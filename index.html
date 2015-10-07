@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <!-- Includes -->
+  <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js"></script>
+  <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <!--  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"> -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+  
+  <!-- ACE and its JavaScript mode and theme files -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.8/ace.js"></script>
+	
+  <!-- Firepad -->
+  <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.1.0/firepad.css" />
+  <script src="https://cdn.firebase.com/libs/firepad/1.1.0/firepad.min.js"></script>
+
+  <!-- Esprima -->
+	<script src="include/esprima.js"></script>
+	<script src="include/escodegen.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+
+</head>
+
+<body>
+  <div class="container-fluid">
+  	<div class="row">
+	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
+	  	<div role="tabpanel" >
+		  	<ul class="nav nav-tabs">
+	  			<li role="presentation" class="active">
+	  				<a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
+	  			<li role="presentation">
+	  				<a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
+	  			<li role="presentation">
+	  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
+			</ul>
+		  
+			<div class="tab-content">	  
+		  		<div role="tabpanel" class="tab-pane active" id="js-container" >
+		  			<div id="aceJSEditorDiv" style="height: 700px"></div></div>
+			  	<div role="tabpanel" class="tab-pane" id="html-container">
+			  		<div id="aceHTMLEditorDiv" style="height: 700px"></div></div>
+			  	<div role="tabpanel" class="tab-pane" id="css-container">
+			  		<div id="aceCSSEditorDiv" style="height: 700px"></div></div>
+			</div>
+		</div>
+		
+
+	    <button onClick="updateIframe();" id="runCode" class="btn btn-default btn-primary" >Run</button>	
+	  </div>
+	  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px">
+	  		<div id="html-output"><iframe id="preview" style="height: 650px; width: 100%"></iframe></div>
+	  		<div id="console-output"></div>
+	  </div>
+  	</div>
+  </div>
+  
+
+
+<script>
+	// Helper to get hash from end of URL or generate a random one.
+	function getUniqueCodeURL(baseURL) {
+	  var ref = new Firebase(baseURL);
+	  var hash = window.location.hash.replace(/#/g, '');
+	  if (hash) {
+	    ref = ref.child(hash);
+	  } else {
+	    ref = ref.push(); // generate unique location.
+	    window.location = window.location + '#' + ref.key(); // add it as a hash to the URL.
+	  }
+	  if (typeof console !== 'undefined')
+	    console.log('Firebase data: ', ref.toString());
+	  return ref.key();
+	}
+	
+	function onEditorChanged(e)
+	{
+		// Reset the timeout to update the iframe.	
+		clearTimeout(editorChangedTimeout);
+		editorChangedTimeout = setTimeout(function() {
+			console.log("Editor changed timeout fired");
+			console.log("HasjsErrors: " + hasjsErrors);
+			if (!(hasjsErrors || hashtmlErrors || hascssErrors))
+				updateIframe();
+		}, 2500);
+	}
+
+	
+	function updateIframe()
+	{
+		console.log("Updated iFrame");
+		
+		// Clear the output window
+		$('#console-output').html('');
+		
+		// Populate the iframe with the current html, css, and js.
+		$("#preview").contents().find("body").html(htmlEditor.getValue());
+		$("#preview").contents().find("head").append('<style>' + cssEditor.getValue() + '</style>'
+				+ '<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"><\/script>'
+				+ '<script>' + jsEditor.getValue() + '<\/script>');
+	}
+	
+	// Global vars
+	var editorChangedTimeout = null;
+
+	// Initialize Firebase Refs for js, html, and css
+	var baseURL = 'https://coode.firebaseio.com';
+	var uniqueCodeURL = getUniqueCodeURL(baseURL);
+	var jsFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/js');
+	var htmlFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/html');
+	var cssFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/css');	
+	
+	// Set up ACE editors and firepads for js, html, and css
+	var jsEditor = ace.edit('aceJSEditorDiv');
+	jsEditor.getSession().setMode("ace/mode/javascript");
+	jsEditor.setTheme("ace/theme/chrome");
+	jsEditor.setShowFoldWidgets(false);
+	jsEditor.getSession().on('change', onEditorChanged);
+	var hasjsErrors = false;
+	var firepad = Firepad.fromACE(jsFirebaseRef, jsEditor, 
+		{ defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}' });
+
+	var htmlEditor = ace.edit('aceHTMLEditorDiv');
+	htmlEditor.getSession().setMode("ace/mode/html");
+	htmlEditor.setTheme("ace/theme/chrome");
+	htmlEditor.setShowFoldWidgets(false);
+	htmlEditor.getSession().on('change', onEditorChanged);
+	var hashtmlErrors = false;
+	var firepad = Firepad.fromACE(htmlFirebaseRef, htmlEditor, 
+		{ defaultText: '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n'
+						+ '<body>\n\n</body>\n</html>' });
+
+	var cssEditor = ace.edit('aceCSSEditorDiv');
+	cssEditor.getSession().setMode("ace/mode/css");
+	cssEditor.setTheme("ace/theme/chrome");
+	cssEditor.setShowFoldWidgets(false);
+	cssEditor.getSession().on('change', onEditorChanged);
+	var hascssErrors = false;
+	var firepad = Firepad.fromACE(cssFirebaseRef, cssEditor, 
+		{ defaultText: '' });	
+	
+	// Subscribe to annotation changes
+	jsEditor.getSession().on("changeAnnotation", function(){
+		console.log("annotation changed");
+		
+		// Look through the JSON structure of annotations. If there is any annotation that is an error,
+		// set the error flag and halt.
+    	var annot = jsEditor.getSession().getAnnotations();
+    	for (var key in annot)
+    	{
+        	if (annot.hasOwnProperty(key) && annot[key].type == 'error')
+        	{
+        		console.log("has js errors");
+        		hasjsErrors = true;
+        		return;
+        	}        
+    	}
+    	hasjsErrors = false;
+    });
+	
+	
+    // Intercept calls to console.log and output them to the console window      
+    (function () {
+  	  var log = console.log;
+  	  console.log = function () {
+  		$('#console-output').append(Array.prototype.slice.call(arguments) + '<BR>');  
+  	    log.apply(this, Array.prototype.slice.call(arguments));
+  	  };
+  	}());
+    
+    // Activate tabs in code UI
+    $('#jsTab a').click(function (e) {
+	  e.preventDefault();
+	  $(this).tab('show');
+	});
+    $('#htmlTab a').click(function (e) {
+  	  e.preventDefault();
+  	  $(this).tab('show');
+  	});
+    $('#cssTab a').click(function (e) {
+  	  e.preventDefault();
+  	  $(this).tab('show');
+  	});
+    
+</script>
+
+</body>
+</html>
