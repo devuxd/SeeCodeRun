@@ -19,6 +19,7 @@
 
 	<!-- Esprima -->
 	<script src="include/esprima.js"></script>
+	<script src="include/source_rewrite.js"></script>
 	<!-- <script src="include/escodegen.js"></script> -->
 
 	<!-- Stylesheet -->
@@ -80,12 +81,18 @@
 	  return ref.key();
 	}
 	
+	function logJsCode() {
+		var syntax = esprima.parse(jsEditor.getValue(), {loc: true});
+		console.log(JSON.stringify(syntax, null, 4));
+	}
+	
 	function onEditorChanged(e)
 	{
 		// Reset the timeout to update the iframe.	
 		clearTimeout(editorChangedTimeout);
 		editorChangedTimeout = setTimeout(function() {
 			if (!(hasjsErrors || hashtmlErrors || hascssErrors))
+				Debugger.run(jsEditor.getValue());
 				updateIframe();
 		}, 2500);
 	}
