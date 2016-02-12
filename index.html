@@ -23,7 +23,7 @@
 
 	<!-- Stylesheet -->
 	<link rel="stylesheet" href="styles.css" />
-       <!--  This is a change  -->
+
 </head>
 
 <body>
@@ -39,10 +39,22 @@
 	  			<li role="presentation">
 	  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
 			</ul>
-		  
+		        
 			<div class="tab-content">	  
 		  		<div role="tabpanel" class="tab-pane active" id="js-container" >
-		  			<div id="aceJSEditorDiv" style="height: 700px"></div></div>
+                  <div class ="row">
+                  <div class="col-md-9" style="padding-left: 0px; padding-right: 0px">
+		  			<div id="aceJSEditorDiv" style="height: 700px"></div>
+                  </div>
+                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px">
+                    <!-- <label> <input type="checkbox" value="">Show Gutter</label> <!-->
+                    <div id="gutter_space"><iframe id="gutter" style="height: 700px; width: 100%"></iframe></div>
+                    
+                  </div>
+                  </div>
+		  			</div>
+                  
+		  			
 			  	<div role="tabpanel" class="tab-pane" id="html-container">
 			  		<div id="aceHTMLEditorDiv" style="height: 700px"></div></div>
 			  	<div role="tabpanel" class="tab-pane" id="css-container">
