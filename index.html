@@ -22,6 +22,8 @@
 	<!-- <script src="include/escodegen.js"></script> -->
      <!-- gutter -->
 	<script src="include/gutter.js"></script>
+	<!-- stub -->
+	<script src="include/stub.js"></script>
 	<!-- Stylesheet -->
 	<link rel="stylesheet" href="styles.css" />
 
@@ -117,11 +119,8 @@
 		
 		// Clear the output window
 		$('#console-output').html('');
-           var c  = ['1','2'];
-           setContentGutter(1, c);  
-            var c  = ['1','3'];
-           setContentGutter(2, c);
-
+           // calling the stub
+              fake();
         // Populate the iframe with the current html, css, and js.
 		$("#preview").contents().find("body").html(htmlEditor.getValue());
 		$("#preview").contents().find("head").append('<style>' + cssEditor.getValue() + '</style>'
