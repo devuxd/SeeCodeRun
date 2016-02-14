@@ -20,7 +20,8 @@
 	<!-- Esprima -->
 	<script src="include/esprima.js"></script>
 	<!-- <script src="include/escodegen.js"></script> -->
-
+     <!-- gutter -->
+	<script src="include/gutter.js"></script>
 	<!-- Stylesheet -->
 	<link rel="stylesheet" href="styles.css" />
 
@@ -43,12 +44,19 @@
 			<div class="tab-content">	  
 		  		<div role="tabpanel" class="tab-pane active" id="js-container" >
                   <div class ="row">
-                  <div class="col-md-9" style="padding-left: 0px; padding-right: 0px">
-		  			<div id="aceJSEditorDiv" style="height: 700px"></div>
+                  <div class="col-md-9" style="padding-left: 0px; padding-right: 0px; padding-top: 5px">
+		  			<div id="aceJSEditorDiv" style="height: 700px;"></div>
                   </div>
-                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px">
+                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:0px">
                     <!-- <label> <input type="checkbox" value="">Show Gutter</label> <!-->
-                    <div id="gutter_space"><iframe id="gutter" style="height: 700px; width: 100%"></iframe></div>
+                    <div id="gutter_space"><iframe id="gutter" style="height: 700px; width: 100%">
+                    	
+                    		
+                    		
+                    	
+                    	
+                    	
+                    </iframe></div>
                     
                   </div>
                   </div>
@@ -109,8 +117,12 @@
 		
 		// Clear the output window
 		$('#console-output').html('');
-		
-		// Populate the iframe with the current html, css, and js.
+           var c  = ['1','2'];
+           setContentGutter(1, c);  
+            var c  = ['1','3'];
+           setContentGutter(2, c);
+
+        // Populate the iframe with the current html, css, and js.
 		$("#preview").contents().find("body").html(htmlEditor.getValue());
 		$("#preview").contents().find("head").append('<style>' + cssEditor.getValue() + '</style>'
 				+ '<script src="https://code.jquery.com/jquery-2.1.4.min.js"><\/script>'
