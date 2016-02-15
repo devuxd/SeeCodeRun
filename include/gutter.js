@@ -3,12 +3,12 @@
    
    
    function  setContentGutter (line, content){
-       
+        // setCss(); // bug
         var iframeBody = $('#gutter').contents().find("body");                 
          jumpToLine(line);
-        // console.log(content.length)
         for(var i =0; i< content.length; i++){
-        iframeBody.find("#line"+line).append(content[i]+" ");
+        iframeBody.find("#line"+line).append(content[i]+"_").addClass("outer-gutter");
+        
         }
 
    }
@@ -18,11 +18,9 @@
    function jumpToLine(line){
       var iframeBody = $('#gutter').contents().find("body");
       var indexOfDiv = getLastDiv();
-      console.log(indexOfDiv);
       for(indexOfDiv; indexOfDiv<=line; indexOfDiv++){
          iframeBody.append("<div id=line"+indexOfDiv+"></div>");
                         
-         console.log(indexOfDiv);
       }
       
       function getLastDiv(){
@@ -33,4 +31,12 @@
          }
        return indexOfDiv;
       }
-   }
+   }  
+      function setCss(){
+          
+           var iframeBody = $('#gutter').contents().find("head");
+           iframeBody.append($("<link/>",
+                { rel: "stylesheet", href: "styles.css", type: "text/css" }
+              ));
+      }
+   
