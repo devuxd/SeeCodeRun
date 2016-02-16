@@ -1,26 +1,31 @@
 
-   
-   
+   var jsEditor = ace.edit('aceJSEditorDiv');
+   var selectedLine = 1;
    
    function  setContentGutter (line, content){
-        // setCss(); // bug
-        var iframeBody = $('#gutter').contents().find("body");                 
-         jumpToLine(line);
+         setCss(); // bug
+         var lastline =jsEditor.getLastVisibleRow()+1;
+         var iframeBody = $('#gutter').contents().find("body");  
+
+         if(iframeBody.find('#line'+line).length ==0){
+          CreateLine(lastline);
+         }
         for(var i =0; i< content.length; i++){
-        iframeBody.find("#line"+line).append(content[i]+"_").addClass("outer-gutter");
+        iframeBody.find("#line"+line).append(content[i]+" ").addClass("outer-gutter");
         
         }
-
+          highlightLine();
    }
    
    
    
-   function jumpToLine(line){
-      var iframeBody = $('#gutter').contents().find("body");
+   function CreateLine(line){
+         var iframeBody = $('#gutter').contents().find("body");  
       var indexOfDiv = getLastDiv();
       for(indexOfDiv; indexOfDiv<=line; indexOfDiv++){
          iframeBody.append("<div id=line"+indexOfDiv+"></div>");
-                        
+         iframeBody.find("#line"+indexOfDiv).addClass("line_height");
+
       }
       
       function getLastDiv(){
@@ -38,5 +43,33 @@
            iframeBody.append($("<link/>",
                 { rel: "stylesheet", href: "styles.css", type: "text/css" }
               ));
+              iframeBody.append($("<script/>",
+                { src: "https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js" }
+              ));
+              
+      }
+      
+      
+
+      
+      function  highlightLine(){
+      jsEditor.getSession().selection.on('changeCursor', function(e)
+      {
+            var line =  jsEditor.getCursorPosition().row+1; 
+            var iframeBody = $('#gutter').contents().find("body");
+            iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
+           iframeBody.find("#line"+line).addClass("highlight_gutter");
+           selectedLine=line;
+           
+      }
+      );
       }
    
+   
+   
+   
+   
+ $(document).mouseup(function (e)
+{
+   alert("hi");   
+});

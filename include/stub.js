@@ -4,22 +4,10 @@
    
    function fake(){
        
-        for (var i=1; i<50; i++){
-           var c  = ['',''];
-           setContentGutter(i, c);  
-            var c  = ['1','Hello'];
-           setContentGutter(2, c);
-           var c  = ['1','2'];
-           setContentGutter(1, c);  
-            var c  = ['1','3'];
-           setContentGutter(2, c);
-           var c  = ['1','3'];
-           setContentGutter(2, c);
-           var c  = ['1','3'];
-           setContentGutter(2, c);
-           var c  = ['1','3'];
-           setContentGutter(2, c);
-           var c  = ['1','3'];
-           setContentGutter(1, c);
-        }
+      
+           var c  = ['1','Hello World!'];
+           setContentGutter(1, c)
+           setContentGutter(227, c);
+
+        
    }

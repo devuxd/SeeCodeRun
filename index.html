@@ -49,12 +49,9 @@
                   <div class="col-md-9" style="padding-left: 0px; padding-right: 0px; padding-top: 5px">
 		  			<div id="aceJSEditorDiv" style="height: 700px;"></div>
                   </div>
-                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:0px">
+                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:3px">
                     <!-- <label> <input type="checkbox" value="">Show Gutter</label> <!-->
-                    <div id="gutter_space" ><iframe  id="gutter"  style="height: 700px; width: 100%">
-                    	
-                    		
-                    	
+                    <div id="gutter_space" class="line_height" ><iframe  class= "iframeCss" id="gutter" >
                     	
                     </iframe></div>
                     
@@ -114,7 +111,6 @@
 	function updateIframe()
 	{
 		console.log("Updated iFrame");
-		
 		// Clear the output window
 		$('#console-output').html('');
            // calling the stub
