@@ -26,12 +26,51 @@
 	<link rel="stylesheet" href="styles.css" />
 
 </head>
-
 <body>
   <div class="container-fluid">
   	<div class="row">
-	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
+  			  			  		<!-- Navigation Bar Work (Steph/Alex)-->
+	  		<nav class="navbar navbar-default">
+	  			<div class="container-fluid">
+	  				
+	  				<!-- SeeCode.Run Title **THIS IMAGE WILL BE UPDATED**-->
+	  				<ul class = "nav pull-left">
+	  					<li>
+	  						<img src="images\SeeCodeRunTitle.png" alt="See Code Run">
+	  					</li>
+	  				</ul>
+	  			
+	  				<!-- Help-->
+		  			<ul class = "nav pull-right">
+		  				<li>
+		  					<!--<img src ="images\HelpIcon.jpg" alt="Help"> SB COMMENTED OUT-->
+		  					<a href="https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!"><span class='glyphicon glyphicon-question-sign'></span>Help</a><!--SB added-->
+		  				</li>
+		  			</ul>
+	  			
+	  				<!-- Contact Us-->
+		  			<ul class = "nav pull-right">
+		  				<li>
+		  					<a href="mailto:contact@seecode.run"><span class='glyphicon glyphicon-envelope'></span>Contact Us</a><!--SB added span-->
+		  				</li>
+		  			</ul>
+	  			
+	  				<!-- About-->
+		  			<ul class = "nav pull-right">
+		  				<li>
+		  					<a href="https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run"><span class='glyphicon glyphicon-asterisk'></span>About</a><!--SB added span-->
+		  				</li>
+		  			</ul>
+	  		
+	  				
+	  			</div>
+	  			
+	  			
+	  			
+	  		</nav>
+	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">
 	  	<div role="tabpanel" >
+
 		  	<ul class="nav nav-tabs">
 	  			<li role="presentation" class="active">
 	  				<a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
@@ -40,8 +79,7 @@
 	  			<li role="presentation">
 	  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
 			</ul>
-		  
-			<div class="tab-content">	  
+			<div class="tab-content">
 		  		<div role="tabpanel" class="tab-pane active" id="js-container" >
 		  			<div id="aceJSEditorDiv" style="height: 700px"></div></div>
 			  	<div role="tabpanel" class="tab-pane" id="html-container">
@@ -65,6 +103,9 @@
 
 <script>
 	"use strict";
+
+	// $('#cont').draggable({handle: '#pan', snap:true, containment: "parent" });
+
 
 	// Helper to get hash from end of URL or generate a random one.
 	function getUniqueCodeURL(baseURL) {
@@ -122,6 +163,7 @@
 	jsEditor.setTheme("ace/theme/chrome");
 	jsEditor.setShowFoldWidgets(false);
 	jsEditor.getSession().on('change', onEditorChanged);
+	jsEditor.resize();
 	var hasjsErrors = false;
 	var firepad = Firepad.fromACE(jsFirebaseRef, jsEditor, 
 		{ defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}' });
@@ -131,6 +173,7 @@
 	htmlEditor.setTheme("ace/theme/chrome");
 	htmlEditor.setShowFoldWidgets(false);
 	htmlEditor.getSession().on('change', onEditorChanged);
+	htmlEditor.resize();
 	var hashtmlErrors = false;
 	var firepad = Firepad.fromACE(htmlFirebaseRef, htmlEditor, 
 		{ defaultText: '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n'
@@ -141,6 +184,7 @@
 	cssEditor.setTheme("ace/theme/chrome");
 	cssEditor.setShowFoldWidgets(false);
 	cssEditor.getSession().on('change', onEditorChanged);
+	cssEditor.resize();
 	var hascssErrors = false;
 	var firepad = Firepad.fromACE(cssFirebaseRef, cssEditor, 
 		{ defaultText: '' });	
