@@ -7,7 +7,7 @@
          var lastline =jsEditor.getLastVisibleRow()+1;
          var iframeBody = $('#gutter').contents().find("body");  
 
-         if(iframeBody.find('#line'+line).length ==0){
+         if(iframeBody.find('#line'+lastline).length ==0){
           CreateLine(lastline);
          }
         for(var i =0; i< content.length; i++){
