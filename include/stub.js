@@ -2,14 +2,24 @@
 
    // this a stub "fake" code is used to simulate the sinario in which other JS code calls the gutter API
    
+  
+  var change = false;
    function fake(){
        
-      
-           var content  = ['Hey','Hello World!'];
+       if(!change){
+           var content  = ['void'];
            setContentGutter(1, content);
            
-           var content2 = ["Test line 9 with realy long text !!!!"];
-           setContentGutter(9, content2);
-
+           var content1  = ['void'];
+           setContentGutter(3, content);
+           
+           var content2 = ["Hello, world."];
+           setContentGutter(4, content2);
+           
+           var content3 = ["Hello, world."];
+           setContentGutter(5, content3);
+            change =true;
+       }
+      
         
    }

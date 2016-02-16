@@ -11,16 +11,16 @@
           CreateLine(lastline);
          }
         for(var i =0; i< content.length; i++){
-        iframeBody.find("#line"+line).append(content[i]+" ").addClass("outer-gutter");
+        iframeBody.find("#line"+line).append(" [ "+content[i]+" ]").addClass("outer-gutter");
         
         }
-          highlightLine();
+        highlightLine();
    }
    
    
    
    function CreateLine(line){
-         var iframeBody = $('#gutter').contents().find("body");  
+      var iframeBody = $('#gutter').contents().find("body");  
       var indexOfDiv = getLastDiv();
       for(indexOfDiv; indexOfDiv<=line; indexOfDiv++){
          iframeBody.append("<div id=line"+indexOfDiv+"></div>");
@@ -55,8 +55,11 @@
       function  highlightLine(){
       jsEditor.getSession().selection.on('changeCursor', function(e)
       {
-            var line =  jsEditor.getCursorPosition().row+1; 
-            var iframeBody = $('#gutter').contents().find("body");
+          var iframeBody = $('#gutter').contents().find("body");
+          var line =  jsEditor.getCursorPosition().row+1;
+          if(iframeBody.find('#line'+line).length ==0){
+          CreateLine(line);
+            }
             iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
            iframeBody.find("#line"+line).addClass("highlight_gutter");
            selectedLine=line;
