@@ -66,10 +66,4 @@
       }
    
    
-   
-   
-   
- $(document).mouseup(function (e)
-{
-   alert("hi");   
-});
+  

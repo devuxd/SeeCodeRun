@@ -5,9 +5,11 @@
    function fake(){
        
       
-           var c  = ['1','Hello World!'];
-           setContentGutter(1, c)
-           setContentGutter(227, c);
+           var content  = ['Hey','Hello World!'];
+           setContentGutter(1, content);
+           
+           var content2 = ["Test line 9 with realy long text !!!!"];
+           setContentGutter(9, content2);
 
         
    }
