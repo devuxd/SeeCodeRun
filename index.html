@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   
+  <!-- Comment by Dana -->
   <!-- Includes -->
 	<script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
 	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -18,8 +19,9 @@
 	<script src="https://cdn.firebase.com/libs/firepad/1.2.0/firepad.min.js"></script>
 
 	<!-- Esprima -->
+	<!--<script src="include/require.js"></script>-->
 	<script src="include/esprima.js"></script>
-	<!-- <script src="include/escodegen.js"></script> -->
+	<!--<script src="include/escodegen.js"></script>-->
 
 	<!-- Stylesheet -->
 	<link rel="stylesheet" href="styles.css" />
@@ -64,7 +66,152 @@
 
 <script>
 	"use strict";
-
+	//var escodegen = require('escodegen');
+	//var esprima = require('esprima');
+	/*
+	    Syntax = {
+        AssignmentExpression: 'AssignmentExpression',
+        AssignmentPattern: 'AssignmentPattern',
+        ArrayExpression: 'ArrayExpression',
+        ArrayPattern: 'ArrayPattern',
+        ArrowFunctionExpression: 'ArrowFunctionExpression',
+        BlockStatement: 'BlockStatement',
+        BinaryExpression: 'BinaryExpression',
+        BreakStatement: 'BreakStatement',
+        *********CallExpression: 'CallExpression',
+        CatchClause: 'CatchClause',
+        ClassBody: 'ClassBody',
+        ClassDeclaration: 'ClassDeclaration',
+        ClassExpression: 'ClassExpression',
+        *********ConditionalExpression: 'ConditionalExpression',
+        ContinueStatement: 'ContinueStatement',
+        *********DoWhileStatement: 'DoWhileStatement',
+        DebuggerStatement: 'DebuggerStatement',
+        EmptyStatement: 'EmptyStatement',
+        ExportAllDeclaration: 'ExportAllDeclaration',
+        ExportDefaultDeclaration: 'ExportDefaultDeclaration',
+        ExportNamedDeclaration: 'ExportNamedDeclaration',
+        ExportSpecifier: 'ExportSpecifier',
+        ExpressionStatement: 'ExpressionStatement',
+        *********ForStatement: 'ForStatement',
+        ForInStatement: 'ForInStatement',
+        FunctionDeclaration: 'FunctionDeclaration',
+        *********FunctionExpression: 'FunctionExpression',
+        Identifier: 'Identifier',
+        *********IfStatement: 'IfStatement',
+        ImportDeclaration: 'ImportDeclaration',
+        ImportDefaultSpecifier: 'ImportDefaultSpecifier',
+        ImportNamespaceSpecifier: 'ImportNamespaceSpecifier',
+        ImportSpecifier: 'ImportSpecifier',
+        Literal: 'Literal',
+        LabeledStatement: 'LabeledStatement',
+        LogicalExpression: 'LogicalExpression',
+        MemberExpression: 'MemberExpression',
+        MethodDefinition: 'MethodDefinition',
+        NewExpression: 'NewExpression',
+        ObjectExpression: 'ObjectExpression',
+        ObjectPattern: 'ObjectPattern',
+        Program: 'Program',
+        Property: 'Property',
+        RestElement: 'RestElement',
+        *********ReturnStatement: 'ReturnStatement',
+        SequenceExpression: 'SequenceExpression',
+        SpreadElement: 'SpreadElement',
+        Super: 'Super',
+        SwitchCase: 'SwitchCase',
+        SwitchStatement: 'SwitchStatement',
+        TaggedTemplateExpression: 'TaggedTemplateExpression',
+        TemplateElement: 'TemplateElement',
+        TemplateLiteral: 'TemplateLiteral',
+        ThisExpression: 'ThisExpression',
+        ThrowStatement: 'ThrowStatement',
+        TryStatement: 'TryStatement',
+        UnaryExpression: 'UnaryExpression',
+        UpdateExpression: 'UpdateExpression',
+        VariableDeclaration: 'VariableDeclaration',
+        VariableDeclarator: 'VariableDeclarator',
+        *********WhileStatement: 'WhileStatement',
+        WithStatement: 'WithStatement'
+    };
+	*/
+	
+	
+	// Get Value of a Statement #20 Issue
+	// 1) assignment statements: value of variable being assigned
+	//		Expression Statement
+	//		AssignmentExpression
+	// 2) conditional statements: true or false
+	//		IfStatement
+	//		SwitchStatement
+	// 3) loops: total number of times loop executed
+	//		WhileStatement
+	//		ForStatement		
+	// 4) function invocations: return value of function
+	//		ReturnStatement
+    esprimaParsing();
+	function esprimaParsing(){
+		console.log("running parsing");	
+		var syntaxTree = esprima.parse('if(x==5){};while(p==true){};',1);
+		//var recreateCode = escodegen.generate(syntaxTree,1);
+		//console.log(recreateCode);
+		console.log("retrieving types of statements...")
+		traverse(syntaxTree, function(node) {
+			if(node.type==="AssignmentExpression"){
+				console.log("assignment expression");
+			}			
+			else if(node.type==="IfStatement"){
+				console.log("conditional statements");
+			}
+			else if(node.type==="ForStatement"||node.type==="WhileStatement"){
+				console.log("loops");
+			}
+			else if(node.type==="CallExpression"||node.type==="FunctionExpression"||node.type==="ReturnStatement"){
+				console.log("function invocations")
+			}
+    	});
+		//traverse(syntax, function(node){alert(node.type)});
+		//showType(syntax);
+	}
+	function traverse(node, func) {
+		//pass the result to the function
+	    func(node);//1
+	    // iterates through each key element in the node
+	    for (var key in node) { //2
+	    	// if the node the property for the key
+	        if (node.hasOwnProperty(key)) { //3
+	        	// retrieve the property from the node
+	            var child = node[key];
+	            // check to see if the retrieved result is an object and not null
+	            if (typeof child === 'object' && child !== null) { //4
+	            	// then create an array for the result
+	                if (Array.isArray(child)) {
+	                	// iterate through each of the element in the array
+	                    child.forEach(function(node) { //5
+	                        traverse(node, func);
+	                    });
+	                // if it can't be created as an array, then display the result 
+	                } else {
+	                    traverse(child, func); //6
+	                }
+	            }
+	        }
+	    }
+	}
+	function traverseX(node){
+		var all = "";
+		var allBody = "";
+		for(var key in node){
+			if(key == "body")
+				alert(key.type);
+				//alert(key[0]);
+				//for(var s in key)
+				//	allBody+=s+"\n";
+			all+=key+"\n";
+		}
+		alert(all);
+		alert(allBody);
+	}
+	
 	// Helper to get hash from end of URL or generate a random one.
 	function getUniqueCodeURL(baseURL) {
 	  var ref = new Firebase(baseURL);
