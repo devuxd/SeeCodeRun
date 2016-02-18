@@ -9,7 +9,7 @@ export class ConsoleWindow {
         this.title = 'Console';
     }
     
-    activate() {
+    attached() {
         let logger = console.log;
         let log = [];
         
@@ -18,9 +18,6 @@ export class ConsoleWindow {
   	        logger.apply(this, Array.prototype.slice.call(arguments));
   	    };
   	    
-  	    this.logger = logger;
   	    this.log = log;
-  	    
-  	    console.log(this);
     }
 }

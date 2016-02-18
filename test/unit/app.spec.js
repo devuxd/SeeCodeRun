@@ -25,18 +25,10 @@ describe('the App module', () => {
   });
 
   it('configures the router title', () => {
-    expect(sut.router.title).toEqual('Aurelia');
+    expect(sut.router.title).toEqual('SeeCode.Run');
   });
 
-  it('should have a welcome route', () => {
-    expect(sut.router.routes).toContain({ route: ['', 'welcome'], name: 'welcome',  moduleId: 'welcome', nav: true, title: 'Welcome' });
-  });
-
-  it('should have a users route', () => {
-    expect(sut.router.routes).toContain({ route: 'users', name: 'users', moduleId: 'users', nav: true, title: 'Github Users' });
-  });
-
-  it('should have a child router route', () => {
-    expect(sut.router.routes).toContain({ route: 'child-router', name: 'child-router', moduleId: 'child-router', nav: true, title: 'Child Router' });
+  it('should have a pastebin route', () => {
+    expect(sut.router.routes).toContain({ route: ['', '/:id'], name: 'pastebin',  moduleId: 'pastebin/pastebin', nav: false, title: 'Pastebin' });
   });
 });

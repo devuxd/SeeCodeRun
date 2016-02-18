@@ -4,9 +4,9 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
-import esprima from 'esprima';
-import '../../mode-javascript';
-import '../../theme-chrome';
+import {TraceService} from '../traceService/traceService';
+import '../mode-javascript';
+import '../theme-chrome';
 
 @inject(EventAggregator, Router)
 export class JsEditor {
@@ -24,21 +24,7 @@ export class JsEditor {
       let baseURL = 'https://radiant-heat-3277.firebaseio.com';
       let firebase = new Firebase(baseURL);
       let pastebinId = firebase.push().key();
-      this.router.navigateToRoute('js-editor', { id: pastebinId });
     }
-
-    //     let baseURL = 'https://radiant-heat-3277.firebaseio.com';
-    //     let firebase = new Firebase(baseURL);
-    //     let pastebin = firebase.child(params.id);
-    //     let pastebinId = this.pastebinId;
-    //     pastebin.once('value', getOrCreatePastebin);
-    //     function getOrCreatePastebin(snapshot) {
-    //       if (snapshot.exists()) {
-    //         pastebinId = params.id;
-    //       } else {
-    //         pastebinId = firebase.push().key();
-    //       }
-    //     }
   }
 
   attached() {
@@ -81,12 +67,10 @@ export class JsEditor {
 
     let editorChangedTimeout;
     
-    console.log(editor);
-    
     function onEditorChanged(e) {
       clearTimeout(editorChangedTimeout);
       editorChangedTimeout = setTimeout(function pub() { 
-        let syntax = esprima.parse(editor.getValue(), {loc: true});
+        let syntax = new TraceService().getTrace(editor.getValue());
 
         ea.publish('onEditorChanged', {
             data: e,
@@ -148,7 +132,7 @@ export class JsEditor {
     let editor = this.editor;
 
     ea.subscribe('onEditorChanged', payload => {
-      
+      // add code here for subscribe event
     });
 
     ea.subscribe('onAnnotationChanged', payload => {
@@ -162,7 +146,7 @@ export class JsEditor {
     });
 
     ea.subscribe('onCursorMoved', payload => {
-      console.log('do something different');
+      // add code here for subscribe event
     });
   }
 }

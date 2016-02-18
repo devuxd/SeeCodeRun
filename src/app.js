@@ -3,18 +3,11 @@ export class App {
     config.title = 'SeeCode.Run';
     config.map([
       {
-        route: ['', 'pastebin'],
+        route: ['', '/:id'],
         name: 'pastebin',
-        moduleId: 'pastebin',
-        nav: true,
-        title: 'Pastebin'
-      },
-      {
-        route: ['js-editor', 'js-editor/:id'],
-        name: 'js-editor',
-        moduleId: 'jsEditor/js-editor',
+        moduleId: 'pastebin/pastebin',
         nav: false,
-        title: 'JS Editor'
+        title: 'Pastebin'
       }
     ]);
 
