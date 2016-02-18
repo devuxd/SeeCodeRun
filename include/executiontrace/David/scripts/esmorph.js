@@ -133,11 +133,12 @@
                 if (node.type === Syntax.VariableDeclarator) {
                     if(node.init){
                         functionList.push({
-                            name: node.init.type,
-                            type: node.init.type,
-                            range: node.init.range,
-                            loc: node.init.loc,
-                            blockStart: node.body? node.body.range[0] : -1 
+                            'node' : node.init,
+                            'name': node.init.type,
+                            'type': node.init.type,
+                            'range': node.init.range,
+                            'loc': node.init.loc,
+                            'blockStart': node.body? node.body.range[0] : -1 
                         });
                     }
                 }else if(node.type === Syntax.AssignmentExpression){
@@ -255,9 +256,13 @@
                 if(functionList[i].type){ // instrumenting the expression tracing
                     var expression = expressionCode.substring(functionList[i].range[0], functionList[i].range[1]);
                     
-                     console.log("autoLog "+ expression);
+                     //console.log("autoLog "+ expression);
+                     if(functionList[i].node){
+                         var  instree = esprima.parse('window.TRACE.autoLog(' + expression +')', { range: true, loc: true });
+                         functionList[i].node = instree;
+                     }
                      
-                  //  expressionCode = expressionCode.slice(0, functionList[i].range[0]) + 'window.TRACE.autoLog(' + expression +')'+ expressionCode.slice(functionList[i].range[1], expressionCode.length);
+                    expressionCode = expressionCode.slice(0, functionList[i].range[0]) + 'window.TRACE.autoLog(' + expression +')'+ expressionCode.slice(functionList[i].range[1], expressionCode.length);
                     
                 }else{
                     
@@ -284,6 +289,9 @@
 			console.log(code);
 			console.log("\n--------------------");
 			console.log(expressionCode);
+			var genCode = escodegen.generate(tree);
+			console.log("\n--------------------");
+			console.log(genCode);
             return code;
         };
     }
