@@ -40,13 +40,21 @@ either expressed or implied, of the SeeCodeRun Project.
         var tracer, code, signature;      // var code caused a 2 hours delay
         tracer = window.esmorph.Tracer.FunctionEntrance(function (fn) {
             signature = 'window.TRACE.autoLog({ ';
-            signature += 'name: "' + fn.name + '", ';
-            signature += 'lineNumber: ' + fn.loc.start.line + ', ';
-            signature += 'columnNumber: ' + fn.loc.start.column + ', ';
-            signature += 'range: [' + fn.range[0] + ',' + fn.range[1] + ']' + ', ';
-            signature += ' });';
+            signature += '"type": "' + fn.type + '", ';
+            signature += '"text": "' + fn.name + '", ';
+            signature += '"value": ' + fn.expression + ', ';
+            signature += '"range": {'+
+                             '"start" : { "row" : '+(fn.loc.start.line - 1) + ', "column" : ' + fn.loc.start.column + '}, '+
+                             '"end" : { "row" : '+(fn.loc.end.line - 1) + ', "column" : ' + fn.loc.end.column + '}'+
+                        '} , ';  // range in column-row format used in ACE
+            signature += 'indexRange: [' + fn.range[0] + ',' + fn.range[1] + ']';
+            signature += '})';
+            
             return signature;
+            
         });
+        
+        
 
         code = window.esmorph.modify(sourceCode, tracer); // instrumented code
 
@@ -64,34 +72,61 @@ either expressed or implied, of the SeeCodeRun Project.
 
     function createTraceCollector() {
         global.TRACE = {
-            hits: {}, data: {}, stack : {}, stackSize : 0,
+            hits: {}, data: {}, stack : [],
             autoLog: function (info) {
+                var key = info.text + ':' + info.indexRange[0];
                 
-                var key = info.name + ':' + info.range[0];
-				this.stack[this.stackSize] = key;
-				this.stackSize = this.stackSize + 1;
-				
-                if (this.hits.hasOwnProperty(key)) {
-                    this.hits[key] = this.hits[key] + 1;					
+                if(info.type === 'CallExpression'){
+    				this.stack.push(key) ;
+                }
+                
+                var stackTop =	this.stack[this.stack.length()] ;
+                
+				if (this.hits.hasOwnProperty(key)) {
+                    this.hits[key] = this.hits[key] + 1;
+                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
                     this.hits[key] = 1;
-					this.data[key] = info;
-
+                    this.data[key] = [{
+                        'type' : info.type,
+                        'text' : info.text,
+                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value)}],
+                        'range': info.range
+                        //{'start' : {'row' : info.loc[0], 'column' : info.loc[1]}, 'end' : {'row' : info.range[2], 'column' : info.range[3]}}
+                    }];
                 }
+                return info.value;
             },
             getStackTrace: function () {
                 var entry,
                     stackData = [];
+                var i=0;
                 for (entry in this.stack) {
                     if (this.stack.hasOwnProperty(entry)) {
-                        stackData.push({ index: entry, name: this.stack[entry], count: this.hits[this.stack[entry]], data : this.data[this.stack[entry]]});
+                        stackData.push({ index: i++, text: entry.split(':')[0], range: this.data[entry].range,  count: this.hits[entry]});
                     }
                 }
                 return stackData;
+            },
+            getExecutionTrace: function () {
+
             }
         };
     }
 
+/**
+ * description
+ *  Usage: window.traceRun( sourceCode, eventListener)
+ *      @parameter sourceCode: a string with the source code
+ *      @parameter eventListener: a callback function that responds with status(Running, Finished, Error) and
+ *      description of them.
+ * Details: 1. Calls createTraceCollector() as the callback instrumented in the original code.
+ *          2. traceInstrument() will analyze the original code, find the element types we need and append calls to the trace collector.
+ *          3. traceInstrument() returns the instrumented code(rewritten code with added functionality) than is then executed with the eval()
+ *          4. When the execution finishes, the eventListener callback will return status 'Finished' and the object window.TRACE wil
+ *          allow to obtain the execution trace data with the getExecutionTrace() call (i.e window.TRACE.getExecutionTrace())
+ *
+ */
     global.traceExecution = function (sourceCode, eventListener) {
         var code, timestamp;
         try {
@@ -113,17 +148,16 @@ either expressed or implied, of the SeeCodeRun Project.
         }
     };
     global.getTraceAnnotations = function(){
-        var i, stackTrace, entry, name, row, column;
+        var i, stackTrace, entry, text, row;
 
 		stackTrace = window.TRACE.getStackTrace();
 		var annotations = [];
         for (i = 0; i < stackTrace.length; i += 1) {
             entry = stackTrace[i];
-            name = entry.name.split(':')[0];
-			row = entry.data.lineNumber -1;
-			column = entry.data.columnNumber;
+            text = entry.text;
+			row = entry.range.start.row;
 			
-			annotations.push({type: "info", "row": row, "column": column, "raw": " y is called x times", "text": name + ' is called ' + count(entry.count, 'time', 'times')});
+			annotations.push({"type": "info", "row": row, "raw": " y is called x times", "text": text + ' is called ' + count(entry.count, 'time', 'times')});
             
         }
         return annotations;

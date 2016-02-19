@@ -26,7 +26,7 @@
 /*jslint node:true browser:true */
 /*global esmorph:true,esprima:true */
 
-//TODO Rename to CodeAnalyzer?
+//TODO Rename to CodeAnalyzer....
 (function (exports) {
     'use strict';
 
@@ -114,6 +114,14 @@
     // the result will be used as the entire prolog. The arguments for the
     // invocation are the function name, range, and location info.
 
+   function getTextRange(code, indexRange){
+       if(!indexRange){
+           return "";
+       }
+       var from = indexRange[0];
+       var till = indexRange[1];
+       return code.substring(from, till);
+   }
     function traceFunctionEntrance(traceName) {
 
         return function (code) {
@@ -125,6 +133,8 @@
                 i;
 
             tree = esprima.parse(code, { range: true, loc: true });
+
+
 
             functionList = [];
             traverse(tree, function (node, path) {
@@ -140,6 +150,8 @@
                             'loc': node.init.loc,
                             'blockStart': node.body? node.body.range[0] : -1 
                         });
+                        
+                    //node.type = "XXX " + Syntax.VariableDeclarator;
                     }
                 }else if(node.type === Syntax.AssignmentExpression){
                      if(node.right){
@@ -256,12 +268,6 @@
                 if(functionList[i].type){ // instrumenting the expression tracing
                     var expression = expressionCode.substring(functionList[i].range[0], functionList[i].range[1]);
                     
-                     //console.log("autoLog "+ expression);
-                     if(functionList[i].node){
-                         var  instree = esprima.parse('window.TRACE.autoLog(' + expression +')', { range: true, loc: true });
-                         functionList[i].node = instree;
-                     }
-                     
                     expressionCode = expressionCode.slice(0, functionList[i].range[0]) + 'window.TRACE.autoLog(' + expression +')'+ expressionCode.slice(functionList[i].range[1], expressionCode.length);
                     
                 }else{
