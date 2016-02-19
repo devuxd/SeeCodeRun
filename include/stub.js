@@ -7,7 +7,7 @@
    function fake(){
        
        if(!change){
-           var content  = ['void'];
+           var content  = ['voidv'];
            setContentGutter(1, content);
            
            var content1  = ['void'];

@@ -13,6 +13,14 @@
 	<!-- ACE and its JavaScript mode and theme files -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js"></script>
 
+   <!-- splitter -->
+    
+    <link rel="stylesheet" href="include/splitter/jqx.base.css" type="text/css" />
+    <script type="text/javascript" src="include/splitter/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="include/splitter/jqxcore.js"></script>
+    <script type="text/javascript" src="include/splitter/jqxsplitter.js"></script>
+    <script type="text/javascript" src="include/splitter/buildingSplitter.js"></script>
+
 	<!-- Firepad -->
 	<link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.2.0/firepad.css" />
 	<script src="https://cdn.firebase.com/libs/firepad/1.2.0/firepad.min.js"></script>
@@ -30,50 +38,74 @@
 </head>
 
 <body>
-  <div class="container-fluid">
-  	<div class="row">
-	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
-	  	<div role="tabpanel" >
-		  	<ul class="nav nav-tabs">
-	  			<li role="presentation" class="active">
-	  				<a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
-	  			<li role="presentation">
-	  				<a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
-	  			<li role="presentation">
-	  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
-			</ul>
-		        
-			<div class="tab-content">	  
-		  	 <div role="tabpanel" class="tab-pane active" id="js-container" >
-                  <div class ="row">
-                  <div class="col-md-9" style="padding-left: 0px; padding-right: 0px; padding-top: 5px">
-		  			<div id="aceJSEditorDiv" style="height: 700px;"></div>
-                  </div>
-                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:3px">
-                    <!-- <label> <input type="checkbox" value="">Show Gutter</label> <!-->
-                    <div id="gutter_space" class="line_height" ><iframe  class= "iframeCss" id="gutter" ></iframe></div>
-                    
-                  </div>
-                </div>
-		  	 </div>
-                  
-		  			
-			  	<div role="tabpanel" class="tab-pane" id="html-container">
-			  		<div id="aceHTMLEditorDiv" style="height: 700px"></div></div>
-			  	<div role="tabpanel" class="tab-pane" id="css-container">
-			  		<div id="aceCSSEditorDiv" style="height: 700px"></div></div>
+	  <div class="container-fluid">
+	  	<div class="row">
+	  	 <div id ="mainSplitter">
+		  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
+		  	<div role="tabpanel" >
+			  	<ul class="nav nav-tabs">
+		  			<li role="presentation" class="active">
+		  				<a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
+		  			<li role="presentation">
+		  				<a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
+		  			<li role="presentation">
+		  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
+				</ul>
 			</div>
+		    <div class="tab-content">	  
+			  <div role="tabpanel" class="tab-pane active" id="js-container" >
+	            <div class ="row">
+	              <div class="col-md-9" style="padding-left: 0px; padding-right: 0px; padding-top: 5px">
+				  	<div id="aceJSEditorDiv" style="height: 700px;">
+				    </div>
+		          </div>
+		          <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:3px">
+	                <div id="gutter_space" class="line_height" >
+	                  <iframe  class= "iframeCss" id="gutter" >
+	                  </iframe>
+	                </div>
+	               </div>
+	              </div>
+			  	</div>
+				<div role="tabpanel" class="tab-pane" id="html-container">
+				  <div id="aceHTMLEditorDiv" style="height: 700px">
+				  </div>
+				</div>
+				<div role="tabpanel" class="tab-pane" id="css-container">
+				 <div id="aceCSSEditorDiv" style="height: 700px">
+				 </div>
+				</div>
+		    </div>
 		</div>
-		
-
-	    <!-- <button onClick="updateIframe();" id="runCode" class="btn btn-default btn-primary" >Run</button> -->
-	  </div>
-	  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px">
-	  		<div id="html-output"><iframe id="preview" style="height: 650px; width: 100%"></iframe></div>
-	  		<div id="console-output"></div>
-	  </div>
-  	</div>
-  </div>
+	    <div>
+	      <div role="tabpanel" >
+			<ul class="nav nav-tabs">
+			  <li role="presentation" class="active">
+			  	<a href="#output-container" aria-controls="output-container" role="tab" data-toggle="tab">output</a></li>
+		  	  <li role="presentation">
+		  		<a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
+		  	</ul>
+		  </div>
+		  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
+		    <div class="tab-content">
+		  	 <div role="tabpanel" class="tab-pane" id="output-container">
+			   <div id="html-output">
+				<iframe id="preview" class= "iframeCss" style = "height: 700px">
+				</iframe>
+			   </div>
+			 </div>
+			 <div role="tabpanel" class="tab-pane" id="visualization-container">
+		       <div class="checkbox">
+	             <label><input type="checkbox" >Activate Visualization Mode</label>
+	           </div>
+			 </div>
+			</div>
+		  <div id="console-output"></div>
+		 </div>
+	 </div>
+    </div>
+   </div>
+	  
   
 
 

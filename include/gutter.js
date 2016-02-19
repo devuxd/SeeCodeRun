@@ -1,7 +1,7 @@
 
    var jsEditor = ace.edit('aceJSEditorDiv');
    var selectedLine = 1;
-   
+
    function  setContentGutter (line, content){
          setCss(); // bug
          var lastline =jsEditor.getLastVisibleRow()+1;
@@ -60,7 +60,8 @@
           if(iframeBody.find('#line'+line).length ==0){
           CreateLine(line);
             }
-            iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
+           
+           iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
            iframeBody.find("#line"+line).addClass("highlight_gutter");
            selectedLine=line;
            
