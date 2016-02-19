@@ -143,21 +143,27 @@
                 if (node.type === Syntax.VariableDeclarator) {
                     if(node.init){
                         functionList.push({
-                            'node' : node.init,
-                            'name': node.init.type,
+                            'name': getTextRange(code, node.id.range),
+                            'expression': getTextRange(code, node.init.range),
                             'type': node.init.type,
                             'range': node.init.range,
                             'loc': node.init.loc,
                             'blockStart': node.body? node.body.range[0] : -1 
                         });
                         
-                    //node.type = "XXX " + Syntax.VariableDeclarator;
+                        node.init= {
+                        "type": "Literal",
+                        "value": 5,
+                        "raw": "5"
+                    };
+                        
                     }
                 }else if(node.type === Syntax.AssignmentExpression){
                      if(node.right){
                         functionList.push({
-                            name: node.right.type,
-                            type: node.right.type,
+                            'type': node.right.type,
+                            'name': getTextRange(code, node.left.range),
+                            'expression': getTextRange(code, node.right.range),
                             range: node.right.range,
                             loc: node.right.loc,
                             blockStart: node.body? node.body.range[0] : -1 
@@ -168,8 +174,9 @@
                      
                     if(node.right){
                         functionList.push({
-                            name: node.right.type,
                             type: node.right.type,
+                            name: getTextRange(code, node.right.range),
+                            'expression': getTextRange(code, node.right.range),
                             range: node.right.range,
                             loc: node.right.loc,
                             blockStart: node.body? node.body.range[0] : -1 
@@ -178,8 +185,9 @@
                     
                     if(node.left){
                         functionList.push({
-                            name: node.left.type,
                             type: node.left.type,
+                            name: getTextRange(code, node.left.range),
+                            'expression': getTextRange(code, node.left.range),
                             range: node.left.range,
                             loc: node.left.loc,
                             blockStart: node.body? node.body.range[0] : -1 
@@ -188,8 +196,9 @@
                      
                     
                     functionList.push({
-                            name: node.type,
                             type: node.type,
+                            name: getTextRange(code, node.range),
+                            'expression': getTextRange(code, node.range),
                             range: node.range,
                             loc: node.loc,
                             blockStart: node.body? node.body.range[0] : -1 
@@ -200,6 +209,7 @@
                 if (node.type === Syntax.FunctionDeclaration) {
                     functionList.push({
                         name: node.id.name,
+                        'expression': getTextRange(code, node.range),
                         range: node.range,
                         loc: node.loc,
                         blockStart: node.body.range[0]
@@ -213,6 +223,7 @@
                             functionList.push({
                                 name: code.slice(parent.left.range[0],
                                           parent.left.range[1]).replace(/"/g, '\\"'),
+                                'expression': getTextRange(code, node.range),
                                 range: node.range,
                                 loc: node.loc,
                                 blockStart: node.body.range[0]
@@ -221,6 +232,7 @@
                     } else if (parent.type === Syntax.VariableDeclarator) {
                         functionList.push({
                             name: parent.id.name,
+                            'expression': getTextRange(code, node.range),
                             range: node.range,
                             loc: node.loc,
                             blockStart: node.body.range[0]
@@ -228,6 +240,7 @@
                     } else if (parent.type === Syntax.CallExpression) {
                         functionList.push({
                             name: parent.id ? parent.id.name : '[Anonymous]',
+                            'expression': getTextRange(code, node.range),
                             range: node.range,
                             loc: node.loc,
                             blockStart: node.body.range[0]
@@ -235,6 +248,7 @@
                     } else if (typeof parent.length === 'number') {
                         functionList.push({
                             name: parent.id ? parent.id.name : '[Anonymous]',
+                            'expression': getTextRange(code, node.range),
                             range: node.range,
                             loc: node.loc,
                             blockStart: node.body.range[0]
@@ -244,6 +258,7 @@
                             if (parent.value === node && parent.key.name) {
                                 functionList.push({
                                     name: parent.key.name,
+                                    'expression': getTextRange(code, node.range),
                                     range: node.range,
                                     loc: node.loc,
                                     blockStart: node.body.range[0]
@@ -261,11 +276,14 @@
             var expressionCode = "" + code;
             for (i = functionList.length - 1; i >= 0; i -= 1) {
                 param = {
+                    type: "Call",
                     name: functionList[i].name,
+                    expression: "0",
                     range: functionList[i].range,
                     loc: functionList[i].loc
                 };
                 if(functionList[i].type){ // instrumenting the expression tracing
+                   
                     var expression = expressionCode.substring(functionList[i].range[0], functionList[i].range[1]);
                     
                     expressionCode = expressionCode.slice(0, functionList[i].range[0]) + 'window.TRACE.autoLog(' + expression +')'+ expressionCode.slice(functionList[i].range[1], expressionCode.length);
@@ -274,20 +292,10 @@
                     
                     if (typeof traceName === 'function') {
                         signature = traceName.call(null, param);
-                    } else {
-                        signature = traceName + '({ ';
-                        signature += 'name: \'' + functionList[i].name + '\', ';
-                        if (typeof functionList[i].loc !== 'undefined') {
-                            signature += 'lineNumber: ' + functionList[i].loc.start.line + ', ';
-                            signature += 'columnNumber: ' + functionList[i].loc.start.column + ', ';
-                        }
-                        signature += 'range: [' + functionList[i].range[0] + ', ' +
-                            functionList[i].range[1] + '] ';
-                        signature += '});';
-                    }
+                    } 
                     pos = functionList[i].blockStart + 1;
-                    code = code.slice(0, pos) + '\n' + signature + code.slice(pos, code.length);
-                    //TODO: USE THE ACE EDITOR TO INSTRUMENT THE CODE
+                    code = code.slice(0, pos) + '\n' + signature +';' + code.slice(pos, code.length);
+                    
                         
                 }
             }

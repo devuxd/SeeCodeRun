@@ -76,34 +76,34 @@ either expressed or implied, of the SeeCodeRun Project.
             autoLog: function (info) {
                 var key = info.text + ':' + info.indexRange[0];
                 
-                if(info.type === 'CallExpression'){
+                if(info.type === 'Call'){
     				this.stack.push(key) ;
                 }
                 
-                var stackTop =	this.stack[this.stack.length()] ;
+                var stackTop =	this.stack.length - 1 ;
                 
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
                     this.hits[key] = 1;
-                    this.data[key] = [{
+                    this.data[key] = {
                         'type' : info.type,
                         'text' : info.text,
                         'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value)}],
                         'range': info.range
                         //{'start' : {'row' : info.loc[0], 'column' : info.loc[1]}, 'end' : {'row' : info.range[2], 'column' : info.range[3]}}
-                    }];
+                    };
                 }
                 return info.value;
             },
             getStackTrace: function () {
                 var entry,
                     stackData = [];
-                var i=0;
-                for (entry in this.stack) {
-                    if (this.stack.hasOwnProperty(entry)) {
-                        stackData.push({ index: i++, text: entry.split(':')[0], range: this.data[entry].range,  count: this.hits[entry]});
+                for (var i in this.stack) {
+                    if (this.stack.hasOwnProperty(i)) {
+                        entry = this.stack[i];
+                        stackData.push({ index: i, text: entry.split(':')[0], range: this.data[entry].range,  count: this.hits[entry]});
                     }
                 }
                 return stackData;
@@ -144,7 +144,7 @@ either expressed or implied, of the SeeCodeRun Project.
             eventListener({'status' : 'Finished' , 'description': 'Tracing completed in ' + (1 + timestamp) + ' ms.'});
 
         } catch (e) {
-            eventListener({'status' : 'Error' , 'description': e});
+            eventListener({'status' : 'Error' , 'description': e.toString()});
         }
     };
     global.getTraceAnnotations = function(){
