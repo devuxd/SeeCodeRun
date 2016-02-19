@@ -1,4 +1,4 @@
-<!doctype html>
+<di<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -38,7 +38,72 @@
 </head>
 
 <body>
-	  <div class="container-fluid">
+  <div class="container-fluid">
+  	<div class="row">
+  	 <div id ="mainSplitter">
+	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
+	  	<div role="tabpanel" >
+		  	<ul class="nav nav-tabs">
+	  			<li role="presentation" class="active">
+	  				<a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
+	  			<li role="presentation">
+	  				<a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
+	  			<li role="presentation">
+	  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
+			</ul>
+		        </div>
+			<div class="tab-content">	  
+		  	 <div role="tabpanel" class="tab-pane active" id="js-container" >
+                  <div class ="row">
+                  <div class="col-md-9" style="padding-left: 0px; padding-right: 0px; padding-top: 5px">
+		  			<div id="aceJSEditorDiv" style="height: 700px;"></div>
+                  </div>
+                  <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:3px">
+                    <!-- <label> <input type="checkbox" value="">Show Gutter</label> <!-->
+                    <div id="gutter_space" class="line_height" ><iframe  class= "iframeCss" id="gutter" ></iframe></div>
+                  
+                  </div>
+                </div>
+		  	 </div>
+               
+			  	<div role="tabpanel" class="tab-pane" id="html-container">
+			  		<div id="aceHTMLEditorDiv" style="height: 700px"></div></div>
+			  	<div role="tabpanel" class="tab-pane" id="css-container">
+			  		<div id="aceCSSEditorDiv" style="height: 700px"></div></div>
+			</div>
+		</div>
+       <div>
+       <div role="tabpanel" >
+			<ul class="nav nav-tabs">
+			  <li role="presentation" class="active">
+			  	<a href="#output-container" aria-controls="output-container" role="tab" data-toggle="tab">output</a></li>
+		  	  <li role="presentation">
+		  		<a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
+		  	</ul>
+		  </div>
+		  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
+		    <div class="tab-content">
+		  	 <div role="tabpanel" class="tab-pane" id="output-container">
+			   <div id="html-output">
+				<iframe id="preview" class= "iframeCss" style = "height: 700px">
+				</iframe>
+			   </div>
+			 </div>
+			 <div role="tabpanel" class="tab-pane" id="visualization-container">
+		       <div class="checkbox">
+	             <label><input type="checkbox" >Activate Visualization Mode</label>
+	           </div>
+			 </div>
+			</div>
+		  <div id="console-output"></div>
+		 </div>
+	 </div>
+    </div>
+   </div>
+  
+  
+  <!--
+  <div class="container-fluid">
 	  	<div class="row">
 	  	 <div id ="mainSplitter">
 		  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
@@ -105,7 +170,8 @@
 	 </div>
     </div>
    </div>
-	  
+  
+  -->
   
 
 
