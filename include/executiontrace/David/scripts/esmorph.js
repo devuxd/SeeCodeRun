@@ -94,6 +94,26 @@
             }
         }
     }
+      function traverseAndInstrument(object,objectInstrumented, visitor, master) {
+        var key, child, childInstrumented, parent, path;
+
+        parent = (typeof master === 'undefined') ? [] : master;
+
+        if (visitor.call(null, object, objectInstrumented, parent) === false) {
+            return;
+        }
+        for (key in object) {
+            if (object.hasOwnProperty(key)) {
+                child = object[key];
+                childInstrumented = objectInstrumented[key];
+                path = [ object ];
+                path.push(parent);
+                if (typeof child === 'object' && child !== null) {
+                    traverseAndInstrument(child, childInstrumented, visitor, path);
+                }
+            }
+        }
+    }
 
     // Insert a prolog in the body of every function.
     // It will be in the form of a function call:
@@ -126,6 +146,7 @@
 
         return function (code) {
             var tree,
+                treeInstrumented,
                 functionList,
                 param,
                 signature,
@@ -133,11 +154,14 @@
                 i;
 
             tree = esprima.parse(code, { range: true, loc: true });
+            //treeInstrumented = tree; 
+            treeInstrumented = esprima.parse(code, { range: true, loc: true });
 
 
 
             functionList = [];
-            traverse(tree, function (node, path) {
+          //  traverse(tree, function (node, path) {
+            traverseAndInstrument(tree, treeInstrumented, function (node, nodeInstrumented, path) {
                 var parent;
                 // Catching the expressions
                 if (node.type === Syntax.VariableDeclarator) {
@@ -151,7 +175,7 @@
                             'blockStart': node.body? node.body.range[0] : -1 
                         });
                         
-                        node.init= {
+                        nodeInstrumented.init= {
                         "type": "Literal",
                         "value": 5,
                         "raw": "5"
