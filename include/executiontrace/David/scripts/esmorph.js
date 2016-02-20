@@ -102,10 +102,15 @@
         if (visitor.call(null, object, objectInstrumented, parent) === false) {
             return;
         }
-        for (key in object) {
+       // for (key in object) {
+       for (key in object) {
             if (object.hasOwnProperty(key)) {
                 child = object[key];
-                childInstrumented = objectInstrumented[key];
+                if(objectInstrumented && objectInstrumented.hasOwnProperty(key)){
+                    childInstrumented = objectInstrumented[key];
+                }else{
+                    childInstrumented = undefined;
+                }
                 path = [ object ];
                 path.push(parent);
                 if (typeof child === 'object' && child !== null) {
@@ -155,13 +160,13 @@
 
             tree = esprima.parse(code, { range: true, loc: true });
             //treeInstrumented = tree; 
-            treeInstrumented = esprima.parse(code, { range: true, loc: true });
+          //  treeInstrumented = esprima.parse(code, { range: true, loc: true });
 
 
 
             functionList = [];
-          //  traverse(tree, function (node, path) {
-            traverseAndInstrument(tree, treeInstrumented, function (node, nodeInstrumented, path) {
+            traverse(tree, function (node, path) {
+         //   traverseAndInstrument(tree, treeInstrumented, function (node, nodeInstrumented, path) {
                 var parent;
                 // Catching the expressions
                 if (node.type === Syntax.VariableDeclarator) {
@@ -175,11 +180,7 @@
                             'blockStart': node.body? node.body.range[0] : -1 
                         });
                         
-                        nodeInstrumented.init= {
-                        "type": "Literal",
-                        "value": 5,
-                        "raw": "5"
-                    };
+                     //  node.init = 
                         
                     }
                 }else if(node.type === Syntax.AssignmentExpression){
@@ -324,15 +325,176 @@
                 }
             }
 			
-			console.log(code);
-			console.log("\n--------------------");
-			console.log(expressionCode);
-			var genCode = escodegen.generate(tree);
-			console.log("\n--------------------");
-			console.log(genCode);
+		//	console.log(code);
+		//	console.log("\n--------------------");
+		//	console.log(expressionCode);
+		//	var genCode = escodegen.generate(tree);
+		//	console.log("\n--------------------");
+		//	console.log(genCode);
             return code;
         };
     }
+
+ function traceAllAutoLog(code, autoLogTracer) {
+
+            var tree,
+                treeInstrumented,
+                functionList,
+                param,
+                signature,
+                pos,
+                i;
+
+            tree = esprima.parse(code, { range: true, loc: true });
+            //treeInstrumented = tree; 
+          //  treeInstrumented = esprima.parse(code, { range: true, loc: true });
+
+
+
+            functionList = [];
+            traverse(tree, function (node, path) {
+         //   traverseAndInstrument(tree, treeInstrumented, function (node, nodeInstrumented, path) {
+                var parent;
+                // Catching the expressions
+                if (node.type === Syntax.VariableDeclarator) {
+                    if(node.init){
+                        
+                       node.init = autoLogTracer(node, code);
+                        
+                    }
+                
+                    
+                }else if (node.type === Syntax.CallExpression) {
+                    if(node.callee){
+                        if(node.calle.name !== "window.TRACE.autoLog"){
+                        node = autoLogTracer(node, code);
+                        }
+                    }
+               
+                }else if(node.type === Syntax.AssignmentExpression){
+                     if(node.right){
+                        functionList.push({
+                            'type': node.right.type,
+                            'name': getTextRange(code, node.left.range),
+                            'expression': getTextRange(code, node.right.range),
+                            range: node.right.range,
+                            loc: node.right.loc,
+                            blockStart: node.body? node.body.range[0] : -1 
+                        });
+                    }
+                    
+                }else if(node.type === Syntax.BinaryExpression){
+                     
+                    if(node.right){
+                        functionList.push({
+                            type: node.right.type,
+                            name: getTextRange(code, node.right.range),
+                            'expression': getTextRange(code, node.right.range),
+                            range: node.right.range,
+                            loc: node.right.loc,
+                            blockStart: node.body? node.body.range[0] : -1 
+                        });
+                    }
+                    
+                    if(node.left){
+                        functionList.push({
+                            type: node.left.type,
+                            name: getTextRange(code, node.left.range),
+                            'expression': getTextRange(code, node.left.range),
+                            range: node.left.range,
+                            loc: node.left.loc,
+                            blockStart: node.body? node.body.range[0] : -1 
+                        });
+                    }
+                     
+                    
+                    functionList.push({
+                            type: node.type,
+                            name: getTextRange(code, node.range),
+                            'expression': getTextRange(code, node.range),
+                            range: node.range,
+                            loc: node.loc,
+                            blockStart: node.body? node.body.range[0] : -1 
+                    });
+                    
+                }
+                
+                if (node.type === Syntax.FunctionDeclaration) {
+                    functionList.push({
+                        name: node.id.name,
+                        'expression': getTextRange(code, node.range),
+                        range: node.range,
+                        loc: node.loc,
+                        blockStart: node.body.range[0]
+                    });
+                  //console.log(JSON.stringify(autoLogTracer(node, code)));
+			      //console.log("\n--------------------");
+                 // node.body.body.unshift(autoLogTracer(node, code));
+                    
+                } else if (node.type === Syntax.FunctionExpression) {
+                    parent = path[0];
+                    
+                    
+                    if (parent.type === Syntax.AssignmentExpression) {
+                        if (typeof parent.left.range !== 'undefined') {
+                            functionList.push({
+                                name: code.slice(parent.left.range[0],
+                                          parent.left.range[1]).replace(/"/g, '\\"'),
+                                'expression': getTextRange(code, node.range),
+                                range: node.range,
+                                loc: node.loc,
+                                blockStart: node.body.range[0]
+                            });
+                        }
+                    } else if (parent.type === Syntax.VariableDeclarator) {
+                        functionList.push({
+                            name: parent.id.name,
+                            'expression': getTextRange(code, node.range),
+                            range: node.range,
+                            loc: node.loc,
+                            blockStart: node.body.range[0]
+                        });
+                    } else if (parent.type === Syntax.CallExpression) {
+                        functionList.push({
+                            name: parent.id ? parent.id.name : '[Anonymous]',
+                            'expression': getTextRange(code, node.range),
+                            range: node.range,
+                            loc: node.loc,
+                            blockStart: node.body.range[0]
+                        });
+                    } else if (typeof parent.length === 'number') {
+                        functionList.push({
+                            name: parent.id ? parent.id.name : '[Anonymous]',
+                            'expression': getTextRange(code, node.range),
+                            range: node.range,
+                            loc: node.loc,
+                            blockStart: node.body.range[0]
+                        });
+                    } else if (typeof parent.key !== 'undefined') {
+                        if (parent.key.type === 'Identifier') {
+                            if (parent.value === node && parent.key.name) {
+                                functionList.push({
+                                    name: parent.key.name,
+                                    'expression': getTextRange(code, node.range),
+                                    range: node.range,
+                                    loc: node.loc,
+                                    blockStart: node.body.range[0]
+                                });
+                            }
+                        }
+                    }
+                }
+				
+            });
+            
+           	
+			var genCode = escodegen.generate(tree);
+			console.log("\n--------------------");
+			console.log(genCode);
+            return genCode;
+        
+    }
+
 
     function modify(code, modifiers) {
         var i;
@@ -356,7 +518,8 @@
     exports.modify = modify;
 
     exports.Tracer = {
-        FunctionEntrance: traceFunctionEntrance
+        FunctionEntrance: traceFunctionEntrance,
+        TraceAll: traceAllAutoLog
     };
 
 }(typeof exports === 'undefined' ? (esmorph = {}) : exports));
