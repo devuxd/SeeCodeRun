@@ -1,9 +1,0 @@
-{
-  "firebase": "seecoderun",
-  "public": ".",
-  "ignore": [
-    "firebase.json",
-    "**/.*",
-    "**/node_modules/**"
-  ]
-}
