@@ -303,7 +303,7 @@ either expressed or implied, of the SeeCodeRun Project.
                 };
                
             }else if(node.type === 'CallExpression'){
-                isStatement = true;
+               // isStatement = true;
                autoLogNode = {
                     "type": "CallExpression",
                     "callee": {
@@ -357,8 +357,8 @@ either expressed or implied, of the SeeCodeRun Project.
                                     "computed": false,
                                     "value": {
                                         "type": "Literal",
-                                        "value": node.callee.name,
-                                        "raw": node.callee.name
+                                        "value": getTextRange(code, node.range),
+                                        "raw": getTextRange(code, node.range)
                                     },
                                     "kind": "init",
                                     "method": false,
@@ -389,7 +389,10 @@ either expressed or implied, of the SeeCodeRun Project.
                                         "raw": "\"value\""
                                     },
                                     "computed": false,
-                                    "value": node,
+                                    "value":  {
+                                        "type": "CallExpression",
+                                            "callee": node.callee,
+                                            "arguments": node.arguments},
                                     "kind": "init",
                                     "method": false,
                                     "shorthand": false
@@ -578,7 +581,7 @@ either expressed or implied, of the SeeCodeRun Project.
             autoLog: function (info) {
                 var key = info.text + ':' + info.indexRange[0];
                 
-                if(info.type === 'Call'){
+                if(info.type === 'CallExpression'){
     				this.stack.push(key) ;
                 }
                 

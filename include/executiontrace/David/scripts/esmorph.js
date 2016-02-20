@@ -365,10 +365,12 @@
                 
                     
                 }else if (node.type === Syntax.CallExpression) {
-                    if(node.callee){
-                        if(node.calle.name !== "window.TRACE.autoLog"){
-                        node = autoLogTracer(node, code);
-                        }
+                    if(node.callee && node.range && !node.recursion){
+                            var calleInstrumented = autoLogTracer(node, code);
+                            node.callee = calleInstrumented.callee;
+                            node.arguments= calleInstrumented.arguments;
+                            node.recursion = true;
+                        
                     }
                
                 }else if(node.type === Syntax.AssignmentExpression){
