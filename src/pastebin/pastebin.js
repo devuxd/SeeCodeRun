@@ -23,7 +23,7 @@ export class Pastebin {
       this.pastebinId = id;
       this.jsEditor.activate({ id: id });
     } else {
-      let baseURL = 'https://radiant-heat-3277.firebaseio.com';
+      let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
       
       let id = firebase.push().key();

@@ -21,7 +21,7 @@ export class JsEditor {
     if (params.id) {
       this.pastebinId = params.id;
     } else {
-      let baseURL = 'https://radiant-heat-3277.firebaseio.com';
+      let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
       let pastebinId = firebase.push().key();
     }
@@ -114,8 +114,7 @@ export class JsEditor {
   }
 
   createFirepad(editor) {
-    //let baseURL = 'https://seecoderun.firebaseio.com';
-    let baseURL = 'https://radiant-heat-3277.firebaseio.com';
+    let baseURL = 'https://seecoderun.firebaseio.com';
     let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/js');
 
     return Firepad.fromACE(
