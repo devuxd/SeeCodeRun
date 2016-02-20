@@ -1,22 +1,20 @@
 {
-  "name": "aurelia-skeleton-navigation",
-  "version": "1.0.0-beta.1.0.5",
-  "description": "A starter kit for building a standard navigation-style app with Aurelia.",
+  "name": "SeeCode.Run",
+  "version": "0.0.1",
+  "description": "A JavaScript IDE with execution trace visualizations",
   "keywords": [
-    "aurelia",
-    "navigation",
-    "skeleton"
+    "seecoderun"
   ],
-  "homepage": "http://aurelia.io",
+  "homepage": "",
   "bugs": {
-    "url": "https://github.com/aurelia/skeleton-navigation/issues"
+    "url": "https://github.com/seecoderun"
   },
-  "license": "CC0-1.0",
-  "author": "Rob Eisenberg <rob@bluespire.com> (http://robeisenberg.com/)",
+  "license": "",
+  "author": "",
   "main": "dist/main.js",
   "repository": {
     "type": "git",
-    "url": "http://github.com/aurelia/skeleton-navigation"
+    "url": "http://github.com/seecoderun"
   },
   "scripts": {
     "test": "gulp test",
