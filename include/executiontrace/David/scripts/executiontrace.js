@@ -547,11 +547,257 @@ either expressed or implied, of the SeeCodeRun Project.
                     ]
                 };
             }
+            else if(node.type === 'FunctionDeclaration'){
+                isStatement = true;
+               autoLogNode = {
+                    "type": "CallExpression",
+                    "callee": {
+                        "type": "MemberExpression",
+                        "computed": false,
+                        "object": {
+                            "type": "MemberExpression",
+                            "computed": false,
+                            "object": {
+                                "type": "Identifier",
+                                "name": "window"
+                            },
+                            "property": {
+                                "type": "Identifier",
+                                "name": "TRACE"
+                            }
+                        },
+                        "property": {
+                            "type": "Identifier",
+                            "name": "autoLog"
+                        }
+                    },
+                    "arguments": [
+                        {
+                            "type": "ObjectExpression",
+                            "properties": [
+                                {
+                                    "type": "Property",
+                                    "key": {
+                                        "type": "Literal",
+                                        "value": "type",
+                                        "raw": "\"type\""
+                                    },
+                                    "computed": false,
+                                    "value": {
+                                        "type": "Literal",
+                                        "value": node.type,
+                                        "raw": node.type
+                                    },
+                                    "kind": "init",
+                                    "method": false,
+                                    "shorthand": false
+                                },
+                                {
+                                    "type": "Property",
+                                    "key": {
+                                        "type": "Literal",
+                                        "value": "id",
+                                        "raw": "\"id\""
+                                    },
+                                    "computed": false,
+                                    "value": {
+                                        "type": "Literal",
+                                        "value": node.id.name,
+                                        "raw": node.id.name
+                                    },
+                                    "kind": "init",
+                                    "method": false,
+                                    "shorthand": false
+                                },
+                                {
+                                    "type": "Property",
+                                    "key": {
+                                        "type": "Literal",
+                                        "value": "text",
+                                        "raw": "\"text\""
+                                    },
+                                    "computed": false,
+                                    "value": {
+                                        "type": "Literal",
+                                        "value": node.id.name,
+                                        "raw": node.id.name
+                                    },
+                                    "kind": "init",
+                                    "method": false,
+                                    "shorthand": false
+                                },
+                                {
+                                    "type": "Property",
+                                    "key": {
+                                        "type": "Literal",
+                                        "value": "value",
+                                        "raw": "\"value\""
+                                    },
+                                    "computed": false,
+                                    "value":  {
+                                        "type": "Literal",
+                                        "value": node.id.name,
+                                        "raw": node.id.name
+                                    },
+                                    "kind": "init",
+                                    "method": false,
+                                    "shorthand": false
+                                },
+                                {
+                                    "type": "Property",
+                                    "key": {
+                                        "type": "Literal",
+                                        "value": "range",
+                                        "raw": "\"range\""
+                                    },
+                                    "computed": false,
+                                    "value": {
+                                        "type": "ObjectExpression",
+                                        "properties": [
+                                            {
+                                                "type": "Property",
+                                                "key": {
+                                                    "type": "Literal",
+                                                    "value": "start",
+                                                    "raw": "\"start\""
+                                                },
+                                                "computed": false,
+                                                "value": {
+                                                    "type": "ObjectExpression",
+                                                    "properties": [
+                                                        {
+                                                            "type": "Property",
+                                                            "key": {
+                                                                "type": "Literal",
+                                                                "value": "row",
+                                                                "raw": "\"row\""
+                                                            },
+                                                            "computed": false,
+                                                            "value": {
+                                                                "type": "Literal",
+                                                                "value": node.loc.start.line -1,
+                                                                "raw": "\""+ (node.loc.start.line -1)+"\""
+                                                            },
+                                                            "kind": "init",
+                                                            "method": false,
+                                                            "shorthand": false
+                                                        },
+                                                        {
+                                                            "type": "Property",
+                                                            "key": {
+                                                                "type": "Literal",
+                                                                "value": "column",
+                                                                "raw": "\"column\""
+                                                            },
+                                                            "computed": false,
+                                                            "value": {
+                                                                "type": "Literal",
+                                                                "value": node.loc.start.column,
+                                                                "raw": "\""+ node.loc.start.column+"\""
+                                                            },
+                                                            "kind": "init",
+                                                            "method": false,
+                                                            "shorthand": false
+                                                        }
+                                                    ]
+                                                },
+                                                "kind": "init",
+                                                "method": false,
+                                                "shorthand": false
+                                            },
+                                            {
+                                                "type": "Property",
+                                                "key": {
+                                                    "type": "Literal",
+                                                    "value": "end",
+                                                    "raw": "\"end\""
+                                                },
+                                                "computed": false,
+                                                "value": {
+                                                    "type": "ObjectExpression",
+                                                    "properties": [
+                                                        {
+                                                            "type": "Property",
+                                                            "key": {
+                                                                "type": "Literal",
+                                                                "value": "row",
+                                                                "raw": "\"row\""
+                                                            },
+                                                            "computed": false,
+                                                            "value": {
+                                                                "type": "Literal",
+                                                                "value":  node.loc.end.line -1,
+                                                                "raw": "\""+ (node.loc.end.line -1)+"\""
+                                                            },
+                                                            "kind": "init",
+                                                            "method": false,
+                                                            "shorthand": false
+                                                        },
+                                                        {
+                                                            "type": "Property",
+                                                            "key": {
+                                                                "type": "Literal",
+                                                                "value": "column",
+                                                                "raw": "\"column\""
+                                                            },
+                                                            "computed": false,
+                                                            "value": {
+                                                                "type": "Literal",
+                                                                "value": node.loc.end.column,
+                                                                "raw": "\""+ node.loc.end.column+"\""
+                                                            },
+                                                            "kind": "init",
+                                                            "method": false,
+                                                            "shorthand": false
+                                                        }
+                                                    ]
+                                                },
+                                                "kind": "init",
+                                                "method": false,
+                                                "shorthand": false
+                                            }
+                                        ]
+                                    },
+                                    "kind": "init",
+                                    "method": false,
+                                    "shorthand": false
+                                },
+                                {
+                                    "type": "Property",
+                                    "key": {
+                                        "type": "Identifier",
+                                        "name": "indexRange"
+                                    },
+                                    "computed": false,
+                                    "value": {
+                                        "type": "ArrayExpression",
+                                        "elements": [
+                                            {
+                                                "type": "Literal",
+                                                "value": node.range[0],
+                                                "raw": "\""+ node.range[0]+"\""
+                                            },
+                                            {
+                                                "type": "Literal",
+                                                "value": node.range[1],
+                                                "raw": "\""+ node.range[1]+"\""
+                                            }
+                                        ]
+                                    },
+                                    "kind": "init",
+                                    "method": false,
+                                    "shorthand": false
+                                }
+                            ]
+                        }
+                    ]
+                };
+            }
             if(isStatement){
                     autoLogNode = { "type": "ExpressionStatement",
-                        "expression": {
+                        "expression": 
                             autoLogNode
-                        }
+                        
                     };
             }
             return autoLogNode;
@@ -581,7 +827,7 @@ either expressed or implied, of the SeeCodeRun Project.
             autoLog: function (info) {
                 var key = info.text + ':' + info.indexRange[0];
                 
-                if(info.type === 'CallExpression'){
+                if(info.type === 'FunctionDeclaration'){
     				this.stack.push(key) ;
                 }
                 
@@ -614,6 +860,16 @@ either expressed or implied, of the SeeCodeRun Project.
                 return stackData;
             },
             getExecutionTrace: function () {
+                var entry,
+                    stackData = [];
+                    var i = 0;
+                for (var key in this.data) {
+                    if (this.data.hasOwnProperty(key)) {
+                        entry = this.data[key];
+                        stackData.push({ index: i++, text: entry.text + ":" + entry.values, range: entry.range,  count: this.hits[key]});
+                    }
+                }
+                return stackData;
 
             }
         };

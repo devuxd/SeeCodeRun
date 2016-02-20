@@ -113,10 +113,11 @@ bubbleSort(data);
             document.getElementById('info').setAttribute('class', 'alert-box secondary');
             document.getElementById('info').innerHTML = event.description;
             var stackTrace = window.TRACE.getStackTrace();
-            var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : ''};
+            var valueTable = window.TRACE.getExecutionTrace();
+            var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
             
             localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
-    		document.getElementById('stacktrace').innerHTML = visualize(stackTrace); 
+    		document.getElementById('stacktrace').innerHTML ='CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>'+visualize(valueTable); 
         }else if(event.status === "Error"){
             document.getElementById('info').innerHTML = event.description;
             document.getElementById('info').setAttribute('class', 'alert-box alert');

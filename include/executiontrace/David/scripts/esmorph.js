@@ -422,16 +422,10 @@
                 }
                 
                 if (node.type === Syntax.FunctionDeclaration) {
-                    functionList.push({
-                        name: node.id.name,
-                        'expression': getTextRange(code, node.range),
-                        range: node.range,
-                        loc: node.loc,
-                        blockStart: node.body.range[0]
-                    });
-                  //console.log(JSON.stringify(autoLogTracer(node, code)));
-			      //console.log("\n--------------------");
-                 // node.body.body.unshift(autoLogTracer(node, code));
+
+			      if(node.body && node.body.body){
+                        node.body.body.unshift(autoLogTracer(node, code));
+			      }
                     
                 } else if (node.type === Syntax.FunctionExpression) {
                     parent = path[0];
