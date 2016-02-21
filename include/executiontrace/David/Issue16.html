@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ACE and Esprima in Action!</title>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
+<!-- Init Scripts for Execution Trace API !-->
+<script src="../../esprima.js" type="text/javascript" charset="utf-8"></script>
+<script src="./scripts/escodegen.browser.js" type="text/javascript" charset="utf-8"></script>
+<script src="./scripts/esmorph.js" type="text/javascript" charset="utf-8"></script>
+<script src="./scripts/executiontrace.js" type="text/javascript" charset="utf-8"></script>
+<!-- End Scripts for Execution Trace API !-->
+
+<style type="text/css" media="screen">
+    #editor { 
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+	
+	#info{
+		position:absolute;
+		background-color: #F55;
+		border-radius: 1px;
+		top: 20px;
+		left: 610px;
+		width: 200px;
+		z-index: 100;		
+	}
+	#stacktrace{
+		position:absolute;
+		background-color: #FF9;
+		border-radius: 1px;
+		top: 40px;
+		left: 610px;
+		width: 600px;
+		bottom: 600px;
+		z-index: 100;		
+	}
+</style>
+</head>
+<body>
+
+<pre id="editor">
+Array.prototype.swap = function (i, j) {
+    var k = this[i]; this[i] = this[j]; this[j] = k;
+}
+
+function bubbleSort(list) {
+    var items = list.slice(0), swapped = false, p, q;
+    for (p = 1; p < items.length; ++p) {
+        for (q = 0; q < items.length - p; ++q) {
+            if (items[q + 1] < items[q]) {
+                items.swap(q, q + 1);
+                swapped =true;
+            }
+        }
+        if (!swapped) break;
+    }
+    return items;
+}
+
+var N = 5, data = []; while (N > 0) data.push(N--);
+bubbleSort(data);
+
+</pre>
+<div id="info" >Ready.</div>
+<div id="stacktrace" >None</div>
+<script>
+	// initiating the editor
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/javascript");
+	editor.renderer.setShowGutter(true);
+    
+    //Esprima
+    // done: prepare demo from http://esprima.org/demo/functiontrace.html into this one 
+    // done: look the required statements in the tree
+    // todo: instrument the log of issue 16 [pending to catch the expression statement parent so code can be appended]
+    // todo: collect the stack trace [ populate tree with callstack sequences]
+    window.onload = function () {
+        'use strict';
+    	
+        document.getElementById('info').setAttribute('class', 'alert-box secondary');
+        document.getElementById('info').innerHTML = 'Ready.';
+        
+    	var executionTrace = JSON.parse(localStorage.getItem('executionTrace'));
+    	
+    	if(executionTrace){
+    	    visualize(executionTrace.stackTrace);
+    	}
+    	
+    	var aceDocumentForEsprima = editor.getSession().getDocument(); // get the document for changes in its structure
+    	aceDocumentForEsprima.on("change", function(e){
+    	    var sourceCode = aceDocumentForEsprima.getValue(); // get the code to analyze
+    	    // API CALL
+    		window.traceExecution(sourceCode, eventListener);
+    	});
+    
+    };
+    
+    // update the status of the trace run
+    function eventListener (event){
+        if(event.status === "Running"){
+            document.getElementById('info').setAttribute('class', 'alert-box secondary');
+            document.getElementById('info').innerHTML = event.description;
+    		document.getElementById('stacktrace').innerHTML = 'Waiting...';        
+        }else if(event.status === "Finished"){
+            showTraceAnnotations(editor);
+            document.getElementById('info').setAttribute('class', 'alert-box secondary');
+            document.getElementById('info').innerHTML = event.description;
+            var stackTrace = window.TRACE.getStackTrace();
+            var valueTable = window.TRACE.getExecutionTrace();
+            var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
+            
+            localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
+    		document.getElementById('stacktrace').innerHTML ='CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>'+visualize(valueTable); 
+        }else if(event.status === "Error"){
+            document.getElementById('info').innerHTML = event.description;
+            document.getElementById('info').setAttribute('class', 'alert-box alert');
+            document.getElementById('stacktrace').innerHTML = 'Waiting...';
+        }
+    }
+    
+    // example using ACE Annotations
+    function showTraceAnnotations(aceEditor) {
+            var annotations = aceEditor.getSession().getAnnotations();	
+            var traceAnnotations = window.getTraceAnnotations();
+            annotations.concat(traceAnnotations);
+    		aceEditor.getSession().setAnnotations(annotations);
+    }
+    
+    // example of how to use the trace resulting data structure
+    function visualize(stackTrace){
+        var i, entry, name, index;
+        var stackText= "";
+    	var repeat = 0;
+    	var previousCall = "";
+    	var previousIndex = -1;
+        for (i = 0; i < stackTrace.length; i += 1) {
+            entry = stackTrace[i];
+            if(entry){
+                name = entry.text.split(':')[0];
+        		index = entry.index;
+        		 if(previousCall !== name){				 
+        			 if(repeat > 0){
+        				 stackText += previousIndex + " -- " + previousCall + "( + "+ repeat +" times) <br>";
+        				 repeat = 0;
+        			 }else{
+        				 if(previousIndex > -1){
+        					 stackText += previousIndex + " -- " + previousCall + "<br> ";
+        				 }
+        				 
+        			 }
+        			 previousCall = name;
+        			 previousIndex = index;
+        		 }else{
+        			 repeat = repeat + 1; 
+        		 }
+            }
+    		
+        }
+    	if(repeat > 0){
+    		stackText +=  previousIndex + " -- " + previousCall + "( + "+ repeat +" times )";
+    		repeat = 0;
+    	}else{
+    		if(previousIndex > -1){
+    			stackText += previousIndex + " -- " + previousCall ;
+    		}					 
+    	}
+    	
+    	return stackText;  
+    
+    }
+
+</script>
+</body>
+</html>
