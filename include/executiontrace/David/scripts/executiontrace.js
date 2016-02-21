@@ -32,16 +32,7 @@ either expressed or implied, of the SeeCodeRun Project.
 (function (global) {
     'use strict';
     // must match autoLogNode.arguments[0].properties order of properties
-    var TraceParameters = {
-        type : 0,
-        id : 1,
-        text : 2,
-        value : 3,
-        range : 4,
-        indexRange : 5,
-        extra : 6
-        
-    };
+
     var Syntax = {
         AssignmentExpression: 'AssignmentExpression',
         // ArrayExpression: 'ArrayExpression',
@@ -59,7 +50,7 @@ either expressed or implied, of the SeeCodeRun Project.
         // ForStatement: 'ForStatement',
         // ForInStatement: 'ForInStatement',
         FunctionDeclaration: 'FunctionDeclaration',
-        // FunctionExpression: 'FunctionExpression',
+        FunctionExpression: 'FunctionExpression',
         // Identifier: 'Identifier',
         // IfStatement: 'IfStatement',
         // Literal: 'Literal',
@@ -83,6 +74,26 @@ either expressed or implied, of the SeeCodeRun Project.
         VariableDeclarator: 'VariableDeclarator',
         // WhileStatement: 'WhileStatement',
         // WithStatement: 'WithStatement'
+    };
+     var TraceParameters = {
+        type : 0,
+        id : 1,
+        text : 2,
+        value : 3,
+        range : 4,
+        indexRange : 5,
+        extra : 6
+        
+    };
+    var TraceTypes = {
+        Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+        Expression: {},
+        ExpressionStatement : {},
+        controlFlow : {},
+        condition: {},
+        loop: {},
+        exception: {}
+        
     };
 
     function getTextRange(code, range){
@@ -525,30 +536,35 @@ either expressed or implied, of the SeeCodeRun Project.
     function traceInstrument(sourceCode) {
         var  code, autoLogTracer;      // var code caused a 2 hours delay
 
-        
+        //FORWARD ANALYSIS
         autoLogTracer = function (ref){
             var node = ref.node, code = ref.code;
             if(!Syntax.hasOwnProperty(node.type)){
                 return undefined;
             }
             
-            var autoLogNode = getDefaultAutoLogNode(), isStatement = false, locationData;
+            var autoLogNode = getDefaultAutoLogNode(), locationData;
             if(node.type === Syntax.VariableDeclarator){
                 if(!node.init){
                     return undefined;
                 }
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.init.type} );
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.id.range)} );
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
-                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
-                 locationData = getLocationDataNode(node.init.loc, node.init.range);
-                 if(typeof locationData !== 'undefined'){
-                    setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-                    setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-                 }
-                //setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : JSON.stringify(value)});
-                
-                node.init = autoLogNode;
+                if(node.init.type === Syntax.FunctionExpression){
+                    return undefined;// Backward Analysis
+                     
+                }else{
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.init.type} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.id.range)} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
+                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
+                     locationData = getLocationDataNode(node.init.loc, node.init.range);
+                     if(typeof locationData !== 'undefined'){
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+                     }
+                    //setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : JSON.stringify(value)});
+                    
+                    node.init = autoLogNode;
+                }
                
             }else if(node.type === Syntax.CallExpression){
                 if(!node.callee || !node.range){ //range is not present in instrumented nodes, it prevents infinite traverse() recursion
@@ -559,7 +575,7 @@ either expressed or implied, of the SeeCodeRun Project.
                      setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
                      setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : 
                          {
-                            "type": "CallExpression",
+                            "type": Syntax.CallExpression,
                             "callee": node.callee,
                             "arguments": node.arguments
                          }
@@ -577,8 +593,30 @@ either expressed or implied, of the SeeCodeRun Project.
                 if(!node.right){
                     return undefined;
                 }
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
+                if(node.right.type === Syntax.FunctionExpression){
+                    return undefined;// Backward Analysis
+                    
+                }else{
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
+                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
+                     locationData = getLocationDataNode(node.right.loc, node.right.range);
+                     if(typeof locationData !== 'undefined'){
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+                     }
+                     node.right = autoLogNode;
+                }
+               
+            }else if(node.type === Syntax.BinaryExpression){
+                if(!(node.right && node.left)){
+                    return undefined;
+                }
+                // var autoLogNodeLeft, autoLogNodeRight;
+
+                setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
+                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.right.range)} );
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
                  setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
                  locationData = getLocationDataNode(node.right.loc, node.right.range);
@@ -586,28 +624,67 @@ either expressed or implied, of the SeeCodeRun Project.
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
                  }
-                node.right = autoLogNode;
                
-            }else if(node.type === Syntax.BinaryExpression){
-                if(!(node.right && node.left)){
-                    return undefined;
-                }
+               node.right = autoLogNode;
+             //  autoLogNodeRight = autoLogNode;
+               
+               autoLogNode = getDefaultAutoLogNode();
+               
+                setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.left.type} );
+                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
+                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.left.range)} );
+                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.left});
+                 locationData = getLocationDataNode(node.left.loc, node.left.range);
+                 if(typeof locationData !== 'undefined'){
+                    setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+                    setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+                 }
+               
+               node.left = autoLogNode;
+            //   autoLogNodeLeft = autoLogNode;
+            //   
+              autoLogNode = getDefaultAutoLogNode();
+               
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.range)} );
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
                  setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node});
+                    //      {
+                    //         "type": Syntax.BinaryExpression,
+                    //         "operator": node.operator,
+                    //         "left": autoLogNodeLeft,
+                    //         "right": autoLogNodeRight,
+                    //      }
+                    //  });
                  locationData = getLocationDataNode(node.loc, node.range);
                  if(typeof locationData !== 'undefined'){
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
                  }
-                node = autoLogNode;
+                ref.node = autoLogNode;
+                 
+                //  node.type = Syntax.CallExpression;
+                //  node.callee = autoLogNode.callee;
+                //  node.arguments = autoLogNode.arguments;
+                 
+                //  delete autoLogNode.callee;
+                //  delete autoLogNode.arguments;
+                 
+                //  autoLogNode.type = Syntax.BinaryExpression;
+                //  autoLogNode.left = node.left;
+                //  autoLogNode.right = node.right;
+                //  autoLogNode.operator = node.operator;
+                //  delete node.left;
+                //  delete node.right;
+                //  delete node.operator;
+                //  delete node.range;
+                //  delete node.loc;
                
             }else if(node.type === Syntax.FunctionDeclaration){
                 if(!(node.body && node.body.body)){
                     return undefined;
                 }
-                 autoLogNode = wrapInExpressionStatementNode(autoLogNode);
+                 
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : node.id.name} );
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : node.id.name} );
@@ -618,8 +695,57 @@ either expressed or implied, of the SeeCodeRun Project.
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
                  }
                  
+                 autoLogNode = wrapInExpressionStatementNode(autoLogNode);
                  node.body.body.unshift(autoLogNode);
+                 
+            }else if (node.type === Syntax.FunctionExpression) { //BACKWARD ANALYSIS
+                var parent = ref.parent,  identifier;
+                
+                if (parent.type === Syntax.AssignmentExpression) {
+                    if (typeof parent.left.range !== 'undefined') {
+                        identifier = code.slice(parent.left.range[0], parent.left.range[1]).replace(/"/g, '\\"');
+                    }
+                } else if (parent.type === Syntax.VariableDeclarator) {
+                    identifier = parent.id.name;
+                    
+                } else if (parent.type === Syntax.CallExpression) {
+                    identifier =  parent.id ? parent.id.name : '[Anonymous]';
+                        
+                } else if (typeof parent.length === 'number') {
+                    identifier =  parent.id ? parent.id.name : '[Anonymous]';
+                    
+                } else if (typeof parent.key !== 'undefined') {
+                    if (parent.key.type === 'Identifier') {
+                        if (parent.value === node && parent.key.name) {
+                                identifier =  parent.key.name;
+                        }
+                    }
+                }
+                
+                if(identifier){
+                    if(!(node.body && node.body.body)){
+                        return undefined;
+                    }
+                     
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : identifier} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : identifier} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : identifier});
+                     locationData = getLocationDataNode(node.loc, node.range);
+                     if(typeof locationData !== 'undefined'){
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+                     }
+                     
+                     autoLogNode = wrapInExpressionStatementNode(autoLogNode);
+                     node.body.body.unshift(autoLogNode);
+                    
+                }
             }
+            
+            
+            
+
            
             return autoLogNode;
         };
@@ -646,7 +772,7 @@ either expressed or implied, of the SeeCodeRun Project.
             autoLog: function (info) {
                 var key = info.text + ':' + info.indexRange[0];
                 
-                if(info.type === 'FunctionDeclaration'){
+                if(TraceTypes.Stack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
                 }
                 
@@ -685,7 +811,7 @@ either expressed or implied, of the SeeCodeRun Project.
                 for (var key in this.data) {
                     if (this.data.hasOwnProperty(key)) {
                         entry = this.data[key];
-                        stackData.push({ index: i++, text: entry.text + ":" + entry.values, range: entry.range,  count: this.hits[key]});
+                        stackData.push({ index: i++, text: (entry.text + ":" + JSON.stringify(entry.values)), range: entry.range,  count: this.hits[key]});
                     }
                 }
                 return stackData;

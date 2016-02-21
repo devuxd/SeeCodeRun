@@ -1,0 +1,13 @@
+{
+    'functionCalls' : {
+        text: ' Function declarations and expressions',
+        code: 'function f(){} var g = function (){}; var h ; h= function x(){}; f(g(h()));'
+        
+    },
+    'functionCalls' : {
+        text: ' anonymous function expressions',
+        code: ''
+        
+    }
+    
+}

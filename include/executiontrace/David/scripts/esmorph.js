@@ -73,8 +73,8 @@
         WithStatement: 'WithStatement'
     };
 
-    // Executes visitor on the object and its children (recursively).
-
+    // Executes visitor on the object and its children (recursively). 
+    // var visitedNodes; // Avoids cyclic references
     function traverse(object, visitor, master) {
         var key, child, parent, path;
 
@@ -88,11 +88,20 @@
                 child = object[key];
                 path = [ object ];
                 path.push(parent);
+                
                 if (typeof child === 'object' && child !== null) {
-                    traverse(child, visitor, path);
+                    // var val = JSON.stringify(child);
+                    
+                    // if(!visitedNodes.has(val)){
+                    //     visitedNodes.add(val);
+                        traverse(child, visitor, path);
+                    // }
+                        
                 }
+                    
             }
         }
+        
     }
     
 
@@ -108,99 +117,38 @@
     
 
  function traceAllAutoLog(code, autoLogTracer) {
+         //   visitedNodes = new Set();
+            
+            var tree = esprima.parse(code, { range: true, loc: true });
 
-            var tree,
-                treeInstrumented,
-                functionList,
-                param,
-                signature,
-                pos,
-                i;
-
-            tree = esprima.parse(code, { range: true, loc: true });
-
-
-
-            functionList = [];
             traverse(tree, function (node, path) {
-                var parent, autoLogNode;
+                var parent;
                 // Catching the expressions
                 if (node.type === Syntax.VariableDeclarator) {
                     autoLogTracer({'node' :node, 'code' : code});
                         
                 }else if (node.type === Syntax.CallExpression) {
                     autoLogTracer({'node' :node, 'code' : code});
-
-                    
                
                 }else if(node.type === Syntax.AssignmentExpression){
                         autoLogTracer({'node' :node, 'code' : code});
                     
                 }else if(node.type === Syntax.BinaryExpression){
-                        autoLogTracer({'node' :node, 'code' : code});
-                }
-                
-                if (node.type === Syntax.FunctionDeclaration) {
+                        node=autoLogTracer({'node' :node, 'code' : code});
+                        
+                }else if (node.type === Syntax.FunctionDeclaration) {
 			            autoLogTracer({'node' :node, 'code' : code});
-
                     
                 } else if (node.type === Syntax.FunctionExpression) {
+                    // requires backward analysis
                     parent = path[0];
-                    
-                    
-                    if (parent.type === Syntax.AssignmentExpression) {
-                        if (typeof parent.left.range !== 'undefined') {
-                            functionList.push({
-                                name: code.slice(parent.left.range[0],
-                                          parent.left.range[1]).replace(/"/g, '\\"'),
-                                'expression': getTextRange(code, node.range),
-                                range: node.range,
-                                loc: node.loc,
-                                blockStart: node.body.range[0]
-                            });
-                        }
-                    } else if (parent.type === Syntax.VariableDeclarator) {
-                        functionList.push({
-                            name: parent.id.name,
-                            'expression': getTextRange(code, node.range),
-                            range: node.range,
-                            loc: node.loc,
-                            blockStart: node.body.range[0]
-                        });
-                    } else if (parent.type === Syntax.CallExpression) {
-                        functionList.push({
-                            name: parent.id ? parent.id.name : '[Anonymous]',
-                            'expression': getTextRange(code, node.range),
-                            range: node.range,
-                            loc: node.loc,
-                            blockStart: node.body.range[0]
-                        });
-                    } else if (typeof parent.length === 'number') {
-                        functionList.push({
-                            name: parent.id ? parent.id.name : '[Anonymous]',
-                            'expression': getTextRange(code, node.range),
-                            range: node.range,
-                            loc: node.loc,
-                            blockStart: node.body.range[0]
-                        });
-                    } else if (typeof parent.key !== 'undefined') {
-                        if (parent.key.type === 'Identifier') {
-                            if (parent.value === node && parent.key.name) {
-                                functionList.push({
-                                    name: parent.key.name,
-                                    'expression': getTextRange(code, node.range),
-                                    range: node.range,
-                                    loc: node.loc,
-                                    blockStart: node.body.range[0]
-                                });
-                            }
-                        }
-                    }
+                    autoLogTracer({'node' :node, 'code' : code, 'parent' :parent});
+
                 }
 				
             });
             
-           	
+           //	console.log(JSON.stringify(tree));
 			var genCode = escodegen.generate(tree);
 			console.log("\n--------------------");
 			console.log(genCode);
@@ -209,26 +157,12 @@
     }
 
 
-    function modify(code, modifiers) {
-        var i;
-
-        if (Object.prototype.toString.call(modifiers) === '[object Array]') {
-            for (i = 0; i < modifiers.length; i += 1) {
-                code = modifiers[i].call(null, code);
-            }
-        } else if (typeof modifiers === 'function') {
-            code = modifiers.call(null, code);
-        } else {
-            throw new Error('Wrong use of esmorph.modify() function');
-        }
-
-        return code;
-    }
+    
 
     // Sync with package.json.
     exports.version = '0.0.0-dev';
 
-    exports.modify = modify;
+    //exports.modify = modify;
 
     exports.Tracer = {
                TraceAll: traceAllAutoLog
