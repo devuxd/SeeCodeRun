@@ -28,7 +28,7 @@
 		top: 20px;
 		left: 610px;
 		width: 200px;
-		z-index: 100;		
+		z-index: 101;		
 	}
 	#stacktrace{
 		position:absolute;
@@ -36,8 +36,8 @@
 		border-radius: 1px;
 		top: 40px;
 		left: 610px;
-		width: 600px;
-		bottom: 600px;
+		width: auto;
+		bottom: auto;
 		z-index: 100;		
 	}
 </style>
@@ -65,6 +65,17 @@ function bubbleSort(list) {
 
 var N = 5, data = []; while (N > 0) data.push(N--);
 bubbleSort(data);
+var x = { c :  N};
+x.c++;
+delete x.c;
+
+var c= false, d= [];
+var i, n=5;
+if(c){}
+while(c){}
+do{}while(c);
+for(i=0; i < 5; i++){}
+for( var x in c){}
 
 </pre>
 <div id="info" >Ready.</div>
@@ -81,8 +92,11 @@ bubbleSort(data);
     // done: look the required statements in the tree
     // todo: instrument the log of issue 16 [pending to catch the expression statement parent so code can be appended]
     // todo: collect the stack trace [ populate tree with callstack sequences]
+    var canTrace = true;
     window.onload = function () {
         'use strict';
+        canTrace=true;
+        window.CANTRACE =true;
     	
         document.getElementById('info').setAttribute('class', 'alert-box secondary');
         document.getElementById('info').innerHTML = 'Ready.';
@@ -93,11 +107,17 @@ bubbleSort(data);
     	    visualize(executionTrace.stackTrace);
     	}
     	
+    	setTimeout(function(){  canTrace = true;}, 3000);
+    	
     	var aceDocumentForEsprima = editor.getSession().getDocument(); // get the document for changes in its structure
     	aceDocumentForEsprima.on("change", function(e){
     	    var sourceCode = aceDocumentForEsprima.getValue(); // get the code to analyze
     	    // API CALL
-    		window.traceExecution(sourceCode, eventListener);
+    	    if(canTrace){
+    	    	window.traceExecution(sourceCode, eventListener);
+    	        canTrace = false;
+    	        setTimeout(function(){  canTrace = true;}, 3000);
+    	    }
     	});
     
     };
@@ -109,6 +129,7 @@ bubbleSort(data);
             document.getElementById('info').innerHTML = event.description;
     		document.getElementById('stacktrace').innerHTML = 'Waiting...';        
         }else if(event.status === "Finished"){
+            var editor = ace.edit("editor");
             showTraceAnnotations(editor);
             document.getElementById('info').setAttribute('class', 'alert-box secondary');
             document.getElementById('info').innerHTML = event.description;
@@ -117,11 +138,22 @@ bubbleSort(data);
             var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
             
             localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
-    		document.getElementById('stacktrace').innerHTML ='CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>'+visualize(valueTable); 
+    		document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
+    		
+    	 $('#stacktrace').append(visualizeExecutionTrace(valueTable)); 
+    	 
         }else if(event.status === "Error"){
             document.getElementById('info').innerHTML = event.description;
             document.getElementById('info').setAttribute('class', 'alert-box alert');
             document.getElementById('stacktrace').innerHTML = 'Waiting...';
+        }else if(event.status === "Timeout"){
+            document.getElementById('info').innerHTML = event.description;
+            document.getElementById('info').setAttribute('class', 'alert-box alert');
+            document.getElementById('stacktrace').innerHTML = 'Waiting...';
+        }else if(event.status === "Busy"){
+            document.getElementById('info').innerHTML = event.description;
+            document.getElementById('info').setAttribute('class', 'alert-box alert');
+            document.getElementById('stacktrace').innerHTML = 'Busy, please wait...';
         }
     }
     
@@ -129,7 +161,7 @@ bubbleSort(data);
     function showTraceAnnotations(aceEditor) {
             var annotations = aceEditor.getSession().getAnnotations();	
             var traceAnnotations = window.getTraceAnnotations();
-            annotations.concat(traceAnnotations);
+            annotations= annotations.concat(traceAnnotations);
     		aceEditor.getSession().setAnnotations(annotations);
     }
     
@@ -171,6 +203,22 @@ bubbleSort(data);
     			stackText += previousIndex + " -- " + previousCall ;
     		}					 
     	}
+    	
+    	return stackText;  
+    
+    }
+     // example of how to use the trace resulting data structure
+    function visualizeExecutionTrace(executionTrace){
+        
+        var i, entry;
+        var stackText= "";
+
+        for (i = 0; i < executionTrace.length; i += 1) {
+            entry = executionTrace[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+       
     	
     	return stackText;  
     

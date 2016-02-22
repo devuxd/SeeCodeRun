@@ -73,13 +73,13 @@
         WithStatement: 'WithStatement'
     };
 
-    // Executes visitor on the object and its children (recursively). 
-    function traverse(object, visitor, master) {
+    // Executes visitor on the object and its children (recursively). Added key to modify object (repercusion?) path[0][objectKey] = new node...
+    function traverse(object, visitor, master, objectKey) {
         var key, child, parent, path, isLeaf = true;
 
         parent = (typeof master === 'undefined') ? [] : master;
 
-        if (visitor.call(null, object, parent) === false) {
+        if (visitor.call(null, object, parent, objectKey) === false) {
             return;
         }
         
@@ -90,15 +90,15 @@
                 path.push(parent);
                 
                 if (typeof child === 'object' && child !== null) {
-                        traverse(child, visitor, path);
+                        traverse(child, visitor, path, key);
                         isLeaf = false;
                 }
                     
             }
         }
-        if (isLeaf) { 
-            // end of path action        
-        }
+        // if (isLeaf) { 
+        //     // end of path action        
+        // }
         
     }
     // from root to current node
@@ -119,7 +119,7 @@
         }
         return path;
     }
-    function beautifyPathSintaxTypesOnly (path){
+    function beautifyPathSyntaxTypesOnly (path){
         var beautifulString = "path: {";
         for( var i in path){
             var node = path[i];
@@ -151,7 +151,7 @@
             var tree = esprima.parse(code, { range: true, loc: true });
 
 
-            traverse(tree, function traceVisitor(node, path) {
+            traverse(tree, function traceVisitor(node, path, nodeKey) {
                // var parent;
                 // Catching the expressions
             //     if (node.type === Syntax.VariableDeclarator) {
@@ -178,7 +178,7 @@
             //     }
                 
             // all logic moved to autoLogTracer in execution trace
-            autoLogTracer({'node' :node, 'code' : code, 'path' :path});
+            autoLogTracer({'node' :node, 'code' : code, 'path' :path, 'nodeKey' :nodeKey});
 				
             });
             
