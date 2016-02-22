@@ -47,7 +47,7 @@
 <pre id="editor">
 Array.prototype.swap = function (i, j) {
     var k = this[i]; this[i] = this[j]; this[j] = k;
-}
+};
 
 function bubbleSort(list) {
     var items = list.slice(0), swapped = false, p, q;
@@ -91,6 +91,7 @@ var x = (y * 7) / z;
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/javascript");
 	editor.renderer.setShowGutter(true);
+	editor.session.setOption("useWorker", false);
     
     //Esprima
     // done: prepare demo from http://esprima.org/demo/functiontrace.html into this one 
@@ -98,6 +99,7 @@ var x = (y * 7) / z;
     // todo: instrument the log of issue 16 [pending to catch the expression statement parent so code can be appended]
     // todo: collect the stack trace [ populate tree with callstack sequences]
     var canTrace = true;
+    var traceAnnotations =[];
     window.onload = function () {
         'use strict';
         canTrace=true;
@@ -123,7 +125,11 @@ var x = (y * 7) / z;
     	        canTrace = false;
     	        setTimeout(function(){  canTrace = true;}, 3000);
     	    }
+    	     showTraceAnnotations(editor);
     	});
+    // 	editor.getSession().on("changeAnnotation", function(e){
+    //         showTraceAnnotations(editor);
+    // 	});
     
     };
     
@@ -134,8 +140,9 @@ var x = (y * 7) / z;
             document.getElementById('info').innerHTML = event.description;
     		document.getElementById('stacktrace').innerHTML = 'Waiting...';        
         }else if(event.status === "Finished"){
-            var editor = ace.edit("editor");
+            traceAnnotations = window.getTraceAnnotations();
             showTraceAnnotations(editor);
+            
             document.getElementById('info').setAttribute('class', 'alert-box secondary');
             document.getElementById('info').innerHTML = event.description;
             var stackTrace = window.TRACE.getStackTrace();
@@ -165,7 +172,6 @@ var x = (y * 7) / z;
     // example using ACE Annotations
     function showTraceAnnotations(aceEditor) {
             var annotations = aceEditor.getSession().getAnnotations();	
-            var traceAnnotations = window.getTraceAnnotations();
             annotations= annotations.concat(traceAnnotations);
     		aceEditor.getSession().setAnnotations(annotations);
     }
