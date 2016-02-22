@@ -3,9 +3,9 @@
    var selectedLine = 1;
 
    function  setContentGutter (line, content){
-         setCss(); // bug
+        
          var lastline =jsEditor.getLastVisibleRow()+1;
-         var iframeBody = $('#gutter').contents().find("body");  
+         var iframeBody = $('#gutter');
 
          if(iframeBody.find('#line'+lastline).length ==0){
           CreateLine(lastline);
@@ -20,7 +20,7 @@
    
    
    function CreateLine(line){
-      var iframeBody = $('#gutter').contents().find("body");  
+      var iframeBody = $('#gutter');  
       var indexOfDiv = getLastDiv();
       for(indexOfDiv; indexOfDiv<=line; indexOfDiv++){
          iframeBody.append("<div id=line"+indexOfDiv+"></div>");
@@ -29,7 +29,7 @@
       }
       
       function getLastDiv(){
-      var iframeBody = $('#gutter').contents().find("body");
+      var iframeBody = $('#gutter');
        var indexOfDiv =1;   
           while (iframeBody.find('#line'+indexOfDiv).length !=0){
            indexOfDiv++;
@@ -37,25 +37,12 @@
        return indexOfDiv;
       }
    }  
-      function setCss(){
-          
-           var iframeBody = $('#gutter').contents().find("head");
-           iframeBody.append($("<link/>",
-                { rel: "stylesheet", href: "styles.css", type: "text/css" }
-              ));
-              iframeBody.append($("<script/>",
-                { src: "https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js" }
-              ));
-              
-      }
       
-      
-
       
       function  highlightLine(){
       jsEditor.getSession().selection.on('changeCursor', function(e)
       {
-          var iframeBody = $('#gutter').contents().find("body");
+          var iframeBody = $('#gutter');
           var line =  jsEditor.getCursorPosition().row+1;
           if(iframeBody.find('#line'+line).length ==0){
           CreateLine(line);
@@ -69,7 +56,6 @@
       );
       }
    
-          var iframeBody = $('#gutter').window;
 
 (function () {
     var previousScroll = 0;

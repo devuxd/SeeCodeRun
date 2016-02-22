@@ -8,15 +8,12 @@ $( document ).ready(function() {
 function toggle(){
     
     $("#note").toggle();
-
-
- jsEditor.getSession().selection.on('changeSelection', function(e)
- {
-  alert("sumanth"); 
- }
-);
     
 }
-
+//jsEditor.getSession().selection.on('changeSelection', function(e)
+// {
+  //alert("sumanth"); 
+ //}
+//);
 
 //Emitted when the cursor selection changes.

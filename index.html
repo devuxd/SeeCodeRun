@@ -62,7 +62,7 @@
                   </div>
                   <div class="col-md-3" style="padding-left: 0px; padding-right: 13px; padding-top:3px">
                     <!-- <label> <input type="checkbox" value="">Show Gutter</label> <!-->
-                    <div id="gutter_space" class="line_height" ><iframe  class= "iframeCss" id="gutter" ></iframe></div>
+                    <div id="gutter_space" class="line_height" ><div  class= "iframeCss" id="gutter" ></div></div>
                   
                   </div>
                 </div>
@@ -97,7 +97,7 @@
 	           </div>
 			 </div>
 			</div>
-		  <div id="console-output"></div>
+		  <div id="console-output" class="flow"></div>
 		 </div>
 	 </div>
     </div>
@@ -110,6 +110,34 @@
 $('#visual').on('change', 'input[type="checkbox"]', function(){
     
      toggle();
+     
+     if(this.checked)
+     {
+     	console.info("checked");
+     	
+   $( "#other" ).click(function() {
+  $( "#target" ).mouseup();
+});
+
+jsEditor.on("click", function(e){
+	$( "#target" ).mouseup()
+	{
+		
+	};
+});  	
+     	 
+     jsEditor.getSession().selection.on('changeCursor', function(e)
+    	
+    {
+     var content = jsEditor.getSelectedText();
+     console.info(content);
+     	
+     });
+     }
+     else{
+     	console.info("unchecked")
+     	jsEditor.clearSelection();
+     }
 });
 
 

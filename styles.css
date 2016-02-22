@@ -30,6 +30,31 @@
 .iframeCss{
     height: 700px; 
     width: 100%;
+    border-left: solid #eeeeee;
 }
     body { margin:0px; }
+
+.flow
+{
+    overflow: auto;
+}
+@-moz-document url-prefix() {
+   .line_height {
+    white-space:nowrap;
+    color: blue;
+    font-family: "serif", Times ;
+    font-size:12px;
+    height: 16px; 
+    padding-left: 0px;
+    margin-left: 0px;
+    padding-right: 0px;
+    margin-right:0px;
+}
+.highlight_gutter{
+    
+    color: red;
+    background-color: #eeeeee;
+}
+
+}
 
