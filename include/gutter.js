@@ -11,7 +11,7 @@
           CreateLine(lastline);
          }
         for(var i =0; i< content.length; i++){
-        iframeBody.find("#line"+line).append(" [ "+content[i]+" ]").addClass("outer-gutter");
+        iframeBody.find("#line"+line).append(" [ "+content[i]+" ]");
         
         }
         highlightLine();

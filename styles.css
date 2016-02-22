@@ -39,18 +39,13 @@
    .line_height {
     white-space:nowrap;
     color: #C0C0C0;
-    font-family: "serif", Times ;
-    font-size:12px;
-    height: 16px; 
-    padding-left: 0px;
-    margin-left: 0px;
-    padding-right: 0px;
-    margin-right:0px;
+    font-size:11px;
+    height: 16.2px; 
 }
 .highlight_gutter{
-    
-    color: black;
-    background-color: #eeeeee;
+     color: black;
+    background: #eeeeee;
+    display: table-row;
 }
 
 }
