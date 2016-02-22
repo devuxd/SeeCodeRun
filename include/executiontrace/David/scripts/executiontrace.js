@@ -69,7 +69,7 @@ either expressed or implied, of the SeeCodeRun Project.
         // ThrowStatement: 'ThrowStatement',
         // TryStatement: 'TryStatement',
         // UnaryExpression: 'UnaryExpression',
-        // UpdateExpression: 'UpdateExpression',
+        UpdateExpression: 'UpdateExpression',
         // VariableDeclaration: 'VariableDeclaration',
         VariableDeclarator: 'VariableDeclarator',
         // WhileStatement: 'WhileStatement',
@@ -534,14 +534,17 @@ either expressed or implied, of the SeeCodeRun Project.
                     };
     }
     function traceInstrument(sourceCode) {
-        var  code, autoLogTracer;      // var code caused a 2 hours delay
+        
+        var  instrumentedCode, autoLogTracer;      // var code caused a 2 hours delay
 
-        //FORWARD ANALYSIS
+        
         autoLogTracer = function (ref){
-            var node = ref.node, code = ref.code;
+        //uncomment  implemented types in Syntax to allow analysis
+            var node = ref.node, code = ref.code, path = ref.path;
             if(!Syntax.hasOwnProperty(node.type)){
                 return undefined;
             }
+            //FORWARD ANALYSIS
             
             var autoLogNode = getDefaultAutoLogNode(), locationData;
             if(node.type === Syntax.VariableDeclarator){
@@ -698,10 +701,12 @@ either expressed or implied, of the SeeCodeRun Project.
                  autoLogNode = wrapInExpressionStatementNode(autoLogNode);
                  node.body.body.unshift(autoLogNode);
                  
-            }else if (node.type === Syntax.FunctionExpression) { //BACKWARD ANALYSIS
-                var parent = ref.parent,  identifier;
+            }else if (node.type === Syntax.FunctionExpression && path) { //BACKWARD ANALYSIS, requires path to be defined
+                var parent = path[0],  identifier;
                 
-                if (parent.type === Syntax.AssignmentExpression) {
+                if(!parent){
+                    identifier = '[Anonymous]';
+                }else if (parent.type === Syntax.AssignmentExpression) {
                     if (typeof parent.left.range !== 'undefined') {
                         identifier = code.slice(parent.left.range[0], parent.left.range[1]).replace(/"/g, '\\"');
                     }
@@ -751,13 +756,11 @@ either expressed or implied, of the SeeCodeRun Project.
         };
         
         
-        var newCode =window.esmorph.Tracer.TraceAll(sourceCode, autoLogTracer);
-
+        instrumentedCode = window.esmorph.Tracer.TraceAll(sourceCode, autoLogTracer);
         // Enclose in IIFE.
-       // code = '(function() {\n' + code + '\n}())';
-        code = '(function() {\n' + newCode + '\n}())';
+        instrumentedCode = '(function() {\n' + instrumentedCode + '\n}())';
 
-        return code;
+        return instrumentedCode;
     }
 
     function count(x, s, p) {
