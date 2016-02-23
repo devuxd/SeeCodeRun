@@ -1,1 +1,5 @@
 David's log file:
+
+1. Added API: 
+    traceRun
+    getStackTrace
