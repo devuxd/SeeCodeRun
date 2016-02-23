@@ -1015,4 +1015,7 @@ either expressed or implied, of the SeeCodeRun Project.
         }
         return annotations;
     };
+    global.testGetDefaultFunction = function(){
+        return 1;
+    }
 }(window));
