@@ -73,16 +73,16 @@
         WithStatement: 'WithStatement'
     };
 
-    // Executes visitor on the object and its children (recursively). 
-    // var visitedNodes; // Avoids cyclic references
-    function traverse(object, visitor, master) {
-        var key, child, parent, path;
+    // Executes visitor on the object and its children (recursively). Added key to modify object (repercusion?) path[0][objectKey] = new node...
+    function traverse(object, visitor, master, objectKey) {
+        var key, child, parent, path, isLeaf = true;
 
         parent = (typeof master === 'undefined') ? [] : master;
 
-        if (visitor.call(null, object, parent) === false) {
+        if (visitor.call(null, object, parent, objectKey) === false) {
             return;
         }
+        
         for (key in object) {
             if (object.hasOwnProperty(key)) {
                 child = object[key];
@@ -90,18 +90,47 @@
                 path.push(parent);
                 
                 if (typeof child === 'object' && child !== null) {
-                    // var val = JSON.stringify(child);
-                    
-                    // if(!visitedNodes.has(val)){
-                    //     visitedNodes.add(val);
-                        traverse(child, visitor, path);
-                    // }
-                        
+                        traverse(child, visitor, path, key);
+                        isLeaf = false;
                 }
                     
             }
         }
+        // if (isLeaf) { 
+        //     // end of path action        
+        // }
         
+    }
+    // from root to current node
+    function collectPath( nodePath ){
+        var path =[];
+        
+        while (typeof nodePath !== 'undefined'){
+            if(nodePath.length>1){
+                path.unshift(nodePath[0]);
+                nodePath = nodePath[1];
+                
+            }else if(nodePath.length>0){
+                path.unshift(nodePath[0]);
+                nodePath = undefined;
+            }else{ // [] case
+                nodePath = undefined;
+            }
+        }
+        return path;
+    }
+    function beautifyPathSyntaxTypesOnly (path){
+        var beautifulString = "path: {";
+        for( var i in path){
+            var node = path[i];
+            if(node.type){
+                beautifulString  += node.type;
+                beautifulString  += ", ";
+            }
+             
+        }
+        beautifulString  += " }";
+        return beautifulString; // create a clipboard visualizer overlay plugin for windows
     }
     
 
@@ -117,38 +146,43 @@
     
 
  function traceAllAutoLog(code, autoLogTracer) {
-         //   visitedNodes = new Set();
+ 
             
             var tree = esprima.parse(code, { range: true, loc: true });
 
-            traverse(tree, function (node, path) {
-                var parent;
-                // Catching the expressions
-                if (node.type === Syntax.VariableDeclarator) {
-                    autoLogTracer({'node' :node, 'code' : code});
-                        
-                }else if (node.type === Syntax.CallExpression) {
-                    autoLogTracer({'node' :node, 'code' : code});
-               
-                }else if(node.type === Syntax.AssignmentExpression){
-                        autoLogTracer({'node' :node, 'code' : code});
-                    
-                }else if(node.type === Syntax.BinaryExpression){
-                        node=autoLogTracer({'node' :node, 'code' : code});
-                        
-                }else if (node.type === Syntax.FunctionDeclaration) {
-			            autoLogTracer({'node' :node, 'code' : code});
-                    
-                } else if (node.type === Syntax.FunctionExpression) {
-                    // requires backward analysis
-                    parent = path[0];
-                    autoLogTracer({'node' :node, 'code' : code, 'parent' :parent});
 
-                }
+            traverse(tree, function traceVisitor(node, path, nodeKey) {
+               // var parent;
+                // Catching the expressions
+            //     if (node.type === Syntax.VariableDeclarator) {
+            //         autoLogTracer({'node' :node, 'code' : code});
+                        
+            //     }else if (node.type === Syntax.CallExpression) {
+            //         autoLogTracer({'node' :node, 'code' : code});
+               
+            //     }else if(node.type === Syntax.AssignmentExpression){
+            //             autoLogTracer({'node' :node, 'code' : code});
+                    
+            //     }else if(node.type === Syntax.BinaryExpression){
+            //             node=autoLogTracer({'node' :node, 'code' : code});
+                        
+            //     }else if (node.type === Syntax.FunctionDeclaration) {
+			         //   autoLogTracer({'node' :node, 'code' : code});
+                    
+            //     } else if (node.type === Syntax.FunctionExpression) {
+            //         // requires backward analysis
+            //         //parent = path[0];
+            //         //console.log(beautifyPathSintaxTypesOnly(collectPath(path)));
+            //         autoLogTracer({'node' :node, 'code' : code, 'path' :path});
+
+            //     }
+                
+            // all logic moved to autoLogTracer in execution trace
+            autoLogTracer({'node' :node, 'code' : code, 'path' :path, 'nodeKey' :nodeKey});
 				
             });
             
-           //	console.log(JSON.stringify(tree));
+           //console.log(JSON.stringify(tree));
 			var genCode = escodegen.generate(tree);
 			console.log("\n--------------------");
 			console.log(genCode);
