@@ -20,8 +20,20 @@
         <tr>
             <td>
                 <div id = "debugging">Debugging:</div>
-                <div id = "status">Status Updates: </div>
-                <div id = "result">Result:</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Testing Execution Trace Info 1:
+                <div id = "teststatus1">Test Status 1 Updates: </div>
+                <div id = "testinfo1">Test Status 1 Info: </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Testing Execution Trace Info 2:
+                <div id = "teststatus2">Test Statu 2 Updates: </div>
+                <div id = "testinfo1">Test Status 2 Info: </div>
             </td>
         </tr>
     </table>
@@ -116,26 +128,26 @@
     </script>
     
     <script>
-        describe("A suite is just a function", function() {
+        describe("A suite is just a function (sample jasmine)", function() {
               var a;
             
               it("and so is a spec", function() {
                 a = true;
-                expect(a).toBe(true);
+                expect(a).toBe(true); // === comparison
               });
         });
         
         // option 1: setup a global function in execution trace for testing
-        describe("calling to a global function", function() {
+        describe("Testing call to a global function", function() {
               var hi;
-              it("and so is a spec", function() {
+              it("calling a global function in executiontrace.js", function() {
                 hi = window.testGetDefaultFunction();
                 expect(hi).toBe(1);
               });
         });      
         
         // option 2: start by calling traceExecution(code,function) 
-        describe("executiontrace1", function(){
+        describe("Testing Execution Trace 1", function(){
             var mockCode = "var x = 5;";
             var stackTrace;
             var valueTable;
@@ -163,10 +175,10 @@
                     }
                 });
             });
-            it("single unit test", function(){
+            it("Testing a Literal: 'var x = 5'", function(){
                 // a single unit test per function under testing
-                document.getElementById('status').innerHTML += eventStatus;
-                document.getElementById('result').innerHTML += visualizeExecutionTrace(valueTable);
+                document.getElementById('teststatus1').innerHTML += eventStatus;
+                document.getElementById('testinfo1').innerHTML += visualizeExecutionTrace(valueTable);
                 var entry,ele;
                 for(entry=0;entry<valueTable.length;entry++){
                     //var keys = Object.keys(valueTable[entry]);
@@ -181,6 +193,24 @@
                     }
                 }
             });
+            /*it("Testing a Literal: 'var x = 5'", function(){
+                // a single unit test per function under testing
+                document.getElementById('teststatus1').innerHTML += eventStatus;
+                document.getElementById('testinfo1').innerHTML += visualizeExecutionTrace(valueTable);
+                var entry,ele;
+                for(entry=0;entry<valueTable.length;entry++){
+                    //var keys = Object.keys(valueTable[entry]);
+                    if(valueTable[entry].hasOwnProperty("type")){
+                        expect(valueTable[entry].type).toBe("Literal");   
+                    }
+                    if(valueTable[entry].hasOwnProperty("id")){
+                        expect(valueTable[entry].id).toBe("x");   
+                    }
+                    if(valueTable[entry].hasOwnProperty("text")){
+                        expect(valueTable[entry].text).toBe("5");   
+                    }
+                }
+            });*/
         });
         
     </script>
