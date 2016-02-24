@@ -86,17 +86,17 @@ either expressed or implied, of the SeeCodeRun Project.
         
     };
     var TraceTypes = {
-        Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
-        Expression: {},
+        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+        Expression: {Syntax.},
         ExpressionStatement : {},
-        controlFlow : {},
-        condition: {},
-        loop: {},
+        ControlFlow : {},
+        Condition: {},
+        Loop: {WhileStatement},
         exception: {}
         
     };
 
-    function getTextRange(code, range){
+   function getTextRange(code, range){
        if(typeof range === 'undefined'){
            return undefined;
        }else if(range.length < 2){
@@ -906,11 +906,11 @@ either expressed or implied, of the SeeCodeRun Project.
  */
     function createTraceCollector() {
         global.TRACE = {
-            hits: {}, data: {}, stack : [], execution : [],
+            hits: {}, data: {}, stack : [], execution : [], values : {}, 
             autoLog: function (info) {
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
-                if(TraceTypes.Stack.indexOf(info.type)>-1){
+                if(TraceTypes.LocalStack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
                 }
 
@@ -919,7 +919,7 @@ either expressed or implied, of the SeeCodeRun Project.
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].hits = this.hits[key] + 1;
-                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value), 'hit': this.hits[key] + 1});
+                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
                     this.hits[key] = 1;
                     this.execution.push(key);
@@ -927,7 +927,7 @@ either expressed or implied, of the SeeCodeRun Project.
                         'type' : info.type,
                         'id' : info.id,
                         'text' : info.text,
-                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value), 'hit': this.hits[key]}],
+                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value)}],
                         'range': info.range,
                         'hits' : 1,
                         'extra' : info.extra
@@ -951,6 +951,24 @@ either expressed or implied, of the SeeCodeRun Project.
                 for (var i in this.execution) {
                     entry = this.execution[i];
                     if (this.data.hasOwnProperty(entry)) {
+                        stackData.push(this.data[entry]);
+                    }
+                }
+                return stackData;
+            },
+            getExecutionTable: function () {
+              //  var row = {'type': '', 'text' : '', 'values' : [], 'range' : {}};// properties
+                var row, groupType;
+                var i, entry, stackData = [];
+                for (var i in this.execution) {
+                    entry = this.execution[i];
+                    if (this.data.hasOwnProperty(entry)) {
+                        if(){
+                            
+                        }
+                        
+                        var row = {'type': '', 'text' : '', 'values' : [], 'range' : {}};
+                        
                         stackData.push(this.data[entry]);
                     }
                 }
@@ -980,7 +998,7 @@ either expressed or implied, of the SeeCodeRun Project.
             return;
         }
         window.CANTRACE =false;
-       try {
+    //   try {
             eventListener({'status' : 'Running' , 'description': 'Building Tracer'});
             
             createTraceCollector();
@@ -995,10 +1013,10 @@ either expressed or implied, of the SeeCodeRun Project.
             eventListener({'status' : 'Finished' , 'description': 'Tracing completed in ' + (1 + timestamp) + ' ms.'});
             window.CANTRACE = true;
 
-       } catch (e) {
-           eventListener({'status' : 'Error' , 'description': e.toString()});
-           window.CANTRACE = true;
-        }
+    //   } catch (e) {
+    //       eventListener({'status' : 'Error' , 'description': e.toString()});
+    //       window.CANTRACE = true;
+    //     }
     };
     global.getTraceAnnotations = function(){
         var i, stackTrace, entry, text, row;
