@@ -56,15 +56,28 @@ var stackDataEntry ={
  * 5. Provide queries that satisfy the API requirements
  */
  
-function search(queryTerm){
+//This is not working code yet - more like a pseudo code 
+function search(type, value, range){
+    var stackTrace = window.TRACE.getStackTrace();
+    var valueTable = window.TRACE.getExecutionTrace();
+    var stackDataEntry = { };
+    var result;
     
-    //If the query term is DOM in jQuery. DOM is accessed through  different calls.
-    // 
-    // if(node.typeof === Syntax.CallExpression){
-    //     if(queryTerm === arguments.value){
-    //          this.data[key].values.push({'Found': queryTerm, 'location': info.range});
-    //     }
+    //Example: User is searching button 5 and the following jQuery code is used for this example
+    //$("#button5").click(function(){  }); 
+    stackDataEntry = valueTable;
+    result = JSLINQ(stackDataEntry).type
+       .Where(item.type === "Literal" && item.range === "{'start':{'row':1,'column':10}, 'end':{'row':1,'column':48}")
+       .Select(item.values == "#button5");
+   
+    }
         
-    // }
+    
+    
+    
+    
+    
+    
+    
     
 }
