@@ -87,12 +87,12 @@ either expressed or implied, of the SeeCodeRun Project.
     };
     var TraceTypes = {
         LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
-        Expression: {Syntax.},
-        ExpressionStatement : {},
-        ControlFlow : {},
-        Condition: {},
-        Loop: {WhileStatement},
-        exception: {}
+        Expression: [Syntax.UnaryExpression, Syntax.UpdateExpression],
+        ExpressionStatement : [],
+        ControlFlow : [],
+        Condition: [],
+        Loop: [Syntax.WhileStatement],
+        exception: []
         
     };
 
