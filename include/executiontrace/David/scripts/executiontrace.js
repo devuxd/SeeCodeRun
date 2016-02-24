@@ -908,7 +908,7 @@ either expressed or implied, of the SeeCodeRun Project.
         global.TRACE = {
             hits: {}, data: {}, stack : [], execution : [],
             autoLog: function (info) {
-                var key = info.text + ':' + info.indexRange[0];
+                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
                 if(TraceTypes.Stack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
@@ -927,7 +927,7 @@ either expressed or implied, of the SeeCodeRun Project.
                         'type' : info.type,
                         'id' : info.id,
                         'text' : info.text,
-                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value)}],
+                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value), 'hit': this.hits[key]}],
                         'range': info.range,
                         'hits' : 1,
                         'extra' : info.extra
