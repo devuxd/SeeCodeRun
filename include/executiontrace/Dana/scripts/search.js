@@ -66,7 +66,7 @@ function search(type, value, range){
     //Example: User is searching button 5 and the following jQuery code is used for this example
     //$("#button5").click(function(){  }); 
     stackDataEntry = valueTable;
-    result = JSLINQ(stackDataEntry).type
+    result = JSLINQ(stackDataEntry)
        .Where(item.type === "Literal" && item.range === "{'start':{'row':1,'column':10}, 'end':{'row':1,'column':48}")
        .Select(item.values == "#button5");
    
