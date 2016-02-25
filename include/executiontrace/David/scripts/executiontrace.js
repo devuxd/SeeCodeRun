@@ -57,11 +57,11 @@ either expressed or implied, of the SeeCodeRun Project.
         // LabeledStatement: 'LabeledStatement',
         // LogicalExpression: 'LogicalExpression',
         // MemberExpression: 'MemberExpression',
-        // NewExpression: 'NewExpression',
+        NewExpression: 'NewExpression',
         // ObjectExpression: 'ObjectExpression',
         // Program: 'Program',
         Property: 'Property',
-        // ReturnStatement: 'ReturnStatement',
+        ReturnStatement: 'ReturnStatement',
         // SequenceExpression: 'SequenceExpression',
         // SwitchStatement: 'SwitchStatement',
         // SwitchCase: 'SwitchCase',
@@ -86,17 +86,33 @@ either expressed or implied, of the SeeCodeRun Project.
         
     };
     var TraceTypes = {
-        Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
-        Expression: {},
-        ExpressionStatement : {},
-        controlFlow : {},
-        condition: {},
-        loop: {},
-        exception: {}
+        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+        Expression: [
+            Syntax.UnaryExpression,
+            Syntax.UpdateExpression,
+            Syntax.CallExpression,
+            Syntax.Property,
+            Syntax.VariableDeclarator,
+            Syntax.AssignmentExpression,
+            Syntax.BinaryExpression,
+            Syntax.ReturnStatement,
+            Syntax.ForStatement,
+            Syntax.ForInStatement,
+            Syntax.WhileStatement,
+            Syntax.DoWhileStatement,
+            Syntax.ExpressionStatement
+            ],
+        ExpressionStatement : [
+            Syntax.ExpressionStatement
+            ],
+        ControlFlow : [],
+        Condition: [],
+        Loop: [Syntax.WhileStatement],
+        exception: []
         
     };
 
-    function getTextRange(code, range){
+   function getTextRange(code, range){
        if(typeof range === 'undefined'){
            return undefined;
        }else if(range.length < 2){
@@ -558,7 +574,7 @@ either expressed or implied, of the SeeCodeRun Project.
                     return undefined;// Backward Analysis
                      
                 }else{
-                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.init.type} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
                      setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.id.range)} );
                      setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
                      setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
@@ -603,7 +619,7 @@ either expressed or implied, of the SeeCodeRun Project.
                     return undefined;// Backward Analysis
                     
                 }else{
-                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
                      setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
                      setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
                      setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
@@ -613,6 +629,27 @@ either expressed or implied, of the SeeCodeRun Project.
                         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
                      }
                      node.right = autoLogNode;
+                }
+                
+/*ReturnStatement */  
+            }else if(node.type === Syntax.ReturnStatement){
+                if(!node.argument){
+                    return undefined;
+                }
+                if(node.argument.type === Syntax.FunctionExpression){
+                    return undefined;// Backward Analysis
+                    
+                }else{
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.argument.range)} );
+                     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.argument.range)} );
+                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.argument});
+                     locationData = getLocationDataNode(node.argument.loc, node.argument.range);
+                     if(typeof locationData !== 'undefined'){
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+                        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+                     }
+                     node.argument = autoLogNode;
                 }
                 
 /*BinaryExpression */   // the whole expression is handle in others cases such test, expression. that is, is element of something 
@@ -906,11 +943,11 @@ either expressed or implied, of the SeeCodeRun Project.
  */
     function createTraceCollector() {
         global.TRACE = {
-            hits: {}, data: {}, stack : [], execution : [],
+            hits: {}, data: {}, stack : [], execution : [], values : {}, 
             autoLog: function (info) {
-                var key = info.text + ':' + info.indexRange[0];
+                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
-                if(TraceTypes.Stack.indexOf(info.type)>-1){
+                if(TraceTypes.LocalStack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
                 }
 
@@ -919,7 +956,7 @@ either expressed or implied, of the SeeCodeRun Project.
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].hits = this.hits[key] + 1;
-                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value), 'hit': this.hits[key] + 1});
+                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
                     this.hits[key] = 1;
                     this.execution.push(key);
@@ -946,7 +983,7 @@ either expressed or implied, of the SeeCodeRun Project.
                 }
                 return stackData;
             },
-            getExecutionTrace: function () {
+            getExecutionTraceAll: function () {
                 var i, entry, stackData = [];
                 for (var i in this.execution) {
                     entry = this.execution[i];
@@ -955,6 +992,37 @@ either expressed or implied, of the SeeCodeRun Project.
                     }
                 }
                 return stackData;
+            },
+            getExecutionTrace: function () {// getValues
+                var i, entry, data, stackData = [];
+                for (var i in this.execution) {
+                    entry = this.execution[i];
+                    if (this.data.hasOwnProperty(entry)) {
+                        data =this.data[entry];
+                        if(TraceTypes.Expression.indexOf(data.type) > -1  ){
+                            stackData.push(this.data[entry]);
+                        }
+                     }
+                }
+                return stackData;
+            },
+            getExecutionTable: function () {
+              //  var row = {'type': '', 'text' : '', 'values' : [], 'range' : {}};// properties
+                var row, groupType;
+                // var i, entry, stackData = [];
+                // for (var i in this.execution) {
+                //     entry = this.execution[i];
+                //     if (this.data.hasOwnProperty(entry)) {
+                //         if(){
+                            
+                //         }
+                        
+                //         var row = {'type': '', 'text' : '', 'values' : [], 'range' : {}};
+                        
+                //         stackData.push(this.data[entry]);
+                //     }
+                // }
+                // return stackData;
             }
         };
     }
@@ -980,25 +1048,25 @@ either expressed or implied, of the SeeCodeRun Project.
             return;
         }
         window.CANTRACE =false;
-       try {
-            eventListener({'status' : 'Running' , 'description': 'Building Tracer'});
-            
-            createTraceCollector();
-            code = traceInstrument(sourceCode);
-            
-            eventListener({'status' : 'Running' , 'description': 'Executing Code'});
-            
-            timestamp = +new Date();
-            eval(code);
-            timestamp = (+new Date()) - timestamp;
-            
-            eventListener({'status' : 'Finished' , 'description': 'Tracing completed in ' + (1 + timestamp) + ' ms.'});
-            window.CANTRACE = true;
-
-       } catch (e) {
-           eventListener({'status' : 'Error' , 'description': e.toString()});
-           window.CANTRACE = true;
-        }
+        try {
+                eventListener({'status' : 'Running' , 'description': 'Building Tracer'});
+                
+                createTraceCollector();
+                code = traceInstrument(sourceCode);
+                
+                eventListener({'status' : 'Running' , 'description': 'Executing Code'});
+                
+                timestamp = +new Date();
+                eval(code);
+                timestamp = (+new Date()) - timestamp;
+                
+                eventListener({'status' : 'Finished' , 'description': 'Tracing completed in ' + (1 + timestamp) + ' ms.'});
+                window.CANTRACE = true;
+    
+          } catch (e) {
+              eventListener({'status' : 'Error' , 'description': e.toString()});
+              window.CANTRACE = true;
+          }
     };
     global.getTraceAnnotations = function(){
         var i, stackTrace, entry, text, row;
