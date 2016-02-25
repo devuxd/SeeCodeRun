@@ -9,5 +9,6 @@ Han's log file:
 Task list:
 1) linking jasmine to execution trace code
 2) list out all the functions for testing
+3) two types of test, "user interface" and "code traversal"
 3) developing a control flow graph or other testing methods for the list of functions
 4) start writing tests for each of the decision path

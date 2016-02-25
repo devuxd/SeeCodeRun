@@ -8,9 +8,11 @@
     <script src="jasmine-2.4.1/boot.js"></script>
     <!--- End Files for Jasmine API --->
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
+
     
     <!-- Init Scripts for Execution Trace API !-->
-    <script src="../../esprima.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/esprima.js" type="text/javascript" charset="utf-8"></script>
     <script src="../David/scripts/escodegen.browser.js" type="text/javascript" charset="utf-8"></script>
     <script src="../David/scripts/esmorph.js" type="text/javascript" charset="utf-8"></script>
     <script src="../David/scripts/executiontrace.js" type="text/javascript" charset="utf-8"></script>
@@ -183,7 +185,7 @@
                 for(entry=0;entry<valueTable.length;entry++){
                     //var keys = Object.keys(valueTable[entry]);
                     if(valueTable[entry].hasOwnProperty("type")){
-                        expect(valueTable[entry].type).toBe("Literal");   
+                        expect(valueTable[entry].type).toBe("VariableDeclarator");   
                     }
                     if(valueTable[entry].hasOwnProperty("id")){
                         expect(valueTable[entry].id).toBe("x");   
@@ -193,7 +195,7 @@
                     }
                 }
             });
-            /*it("Testing a Literal: 'var x = 5'", function(){
+/*            it("Testing a Literal: 'var x = 5'", function(){
                 // a single unit test per function under testing
                 document.getElementById('teststatus1').innerHTML += eventStatus;
                 document.getElementById('testinfo1').innerHTML += visualizeExecutionTrace(valueTable);
@@ -201,7 +203,7 @@
                 for(entry=0;entry<valueTable.length;entry++){
                     //var keys = Object.keys(valueTable[entry]);
                     if(valueTable[entry].hasOwnProperty("type")){
-                        expect(valueTable[entry].type).toBe("Literal");   
+                        expect(valueTable[entry].type).toBe("VariableDeclarator");   
                     }
                     if(valueTable[entry].hasOwnProperty("id")){
                         expect(valueTable[entry].id).toBe("x");   
