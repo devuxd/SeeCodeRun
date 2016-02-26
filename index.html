@@ -23,6 +23,13 @@
 
 	<!-- Stylesheet -->
 	<link rel="stylesheet" href="styles.css" />
+	<link rel="stylesheet" href="chat.css"/>
+
+		 <style type="text/css">
+	 html, body, #placeholder { height: 100%; }
+	
+	 #placeholder { display:inline-block; vertical-align: middle; }
+	 </style>
 
 </head>
 <body>
@@ -98,6 +105,21 @@
   	</div>
   </div>
   
+  <!-- Firebase Chat -->
+  <div class="example-chat l-demo-container">
+  <header>Firebase Chat</header>
+
+  <div class='example-chat-toolbar'>
+    <label for="nameInput">Username:</label>
+    <input type='text' id='nameInput' placeholder='enter a username...'>
+  </div>
+
+  <ul id='example-messages' class="example-chat-messages"></ul>
+
+  <footer>
+    <input type='text' id='messageInput'  placeholder='Type a message...'>
+  </footer>
+</div>
 
 
 <script>
@@ -155,6 +177,56 @@
 	var jsFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/js');
 	var htmlFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/html');
 	var cssFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/css');	
+	
+	
+	//Begin Firebase code
+	//New Firebasechat Reference
+	var chatFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL)
+	
+	
+		// CREATE A REFERENCE TO FIREBASE
+	 // var messagesRef = new Firebase('https://j3v3r219xav.firebaseio-demo.com/');
+	
+	  // REGISTER DOM ELEMENTS
+	  var messageField = $('#messageInput');
+	  var nameField = $('#nameInput');
+	  var messageList = $('#example-messages');
+	
+	  // LISTEN FOR KEYPRESS EVENT
+	  messageField.keypress(function (e) {
+	    if (e.keyCode == 13) {
+	      //FIELD VALUES
+	      var username = nameField.val();
+	      var message = messageField.val();
+	
+	      //SAVE DATA TO FIREBASE AND EMPTY FIELD
+	      chatFirebaseRef.push({name:username, text:message});
+	      messageField.val('');
+	    }
+	  });
+	
+	  // Add a callback that is triggered for each chat message.
+	  chatFirebaseRef.limitToLast(10).on('child_added', function (snapshot) {
+	    //GET DATA
+	    var data = snapshot.val();
+	    var username = data.name;
+	    var message = data.text;
+	
+	    //CREATE ELEMENTS MESSAGE & SANITIZE TEXT
+	    var messageElement = $("<li>");
+	    var nameElement = $("<strong class='example-chat-username'></strong>")
+	    nameElement.text(username);
+	    messageElement.text(message).prepend(nameElement);
+	
+	    //ADD MESSAGE
+	    messageList.append(messageElement)
+	
+	    //SCROLL TO BOTTOM OF MESSAGE LIST
+	    messageList[0].scrollTop = messageList[0].scrollHeight;
+	  });
+	
+	//End Firebase Code
+	
 	
 	// Set up ACE editors and firepads for js, html, and css
 	var jsEditor = ace.edit('aceJSEditorDiv');
