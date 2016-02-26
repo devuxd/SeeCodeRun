@@ -10,7 +10,7 @@
 
 .line_height {
     white-space:nowrap;
-    color: #C0C0C0;
+    color: #999487;
     font-size:11px;
     height: 14px; 
     
@@ -26,10 +26,11 @@
 .iframeCss{
     height: 700px; 
     width: 100%;
-    border-left: solid #eeeeee;
+    border-left: 1px solid #a6a195;
     overflow:auto;
+    padding-left: 1.5px;
 }
-    body { margin:0px; }
+   
 
 .flow
 {
@@ -38,7 +39,7 @@
 @-moz-document url-prefix() {
    .line_height {
     white-space:nowrap;
-    color: #C0C0C0;
+    color: #999487;
     font-size:11px;
     height: 16.2px; 
 }
@@ -48,5 +49,14 @@
     display: table-row;
 }
 
+}
+
+.iframeCssPreview
+{
+ height: 700px;
+ height: 700px; 
+ width: 100%; 
+ border: none;
+ overflow:auto;
 }
 

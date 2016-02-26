@@ -5,7 +5,7 @@
 
 
 
-            $('#mainSplitter').jqxSplitter({ width: 1595, height: 780, panels: [{ size: '45%' }] });
-            $('#rightSplitter').jqxSplitter({ width: '100%', height: 740, orientation: 'horizontal', panels: [{ size: '80%'}] });
+            $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
+            $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });
 
         });

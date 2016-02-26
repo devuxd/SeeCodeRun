@@ -86,13 +86,13 @@
 		    <div class="tab-content">
 		  	 <div role="tabpanel" class="tab-pane" id="output-container">
 			   <div id="html-output">
-				<iframe id="preview" class= "iframeCss" style = "height: 700px">
+				<iframe id="preview" class="iframeCssPreview">
 				</iframe>
 			   </div>
 			 </div>
 			 <div role="tabpanel" class="tab-pane" id="visualization-container">
 		       <div class="checkbox" id="visual">
-	             <label><input type="checkbox" >Activate Visualization Mode</label></br><span id="note">You have activated Visualization Mode, Select any expression or variable to view visualization.</span>
+	             <label><input type="checkbox" id="mycheck">Activate Visualization Mode</label></br><span id="note">You have activated Visualization Mode, Select any expression or variable to view visualization.</span>
 	           </div>
 			 </div>
 			</div>
@@ -106,38 +106,17 @@
  
 
 <script>
+
 $('#visual').on('change', 'input[type="checkbox"]', function(){
-    
+   
      toggle();
      
-     if(this.checked)
-     {
-     	console.info("checked");
-     	
-   $( "#other" ).click(function() {
-  $( "#target" ).mouseup();
+     
+	jsEditor.clearSelection();
+
+	
 });
 
-jsEditor.on("click", function(e){
-	$( "#target" ).mouseup()
-	{
-		
-	};
-});  	
-     	 
-     jsEditor.getSession().selection.on('changeCursor', function(e)
-    	
-    {
-     var content = jsEditor.getSelectedText();
-     console.info(content);
-     	
-     });
-     }
-     else{
-     	console.info("unchecked")
-     	jsEditor.clearSelection();
-     }
-});
 
 
 	"use strict";
