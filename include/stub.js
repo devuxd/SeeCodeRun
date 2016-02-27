@@ -7,17 +7,17 @@
    function fake(){
        
        if(!change){
-           var content  = ['voidvcccccccccccccccccccccccccccccccccccccccccccccccccccccccc'];
+           var content  = ['void'];
            setContentGutter(1, content);
            
            var content1  = ['void'];
            setContentGutter(3, content);
            
-           var content2 = ["Hello, world."];
-           setContentGutter(4, content2);
+        
            
-           var content3 = ["Hello, world."];
-           setContentGutter(15, content3);
+           var content3 = ["Hello world, from js"];
+           setContentGutter(4, content3);
+           setContentGutter(5, content3);
             change =true;
        }
       
