@@ -1,4 +1,11 @@
-
+<!-- Written by: Execution Trace Feature Team -->
+<!-- (@author: Han Tsung Liu-->
+<!--  @started: 02-24-16-->
+<!--  @last-modified: 02-26-16)-->
+<!--  Reviewed by: Dana Pepporuby and Venkat Polumahanti (02-26-16)-->
+<!--  Sample Implementation of ExecutionTraceInterface.js
+<!--  1) Creating an instance of the ExecutionTraceInterface class- ->
+<!--  2) Calling getLineValues(lineNumber) function to retrieve all values for the row in editor-->
 <html>
 	<head>
 	    <!-- Init Scripts for Execution Trace API !-->
@@ -20,10 +27,19 @@
 	    }
 	    </style>
 	</head>
+	
 	<body>
         <h3>Simple Range Value Function Testing (getValues(Range))</h3>
-        <!--<input type = "hidden" id = "mockCode" placeholder="enter test code here">var x = 5;</input>
-        <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+        <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+        <div id = "status">
+            Row values on hover-over: <br/>
+        </div>
+        <div id = "cursorPos">
+            Cursor Position: <br/>
+        </div>
+        <div id = "valueOfCurPos">
+            Cursor Position: <br/>
+        </div>        
         <table border=1>
             <tr>
                 <td></td>
@@ -41,67 +57,46 @@
                 <td id = "ec"></td>
             </tr>
         </table><br/><br/>
-        <input id = "inputRange" type = "text" size="30" placeholder="startRow startCol endRow endCol"/><br/><br/>
-        <div id = "resultContainer">Results:</div>
-        <div id = "currentPos">curPos: </div>-->
-        <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-        <div id = "status">Values On Hover-over: <br/></div>
+        
 <div id="editor">var x = 5;var y = 10;
-var z = [1,2,3];
+var z = [1,2,3]; <!-- the position of the code here matches the editor, so no indentation :) -->
 </div>
-
-	<script>
-		$("#status").css("font-size","20px")
-		// initiating the editor
-	    var editor = ace.edit("editor");
-	    editor.setTheme("ace/theme/monokai");
-	    editor.getSession().setMode("ace/mode/javascript");
-	    editor.renderer.setShowGutter(true);
-    
-        editor.on("mousemove",function(e){
-            var acePos = e.getDocumentPosition();
-            var valuesOfCurrentLine;
-            //getLineValues(acePosUseForRangeWrapper.row+1);
-            var eti = new ExecutionTraceInterface(editor.getSession().getDocument().getValue());
-        	if(eti.linkEstablished){
-        		valuesOfCurrentLine = eti.getLineValues(acePos.row+1);
-        	}
-        	$("#status").text("Values On Hover-over: "+JSON.stringify(valuesOfCurrentLine));
-        });
-        
-
-
-        // precondition: line number should start with 1
-/*        function getLineValues(lineNumber){
-        	lineNumber--; // aces starts with row = 0;
-        	var sourceCode = editor.getSession().getDocument().getValue();
-        	var stackTrace, valueTable;
-        	var returnValues;
-	    	window.traceExecution(sourceCode,
-                function eventListener (event){
-                    if(event.status === "Finished"){
-                        stackTrace = window.TRACE.getStackTrace();
-                        valueTable = window.TRACE.getExecutionTrace();
-                    }
-			});
-			var i,entry,ele;
-            //alert(Object.keys(valueTable[0]));
-            for(i=0;i<valueTable.length;i++){
-            	entry = valueTable[i]
-                //var keys = Object.keys(valueTable[entry]);
-                if(entry.hasOwnProperty("range")){
-                    if(entry.range.start.row===lineNumber){
-                    	getValues(entry.range);
-                    }
-                }
-            }
-        }
-        
-        function getValues(Range){
-			
-        }*/
-        
-	</script>
-
+    	<script>
+    	    // label to display the current result
+    		$("#status").css("font-size","20px");
+    		$("#cursorPos").css("font-size","20px");
+    		$("#valueOfCurPos").css("font-size","20px");
+    		// Initiating the editor
+    	    var editor = ace.edit("editor");
+    	    editor.setTheme("ace/theme/monokai");
+    	    editor.getSession().setMode("ace/mode/javascript");
+    	    editor.renderer.setShowGutter(true);
+            //  Function is triggered on changing mouse position. mousemove is an ACE method specific for ACE editor  //
+            editor.on("mousemove",function(e){
+                var acePos = e.getDocumentPosition();
+                var valuesOfCurrentLine, valueOfCurrentPosition;
+                //"range":{"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
+                var concatRange = { "start":{"row":acePos.row,
+                                    "column":acePos.column},
+                                    "end":{"row":acePos.row,
+                                    "column":acePos.column}};
+                $("#sr").text(concatRange.start.row+1);
+                $("#sc").text(concatRange.start.col);
+                $("#er").text(concatRange.end.row+1);
+                $("#ec").text(concatRange.end.col);
+                // Code typed in the editor is saved into the variable eti. eti stands for Execution Trace Interface //
+                var eti = new ExecutionTraceInterface(editor.getSession().getDocument().getValue());
+            	/*  if eti is true, get the values of moused over elements into valueOfCurrentLine variable.
+            	    Refer ExecutionTraceInterface.html line 38 for more info on linkEstablished 	*/
+            	if(eti.linkEstablished){           
+            		valuesOfCurrentLine = eti.getLineValues(acePos.row+1);
+            		valueOfCurrentPosition = eti.getValues(concatRange);
+            	}
+            	//  Updates the div to show the values of mouse hovered elements  
+            	$("#status").text("Values On Hover-over: "+JSON.stringify(valuesOfCurrentLine));
+            	$("#cursorPos").text("Cursor Position: (X:" + (acePos.row+1) + ",Y:" + (acePos.column+1) + ")");
+            	$("#valueOfCurPos").text("Value Of Cur Pos: "+JSON.stringify(valueOfCurrentPosition));
+            });
+    	</script>
 	</body>
 </html>
