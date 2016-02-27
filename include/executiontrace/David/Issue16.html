@@ -51,7 +51,7 @@
 		max-width: 100%;
 		padding: 3px 4px;
 		position: absolute;
-		z-index: 999999;
+		z-index: 999998;
 		-moz-box-sizing: border-box;
 		-webkit-box-sizing: border-box;
 		box-sizing: border-box;
@@ -67,7 +67,6 @@
 </style>
 </head>
 <body>
-
 <pre id="editor">
 Array.prototype.swap = function (i, j) {
     var k = this[i]; this[i] = this[j]; this[j] = k;
@@ -148,7 +147,6 @@ var x = (y * 7) / z;
         document.getElementById('info').innerHTML = 'Ready.';
         
     	var executionTrace = JSON.parse(localStorage.getItem('executionTrace'));
-    	
     	if(executionTrace){
     	    visualize(executionTrace.stackTrace);
     	}
@@ -187,7 +185,6 @@ var x = (y * 7) / z;
             var stackTrace = window.TRACE.getStackTrace();
             var valueTable = window.TRACE.getExecutionTrace();
             var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
-            
             localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
     		document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
     		
@@ -259,7 +256,6 @@ var x = (y * 7) / z;
     }
      // example of how to use the trace resulting data structure
     function visualizeExecutionTrace(executionTrace){
-        
         var i, entry;
         var stackText= "";
 
