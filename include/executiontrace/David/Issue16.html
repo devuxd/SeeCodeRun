@@ -6,7 +6,7 @@
 <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
 <!-- Init Scripts for Execution Trace API !-->
-<script src="../../esprima.js" type="text/javascript" charset="utf-8"></script>
+<script src="./scripts/esprima.js" type="text/javascript" charset="utf-8"></script>
 <script src="./scripts/escodegen.browser.js" type="text/javascript" charset="utf-8"></script>
 <script src="./scripts/esmorph.js" type="text/javascript" charset="utf-8"></script>
 <script src="./scripts/executiontrace.js" type="text/javascript" charset="utf-8"></script>
@@ -40,10 +40,33 @@
 		bottom: auto;
 		z-index: 100;		
 	}
+	.seecoderun_tooltip {
+		background-color: #FFF;
+		background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
+		background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
+		border: 1px solid gray;
+		border-radius: 1px;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+		color: black;
+		max-width: 100%;
+		padding: 3px 4px;
+		position: absolute;
+		z-index: 999998;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+		cursor: default;
+		white-space: pre;
+		word-wrap: break-word;
+		line-height: normal;
+		font-style: normal;
+		font-weight: normal;
+		letter-spacing: normal;
+		pointer-events: none;
+	}
 </style>
 </head>
 <body>
-
 <pre id="editor">
 Array.prototype.swap = function (i, j) {
     var k = this[i]; this[i] = this[j]; this[j] = k;
@@ -71,11 +94,26 @@ delete x.c;
 
 var c= false, d= [];
 var i, n=5;
-if(c){}
-while(c){}
-do{}while(c);
-for(i=0; i < 5; i++){}
-for( var x in c){}
+
+if(c){
+    var x=7;
+}else{
+    
+}
+
+while(c){
+    var notused= 8;
+}
+
+do{
+
+}while(c);
+for(i=0; i < 5; i++){
+
+}
+
+for( var x in c){
+}
 
 //issue 17
 
@@ -109,7 +147,6 @@ var x = (y * 7) / z;
         document.getElementById('info').innerHTML = 'Ready.';
         
     	var executionTrace = JSON.parse(localStorage.getItem('executionTrace'));
-    	
     	if(executionTrace){
     	    visualize(executionTrace.stackTrace);
     	}
@@ -148,7 +185,6 @@ var x = (y * 7) / z;
             var stackTrace = window.TRACE.getStackTrace();
             var valueTable = window.TRACE.getExecutionTrace();
             var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
-            
             localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
     		document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
     		
@@ -220,7 +256,6 @@ var x = (y * 7) / z;
     }
      // example of how to use the trace resulting data structure
     function visualizeExecutionTrace(executionTrace){
-        
         var i, entry;
         var stackText= "";
 
@@ -234,6 +269,110 @@ var x = (y * 7) / z;
     	return stackText;  
     
     }
+    
+    function isPositioninRange(position, inRange){
+        
+        var matchesInOneLine = (
+                position.row == inRange.start.row 
+                && inRange.start.row  == inRange.end.row
+                && position.column >= inRange.start.column
+                && position.column <= inRange.end.column
+            );
+            
+        if(matchesInOneLine){
+            return true;
+        }
+            
+        var matchesStart = (
+                position.row == inRange.start.row 
+                && inRange.start.row  < inRange.end.row
+                && position.column >= inRange.start.column
+            );
+           
+        if(matchesStart){
+            return true;
+        }
+        
+        var matchesEnd = (
+                position.row == inRange.end.row
+                && inRange.start.row  < inRange.end.row
+                && position.column <= inRange.end.column
+            );
+
+        return matchesEnd;
+
+    }
+    function isRangeInRange(isRange, inRange){
+        return (
+                (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
+    			 &&
+    			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
+    			);
+    }
+    function isRangeInRangeStrict(isRange, inRange){
+        return (
+                (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
+    			 &&
+    			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
+    			);
+    }
+    
+    editor.on("mousemove", function (e){
+		var position = e.getDocumentPosition(),  hasUpdate =false, data, match;
+		if(position){ 
+		//console.log("mouse " + position.row + ", " + position.column);
+		//	var wordRange = editor.getSession().getWordRange(position.row , position.column);
+			var result = window.TRACE? window.TRACE.getExecutionTrace() : undefined;
+			if(!result){
+			    return;
+			}
+			
+			for(var key in result){
+			    data = result[key];
+			    
+    			 if(data.range && isPositioninRange(position, data.range)){
+    			     if(match){
+    			         if(isRangeInRangeStrict(data.range, match.range)){
+    			             match = data;
+    			         }
+    			     }else{
+    			        match = data;
+    			     }
+    			 
+    			 }
+			}
+			if(match){
+    				var pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
+    				pixelPosition.pageY += editor.renderer.lineHeight;
+    				updateTooltip(pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
+    		}else{
+    				updateTooltip(editor.renderer.textToScreenCoordinates(position));
+    		}
+			
+		}
+		});
+		
+		function updateTooltip(position, text){
+			//example with container creation via JS
+			var div = document.getElementById('tooltip_0');
+			if(div === null){
+				div = document.createElement('div');		
+				div.setAttribute('id', 'tooltip_0'); 
+				div.setAttribute('class', 'seecoderun_tooltip'); // and make sure myclass has some styles in css
+				document.body.appendChild(div);
+			}
+
+			div.style.left = position.pageX + 'px';
+			div.style.top = position.pageY + 'px';
+			if(text){
+				div.style.display = "block";
+				div.innerText = text;
+			}else{
+				div.style.display = "none";
+				div.innerText = "";
+			}			
+			
+		}
 
 </script>
 </body>
