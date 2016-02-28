@@ -68,15 +68,32 @@
             </tr>
         </table><br/><br/>
         <!-- the position of the code here matches the editor, so no indentation :) -->
-<div id="editor">var x = 5;var y = 10; // demonstrate two values on the same line
-var z = [1,2,3]; // demonstrate retrieving all values inside the array
-//function foo(){
-    var result = 5;
-    while(result>0){
-        result--;
-    }
-//    return result;
-//}
+<div id="editor">// Assignment Statement
+var a = true; // {"AssignmentExpression":"true"}
+var b = (true||false); // {"AssignmentExpression":"false"}
+var c = (1>5); // {"AssignmentExpression":"false"}
+// Conditional Statement
+if(a===b){ // not yet implemented (not working correctly)
+
+}
+// Loops
+var d; // not evalated
+for(d=0;d<5;d++){ // not yet implemented (not working correctly)
+    
+}
+var e = 5; // {"AssignmentExpression":"5"}
+while(e>0){ // while loop -> {"Loops":6}
+    e--; // others -> {"Others":["5","4","3","2","1"]}
+}
+var f = 0; // {"AssignmentExpression":"0"}
+do { // {"Loops":5}
+    f++; // others -> {"Others":["0","1","2","3","4"]}
+}
+while (f < 5);
+var g = {"a":"1","b":"2"}; // {"Others":["\1"\""]} and {"Others":["\2"\""]}
+for(gee in g){ // not yet implemented (not working correctly)
+    console.log(gee);
+}
 </div>
     	<script>
     	    // label to display the current result
