@@ -20,6 +20,48 @@ class ExecutionTraceInterface{
      * @ param source - source code for the trace
      */
     constructor(source){
+        this.Syntax = {
+            AssignmentExpression: 'AssignmentExpression',
+            // ArrayExpression: 'ArrayExpression',
+            // BlockStatement: 'BlockStatement',
+            BinaryExpression: 'BinaryExpression', // whole expression catch as part of expression statement, call expression and control flow ones
+            // BreakStatement: 'BreakStatement',
+            CallExpression: 'CallExpression',
+            // CatchClause: 'CatchClause',
+            // ConditionalExpression: 'ConditionalExpression',// solves Unary and Update Expressions
+            // ContinueStatement: 'ContinueStatement',
+            DoWhileStatement: 'DoWhileStatement',// solves Unary and Update Expressions
+            // DebuggerStatement: 'DebuggerStatement',
+            // EmptyStatement: 'EmptyStatement',
+            ExpressionStatement: 'ExpressionStatement', // solves Unary and Update Expressions
+            ForStatement: 'ForStatement', // solves Unary and Update Expressions
+            ForInStatement: 'ForInStatement', // solves Unary and Update Expressions
+            FunctionDeclaration: 'FunctionDeclaration',
+            FunctionExpression: 'FunctionExpression',
+            // Identifier: 'Identifier',
+            IfStatement: 'IfStatement', // solves Unary and Update Expressions
+            // Literal: 'Literal',
+            // LabeledStatement: 'LabeledStatement',
+            // LogicalExpression: 'LogicalExpression',
+            // MemberExpression: 'MemberExpression',
+            NewExpression: 'NewExpression',
+            // ObjectExpression: 'ObjectExpression',
+            // Program: 'Program',
+            Property: 'Property',
+            ReturnStatement: 'ReturnStatement',
+            // SequenceExpression: 'SequenceExpression',
+            // SwitchStatement: 'SwitchStatement',
+            // SwitchCase: 'SwitchCase',
+            // ThisExpression: 'ThisExpression',
+            // ThrowStatement: 'ThrowStatement',
+            // TryStatement: 'TryStatement',
+            UnaryExpression: 'UnaryExpression', // done in parent
+            UpdateExpression: 'UpdateExpression', // done in parent
+            VariableDeclaration: 'VariableDeclaration', // done in children and parent
+            VariableDeclarator: 'VariableDeclarator',
+            WhileStatement: 'WhileStatement',
+            // WithStatement: 'WithStatement'
+        };
         // checks to see if the source code is provided by the caller
         if(source===undefined){
             // if source code not given by caller then retrieve source code through ace editor
@@ -65,6 +107,19 @@ class ExecutionTraceInterface{
         return this.link;
     }
     /*
+     * Direct Source from David Gonzalez for finding printing execution trace.
+     */
+    getFullTrace(){
+        var i, entry;
+        var stackText= "";
+        for (i = 0; i < this.valueTable.length; i += 1) {
+            entry = this.valueTable[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+    	return stackText;  
+    }
+    /*
      * getLineValues(lineNumber)
      * @ param lineNumber - the line number in the editor for retrieving all the associated values
      * @ pre - this.valueTable is defined and lineNumber > 0
@@ -76,7 +131,7 @@ class ExecutionTraceInterface{
         this.valueTable = window.TRACE.getExecutionTrace();
         // if the execution trace is undefined the return undefined
         if(this.valueTable===undefined || lineNumber<=0){
-            return undefined;
+            return false;
         }
         // sorts out the conflict for the ace editor starting with row #0
     	lineNumber--;
@@ -97,7 +152,7 @@ class ExecutionTraceInterface{
                     // calls this.getValues() to get the value based on the range
                     this.entryResult = this.getValues(entry.range);
                     // if the returned result is not false
-                    if(this.entryResult!=false)
+                    if(this.entryResult!=[])
                         // push the result into the array
                 	    this.returnValues.push(this.entryResult);
                 }
@@ -111,17 +166,16 @@ class ExecutionTraceInterface{
      * @ param inputEsprimaRange - start row and column & end row and column
      * @ example: {"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
      * @ pre - inputEsprimaRange is not undefined
-     * @ returns - (currently) a single value within the range
-     *             (later/future implementation) multiple values within the range
-     *             else, if no value within range, return false
+     * @ returns - (currently) an "array" all the values of a single statement within the range
+     *             else, if no statement within range, return []
      * @ comment - none
      */    
     getValues(inputEsprimaRange){
         if(inputEsprimaRange===undefined){
-            return false; // return false if inputEsprimaRange is undefined
+            return []; // return false if inputEsprimaRange is undefined
         }
         // find the element that meets the range requirement
-        var i, entry;
+        var i, entry, allValues = [];
         // iterates through all the elements of the execution trace
         for(i=0;i<this.valueTable.length;i++){
             // stores current element in entry
@@ -132,6 +186,55 @@ class ExecutionTraceInterface{
                 if(this.isRangeInRange(inputEsprimaRange,entry.range)){
                         //alert(Object.keys(this.valueTable[i]));
                         // check to see if the current entry element has the values property
+                        if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
+                            if(entry.type==="WhileStatement"){
+                                allValues.push(entry.hits-1);                            
+                            }
+                            else{
+                                //alert(entry.values); // if return stackIndex + values
+                                // returns the value within thin the range
+                                var i;
+                                for(i=0;i<entry.values.length;i++){
+                                    //alert(entry.values[i].value);
+                                    allValues.push(entry.values[i].value);
+                                }
+                            }
+                            return allValues;
+                        }
+                        else { 
+                            return []; //return false if not found
+                        }
+                }
+            }
+        }
+        return []; // return false if not found
+    }
+        /*
+     * getLineValuesWithType(lineNumber)
+     * @ param inputEsprimaRange - start row and column & end row and column
+     * @ example: {"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
+     * @ pre - inputEsprimaRange is not undefined
+     * @ returns - (currently) a "map" of all the values for a statement (+type) within the range
+     *             else, if no statement within range, return []
+     * @ comment - none
+     */    
+    getValuesWithType(inputEsprimaRange){
+        if(inputEsprimaRange===undefined){
+            return []; // return false if inputEsprimaRange is undefined
+        }
+        // find the element that meets the range requirement
+        var i, entry, allValues = {};
+        // iterates through all the elements of the execution trace
+        for(i=0;i<this.valueTable.length;i++){
+            // stores current element in entry
+            entry = this.valueTable[i];
+            // check to see if the current entry element has the range property
+            if(entry.hasOwnProperty("range")){
+                // check to see if inputEsprimaRange is within the entry.range
+                if(this.isRangeInRange(inputEsprimaRange,entry.range)){
+                        //alert(Object.keys(this.valueTable[i]));
+                        // check to see if the current entry element has the values property
+<<<<<<< HEAD
                         if(entry.hasOwnProperty("values")){
                             //alert(entry.values); // if return stackIndex + values
                             if(entry.hasOwnProperty("type")){
@@ -145,13 +248,32 @@ class ExecutionTraceInterface{
                                 }
                             }
 
+=======
+                        if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
+                            if(entry.type===this.Syntax.WhileStatement || entry.type===this.Syntax.DoWhileStatement 
+                            || entry.type===this.Syntax.ForStatement || entry.type===this.Syntax.ForInStatement){
+                                allValues["Loops"]=(entry.hits-1); //for statement not working correctly                           
+                            }
+                            else if(entry.type===this.Syntax.AssignmentExpression||entry.type===this.Syntax.VariableDeclarator){
+                                allValues[this.Syntax.AssignmentExpression]=entry.values[0].value;                           
+                            }
+                            else{
+                                var i, tempArr = [];
+                                for(i=0;i<entry.values.length;i++){
+                                    tempArr[i]=entry.values[i].value;
+                                }
+                                allValues["Others"]=tempArr;
+                            }
+                            return allValues;
+>>>>>>> 1bed1a18b626afe802812555f2a0387574bfb450
                         }
-                        else { return false; //return false if not found
+                        else { 
+                            return []; //return false if not found
                         }
                 }
             }
         }
-        return false; // return false if not found
+        return []; // return false if not found
     }
     /*
      * Direct Source from David Gonzalez for finding range.
