@@ -81,9 +81,9 @@ var z = [1,2,3]; <!-- the position of the code here matches the editor, so no in
                                     "end":{"row":acePos.row,
                                     "column":acePos.column}};
                 $("#sr").text(concatRange.start.row+1);
-                $("#sc").text(concatRange.start.col);
+                $("#sc").text(concatRange.start.column+1);
                 $("#er").text(concatRange.end.row+1);
-                $("#ec").text(concatRange.end.col);
+                $("#ec").text(concatRange.end.column+1);
                 // Code typed in the editor is saved into the variable eti. eti stands for Execution Trace Interface //
                 var eti = new ExecutionTraceInterface(editor.getSession().getDocument().getValue());
             	/*  if eti is true, get the values of moused over elements into valueOfCurrentLine variable.
