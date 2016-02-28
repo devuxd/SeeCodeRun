@@ -37,18 +37,20 @@ export class JsGutter {
     let session = this.session;
     
     ea.subscribe('onEditorChanged', payload => {
-      let doc = session.doc;
+      let doc = session.getDocument();
       
       doc.removeLines(0, doc.getLength());
       
-      // TODO: fix uncaught length error
-      doc.insertLines(0, new Array(payload.length - 1));
-      
-      for(let result of payload.syntax) {
-        doc.insertInLine({
-          row: result.location.row,
-          column: result.location.col
-        }, result.content);
+      // TODO: fix uncaught length error... David: I added the type check
+      if(payload && payload.constructor == Array){
+        doc.insertLines(0, new Array(payload.length - 1));
+        
+        for(let result of payload.syntax) {
+          doc.insertInLine({
+            row: result.location.row,
+            column: result.location.col
+          }, result.content);
+        }
       }
     });
   }
