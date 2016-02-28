@@ -39,7 +39,10 @@
         </div>
         <div id = "valueOfCurPos">
             Cursor Position: <br/>
-        </div>        
+        </div>
+        <div id = "wholeTrace">
+            Trace: <br/>
+        </div>
         <table border=1>
             <tr>
                 <td></td>
@@ -58,14 +61,17 @@
             </tr>
         </table><br/><br/>
         
-<div id="editor">var x = 5;var y = 10;
-var z = [1,2,3]; <!-- the position of the code here matches the editor, so no indentation :) -->
+<div id="editor">var x = 2;
+while(x>0){
+    x--;
+}
 </div>
     	<script>
     	    // label to display the current result
     		$("#status").css("font-size","20px");
     		$("#cursorPos").css("font-size","20px");
     		$("#valueOfCurPos").css("font-size","20px");
+    		$("#wholeTrace").css("font-size", "20px");
     		// Initiating the editor
     	    var editor = ace.edit("editor");
     	    editor.setTheme("ace/theme/monokai");
@@ -74,7 +80,7 @@ var z = [1,2,3]; <!-- the position of the code here matches the editor, so no in
             //  Function is triggered on changing mouse position. mousemove is an ACE method specific for ACE editor  //
             editor.on("mousemove",function(e){
                 var acePos = e.getDocumentPosition();
-                var valuesOfCurrentLine, valueOfCurrentPosition;
+                var valuesOfCurrentLine, valueOfCurrentPosition, wholeTrace;
                 //"range":{"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
                 var concatRange = { "start":{"row":acePos.row,
                                     "column":acePos.column},
@@ -91,11 +97,13 @@ var z = [1,2,3]; <!-- the position of the code here matches the editor, so no in
             	if(eti.linkEstablished){           
             		valuesOfCurrentLine = eti.getLineValues(acePos.row+1);
             		valueOfCurrentPosition = eti.getValues(concatRange);
+            		wholeTrace = eti.getWholeTrace();
             	}
             	//  Updates the div to show the values of mouse hovered elements  
             	$("#status").text("Values On Hover-over: "+JSON.stringify(valuesOfCurrentLine));
             	$("#cursorPos").text("Cursor Position: (X:" + (acePos.row+1) + ",Y:" + (acePos.column+1) + ")");
             	$("#valueOfCurPos").text("Value Of Cur Pos: "+JSON.stringify(valueOfCurrentPosition));
+            	$("#wholeTrace").text("Whole Trace: "+JSON.stringify(wholeTrace));
             });
     	</script>
 	</body>

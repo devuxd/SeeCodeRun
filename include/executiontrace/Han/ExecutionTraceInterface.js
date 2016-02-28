@@ -43,6 +43,18 @@ class ExecutionTraceInterface{
 		    });
         }
     }
+    getWholeTrace(){
+        this.valueTable = window.TRACE.getExecutionTrace();
+        var i, entry;
+        var stackText= "";
+        for (i = 0; i < this.valueTable.length; i += 1) {
+            entry = this.valueTable[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+        // {values:{[{stackIndex:value}],[{stackIndex:value}],[{stackIndex:value}]...}}
+    	return stackText;
+    }
     /*
      * linkEstablished()
      * @ param - none
@@ -122,8 +134,17 @@ class ExecutionTraceInterface{
                         // check to see if the current entry element has the values property
                         if(entry.hasOwnProperty("values")){
                             //alert(entry.values); // if return stackIndex + values
-                            // returns the value within thin the range
-                            return entry.values[0].value; // return only values
+                            if(entry.hasOwnProperty("type")){
+                                alert(entry.hits);
+                                if(entry.type==="WhileStatement"){
+                                    return entry.hits;
+                                }     
+                                else{
+                                    // returns the value within thin the range
+                                    return entry.values[0].value; // return only values
+                                }
+                            }
+
                         }
                         else { return false; //return false if not found
                         }
