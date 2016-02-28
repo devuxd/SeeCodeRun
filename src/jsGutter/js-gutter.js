@@ -36,7 +36,7 @@ export class JsGutter {
     let ea = this.eventAggregator;
     let session = this.session;
     
-    ea.subscribe('onEditorChanged', payload => {
+    ea.subscribe('onJsEditorChanged', payload => {
       let doc = session.doc;
       
       doc.removeLines(0, doc.getLength());
