@@ -119,7 +119,7 @@ class ExecutionTraceInterface{
         this.valueTable = window.TRACE.getExecutionTrace();
         // if the execution trace is undefined the return undefined
         if(this.valueTable===undefined || lineNumber<=0){
-            return undefined;
+            return false;
         }
         // sorts out the conflict for the ace editor starting with row #0
     	lineNumber--;
@@ -160,7 +160,7 @@ class ExecutionTraceInterface{
      */    
     getValues(inputEsprimaRange){
         if(inputEsprimaRange===undefined){
-            return "unavailable"; // return false if inputEsprimaRange is undefined
+            return []; // return false if inputEsprimaRange is undefined
         }
         // find the element that meets the range requirement
         var i, entry, allValues = [];
@@ -208,7 +208,7 @@ class ExecutionTraceInterface{
      */    
     getValuesWithType(inputEsprimaRange){
         if(inputEsprimaRange===undefined){
-            return false; // return false if inputEsprimaRange is undefined
+            return []; // return false if inputEsprimaRange is undefined
         }
         // find the element that meets the range requirement
         var i, entry, allValues = {};
