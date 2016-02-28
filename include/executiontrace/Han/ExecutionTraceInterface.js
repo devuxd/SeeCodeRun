@@ -234,21 +234,6 @@ class ExecutionTraceInterface{
                 if(this.isRangeInRange(inputEsprimaRange,entry.range)){
                         //alert(Object.keys(this.valueTable[i]));
                         // check to see if the current entry element has the values property
-<<<<<<< HEAD
-                        if(entry.hasOwnProperty("values")){
-                            //alert(entry.values); // if return stackIndex + values
-                            if(entry.hasOwnProperty("type")){
-                                alert(entry.hits);
-                                if(entry.type==="WhileStatement"){
-                                    return entry.hits;
-                                }     
-                                else{
-                                    // returns the value within thin the range
-                                    return entry.values[0].value; // return only values
-                                }
-                            }
-
-=======
                         if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
                             if(entry.type===this.Syntax.WhileStatement || entry.type===this.Syntax.DoWhileStatement 
                             || entry.type===this.Syntax.ForStatement || entry.type===this.Syntax.ForInStatement){
@@ -265,7 +250,6 @@ class ExecutionTraceInterface{
                                 allValues["Others"]=tempArr;
                             }
                             return allValues;
->>>>>>> 1bed1a18b626afe802812555f2a0387574bfb450
                         }
                         else { 
                             return []; //return false if not found
