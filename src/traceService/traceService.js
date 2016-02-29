@@ -12,7 +12,7 @@ export class TraceService {
         let toReturn = [];
         
         for(let node of syntax.body) {
-        if(node.type === 'VariableDeclaration') {
+        if(node.hasOwnProperty('type') && node.type === 'VariableDeclaration') {
           let init = node.declarations[0].init;
           
           if(init.type === 'Literal') {
