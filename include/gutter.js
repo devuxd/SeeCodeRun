@@ -1,6 +1,7 @@
 
    var jsEditor = ace.edit('aceJSEditorDiv');
    var selectedLine = 1;
+   var index=  + "1";
 
    function  setContentGutter (line, content){
         
@@ -47,28 +48,26 @@
           if(iframeBody.find('#line'+line).length ==0){
           CreateLine(line);
             }
-          
+          console.info(selectedLine);
+          console.info("--->"+ window.index);
            iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
            iframeBody.find("#line"+line).addClass("highlight_gutter");
            selectedLine=line;
+               
+
           
       }
       );
       }
    
 
-(function () {
-    var previousScroll = 0;
 
-    $(window).scroll(function(){
-       var currentScroll = $(this).scrollTop();
-       if (currentScroll > previousScroll){
-           alert('down');
-       } else {
-          alert('up');
-       }
-       previousScroll = currentScroll;
-    });
-}()); 
+function scrolled(){
     
+      jsEditor.getSession().setScrollTop(window.index);
+      
+     
+}
+
+
 
