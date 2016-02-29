@@ -1,0 +1,6 @@
+{
+  "registry": "npm",
+  "dependencies": {
+    "punycode": "^1.3.2"
+  }
+}

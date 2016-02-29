@@ -1,0 +1,1 @@
+module.exports = require("npm:faye-websocket@0.10.0/lib/faye/websocket");

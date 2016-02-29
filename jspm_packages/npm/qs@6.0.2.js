@@ -1,0 +1,1 @@
+module.exports = require("npm:qs@6.0.2/lib/index.js");

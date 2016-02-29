@@ -1,0 +1,1 @@
+module.exports = require("npm:firepad@1.3.0/dist/firepad.min.js");

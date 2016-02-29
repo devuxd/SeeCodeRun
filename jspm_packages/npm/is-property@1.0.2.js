@@ -1,0 +1,1 @@
+module.exports = require("npm:is-property@1.0.2/is-property.js");

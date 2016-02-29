@@ -1,0 +1,23 @@
+sudo: false
+language: node_js
+before_script: make
+script: make test
+env:
+  global:
+    - SAUCE_USERNAME=github-fetch
+    - SAUCE_ACCESS_KEY=c3d37f93-0c2e-4834-9da5-eddc0d8c6299
+  matrix:
+    - PHANTOMJS=1
+    - SAUCE_PLATFORM="Windows 7" SAUCE_BROWSER="googlechrome" SAUCE_VERSION=""
+    - SAUCE_PLATFORM="Windows 7" SAUCE_BROWSER="internet explorer" SAUCE_VERSION="11"
+    - SAUCE_PLATFORM="Windows 7" SAUCE_BROWSER="internet explorer" SAUCE_VERSION="10"
+    - SAUCE_PLATFORM="Windows 7" SAUCE_BROWSER="internet explorer" SAUCE_VERSION="9"
+deploy:
+  provider: npm
+  email: mislav.marohnic@gmail.com
+  api_key:
+    secure: jDz/nRddGLUsdWS9ZvvqzqXSxEY+c2DS8Pd1SobjDVT8s2F03JzN2McyuMdugCXcFXls2tG/5A/xpCRrnrR4YSz3CQ+Ycrfxivq7lzgCqKB944o4jWWfPhvVqmWeqOylZpb1nDD5vNofHc12uaSImWr0DXBn0O0RX5xH7+D02J0=
+  on:
+    all_branches: true
+    tags: true
+    repo: github/fetch

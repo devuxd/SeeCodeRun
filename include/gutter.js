@@ -48,8 +48,8 @@
           if(iframeBody.find('#line'+line).length ==0){
           CreateLine(line);
             }
-          console.info(selectedLine);
-          console.info("--->"+ window.index);
+          //console.info(selectedLine);
+          //console.info("--->"+ window.index);
            iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
            iframeBody.find("#line"+line).addClass("highlight_gutter");
            selectedLine=line;

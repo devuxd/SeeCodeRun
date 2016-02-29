@@ -5,10 +5,11 @@ $( document ).ready(function() {
 });
 
 
-function toggle(){
-    
-    $("#note").toggle();
-    
+function toggle(checked){
+  $("#note").toggle();
+  if( !checked ) {
+    jsEditor.clearSelection();
+  }
 }
 
 

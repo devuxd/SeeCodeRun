@@ -106,19 +106,6 @@
  
 
 <script>
-
-$('#visual').on('change', 'input[type="checkbox"]', function(){
-   
-     toggle();
-     
-     
-	jsEditor.clearSelection();
-
-	
-});
-
-
-
 	"use strict";
 
 	// Helper to get hash from end of URL or generate a random one.
@@ -241,6 +228,27 @@ $('#visual').on('change', 'input[type="checkbox"]', function(){
   	  $(this).tab('show');
   	});
     
+$('#visual').on('change', 'input[type="checkbox"]', function(){
+	toggle(this.checked);
+	jsEditor.clearSelection();
+
+});
+
+jsEditor.on("click", function(e){
+	
+ 	var checkbox = $('#visual input[type="checkbox"]');		
+	if(checkbox.prop( "checked" ))
+     {
+     	console.info("checked");				
+		var content = jsEditor.getSelectedText();
+     		console.info(content);	
+     }				
+	 else
+	 {
+     	console.info("unchecked");
+ 	}
+});
+
 </script>
 
 </body>
