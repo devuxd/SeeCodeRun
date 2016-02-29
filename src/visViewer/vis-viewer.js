@@ -56,36 +56,21 @@ export class VisViewer {
       
       let values = [];
       
-      for(let d of data) {
-        
+      for(let i = 0; i < data.length; i++) {
+          for(let j = 0; j < data[i].values.length; j++) {
+              values.push({value: data[i].values[j]})
+          }
       }
     }
     
     getMockTableTrace() {
       return [{
         variableName: 'x',
-        values: [{
-         time: 1,
-         value: '25'
-        }, {
-         time: 2,
-         value: '25'
-        }, {
-         time: 3,
-         value: '500'
-        }]
-      }, {
+        values: [{value: '25'},{value: '25'},{value: '500'}]
+      }, 
+      {
         variableName: 'y',
-        values: [{
-          time: 1,
-          value: 'undefined'
-        }, {
-         time: 2,
-         value: '75'
-        }, {
-         time: 3,
-         value: '75'
-        }]
+        values: [{value: 'undefined'},{value: '75'},{value: '75'}]
       }];
     }
 }
