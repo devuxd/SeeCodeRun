@@ -1,1 +1,0 @@
-module.exports = require("npm:generate-function@2.0.0/index.js");

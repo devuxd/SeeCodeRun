@@ -1,1 +1,0 @@
-module.exports = require("npm:escape-string-regexp@1.0.4/index");

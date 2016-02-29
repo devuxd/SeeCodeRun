@@ -1,1 +1,0 @@
-module.exports = require("npm:json-stringify-safe@5.0.1/stringify.js");

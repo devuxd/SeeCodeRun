@@ -1,1 +1,0 @@
-module.exports = require("npm:http-signature@1.1.1/lib/index.js");

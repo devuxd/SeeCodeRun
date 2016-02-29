@@ -1,1 +1,0 @@
-module.exports = require("npm:xml-name-validator@2.0.1/lib/xml-name-validator.js");

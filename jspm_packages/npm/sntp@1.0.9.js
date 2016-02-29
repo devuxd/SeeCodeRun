@@ -1,1 +1,0 @@
-module.exports = require("npm:sntp@1.0.9/index");
