@@ -1,0 +1,39 @@
+ 
+
+//configuration
+npm update npm -g
+npm install graceful
+npm install -g gulp
+npm install -g jspm
+
+* got to github and add jspm to token:
+	account --> settings --> personal access tokens --> add public-repo scope
+http://stackoverflow.com/questions/30995040/jspm-saying-github-rate-limit-reached-how-to-fix/30995041
+	
+jspm registry config github
+
+npm install
+jspm install -y
+
+jspm install npm:esprima
+jspm install npm:escodegen
+jspm install npm:estraverse
+
+
+//Running
+gulp build
+gulp watch
+
+
+//ignore these
+"license": "Apache-2.0" in package.json to remove license warning
+npm install electron-prebuilt -g
+npm install unzip
+npm install -g babel
+
+// Unit Testing
+npm install -g karma-cli
+jspm install aurelia-framework
+jspm install aurelia-http-client
+jspm install aurelia-router
+karma start
