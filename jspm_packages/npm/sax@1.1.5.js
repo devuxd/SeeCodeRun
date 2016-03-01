@@ -1,0 +1,1 @@
+module.exports = require("npm:sax@1.1.5/lib/sax.js");

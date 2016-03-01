@@ -1,0 +1,1 @@
+module.exports = require("npm:jsdom@8.0.2/lib/jsdom");

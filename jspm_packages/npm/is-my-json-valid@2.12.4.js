@@ -1,0 +1,1 @@
+module.exports = require("npm:is-my-json-valid@2.12.4/index.js");

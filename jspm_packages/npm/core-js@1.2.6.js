@@ -1,0 +1,1 @@
+module.exports = require("npm:core-js@1.2.6/client/shim.min");

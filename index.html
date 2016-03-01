@@ -77,19 +77,18 @@
        <div role="tabpanel" >
 			<ul class="nav nav-tabs">
 			  <li role="presentation" class="active" >
-			  	<a href="#output-container" aria-controls="output-container" role="tab" data-toggle="tab">output</a></li>
+			  	<a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">output</a></li>
 		  	  <li role="presentation" >
 		  		<a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
 		  	</ul>
 		  </div>
 		  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
 		    <div class="tab-content">
-		  	 <div role="tabpanel" class="tab-pane active" id="output-container">
-			   <div id="html-output">
-				<iframe id="preview" class="iframeCssPreview">
+			   
+				<iframe role="tabpanel" id="preview" class="tab-pane active iframeCssPreview"  >
 				</iframe>
-			   </div>
-			 </div>
+			 
+			 
 			 <div role="tabpanel" class="tab-pane" id="visualization-container">
 		       <div class="checkbox" id="visual">
 	             <label><input type="checkbox" id="mycheck">Activate Visualization Mode</label></br><span id="note">You have activated Visualization Mode, Select any expression or variable to view visualization.</span>
@@ -253,3 +252,12 @@ jsEditor.on("click", function(e){
 
 </body>
 </html>
+
+
+<!-- 
+
+https://seecode.run/#-KBnY_OfJHO21JwerJgg
+
+https://groups.google.com/forum/#!topic/ace-discuss/lY-vF2Bd6NY
+
+-->

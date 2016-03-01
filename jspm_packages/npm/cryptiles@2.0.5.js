@@ -1,0 +1,1 @@
+module.exports = require("npm:cryptiles@2.0.5/lib/index.js");

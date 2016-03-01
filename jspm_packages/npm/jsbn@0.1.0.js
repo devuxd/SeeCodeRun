@@ -1,0 +1,1 @@
+module.exports = require("npm:jsbn@0.1.0/index.js");

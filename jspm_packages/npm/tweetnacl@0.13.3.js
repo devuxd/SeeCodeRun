@@ -1,0 +1,1 @@
+module.exports = require("npm:tweetnacl@0.13.3/nacl-fast.js");
