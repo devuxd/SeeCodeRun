@@ -245,6 +245,12 @@ class ExecutionTraceInterface{
                             else if(entry.type===this.Syntax.AssignmentExpression||entry.type===this.Syntax.VariableDeclarator){
                                 allValues[this.Syntax.AssignmentExpression]=entry.values[0].value;                           
                             }
+                            else if(entry.type===this.Syntax.ReturnStatement){
+                                allValues[this.Syntax.ReturnStatement]=entry.values[0].value;
+                            }
+                            else if(entry.type===this.Syntax.CallExpression){
+                                allValues["FunctionInvocation"]=entry.values[0].value;
+                            }
                             else{
                                 var i, tempArr = [];
                                 for(i=0;i<entry.values.length;i++){
