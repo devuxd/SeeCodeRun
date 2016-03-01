@@ -1,0 +1,264 @@
+<html>
+    <h1>Unit Testing For Execution Trace Interface</h1>
+    <!--- Init Files for Jasmine API --->
+    <link rel="shortcut icon" type="image/png" href="jasmine-2.4.1/jasmine_favicon.png">
+    <link rel="stylesheet" href="jasmine-2.4.1/jasmine.css">
+    <script src="jasmine-2.4.1/jasmine.js"></script>
+    <script src="jasmine-2.4.1/jasmine-html.js"></script>
+    <script src="jasmine-2.4.1/boot.js"></script>
+    <!--- End Files for Jasmine API --->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
+
+    
+    <!-- Init Scripts for Execution Trace API !-->
+    <script src="../David/scripts/esprima.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/escodegen.browser.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/esmorph.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/executiontrace.js" type="text/javascript" charset="utf-8"></script>
+    <!-- End Scripts for Execution Trace API !-->
+    
+    <table border = 1>
+        <tr>
+            <td>
+                <div id = "debugging">Debugging:</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Testing Execution Trace Info:
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id = "testCode"><b>Test Code:</b><br/> </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id = "testStatus"><b>Trace Status:</b><br/> </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id = "testInfo"><b>Trace Details:</b><br/> </div>                
+            </td>
+        </tr>
+    </table>
+    <br/>
+    
+    <script>
+        function visualizeExecutionTrace(executionTrace){
+            var i, entry;
+            var stackText= "";
+            for (i = 0; i < executionTrace.length; i += 1) {
+                entry = executionTrace[i];
+                stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+               
+            }
+        	return stackText;  
+        
+        }
+        describe("Testing Execution Trace For Sprint #2", function(){
+            var mockCode;
+            var stackTrace;
+            var valueTable;
+            var eventStatus;
+            beforeEach(function (){
+            });
+            it("Test # 1: Testing VariableDeclarator", function(){
+                mockCode = "var x = 5;";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                var entry,ele;
+                expect(valueTable[0].type).toBe("VariableDeclarator");   
+                expect(valueTable[0].id).toBe("x");   
+                expect(valueTable[0].text).toBe("5");   
+                expect(valueTable[0].values[0].value).toBe('5');
+            });
+            it("Test # 2: Testing WhileStatement", function(){
+                mockCode = "var x = 5; while(x>0){x--; }";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                var entry,ele;
+                expect(valueTable[1].type).toBe("WhileStatement");   
+                expect(valueTable[1].id).toBe("x>0");   
+                expect(valueTable[1].text).toBe("x>0");
+                expect(valueTable[1].values[0].value).toBe("true");
+                expect(valueTable[1].values[1].value).toBe("true");
+                expect(valueTable[1].values[2].value).toBe("true");
+                expect(valueTable[1].values[3].value).toBe("true");
+                expect(valueTable[1].values[4].value).toBe("true");
+                expect(valueTable[1].values[5].value).toBe("false");
+            });
+            it("Test # 3: Testing ExpressionStatement", function(){
+                mockCode = "var x = 5; while(x>0){x--; }";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                var entry,ele;
+                expect(valueTable[2].type).toBe("ExpressionStatement");   
+                expect(valueTable[2].id).toBe("x--");   
+                expect(valueTable[2].text).toBe("x--");
+                expect(valueTable[2].values[0].value).toBe("5");
+                expect(valueTable[2].values[1].value).toBe("4");
+                expect(valueTable[2].values[2].value).toBe("3");
+                expect(valueTable[2].values[3].value).toBe("2");
+                expect(valueTable[2].values[4].value).toBe("1");
+            });
+            it("Test # 4: Testing BinaryExpression", function(){
+                mockCode = "var i = (i-4)>0;";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[0].type).toBe("BinaryExpression");   
+                expect(valueTable[0].id).toBe("i-4");   
+                expect(valueTable[0].text).toBe("i-4");
+                expect(valueTable[0].values[0].value).toBe("null");
+            });
+            it("Test # 5: Testing CallExpression", function(){
+                mockCode = "var i = []; i.push(5);";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[1].type).toBe("CallExpression");   
+                expect(valueTable[1].id).toBe("i.push");   
+                expect(valueTable[1].text).toBe("i.push(5)");
+            });
+            it("Test # 6: Testing AssignmentExpression", function(){
+                mockCode = "var name; name = \"Han\";";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[0].type).toBe("AssignmentExpression");   
+                expect(valueTable[0].id).toBe("name");   
+                expect(valueTable[0].text).toBe("\"Han\"");
+                expect(valueTable[0].values[0].value).toBe("\"Han\"");
+            });
+            it("Test # 7: Testing ForStatement", function(){
+                mockCode = "var i; for(i=0;i<5;i++){}";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[1].type).toBe("ForStatement");   
+                expect(valueTable[1].id).toBe("i=0");   
+                expect(valueTable[1].text).toBe("i=0");
+                expect(valueTable[2].type).toBe("ForStatement");   
+                expect(valueTable[2].id).toBe("i<5");   
+                expect(valueTable[2].text).toBe("i<5");
+                expect(valueTable[3].type).toBe("ForStatement");   
+                expect(valueTable[3].id).toBe("i++");   
+                expect(valueTable[3].text).toBe("i++");
+            });
+            it("Test # 8: Testing DoWhileStatement", function(){
+                mockCode = "var f = 0; do { f++; } while (f < 5);";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[2].type).toBe("DoWhileStatement");   
+                expect(valueTable[2].id).toBe("f < 5");   
+                expect(valueTable[2].text).toBe("f < 5");
+                expect(valueTable[2].values[0].value).toBe("true");
+                expect(valueTable[2].values[1].value).toBe("true");
+                expect(valueTable[2].values[2].value).toBe("true");
+                expect(valueTable[2].values[3].value).toBe("true");
+                expect(valueTable[2].values[4].value).toBe("false");
+            });
+            it("Test # 9: Testing ReturnStatement", function(){
+                mockCode = "function x () { return 2; } var i = x();";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[0].type).toBe("ReturnStatement");   
+                expect(valueTable[0].id).toBe("2");   
+                expect(valueTable[0].text).toBe("2");
+                expect(valueTable[0].values[0].value).toBe("2");
+            });
+            it("Test # 10: Testing ForInStatement", function(){
+                mockCode = "var x = []; for( var i in x){ }";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[1].type).toBe("ForInStatement");   
+                expect(valueTable[1].id).toBe("x");   
+                expect(valueTable[1].text).toBe("x");
+                expect(valueTable[1].values[0].value).toBe("[]");
+            });
+            /*it("Testing an UnaryExpression", function(){
+                mockCode = "var i = (5-4)>0;";
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Finished"){
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus = event.description;
+                    }
+                });
+                expect(valueTable[0].type).toBe("UnaryExpression");   
+                expect(valueTable[0].id).toBe("-4");   
+                expect(valueTable[0].text).toBe("-4");
+                expect(valueTable[0].values[0].value).toBe("-4");
+            });*/
+            
+            afterEach(function (){
+                // a single unit test per function under testing
+                document.getElementById('testCode').innerHTML += "<br/>"+mockCode;
+                document.getElementById('testStatus').innerHTML += "<br/>"+eventStatus;
+                document.getElementById('testInfo').innerHTML += "<br/>"+visualizeExecutionTrace(valueTable);
+            })
+        });
+        
+    </script>
+</html>

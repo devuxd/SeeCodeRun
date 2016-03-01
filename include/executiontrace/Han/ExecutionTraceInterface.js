@@ -223,9 +223,12 @@ class ExecutionTraceInterface{
                         //alert(Object.keys(this.valueTable[i]));
                         // check to see if the current entry element has the values property
                         if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
-                            if(entry.type===this.Syntax.WhileStatement || entry.type===this.Syntax.DoWhileStatement 
+                            if(entry.type===this.Syntax.WhileStatement
                             || entry.type===this.Syntax.ForStatement || entry.type===this.Syntax.ForInStatement){
-                                allValues["Loops"]=(entry.hits-1); //for statement not working correctly                           
+                                allValues["Loops"]=(entry.hits-2);                           
+                            }
+                            else if (entry.type===this.Syntax.DoWhileStatement ){
+                                allValues["Loops"]=(entry.hits-1);
                             }
                             else if(entry.type===this.Syntax.AssignmentExpression||entry.type===this.Syntax.VariableDeclarator){
                                 allValues[this.Syntax.AssignmentExpression]=entry.values[0].value;                           

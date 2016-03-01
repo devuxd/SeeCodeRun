@@ -82,7 +82,7 @@ for(d=0;d<5;d++){ // not yet implemented (not working correctly)
     
 }
 var e = 5; // {"AssignmentExpression":"5"}
-while(e>0){ // while loop -> {"Loops":6}
+while(e>0){ // while loop -> {"Loops":5}
     e--; // others -> {"Others":["5","4","3","2","1"]}
 }
 var f = 0; // {"AssignmentExpression":"0"}
@@ -91,7 +91,7 @@ do { // {"Loops":5}
 }
 while (f < 5);
 var g = {"a":"1","b":"2"}; // {"Others":["\1"\""]} and {"Others":["\2"\""]}
-for(gee in g){ // not yet implemented (not working correctly)
+for(var gee in g){ // not yet implemented (not working correctly)
     console.log(gee);
 }
 </div>
