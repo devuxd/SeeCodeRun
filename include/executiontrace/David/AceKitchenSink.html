@@ -199,8 +199,34 @@ function foo(items) {
 			}else{
 				updateTooltip(editor.renderer.textToScreenCoordinates(position));
 			}
+		//	theGutterActionToMovetheScroller(position.row);
 		}
 	});
+	
+	// How do I synchronize / listen when the user scrolls the document?
+		editor.getSession().on('changeScrollTop', function(scrollTop) {
+				//editor.getSession().getScrollTop(); // should have the same value
+				console.log("SCROLL EVENT : " + JSON.stringify(scrollTop));
+				// update your gutter 
+				// Do not modify the scroller here. it will result in infinite recursion
+		});
+	
+	function theGutterActionToMovetheScroller(scrollTop){
+		editor.getSession().setScrollTop(scrollTop);
+	}
+	//some code...
+// GUTTER --> ACE
+// var offset = 100; // if there is any
+// var aceScrollTop = $('yourGutter').scrollTop() + offset;
+// editor.getSession().setScrollTop(aceScrollTop);
+
+// //ACE --> GUTTER
+// editor.getSession().on('changeScrollTop', function(scrollTop) {
+// 	$('yourGutter').scrollTop( scrollTop - offset);
+// 	// Do not modify the Ace scroller here.
+// 	//It will result in infinite recursion
+// });
+	
 
 		
 /*	ace.require("ace/ext/language_tools");

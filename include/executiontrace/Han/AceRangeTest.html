@@ -2,7 +2,7 @@
 <!-- (@author: Han Tsung Liu-->
 <!--  @started: 02-24-16-->
 <!--  @last-modified: 02-26-16)-->
-<!--  Reviewed by: Dana Pepporuby and Venkat Polumahanti (02-26-16)-->
+<!--  Reviewed by: Dana Turner and Venkat Polumahanti (02-26-16)-->
 <!--  Sample Implementation of ExecutionTraceInterface.js
 <!--  1) Creating an instance of the ExecutionTraceInterface class- ->
 <!--  2) Calling getLineValues(lineNumber) function to retrieve all values for the row in editor-->
@@ -16,7 +16,7 @@
 	    <!-- End Scripts for Execution Trace API !-->
 	    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
-		<script src="ExecutionTraceInterface.js"></script>
+		<script src="../Han/ExecutionTraceInterface.js"></script>
 	    <style>
 	    #editor { 
 	        position: absolute;
@@ -31,15 +31,29 @@
 	<body>
         <h3>Simple Range Value Function Testing (getValues(Range))</h3>
         <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-        <div id = "status">
-            Row values on hover-over: <br/>
-        </div>
         <div id = "cursorPos">
-            Cursor Position: <br/>
+            Cursor Position: (x,y) 
         </div>
+        <br/>
+        <div id = "rowValues">
+            Row values on hover-over (without type of statement): 
+        </div>
+        <br/>
         <div id = "valueOfCurPos">
             Cursor Position: <br/>
-        </div>        
+        </div>
+        <div id = "wholeTrace">
+            Trace: <br/>
+            Value of a Cursor Position (without type of statement): [] 
+        </div>
+        <br/>
+        <div id = "valueOfCurPosWType">
+            Value of a Cursor Position (with type of statement): [] 
+        </div>
+        <br/><br/>
+        <div id = "fullTrace">
+            Full Trace: {...}<br/>
+        </div>
         <table border=1>
             <tr>
                 <td></td>
@@ -58,14 +72,43 @@
             </tr>
         </table><br/><br/>
         
-<div id="editor">var x = 5;var y = 10;
-var z = [1,2,3]; <!-- the position of the code here matches the editor, so no indentation :) -->
+
+        <!-- the position of the code here matches the editor, so no indentation :) -->
+<div id="editor">// Assignment Statement
+var a = true; // {"AssignmentExpression":"true"}
+var b = (true||false); // {"AssignmentExpression":"false"}
+var c = (1>5); // {"AssignmentExpression":"false"}
+// Conditional Statement
+if(a===b){ // not yet implemented (not working correctly)
+
+}
+// Loops
+var d; // not evalated
+for(d=0;d<5;d++){ // not yet implemented (not working correctly)
+    
+}
+var e = 5; // {"AssignmentExpression":"5"}
+while(e>0){ // while loop -> {"Loops":6}
+    e--; // others -> {"Others":["5","4","3","2","1"]}
+}
+var f = 0; // {"AssignmentExpression":"0"}
+do { // {"Loops":5}
+    f++; // others -> {"Others":["0","1","2","3","4"]}
+}
+while (f < 5);
+var g = {"a":"1","b":"2"}; // {"Others":["\1"\""]} and {"Others":["\2"\""]}
+for(gee in g){ // not yet implemented (not working correctly)
+    console.log(gee);
+}
 </div>
     	<script>
     	    // label to display the current result
-    		$("#status").css("font-size","20px");
+    		$("#rowValues").css("font-size","20px");
     		$("#cursorPos").css("font-size","20px");
     		$("#valueOfCurPos").css("font-size","20px");
+    		$("#wholeTrace").css("font-size", "20px");
+    		$("#valueOfCurPosWType").css("font-size","20px");
+    		$("#fullTrace").css("font-size","20px");
     		// Initiating the editor
     	    var editor = ace.edit("editor");
     	    editor.setTheme("ace/theme/monokai");
@@ -74,16 +117,16 @@ var z = [1,2,3]; <!-- the position of the code here matches the editor, so no in
             //  Function is triggered on changing mouse position. mousemove is an ACE method specific for ACE editor  //
             editor.on("mousemove",function(e){
                 var acePos = e.getDocumentPosition();
-                var valuesOfCurrentLine, valueOfCurrentPosition;
+                var valuesOfCurrentLine, valueOfCurrentPosition, valueOfCurrentPositionWType, fullTrace;
                 //"range":{"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
                 var concatRange = { "start":{"row":acePos.row,
                                     "column":acePos.column},
                                     "end":{"row":acePos.row,
                                     "column":acePos.column}};
                 $("#sr").text(concatRange.start.row+1);
-                $("#sc").text(concatRange.start.col);
+                $("#sc").text(concatRange.start.column+1);
                 $("#er").text(concatRange.end.row+1);
-                $("#ec").text(concatRange.end.col);
+                $("#ec").text(concatRange.end.column+1);
                 // Code typed in the editor is saved into the variable eti. eti stands for Execution Trace Interface //
                 var eti = new ExecutionTraceInterface(editor.getSession().getDocument().getValue());
             	/*  if eti is true, get the values of moused over elements into valueOfCurrentLine variable.
@@ -91,11 +134,16 @@ var z = [1,2,3]; <!-- the position of the code here matches the editor, so no in
             	if(eti.linkEstablished){           
             		valuesOfCurrentLine = eti.getLineValues(acePos.row+1);
             		valueOfCurrentPosition = eti.getValues(concatRange);
+            		wholeTrace = eti.getWholeTrace();
+            		valueOfCurrentPositionWType = eti.getValuesWithType(concatRange);
+            		fullTrace = eti.getFullTrace();
             	}
             	//  Updates the div to show the values of mouse hovered elements  
-            	$("#status").text("Values On Hover-over: "+JSON.stringify(valuesOfCurrentLine));
+            	$("#rowValues").text("Row Values On Hover-over (without type of statement): "+JSON.stringify(valuesOfCurrentLine));
+            	$("#valueOfCurPosWType").text("Value Of Cur Pos (with type of statement): "+JSON.stringify(valueOfCurrentPositionWType));
             	$("#cursorPos").text("Cursor Position: (X:" + (acePos.row+1) + ",Y:" + (acePos.column+1) + ")");
-            	$("#valueOfCurPos").text("Value Of Cur Pos: "+JSON.stringify(valueOfCurrentPosition));
+            	$("#valueOfCurPos").text("Value Of Cur Pos (without type of statement): "+JSON.stringify(valueOfCurrentPosition));
+            	$("#fullTrace").text("Full Trace: "+fullTrace);
             });
     	</script>
 	</body>
