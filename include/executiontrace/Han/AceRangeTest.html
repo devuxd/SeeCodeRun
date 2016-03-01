@@ -2,7 +2,7 @@
 <!-- (@author: Han Tsung Liu-->
 <!--  @started: 02-24-16-->
 <!--  @last-modified: 02-26-16)-->
-<!--  Reviewed by: Dana Pepporuby and Venkat Polumahanti (02-26-16)-->
+<!--  Reviewed by: Dana Turner and Venkat Polumahanti (02-26-16)-->
 <!--  Sample Implementation of ExecutionTraceInterface.js
 <!--  1) Creating an instance of the ExecutionTraceInterface class- ->
 <!--  2) Calling getLineValues(lineNumber) function to retrieve all values for the row in editor-->
@@ -16,7 +16,7 @@
 	    <!-- End Scripts for Execution Trace API !-->
 	    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
-		<script src="ExecutionTraceInterface.js"></script>
+		<script src="../Han/ExecutionTraceInterface.js"></script>
 	    <style>
 	    #editor { 
 	        position: absolute;
@@ -40,6 +40,10 @@
         </div>
         <br/>
         <div id = "valueOfCurPos">
+            Cursor Position: <br/>
+        </div>
+        <div id = "wholeTrace">
+            Trace: <br/>
             Value of a Cursor Position (without type of statement): [] 
         </div>
         <br/>
@@ -67,6 +71,8 @@
                 <td id = "ec"></td>
             </tr>
         </table><br/><br/>
+        
+
         <!-- the position of the code here matches the editor, so no indentation :) -->
 <div id="editor">// Assignment Statement
 var a = true; // {"AssignmentExpression":"true"}
@@ -100,6 +106,7 @@ for(var gee in g){ // not yet implemented (not working correctly)
     		$("#rowValues").css("font-size","20px");
     		$("#cursorPos").css("font-size","20px");
     		$("#valueOfCurPos").css("font-size","20px");
+    		$("#wholeTrace").css("font-size", "20px");
     		$("#valueOfCurPosWType").css("font-size","20px");
     		$("#fullTrace").css("font-size","20px");
     		// Initiating the editor
@@ -127,6 +134,7 @@ for(var gee in g){ // not yet implemented (not working correctly)
             	if(eti.linkEstablished){           
             		valuesOfCurrentLine = eti.getLineValues(acePos.row+1);
             		valueOfCurrentPosition = eti.getValues(concatRange);
+            		wholeTrace = eti.getWholeTrace();
             		valueOfCurrentPositionWType = eti.getValuesWithType(concatRange);
             		fullTrace = eti.getFullTrace();
             	}

@@ -85,6 +85,18 @@ class ExecutionTraceInterface{
 		    });
         }
     }
+    getWholeTrace(){
+        this.valueTable = window.TRACE.getExecutionTrace();
+        var i, entry;
+        var stackText= "";
+        for (i = 0; i < this.valueTable.length; i += 1) {
+            entry = this.valueTable[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+        // {values:{[{stackIndex:value}],[{stackIndex:value}],[{stackIndex:value}]...}}
+    	return stackText;
+    }
     /*
      * linkEstablished()
      * @ param - none
