@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 export class VisViewer {
     
     constructor(eventAggregator) {
@@ -5,72 +7,48 @@ export class VisViewer {
         this.subscribe();
     }
     
+    attached(visualizations) {
+        this.visualizations = visualizations;
+        this.tabulate(this.visualizations);
+    }
+    
     subscribe() {
       let ea = this.eventAggregator;
-      
-      ea.subscribe('onHtmlEditorChanged', payload => {
-        this.html = payload;
-        this.addJsAndCss();
-      });
-      
-      ea.subscribe('onCssEditorChanged', payload => {
-        this.css = payload;
-        this.addJsAndCss();
-      });
-      
-      ea.subscribe('onJsEditorChanged', payload => {
-        this.js = payload.js;
-        this.addJsAndCss();
-      })
     }
     
-    addJsAndCss() {
-        let doc = document.getElementById('visView')
-                          .contentDocument;
-  
-        //doc.body.innerHTML = this.html + '<script src="jspm_packages/npm/d3@3.5.16/d3.js"></script>';
-        doc.body.innerHTML = this.html;// + '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>';
+    tabulate(vis) {
+            let columns = vis[0].data.columns;
+            let values = vis[0].data.values;
+            let table = d3.select(".visualization.table").append("table")
+                        .style("border-collapse", "collapse")// <= Add this line in
+                        .style("border", "2px black solid"),
+                thead = table.append("thead"),
+                tbody = table.append("tbody");
         
+            // append the header row
+            thead.append("tr")
+                .selectAll("th")
+                .data(columns)
+                .enter()
+                .append("th")
+                    .text(function(column) { return column; });
         
-        let style = doc.createElement('style');
-        style.textContent = this.css;
+            // create a row for each object in the data
+            let rows = tbody.selectAll("tr")
+                .data(values)
+                .enter()
+                .append("tr");
         
-        let script = doc.createElement('script');
-        script.textContent = this.js;
-        
-        let d3script = doc.createElement('script');
-        d3script.src = '/jspm_packages/npm/d3@3.5.16/d3.js';
-        
-        doc.head.appendChild(style);
-        doc.body.appendChild(script);
-        doc.body.appendChild(d3script);
-    }
-    
-    formatData(data) {
-      // columns = ["col1","col2",...,"colN"]
-      // data = [{col1: val1, col2: val1},{col1: val2, col2: val2},...{}]
-      let columns = [];
-      for(let v of data) {
-        columns.push(v.variableName);
-      }
-      
-      let values = [];
-      
-      for(let i = 0; i < data.length; i++) {
-          for(let j = 0; j < data[i].values.length; j++) {
-              values.push({value: data[i].values[j]})
-          }
-      }
-    }
-    
-    getMockTableTrace() {
-      return [{
-        variableName: 'x',
-        values: [{value: '25'},{value: '25'},{value: '500'}]
-      }, 
-      {
-        variableName: 'y',
-        values: [{value: 'undefined'},{value: '75'},{value: '75'}]
-      }];
-    }
+            // create a cell in each row for each column
+            let cells = rows.selectAll("td")
+                .data(function(row) {
+                    return columns.map(function(column) {
+                        return {column: column, value: row[column]};
+                    });
+                })
+                .enter()
+                .append("td")
+                .attr("style", "font-family: Courier") // sets the font style
+                    .html(function(d) { return d.value; });
+        }
 }

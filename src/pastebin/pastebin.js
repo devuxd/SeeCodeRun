@@ -23,6 +23,28 @@ export class Pastebin {
     this.cssEditor = new CssEditor(this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer = new VisViewer(this.eventAggregator);
+    
+    this.visualizations = [
+          {
+              type: "table",
+              data: {
+                  columns: [
+                    "x",
+                    "y"
+                  ],
+                  values: [
+                    {
+                        x: 3,
+                        y: 5
+                    },
+                    {
+                        x: 4,
+                        y: 6
+                    }
+                  ]
+              }
+          }
+        ];
   }
 
   activate(params) {
@@ -49,6 +71,7 @@ export class Pastebin {
     this.consoleWindow.attached();
     this.htmlEditor.attached();
     this.cssEditor.attached();
+    this.visViewer.attached(this.visualizations);
   }
 
   subscribe() {

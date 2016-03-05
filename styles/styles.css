@@ -193,3 +193,8 @@ visViewer {
 iframe {
   width: 100%;
 }
+
+td, th {
+    padding: 1px 4px;
+    border: 1px black solid;
+}
