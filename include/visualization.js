@@ -2,8 +2,12 @@
 
 $( document ).ready(function() {
   $("#note").hide();
+  
+    $('#popup').hide();
+    $('#hide').click(function(){
+        $('#popup').toggle();
 });
-
+});
 
 function toggle(checked){
   $("#note").toggle();
