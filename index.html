@@ -48,7 +48,7 @@
 	  				<!-- SeeCode.Run Title **THIS IMAGE WILL BE UPDATED**-->
 	  				<ul class = "nav pull-left">
 	  					<li>
-	  						<img src="images\SeeCodeRunTitle.png" alt="See Code Run">
+	  						<img src="images\SeeCodeRunTitle.png" alt="See Code Run" style="max-width: 250px">
 	  					</li>
 	  				</ul>
 	  			
@@ -91,7 +91,7 @@
   <div class="container-fluid">
   	<div class="row">
   	 <div id ="mainSplitter">
-	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
+	  <div class="col-md-5 col-xs-5 col-sm-5" style="padding-left: 0px; padding-right: 0px">	  
 	  	<div role="tabpanel" >
 		  	<ul class="nav nav-tabs">
 	  			<li role="presentation" class="active">
@@ -105,11 +105,11 @@
 			<div class="tab-content">	  
 		  	 <div role="tabpanel" class="tab-pane active" id="js-container" >
                   <div class ="row">
-                  <div class="col-md-9" style="padding-right: 0px;padding-top: 5px">
+                  <div class="col-md-9 col-xs-7 col-sm-7" style="padding-right: 0px;padding-top: 5px">
 		  			<div id="aceJSEditorDiv" style="height: 700px;"></div>
                   </div>
-                  <div class="col-md-3" style="padding-left: 0px; padding-right: 15px; padding-top:3px">
-                    <div id="gutter_space"  ><div  class= "iframeCss" id="gutter" onscroll="scrolled()" ></div></div>
+                  <div class="col-md-3 col-xs-5 col-sm-5" style="padding-left: 0px; padding-right: 15px; padding-top:3px">
+                    <div id="gutter_space"  ><div  class= "iframeCss" id="gutter" ></div></div>
                   
                   </div>
                 </div>
@@ -130,7 +130,7 @@
 		  		<a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
 		  	</ul>
 		  </div>
-		  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
+		  <div class="col-md-7 col-xs-7 col-sm-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
 		    <div class="tab-content">
 			   
 				<iframe role="tabpanel" id="preview" class="tab-pane active iframeCssPreview"  >
@@ -294,6 +294,9 @@
 	jsEditor.setTheme("ace/theme/chrome");
 	jsEditor.setShowFoldWidgets(false);
 	jsEditor.getSession().on('change', onEditorChanged);
+    jsEditor.renderer.scrollBarV.width=0;
+    jsEditor.renderer.scrollBarV.element.style.display="none";
+
 	var hasjsErrors = false;
 	var firepad = Firepad.fromACE(jsFirebaseRef, jsEditor, 
 		{ defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}' });
@@ -378,6 +381,15 @@ jsEditor.on("click", function(e){
      	console.info("unchecked");
  	}
 });
+
+$(function () {
+    $('#gutter').scroll(function () {
+ jsEditor.getSession().setScrollTop($(this).scrollTop());
+      console.info("h");
+ });
+    
+});
+
 
 </script>
 
