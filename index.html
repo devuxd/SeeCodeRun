@@ -294,9 +294,7 @@
 	jsEditor.setTheme("ace/theme/chrome");
 	jsEditor.setShowFoldWidgets(false);
 	jsEditor.getSession().on('change', onEditorChanged);
-    jsEditor.renderer.scrollBarV.width=0;
-    jsEditor.renderer.scrollBarV.element.style.display="none";
-
+	
 	var hasjsErrors = false;
 	var firepad = Firepad.fromACE(jsFirebaseRef, jsEditor, 
 		{ defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}' });
