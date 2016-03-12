@@ -17,7 +17,7 @@
            
            var content3 = ["Hello world, from js"];
            setContentGutter(4, content3);
-           setContentGutter(115, content3);
+           setContentGutter(30, content3);
             change =true;
        }
       
