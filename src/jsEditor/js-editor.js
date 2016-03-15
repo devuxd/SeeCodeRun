@@ -28,6 +28,7 @@ export class JsEditor {
   }
 
   attached() {
+    eval(ace.edit('shadowEditorDiv').getValue());
     let editor = ace.edit('editorDiv');
     this.configureEditor(editor);
     
@@ -70,13 +71,9 @@ export class JsEditor {
     function onEditorChanged(e) {
       clearTimeout(editorChangedTimeout);
       editorChangedTimeout = setTimeout(function pub() { 
-        let syntax = new TraceService().getTrace(editor.getValue());
-
-        ea.publish('onEditorChanged', {
-            data: e,
-            length: session.getLength(),
-            syntax: syntax
-        });
+        let payload = new TraceService().getTrace(editor.getValue());
+        console.log(JSON.stringify(payload));
+        ea.publish('onEditorChanged', payload);
       }, 2500);
     }
 
