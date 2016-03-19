@@ -1,0 +1,219 @@
+<html>
+    <h1>Unit Testing For Execution Trace</h1>
+    <!--- Init Files for Jasmine API --->
+    <link rel="shortcut icon" type="image/png" href="jasmine-2.4.1/jasmine_favicon.png">
+    <link rel="stylesheet" href="jasmine-2.4.1/jasmine.css">
+    <script src="jasmine-2.4.1/jasmine.js"></script>
+    <script src="jasmine-2.4.1/jasmine-html.js"></script>
+    <script src="jasmine-2.4.1/boot.js"></script>
+    <!--- End Files for Jasmine API --->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
+
+    
+    <!-- Init Scripts for Execution Trace API !-->
+    <script src="../David/scripts/esprima.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/escodegen.browser.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/esmorph.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../David/scripts/executiontrace.js" type="text/javascript" charset="utf-8"></script>
+    <!-- End Scripts for Execution Trace API !-->
+    
+    <table border = 1>
+        <tr>
+            <td>
+                <div id = "debugging">Debugging:</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Testing Execution Trace Info 1:
+                <div id = "teststatus1">Test Status 1 Updates: </div>
+                <div id = "testinfo1">Test Status 1 Info: </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Testing Execution Trace Info 2:
+                <div id = "teststatus2">Test Statu 2 Updates: </div>
+                <div id = "testinfo1">Test Status 2 Info: </div>
+            </td>
+        </tr>
+    </table>
+    <br/>
+    <script>
+        function eventListener (event){
+        if(event.status === "Running"){
+            //document.getElementById('info').setAttribute('class', 'alert-box secondary');
+            //document.getElementById('info').innerHTML = event.description;
+    		//document.getElementById('stacktrace').innerHTML = 'Waiting...';        
+        }else if(event.status === "Finished"){
+            //traceAnnotations = window.getTraceAnnotations();
+            //showTraceAnnotations(editor);
+            
+            //document.getElementById('info').setAttribute('class', 'alert-box secondary');
+            //document.getElementById('info').innerHTML = event.description;
+            //var stackTrace = window.TRACE.getStackTrace();
+            //var valueTable = window.TRACE.getExecutionTrace();
+            //var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
+            
+            //localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
+    		//document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
+    		
+    	    //$('#stacktrace').append(visualizeExecutionTrace(valueTable)); 
+    	 
+        }else if(event.status === "Error"){
+            //document.getElementById('info').innerHTML = event.description;
+            //document.getElementById('info').setAttribute('class', 'alert-box alert');
+            //document.getElementById('stacktrace').innerHTML = 'Waiting...';
+        }else if(event.status === "Timeout"){
+            //document.getElementById('info').innerHTML = event.description;
+            //document.getElementById('info').setAttribute('class', 'alert-box alert');
+            //document.getElementById('stacktrace').innerHTML = 'Waiting...';
+        }else if(event.status === "Busy"){
+            //document.getElementById('info').innerHTML = event.description;
+            //document.getElementById('info').setAttribute('class', 'alert-box alert');
+            //document.getElementById('stacktrace').innerHTML = 'Busy, please wait...';
+        }
+    }
+    // example of how to use the trace resulting data structure
+    function visualize(stackTrace){
+        var i, entry, name, index;
+        var stackText= "";
+    	var repeat = 0;
+    	var previousCall = "";
+    	var previousIndex = -1;
+        for (i = 0; i < stackTrace.length; i += 1) {
+            entry = stackTrace[i];
+            if(entry){
+                name = entry.text;
+        		index = entry.index;
+        		 if(previousCall !== name){				 
+        			 if(repeat > 0){
+        				 stackText += previousIndex + " -- " + previousCall + "( + "+ repeat +" times) <br>";
+        				 repeat = 0;
+        			 }else{
+        				 if(previousIndex > -1){
+        					 stackText += previousIndex + " -- " + previousCall + "<br> ";
+        				 }
+        				 
+        			 }
+        			 previousCall = name;
+        			 previousIndex = index;
+        		 }else{
+        			 repeat = repeat + 1; 
+        		 }
+            }
+    		
+        }
+    	if(repeat > 0){
+    		stackText +=  previousIndex + " -- " + previousCall + "( + "+ repeat +" times )";
+    		repeat = 0;
+    	}else{
+    		if(previousIndex > -1){
+    			stackText += previousIndex + " -- " + previousCall ;
+    		}					 
+    	}
+    	return stackText;
+    }
+     // example of how to use the trace resulting data structure
+    function visualizeExecutionTrace(executionTrace){
+        var i, entry;
+        var stackText= "";
+        for (i = 0; i < executionTrace.length; i += 1) {
+            entry = executionTrace[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+    	return stackText;  
+    
+    }
+    </script>
+    
+    <script>
+        describe("A suite is just a function (sample jasmine)", function() {
+              var a;
+            
+              it("and so is a spec", function() {
+                a = true;
+                expect(a).toBe(true); // === comparison
+              });
+        });
+        
+        // option 1: setup a global function in execution trace for testing
+        describe("Testing call to a global function", function() {
+              var hi;
+              it("calling a global function in executiontrace.js", function() {
+                hi = window.testGetDefaultFunction();
+                expect(hi).toBe(1);
+              });
+        });      
+        
+        // option 2: start by calling traceExecution(code,function) 
+        describe("Testing Execution Trace 1", function(){
+            var mockCode = "var x = 5;";
+            var stackTrace;
+            var valueTable;
+            var eventStatus = [];
+            beforeEach(function (){
+                window.traceExecution(mockCode,
+                    function eventListener (event){
+                    if(event.status === "Running"){
+                        //alert("Running");
+                        eventStatus.push(event.description);
+                    }else if(event.status === "Finished"){
+                        //alert("Finished");
+                        stackTrace = window.TRACE.getStackTrace();
+                        valueTable = window.TRACE.getExecutionTrace();
+                        eventStatus.push(event.description);
+                    }else if(event.status === "Error"){
+                        //("Error");
+                        eventStatus.push(event.description);
+                    }else if(event.status === "Timeout"){
+                        //alert("Timeout");
+                        eventStatus.push(event.description);
+                    }else if(event.status === "Busy"){
+                        //alert("Busy");
+                        eventStatus.push(event.description);
+                    }
+                });
+            });
+            it("Testing a Literal: 'var x = 5'", function(){
+                // a single unit test per function under testing
+                document.getElementById('teststatus1').innerHTML += eventStatus;
+                document.getElementById('testinfo1').innerHTML += visualizeExecutionTrace(valueTable);
+                var entry,ele;
+                for(entry=0;entry<valueTable.length;entry++){
+                    //var keys = Object.keys(valueTable[entry]);
+                    if(valueTable[entry].hasOwnProperty("type")){
+                        expect(valueTable[entry].type).toBe("VariableDeclarator");   
+                    }
+                    if(valueTable[entry].hasOwnProperty("id")){
+                        expect(valueTable[entry].id).toBe("x");   
+                    }
+                    if(valueTable[entry].hasOwnProperty("text")){
+                        expect(valueTable[entry].text).toBe("5");   
+                    }
+                }
+            });
+/*            it("Testing a Literal: 'var x = 5'", function(){
+                // a single unit test per function under testing
+                document.getElementById('teststatus1').innerHTML += eventStatus;
+                document.getElementById('testinfo1').innerHTML += visualizeExecutionTrace(valueTable);
+                var entry,ele;
+                for(entry=0;entry<valueTable.length;entry++){
+                    //var keys = Object.keys(valueTable[entry]);
+                    if(valueTable[entry].hasOwnProperty("type")){
+                        expect(valueTable[entry].type).toBe("VariableDeclarator");   
+                    }
+                    if(valueTable[entry].hasOwnProperty("id")){
+                        expect(valueTable[entry].id).toBe("x");   
+                    }
+                    if(valueTable[entry].hasOwnProperty("text")){
+                        expect(valueTable[entry].text).toBe("5");   
+                    }
+                }
+            });*/
+        });
+        
+    </script>
+</html>

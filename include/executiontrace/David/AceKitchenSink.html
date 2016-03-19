@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ACE in Action... Sort of</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+
+
+
+<style type="text/css" media="screen">
+    #editor { 
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+	.ace_gutter-cell.ace_breakpoint{ 
+		border-radius: 20px 0px 0px 20px; 
+		box-shadow: 0px 0px 1px 1px red inset; 
+	}
+	
+	#overlay{
+		position:absolute;
+		z-index: 100;		
+	}
+
+	.seecoderun_tooltip {
+		background-color: #FFF;
+		background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
+		background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
+		border: 1px solid gray;
+		border-radius: 1px;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+		color: black;
+		max-width: 100%;
+		padding: 3px 4px;
+		position: absolute;
+		z-index: 999999;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+		cursor: default;
+		white-space: pre;
+		word-wrap: break-word;
+		line-height: normal;
+		font-style: normal;
+		font-weight: normal;
+		letter-spacing: normal;
+		pointer-events: none;
+	}
+</style>
+</head>
+<body>
+
+<div id="editor">
+function foo(items) {
+    var x = "All this is syntax highlighted";
+    return x;
+}
+</div>
+<canvas id ="overlay" width="20" height="20"> </canvas>
+<script>
+	function updateOverlay(position){
+		var div =document.getElementById("overlay");
+		div.style.left = position.pageX + 'px';
+		div.style.top = position.pageY + 'px';
+		// Check the element is in the DOM and the browser supports canvas
+		if(div.getContext) {
+			// Initaliase a 2-dimensional drawing context
+			var context = div.getContext('2d');
+			//Canvas commands go here
+			// Create the yellow circle
+			context.strokeStyle = "#000000";
+			context.fillStyle = "#FFFF00";
+			context.beginPath();
+			context.arc(10,10,5,0,Math.PI*2,true);
+			context.closePath();
+			context.stroke();
+			context.fill();
+		}
+	}
+	
+		function updateTooltip(position, text){
+			//example with container creation via JS
+			var div = document.getElementById('tooltip_0');
+			if(div === null){
+				div = document.createElement('div');		
+				div.setAttribute('id', 'tooltip_0'); 
+				div.setAttribute('class', 'seecoderun_tooltip'); // and make sure myclass has some styles in css
+				document.body.appendChild(div);
+			}
+
+			div.style.left = position.pageX + 'px';
+			div.style.top = position.pageY + 'px';
+			if(text){
+				div.style.display = "block";
+				div.innerText = text;
+			}else{
+				div.style.display = "none";
+				div.innerText = "";
+			}			
+			
+		}
+	
+	// initiating the editor
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/javascript");
+	
+	// adding breakpoints
+	editor.renderer.setShowGutter(true);
+	editor.on("guttermousedown", function(e){ 
+		var target = e.domEvent.target; 
+		// si the element we want?
+		if (target.className.indexOf("ace_gutter-cell") == -1){ 
+			return;
+		}
+		// is this during user attention?
+		if (!editor.isFocused()){ 
+			return;
+		}
+		// is not the folding icon to the right of the line number?
+		if (e.clientX > 25 + target.getBoundingClientRect().left){ 
+			return; 
+		}
+		var row = e.getDocumentPosition().row;
+		var breakpointsArray = e.editor.getSession().getBreakpoints();
+		if(!(row in breakpointsArray)){
+			e.editor.getSession().setBreakpoint(row);
+		}else{
+			e.editor.getSession().clearBreakpoint(row);
+		}
+		e.stop(); 
+	}); 
+	
+	//capturing changes in the breakpoints
+	editor.getSession().on("changeBreakpoint", function(e){
+		// captures set and clear breakpoint events
+	});
+	
+	// adding overlays
+	editor.renderer.setAnimatedScroll(true);
+	var aceDocument = editor.getSession().getDocument();
+	var anchor = aceDocument.createAnchor( 0, 0);
+	anchor.on("change", function(e){
+			updateOverlay(editor.renderer.textToScreenCoordinates(anchor.getPosition())); 
+	});
+	updateOverlay(editor.renderer.textToScreenCoordinates(anchor.getPosition())); 
+	
+	editor.getSession().on("changeScrollLeft", function(scrollLeft){
+		updateOverlay(editor.renderer.textToScreenCoordinates(anchor.getPosition())); 
+	});
+
+	editor.getSession().on("changeScrollTop", function(scrollTop){
+		updateOverlay(editor.renderer.textToScreenCoordinates(anchor.getPosition())); 
+	});
+
+	// detecting user input action
+	var selectionAction = "NONE";
+	editor.on("mousedown", function(e){
+			selectionAction = "MOUSE";
+			// e.clientX and e.clientY for mouse coordinates
+	});	
+
+	var selectionKeyStrokes = [
+		//"golineup", "gotoright" ,"golinedown","gotoleft", // if you want to catch cursor events
+		"selectup", "selectright" ,"selectdown","selectleft",
+	];
+	
+	editor.commands.on("exec", function(e) {
+		if(selectionKeyStrokes.indexOf(e.command.name) > -1){
+			selectionAction = "KEYBOARD";
+		}		
+		//console.log(e.command.name);
+	});
+	
+	editor.getSession().selection.on('changeSelection', function(e) {
+			var range = editor.getSelectionRange();
+			if(range){
+				console.log(selectionAction);
+				anchor.setPosition(range.end.row, range.end.column, false);
+			}
+	});
+	
+	//adding a tooltip
+	
+	editor.on("mousemove", function (e){
+		var position = e.getDocumentPosition();
+		if(position){
+		//console.log("mouse " + position.row + ", " + position.column);
+			var wordRange = editor.getSession().getWordRange(position.row , position.column);
+			var text = editor.session.getTextRange(wordRange);
+			if(text.length>0){
+				var pixelPosition = editor.renderer.textToScreenCoordinates(position);
+				pixelPosition.pageY += editor.renderer.lineHeight;
+				updateTooltip(pixelPosition, text);
+			}else{
+				updateTooltip(editor.renderer.textToScreenCoordinates(position));
+			}
+		}
+	});
+
+		
+/*	ace.require("ace/ext/language_tools");
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: false
+    });
+*/
+</script>
+</body>
+</html>
