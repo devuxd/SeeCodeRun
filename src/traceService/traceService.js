@@ -14,7 +14,7 @@ export class TraceService {
       this.events = {
         onTraceServiceStart: {  event :'onTraceServiceStart', description : 'Building Tracer...' },
         onTraceServiceRunning: {  event :'onTraceServiceRunning', description : 'Tracing...' },
-        onTraceServiceEnd :{  event :'onTraceServiceEnd', description : 'Trace build successfully.' },
+        onTraceServiceEnd :{  event :'onTraceServiceEnd', description : 'Trace built successfully.' },
         onTraceServiceBusy : {  event :'onTraceServiceBusy', description : 'A previous trace is running.' },
         onTraceServiceException: {  event :'onTraceServiceException', description : 'Trace ended due to an exception.' }
       };
