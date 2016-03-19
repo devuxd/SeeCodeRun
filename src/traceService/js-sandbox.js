@@ -32,10 +32,22 @@ export class JsSandBox {
       console.log(JSON.stringify(window.TRACE.getExecutionTrace()));
       
     });
-
-    
   }
-
+    
+  // subscribe() {
+  // let ea = this.eventAggregator;
   
+  // ea.subscribe('onTraceChanged', payload =>  {
+  //           this.trace = payload;
+  //       }
+  // );
+  // }
+  
+  // visualizelineValues( lineNumber){
+  //   let traceHelper = new TraceHelper(); 
+  //   let values = traceHelper.getLineValues(this.trace, lineNumber);
+  //   // draw values somehow
+  // }
+
 }
 
