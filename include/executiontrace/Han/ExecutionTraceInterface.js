@@ -1,6 +1,25 @@
-export class TraceHelper {
-    constructor(executionTrace){
-        this.executionTrace = executionTrace;
+// Written by: Execution Trace Feature Team 
+// (@author: Han Tsung Liu
+//  @started: 02-24-16
+//  @last-modified: 02-26-16)
+// Reviewed by: Dana Pepporuby and Venkat Polumahanti (02-26-16)
+// Referenced: David Gonzalez (isRangeInRange(isRange, inRange) function)
+// Interface created by execution trace team to provide the trace table
+// and useable functions to be called.
+// Example of using the class
+// Step 1) Create a new instance of the class
+// var eti = new ExecutionTraceInterface(source_code);
+// Step 2) Check to see if the object is ready to be used
+// if(eti.linkEstablished){
+//      Step 3) Call any functions to get parts of the trace 
+// }
+'use strict'
+class ExecutionTraceInterface{
+    /*
+     * Constructor(source)
+     * @ param source - source code for the trace
+     */
+    constructor(source){
         this.Syntax = {
             AssignmentExpression: 'AssignmentExpression',
             // ArrayExpression: 'ArrayExpression',
@@ -42,31 +61,76 @@ export class TraceHelper {
             VariableDeclarator: 'VariableDeclarator',
             WhileStatement: 'WhileStatement',
             // WithStatement: 'WithStatement'
-        };        
+        };
+        // checks to see if the source code is provided by the caller
+        if(source===undefined){
+            // if source code not given by caller then retrieve source code through ace editor
+            this.sourceCode = editor.getSession().getDocument().getValue();
+        }
+        else{
+            // if the source code is provided by the caller of the class, then store the source code
+            this.sourceCode = source;
+        }
+        // if the source code is undefined then set the link to false (not ready to call object functions)
+        if(this.sourceCode === undefined){
+            this.link = false;
+        }
+        // if the source code is provided then create new trace with source code and a event listener
+        else{
+        	window.traceExecution(this.sourceCode,
+                function eventListener (event){
+                    if(event.status === "Finished"){
+                        this.link = true;
+                    }
+		    });
+        }
     }
     /*
-     * getLineValues(lineNumber,valueTable)
-     * @ param lineNumber - the line number in the editor for retrieving all the associated values
-     * @ param valueTable - the whole execution trace of the code
-     * @ pre - valueTable is defined and lineNumber > 0
-     * @ returns - an array of values for the current line
-     * @ comment - line number should start with 1, which is same as the gutter
+     * linkEstablished()
+     * @ param - none
+     * @ return this.link - if true, the getter functions are ready to be called
+     *                    - if false, the getter functions are not ready 
      */
-    getLineValues(lineNumber,valueTable){
+    linkEstablished(){
+        return this.link;
+    }
+    /*
+     * Direct Source from David Gonzalez for finding printing execution trace.
+     */
+    getFullTrace(){
+        var i, entry;
+        var stackText= "";
+        for (i = 0; i < this.valueTable.length; i += 1) {
+            entry = this.valueTable[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+    	return stackText;  
+    }
+    /*
+     * getLineValues(lineNumber)
+     * @ param lineNumber - the line number in the editor for retrieving all the associated values
+     * @ pre - this.valueTable is defined and lineNumber > 0
+     * @ returns - an array of values for the current line
+     * @ comment - line number should start with 1 same as the gutter
+     */
+    getLineValues(lineNumber){
+        // retrieves the execution trace
+        this.valueTable = window.TRACE.getExecutionTrace();
         // if the execution trace is undefined the return undefined
-        if(valueTable===undefined || lineNumber<=0){
+        if(this.valueTable===undefined || lineNumber<=0){
             return false;
         }
         // sorts out the conflict for the ace editor starting with row #0
     	lineNumber--;
     	// new array for storing all the return values
-    	var returnValues = [];
+    	this.returnValues = [];
     	// i = iteration, entry = each traced element
 		var i,entry;
         // iterates through all the elements of the execution trace
-        for(i=0;i<valueTable.length;i++){
+        for(i=0;i<this.valueTable.length;i++){
             // stores current element in entry
-        	entry = valueTable[i];
+        	entry = this.valueTable[i];
         	// retrieves all the keys for the current element in the trace
             // Object.keys(valueTable[entry]);
             // check to see if the current entry element has the range property
@@ -74,41 +138,40 @@ export class TraceHelper {
                 // determines if the current range element row number matches line number
                 if(entry.range.start.row===lineNumber){
                     // calls this.getValues() to get the value based on the range
-                    var entryResult = this.getValues(entry.range);
+                    this.entryResult = this.getValues(entry.range);
                     // if the returned result is not false
-                    if(entryResult!=[])
+                    if(this.entryResult!=[])
                         // push the result into the array
-                	    returnValues.push(entryResult);
+                	    this.returnValues.push(this.entryResult);
                 }
             }
         }
         // return all the values for the current line
-        return returnValues;
+        return this.returnValues;
     }
     /*
      * getLineValues(lineNumber)
      * @ param inputEsprimaRange - start row and column & end row and column
-     * @ param valueTable - the whole execution trace of the code
      * @ example: {"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
      * @ pre - inputEsprimaRange is not undefined
      * @ returns - (currently) an "array" all the values of a single statement within the range
      *             else, if no statement within range, return []
      * @ comment - none
      */    
-    getValues(esprimaRange,valueTable){
-        if(esprimaRange===undefined){
+    getValues(inputEsprimaRange){
+        if(inputEsprimaRange===undefined){
             return []; // return false if inputEsprimaRange is undefined
         }
         // find the element that meets the range requirement
         var i, entry, allValues = [];
         // iterates through all the elements of the execution trace
-        for(i=0;i<valueTable.length;i++){
+        for(i=0;i<this.valueTable.length;i++){
             // stores current element in entry
-            entry = valueTable[i];
+            entry = this.valueTable[i];
             // check to see if the current entry element has the range property
             if(entry.hasOwnProperty("range")){
                 // check to see if inputEsprimaRange is within the entry.range
-                if(this.isRangeInRange(esprimaRange,entry.range)){
+                if(this.isRangeInRange(inputEsprimaRange,entry.range)){
                         //alert(Object.keys(this.valueTable[i]));
                         // check to see if the current entry element has the values property
                         if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
@@ -134,7 +197,7 @@ export class TraceHelper {
         }
         return []; // return false if not found
     }
-    /*
+        /*
      * getLineValuesWithType(lineNumber)
      * @ param inputEsprimaRange - start row and column & end row and column
      * @ example: {"start":{"row":18,"column":8},"end":{"row":18,"column":9}}
@@ -143,38 +206,29 @@ export class TraceHelper {
      *             else, if no statement within range, return []
      * @ comment - none
      */    
-    getValuesWithType(esprimaRange,valueTable){
-        if(esprimaRange===undefined){
+    getValuesWithType(inputEsprimaRange){
+        if(inputEsprimaRange===undefined){
             return []; // return false if inputEsprimaRange is undefined
         }
         // find the element that meets the range requirement
         var i, entry, allValues = {};
         // iterates through all the elements of the execution trace
-        for(i=0;i<valueTable.length;i++){
+        for(i=0;i<this.valueTable.length;i++){
             // stores current element in entry
-            entry = valueTable[i];
+            entry = this.valueTable[i];
             // check to see if the current entry element has the range property
             if(entry.hasOwnProperty("range")){
                 // check to see if inputEsprimaRange is within the entry.range
-                if(this.isRangeInRange(esprimaRange,entry.range)){
+                if(this.isRangeInRange(inputEsprimaRange,entry.range)){
                         //alert(Object.keys(this.valueTable[i]));
                         // check to see if the current entry element has the values property
                         if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
-                            if(entry.type===this.Syntax.WhileStatement
+                            if(entry.type===this.Syntax.WhileStatement || entry.type===this.Syntax.DoWhileStatement 
                             || entry.type===this.Syntax.ForStatement || entry.type===this.Syntax.ForInStatement){
-                                allValues["Loops"]=(entry.hits-2);                           
-                            }
-                            else if (entry.type===this.Syntax.DoWhileStatement ){
-                                allValues["Loops"]=(entry.hits-1);
+                                allValues["Loops"]=(entry.hits-1); //for statement not working correctly                           
                             }
                             else if(entry.type===this.Syntax.AssignmentExpression||entry.type===this.Syntax.VariableDeclarator){
                                 allValues[this.Syntax.AssignmentExpression]=entry.values[0].value;                           
-                            }
-                            else if(entry.type===this.Syntax.ReturnStatement){
-                                allValues[this.Syntax.ReturnStatement]=entry.values[0].value;
-                            }
-                            else if(entry.type===this.Syntax.CallExpression){
-                                allValues["FunctionInvocation"]=entry.values[0].value;
                             }
                             else{
                                 var i, tempArr = [];
@@ -193,68 +247,14 @@ export class TraceHelper {
         }
         return []; // return false if not found
     }
+    /*
+     * Direct Source from David Gonzalez for finding range.
+     */
     isRangeInRange(isRange, inRange){
         return (
                 (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
     			 &&
     			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
     			);
-    }    
-    // example of how to use the trace resulting data structure
-    visualizeExecutionTrace(executionTrace){
-        var i, entry;
-        var stackText= "";
-
-        for (i = 0; i < executionTrace.length; i += 1) {
-            entry = executionTrace[i];
-            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
-           
-        }
-       
-    	
-    	return stackText;  
-    
-    }
-       // example of how to use the trace resulting data structure
-    visualize(stackTrace){
-        var i, entry, name, index;
-        var stackText= "";
-    	var repeat = 0;
-    	var previousCall = "";
-    	var previousIndex = -1;
-        for (i = 0; i < stackTrace.length; i += 1) {
-            entry = stackTrace[i];
-            if(entry){
-                name = entry.text;
-        		index = entry.index;
-        		 if(previousCall !== name){				 
-        			 if(repeat > 0){
-        				 stackText += previousIndex + " -- " + previousCall + "( + "+ repeat +" times) <br>";
-        				 repeat = 0;
-        			 }else{
-        				 if(previousIndex > -1){
-        					 stackText += previousIndex + " -- " + previousCall + "<br> ";
-        				 }
-        				 
-        			 }
-        			 previousCall = name;
-        			 previousIndex = index;
-        		 }else{
-        			 repeat = repeat + 1; 
-        		 }
-            }
-    		
-        }
-    	if(repeat > 0){
-    		stackText +=  previousIndex + " -- " + previousCall + "( + "+ repeat +" times )";
-    		repeat = 0;
-    	}else{
-    		if(previousIndex > -1){
-    			stackText += previousIndex + " -- " + previousCall ;
-    		}					 
-    	}
-    	
-    	return stackText;  
-    
     }
 }
