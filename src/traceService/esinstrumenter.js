@@ -377,7 +377,7 @@ export class EsInstrumenter {
             returns an AST nodes (Esprima format) in properties location and range, any undefined properties in inputs loc and range value are zeros 
    */
   getLocationDataNode(loc, range){
-       var aceRange, indexRange;
+       let aceRange, indexRange;
 
        if(loc && range){
             aceRange = {
@@ -389,7 +389,7 @@ export class EsInstrumenter {
                 (range.length>1? range[1]: 0) 
                 ];
             
-       var data = {
+       let data = {
           'location' : {
                                     "type": "ObjectExpression",
                                     "properties": [
@@ -521,7 +521,7 @@ export class EsInstrumenter {
    }
   
   setNodeValue(ref){
-        ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
+     ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
     }
     
   setNodeTextValue(ref){
@@ -534,11 +534,11 @@ export class EsInstrumenter {
   
   traceInstrument(sourceCode, esanalyzer) {
         
-        var  instrumentedCode, autoLogTracer;      // var code caused a 2 hours delay
+        let  instrumentedCode, autoLogTracer;      // var code caused a 2 hours delay
         let Syntax = this.Syntax,
             TraceParameters = this.TraceParameters,
             getDefaultAutoLogNode= this.getDefaultAutoLogNode,
-            setNodeValue = this.setNodeTextValue,
+            setNodeValue = this.setNodeValue,
             setNodeTextValue = this.setNodeTextValue,
             getLocationDataNode = this.getLocationDataNode,
             getTextRange = this.getTextRange,
@@ -546,7 +546,7 @@ export class EsInstrumenter {
         
         autoLogTracer = function (ref){
         //uncomment  implemented types in Syntax to allow analysis
-            var node = ref.node, code = ref.code, path = ref.path, nodeKey = ref.nodeKey;
+            let node = ref.node, code = ref.code, path = ref.path, nodeKey = ref.nodeKey;
             if(!Syntax.hasOwnProperty(node.type)){
                 return undefined;
             }
@@ -555,7 +555,7 @@ export class EsInstrumenter {
             }
             //FORWARD ANALYSIS
             
-            var autoLogNode = getDefaultAutoLogNode(), locationData;
+            let autoLogNode = getDefaultAutoLogNode(), locationData;
             if(node.type === Syntax.VariableDeclarator){
                 if(!node.init){
                     return undefined;
@@ -851,14 +851,14 @@ export class EsInstrumenter {
                 node.right = autoLogNode;
                  
  /*BW */    }else if(path){//BACKWARD ANALYSIS, requires path to be defined
-                var parent = path[0] ;
+                let parent = path[0] ;
                 //path[1] contains reference to parent array and ... check collectPath()
                 // learn that references are treoublesome in JS. fixing elements only in context
                 
 /*FunctionExpression */
                 if (node.type === Syntax.FunctionExpression) { 
                     
-                    var identifier;
+                    let identifier;
                     
                     if (parent.type === Syntax.AssignmentExpression) {
                         if (typeof parent.left.range !== 'undefined') {

@@ -4,7 +4,7 @@ import {EsInstrumenter} from './esinstrumenter';
 
 export class EsTracer {
 
-    constructor(events) {
+    constructor(events) { //todo: send the sandbox
       this.esanalyzer = new EsAnalyzer();
       this.esinstrumenter = new EsInstrumenter();
       this.events = events;
@@ -35,7 +35,11 @@ export class EsTracer {
         window.TRACE = {
             hits: {}, data: {}, stack : [], execution : [], values : {}, 
             autoLog: function (info) {
-                let returnValue = info.value; // does execute more than once?
+                // let returnValue = info.value; // does execute more than once? yep
+                // if(returnValue instanceof Function){
+                //     returnValue = info.value();
+                // }
+                
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
                 if(TraceTypes.LocalStack.indexOf(info.type)>-1){
@@ -47,7 +51,7 @@ export class EsTracer {
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].hits = this.hits[key] + 1;
-                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(returnValue)});
+                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
                     this.hits[key] = 1;
                     this.execution.push(key);
@@ -55,7 +59,7 @@ export class EsTracer {
                         'type' : info.type,
                         'id' : info.id,
                         'text' : info.text,
-                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(returnValue)}],
+                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value)}],
                         'range': info.range,
                         'hits' : 1,
                         'extra' : info.extra
@@ -66,7 +70,7 @@ export class EsTracer {
                     throw "Trace Cancelled.";
                 }
                 
-                return returnValue;
+                return info.value;
             },
             getStackTrace: function () {
                 var entry,
@@ -183,10 +187,12 @@ export class EsTracer {
             timeOut =window.setTimeout(timeLimit, timeOutCallback);
             
             //TODO: what about async code?
-           // console.log(code);
-            this.shadowEditor = ace.edit('shadowEditorDiv');
-            this.shadowEditor.setValue(code);
-           // window.eval(code);
+            //console.log(sourceCode);
+          // console.log("-------------------------------------------------");
+          // console.log(code);
+           //this.shadowEditor = ace.edit('sandBoxDiv');
+           //.shadowEditor.setValue(code);
+           //eval(code);
             window.CANTRACE = true;
             
             timestamp = (+new Date()) - timestamp;
@@ -197,7 +203,8 @@ export class EsTracer {
             
             payload.status = this.events.onTraceServiceEnd.event;
             payload.description = this.events.onTraceServiceEnd.description + 'Completed in ' + (1 + timestamp) + ' ms.';
-            payload.data = window.TRACE.getExecutionTrace();
+            //payload.data = window.TRACE.getExecutionTrace();
+            payload.code = code;
                 
             if(publisher){
                 publisher.publish(payload.status, payload);
