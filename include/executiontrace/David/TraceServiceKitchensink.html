@@ -68,31 +68,25 @@
 </head>
 <body>
 <pre id="editor">
-Array.prototype.swap = function (i, j) {
-    var k = this[i]; this[i] = this[j]; this[j] = k;
-};
+    
+let x= 5;
+let y = 6;
 
-function bubbleSort(list) {
-    var items = list.slice(0), swapped = false, p, q;
-    for (p = 1; p < items.length; ++p) {
-        for (q = 0; q < items.length - p; ++q) {
-            if (items[q + 1] < items[q]) {
-                items.swap(q, q + 1);
-                swapped =true;
-            }
-        }
-        if (!swapped) break;
-    }
-    return items;
-}
+x = 7;
+y = 8;
 
-var N = 5, data = []; while (N > 0) data.push(N--);
-bubbleSort(data);
+/*
+// other cases
+var N = 5, data = [4, 5]; 
+
+while (N > 0) 
+    data.push(N--);
+
 var x = { c :  N};
 x.c++;
 delete x.c;
 
-var c= false, d= [];
+let c= false, d= [];
 var i, n=5;
 
 if(c){
@@ -101,25 +95,11 @@ if(c){
     
 }
 
-while(c){
-    var notused= 8;
+for(let i= 0; i < 5; i++){
+    d.push(i);
 }
-
-do{
-
-}while(c);
-for(i=0; i < 5; i++){
-
-}
-
-for( var x in c){
-}
-
-//issue 17
-
-var y =7, z = 49;
-var x = (y * 7) / z;
-
+let z = d;
+*/
 </pre>
 <div id="info" >Ready.</div>
 <div id="stacktrace" >None</div>
@@ -186,10 +166,14 @@ var x = (y * 7) / z;
             var valueTable = window.TRACE.getExecutionTrace();
             var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
             localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
-    		document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
-    		 $('#stacktrace').append(visualizeExecutionTrace(valueTable));
+    	//	document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
+    	// 	 $('#stacktrace').append(visualizeExecutionTrace(valueTable));
     	
-    	    
+    	    //timeline
+    	    let trace = window.TRACE.getVariables();
+    		document.getElementById('stacktrace').innerHTML =
+    		    'VARIABLES :<br>'+ visualizeExecutionTrace(trace.variables) +
+    		    '<br>VALUES:<br>' + visualizeExecutionTrace(trace.values);
     	 
         }else if(event.status === "Error"){
             document.getElementById('info').innerHTML = event.description;

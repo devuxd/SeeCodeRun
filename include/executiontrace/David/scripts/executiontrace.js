@@ -943,13 +943,21 @@ either expressed or implied, of the SeeCodeRun Project.
  */
     function createTraceCollector() {
         global.TRACE = {
-            hits: {}, data: {}, stack : [], execution : [], values : {}, 
+            hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [],  
             autoLog: function (info) {
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
                 if(TraceTypes.LocalStack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
                 }
+                //variables
+                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression){
+                   this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range}); 
+                }
+                
+                
+                //timeline
+                this.timeline.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range});
 
                 var stackTop =	this.stack.length - 1;
                 
@@ -958,8 +966,18 @@ either expressed or implied, of the SeeCodeRun Project.
                     this.data[key].hits = this.hits[key] + 1;
                     this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
+                    
+                    //variables
+                    if(info.type === Syntax.VariableDeclarator){
+                       this.variables.push({'id': info.id , 'range': info.range});
+                    }
+                    
+                    //timeline
+                    this.identifiers.push({'id': info.id , 'range': info.range});
+                    
                     this.hits[key] = 1;
                     this.execution.push(key);
+                    
                     this.data[key] = {
                         'type' : info.type,
                         'id' : info.id,
@@ -984,18 +1002,24 @@ either expressed or implied, of the SeeCodeRun Project.
                 return stackData;
             },
             getExecutionTraceAll: function () {
-                var i, entry, stackData = [];
-                for (var i in this.execution) {
-                    entry = this.execution[i];
+                let result = [];
+                for (let i in this.execution) {
+                    let entry = this.execution[i];
                     if (this.data.hasOwnProperty(entry)) {
-                        stackData.push(this.data[entry]);
+                        result.push(this.data[entry]);
                     }
                 }
-                return stackData;
+                return result;
+            },// timeline
+            getExpressions: function () {
+                return {variables : this.identifiers, timeline: this.timeline};
+            },
+            getVariables: function () {
+                return {variables : this.variables, values: this.values};
             },
             getExecutionTrace: function () {// getValues
                 var i, entry, data, stackData = [];
-                for (var i in this.execution) {
+                for (i in this.execution) {
                     entry = this.execution[i];
                     if (this.data.hasOwnProperty(entry)) {
                         data =this.data[entry];
@@ -1057,6 +1081,7 @@ either expressed or implied, of the SeeCodeRun Project.
                 eventListener({'status' : 'Running' , 'description': 'Executing Code'});
                 
                 timestamp = +new Date();
+                console.log(code);
                 eval(code);
                 timestamp = (+new Date()) - timestamp;
                 
