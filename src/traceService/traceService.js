@@ -38,19 +38,19 @@ export class TraceService {
       
      
     }
-// exec-viz suscribe to the onTraceChanged event
-//   onTraceChanged(result){
-//         let traceHelper = new TraceHelper(result); 
-//         traceHelper.getLine();
-//   }
-  
-//paste-bin
-// onDocumentChanged(){
-//   let code =  ace.getText();
-//   let traceresults = new TraceService().getTrace(code);
-//   // do your magic
-//   this.publish('onTraceChanged', traceresults);
-// }
+    // exec-viz suscribe to the onTraceChanged event
+    //   onTraceChanged(result){
+    //         let traceHelper = new TraceHelper(result); 
+    //         traceHelper.getLine();
+    //   }
+      
+    //paste-bin
+    // onDocumentChanged(){
+    //   let code =  ace.getText();
+    //   let traceresults = new TraceService().getTrace(code);
+    //   // do your magic
+    //   this.publish('onTraceChanged', traceresults);
+    // }
     getTimeLimit(){
        return this.timeLimit; 
     }
