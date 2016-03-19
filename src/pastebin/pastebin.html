@@ -2,6 +2,7 @@
   <require from="jsEditor/js-editor.html"></require>
   <require from="consoleWindow/console-window.html"></require>
   <require from="jsGutter/js-gutter.html"></require>
+  <require from="traceService/js-sandbox.html"></require>
 
   <section class="au-animate">
     <h2>${heading} ${pastebinId}</h2>
@@ -10,6 +11,7 @@
       <div class="col-sm-5">
         <div>
           <js-editor editor.bind="jsEditor"></js-editor>
+          <js-sandbox sandbox.bind="jsSandBox"></js-sandbox>
         </div>
       </div>
       <div class="col-sm-3">

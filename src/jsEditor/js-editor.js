@@ -28,7 +28,6 @@ export class JsEditor {
   }
 
   attached() {
-    eval(ace.edit('shadowEditorDiv').getValue());
     let editor = ace.edit('editorDiv');
     this.configureEditor(editor);
     
@@ -68,14 +67,17 @@ export class JsEditor {
 
     let editorChangedTimeout;
     
-    function onEditorChanged(e) {
-      clearTimeout(editorChangedTimeout);
-      editorChangedTimeout = setTimeout(function pub() { 
-        let payload = new TraceService().getTrace(editor.getValue());
-        console.log(JSON.stringify(payload));
-        ea.publish('onEditorChanged', payload);
-      }, 2500);
-    }
+        function onEditorChanged(e) {
+          clearTimeout(editorChangedTimeout);
+          editorChangedTimeout = setTimeout(function pub() { 
+            let payload = new TraceService().getTrace(editor.getValue());
+            //console.log(JSON.stringify(payload));
+           //ea.publish('onEditorChanged', payload);
+            ea.publish('onTraceChanged', payload);
+          }, 2500);
+          
+          
+        }
 
     this.editorChangedTimeout = editorChangedTimeout;
 
