@@ -1,7 +1,4 @@
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
 
-@inject(EventAggregator)
 export class HtmlViewer {
     
     constructor(eventAggregator) {
@@ -28,9 +25,11 @@ export class HtmlViewer {
       })
     }
     
-    addJsAndCss( {
-        let doc = document.getElementById('view')
+    addJsAndCss() {
+        let doc = document.getElementById('htmlView')
                           .contentDocument;
+                          
+        doc.body.innerHTML = this.html;
   
         let style = doc.createElement('style');
         style.textContent = this.css;
@@ -41,5 +40,5 @@ export class HtmlViewer {
         doc.head.appendChild(style);
         
         doc.body.appendChild(script);
-    })
+    }
 }

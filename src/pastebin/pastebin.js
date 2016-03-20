@@ -8,19 +8,19 @@ import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
 
-@inject(EventAggregator, Router, JsEditor, JsGutter, ConsoleWindow, HtmlEditor, CssEditor, HtmlViewer)
+@inject(Router)
 export class Pastebin {
 
-  constructor(eventAggregator, router, jsEditor, jsGutter, consoleWindow, htmlEditor, cssEditor, htmlViewer) {
-    this.eventAggregator = eventAggregator;
+  constructor(router) {
+    this.eventAggregator = new EventAggregator();
     this.router = router;
     this.heading = 'Pastebin';
-    this.jsEditor = jsEditor;
-    this.jsGutter = jsGutter;
-    this.consoleWindow = consoleWindow;
-    this.htmlEditor = htmlEditor;
-    this.cssEditor = cssEditor;
-    this.htmlViewer = htmlViewer;
+    this.jsEditor = new JsEditor(this.eventAggregator);
+    this.jsGutter = new JsGutter(this.eventAggregator);
+    this.consoleWindow = new ConsoleWindow(this.eventAggregator);
+    this.htmlEditor = new HtmlEditor(this.eventAggregator);
+    this.cssEditor = new CssEditor(this.eventAggregator);
+    this.htmlViewer = new HtmlViewer(this.eventAggregator);
   }
 
   activate(params) {

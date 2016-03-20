@@ -2,18 +2,14 @@
 /* global Firebase */
 /* global ace */
 import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
-import {Router} from 'aurelia-router';
 import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
 
-@inject(EventAggregator, Router)
 export class JsEditor {
 
-  constructor(eventAggregator, router) {
+  constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
-    this.router = router;
     this.hasErrors = false;
   }
 

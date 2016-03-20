@@ -5,6 +5,7 @@
   <require from="htmlEditor/html-editor.html"></require>
   <require from="cssEditor/css-editor.html"></require>
   <require from="htmlViewer/html-viewer.html"></require>
+  <require from="visViewer/vis-viewer.html"></require>
 
   <section class="au-animate">
     <h2>${heading} ${pastebinId}</h2>
@@ -44,8 +45,23 @@
       </div>
 
       <div class="col-sm-4">
+        <ul class="nav nav-pills">
+          <li class="active"><a data-toggle="pill" href="#output">Output</a></li>
+          <li><a data-toggle="pill" href="#visualization">Visualization</a></li>
+        </ul>
         <div class="row">
-          <html-viewer viewer.bind="htmlViewer"></html-viewer>
+          <div class="tab-content">
+            <div id="output" class="tab-pane fade in active">
+              <div>
+                <html-viewer viewer.bind="htmlViewer"></html-viewer>
+              </div>
+            </div>
+            <div id="visualization" class="tab-pane fade">
+              <div>
+                <vis-viewer viewer.bind="visViewer"></vis-viewer>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="row">
           <console-window console.bind="consoleWindow"></console-window>
