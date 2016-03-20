@@ -1,5 +1,4 @@
-import * as d3 from 'd3';
-import {TableVis} from '../tableVis/table-vis'
+import * as d3 from 'd3'; 
 
 export class VisViewer {
     

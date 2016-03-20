@@ -1,7 +1,7 @@
 <template bindable="visualizations">
     <div id="visualizations">
         <div repeat.for="visualization of visualizations">
-            <div class="visualization ${visualization.type}"></div>
+            <div id="${visualization.type}${$index}" class="visualization ${visualization.type}"></div>
         </div>
     </div>
 </template>
