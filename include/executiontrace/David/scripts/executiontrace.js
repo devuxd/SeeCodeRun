@@ -1072,7 +1072,7 @@ either expressed or implied, of the SeeCodeRun Project.
             return;
         }
         window.CANTRACE =false;
-        try {
+        // try {
                 eventListener({'status' : 'Running' , 'description': 'Building Tracer'});
                 
                 createTraceCollector();
@@ -1088,10 +1088,10 @@ either expressed or implied, of the SeeCodeRun Project.
                 eventListener({'status' : 'Finished' , 'description': 'Tracing completed in ' + (1 + timestamp) + ' ms.'});
                 window.CANTRACE = true;
     
-          } catch (e) {
-              eventListener({'status' : 'Error' , 'description': e.toString()});
-              window.CANTRACE = true;
-          }
+        //   } catch (e) {
+        //       eventListener({'status' : 'Error' , 'description': e.toString()});
+        //       window.CANTRACE = true;
+        //   }
     };
     global.getTraceAnnotations = function(){
         var i, stackTrace, entry, text, row;
