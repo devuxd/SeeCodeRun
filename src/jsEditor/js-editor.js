@@ -67,18 +67,17 @@ export class JsEditor {
 
     let editorChangedTimeout;
     
-    function onEditorChanged(e) {
-      clearTimeout(editorChangedTimeout);
-      editorChangedTimeout = setTimeout(function pub() { 
-        let syntax = new TraceService().getTrace(editor.getValue());
-
-        ea.publish('onEditorChanged', {
-            data: e,
-            length: session.getLength(),
-            syntax: syntax
-        });
-      }, 2500);
-    }
+        function onEditorChanged(e) {
+          clearTimeout(editorChangedTimeout);
+          editorChangedTimeout = setTimeout(function pub() { 
+            let payload = new TraceService().getTrace(editor.getValue());
+            //console.log(JSON.stringify(payload));
+           //ea.publish('onEditorChanged', payload);
+            ea.publish('onTraceChanged', payload);
+          }, 2500);
+          
+          
+        }
 
     this.editorChangedTimeout = editorChangedTimeout;
 
