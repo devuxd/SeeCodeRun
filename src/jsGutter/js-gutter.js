@@ -1,12 +1,9 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
 import '../mode-javascript';
 import '../theme-chrome';
 
-@inject(EventAggregator)
 export class JsGutter {
   
   constructor(eventAggregator) {
@@ -36,7 +33,7 @@ export class JsGutter {
     let ea = this.eventAggregator;
     let session = this.session;
     
-    ea.subscribe('onEditorChanged', payload => {
+    ea.subscribe('onJsEditorChanged', payload => {
       let doc = session.doc;
       
       doc.removeLines(0, doc.getLength());
