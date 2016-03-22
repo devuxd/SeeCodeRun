@@ -1,7 +1,9 @@
-<template bindable="visualizations">
-    <div id="visualizations">
-        <div repeat.for="visualization of visualizations">
-            <div id="${visualization.type}${$index}" class="visualization ${visualization.type}"></div>
+<template bindable="viewer">
+  <require from="visualization/visualization.html"></require>
+    
+    <div>
+        <div repeat.for="visualization of viewer.visualizations">
+            <visualization viz.bind="visualization"></visualization>
         </div>
     </div>
 </template>
