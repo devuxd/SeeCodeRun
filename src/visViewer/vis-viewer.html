@@ -1,0 +1,9 @@
+<template bindable="viewer">
+  <require from="visualization/visualization.html"></require>
+    
+    <div>
+        <div repeat.for="visualization of viewer.visualizations">
+            <visualization viz.bind="visualization"></visualization>
+        </div>
+    </div>
+</template>

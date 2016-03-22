@@ -1,0 +1,7 @@
+<template bindable="viz">
+  <section class="au-animate">
+    <div class="visualization-title">${viz.title}</div>
+    <div if.bind="viz.hasError" class="alert alert-danger" role="alert">${viz.errorMessage}</div>
+    <div id="${viz.type}"></div>
+  </section>
+</template>

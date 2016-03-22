@@ -7,6 +7,8 @@ import {ConsoleWindow} from '../consoleWindow/console-window';
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
+import {VisViewer} from '../visViewer/vis-viewer';
+import {TraceService} from '../traceService/traceService'
 
 @inject(Router)
 export class Pastebin {
@@ -21,6 +23,7 @@ export class Pastebin {
     this.htmlEditor = new HtmlEditor(this.eventAggregator);
     this.cssEditor = new CssEditor(this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
+    this.visViewer = new VisViewer(this.eventAggregator);
   }
 
   activate(params) {
@@ -47,6 +50,7 @@ export class Pastebin {
     this.consoleWindow.attached();
     this.htmlEditor.attached();
     this.cssEditor.attached();
+    this.visViewer.attached();
   }
 
   subscribe() {
