@@ -63,9 +63,10 @@
 		font-weight: normal;
 		letter-spacing: normal;
 		pointer-events: none;
+		display: none;
 	}
 
-	.ace_gutter-cell.seecoderun_annotation{
+	.ace_gutter-cell.seecoderun_gutter_decoration{
         background-color: #FFF;
         border-radius: 20px 0px 0px 20px; 
         box-shadow: 0px 0px 1px 1px red inset;
@@ -76,7 +77,7 @@
 </head>
 <body>
 <pre id="editor">
-
+//example of TraceViewModel using AceUtils
 Array.prototype.swap = function (i, j) {
     var k = this[i]; this[i] = this[j]; this[j] = k;
 };
@@ -134,26 +135,89 @@ let z = d;
 <div id="info" >Ready.</div>
 <div id="stacktrace" >None</div>
 <script>
-	// initiating the editor
-	var traceGutterData;
-    var editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.getSession().setMode("ace/mode/javascript");
-	editor.renderer.setShowGutter(true);
-	editor.session.setOption("useWorker", false);
-	
-	//gutter
-	setTraceGutterRenderer(editor);
-	var updateTooltip = function (position, text){
-			//example with container creation via JS
-			var div = document.getElementById('tooltip_0');
-			if(div === null){
-				div = document.createElement('div');		
-				div.setAttribute('id', 'tooltip_0'); 
-				div.setAttribute('class', 'seecoderun_tooltip'); // and make sure myclass has some styles in css
-				document.body.appendChild(div);
-			}
 
+// requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
+class AceUtils{
+    constructor(){
+        //stateless
+    }
+    // will add the tooltip rendering to a given editor.
+    //It will find decorations and add show a tooltip if there row that matches the cursor.
+    //The datamodel must contain a "rows" property with an array of rows as indexes.
+    //Each row of rows should have a "text" property to be shown.
+    // todo: generalize this method with a ViewModel{ view, datamodel} and enum for ace's events
+    
+    subscribeToEvents(editor, tooltip, gutterDecorationClassName, dataModel){
+        let updateTooltip = this.updateTooltip;
+        let isPositionInRange = this.isPositionInRange;
+        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
+
+        // for tap/ click use guttermousedown
+    	editor.on("guttermousemove", function(e){ 
+    	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
+    		let target = e.domEvent.target; 
+    		// is this the element we want? They are Ace cells, "ace_gutter-cell", which have the gutterDecorationClassName CSS style
+    		if (target.className.indexOf(gutterDecorationClassName) == -1){ 
+    			return;
+    		}
+    		// is this during user attention?
+    		if (!editor.isFocused()){ 
+    			return;
+    		}
+    		// is not the folding icon to the right of the line number?
+    		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){ 
+    			return; 
+    		}
+    		let row = e.getDocumentPosition().row;
+    		let text = "";
+    		
+    		if(dataModel.rows.hasOwnProperty(row)){
+                    text = dataModel.rows[row].text; 
+    				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
+    				pixelPosition.pageY += editor.renderer.lineHeight;
+    				updateTooltip(tooltip, pixelPosition, text);
+    		}
+    		e.stop(); 
+    		 
+    	});
+    	
+    	editor.on("mousemove", function (e){
+		let position = e.getDocumentPosition(), match;
+		if(position){ 
+            // todo: Aurelia style
+			let result = window.TRACE? window.TRACE.getExecutionTrace() : undefined;
+			if(!result){
+			    return;
+			}
+			
+			for(let key in result){
+			    let data = result[key];
+			    
+    			 if(data.range && isPositionInRange(position, data.range)){
+    			     if(match){
+    			         if(isRangeInRangeStrict(data.range, match.range)){
+    			             match = data;
+    			         }
+    			     }else{
+    			        match = data;
+    			     }
+    			 
+    			 }
+			}
+			if(match){
+    				let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
+    				pixelPosition.pageY += editor.renderer.lineHeight;
+    				updateTooltip(tooltip, pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
+    		}else{
+    				updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(position));
+    		}
+		}
+		});
+        
+    }
+    
+    updateTooltip(div, position, text){
+			
 			div.style.left = position.pageX + 'px';
 			div.style.top = position.pageY + 'px';
 			if(text){
@@ -162,186 +226,10 @@ let z = d;
 			}else{
 				div.style.display = "none";
 				div.innerText = "";
-			}			
-			
-	};
-	// for tap/ click use guttermousedown
-	editor.on("guttermousemove", function(e){ 
-	    updateTooltip(editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
-		let target = e.domEvent.target; 
-		// si the element we want? for Ace cells "ace_gutter-cell", ours is
-		if (target.className.indexOf("seecoderun_annotation") == -1){ 
-			return;
-		}
-		// is this during user attention?
-		if (!editor.isFocused()){ 
-			return;
-		}
-		// is not the folding icon to the right of the line number?
-		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){ 
-			return; 
-		}
-		let row = e.getDocumentPosition().row;
-		let text = ""
-		if(traceGutterData.rows.hasOwnProperty(row)){
-                let count = traceGutterData.rows[row]; 
-                text = "This block has been called " + count + " times";
-				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
-				pixelPosition.pageY += editor.renderer.lineHeight;
-				updateTooltip(pixelPosition, text);
-			}else{
-			//	updateTooltip(editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
 			}
-		e.stop(); 
-		 
-	});
+	}
 	
-    
-    //Esprima
-    // done: prepare demo from http://esprima.org/demo/functiontrace.html into this one 
-    // done: look the required statements in the tree
-    // todo: instrument the log of issue 16 [pending to catch the expression statement parent so code can be appended]
-    // todo: collect the stack trace [ populate tree with callstack sequences]
-    var canTrace = true;
-    let aceAnnotations =[];
-    window.onload = function () {
-        'use strict';
-        canTrace=true;
-        window.CANTRACE =true;
-    	
-        document.getElementById('info').setAttribute('class', 'alert-box secondary');
-        document.getElementById('info').innerHTML = 'Ready.';
-        
-    	var executionTrace = JSON.parse(localStorage.getItem('executionTrace'));
-    	if(executionTrace){
-    	    visualize(executionTrace.stackTrace);
-    	}
-    	
-    	setTimeout(function(){  canTrace = true;}, 3000);
-    	
-    	var aceDocumentForEsprima = editor.getSession().getDocument(); // get the document for changes in its structure
-    	aceDocumentForEsprima.on("change", function(e){
-    	    var sourceCode = aceDocumentForEsprima.getValue(); // get the code to analyze
-    	    // API CALL
-    	    if(canTrace){
-    	    	window.traceExecution(sourceCode, eventListener);
-    	        canTrace = false;
-    	        setTimeout(function(){  canTrace = true;}, 3000);
-    	    }
-    	   //  showTraceAnnotations(editor);
-    	});
-    // 	editor.getSession().on("changeAnnotation", function(e){
-    //         showTraceAnnotations(editor);
-    // 	});
-    
-    };
-    
-    // update the status of the trace run
-    function eventListener (event){
-        if(event.status === "Running"){
-            document.getElementById('info').setAttribute('class', 'alert-box secondary');
-            document.getElementById('info').innerHTML = event.description;
-    		document.getElementById('stacktrace').innerHTML = 'Waiting...';        
-        }else if(event.status === "Finished"){
-            // traceAnnotations = window.getTraceAnnotations();
-            
-           // let aceAnnotations = getAnnotations();
-           // addAceAnnotations(editor, aceAnnotations);
-            updateTraceGutterData(editor);
-            addTraceAnnotations(editor);
-            
-          
-            document.getElementById('info').setAttribute('class', 'alert-box secondary');
-            document.getElementById('info').innerHTML = event.description;
-            var stackTrace = window.TRACE.getStackTrace();
-            var valueTable = window.TRACE.getExecutionTrace();
-            var executionTrace = {'stackTrace' : stackTrace, 'valueTable' : valueTable};
-            localStorage.setItem('executionTrace', JSON.stringify(executionTrace));
-    	//	document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
-    	// 	 $('#stacktrace').append(visualizeExecutionTrace(valueTable));
-    	
-    	    //timeline
-    	    let trace = window.TRACE.getVariables();
-    		document.getElementById('stacktrace').innerHTML =
-    		    'VARIABLES :<br>'+ visualizeExecutionTrace(trace.variables) +
-    		    '<br>VALUES:<br>' + visualizeExecutionTrace(trace.values);
-    	 
-        }else if(event.status === "Error"){
-            document.getElementById('info').innerHTML = event.description;
-            document.getElementById('info').setAttribute('class', 'alert-box alert');
-            document.getElementById('stacktrace').innerHTML = 'Waiting...';
-        }else if(event.status === "Timeout"){
-            document.getElementById('info').innerHTML = event.description;
-            document.getElementById('info').setAttribute('class', 'alert-box alert');
-            document.getElementById('stacktrace').innerHTML = 'Waiting...';
-        }else if(event.status === "Busy"){
-            document.getElementById('info').innerHTML = event.description;
-            document.getElementById('info').setAttribute('class', 'alert-box alert');
-            document.getElementById('stacktrace').innerHTML = 'Busy, please wait...';
-        }
-    }
-    
-    
-    
-    // example of how to use the trace resulting data structure
-    function visualize(stackTrace){
-        var i, entry, name, index;
-        var stackText= "";
-    	var repeat = 0;
-    	var previousCall = "";
-    	var previousIndex = -1;
-        for (i = 0; i < stackTrace.length; i += 1) {
-            entry = stackTrace[i];
-            if(entry){
-                name = entry.text;
-        		index = entry.index;
-        		 if(previousCall !== name){				 
-        			 if(repeat > 0){
-        				 stackText += previousIndex + " -- " + previousCall + "( + "+ repeat +" times) <br>";
-        				 repeat = 0;
-        			 }else{
-        				 if(previousIndex > -1){
-        					 stackText += previousIndex + " -- " + previousCall + "<br> ";
-        				 }
-        				 
-        			 }
-        			 previousCall = name;
-        			 previousIndex = index;
-        		 }else{
-        			 repeat = repeat + 1; 
-        		 }
-            }
-    		
-        }
-    	if(repeat > 0){
-    		stackText +=  previousIndex + " -- " + previousCall + "( + "+ repeat +" times )";
-    		repeat = 0;
-    	}else{
-    		if(previousIndex > -1){
-    			stackText += previousIndex + " -- " + previousCall ;
-    		}					 
-    	}
-    	
-    	return stackText;  
-    
-    }
-     // example of how to use the trace resulting data structure
-    function visualizeExecutionTrace(executionTrace){
-        var i, entry;
-        var stackText= "";
-
-        for (i = 0; i < executionTrace.length; i += 1) {
-            entry = executionTrace[i];
-            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
-           
-        }
-       
-    	
-    	return stackText;  
-    
-    }
-    
-    function isPositioninRange(position, inRange){
+	isPositionInRange(position, inRange){
         
         var matchesInOneLine = (
                 position.row == inRange.start.row 
@@ -373,14 +261,16 @@ let z = d;
         return matchesEnd;
 
     }
-    function isRangeInRange(isRange, inRange){
+    
+    isRangeInRange(isRange, inRange){
         return (
                 (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
     			 &&
     			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
     			);
     }
-    function isRangeInRangeStrict(isRange, inRange){
+    
+    isRangeInRangeStrict(isRange, inRange){
         return (
                 (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
     			 &&
@@ -388,128 +278,76 @@ let z = d;
     			);
     }
     
-    editor.on("mousemove", function (e){
-		var position = e.getDocumentPosition(),  hasUpdate =false, data, match;
-		if(position){ 
-		//console.log("mouse " + position.row + ", " + position.column);
-		//	var wordRange = editor.getSession().getWordRange(position.row , position.column);
-			var result = window.TRACE? window.TRACE.getExecutionTrace() : undefined;
-			if(!result){
-			    return;
-			}
-			
-			for(var key in result){
-			    data = result[key];
-			    
-    			 if(data.range && isPositioninRange(position, data.range)){
-    			     if(match){
-    			         if(isRangeInRangeStrict(data.range, match.range)){
-    			             match = data;
-    			         }
-    			     }else{
-    			        match = data;
-    			     }
-    			 
-    			 }
-			}
-			if(match){
-    				var pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
-    				pixelPosition.pageY += editor.renderer.lineHeight;
-    				updateTooltip(pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
-    		}else{
-    				updateTooltip(editor.renderer.textToScreenCoordinates(position));
-    		}
-			
-		}
-		});
-		
-		function updateTooltip(position, text){
-			//example with container creation via JS
-			var div = document.getElementById('tooltip_0');
-			if(div === null){
-				div = document.createElement('div');		
-				div.setAttribute('id', 'tooltip_0'); 
-				div.setAttribute('class', 'seecoderun_tooltip'); // and make sure myclass has some styles in css
-				document.body.appendChild(div);
-			}
-
-			div.style.left = position.pageX + 'px';
-			div.style.top = position.pageY + 'px';
-			if(text){
-				div.style.display = "block";
-				div.innerText = text;
-			}else{
-				div.style.display = "none";
-				div.innerText = "";
-			}			
-			
-		}
-		var traceAnnotations = [];
-		function getTraceGutterCount(editor, aRow){
-            var i, stackTrace, entry, text, row;
-    
-    		stackTrace = window.TRACE.getStackTrace();
-            for (i = 0; i < stackTrace.length; i += 1) {
-                entry = stackTrace[i];
-                text = entry.text;
-    			row = entry.range.start.row;
-                if(row === aRow){
-                    return entry.count;
-                }
+    updateGutterDecorations(editor, previousRows, rows, gutterDecorationClassName){
+        this.removeGutterDecorations(editor, previousRows, gutterDecorationClassName);
+        this.addGutterDecorations(editor, rows, gutterDecorationClassName);
+	}
+	
+	addGutterDecorations(editor, rows, gutterDecorationClassName){
+        for (let row in rows) {
+            if(rows.hasOwnProperty(row)){
+                 editor.getSession().addGutterDecoration(row, gutterDecorationClassName);
             }
-            return 0;
-		}
-		
-		function addTraceAnnotations(editor){
-            var i, stackTrace, entry, text, row;
-            
-            // remove previous decorations
-            if(traceAnnotations){
-                for(i = 0; i< traceAnnotations.length; i++){
-                    row = traceAnnotations[i]; 
-                    editor.getSession().removeGutterDecoration(row, "seecoderun_annotation");
-                }
-            }
-            
-            traceAnnotations = [];
-    		stackTrace = window.TRACE.getStackTrace();
-    		var annotations = [];
-            for (i = 0; i < stackTrace.length; i++) {
-                entry = stackTrace[i];
-                text = entry.text;
-    			row = entry.range.start.row;
-                editor.getSession().addGutterDecoration(row, "seecoderun_annotation");
-                traceAnnotations.push(row);
-            }	    
-		}
-		function removeTraceAnnotations(){
-		    traceAnnotations = [];
-		}
-		function getAnnotations(){
-            var i, stackTrace, entry, text, row;
-    
-    		stackTrace = window.TRACE.getStackTrace();
-    		var annotations = [];
-            for (i = 0; i < stackTrace.length; i += 1) {
-                entry = stackTrace[i];
-                text = entry.text;
-    			row = entry.range.start.row;
-    			
-    			annotations.push({ type: "info", row: row, raw: " y is called x times", text: text + ' is called ' + entry.count + ' times'});
-                
-            }
-            return annotations;
         }
+	}
+		
+	removeGutterDecorations(editor, rows, gutterDecorationClassName){
+        for(let row in rows){ 
+            if(rows.hasOwnProperty(row)){
+             editor.getSession().removeGutterDecoration(row, gutterDecorationClassName);
+            }
+        }
+	}
+	
+    
+    getDefaultGutterRenderer(){
+        return {
+            getWidth: function(session, lastLineNumber, config) {
+                return lastLineNumber.toString().length * config.characterWidth;
+            },
+            getText: function(session, row) {
+                return row + 1;
+            }
+        };
+    }  
+    
+    
+    
+    /**
+     * setTraceGutterRenderer
+     * parameters: 
+     *              @editor, 
+     * description: 
+     * pre: editor is defined
+     * post: 
+     **/
+    setTraceGutterRenderer(editor, traceGutterData){
         
-        // example using ACE Annotations
-    function addAceAnnotations(aceEditor, aceAnnotations) {
-            var annotations = aceEditor.getSession().getAnnotations();	
-            annotations= annotations.concat(aceAnnotations);
-    		aceEditor.getSession().setAnnotations(annotations);
+        let session = editor.getSession(); // maybe attach the gutterdata to the session?
+        let traceGutterRenderer =  {
+            getWidth: function(session, lastLineNumber, config) {
+                let format = "";
+                if(traceGutterData.maxCount > 0){
+                    format = "[] ";// adds the brackets and space chars 
+                }
+                
+                return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
+            },
+            getText: function(session, row) {
+                if(traceGutterData.rows.hasOwnProperty(row)){
+                    let count = traceGutterData.rows[row].count; // "never" 0
+                    return "["+ count +"] "+ (row + 1);
+                }else{
+                    return row + 1;
+                }
+            }
+        };
+        session.gutterRenderer = traceGutterRenderer;
     }
     
-    // usage: editor.on("afterRender", updateTraceAnnotations(editor)) // reuires DOM access [Aurelia: call within attached()]
-    function updateTraceAnnotations(editor) {
+// If more gutter customization is needed. modify this is more than text is needed. Taken from Ace's source code [gutter.js]    
+// usage: editor.on("afterRender", updateTraceAnnotations(editor)) // requires DOM access [Aurelia: call within attached()]
+    customUpdateGutter(editor, traceGutterRenderer) {
         let dom = document;
         let gutter = editor.renderer.$gutterLayer;
         session.gutterRenderer = traceGutterRenderer;
@@ -625,72 +463,240 @@ let z = d;
         }
     }
     
-    let gutterRenderer =  {
-        getWidth: function(session, lastLineNumber, config) {
-            return lastLineNumber.toString().length * config.characterWidth;
-        },
-        getText: function(session, row) {
-            return String.fromCharCode(row + 65) + "|" + row;
+}
+
+class TraceViewController{
+    // uses AceUtils to render the view based on the editor events and state
+    // The view is a tooltip that is binded to the editor
+    
+}
+
+class TraceViewModel {
+    constructor(editor, tooltip, gutterDecorationClassName){
+        this.editor= editor;
+        this.tooltip = tooltip;
+        this.gutterDecorationClassName = gutterDecorationClassName;
+        this.aceUtils = undefined;
+        this.traceGutterData = {  maxCount : 0, rows : []  }; // contains custom data to be shown in the gutter cell text
+        // remove in Aurelia
+        this.attached();
+    }
+    
+    setUpEditor(editor){
+        editor.setTheme("ace/theme/monokai");
+        editor.getSession().setMode("ace/mode/javascript");
+    	editor.renderer.setShowGutter(true);
+    //	editor.session.setOption("useWorker", false);
+    }
+    
+    attached(){
+        this.resetTraceGutterData();
+        let editor = this.editor;
+        let tooltip = this.tooltip;
+        let traceGutterData =  this.traceGutterData;
+        let gutterDecorationClassName = this.gutterDecorationClassName;
+        
+        this.setUpEditor(editor);
+    	let aceUtils = new AceUtils();
+    	aceUtils.setTraceGutterRenderer(editor, traceGutterData);
+    	
+    	aceUtils.subscribeToEvents(editor, tooltip, gutterDecorationClassName, traceGutterData);
+        
+    	this.aceUtils = aceUtils;
+    }
+    
+    onTraceChanged(trace){
+            let previousRows = this.traceGutterData.rows;
+            this.updateTraceGutterData(trace);
+            let editor = this.editor;
+            let traceGutterData = this.traceGutterData;
+            let gutterDecorationClassName = this.gutterDecorationClassName;
+            this.aceUtils.updateGutterDecorations(editor, previousRows, traceGutterData.rows, gutterDecorationClassName);
+    }
+    
+    // use only after execution trace ends
+    updateTraceGutterData(trace){
+        let localTraceGutterData = this.getTraceGutterData(trace);
+        this.traceGutterData.maxCount = localTraceGutterData.maxCount;
+        this.traceGutterData.rows = localTraceGutterData.rows;
+    }
+    
+    resetTraceGutterData(){
+        if(!this.traceGutterData){
+            this.traceGutterData = {  maxCount : 0, rows : []  };
+            return;
         }
-    };
+        this.traceGutterData.maxCount = 0;
+        this.traceGutterData.rows = [];
+    }
     
-    
-    
-    function getTraceGutterData(trace){
+    getTraceGutterData(trace){
 		    let result = {  maxCount : 0, rows : []  };
     
             for (let i = 0; i < trace.length; i ++) {
                 let entry = trace[i];
     			let row = entry.range.start.row;
     			
-                result.rows[row] = entry.count;
+    			if(!result.rows.hasOwnProperty(row)){
+                 result.rows[row] = {count: entry.count, text: "This block has been called " + entry.count + " times"};
+    			}
                 
                 if(result.maxCount< entry.count){
                     result.maxCount = entry.count;
                 }
             }
             
-            
             return result;
-		}
-    // use only after execution trace ends
-    function updateTraceGutterData(){
-        let trace = window.TRACE.getStackTrace();
+	}
+    
+}
+
+	
+	
+    
+    //Esprima
+    // done: prepare demo from http://esprima.org/demo/functiontrace.html into this one 
+    // done: look the required statements in the tree
+    // todo: instrument the log of issue 16 [pending to catch the expression statement parent so code can be appended]
+    // todo: collect the stack trace [ populate tree with callstack sequences]
+    var canTrace = true;
+    window.onload = function () {
+        'use strict';
+            
+        let editor = ace.edit("editor");
+        let tooltip = document.getElementById('tooltip_0');
         
-        let localTraceGutterData = getTraceGutterData(trace);
-        traceGutterData.maxCount = localTraceGutterData.maxCount;
-        traceGutterData.rows = localTraceGutterData.rows;
-    }
-    
-    function initTraceGutterData(){
-        traceGutterData  = {  maxCount : 0, rows : []  };
-    }
-    
-    // use after the editor is created
-    function setTraceGutterRenderer(editor){
-        initTraceGutterData();
-        let session = editor.getSession(); // maybe attach the gutterdata to the session?
-        let traceGutterRenderer =  {
-            getWidth: function(session, lastLineNumber, config) {
-                let format = "";
-                if(traceGutterData.maxCount > 0){
-                    format = "[] ";// adds the brackets and space chars 
-                }
+        if(tooltip === null){
+        			tooltip = document.createElement('div');		
+        			tooltip.setAttribute('id', 'tooltip_0'); 
+        			tooltip.setAttribute('class', 'seecoderun_tooltip'); // and make sure myclass has some styles in css
+        			document.body.appendChild(tooltip);
+        }
+        let gutterDecorationClassName = "seecoderun_gutter_decoration";
+        var traceViewModel = new TraceViewModel(editor, tooltip, gutterDecorationClassName);  
+            
+        
+        // update the status of the trace run
+        let eventListener =function  (event){
+            if(event.status === "Running"){
+                document.getElementById('info').setAttribute('class', 'alert-box secondary');
+                document.getElementById('info').innerHTML = event.description;
+        		document.getElementById('stacktrace').innerHTML = 'Waiting...';        
+            }else if(event.status === "Finished"){
                 
-                return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
-            },
-            getText: function(session, row) {
-                if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row]; // "never" 0
-                    return "["+ count +"] "+ row;
-                }else{
-                    return row;
-                }
+                let trace = window.TRACE.getStackTrace();
+                traceViewModel.onTraceChanged(trace);
+              
+                document.getElementById('info').setAttribute('class', 'alert-box secondary');
+                document.getElementById('info').innerHTML = event.description;
+         
+
+        	    let variablesTrace = window.TRACE.getVariables();
+        		document.getElementById('stacktrace').innerHTML =
+        		    'VARIABLES :<br>'+ visualizeExecutionTrace(variablesTrace.variables) +
+        		    '<br>VALUES:<br>' + visualizeExecutionTrace(variablesTrace.values);
+        	 
+            }else if(event.status === "Error"){
+                document.getElementById('info').innerHTML = event.description;
+                document.getElementById('info').setAttribute('class', 'alert-box alert');
+                document.getElementById('stacktrace').innerHTML = 'Waiting...';
+            }else if(event.status === "Timeout"){
+                document.getElementById('info').innerHTML = event.description;
+                document.getElementById('info').setAttribute('class', 'alert-box alert');
+                document.getElementById('stacktrace').innerHTML = 'Waiting...';
+            }else if(event.status === "Busy"){
+                document.getElementById('info').innerHTML = event.description;
+                document.getElementById('info').setAttribute('class', 'alert-box alert');
+                document.getElementById('stacktrace').innerHTML = 'Busy, please wait...';
             }
         };
-        session.gutterRenderer = traceGutterRenderer;
-    }
+        canTrace=true;
+        window.CANTRACE =true;
+    	
+        document.getElementById('info').setAttribute('class', 'alert-box secondary');
+        document.getElementById('info').innerHTML = 'Ready.';
+        
+    	var executionTrace = JSON.parse(localStorage.getItem('executionTrace'));
+    	if(executionTrace){
+    	    visualize(executionTrace.stackTrace);
+    	}
+    	
+    	setTimeout(function(){  canTrace = true;}, 3000);
+    	
+    	var aceDocumentForEsprima = editor.getSession().getDocument(); // get the document for changes in its structure
+    	aceDocumentForEsprima.on("change", function(e){
+    	    var sourceCode = aceDocumentForEsprima.getValue(); // get the code to analyze
+    	    // API CALL
+    	    if(canTrace){
+    	    	window.traceExecution(sourceCode, eventListener);
+    	        canTrace = false;
+    	        setTimeout(function(){  canTrace = true;}, 3000);
+    	    }
+    
+    	});
 
+    
+    };
+    
+    
+    // example of how to use the trace resulting data structure
+    function visualize(stackTrace){
+        var i, entry, name, index;
+        var stackText= "";
+    	var repeat = 0;
+    	var previousCall = "";
+    	var previousIndex = -1;
+        for (i = 0; i < stackTrace.length; i += 1) {
+            entry = stackTrace[i];
+            if(entry){
+                name = entry.text;
+        		index = entry.index;
+        		 if(previousCall !== name){				 
+        			 if(repeat > 0){
+        				 stackText += previousIndex + " -- " + previousCall + "( + "+ repeat +" times) <br>";
+        				 repeat = 0;
+        			 }else{
+        				 if(previousIndex > -1){
+        					 stackText += previousIndex + " -- " + previousCall + "<br> ";
+        				 }
+        				 
+        			 }
+        			 previousCall = name;
+        			 previousIndex = index;
+        		 }else{
+        			 repeat = repeat + 1; 
+        		 }
+            }
+    		
+        }
+    	if(repeat > 0){
+    		stackText +=  previousIndex + " -- " + previousCall + "( + "+ repeat +" times )";
+    		repeat = 0;
+    	}else{
+    		if(previousIndex > -1){
+    			stackText += previousIndex + " -- " + previousCall ;
+    		}					 
+    	}
+    	
+    	return stackText;  
+    
+    }
+     // example of how to use the trace resulting data structure
+    function visualizeExecutionTrace(executionTrace){
+        var i, entry;
+        var stackText= "";
+
+        for (i = 0; i < executionTrace.length; i += 1) {
+            entry = executionTrace[i];
+            stackText += i + " -- " + JSON.stringify(entry) + "<br> ";
+           
+        }
+       
+    	
+    	return stackText;  
+    
+    }
+    
 </script>
 </body>
 </html>

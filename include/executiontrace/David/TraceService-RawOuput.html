@@ -77,7 +77,7 @@
 </head>
 <body>
 <pre id="editor">
-
+//example of TraceViewModel using AceUtils
 Array.prototype.swap = function (i, j) {
     var k = this[i]; this[i] = this[j]; this[j] = k;
 };
@@ -136,13 +136,16 @@ let z = d;
 <div id="stacktrace" >None</div>
 <script>
 
-// requires CSS styles from decorations and tooltips
+// requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
 class AceUtils{
     constructor(){
         //stateless
     }
-    // will add the rendering to the given editor
-    subscribeToEvents(editor, tooltip, gutterDecorationClassName, traceGutterData){
+    // will add the tooltip rendering to a given editor.
+    //It will find decorations and add show a tooltip if there row that matches the cursor.
+    //The datamodel must contain a "rows" property with an array of rows as indexes.
+    //Each row of rows should have a "text" property to be shown.
+    subscribeToEvents(editor, tooltip, gutterDecorationClassName, dataModel){
         let updateTooltip = this.updateTooltip;
         let isPositionInRange = this.isPositionInRange;
         let isRangeInRangeStrict = this.isRangeInRangeStrict; 
@@ -166,9 +169,8 @@ class AceUtils{
     		let row = e.getDocumentPosition().row;
     		let text = "";
     		
-    		if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row]; 
-                    text = "This block has been called " + count + " times";
+    		if(dataModel.rows.hasOwnProperty(row)){
+                    text = dataModel.rows[row].text; 
     				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
     				pixelPosition.pageY += editor.renderer.lineHeight;
     				updateTooltip(tooltip, pixelPosition, text);
@@ -330,7 +332,7 @@ class AceUtils{
             },
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row]; // "never" 0
+                    let count = traceGutterData.rows[row].count; // "never" 0
                     return "["+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;
@@ -527,7 +529,7 @@ class TraceViewModel {
     			let row = entry.range.start.row;
     			
     			if(!result.rows.hasOwnProperty(row)){
-                 result.rows[row] = entry.count;
+                 result.rows[row] = {count: entry.count, text: "This block has been called " + entry.count + " times"};
     			}
                 
                 if(result.maxCount< entry.count){
@@ -582,14 +584,10 @@ class TraceViewModel {
                 let stackTrace = window.TRACE.getStackTrace();
                 let valueTable = window.TRACE.getExecutionTrace();
                 
-        	//	document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
-        	// 	 $('#stacktrace').append(visualizeExecutionTrace(valueTable));
+        		document.getElementById('stacktrace').innerHTML ='LOCAL CALL STACK:<br>'+ visualize(stackTrace)+'<br>EXECUTION TRACE:<br>';
+        		 $('#stacktrace').append(visualizeExecutionTrace(valueTable));
         	
-        	    //timeline
-        	    let variablesTrace = window.TRACE.getVariables();
-        		document.getElementById('stacktrace').innerHTML =
-        		    'VARIABLES :<br>'+ visualizeExecutionTrace(variablesTrace.variables) +
-        		    '<br>VALUES:<br>' + visualizeExecutionTrace(variablesTrace.values);
+
         	 
             }else if(event.status === "Error"){
                 document.getElementById('info').innerHTML = event.description;
