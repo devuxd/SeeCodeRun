@@ -192,7 +192,7 @@ export class EsTracer {
           // console.log(code);
            //this.shadowEditor = ace.edit('sandBoxDiv');
            //.shadowEditor.setValue(code);
-           //eval(code);
+           eval(code);
             window.CANTRACE = true;
             
             timestamp = (+new Date()) - timestamp;
