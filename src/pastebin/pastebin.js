@@ -6,26 +6,28 @@ import {JsGutter} from '../jsGutter/js-gutter';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import {Chat} from '../chat/chat';
 
-@inject(EventAggregator, Router, JsEditor, JsGutter, ConsoleWindow, Chat)
+@inject(EventAggregator, Router, JsEditor, JsGutter, ConsoleWindow)
 export class Pastebin {
 
-  constructor(eventAggregator, router, jsEditor, jsGutter, consoleWindow, chat) {
+  constructor(eventAggregator, router, jsEditor, jsGutter, consoleWindow) {
     this.eventAggregator = eventAggregator;
     this.router = router;
     this.heading = 'Pastebin';
     this.jsEditor = jsEditor;
     this.jsGutter = jsGutter;
     this.consoleWindow = consoleWindow;
-    this.chat = chat;
+    
   }
 
   activate(params) {
+    let baseURL = 'https://seecoderun.firebaseio.com';
     if (params.id) {
       let id = params.id;
       this.pastebinId = id;
       this.jsEditor.activate({ id: id });
+      this.chat = new Chat(baseURL, this.pastebinId);
     } else {
-      let baseURL = 'https://seecoderun.firebaseio.com';
+      
       let firebase = new Firebase(baseURL);
       
       let id = firebase.push().key();

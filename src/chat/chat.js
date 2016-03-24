@@ -1,22 +1,19 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
-import '../mode-javascript';
-import '../theme-chrome';
 
-@inject(EventAggregator)
+
 export class Chat {
   
-  constructor(eventAggregator) {
-    this.eventAggregator = eventAggregator;
+  constructor(baseURL, pastebinId) {
+    this.baseURL = baseURL;
+    this.pastebinId = pastebinId;
   }
   
   attached() {
     
     //New Firebasechat Reference
-    var chatFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL)
+    var chatFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/chat');
     
     
         // CREATE A REFERENCE TO FIREBASE
@@ -62,51 +59,27 @@ export class Chat {
     
     //End Firebase Code
     
+    //Chat Box User Interface
     
-    	//Chat show/hide
-	
 		$(document).ready(function(){
     $('#chatDiv').hide();
     $('#hide').click(function(){
         $('#chatDiv').toggle();
-    });        
-});
-    //Chat box draggable       
-    $(function() {
-    $( "#chatDiv" ).draggable();
-  });
-  
-  
+    }); 
+    
+ });
+
+  //Chat box draggable   	
+     $(function() {
+     $("#chatDiv").draggable();
+   });
   
   //Chat box resizable    
-      $(function() {
-    $( "#chatDiv" ).resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
+    $(function() {
+     $("#chatDiv").resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
   });
-    
+ 
    
-    this.subscribe();
-  }
-
-  
-  subscribe() {
-    let ea = this.eventAggregator;
-    let session = this.session;
-    
-    ea.subscribe('onEditorChanged', payload => {
-      let doc = session.doc;
-      
-      doc.removeLines(0, doc.getLength());
-      
-      // TODO: fix uncaught length error
-      doc.insertLines(0, new Array(payload.length - 1));
-      
-      for(let result of payload.syntax) {
-        doc.insertInLine({
-          row: result.location.row,
-          column: result.location.col
-        }, result.content);
-      }
-    });
   }
 }
 
