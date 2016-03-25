@@ -2,33 +2,25 @@
 /* global Firebase */
 /* global ace */
 import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
-import {Router} from 'aurelia-router';
 import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
 
-@inject(EventAggregator, Router)
 export class JsEditor {
 
-  constructor(eventAggregator, router) {
+  constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
-    this.router = router;
     this.hasErrors = false;
   }
 
   activate(params) {
     if (params.id) {
       this.pastebinId = params.id;
-    } else {
-      let baseURL = 'https://seecoderun.firebaseio.com';
-      let firebase = new Firebase(baseURL);
-      let pastebinId = firebase.push().key();
-    }
+    } 
   }
 
   attached() {
-    let editor = ace.edit('editorDiv');
+    let editor = ace.edit('jsEditorDiv');
     this.configureEditor(editor);
     
     this.editor = editor;
@@ -55,7 +47,6 @@ export class JsEditor {
     session.setUseWrapMode(true);
     session.setUseWorker(false);
     session.setMode('ace/mode/javascript');
-    session.addGutterDecoration(0, 'label label-info');
   }
 
   setupSessionEvents(session) {
@@ -72,7 +63,8 @@ export class JsEditor {
       editorChangedTimeout = setTimeout(function pub() { 
         let syntax = new TraceService().getTrace(editor.getValue());
 
-        ea.publish('onEditorChanged', {
+        ea.publish('onJsEditorChanged', {
+            js: editor.getValue(),
             data: e,
             length: session.getLength(),
             syntax: syntax
