@@ -1,3 +1,56 @@
+
 <template bindable="sandbox">
     <div id="sandBoxDiv" style="height: 1000px"></div>
 </template>
+
+<html>
+    <head>
+        <script src="jlinq/JSLINQ.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    </head>
+    <body>
+        <div id="page-wrapper">
+        <h3> Search Section</h3>
+        <div>
+            Enter Search Term:
+            <input type="textfield" id="searchTerm" placeholder="search by id"> 
+            <select name="" id="">
+              <option value="All Values">All Values</option>
+              <option value="variableDeclaration">Variable Declaration</option>
+              <option value="expression">expression</option>
+            </select>
+        </div>
+        <pre id='searchResultDisplayArea'></pre>
+    </div>
+    <script>
+    /* global jlinq */
+        window.onload = function(){
+            var queryTerm = document.getElementById('searchTerm');
+            var displayArea = document.getElementById('searchResultDisplayArea');
+            // sample source code for playing with jlinq
+            var source = [  {"ID":1, var:"x", type:"expression"},
+                            {"ID":2, var:"y", type:"expression"},
+                            {"ID":3, var:"z", type:"expression"}];
+           
+            $("#searchTerm").change(function(e){
+                var searchedTerm = parseInt(this.value);
+                var usingJlinq = JSLINQ(source);
+                // returns a object array of the queried results
+                var query1 = usingJlinq.Where(function(item){return item.ID == searchedTerm}).ToArray();
+                var qData = "Query Result:\n";
+                var allAssociatedKeys = "";
+                var i;
+                for(i=0;i<query1.length;i++){
+                    for(var key in query1[i]){
+                        allAssociatedKeys+="key:"+key+"\n";
+                    }
+                    qData += "ID"+":"+query1[i].ID+"\n";
+                    qData += "var"+":"+query1[i].var+"\n";
+                    qData += "type"+":"+query1[i].type+"\n";
+                }            
+                displayArea.innerHTML = JSON.stringify(query1);
+            });
+        }
+        </script>
+    </body>
+</html>
