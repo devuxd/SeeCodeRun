@@ -22,13 +22,15 @@
         <h3> Search Section</h3>
         <div>
             Enter Search Term:
-            <input type="textfield" id="searchTerm" placeholder="search by id"> 
+            <input type="textfield" id="searchTerm" placeholder="Enter 'expression'"> 
             <select name="" id="">
               <option value="All Values">All Values</option>
               <option value="variableDeclaration">Variable Declaration</option>
               <option value="expression">expression</option>
             </select>
         </div>
+        <br/>
+        <h3> Search Results:</h3>
         <pre id='searchResultDisplayArea'></pre>
     </div>
     <script>
@@ -37,27 +39,52 @@
             var queryTerm = document.getElementById('searchTerm');
             var displayArea = document.getElementById('searchResultDisplayArea');
             // sample source code for playing with jlinq
-            var source = [  {"ID":1, var:"x", type:"expression"},
-                            {"ID":2, var:"y", type:"expression"},
-                            {"ID":3, var:"z", type:"expression"}];
+            var source = [  {"ID":1, var:"x", "type":"expression"},
+                            {"ID":2, var:"y", "type":"expression"},
+                            {"ID":3, var:"z", "type":"expression"}];
            
             $("#searchTerm").change(function(e){
-                var searchedTerm = parseInt(this.value);
+                var searchedTerm1 = parseInt(this.value);
+                var searchedTerm2 = this.value;
                 var usingJlinq = JSLINQ(source);
                 // returns a object array of the queried results
-                var query1 = usingJlinq.Where(function(item){return item.ID == searchedTerm}).ToArray();
+                var table =" ";
+                var query1 = usingJlinq.Where(function(item){return item.ID == searchedTerm1}).ToArray();
+                var query2 = usingJlinq.Where(function(item){return item.type == searchedTerm2}).ToArray();
                 var qData = "Query Result:\n";
                 var allAssociatedKeys = "";
                 var i;
-                for(i=0;i<query1.length;i++){
-                    for(var key in query1[i]){
+                for(i=0;i<query2.length;i++){
+                    for(var key in query2[i]){
                         allAssociatedKeys+="key:"+key+"\n";
                     }
-                    qData += "ID"+":"+query1[i].ID+"\n";
-                    qData += "var"+":"+query1[i].var+"\n";
-                    qData += "type"+":"+query1[i].type+"\n";
-                }            
-                displayArea.innerHTML = JSON.stringify(query1);
+                    qData += "ID"+":"+query2[i].ID+"\n";
+                    qData += "var"+":"+query2[i].var+"\n";
+                    qData += "type"+":"+query2[i].type+"\n";
+                } 
+                
+                
+                table = "<table>";
+                for(var i=0; i < query2.length; i=i+3){
+                    table += "<th>Results</th>";
+                    table += "<tr><td>" + JSON.stringify(query2[i]) + "</td></tr>";
+                    if(i+1 < query2.length){
+                       table += "<tr><td>" + ( query2[i+1]===undefined ? '' :JSON.stringify(query2[i+1]) )+"</td></tr>";
+                    }
+                    else if(i+2 < query2.length){
+                        table += "<tr><td>" + ( query2[i+2]===undefined ? '' : JSON.stringify(query2[i+2]))+"</td></tr>";
+                    }
+                     else if(i+3 < query2.length){
+                        table += "<tr><td>" + ( query2[i+3]===undefined ? '' : JSON.stringify(query2[i+3]) )+"</td></tr>";
+                    }
+                    else{
+                        table += "<tr><td>no data</td></tr>";
+                    }
+                }
+               table += "<table><br /> <br />";
+                
+                //displayArea.innerHTML = JSON.stringify(query2);
+                displayArea.innerHTML =  table;
             });
         }
         </script>
