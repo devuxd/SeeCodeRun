@@ -1,1 +1,0 @@
-module.exports = require("github:jspm/nodelibs-tls@0.1.0/index");

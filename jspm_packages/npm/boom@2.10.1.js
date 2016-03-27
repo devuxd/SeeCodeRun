@@ -1,1 +1,0 @@
-module.exports = require("npm:boom@2.10.1/lib/index.js");

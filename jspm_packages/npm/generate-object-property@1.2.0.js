@@ -1,1 +1,0 @@
-module.exports = require("npm:generate-object-property@1.2.0/index.js");

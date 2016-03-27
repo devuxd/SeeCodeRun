@@ -1,1 +1,0 @@
-module.exports = require("npm:delayed-stream@1.0.0/lib/delayed_stream");

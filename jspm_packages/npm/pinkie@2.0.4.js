@@ -1,1 +1,0 @@
-module.exports = require("npm:pinkie@2.0.4/index");

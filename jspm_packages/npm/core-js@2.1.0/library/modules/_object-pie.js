@@ -1,2 +1,0 @@
-/* */ 
-exports.f = {}.propertyIsEnumerable;

@@ -1,1 +1,0 @@
-module.exports = require("npm:timers-browserify@1.4.2/main.js");

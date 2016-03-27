@@ -1,1 +1,0 @@
-module.exports = require("npm:verror@1.3.6/lib/verror.js");

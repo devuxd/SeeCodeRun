@@ -1,1 +1,0 @@
-module.exports = require("npm:nwmatcher@1.3.7/src/nwmatcher");

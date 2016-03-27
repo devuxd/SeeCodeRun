@@ -1,1 +1,0 @@
-module.exports = require("npm:cssstyle@0.2.34/lib/CSSStyleDeclaration.js");

@@ -1,403 +1,47 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="utf-8" />
-  
-  <!-- Includes -->
+	<title>SeeCode.Run</title>
+	<link rel="stylesheet" href="jspm_packages/npm/font-awesome@4.5.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="styles/styles.css">
+	<link rel="stylesheet" href="styles/jqx.base.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+
+<body aurelia-app="main">
+	<div class="splash">
+		<div class="message">SeeCode.Run</div>
+		<i class="fa fa-spinner fa-spin"></i>
+	</div>
+
+	<script src="jspm_packages/system.js"></script>
+	<script src="config.js"></script>
+    
+	<script>
+		System.import('aurelia-bootstrapper');
+	</script>
+
+      <!-- JQuery -->
+ 	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+	<!-- Firebase -->
 	<script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
-	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-	<!--  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"> -->
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="jquery-ui.js"></script>
 
 	<!-- ACE and its JavaScript mode and theme files -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js"></script>
 
-   <!-- splitter -->
-    
-    <link rel="stylesheet" href="include/splitter/jqx.base.css" type="text/css" />
-    <script type="text/javascript" src="include/splitter/jquery-1.11.1.min.js"></script>
-    <script type="text/javascript" src="include/splitter/jqxcore.js"></script>
-    <script type="text/javascript" src="include/splitter/jqxsplitter.js"></script>
-    <script type="text/javascript" src="include/splitter/buildingSplitter.js"></script>
-
 	<!-- Firepad -->
-	<link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.2.0/firepad.css" />
-	<script src="https://cdn.firebase.com/libs/firepad/1.2.0/firepad.min.js"></script>
+	<script src="https://cdn.firebase.com/libs/firepad/1.2.0/firepad.js"></script>
 
-	<!-- Esprima -->
-	<script src="include/esprima.js"></script>
-	<!-- <script src="include/escodegen.js"></script> -->
-     <!-- gutter -->
-	<script src="include/gutter.js"></script>
-	<!-- stub -->
-	<script src="include/stub.js"></script>
-	<!-- visualization -->
-	<script src="include/visualization.js"></script>
-	<!-- Stylesheet -->
-	<link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="jquery-ui.css" />
-	<link rel="stylesheet" href="chat.css" />
-</head>
+    	
 
-<body>
-  	<!-- Navigation Bar Work (Steph/Alex)-->
-	  			<nav class="navbar navbar-default  navbar-fixed-top">
-	  			<div class="container-fluid">
-	  				<!-- SeeCode.Run Title **THIS IMAGE WILL BE UPDATED**-->
-	  				<ul class = "nav pull-left">
-	  					<li>
-	  						<img src="images\SeeCodeRunTitle.png" alt="See Code Run" style="max-width: 250px">
-	  					</li>
-	  				</ul>
-	  			
-	  				<!-- Chat STEPH TEST WORK-->
-		  			<ul class = "nav pull-right">
-		  				<li>
-		  				<a href="#popup" id="hide"><span class='glyphicon glyphicon-share'></span>Chat</a><!--SB added-DON'T LIKE THE GLYPH-->
-		  				</li>
-		  			</ul>
-	  				
-	  				
-	  				<!-- Help-->
-		  			<ul class = "nav pull-right">
-		  				<li>
-		  					<!--<img src ="images\HelpIcon.jpg" alt="Help"> SB COMMENTED OUT-->
-		  					<a href="#"><span class='glyphicon glyphicon-question-sign'></span>Help</a><!--SB added-->
-		  				</li>
-		  			</ul>
-	  			
-	  				<!-- Contact Us-->
-		  			<ul class = "nav pull-right">
-		  				<li>
-		  					<a href="mailto:contact@seecode.run"><span class='glyphicon glyphicon-envelope'></span>Contact Us</a><!--SB added span-->
-		  				</li>
-		  			</ul>
-	  			
-	  				<!-- About-->
-		  			<ul class = "nav pull-right">
-		  				<li>
-		  					<a href="#"><span class='glyphicon glyphicon-info-sign'></span>About</a><!--SB added span-->
-		  				</li>
-		  			</ul>
-	  		
-	  				
-	  			</div>
-	  			
-	  			
-	  			
-	  		</nav>
-  <div class="container-fluid">
-  	<div class="row">
-  	 <div id ="mainSplitter">
-	  <div class="col-md-5 col-xs-5 col-sm-5" style="padding-left: 0px; padding-right: 0px">	  
-	  	<div role="tabpanel" >
-		  	<ul class="nav nav-tabs">
-	  			<li role="presentation" class="active">
-	  				<a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
-	  			<li role="presentation">
-	  				<a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
-	  			<li role="presentation">
-	  				<a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
-			</ul>
-		        </div>
-			<div class="tab-content">	  
-		  	 <div role="tabpanel" class="tab-pane active" id="js-container" >
-                  <div class ="row">
-                  <div class="col-md-9 col-xs-7 col-sm-7" style="padding-right: 0px;padding-top: 5px">
-		  			<div id="aceJSEditorDiv" style="height: 700px;"></div>
-                  </div>
-                  <div class="col-md-3 col-xs-5 col-sm-5" style="padding-left: 0px; padding-right: 15px; padding-top:3px">
-                    <div id="gutter_space"  ><div  class= "iframeCss" id="gutter" ></div></div>
-                  
-                  </div>
-                </div>
-		  	 </div>
-               
-			  	<div role="tabpanel" class="tab-pane" id="html-container">
-			  		<div id="aceHTMLEditorDiv" style="height: 700px"></div></div>
-			  	<div role="tabpanel" class="tab-pane" id="css-container">
-			  		<div id="aceCSSEditorDiv" style="height: 700px"></div></div>
-			</div>
-		</div>
-       <div>
-       <div role="tabpanel" >
-			<ul class="nav nav-tabs">
-			  <li role="presentation" class="active" >
-			  	<a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">output</a></li>
-		  	  <li role="presentation" >
-		  		<a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
-		  	</ul>
-		  </div>
-		  <div class="col-md-7 col-xs-7 col-sm-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
-		    <div class="tab-content">
-			   
-				<iframe role="tabpanel" id="preview" class="tab-pane active iframeCssPreview"  >
-				</iframe>
-			 
-			 
-			 <div role="tabpanel" class="tab-pane" id="visualization-container">
-		       <div class="checkbox" id="visual">
-	             <label><input type="checkbox" id="mycheck">Activate Selection for Visualization</label></br><span id="note">You have activated Visualization Mode, Select any expression or variable to view visualization.</span>
-	           </div>
-			 </div>
-			</div>
-		  <div id="console-output" class="flow"></div>
-		 </div>
-	 </div>
-    </div>
-   </div>
-  </div>
-  
  
-<div id="popup" class="seecoderun-chat l-demo-container">
-  <div class="seecoderun-chatHeader" <header>SeeCode.Run Chat</header></div> <!-- added div and class--> 
 
-  <div class='seecoderun-chat-toolbar'>
-    <label for="nameInput">Username:</label>
-    <input type='text' id='nameInput' placeholder='Enter Your Username...'>
-  </div>
-
-  <ul id='seecoderun-messages' class="seecoderun-chat-messages"></ul>
-
-  <footer>
-    <input type='text' id='messageInput'  placeholder='Type Message Here...'>
-  </footer>
-</div>
-  </div>
-  
-<script>
-	"use strict";
-
-	//Chat show/hide
-	
-
-	
-
-    //Chat box draggable       
-    $(function() {
-    $( "#popup" ).draggable();
-  });
-  
-  
-  
-  //Chat box resizable    
-      $(function() {
-    $( "#popup" ).resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
-  });
-      
-
-	// Helper to get hash from end of URL or generate a random one.
-	function getUniqueCodeURL(baseURL) {
-	  var ref = new Firebase(baseURL);
-	  var hash = window.location.hash.replace(/#/g, '');
-	  if (hash) {
-	    ref = ref.child(hash);
-	  } else {
-	    ref = ref.push(); // generate unique location.
-	    window.location = window.location + '#' + ref.key(); // add it as a hash to the URL.
-	  }
-	  if (typeof console !== 'undefined')
-	    console.log('Firebase data: ', ref.toString());
-	  return ref.key();
-	}
-	
-	function onEditorChanged(e)
-	{
-		// Reset the timeout to update the iframe.	
-		clearTimeout(editorChangedTimeout);
-		editorChangedTimeout = setTimeout(function() {
-			if (!(hasjsErrors || hashtmlErrors || hascssErrors))
-				updateIframe();
-		}, 2500);
-	}
-
-	
-	function updateIframe()
-	{
-		console.log("Updated iFrame");
-		// Clear the output window
-		$('#console-output').html('');
-           // calling the stub
-              fake();
-        // Populate the iframe with the current html, css, and js.
-		$("#preview").contents().find("body").html(htmlEditor.getValue());
-		$("#preview").contents().find("head").append('<style>' + cssEditor.getValue() + '</style>'
-				+ '<script src="https://code.jquery.com/jquery-2.1.4.min.js"><\/script>'
-				+ '<script>' + jsEditor.getValue() + '<\/script>');
-	}
-	
-	// Global vars
-	var editorChangedTimeout = null;
-
-	// Initialize Firebase Refs for js, html, and css
-	var baseURL = 'https://seecoderun.firebaseio.com';
-	var uniqueCodeURL = getUniqueCodeURL(baseURL);
-	var jsFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/js');
-	var htmlFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/html');
-	var cssFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/css');	
-
-
-//Begin Firebase code
-	
-    //New Firebasechat Reference
-    var chatFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL)
-    
-    
-        // CREATE A REFERENCE TO FIREBASE
-     // var messagesRef = new Firebase('https://j3v3r219xav.firebaseio-demo.com/');
-    
-      // REGISTER DOM ELEMENTS
-      var messageField = $('#messageInput');
-      var nameField = $('#nameInput');
-      var messageList = $('#seecoderun-messages');
-    
-      // LISTEN FOR KEYPRESS EVENT
-      messageField.keypress(function (e) {
-        if (e.keyCode == 13) {
-          //FIELD VALUES
-          var username = nameField.val();
-          var message = messageField.val();
-    
-          //SAVE DATA TO FIREBASE AND EMPTY FIELD
-          chatFirebaseRef.push({name:username, text:message});
-          messageField.val('');
-        }
-      });
-    
-      // Add a callback that is triggered for each chat message.
-      chatFirebaseRef.limitToLast(10).on('child_added', function (snapshot) {
-        //GET DATA
-        var data = snapshot.val();
-        var username = data.name;
-        var message = data.text;
-    
-        //CREATE ELEMENTS MESSAGE & SANITIZE TEXT
-        var messageElement = $("<li>");
-        var nameElement = $("<strong class='seecoderun-chat-username'></strong>")
-        nameElement.text(username);
-        messageElement.text(message).prepend(nameElement);
-    
-        //ADD MESSAGE
-        messageList.append(messageElement)
-    
-        //SCROLL TO BOTTOM OF MESSAGE LIST
-        messageList[0].scrollTop = messageList[0].scrollHeight;
-      });
-    
-    //End Firebase Code
-	
-	// Set up ACE editors and firepads for js, html, and css
-	var jsEditor = ace.edit('aceJSEditorDiv');
-	jsEditor.getSession().setMode("ace/mode/javascript");
-	jsEditor.setTheme("ace/theme/chrome");
-	jsEditor.setShowFoldWidgets(false);
-	jsEditor.getSession().on('change', onEditorChanged);
-	
-	var hasjsErrors = false;
-	var firepad = Firepad.fromACE(jsFirebaseRef, jsEditor, 
-		{ defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}' });
-
-	var htmlEditor = ace.edit('aceHTMLEditorDiv');
-	htmlEditor.getSession().setMode("ace/mode/html");
-	htmlEditor.setTheme("ace/theme/chrome");
-	htmlEditor.setShowFoldWidgets(false);
-	htmlEditor.getSession().on('change', onEditorChanged);
-	var hashtmlErrors = false;
-	var firepad = Firepad.fromACE(htmlFirebaseRef, htmlEditor, 
-		{ defaultText: '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n'
-						+ '<body>\n\n</body>\n</html>' });
-
-	var cssEditor = ace.edit('aceCSSEditorDiv');
-	cssEditor.getSession().setMode("ace/mode/css");
-	cssEditor.setTheme("ace/theme/chrome");
-	cssEditor.setShowFoldWidgets(false);
-	cssEditor.getSession().on('change', onEditorChanged);
-	var hascssErrors = false;
-	var firepad = Firepad.fromACE(cssFirebaseRef, cssEditor, 
-		{ defaultText: '' });	
-	
-	// Subscribe to annotation changes
-	jsEditor.getSession().on("changeAnnotation", function(){
-		// Look through the JSON structure of annotations. If there is any annotation that is an error,
-		// set the error flag and halt.
-    	var annot = jsEditor.getSession().getAnnotations();
-    	for (var key in annot)
-    	{
-        	if (annot.hasOwnProperty(key) && annot[key].type == 'error')
-        	{
-        		console.log("has js errors");
-        		hasjsErrors = true;
-        		return;
-        	}        
-    	}
-    	hasjsErrors = false;
-    });
-	
-	
-    // Intercept calls to console.log and output them to the console window      
-    (function () {
-  	  var log = console.log;
-  	  console.log = function () {
-  		$('#console-output').append(Array.prototype.slice.call(arguments) + '<BR>');  
-  	    log.apply(this, Array.prototype.slice.call(arguments));
-  	  };
-  	}());
-    
-    // Activate tabs in code UI
-    $('#jsTab a').click(function (e) {
-	  e.preventDefault();
-	  $(this).tab('show');
-	});
-    $('#htmlTab a').click(function (e) {
-  	  e.preventDefault();
-  	  $(this).tab('show');
-  	});
-    $('#cssTab a').click(function (e) {
-  	  e.preventDefault();
-  	  $(this).tab('show');
-  	});
-    
-$('#visual').on('change', 'input[type="checkbox"]', function(){
-	toggle(this.checked);
-	jsEditor.clearSelection();
-
-});
-
-jsEditor.on("click", function(e){
-	
- 	var checkbox = $('#visual input[type="checkbox"]');		
-	if(checkbox.prop( "checked" ))
-     {
-     	console.info("checked");				
-		var content = jsEditor.getSelectedText();
-     		console.info(content);	
-     }				
-	 else
-	 {
-     	console.info("unchecked");
- 	}
-});
-
-$(function () {
-    $('#gutter').scroll(function () {
- jsEditor.getSession().setScrollTop($(this).scrollTop());
- });
-    
-});
-
-
-</script>
-
+		
 </body>
+
+   
+
 </html>
-
-
-<!-- 
-
-https://seecode.run/#-KBnY_OfJHO21JwerJgg
-
-https://groups.google.com/forum/#!topic/ace-discuss/lY-vF2Bd6NY
-
--->
