@@ -47,39 +47,28 @@
                 var searchedTerm1 = parseInt(this.value);
                 var searchedTerm2 = this.value;
                 var usingJlinq = JSLINQ(source);
-                // returns a object array of the queried results
+                // returns an object array of the queried results
                 var table =" ";
                 var query1 = usingJlinq.Where(function(item){return item.ID == searchedTerm1}).ToArray();
                 var query2 = usingJlinq.Where(function(item){return item.type == searchedTerm2}).ToArray();
-                var qData = "Query Result:\n";
+                var qData1, qData2, qData3;
                 var allAssociatedKeys = "";
                 var i;
+                var number=0;
+                table = "<table border='1'>Results</th>";
                 for(i=0;i<query2.length;i++){
                     for(var key in query2[i]){
                         allAssociatedKeys+="key:"+key+"\n";
                     }
-                    qData += "ID"+":"+query2[i].ID+"\n";
-                    qData += "var"+":"+query2[i].var+"\n";
-                    qData += "type"+":"+query2[i].type+"\n";
-                } 
-                
-                
-                table = "<table>";
-                for(var i=0; i < query2.length; i=i+3){
-                    table += "<th>Results</th>";
-                    table += "<tr><td>" + JSON.stringify(query2[i]) + "</td></tr>";
-                    if(i+1 < query2.length){
-                       table += "<tr><td>" + ( query2[i+1]===undefined ? '' :JSON.stringify(query2[i+1]) )+"</td></tr>";
-                    }
-                    else if(i+2 < query2.length){
-                        table += "<tr><td>" + ( query2[i+2]===undefined ? '' : JSON.stringify(query2[i+2]))+"</td></tr>";
-                    }
-                     else if(i+3 < query2.length){
-                        table += "<tr><td>" + ( query2[i+3]===undefined ? '' : JSON.stringify(query2[i+3]) )+"</td></tr>";
-                    }
-                    else{
-                        table += "<tr><td>no data</td></tr>";
-                    }
+                    qData1 = "ID"+":"+query2[i].ID;
+                    qData2 = "var"+":"+query2[i].var;
+                    qData3 = "type"+":"+query2[i].type;
+                  
+                    number++;
+                   
+                    table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  number + " " +"</td>" + "<td>" + qData1 + "</td>" +
+                    + "<td>" + qData2 + "</td>" + "<td>" + qData3 + "</td> </tr>";
+                   
                 }
                table += "<table><br /> <br />";
                 
