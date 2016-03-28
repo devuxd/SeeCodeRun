@@ -22,8 +22,8 @@
         <h3> Search Section</h3>
         <div>
             Enter Search Term:
-            <input type="textfield" id="searchTerm" placeholder="Enter 'expression'"> 
-            <select name="" id="">
+            <input type="textfield" id="searchTerm" placeholder="Enter"> 
+            <select name="optionSelected" id="optionSelected">
               <option value="All Values">All Values</option>
               <option value="variableDeclaration">Variable Declaration</option>
               <option value="expression">expression</option>
@@ -41,28 +41,47 @@
             // sample source code for playing with jlinq
             var source = [  {"ID":1, var:"x", "type":"expression"},
                             {"ID":2, var:"y", "type":"expression"},
-                            {"ID":3, var:"z", "type":"Literal"}];
+                            {"ID":3, var:"z", "type":"Literal"},
+                            {"ID":4, var:"z", "type":"Literal"},
+                            {"ID":5, var:"y", "type":"expression"}
+                        ];
            
             $("#searchTerm").change(function(e){
-                var searchedTerm1 = parseInt(this.value);//filter by ID
-                var searchedTerm2 = this.value; //filter by type
+                //var searchedTerm = parseInt(this.value);//filter by ID
+                var searchedTerm = this.value; //filter by type
                 var usingJlinq = JSLINQ(source);
                 // returns an object array of the queried results
-                var table =" ";
-                var query1 = usingJlinq.Where(function(item){return item.ID == searchedTerm1}).ToArray();
-                var query2 = usingJlinq.Where(function(item){return item.type == searchedTerm2}).ToArray();
+               var select = document.getElementById("optionSelected");
+               var option = select.options[select.selectedIndex].value;
+              
+               if(option == "All Values")
+               {
+                   var query = usingJlinq.Where(function(item){return item.ID == searchedTerm}).ToArray();
+               }
+               else if(option == "variableDeclaration")
+               {
+                    var query = usingJlinq.Where(function(item){return item.var == searchedTerm}).ToArray();
+               }
+                else if(option == "expression")
+               {
+                    var query = usingJlinq.Where(function(item){return item.type == searchedTerm}).ToArray();
+               }
+                
+            
                 var qData1, qData2, qData3;
                 var allAssociatedKeys = "";
+                var table =" ";
                 var i;
                 var number=0;
+                
                 table = "<table border='1'>";
-                for(i=0;i<query2.length;i++){
+                for(i=0;i<query.length;i++){
                     // for(var key in query2[i]){
                     //     allAssociatedKeys+="key:"+key+"\n";
                     // }
-                    qData1 = "ID"+":"+parseInt(query2[i].ID);
-                    qData2 = "var"+":"+query2[i].var;
-                    qData3 = "type"+":"+query2[i].type;
+                    qData1 = "ID"+":"+parseInt(query[i].ID);
+                    qData2 = "var"+":"+query[i].var;
+                    qData3 = "type"+":"+query[i].type;
                   
                     number++;
                    
