@@ -55,11 +55,11 @@
                 var allAssociatedKeys = "";
                 var i;
                 var number=0;
-                table = "<table border='1'><th>Results</th>";
+                table = "<table border='1'>";
                 for(i=0;i<query2.length;i++){
-                    for(var key in query2[i]){
-                        allAssociatedKeys+="key:"+key+"\n";
-                    }
+                    // for(var key in query2[i]){
+                    //     allAssociatedKeys+="key:"+key+"\n";
+                    // }
                     qData1 = "ID"+":"+parseInt(query2[i].ID);
                     qData2 = "var"+":"+query2[i].var;
                     qData3 = "type"+":"+query2[i].type;
