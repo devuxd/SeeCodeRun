@@ -41,11 +41,11 @@
             // sample source code for playing with jlinq
             var source = [  {"ID":1, var:"x", "type":"expression"},
                             {"ID":2, var:"y", "type":"expression"},
-                            {"ID":3, var:"z", "type":"expression"}];
+                            {"ID":3, var:"z", "type":"Literal"}];
            
             $("#searchTerm").change(function(e){
-                var searchedTerm1 = parseInt(this.value);
-                var searchedTerm2 = this.value;
+                var searchedTerm1 = parseInt(this.value);//filter by ID
+                var searchedTerm2 = this.value; //filter by type
                 var usingJlinq = JSLINQ(source);
                 // returns an object array of the queried results
                 var table =" ";
@@ -55,22 +55,24 @@
                 var allAssociatedKeys = "";
                 var i;
                 var number=0;
-                table = "<table border='1'>Results</th>";
+                table = "<table border='1'><th>Results</th>";
                 for(i=0;i<query2.length;i++){
                     for(var key in query2[i]){
                         allAssociatedKeys+="key:"+key+"\n";
                     }
-                    qData1 = "ID"+":"+query2[i].ID;
+                    qData1 = "ID"+":"+parseInt(query2[i].ID);
                     qData2 = "var"+":"+query2[i].var;
                     qData3 = "type"+":"+query2[i].type;
                   
                     number++;
                    
-                    table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  number + " " +"</td>" + "<td>" + qData1 + "</td>" +
-                    + "<td>" + qData2 + "</td>" + "<td>" + qData3 + "</td> </tr>";
+                    table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  number + " " +"</td>" 
+                            + "<td>" + qData1 + "</td>" 
+                            + "<td>" + qData2 + "</td>" 
+                            + "<td>" + qData3 + "</td> </tr>";
                    
                 }
-               table += "<table><br /> <br />";
+               table += "</table><br/>";
                 
                 //displayArea.innerHTML = JSON.stringify(query2);
                 displayArea.innerHTML =  table;
