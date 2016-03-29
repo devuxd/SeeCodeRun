@@ -1,4 +1,4 @@
- <!-- 
+<!-- 
  Order of Operation (March 26, 2016)
 1) [ ] Generate Execution Trace from example code (Han)
 2) [ ] Searchbox will be used to match user input in executiontrace (Dana)
@@ -22,11 +22,12 @@
         <h3> Search Section</h3>
         <div>
             Enter Search Term:
-            <input type="textfield" id="searchTerm" placeholder="Enter"> 
+            <input type="textfield" id="searchTerm" placeholder="ex. expression"> 
             <select name="optionSelected" id="optionSelected">
-              <option value="All Values">All Values</option>
-              <option value="variableDeclaration">Variable Declaration</option>
-              <option value="expression">expression</option>
+              <option value="Any">Any</option>
+              <option value="ID">ID</option>
+              <option value="VariableDeclaration">Variable Declaration</option>
+              <option value="SyntaxType">Syntax Type</option>
             </select>
         </div>
         <br/>
@@ -36,65 +37,99 @@
     <script>
     /* global jlinq */
         window.onload = function(){
-            var queryTerm = document.getElementById('searchTerm');
-            var displayArea = document.getElementById('searchResultDisplayArea');
+            // var queryTerm = document.getElementById('searchTerm');
             // sample source code for playing with jlinq
-            var source = [  {"ID":1, var:"x", "type":"expression"},
-                            {"ID":2, var:"y", "type":"expression"},
-                            {"ID":3, var:"z", "type":"Literal"},
-                            {"ID":4, var:"z", "type":"Literal"},
-                            {"ID":5, var:"y", "type":"expression"}
+            var source = [  {"ID":1, "var":"x", "type":"expression"},
+                            {"ID":2, "var":"y", "type":"expression"},
+                            {"ID":3, "var":"z", "type":"Literal"},
+                            {"ID":4, "var":"z", "type":"Literal"},
+                            {"ID":5, "var":"y", "type":"expression"}
                         ];
-           
-            $("#searchTerm").change(function(e){
-                //var searchedTerm = parseInt(this.value);//filter by ID
-                var searchedTerm = this.value; //filter by type
-                var usingJlinq = JSLINQ(source);
-                // returns an object array of the queried results
-               var select = document.getElementById("optionSelected");
-               var option = select.options[select.selectedIndex].value;
-              
-               if(option == "All Values")
-               {
-                   var query = usingJlinq.Where(function(item){return item.ID == searchedTerm}).ToArray();
-               }
-               else if(option == "variableDeclaration")
-               {
-                    var query = usingJlinq.Where(function(item){return item.var == searchedTerm}).ToArray();
-               }
-                else if(option == "expression")
-               {
-                    var query = usingJlinq.Where(function(item){return item.type == searchedTerm}).ToArray();
-               }
-                
-            
-                var qData1, qData2, qData3;
-                var allAssociatedKeys = "";
+            function updateTable(query,cols){
+                var displayArea = document.getElementById('searchResultDisplayArea');
+                if(query.length==0){
+                    displayArea.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
+                    return;
+                }
+                // var allAssociatedKeys = "";
                 var table =" ";
-                var i;
-                var number=0;
-                
+                var i,c, qData;
                 table = "<table border='1'>";
                 for(i=0;i<query.length;i++){
-                    // for(var key in query2[i]){
+                    // for(var key in query[i]){
                     //     allAssociatedKeys+="key:"+key+"\n";
                     // }
-                    qData1 = "ID"+":"+parseInt(query[i].ID);
-                    qData2 = "var"+":"+query[i].var;
-                    qData3 = "type"+":"+query[i].type;
-                  
-                    number++;
-                   
-                    table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  number + " " +"</td>" 
-                            + "<td>" + qData1 + "</td>" 
-                            + "<td>" + qData2 + "</td>" 
-                            + "<td>" + qData3 + "</td> </tr>";
-                   
+                    // alert(allAssociatedKeys);
+                    // generate the table
+                    table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  i + " " +"</td>" 
+                    for(c=0;c<cols.length;c++){
+                        if(cols[c]=="ID")
+                            qData = ("id"+":"+query[i].ID);
+                        else if(cols[c]=="VariableDeclaration")
+                            qData = ("var"+":"+query[i].var);
+                        else if(cols[c]=="SyntaxType")
+                            qData = ("type"+":"+query[i].type);
+                        table += "<td>" + qData + "</td>";
+                    }
+                    table+= "</tr>";
                 }
-               table += "</table><br/>";
-                
-                //displayArea.innerHTML = JSON.stringify(query2);
+                table += "</table><br/>";
                 displayArea.innerHTML =  table;
+                //displayArea.innerHTML = JSON.stringify(query2);                  
+            }
+            function JlinqQuery(searchTerm,filterSelection){
+                var usingJlinq = JSLINQ(source);
+                if(searchTerm==""){
+                    return source;
+                }
+                if(filterSelection == "Any")
+                {
+                   var query = usingJlinq.Where(function(item){return (item.ID == searchTerm||item.var == searchTerm||item.type == searchTerm)}).ToArray();
+                }
+                else if(filterSelection == "ID")
+                {
+                    var query = usingJlinq.Where(function(item){return item.ID == searchTerm}).ToArray();
+                }
+                else if(filterSelection == "VariableDeclaration")
+                {
+                    var query = usingJlinq.Where(function(item){return item.var == searchTerm}).ToArray();
+                }
+                else if(filterSelection == "SyntaxType")
+                {
+                    var query = usingJlinq.Where(function(item){return item.type == searchTerm}).ToArray();
+                }     
+                return query;
+            }
+            $("#searchTerm").change(function(e){
+                // returns an object array of the queried results
+                var select = document.getElementById("optionSelected");
+                var option = select.options[select.selectedIndex].value; 
+                var query = JlinqQuery(this.value,option);
+                if(option=="Any"){
+                    var combo = ["ID","VariableDeclaration","SyntaxType"];
+                    updateTable(query,combo);
+                }
+                else{
+                    var combo = [option];
+                    updateTable(query,combo);
+                }
+                // alert(query);
+                // updateTable(query);
+            });
+            $("#optionSelected").change(function(e){
+                // returns an object array of the queried results
+                var term = document.getElementById("searchTerm").value;
+                var query = JlinqQuery(term,this.value);
+                if(this.value=="Any"){
+                    var combo = ["ID","VariableDeclaration","SyntaxType"];
+                    updateTable(query,combo);
+                }
+                else{
+                    var combo = [this.value];
+                    updateTable(query,combo);
+                }
+                // alert(query);
+                // updateTable(query);
             });
         }
         </script>
