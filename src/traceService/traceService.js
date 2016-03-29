@@ -12,11 +12,10 @@ export class TraceService {
       this.eventAggregator = eventAggregator;
 
       this.events = {
-        onTraceServiceStart: {  event :'onTraceServiceStart', description : 'Building Tracer...' },
-        onTraceServiceRunning: {  event :'onTraceServiceRunning', description : 'Tracing...' },
-        onTraceServiceEnd :{  event :'onTraceServiceEnd', description : 'Trace built successfully.' },
-        onTraceServiceBusy : {  event :'onTraceServiceBusy', description : 'A previous trace is running.' },
-        onTraceServiceException: {  event :'onTraceServiceException', description : 'Trace ended due to an exception.' }
+        started : {  event :'traceServiceStarted',  description : 'Tracer built succesfully....' },
+        running : {  event :'traceServiceRunning',  description : 'Tracing...' },
+        finished: {  event :'traceServiceFinished',    description : 'Trace built successfully.' },
+        failed  : {  event :'traceServiceFailed',   description : 'Trace ended in failure due to an exception.' }
       };
       
       this.timeLimit = 3000; //default timeout

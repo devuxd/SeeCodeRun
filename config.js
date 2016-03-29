@@ -42,6 +42,7 @@ System.config({
     "firebase": "npm:firebase@2.4.0",
     "firepad": "npm:firepad@1.3.0",
     "font-awesome": "npm:font-awesome@4.5.0",
+    "jslinq": "npm:jslinq@1.0.15",
     "text": "github:systemjs/plugin-text@0.0.3",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"

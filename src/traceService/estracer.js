@@ -164,8 +164,8 @@ export class EsTracer {
         // try {
             window.CANTRACE = false;
             
-            payload.status = this.events.onTraceServiceStart.event;
-            payload.description = this.events.onTraceServiceStart.description;
+            payload.status = this.events.started.event;
+            payload.description = this.events.started.description;
                 
             if(publisher){
                 publisher.publish(payload.status, payload);
@@ -174,8 +174,8 @@ export class EsTracer {
             this.createTraceCollector();
             code = this.esinstrumenter.traceInstrument(sourceCode, this.esanalyzer);
             
-            payload.status = this.events.onTraceServiceRunning.event;
-            payload.description = this.events.onTraceServiceRunning.description;
+            payload.status = this.events.running.event;
+            payload.description = this.events.running.description;
                 
             if(publisher){
                 publisher.publish(payload.status, payload);
@@ -201,8 +201,8 @@ export class EsTracer {
             window.clearTimeout(timeOut);
             
             
-            payload.status = this.events.onTraceServiceEnd.event;
-            payload.description = this.events.onTraceServiceEnd.description + 'Completed in ' + (1 + timestamp) + ' ms.';
+            payload.status = this.events.finished.event;
+            payload.description = this.events.finished.description + 'Completed in ' + (1 + timestamp) + ' ms.';
             //payload.data = window.TRACE.getExecutionTrace();
             payload.code = code;
                 
@@ -219,8 +219,8 @@ export class EsTracer {
         //         window.clearTimeout(timeOut);
         //     }
         //     timestamp = (+new Date()) - timestamp;
-        //     payload.status = this.events.onTraceServiceException.event;
-        //     payload.description = this.events.onTraceServiceException.description + ' Trace completed in ' + (1 + timestamp) + ' ms. Error: ' + e.toString();
+        //     payload.status = this.events.failed.event;
+        //     payload.description = this.events.failed.description + ' Trace completed in ' + (1 + timestamp) + ' ms. Error: ' + e.toString();
         //     payload.data = window.TRACE.getExecutionTrace();
                 
         //     if(publisher){
