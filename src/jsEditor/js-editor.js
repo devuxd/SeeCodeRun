@@ -72,15 +72,15 @@ export class JsEditor {
             js: editor.getValue(), 
             length: session.getLength(), 
             syntax: syntax,  
-            curser: curs
+            cursor: curs
         });
 
-           // This is reserived for TraceServices
+           // This is reserved for TraceServices
          ea.publish('onEditorChanged', {
             js: editor.getValue(), 
             length: session.getLength(), 
             syntax: syntax,  
-            curser: curs
+            cursor: curs
         });
       }, 2500);
 }
