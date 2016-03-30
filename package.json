@@ -56,6 +56,7 @@
   "jspm": {
     "dependencies": {
       "ace": "github:ajaxorg/ace-builds@^1.2.3",
+      "ansi-styles": "npm:ansi-styles@^2.2.1",
       "aurelia-animator-css": "npm:aurelia-animator-css@^1.0.0-beta.1.0.3",
       "aurelia-bootstrapper": "npm:aurelia-bootstrapper@^1.0.0-beta.1.0.2",
       "aurelia-event-aggregator": "npm:aurelia-event-aggregator@^1.0.0-beta.1.1.0",
@@ -73,7 +74,7 @@
       "bootstrap": "github:twbs/bootstrap@^3.3.5",
       "escodegen": "npm:escodegen@^1.8.0",
       "esprima": "npm:esprima@^2.7.2",
-      "estraverse": "npm:estraverse@^4.1.1",
+      "estraverse": "npm:estraverse@^4.2.0",
       "esutils": "npm:esutils@^2.0.2",
       "fetch": "github:github/fetch@^0.10.1",
       "firebase": "npm:firebase@^2.4.0",

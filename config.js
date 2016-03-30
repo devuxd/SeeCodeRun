@@ -16,6 +16,7 @@ System.config({
 
   map: {
     "ace": "github:ajaxorg/ace-builds@1.2.3",
+    "ansi-styles": "npm:ansi-styles@2.2.1",
     "aurelia-animator-css": "npm:aurelia-animator-css@1.0.0-beta.1.1.1",
     "aurelia-bootstrapper": "npm:aurelia-bootstrapper@1.0.0-beta.1.1.2",
     "aurelia-event-aggregator": "npm:aurelia-event-aggregator@1.0.0-beta.1.1.1",
@@ -36,7 +37,7 @@ System.config({
     "core-js": "npm:core-js@1.2.6",
     "escodegen": "npm:escodegen@1.8.0",
     "esprima": "npm:esprima@2.7.2",
-    "estraverse": "npm:estraverse@4.1.1",
+    "estraverse": "npm:estraverse@4.2.0",
     "esutils": "npm:esutils@2.0.2",
     "fetch": "github:github/fetch@0.10.1",
     "firebase": "npm:firebase@2.4.0",
@@ -133,9 +134,6 @@ System.config({
       "module": "github:jspm/nodelibs-module@0.1.0",
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
-    },
-    "npm:ansi-styles@2.2.0": {
-      "color-convert": "npm:color-convert@1.0.0"
     },
     "npm:asn1.js@4.5.0": {
       "assert": "github:jspm/nodelibs-assert@0.1.0",
@@ -506,7 +504,7 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:chalk@1.1.1": {
-      "ansi-styles": "npm:ansi-styles@2.2.0",
+      "ansi-styles": "npm:ansi-styles@2.2.1",
       "escape-string-regexp": "npm:escape-string-regexp@1.0.5",
       "has-ansi": "npm:has-ansi@2.0.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
@@ -666,7 +664,7 @@ System.config({
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
-    "npm:estraverse@4.1.1": {
+    "npm:estraverse@4.2.0": {
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
     "npm:evp_bytestokey@1.0.0": {
