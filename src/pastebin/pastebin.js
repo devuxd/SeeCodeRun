@@ -5,23 +5,18 @@ import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import {Chat} from '../chat/chat';
-import {HtmlEditor} from '../htmlEditor/html-editor';
-import {CssEditor} from '../cssEditor/css-editor';
-import {HtmlViewer} from '../htmlViewer/html-viewer';
 
-@inject(Router)
+@inject(EventAggregator, Router, JsEditor, JsGutter, ConsoleWindow)
 export class Pastebin {
 
-  constructor(router) {
-    this.eventAggregator = new EventAggregator();
+  constructor(eventAggregator, router, jsEditor, jsGutter, consoleWindow) {
+    this.eventAggregator = eventAggregator;
     this.router = router;
     this.heading = 'Pastebin';
-    this.jsEditor = new JsEditor(this.eventAggregator);
-    this.jsGutter = new JsGutter(this.eventAggregator);
-    this.consoleWindow = new ConsoleWindow(this.eventAggregator);
-    this.htmlEditor = new HtmlEditor(this.eventAggregator);
-    this.cssEditor = new CssEditor(this.eventAggregator);
-    this.htmlViewer = new HtmlViewer(this.eventAggregator);
+    this.jsEditor = jsEditor;
+    this.jsGutter = jsGutter;
+    this.consoleWindow = consoleWindow;
+    
   }
 
   activate(params) {
@@ -31,8 +26,6 @@ export class Pastebin {
       this.pastebinId = id;
       this.jsEditor.activate({ id: id });
       this.chat = new Chat(baseURL, this.pastebinId);
-      this.htmlEditor.activate({ id: id });
-      this.cssEditor.activate({ id: id });
     } else {
       
       let firebase = new Firebase(baseURL);
@@ -49,8 +42,6 @@ export class Pastebin {
     this.jsGutter.attached();
     this.consoleWindow.attached();
     this.chat.attached();
-    this.htmlEditor.attached();
-    this.cssEditor.attached();
   }
 
   subscribe() {

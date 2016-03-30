@@ -67,16 +67,16 @@ export class Chat {
         $('#chatDiv').toggle();
     }); 
     
-});
+ });
 
   //Chat box draggable   	
-    $(function() {
-    $("#chatDiv").draggable();
-  });
+     $(function() {
+     $("#chatDiv").draggable();
+   });
   
   //Chat box resizable    
     $(function() {
-    $("#chatDiv").resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
+     $("#chatDiv").resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
   });
  
    

@@ -3,66 +3,24 @@
   <require from="consoleWindow/console-window.html"></require>
   <require from="jsGutter/js-gutter.html"></require>
   <require from="chat/chat.html"></require>
-  <require from="htmlEditor/html-editor.html"></require>
-  <require from="cssEditor/css-editor.html"></require>
-  <require from="htmlViewer/html-viewer.html"></require>
-  <require from="visViewer/vis-viewer.html"></require>
 
   <section class="au-animate">
     <h2>${heading} ${pastebinId}</h2>
 
     <div class="row">
-      <div class="col-sm-8">
-        <ul class="nav nav-pills">
-          <li class="active"><a data-toggle="pill" href="#html">HTML</a></li>
-          <li><a data-toggle="pill" href="#js">JS</a></li>
-          <li><a data-toggle="pill" href="#css">CSS</a></li>
-        </ul>
-
-        <div class="tab-content">
-          <div id="html" class="tab-pane fade in active">
-            <div>
-              <html-editor editor.bind="htmlEditor"></html-editor>
-            </div>
-          </div>
-          <div id="js" class="tab-pane fade">
-            <div class="col-sm-8">
-              <div>
-                <js-editor editor.bind="jsEditor"></js-editor>
-              </div>
-            </div>
-            <div class="col-sm-4">
-              <div>
-                <js-gutter gutter.bind="jsGutter"></js-gutter>
-              </div>
-            </div>
-          </div>
-          <div id="css" class="tab-pane fade">
-            <div>
-              <css-editor editor.bind="cssEditor"></css-editor>
-            </div>
-          </div>
+      <div class="col-sm-5">
+        <div>
+          <js-editor editor.bind="jsEditor"></js-editor>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div>
+          <js-gutter gutter.bind="jsGutter"></js-gutter>
         </div>
       </div>
 
       <div class="col-sm-4">
-        <ul class="nav nav-pills">
-          <li class="active"><a data-toggle="pill" href="#output">Output</a></li>
-          <li><a data-toggle="pill" href="#visualization">Visualization</a></li>
-        </ul>
         <div class="row">
-          <div class="tab-content">
-            <div id="output" class="tab-pane fade in active">
-              <div>
-                <html-viewer viewer.bind="htmlViewer"></html-viewer>
-              </div>
-            </div>
-            <div id="visualization" class="tab-pane fade">
-              <div>
-                <vis-viewer viewer.bind="visViewer"></vis-viewer>
-              </div>
-            </div>
-          </div>
         </div>
         <div class="row">
           <console-window console.bind="consoleWindow"></console-window>
