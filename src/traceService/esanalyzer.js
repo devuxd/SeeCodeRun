@@ -8,7 +8,7 @@ export class EsAnalyzer {
     this.init();
   }
   init(){
-    this.Syntax = {
+        let Syntax = {
         AssignmentExpression: 'AssignmentExpression',
         ArrayExpression: 'ArrayExpression',
         BlockStatement: 'BlockStatement',
@@ -50,6 +50,33 @@ export class EsAnalyzer {
         WhileStatement: 'WhileStatement',
         WithStatement: 'WithStatement'
     };
+    this.traceTypes = {
+        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+        Expression: [
+            Syntax.UnaryExpression,
+            Syntax.UpdateExpression,
+            Syntax.CallExpression,
+            Syntax.Property,
+            Syntax.VariableDeclarator,
+            Syntax.AssignmentExpression,
+            Syntax.BinaryExpression,
+            Syntax.ReturnStatement,
+            Syntax.ForStatement,
+            Syntax.ForInStatement,
+            Syntax.WhileStatement,
+            Syntax.DoWhileStatement,
+            Syntax.ExpressionStatement
+            ],
+        ExpressionStatement : [
+            Syntax.ExpressionStatement
+            ],
+        ControlFlow : [],
+        Condition: [],
+        Loop: [Syntax.WhileStatement],
+        exception: []
+        
+    };
+    this.Syntax = Syntax; 
   }
   
   getEsprima(){

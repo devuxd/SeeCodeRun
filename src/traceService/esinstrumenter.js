@@ -61,32 +61,7 @@ export class EsInstrumenter {
         extra : 6
         
     };
-    this.TraceTypes = {
-        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
-        Expression: [
-            Syntax.UnaryExpression,
-            Syntax.UpdateExpression,
-            Syntax.CallExpression,
-            Syntax.Property,
-            Syntax.VariableDeclarator,
-            Syntax.AssignmentExpression,
-            Syntax.BinaryExpression,
-            Syntax.ReturnStatement,
-            Syntax.ForStatement,
-            Syntax.ForInStatement,
-            Syntax.WhileStatement,
-            Syntax.DoWhileStatement,
-            Syntax.ExpressionStatement
-            ],
-        ExpressionStatement : [
-            Syntax.ExpressionStatement
-            ],
-        ControlFlow : [],
-        Condition: [],
-        Loop: [Syntax.WhileStatement],
-        exception: []
-        
-    };
+    
     }
     
   getTextRange(code, range){

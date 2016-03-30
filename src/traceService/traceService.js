@@ -12,16 +12,16 @@ export class TraceService {
       this.eventAggregator = eventAggregator;
 
       this.events = {
-        started : {  event :'traceServiceStarted',  description : 'Tracer built succesfully....' },
-        running : {  event :'traceServiceRunning',  description : 'Tracing...' },
-        finished: {  event :'traceServiceFinished',    description : 'Trace built successfully.' },
-        failed  : {  event :'traceServiceFailed',   description : 'Trace ended in failure due to an exception.' }
+        started : {  event :'traceServiceStarted'   , description : 'Tracer built succesfully....' },
+        running : {  event :'traceServiceRunning'   , description : 'Tracing...' },
+        finished: {  event :'traceServiceFinished'  , description : 'Trace built successfully.' },
+        failed  : {  event :'traceServiceFailed'    , description : 'Tracer ended with a failure.' }
       };
       
       this.timeLimit = 3000; //default timeout
       
 
-      this.estracer = new EsTracer(this.events);
+      this.esTracer = new EsTracer(this.events);
 
     }
 
@@ -46,7 +46,7 @@ export class TraceService {
             publisher = this;
         }
         
-        return this.estracer.traceExecution(code, this.timeLimit,  publisher);
+        return this.esTracer.traceExecution(code, this.timeLimit,  publisher);
         
     }
     

@@ -5,20 +5,20 @@ import {EsInstrumenter} from './esinstrumenter';
 export class EsTracer {
 
     constructor(events) { //todo: send the sandbox
-      this.esanalyzer = new EsAnalyzer();
-      this.esinstrumenter = new EsInstrumenter();
+      this.esAnalyzer = new EsAnalyzer();
+      this.esInstrumenter = new EsInstrumenter();
       this.events = events;
     }
     
     getEsAnalyzer(){
-      return this.esanalyzer;
+      return this.esAnalyzer;
     }
     
     getEsInstrumenter(){
-      return this.esinstrumenter;
+      return this.esInstrumenter;
     }
     getTrace(code, callback) {
-      this.esinstrumenter.traceInstrument(code, this.esanalyzer);
+      this.esInstrumenter.traceInstrument(code, this.esAnalyzer);
     }
     
      /**
@@ -29,7 +29,7 @@ export class EsTracer {
  * David: add timeout handling as valid
  */
   createTraceCollector() {
-        var TraceTypes = this.TraceTypes;
+        let traceTypes = this.esAnalyzer.traceTypes;
         window.CANTRACE = true;
         window.ISCANCELLED = false;
         window.TRACE = {
@@ -42,7 +42,7 @@ export class EsTracer {
                 
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
-                if(TraceTypes.LocalStack.indexOf(info.type)>-1){
+                if(traceTypes.LocalStack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
                 }
 
@@ -99,7 +99,7 @@ export class EsTracer {
                     entry = this.execution[i];
                     if (this.data.hasOwnProperty(entry)) {
                         data =this.data[entry];
-                        if(TraceTypes.Expression.indexOf(data.type) > -1  ){
+                        if(traceTypes.Expression.indexOf(data.type) > -1  ){
                             stackData.push(this.data[entry]);
                         }
                      }
@@ -172,7 +172,7 @@ export class EsTracer {
             }
                 
             this.createTraceCollector();
-            code = this.esinstrumenter.traceInstrument(sourceCode, this.esanalyzer);
+            code = this.esInstrumenter.traceInstrument(sourceCode, this.esAnalyzer);
             
             payload.status = this.events.running.event;
             payload.description = this.events.running.description;
