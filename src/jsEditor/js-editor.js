@@ -3,19 +3,29 @@
 /* global ace */
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
+<<<<<<< HEAD
+=======
+import {Router} from 'aurelia-router';
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
 import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
 
+<<<<<<< HEAD
 @inject(EventAggregator)
+=======
+@inject(EventAggregator, Router)
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
 export class JsEditor {
 
-  constructor(eventAggregator) {
+  constructor(eventAggregator, router) {
     this.eventAggregator = eventAggregator;
+    this.router = router;
     this.hasErrors = false;
   }
 
   activate(params) {
+<<<<<<< HEAD
     
     this.pastebinId = params.id;
         
@@ -23,6 +33,19 @@ export class JsEditor {
 
   attached() {
     let editor = ace.edit('aceJsEditorDiv');
+=======
+    if (params.id) {
+      this.pastebinId = params.id;
+    } else {
+      let baseURL = 'https://seecoderun.firebaseio.com';
+      let firebase = new Firebase(baseURL);
+      let pastebinId = firebase.push().key();
+    }
+  }
+
+  attached() {
+    let editor = ace.edit('editorDiv');
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
     this.configureEditor(editor);
     
     this.editor = editor;
@@ -47,6 +70,7 @@ export class JsEditor {
     session.setUseWrapMode(true);
     session.setUseWorker(false);
     session.setMode('ace/mode/javascript');
+    session.addGutterDecoration(0, 'label label-info');
   }
 
   setupSessionEvents(session) {
@@ -63,6 +87,7 @@ export class JsEditor {
 	  
       editorChangedTimeout = setTimeout(function pub() { 
         let syntax = new TraceService().getTrace(editor.getValue());
+<<<<<<< HEAD
         let curs = editor.getCursorPosition().row+1;  
        
             // Two events for onEditorChanged 
@@ -81,6 +106,13 @@ export class JsEditor {
             length: session.getLength(), 
             syntax: syntax,  
             cursor: curs
+=======
+
+        ea.publish('onEditorChanged', {
+            data: e,
+            length: session.getLength(),
+            syntax: syntax
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
         });
       }, 2500);
 }

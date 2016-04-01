@@ -1,5 +1,9 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
+<<<<<<< HEAD
+=======
+
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
 @inject(EventAggregator)
 export class ConsoleWindow {
     

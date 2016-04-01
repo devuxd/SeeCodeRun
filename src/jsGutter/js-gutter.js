@@ -3,6 +3,11 @@
 /* global ace */
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
+<<<<<<< HEAD
+=======
+import '../mode-javascript';
+import '../theme-chrome';
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
 
 @inject(EventAggregator)
 export class JsGutter {
@@ -37,6 +42,7 @@ export class JsGutter {
   subscribe() {
     let ea = this.eventAggregator;
     let session = this.session;
+<<<<<<< HEAD
 
     ea.subscribe('onEditorChangedd', payload => {
          
@@ -113,6 +119,11 @@ export class JsGutter {
          }
       }
 	  highlightLine(line, lastline){
+=======
+    
+    ea.subscribe('onEditorChanged', payload => {
+      let doc = session.doc;
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
       
           let lastDiv = this.GetLastDiv();
           let iframeBody = $('#gutter');

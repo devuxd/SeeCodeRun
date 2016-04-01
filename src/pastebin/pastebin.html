@@ -1,3 +1,4 @@
+<<<<<<< HEAD
   <template>
    <require from="jsEditor/js-editor.html"></require>
    <require from="jsGutter/js-gutter.html"></require>
@@ -6,6 +7,12 @@
    <require from="visViewer/vis-viewer.html"></require>
    <require from="htmlViewer/html-viewer.html"></require>
    <require from="consoleWindow/console-window.html"></require>
+=======
+<template>
+  <require from="jsEditor/js-editor.html"></require>
+  <require from="consoleWindow/console-window.html"></require>
+  <require from="jsGutter/js-gutter.html"></require>
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
 
    <div id="mainSplitter">  
     <div>
@@ -51,6 +58,7 @@
     <div>
       <div id="rightSplitter">
 
+<<<<<<< HEAD
        <div>
 
       <div role="tabpanel" >
@@ -68,6 +76,17 @@
 
         <div role="tabpanel" class="tab-pane active" id="preview" >
              <html-viewer></html-viwer>
+=======
+    <div class="row">
+      <div class="col-sm-5">
+        <div>
+          <js-editor editor.bind="jsEditor"></js-editor>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div>
+          <js-gutter gutter.bind="jsGutter"></js-gutter>
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
         </div>
 
        
@@ -83,8 +102,16 @@
     <console-window console.bind = 'consoleWindow'> </console-window>
       </div>
 
+<<<<<<< HEAD
             </div>
 
+=======
+      <div class="col-sm-4">
+        <div class="row">
+        </div>
+        <div class="row">
+          <console-window console.bind="consoleWindow"></console-window>
+>>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
         </div>
 
     </div>
