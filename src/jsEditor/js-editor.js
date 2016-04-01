@@ -65,18 +65,10 @@ export class JsEditor {
         let syntax = new TraceService().getTrace(editor.getValue());
         let curs = editor.getCursorPosition().row+1;  
        
-            // Two events for onEditorChanged 
-            
-            //This is been used by HtmlViewer  
-        ea.publish('onJsEditorChanged', {
-            js: editor.getValue(), 
-            length: session.getLength(), 
-            syntax: syntax,  
-            cursor: curs
-        });
-
-           // This is reserved for TraceServices
-         ea.publish('onEditorChanged', {
+        // subscribe to this event to be notified with the following data when the JS-editor changed.   
+        //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
+        
+         ea.publish('onJsEditorChanged', {
             js: editor.getValue(), 
             length: session.getLength(), 
             syntax: syntax,  

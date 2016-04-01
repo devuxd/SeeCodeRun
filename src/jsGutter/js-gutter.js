@@ -38,17 +38,6 @@ export class JsGutter {
     let ea = this.eventAggregator;
     let session = this.session;
 
-    ea.subscribe('onEditorChangedd', payload => {
-         
-
-
-         // This been used to populate the guuter (stub)
-    //   let c = ['Hello'];
-    // this.setContentGutter(1 , c); 
-    // this.setContentGutter(100 , c); 
-    //   console.info('payload');
-	  
-    });
 
     ea.subscribe('onCursorMoved', info => {
 
@@ -73,9 +62,7 @@ export class JsGutter {
                   
                   this.highlightLine(line, lastline);
                 
-                 //TODO: Fix gutter scrolling expereince 
-                 
-                 // iframeBody.scrollTop((info.cursor*4)+1);
+              
     });
   }
   setContentGutter (line, content){
@@ -92,7 +79,7 @@ export class JsGutter {
    CreateLine(line){
       let iframeBody = $('#gutter');  
       let indexOfDiv = this.GetLastDiv();
-      for(indexOfDiv ; indexOfDiv <=line; indexOfDiv++){ // possible bug
+      for(indexOfDiv ; indexOfDiv <=line; indexOfDiv++){ 
          iframeBody.append("<div id=line"+indexOfDiv+"></div>");
          iframeBody.find("#line"+indexOfDiv).addClass("line_height");
       }

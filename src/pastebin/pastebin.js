@@ -10,7 +10,7 @@ import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from'../htmlViewer/html-viewer';
 import {VisViewer} from '../visViewer/vis-viewer'
 import {ConsoleWindow} from '../consoleWindow/console-window'
-@inject(EventAggregator, Router, JsEditor, HtmlEditor, CssEditor,JsGutter, HtmlViewer, VisViewer, ConsoleWindow)//,  JsEditor,JsGutter)
+@inject(EventAggregator, Router, JsEditor, HtmlEditor, CssEditor,JsGutter, HtmlViewer, VisViewer, ConsoleWindow)
 export class Pastebin {
 
   constructor(eventAggregator, router, jsEditor,htmlEditor,cssEditor,jsGutter,htmlViewer, visViewer, consoleWindow) {
@@ -64,19 +64,6 @@ export class Pastebin {
 
 
 
-// There is no obvious need for event aggregator in pastebin for now @first pull request.
-//   subscribe() {
-//     let ea = this.eventAggregator;
-    
-//     ea.subscribe('onEditorChanged', payload => {
-//       // add code for subscribe event
-//     });
-
-//     ea.subscribe('onCursorMoved', payload => {
-//       // add code for subscribe event
-//     });
-//   }
-// }
 
 
 

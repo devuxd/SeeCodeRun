@@ -35,14 +35,5 @@ export class TraceService {
 	
 	getCreate(){
    
- /**   let content1  = ['void'];
-          this.jsGutter.setContentGutter(3, content);
-           
-        
-           
-    let content3 = ["Hello world, from js"];
-           this.jsGutter.setContentGutter(4, content3);
-		   
-  **/		   
   }
 }
