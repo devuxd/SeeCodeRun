@@ -1,4 +1,5 @@
-export class AceUtils{
+// requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
+class AceUtils{
     constructor(){
         //stateless
     }
@@ -92,7 +93,7 @@ export class AceUtils{
 	
 	isPositionInRange(position, inRange){
         
-        var matchesInOneLine = (
+        let matchesInOneLine = (
                 position.row == inRange.start.row 
                 && inRange.start.row  == inRange.end.row
                 && position.column >= inRange.start.column
@@ -103,7 +104,7 @@ export class AceUtils{
             return true;
         }
             
-        var matchesStart = (
+        let matchesStart = (
                 position.row == inRange.start.row 
                 && inRange.start.row  < inRange.end.row
                 && position.column >= inRange.start.column
@@ -113,7 +114,7 @@ export class AceUtils{
             return true;
         }
         
-        var matchesEnd = (
+        let matchesEnd = (
                 position.row == inRange.end.row
                 && inRange.start.row  < inRange.end.row
                 && position.column <= inRange.end.column
@@ -322,27 +323,6 @@ export class AceUtils{
             gutter.element.style.width = Math.ceil(gutter.gutterWidth) + "px";
             gutter._emit("changeGutterWidth", gutterWidth);
         }
-    }
-    
-    // example using ACE Annotations
-    appendAnnotations(editor, annotations) {
-            let aceAnnotations = editor.getSession().getAnnotations();	
-            annotations= annotations.concat(aceAnnotations);
-    		editor.getSession().setAnnotations(annotations);
-    }
-    
-    compareRanges(){
-        
-    }
-
-    hoverRange(){
-        
-    }
-    getSmallestRange(){
-         
-    }
-    getRanges(){
-         
     }
     
 }

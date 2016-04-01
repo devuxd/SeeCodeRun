@@ -1,31 +1,32 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 
-//local imports
 import {EsTracer} from './estracer';
 
 @inject(EventAggregator)
 export class TraceService {
 
     constructor(eventAggregator) {
-      // inject code in the service. Dependencies failure happens here
       this.eventAggregator = eventAggregator;
 
-      this.events = {
+      this.eventsToSubscribe = {
         started : {  event :'traceServiceStarted'   , description : 'Tracer built succesfully....' },
         running : {  event :'traceServiceRunning'   , description : 'Tracing...' },
         finished: {  event :'traceServiceFinished'  , description : 'Trace built successfully.' },
         failed  : {  event :'traceServiceFailed'    , description : 'Tracer ended with a failure.' }
       };
       
+      this.eventsToPublish = {
+        instrumented : {  event :'traceInstrumented'   , description : 'Code Instrumented successfully.' },
+        changed : {  event :'traceChanged'   , description : 'Trace results obtained succesfully.' }
+      };
+      
       this.timeLimit = 3000; //default timeout
       
 
-      this.esTracer = new EsTracer(this.events);
+      this.esTracer = new EsTracer(this.eventsToSubscribe);
 
     }
-
-  
 
     getTimeLimit(){
        return this.timeLimit; 
@@ -37,7 +38,7 @@ export class TraceService {
         window.ISCANCELLED = true;
     }
     
-    getTrace(code, publisher) { //optional publisher
+    getInstrumentation(code, publisher) { //optional publisher
         if(!code){
           return {status: undefined, description : undefined , data : {}};
         }
@@ -46,31 +47,16 @@ export class TraceService {
             publisher = this;
         }
         
-        return this.esTracer.traceExecution(code, this.timeLimit,  publisher);
+        return this.esTracer.getInstrumentation(code, this.timeLimit,  publisher);
         
     }
     
     subscribe() {
-    // move this logic to the gutter
-    // let ea = this.eventAggregator;
-    // let session = this.session;
-    
-    // ea.subscribe('on', payload => {
-    //   let doc = session.doc;
-      
-    //   doc.removeLines(0, doc.getLength());
-      
-    //   // TODO: fix uncaught length error
-    //   doc.insertLines(0, new Array(payload.length - 1));
-      
-    //   for(let result of payload.syntax) {
-    //     doc.insertInLine({
-    //       row: result.location.row,
-    //       column: result.location.col
-    //     }, result.content);
-    //   }
-    // });
-  }
+     let ea = this.eventAggregator;
+     ea.publish(this.events.running, this.esTracer.onCodeRunning());
+     ea.publish(this.events.finished, this.esTracer.onCodeRunning()); 
+
+    }
   
   publish(event, payload){
      let ea = this.eventAggregator;

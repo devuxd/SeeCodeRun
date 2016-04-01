@@ -146,52 +146,14 @@ export class EsAnalyzer {
   }
     
 
-
-  getTextRange(code, indexRange){//todo move to utils
-       if(!indexRange){
-           return "";
-       }
-       let from = indexRange[0];
-       let till = indexRange[1];
-       return code.substring(from, till);
-  }
-    
-
   traceAllAutoLog(code, autoLogTracer) {
  
             
-            var tree = esprima.parse(code, { range: true, loc: true });
+            let tree = esprima.parse(code, { range: true, loc: true });
 
 
             this.traverse(tree, function traceVisitor(node, path, nodeKey) {
-               // var parent;
-                // Catching the expressions
-            //     if (node.type === Syntax.VariableDeclarator) {
-            //         autoLogTracer({'node' :node, 'code' : code});
-                        
-            //     }else if (node.type === Syntax.CallExpression) {
-            //         autoLogTracer({'node' :node, 'code' : code});
-               
-            //     }else if(node.type === Syntax.AssignmentExpression){
-            //             autoLogTracer({'node' :node, 'code' : code});
-                    
-            //     }else if(node.type === Syntax.BinaryExpression){
-            //             node=autoLogTracer({'node' :node, 'code' : code});
-                        
-            //     }else if (node.type === Syntax.FunctionDeclaration) {
-			         //   autoLogTracer({'node' :node, 'code' : code});
-                    
-            //     } else if (node.type === Syntax.FunctionExpression) {
-            //         // requires backward analysis
-            //         //parent = path[0];
-            //         //console.log(beautifyPathSintaxTypesOnly(collectPath(path)));
-            //         autoLogTracer({'node' :node, 'code' : code, 'path' :path});
-
-            //     }
-                
-            // all logic moved to autoLogTracer in execution trace
-            autoLogTracer({'node' :node, 'code' : code, 'path' :path, 'nodeKey' :nodeKey});
-				
+                autoLogTracer({'node' :node, 'code' : code, 'path' :path, 'nodeKey' :nodeKey});
             });
             
           return tree;

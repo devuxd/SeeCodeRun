@@ -4,7 +4,7 @@ import {EsInstrumenter} from './esinstrumenter';
 
 export class EsTracer {
 
-    constructor(events) { //todo: send the sandbox
+    constructor(events) {
       this.esAnalyzer = new EsAnalyzer();
       this.esInstrumenter = new EsInstrumenter();
       this.events = events;
@@ -21,13 +21,7 @@ export class EsTracer {
       this.esInstrumenter.traceInstrument(code, this.esAnalyzer);
     }
     
-     /**
- * Readme(Chat/Doc/Misc anchor to piece of code) to Team in code. Interesting idea like wht the professor proposed in paper.
- * Venkat : add a timer to the last while  entrance and clear if hit again (use a timeout callback), otherwise offer to stop trace
- * Han :  the stack index is already added to the values  every time a expression is evaluated. Look in the this.data[expression].values array
- * Dana: Yep. Once you find elements in the stack of type "CallExpression" and the name is like document.* then show it the API should look like this tool (don't look a the code, only the functionality) https://github.com/estools/esquery
- * David: add timeout handling as valid
- */
+
   createTraceCollector() {
         let traceTypes = this.esAnalyzer.traceTypes;
         window.CANTRACE = true;
@@ -35,11 +29,6 @@ export class EsTracer {
         window.TRACE = {
             hits: {}, data: {}, stack : [], execution : [], values : {}, 
             autoLog: function (info) {
-                // let returnValue = info.value; // does execute more than once? yep
-                // if(returnValue instanceof Function){
-                //     returnValue = info.value();
-                // }
-                
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
                 if(traceTypes.LocalStack.indexOf(info.type)>-1){
@@ -105,24 +94,6 @@ export class EsTracer {
                      }
                 }
                 return stackData;
-            },
-            getExecutionTable: function () {
-              //  var row = {'type': '', 'text' : '', 'values' : [], 'range' : {}};// properties
-                var row, groupType;
-                // var i, entry, stackData = [];
-                // for (var i in this.execution) {
-                //     entry = this.execution[i];
-                //     if (this.data.hasOwnProperty(entry)) {
-                //         if(){
-                            
-                //         }
-                        
-                //         var row = {'type': '', 'text' : '', 'values' : [], 'range' : {}};
-                        
-                //         stackData.push(this.data[entry]);
-                //     }
-                // }
-                // return stackData;
             }
         };
         
@@ -142,28 +113,20 @@ export class EsTracer {
  *          allow to obtain the execution trace data with the getExecutionTrace() call (i.e this.TRACE.getExecutionTrace())
  *
  */
-
-    traceExecution (sourceCode, timeLimit, publisher) {
+    onCodeEnded(){
+        
+    }
+    getInstrumentation(sourceCode = "", timeLimit = 3000, publisher = undefined) {
         window.ISCANCELLED = false;
         let  code, timestamp;
         let payload = {'status' : 'NONE', 'description' : '', 'data' : {}};
         
-        // if(!this.CANTRACE){
-        //     payload.status = this.events.onTraceServiceBusy.event;
-        //     payload.description = this.events.onTraceServiceBusy.description;
-        //     if(publisher){
-        //         publisher.publish(payload.status, payload);
-        //     }
-        //     return payload;
-        // }
-        
         let timeOutCallback = function(){
-                  throw "Execution time out. Excedeed " + timeLimit +" ms";
+                  throw `Execution time out. Excedeed ${timeLimit} ms`;
         };
         let timeOut;
-        // try {
-            window.CANTRACE = false;
-            
+        try {
+
             payload.status = this.events.started.event;
             payload.description = this.events.started.description;
                 
@@ -186,14 +149,8 @@ export class EsTracer {
 
             timeOut =window.setTimeout(timeLimit, timeOutCallback);
             
-            //TODO: what about async code?
-            //console.log(sourceCode);
-          // console.log("-------------------------------------------------");
-          // console.log(code);
-           //this.shadowEditor = ace.edit('sandBoxDiv');
-           //.shadowEditor.setValue(code);
-           eval(code);
-            window.CANTRACE = true;
+
+
             
             timestamp = (+new Date()) - timestamp;
             
@@ -202,7 +159,7 @@ export class EsTracer {
             
             
             payload.status = this.events.finished.event;
-            payload.description = this.events.finished.description + 'Completed in ' + (1 + timestamp) + ' ms.';
+            payload.description = `${this.events.finished.description} Trace completed in ${1 + timestamp} ms.`;
             //payload.data = window.TRACE.getExecutionTrace();
             payload.code = code;
                 
@@ -212,22 +169,22 @@ export class EsTracer {
             
             return payload;
     
-        // } catch (e) {
-        //     this.CANTRACE = true;
+        } catch (e) {
+            this.CANTRACE = true;
             
-        //     if(timeOut){
-        //         window.clearTimeout(timeOut);
-        //     }
-        //     timestamp = (+new Date()) - timestamp;
-        //     payload.status = this.events.failed.event;
-        //     payload.description = this.events.failed.description + ' Trace completed in ' + (1 + timestamp) + ' ms. Error: ' + e.toString();
-        //     payload.data = window.TRACE.getExecutionTrace();
+            if(timeOut){
+                window.clearTimeout(timeOut);
+            }
+            timestamp = (+new Date()) - timestamp;
+            payload.status = this.events.failed.event;
+            payload.description = `${this.events.failed.description} Trace completed in ${1 + timestamp} ms. Error: ${e.toString()}`;
+           // payload.data = window.TRACE.getExecutionTrace();
                 
-        //     if(publisher){
-        //         publisher.publish(payload.status, payload);
-        //     }
-        //     return payload;
-        //   }
+            if(publisher){
+                publisher.publish(payload.status, payload);
+            }
+            return payload;
+          }
     }
     
   getTraceAnnotations(){
@@ -240,21 +197,15 @@ export class EsTracer {
             text = entry.text;
 			row = entry.range.start.row;
 			
-			annotations.push({"type": "info", "row": row, "column": 0, "raw": " y is called x times", "text": text + ' is called ' + this.count(entry.count, 'time', 'times')});
+			annotations.push({ type : "info", row: row, column: 0, raw: "y is called x times", text: `${text}  is called  ${this.count(entry.count, 'time', 'times')}`});
             
         }
         return annotations;
   }
   
-  count(x, s, p) {
-        return (x === 1) ? (x + ' ' + s) : (x + ' ' + p);
+  count(value, singular, plural) {
+        return (value === 1) ? (`${value} ${singular}`) : (`${value} ${plural}`);
   }
   
-  evalIframe(iframe, command) {
-    if (!iframe.eval && iframe.execScript) {
-        iframe.execScript("null");
-    }
-    iframe.eval(command);
-}
   
 }
