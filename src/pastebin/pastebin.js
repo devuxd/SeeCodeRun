@@ -1,12 +1,9 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
-import jqxcore     from '../../jqxcore';
-import jqxsplitter from '../../jqxsplitter';
-import {HtmlEditor} from '../htmlEditor/html-editor';
-import {CssEditor} from '../cssEditor/css-editor'
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
+<<<<<<< HEAD
 <<<<<<< HEAD
 import {HtmlViewer} from'../htmlViewer/html-viewer';
 import {VisViewer} from '../visViewer/vis-viewer'
@@ -39,11 +36,31 @@ export class Pastebin {
     this.jsGutter = jsGutter;
     this.consoleWindow = consoleWindow;
 >>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
+=======
+import {ConsoleWindow} from '../consoleWindow/console-window';
+import {HtmlEditor} from '../htmlEditor/html-editor';
+import {CssEditor} from '../cssEditor/css-editor';
+import {HtmlViewer} from '../htmlViewer/html-viewer';
+
+@inject(Router)
+export class Pastebin {
+
+  constructor(router) {
+    this.eventAggregator = new EventAggregator();
+    this.router = router;
+    this.heading = 'Pastebin';
+    this.jsEditor = new JsEditor(this.eventAggregator);
+    this.jsGutter = new JsGutter(this.eventAggregator);
+    this.consoleWindow = new ConsoleWindow(this.eventAggregator);
+    this.htmlEditor = new HtmlEditor(this.eventAggregator);
+    this.cssEditor = new CssEditor(this.eventAggregator);
+    this.htmlViewer = new HtmlViewer(this.eventAggregator);
+>>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
   }
 
-// TODO: fix the routing bug. See github repo for more information
   activate(params) {
     if (params.id) {
+<<<<<<< HEAD
 <<<<<<< HEAD
         this.pastebinId = params.id;
         this.jsEditor.activate({ id: this.pastebinId }); 
@@ -54,19 +71,26 @@ export class Pastebin {
       this.pastebinId = id;
       this.jsEditor.activate({ id: id });
 >>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
+=======
+      let id = params.id;
+      this.pastebinId = id;
+      this.jsEditor.activate({ id: id });
+      this.htmlEditor.activate({ id: id });
+      this.cssEditor.activate({ id: id });
+>>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
     } else {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
       
-      this.pastebinId = firebase.push().key();
-
-      this.router.navigate(this.pastebinId);
+      let id = firebase.push().key();
+      this.router.navigateToRoute('pastebin', { id: id });
     }
-
-        
-   }
+    
+    this.subscribe();
+  }
 
   attached() {
+<<<<<<< HEAD
 <<<<<<< HEAD
       
       // Constructing the pastebin 
@@ -86,24 +110,29 @@ export class Pastebin {
     this.jsGutter.attached();
     this.consoleWindow.attached();
 >>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
+=======
+    this.jsEditor.attached();
+    this.jsGutter.attached();
+    this.consoleWindow.attached();
+    this.htmlEditor.attached();
+    this.cssEditor.attached();
+>>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
   }
 
-
-
-// There is no obvious need for event aggregator in pastebin for now @first pull request.
-//   subscribe() {
-//     let ea = this.eventAggregator;
+  subscribe() {
+    let ea = this.eventAggregator;
     
-//     ea.subscribe('onEditorChanged', payload => {
-//       // add code for subscribe event
-//     });
+    ea.subscribe('onEditorChanged', payload => {
+      // add code for subscribe event
+    });
 
-//     ea.subscribe('onCursorMoved', payload => {
-//       // add code for subscribe event
-//     });
-//   }
-// }
+<<<<<<< HEAD
 
 
-
+=======
+    ea.subscribe('onCursorMoved', payload => {
+      // add code for subscribe event
+    });
+  }
+>>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
 }
