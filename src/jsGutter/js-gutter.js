@@ -91,7 +91,7 @@ export class JsGutter {
            indexOfDiv++;
          }
        return indexOfDiv;
-      }
+      } 
 	  RemoveLine(lastline, lastDiv){
           let iframeBody = $('#gutter');  
           while (lastline<lastDiv){

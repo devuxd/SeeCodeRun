@@ -5,7 +5,7 @@ export class Visualization {
   static inject() {
     return [d3];
   }
-
+ 
   constructor(d3, eventAggregator, config) {
     this.d3 = d3;
     this.eventAggregator = eventAggregator;

@@ -3,7 +3,7 @@ import {inject} from 'aurelia-framework';
 import * as d3 from 'd3'; 
 import {VisualizationFactory} from '../visualization/visualizationFactory';
 import {Visualization} from '../visualization/visualization';
-
+ 
 @inject(EventAggregator)
 export class VisViewer {
     

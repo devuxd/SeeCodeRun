@@ -34,6 +34,6 @@ export class TraceService {
     }
 	
 	getCreate(){
-   
+    
   }
 }

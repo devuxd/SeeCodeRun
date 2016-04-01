@@ -8,7 +8,7 @@ export class HtmlViewer {
         this.eventAggregator = eventAggregator;
         this.subscribe();
     }
-    
+     
 subscribe() {
       let ea = this.eventAggregator;
       

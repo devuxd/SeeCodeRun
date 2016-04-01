@@ -45,7 +45,7 @@ export class HtmlEditor {
     session.setUseWrapMode(true);
     session.setUseWorker(false);
     session.setMode('ace/mode/html');
-  }
+  } 
 
   createFirepad(editor) {
     let baseURL = 'https://seecoderun.firebaseio.com';

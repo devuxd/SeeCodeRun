@@ -39,7 +39,7 @@ export class CssEditor {
   configureEditor(editor) {
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
-  }
+  } 
 
   configureSession(session) {
     session.setUseWrapMode(true);
