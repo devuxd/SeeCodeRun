@@ -1,49 +1,42 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-<<<<<<< HEAD
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
-<<<<<<< HEAD
-=======
-import '../mode-javascript';
-import '../theme-chrome';
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
-import '../mode-javascript';
-import '../theme-chrome';
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
 
+@inject(EventAggregator)
 export class JsGutter {
   
   constructor(eventAggregator) {
-    this.eventAggregator = eventAggregator;
+       this.eventAggregator = eventAggregator;
+       this.selectedLine = 1;
+
+
   }
   
   attached() {
-    let gutter = ace.edit('gutterDiv');
-    this.configureGutter(gutter);
-    
-    let session = gutter.getSession();
-    
-    this.gutter = gutter;
-    this.session = session;
-    this.subscribe();
-  }
+
+         this.subscribe();
+
+  } 
   
-  configureGutter(gutter) {
-    gutter.setTheme('ace/theme/chrome');
-    gutter.setShowFoldWidgets(false);
-    gutter.renderer.setShowGutter(false);
-    gutter.renderer.$cursorLayer.element.style.display = 'none';
-    gutter.setReadOnly(true);
+ 
+  publish(e) {
+   let ea = this.eventAggregator;
+    
+    let info = {
+
+      top: e.target.scrollTop
+    };
+    
+    ea.publish('onScrolled',info);
   }
+
+
   
   subscribe() {
     let ea = this.eventAggregator;
     let session = this.session;
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 
     ea.subscribe('onCursorMoved', info => {
@@ -98,7 +91,7 @@ export class JsGutter {
            indexOfDiv++;
          }
        return indexOfDiv;
-      } 
+      }
 	  RemoveLine(lastline, lastDiv){
           let iframeBody = $('#gutter');  
           while (lastline<lastDiv){
@@ -107,29 +100,28 @@ export class JsGutter {
          }
       }
 	  highlightLine(line, lastline){
-=======
-    
-    ea.subscribe('onEditorChanged', payload => {
-      let doc = session.doc;
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
-    
-    ea.subscribe('onJsEditorChanged', payload => {
-      let doc = session.doc;
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
       
-      doc.removeLines(0, doc.getLength());
-      
-      // TODO: fix uncaught length error
-      doc.insertLines(0, new Array(payload.length - 1));
-      
-      for(let result of payload.syntax) {
-        doc.insertInLine({
-          row: result.location.row,
-          column: result.location.col
-        }, result.content);
+          let lastDiv = this.GetLastDiv();
+          let iframeBody = $('#gutter');
+          let selectedLine = this.selectedLine;
+          if(iframeBody.find('#line'+lastline).length ==0){
+                 this.CreateLine(lastline);
+            }
+            if(lastline < lastDiv){
+             this.RemoveLine(lastline, lastDiv);
+         }
+          
+           iframeBody.find("#line"+selectedLine).removeClass("highlight_gutter");
+           iframeBody.find("#line"+line).addClass("highlight_gutter");
+           this.selectedLine=line;
+               
+
+          
       }
-    });
-  }
+
+
+     
+      
+      
 }
 

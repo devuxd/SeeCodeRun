@@ -45,7 +45,7 @@ export class Pastebin {
 
         
    }
- 
+
   attached() {
       
       // Constructing the pastebin 
