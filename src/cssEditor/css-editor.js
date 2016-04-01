@@ -16,7 +16,11 @@ export class CssEditor {
         }
     }
     
-    attached() {
+    attached(params) {
+        if (params.id) {
+          this.pastebinId = params.id;
+        }
+        
         let editor = ace.edit('cssEditorDiv');
         this.configureEditor(editor);
         

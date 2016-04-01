@@ -18,8 +18,11 @@ export class JsEditor {
       this.pastebinId = params.id;
     } 
   }
-
-  attached() {
+  attached(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    }
+    
     let editor = ace.edit('jsEditorDiv');
     this.configureEditor(editor);
     

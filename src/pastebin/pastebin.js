@@ -34,19 +34,19 @@ export class Pastebin {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
       
-      let id = firebase.push().key();
-      this.router.navigateToRoute('pastebin', { id: id });
+      this.pastebinId = firebase.push().key();
+      this.router.navigateToRoute('pastebin', {id: this.pastebinId});
     }
     
     this.subscribe();
   }
 
   attached() {
-    this.jsEditor.attached();
-    this.jsGutter.attached();
-    this.consoleWindow.attached();
-    this.htmlEditor.attached();
-    this.cssEditor.attached();
+    this.jsEditor.attached({id: this.pastebinId});
+    this.jsGutter.attached({id: this.pastebinId});
+    this.consoleWindow.attached({id: this.pastebinId});
+    this.htmlEditor.attached({id: this.pastebinId});
+    this.cssEditor.attached({id: this.pastebinId});
   }
 
   subscribe() {
