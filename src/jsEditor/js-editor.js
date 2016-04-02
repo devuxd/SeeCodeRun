@@ -1,7 +1,6 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
 
@@ -62,7 +61,7 @@ export class JsEditor {
       clearTimeout(editorChangedTimeout);
 	  
       editorChangedTimeout = setTimeout(function pub() { 
-        let syntax = new TraceService().getTrace(editor.getValue());
+        let syntax = editor.getValue();
         let curs = editor.getCursorPosition().row+1;  
        
         // subscribe to this event to be notified with the following data when the JS-editor changed.   
