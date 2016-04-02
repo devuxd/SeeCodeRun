@@ -142,7 +142,7 @@ export class EsAnalyzer {
              
         }
         beautifulString  += " }";
-        return beautifulString; // create a clipboard visualizer overlay plugin for windows
+        return beautifulString;
   }
     
 

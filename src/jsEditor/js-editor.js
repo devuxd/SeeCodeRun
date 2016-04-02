@@ -73,8 +73,7 @@ export class JsEditor {
             //TODO: make singleton in Aurelia
             let traceService  = new TraceService();
             let instrumentedCode = traceService.getInstrumentation(editor.getValue());
-            //console.log(JSON.stringify(payload));
-           //ea.publish('onEditorChanged', payload);
+
             ea.publish(traceService.eventsToPublish.instrumented.event, instrumentedCode);
           }, 2500);
           

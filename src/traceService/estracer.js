@@ -23,17 +23,24 @@ export class EsTracer {
     
 
   createTraceCollector() {
-        let traceTypes = this.esAnalyzer.traceTypes;
+        let traceTypes = this.esAnalyzer.traceTypes, Syntax = this.esAnalyzer.Syntax;
         window.CANTRACE = true;
         window.ISCANCELLED = false;
         window.TRACE = {
-            hits: {}, data: {}, stack : [], execution : [], values : {}, 
-            autoLog: function (info) {
+            hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [], 
+            autoLog: function autoLog(info) {
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
                 if(traceTypes.LocalStack.indexOf(info.type)>-1){
     				this.stack.push(key) ;
                 }
+
+                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression){
+                   this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range}); 
+                }
+
+                this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});
+
 
                 var stackTop =	this.stack.length - 1;
                 
@@ -42,6 +49,14 @@ export class EsTracer {
                     this.data[key].hits = this.hits[key] + 1;
                     this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
                 } else {
+                    
+                    if(info.type === Syntax.VariableDeclarator){
+                       this.variables.push({'id': info.id , 'range': info.range});
+                    }
+                    
+                    this.identifiers.push({'id': info.id , 'range': info.range});
+                    
+                    
                     this.hits[key] = 1;
                     this.execution.push(key);
                     this.data[key] = {
@@ -61,7 +76,7 @@ export class EsTracer {
                 
                 return info.value;
             },
-            getStackTrace: function () {
+            getStackTrace: function getStackTrace () {
                 var entry,
                     stackData = [];
                 for (var i in this.stack) {
@@ -72,19 +87,25 @@ export class EsTracer {
                 }
                 return stackData;
             },
-            getExecutionTraceAll: function () {
-                var i, entry, stackData = [];
-                for (var i in this.execution) {
-                    entry = this.execution[i];
+            getExecutionTraceAll: function getExecutionTraceAll() {
+                let result = [];
+                for (let i in this.execution) {
+                    let entry = this.execution[i];
                     if (this.data.hasOwnProperty(entry)) {
-                        stackData.push(this.data[entry]);
+                        result.push(this.data[entry]);
                     }
                 }
-                return stackData;
+                return result;
             },
-            getExecutionTrace: function () {// getValues
+            getExpressions: function getExpressions() {
+                return {variables : this.identifiers, timeline: this.timeline};
+            },
+            getVariables: function getVariables() {
+                return {variables : this.variables, values: this.values};
+            },
+            getExecutionTrace: function getExecutionTrace() {// getValues
                 var i, entry, data, stackData = [];
-                for (var i in this.execution) {
+                for (i in this.execution) {
                     entry = this.execution[i];
                     if (this.data.hasOwnProperty(entry)) {
                         data =this.data[entry];
@@ -99,7 +120,7 @@ export class EsTracer {
         
   }
   
-  /**
+/**
  * description
  *  Usage: traceExecution( sourceCode, eventListener)
  *      @parameter sourceCode: a string with the source code
@@ -112,7 +133,7 @@ export class EsTracer {
  *          4. When the execution finishes, the eventListener callback will return status 'Finished' and the object this.TRACE will
  *          allow to obtain the execution trace data with the getExecutionTrace() call (i.e this.TRACE.getExecutionTrace())
  *
- */
+ **/
     onCodeEnded(){
         
     }

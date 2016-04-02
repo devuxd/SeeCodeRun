@@ -53,8 +53,8 @@ export class TraceService {
     
     subscribe() {
      let ea = this.eventAggregator;
-     ea.publish(this.events.running, this.esTracer.onCodeRunning());
-     ea.publish(this.events.finished, this.esTracer.onCodeRunning()); 
+     ea.publish(this.eventsToSubscribe.running, this.esTracer.onCodeRunning());
+     ea.publish(this.eventsToSubscribe.finished, this.esTracer.onCodeRunning()); 
 
     }
   

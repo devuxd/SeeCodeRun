@@ -1,19 +1,16 @@
-
-import {AceUtils} from "./aceutils";
-
-// requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
-class TraceViewModel {
-    constructor(aceEditor, tooltipElement, gutterDecorationCSSClassName){
+export class TraceViewModel {
+    constructor(aceUtils, aceEditor, tooltipElement, gutterDecorationCSSClassName){
         this.editor= aceEditor;
         this.tooltip = tooltipElement;
         this.gutterDecorationClassName = gutterDecorationCSSClassName;
-        this.aceUtils = new AceUtils();
+        this.aceUtils = aceUtils;
         this.traceGutterData = {  maxCount : 0, rows : []  }; // contains custom data to be shown in the gutter cell text
-        // remove in Aurelia
-        this.attached();
+        this.bind();
     }
 
-    attached(){
+
+    bind(){
+        
         this.resetTraceGutterData();
         let editor = this.editor;
         let tooltip = this.tooltip;

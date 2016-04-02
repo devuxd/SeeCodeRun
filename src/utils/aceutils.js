@@ -1,13 +1,14 @@
-class AceUtils{
+export class AceUtils{
     constructor(){
         //stateless
     }
-    // will add the tooltip rendering to a given editor.
-    //It will find decorations and add show a tooltip if there row that matches the cursor.
-    //The datamodel must contain a "rows" property with an array of rows as indexes.
-    //Each row of rows should have a "text" property to be shown.
-    // todo: generalize this method with a ViewModel{ view, datamodel} and enum for ace's events
-    
+/**
+  *    @desc will add the tooltip rendering to a given editor.
+  *    It will find decorations and add show a tooltip if there row that matches the cursor.
+  *    @param datamodel must contain a "rows" property with an array of rows as indexes.
+  *    Each row of rows should have a "text" property to be shown.
+  *   todo: generalize this method with a ViewModel{ view, datamodel} and enum for ace's events
+**/
     subscribeToEvents(editor, tooltip, gutterDecorationClassName, dataModel){
         let updateTooltip = this.updateTooltip;
         let isPositionInRange = this.isPositionInRange;
@@ -206,8 +207,10 @@ class AceUtils{
         session.gutterRenderer = traceGutterRenderer;
     }
     
-// If more gutter customization is needed. modify this is more than text is needed. Taken from Ace's source code [gutter.js]    
-// usage: editor.on("afterRender", updateTraceAnnotations(editor)) // requires DOM access [Aurelia: call within attached()]
+/**
+ * @desc: If more gutter customization is needed. modify this is more than text is needed. Taken from Ace's source code [gutter.js]    
+ * usage: editor.on("afterRender", updateTraceAnnotations(editor)) // requires DOM access [Aurelia: call within attached()]
+**/
     customUpdateGutter(editor, traceGutterRenderer) {
         let dom = document;
         let gutter = editor.renderer.$gutterLayer;
