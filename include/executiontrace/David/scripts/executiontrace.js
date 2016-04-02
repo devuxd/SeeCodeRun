@@ -957,7 +957,7 @@ either expressed or implied, of the SeeCodeRun Project.
                 
                 
                 //timeline
-                this.timeline.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range});
+                this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});
 
                 var stackTop =	this.stack.length - 1;
                 

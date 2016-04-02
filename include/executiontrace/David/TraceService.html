@@ -231,7 +231,7 @@ class AceUtils{
 	
 	isPositionInRange(position, inRange){
         
-        var matchesInOneLine = (
+        let matchesInOneLine = (
                 position.row == inRange.start.row 
                 && inRange.start.row  == inRange.end.row
                 && position.column >= inRange.start.column
@@ -242,7 +242,7 @@ class AceUtils{
             return true;
         }
             
-        var matchesStart = (
+        let matchesStart = (
                 position.row == inRange.start.row 
                 && inRange.start.row  < inRange.end.row
                 && position.column >= inRange.start.column
@@ -252,7 +252,7 @@ class AceUtils{
             return true;
         }
         
-        var matchesEnd = (
+        let matchesEnd = (
                 position.row == inRange.end.row
                 && inRange.start.row  < inRange.end.row
                 && position.column <= inRange.end.column
@@ -472,10 +472,10 @@ class TraceViewController{
 }
 
 class TraceViewModel {
-    constructor(editor, tooltip, gutterDecorationClassName){
-        this.editor= editor;
-        this.tooltip = tooltip;
-        this.gutterDecorationClassName = gutterDecorationClassName;
+    constructor(aceEditor, tooltipElement, gutterDecorationCSSClassName){
+        this.editor= aceEditor;
+        this.tooltip = tooltipElement;
+        this.gutterDecorationClassName = gutterDecorationCSSClassName;
         this.aceUtils = undefined;
         this.traceGutterData = {  maxCount : 0, rows : []  }; // contains custom data to be shown in the gutter cell text
         // remove in Aurelia
@@ -516,7 +516,7 @@ class TraceViewModel {
     
     // use only after execution trace ends
     updateTraceGutterData(trace){
-        let localTraceGutterData = this.getTraceGutterData(trace);
+        let localTraceGutterData = this.extractTraceGutterData(trace);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
         this.traceGutterData.rows = localTraceGutterData.rows;
     }
@@ -530,7 +530,7 @@ class TraceViewModel {
         this.traceGutterData.rows = [];
     }
     
-    getTraceGutterData(trace){
+    extractTraceGutterData(trace){
 		    let result = {  maxCount : 0, rows : []  };
     
             for (let i = 0; i < trace.length; i ++) {
@@ -591,10 +591,14 @@ class TraceViewModel {
                 document.getElementById('info').innerHTML = event.description;
          
 
-        	    let variablesTrace = window.TRACE.getVariables();
+        // 	    let variablesTrace = window.TRACE.getVariables();
+        // 		document.getElementById('stacktrace').innerHTML =
+        // 		    'VARIABLES :<br>'+ visualizeExecutionTrace(variablesTrace.variables) +
+        // 		    '<br>VALUES:<br>' + visualizeExecutionTrace(variablesTrace.values);
+        
+        	    let expressionsTrace = window.TRACE.getExpressions();
         		document.getElementById('stacktrace').innerHTML =
-        		    'VARIABLES :<br>'+ visualizeExecutionTrace(variablesTrace.variables) +
-        		    '<br>VALUES:<br>' + visualizeExecutionTrace(variablesTrace.values);
+        		    'EXPRESSIONS :<br>'+ visualizeExecutionTrace(expressionsTrace.timeline);
         	 
             }else if(event.status === "Error"){
                 document.getElementById('info').innerHTML = event.description;
