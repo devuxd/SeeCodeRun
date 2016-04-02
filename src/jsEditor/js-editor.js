@@ -15,9 +15,15 @@ export class JsEditor {
     this.hasErrors = false;
   }
 
-  
+  activate(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    } 
+  }
   attached(params) {
-    this.pastebinId = params.id;
+    if (params.id) {
+      this.pastebinId = params.id;
+    }
 
     let editor = ace.edit('aceJsEditorDiv');
     this.configureEditor(editor);

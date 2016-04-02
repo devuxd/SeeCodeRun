@@ -32,6 +32,11 @@ export class Pastebin {
 activate(params) {
     if (params.id) {
       let id = params.id;
+      this.pastebinId = id;
+      this.jsEditor.activate({ id: id });
+      this.htmlEditor.activate({ id: id });
+      this.cssEditor.activate({ id: id });
+
     } else {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);

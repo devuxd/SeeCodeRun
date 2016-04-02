@@ -14,10 +14,16 @@ export class HtmlEditor {
         this.eventAggregator = eventAggregator;
     }
     
-  
-    
+  activate(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    } 
+  }
   attached(params) {
-    
+    if (params.id) {
+      this.pastebinId = params.id;
+    }
+
     this.pastebinId = params.id;
 
     let editor = ace.edit('aceHtmlEditorDiv');
