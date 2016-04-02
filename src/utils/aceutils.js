@@ -1,4 +1,3 @@
-// requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
 class AceUtils{
     constructor(){
         //stateless

@@ -216,7 +216,10 @@ export class TraceHelper {
     	return stackText;  
     
     }
-       // example of how to use the trace resulting data structure
+       /**
+        * @desc example of how to use the trace resulting data structure
+        * @param stackTrace results from the trace service
+        * */
     visualize(stackTrace){
         var i, entry, name, index;
         var stackText= "";

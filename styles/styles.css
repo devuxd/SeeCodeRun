@@ -181,3 +181,38 @@ div.au-stagger {
     opacity: 1;
   }
 }
+
+
+.seecoderun_tooltip {
+	background-color: #FFF;
+	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
+	background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
+	border: 1px solid gray;
+	border-radius: 1px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	color: black;
+	max-width: 100%;
+	padding: 3px 4px;
+	position: absolute;
+	z-index: 10;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	cursor: default;
+	white-space: pre;
+	word-wrap: break-word;
+	line-height: normal;
+	font-style: normal;
+	font-weight: normal;
+	letter-spacing: normal;
+	pointer-events: none;
+	display: none;
+}
+
+.ace_gutter-cell.seecoderun_gutter_decoration{
+  background-color: #FFF;
+  border-radius: 20px 0px 0px 20px; 
+  box-shadow: 0px 0px 1px 1px red inset;
+  background-repeat: no-repeat;
+  background-position: 2px center;
+}
