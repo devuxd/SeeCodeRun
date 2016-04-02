@@ -61,14 +61,14 @@ export class JsEditor {
       clearTimeout(editorChangedTimeout);
 	  
       editorChangedTimeout = setTimeout(function pub() { 
-        let syntax = editor.getValue();
+        let js = editor.getValue();
         let curs = editor.getCursorPosition().row+1;  
        
         // subscribe to this event to be notified with the following data when the JS-editor changed.   
         //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
         
          ea.publish('onJsEditorChanged', {
-            js: editor.getValue(), 
+            js: js, 
             length: session.getLength(), 
             cursor: curs
         });
