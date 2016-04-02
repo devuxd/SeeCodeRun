@@ -1,13 +1,8 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-<<<<<<< HEAD
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
-=======
-import '../mode-javascript';
-import '../theme-chrome';
->>>>>>> master
 
 @inject(EventAggregator)
 export class JsGutter {
