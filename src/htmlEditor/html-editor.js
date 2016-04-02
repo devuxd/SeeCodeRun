@@ -57,7 +57,7 @@ export class HtmlEditor {
   createFirepad(editor) {
     let baseURL = 'https://seecoderun.firebaseio.com';
     let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/html');
-var firepad = Firepad.fromACE(firebase, editor, 
+  return Firepad.fromACE(firebase, editor, 
     { defaultText: '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n'
             + '<body>\n\n</body>\n</html>' });
   }
