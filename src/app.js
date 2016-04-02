@@ -6,7 +6,6 @@ export class App {
         route: ['', '/:id'],
         name: 'pastebin',
         moduleId: 'pastebin/pastebin',
-        nav: false,
         title: 'Pastebin'
       }
     ]);
