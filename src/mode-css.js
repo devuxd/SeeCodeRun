@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* */  
+=======
+/* */ 
+>>>>>>> master
 "format global";
 ace.define("ace/mode/css_highlight_rules",["require","exports","module","ace/lib/oop","ace/lib/lang","ace/mode/text_highlight_rules"], function(require, exports, module) {
 "use strict";
