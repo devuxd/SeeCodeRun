@@ -36,6 +36,7 @@ System.config({
     "bootstrap": "github:twbs/bootstrap@3.3.6",
     "core-js": "npm:core-js@1.2.6",
     "escodegen": "npm:escodegen@1.8.0",
+    "d3": "npm:d3@3.5.16",
     "esprima": "npm:esprima@2.7.2",
     "estraverse": "npm:estraverse@4.1.1",
     "esutils": "npm:esutils@2.0.2",

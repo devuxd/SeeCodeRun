@@ -1,14 +1,137 @@
+ 
+
+body{
+    padding-top: 50px; 
+    min-height: 100%;
+    margin: 0;
+}
+@media screen 
+  and (min-device-width: 1200px) 
+  and (max-device-width: 1600px) 
+  and (-webkit-min-device-pixel-ratio: 1) { 
+    body{
+    padding-top: 40px; 
+    min-height: 100%;
+    margin: 0;
+}
+div.fullWidth {
+  width: 100%;
+}
+}
+
+/* ----------- Retina Screens ----------- */
+@media screen 
+  and (min-device-width: 1200px) 
+  and (max-device-width: 1600px) 
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (min-resolution: 192dpi) { 
+    body{
+    padding-top: 50px; 
+    min-height: 100%;
+    margin: 0;
+}
+
+div.fullWidth {
+  width: 100%;
+}
+
+}
+.ace_scrollbar {
+    display: none !important;
+}
+.hidden-thing {
+  position: absolute;
+  left: 100%;
+  width: 50px;
+  height: 50px;
+  opacity: 0;
+}
+
 .powered-by-firepad {
   display: none;
 }
 
 #runCode {
-	float: right;
+  float: right;
 }
 
-body {
-  margin: 0;
+.line_height {
+    white-space:nowrap;
+    color: #999487;
+    font-size:11px;
+    height: 14px; 
+    
 }
+    
+.highlight_gutter{
+    color: black;
+    background: #eeeeee;
+    display: table-row;
+
+}
+
+.iframeCss{
+    height: 700px; 
+    width: 100%;
+    border-left: 1px solid #a6a195;
+    overflow:auto;
+    padding-left: 1.5px;
+}
+   
+
+.flow
+{
+    overflow: auto;
+}
+@-moz-document url-prefix() {
+   .line_height {
+    white-space:nowrap;
+    color: #999487;
+    font-size:11px;
+    height: 16.2px; 
+}
+.highlight_gutter{
+     color: black;
+    background: #eeeeee;
+    display: table-row;
+}
+}
+.iframeCssPreview
+{
+  height: 100vh;        /* Viewport-relative units */
+  width: 100vw; 
+ border: none;
+ overflow:overflow;
+}
+
+
+
+ul.nav li a, ul.nav li a:visited {
+    color: #888888;
+    font-size: 16px;
+}
+
+ul.nav li a:hover, ul.nav li a:active {
+    background-color: #eeeeee;
+    border-left: none;
+    border-top: none;
+    border-right:none;
+    font-size: 16px;
+}
+
+ul.nav li.active a {
+    color: #888888;
+    font-size: 16px;
+}
+
+/*glyph style work*/
+.glyphicon{
+    padding-right: 4px;
+    font-size: 16px;
+    
+}
+
+/* Feature 22 style*/
 
 .splash {
   text-align: center;
@@ -215,4 +338,17 @@ div.au-stagger {
   box-shadow: 0px 0px 1px 1px red inset;
   background-repeat: no-repeat;
   background-position: 2px center;
+}
+
+td, th {
+    padding: 1px 4px;
+    border: 1px black solid;
+}
+
+#visualizations {
+  padding-top: 5px;
+}
+
+#vis-navbar {
+  padding-bottom: 5px;
 }

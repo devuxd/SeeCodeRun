@@ -1,49 +1,41 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
-import {Router} from 'aurelia-router';
-import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
+import {TraceService} from '../traceService/traceService';
 
-@inject(EventAggregator, Router)
 export class JsEditor {
 
-  constructor(eventAggregator, router) {
+  constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
-    this.router = router;
     this.hasErrors = false;
   }
 
   activate(params) {
     if (params.id) {
       this.pastebinId = params.id;
-    } else {
-      let baseURL = 'https://seecoderun.firebaseio.com';
-      let firebase = new Firebase(baseURL);
-      let pastebinId = firebase.push().key();
-    }
+    } 
   }
+  attached(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    }
 
-  attached() {
-    let editor = ace.edit('editorDiv');
+    let editor = ace.edit('aceJsEditorDiv');
     this.configureEditor(editor);
     
     this.editor = editor;
-
+    
     let session = editor.getSession();
     this.configureSession(session);
-    this.setupSessionEvents(session);
 
     let selection = editor.getSelection();
-    this.setupSelectionEvents(selection);
-
     this.session = session;
     this.selection = selection;
-    this.firepad = this.createFirepad(editor);
-    this.subscribe();
+    this.firepad = this.createFirepad(editor);        
+    this.setupSessionEvents(session);
+    this.subscribe(session);
   }
 
   configureEditor(editor) {
@@ -55,31 +47,43 @@ export class JsEditor {
     session.setUseWrapMode(true);
     session.setUseWorker(false);
     session.setMode('ace/mode/javascript');
-    session.addGutterDecoration(0, 'label label-info');
   }
 
   setupSessionEvents(session) {
     let ea = this.eventAggregator;
     let editor = this.editor;
-
     session.on('change',
       onEditorChanged);
 
     let editorChangedTimeout;
     
     function onEditorChanged(e) {
+	  
       clearTimeout(editorChangedTimeout);
+	  
       editorChangedTimeout = setTimeout(function pub() { 
+        let editorText = editor.getValue();
+        let curs = editor.getCursorPosition().row+1;  
+       
+        // subscribe to this event to be notified with the following data when the JS-editor changed.   
+        //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
         
-            let publisher = ea;
-            let traceService  = new TraceService(publisher);
-            let payload = traceService.getInstrumentation(editor.getValue());
-            publisher.publish(payload.status, payload);
-            
+         ea.publish('onJsEditorChanged', {
+            js: editorText, 
+            length: session.getLength(), 
+            cursor: curs
+        });
+        
+        let publisher = ea;
+        let traceService  = new TraceService(publisher);
+        let payload = traceService.getInstrumentation(editorText);
+        publisher.publish(payload.status, payload);
+        
       }, 2500);
-          
-          
-        }
+}
+     
+     
+ 
 
     this.editorChangedTimeout = editorChangedTimeout;
 
@@ -101,17 +105,30 @@ export class JsEditor {
         annotation: null
       });
     }
-  }
+      
 
-  setupSelectionEvents(selection) {
-    let ea = this.eventAggregator;
+      // Copy event for Vis-viewer
+      editor.on('copy', expression =>
+      {
+           ea.publish('onEditorCopy', {
+            expression: expression,
+            row: editor.getCursorPosition().row +1,
+            column: editor.getCursorPosition().column+1
+            
+      });});
 
-    selection.on('changeCursor',
-      onCursorMoved);
+       //For gutter
+    session.selection.on
+           ('changeCursor', () => {
 
-    function onCursorMoved(e) {
-      ea.publish('onCursorMoved', e);
-    }
+           let info =
+           {
+              cursor : this.editor.getCursorPosition().row+1,
+              lastVisibleRow: session.getLength()
+               
+           }; 
+            ea.publish('onCursorMoved', info );
+          });
   }
 
   createFirepad(editor) {
@@ -126,14 +143,11 @@ export class JsEditor {
       });
   }
 
-  subscribe() {
+  subscribe(session) {
     let ea = this.eventAggregator;
     let hasErrors = this.hasErrors;
     let editor = this.editor;
 
-    ea.subscribe('onEditorChanged', payload => {
-      // add code here for subscribe event
-    });
 
     ea.subscribe('onAnnotationChanged', payload => {
       hasErrors = payload.hasErrors;
@@ -145,9 +159,13 @@ export class JsEditor {
       }
     });
 
-    ea.subscribe('onCursorMoved', payload => {
-      // add code here for subscribe event
+    
+    // This is event is published by js-gutter.js to scroll the JS editor. 
+     ea.subscribe('onScrolled', info =>  {     
+      session.setScrollTop(info.top);
     });
-  }
+  
+}
+ 
 }
 
