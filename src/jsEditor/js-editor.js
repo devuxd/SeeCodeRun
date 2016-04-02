@@ -70,7 +70,6 @@ export class JsEditor {
          ea.publish('onJsEditorChanged', {
             js: editor.getValue(), 
             length: session.getLength(), 
-            syntax: syntax,  
             cursor: curs
         });
       }, 2500);
