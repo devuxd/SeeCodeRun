@@ -1,12 +1,7 @@
 # SeeCode.Run
 
-
-
-## Important Note:
-
-The current build has a bug in the router, which causes the browser to freeze when a new pastebin is generated. See [Issue #67](https://github.com/tlatoza/SeeCodeRun/issues/67) for more information.
-
 ## Running The App
+
 To run the app, follow these steps.
 
 1. Ensure that [NodeJS](http://nodejs.org/) is installed. This provides the platform on which the build tooling runs.
