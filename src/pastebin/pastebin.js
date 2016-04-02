@@ -15,8 +15,6 @@ export class Pastebin {
     this.jsEditor = jsEditor;
     this.jsGutter = jsGutter;
     this.consoleWindow = consoleWindow;
-    
-
   }
 
   activate(params) {

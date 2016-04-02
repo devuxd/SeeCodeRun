@@ -4,10 +4,12 @@ import {EsInstrumenter} from './esinstrumenter';
 
 export class EsTracer {
 
-    constructor(events) {
+    constructor(events, timeLimit = 3000, publisher) {
       this.esAnalyzer = new EsAnalyzer();
       this.esInstrumenter = new EsInstrumenter();
       this.events = events;
+      this.timeLimit = timeLimit;
+      this.publisher = publisher;
     }
     
     getEsAnalyzer(){
@@ -134,99 +136,81 @@ export class EsTracer {
  *          allow to obtain the execution trace data with the getExecutionTrace() call (i.e this.TRACE.getExecutionTrace())
  *
  **/
-    onCodeEnded(){
-        
+    cancelTrace(){
+        window.ISCANCELLED = true;
     }
-    getInstrumentation(sourceCode = "", timeLimit = 3000, publisher = undefined) {
-        window.ISCANCELLED = false;
-        let  code, timestamp;
-        let payload = {'status' : 'NONE', 'description' : '', 'data' : {}};
-        
-        let timeOutCallback = function(){
+    
+    onCancelTrace(){
+         this.cancelTrace();
+    }
+    
+    onCodeRunning(){
+        let timeLimit = this.timeLimit;
+        let timeOutCallback = function timeOutCallback(){
                   throw `Execution time out. Excedeed ${timeLimit} ms`;
         };
-        let timeOut;
-        try {
+        
+        if(this.timeOut){
+            window.clearTimeout(this.timeOut);
+        }
+        this.timeOut = window.setTimeout(timeLimit, timeOutCallback);
+        
+        window.ISCANCELLED = false;
+        this.startTimestamp = +new Date();
+    }
+    
+    onCodeFinished(){
+        let event = this.events.changed;
+        this.traceChanged(event);
+    }
+    
+    onCodeFailed(error){
+        let event = this.events.changed;
+        this.traceChanged(event, error);
+    }
+    
+    traceChanged(event, error = ""){
+        window.clearTimeout(this.timeOut);
+        
+        let publisher = this.publisher;
 
+        let data = window.TRACE.getExecutionTrace();
+        
+        let timestamp = (+new Date()) - this.startTimestamp ;
+        let description = `${event.description} Trace completed in ${1 + timestamp} ms. Error: ${error.toString()}`;
+        
+        let payload = { status : event.event, description : description, data : data};
+        
+        if(publisher){
+            publisher.publish(payload.status, payload);
+        }
+    }
+    
+    getInstrumentation(sourceCode = "", timeLimit = 3000) {
+
+        this.timeLimit = timeLimit;
+        let  instrumentedCode;
+        let payload = {'status' : 'NONE', 'description' : '', 'data' : {}};
+        
+        try {
             payload.status = this.events.started.event;
             payload.description = this.events.started.description;
-                
-            if(publisher){
-                publisher.publish(payload.status, payload);
-            }
+
                 
             this.createTraceCollector();
-            code = this.esInstrumenter.traceInstrument(sourceCode, this.esAnalyzer);
+            instrumentedCode = this.esInstrumenter.traceInstrument(sourceCode, this.esAnalyzer);
             
             payload.status = this.events.running.event;
             payload.description = this.events.running.description;
+            payload.data = instrumentedCode;
                 
-            if(publisher){
-                publisher.publish(payload.status, payload);
-            }
-            
-            timestamp = +new Date();
-            
-
-            timeOut =window.setTimeout(timeLimit, timeOutCallback);
-            
-
-
-            
-            timestamp = (+new Date()) - timestamp;
-            
-            
-            window.clearTimeout(timeOut);
-            
-            
-            payload.status = this.events.finished.event;
-            payload.description = `${this.events.finished.description} Trace completed in ${1 + timestamp} ms.`;
-            //payload.data = window.TRACE.getExecutionTrace();
-            payload.code = code;
-                
-            if(publisher){
-                publisher.publish(payload.status, payload);
-            }
-            
             return payload;
     
         } catch (e) {
-            this.CANTRACE = true;
             
-            if(timeOut){
-                window.clearTimeout(timeOut);
-            }
-            timestamp = (+new Date()) - timestamp;
             payload.status = this.events.failed.event;
-            payload.description = `${this.events.failed.description} Trace completed in ${1 + timestamp} ms. Error: ${e.toString()}`;
-           // payload.data = window.TRACE.getExecutionTrace();
-                
-            if(publisher){
-                publisher.publish(payload.status, payload);
-            }
+            payload.description = `${this.events.failed.description}. Error: ${e.toString()}`;
             return payload;
-          }
-    }
-    
-  getTraceAnnotations(){
-        var i, stackTrace, entry, text, row;
-
-		stackTrace = this.TRACE.getStackTrace();
-		var annotations = [];
-        for (i = 0; i < stackTrace.length; i += 1) {
-            entry = stackTrace[i];
-            text = entry.text;
-			row = entry.range.start.row;
-			
-			annotations.push({ type : "info", row: row, column: 0, raw: "y is called x times", text: `${text}  is called  ${this.count(entry.count, 'time', 'times')}`});
-            
         }
-        return annotations;
-  }
-  
-  count(value, singular, plural) {
-        return (value === 1) ? (`${value} ${singular}`) : (`${value} ${plural}`);
-  }
-  
-  
+    }
 }

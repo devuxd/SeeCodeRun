@@ -85,7 +85,7 @@ export class EsAnalyzer {
   
   // Executes visitor on the object and its children (recursively). Added key to modify object (repercusion?) path[0][objectKey] = new node...
   traverse(object, visitor, master, objectKey) {
-        var key, child, parent, path, isLeaf = true;
+        var key, child, parent, path;
 
         parent = (typeof master === 'undefined') ? [] : master;
 
@@ -101,15 +101,11 @@ export class EsAnalyzer {
                 
                 if (typeof child === 'object' && child !== null) {
                         this.traverse(child, visitor, path, key);
-                        isLeaf = false;
                 }
                     
             }
         }
-        // if (isLeaf) { 
-        //     // end of path action        
-        // }
-        
+
     }
     
   // from root to current node

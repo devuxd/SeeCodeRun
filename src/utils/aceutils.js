@@ -327,4 +327,22 @@ export class AceUtils{
         }
     }
     
+    getTraceAnnotations(trace){
+        var i, stackTrace, entry, text, row;
+		var annotations = [];
+        for (i = 0; i < trace.length; i += 1) {
+            entry = stackTrace[i];
+            text = entry.text;
+			row = entry.range.start.row;
+			
+			annotations.push({ type : "info", row: row, column: 0, raw: "y is called x times", text: `${text}  is called  ${this.count(entry.count, 'time', 'times')}`});
+            
+        }
+        return annotations;
+    }
+  
+    count(value, singular, plural) {
+        return (value === 1) ? (`${value} ${singular}`) : (`${value} ${plural}`);
+    }
+    
 }

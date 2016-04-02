@@ -67,15 +67,16 @@ export class JsEditor {
 
     let editorChangedTimeout;
     
-        function onEditorChanged(e) {
-          clearTimeout(editorChangedTimeout);
-          editorChangedTimeout = setTimeout(function pub() {
-            //TODO: make singleton in Aurelia
-            let traceService  = new TraceService();
-            let instrumentedCode = traceService.getInstrumentation(editor.getValue());
-
-            ea.publish(traceService.eventsToPublish.instrumented.event, instrumentedCode);
-          }, 2500);
+    function onEditorChanged(e) {
+      clearTimeout(editorChangedTimeout);
+      editorChangedTimeout = setTimeout(function pub() { 
+        
+            let publisher = ea;
+            let traceService  = new TraceService(publisher);
+            let payload = traceService.getInstrumentation(editor.getValue());
+            publisher.publish(payload.status, payload);
+            
+      }, 2500);
           
           
         }
