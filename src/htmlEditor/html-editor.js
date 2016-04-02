@@ -1,40 +1,48 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
+
 import '../mode-html';
 import '../theme-chrome';
 
+
+
 export class HtmlEditor {
-    
-    constructor(eventAggregator) {
+
+  constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
     }
     
-    activate(params) {
-        if (params.id) {
-            this.pastebinId = params.id;
-        }
+  activate(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    } 
+  }
+  attached(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
     }
+
+    this.pastebinId = params.id;
+
+    let editor = ace.edit('aceHtmlEditorDiv');
+    this.configureEditor(editor);
     
-    attached(params) {
-        if (params.id) {
-          this.pastebinId = params.id;
-        }
-        
-        let editor = ace.edit('htmlEditorDiv');
-        this.configureEditor(editor);
-        
-        this.editor = editor;
-        
-        let session = editor.getSession();
-        this.configureSession(session);
-        this.setupSessionEvents(session);
-        
-        this.session = session;
-        
-        this.firepad = this.createFirepad(editor);
-    }
+    this.editor = editor;
+
+    let session = editor.getSession();
+    this.configureSession(session);
+
+    let selection = editor.getSelection();
+
+    this.session = session;
+    this.selection = selection;
+    this.firepad = this.createFirepad(editor);        
+    this.setupSessionEvents(session);
+  }
+ 
     
+
   configureEditor(editor) {
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
@@ -44,9 +52,19 @@ export class HtmlEditor {
     session.setUseWrapMode(true);
     session.setUseWorker(false);
     session.setMode('ace/mode/html');
+  } 
+
+  createFirepad(editor) {
+    let baseURL = 'https://seecoderun.firebaseio.com';
+    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/html');
+  return Firepad.fromACE(firebase, editor, 
+    { defaultText: '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n'
+            + '<body>\n\n</body>\n</html>' });
   }
-  
-  setupSessionEvents(session) {
+
+
+
+setupSessionEvents(session) {
       let ea = this.eventAggregator;
       let editor = this.editor;
       
@@ -64,15 +82,5 @@ export class HtmlEditor {
       this.editorChangedTimeout = editorChangedTimeout;
   }
   
-  createFirepad(editor) {
-    let baseURL = 'https://seecoderun.firebaseio.com';
-    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/html');
-
-    return Firepad.fromACE(
-      firebase,
-      editor,
-      {
-        defaultText: '<h1>Html Editor</h1>'
-      });
-  }
+  
 }

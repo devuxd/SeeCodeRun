@@ -1,65 +1,96 @@
-<template>
-  <require from="jsEditor/js-editor.html"></require>
-  <require from="consoleWindow/console-window.html"></require>
-  <require from="jsGutter/js-gutter.html"></require>
-  <require from="htmlEditor/html-editor.html"></require>
-  <require from="cssEditor/css-editor.html"></require>
-  <require from="htmlViewer/html-viewer.html"></require>
+  <template>
+   <require from="jsEditor/js-editor.html"></require>
+   <require from="jsGutter/js-gutter.html"></require>
+   <require from="htmlEditor/html-editor.html"></require>
+   <require from="cssEditor/css-editor.html"></require>
+   <require from="visViewer/vis-viewer.html"></require>
+   <require from="htmlViewer/html-viewer.html"></require>
+   <require from="consoleWindow/console-window.html"></require>
 
-  <section class="au-animate">
-    <h2>${heading} ${pastebinId}</h2>
-
-    <div class="row">
-      <div class="col-sm-8">
-        <ul class="nav nav-pills">
-          <li class="active"><a data-toggle="pill" href="#html">HTML</a></li>
-          <li><a data-toggle="pill" href="#js">JS</a></li>
-          <li><a data-toggle="pill" href="#css">CSS</a></li>
-        </ul>
-
-        <div class="tab-content">
-          <div id="html" class="tab-pane fade in active">
-            <div>
-              <html-editor editor.bind="htmlEditor"></html-editor>
-            </div>
-          </div>
-          <div id="js" class="tab-pane fade">
-            <div class="col-sm-8">
-              <div>
-                <js-editor editor.bind="jsEditor"></js-editor>
+   <div id="mainSplitter">  
+    <div>
+      <div class="container-fluid" style="padding-left: 0px; padding-right: 0px; padding-left: 7px;" >
+        <div class="row">
+    <div>   
+    <div role="tabpanel" >
+      <ul class="nav nav-tabs">
+        <li role="presentation" class="active">
+        <a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
+        <li role="presentation">
+        <a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
+        <li role="presentation">
+        <a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
+    </ul>
+     </div>
+      
+      <div class="tab-content">   
+      <div role="tabpanel" class="tab-pane active" id="js-container" >
+            <div class ="row">
+              <div class="col-md-9 col-xs-7 col-sm-7" style="padding-right: 10px;padding-top: 5px;">
+             <js-editor jsEditor.bind="jsEditor"></js-editor>
               </div>
+                 <div class="col-md-3 col-xs-5 col-sm-5" style="padding-left: 10px; padding-right: 32px; padding-top:3px">
+                 <js-gutter gutter.bind="jsGutter"> </js-gutter> 
+                 </div>
             </div>
-            <div class="col-sm-4">
-              <div>
-                <js-gutter gutter.bind="jsGutter"></js-gutter>
-              </div>
-            </div>
-          </div>
-          <div id="css" class="tab-pane fade">
-            <div>
-              <css-editor editor.bind="cssEditor"></css-editor>
-            </div>
-          </div>
-        </div>
       </div>
-
-      <div class="col-sm-4">
-        <ul class="nav nav-pills">
-          <li class="active"><a data-toggle="pill" href="#output">Output</a></li>
-        </ul>
-        <div class="row">
-          <div class="tab-content">
-            <div id="output" class="tab-pane fade in active">
-              <div>
-                <html-viewer viewer.bind="htmlViewer"></html-viewer>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <console-window console.bind="consoleWindow"></console-window>
-        </div>
+               
+        <div role="tabpanel" class="tab-pane" id="html-container">
+       <html-editor htmlEditor.bind="htmlEditor" ></html-editor>
+      </div>
+      <div role="tabpanel" class="tab-pane" id="css-container">
+      <css-editor cssEditor.bind= "cssEditor"></css-editor>
+      </div>
       </div>
     </div>
-  </section>
+    </div>
+    </div>
+           
+   </div>
+        
+    <div>
+      <div id="rightSplitter">
+
+       <div>
+
+      <div role="tabpanel" >
+      <ul class="nav nav-tabs">
+        <li role="presentation" class="active" >
+          <a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">output</a></li>
+          <li role="presentation" >
+          <a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
+        </ul>
+      </div>
+      <div class="col-md-7 col-xs-7 col-sm-7" style="padding-left: 2px; padding-right: 2px" id="rightSplitter">
+        <div class="tab-content">
+         
+        
+
+        <div role="tabpanel" class="tab-pane active" id="preview" >
+             <html-viewer></html-viwer>
+        </div>
+
+       
+       <div role="tabpanel" class="tab-pane iframeCssPreview" id="visualization-container">
+           <vis-viewer vis.bind="visViewer"> </vis-viewer>
+       </div>
+      
+      </div>            
+      </div>
+      </div>
+
+      <div>
+    <console-window console.bind = 'consoleWindow'> </console-window>
+      </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    </div>
+
+
+
+
 </template>

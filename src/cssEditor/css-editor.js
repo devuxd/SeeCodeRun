@@ -1,26 +1,30 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
+
 import '../mode-css';
 import '../theme-chrome';
 
 export class CssEditor {
-    
-    constructor(eventAggregator) {
-        this.eventAggregator = eventAggregator;
+ 
+
+    constructor(eventAggregator) { 
+         this.eventAggregator = eventAggregator; 
+     } 
+
+  
+   activate(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    } 
+  }
+  attached(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
     }
-    
-    activate(params) {
-        if (params.id) {
-            this.pastebinId = params.id;
-        }
-    }
-    
-    attached(params) {
-        if (params.id) {
-          this.pastebinId = params.id;
-        }
-        
+
+        this.pastebinId = params.id;
+
         let editor = ace.edit('cssEditorDiv');
         this.configureEditor(editor);
         
@@ -38,7 +42,7 @@ export class CssEditor {
   configureEditor(editor) {
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
-  }
+  } 
 
   configureSession(session) {
     session.setUseWrapMode(true);
