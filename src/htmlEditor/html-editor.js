@@ -1,13 +1,12 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
+
 import '../mode-html';
 import '../theme-chrome';
 
 
-@inject(EventAggregator)
+
 export class HtmlEditor {
 
   constructor(eventAggregator) {

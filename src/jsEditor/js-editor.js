@@ -1,13 +1,10 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
 import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
 
-@inject(EventAggregator)
 export class JsEditor {
 
   constructor(eventAggregator) {

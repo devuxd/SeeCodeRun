@@ -1,7 +1,4 @@
-import {EventAggregator} from 'aurelia-event-aggregator';
-import {inject} from 'aurelia-framework';
 
-@inject (EventAggregator)
 export class HtmlViewer {
     
     constructor(eventAggregator) {

@@ -1,10 +1,8 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
 
-@inject(EventAggregator)
+
 export class JsGutter {
   
   constructor(eventAggregator) {
