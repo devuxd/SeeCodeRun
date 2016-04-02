@@ -14,7 +14,12 @@ export class HtmlEditor {
         this.eventAggregator = eventAggregator;
     }
     
-  attached() {
+  
+    
+  attached(params) {
+    
+    this.pastebinId = params.id;
+
     let editor = ace.edit('aceHtmlEditorDiv');
     this.configureEditor(editor);
     
@@ -30,10 +35,7 @@ export class HtmlEditor {
     this.firepad = this.createFirepad(editor);        
     this.setupSessionEvents(session);
   }
-  activate(params) {
-      this.pastebinId = params.id;
-        
-    }
+ 
     
 
   configureEditor(editor) {

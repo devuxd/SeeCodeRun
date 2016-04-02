@@ -10,52 +10,47 @@ import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from'../htmlViewer/html-viewer';
 import {VisViewer} from '../visViewer/vis-viewer'
 import {ConsoleWindow} from '../consoleWindow/console-window'
-@inject(EventAggregator, Router, JsEditor, HtmlEditor, CssEditor,JsGutter, HtmlViewer, VisViewer, ConsoleWindow)
+
+@inject(Router)
 export class Pastebin {
 
-  constructor(eventAggregator, router, jsEditor,htmlEditor,cssEditor,jsGutter,htmlViewer, visViewer, consoleWindow) {
-    this.eventAggregator = eventAggregator;
+  constructor(router) {
+    this.eventAggregator = new EventAggregator();
     this.router = router;
     this.heading = 'Pastebin';
-    this.jsEditor = jsEditor;
-    this.htmlEditor = htmlEditor;
-    this.cssEditor= cssEditor;
-    this.jsGutter = jsGutter;
     this.pastebinId ='';
-    this.htmlViewer=htmlViewer;
-    this.visViewer=visViewer;
-    this.consoleWindow=consoleWindow;
+    this.jsEditor = new JsEditor(this.eventAggregator);
+    this.jsGutter = new JsGutter(this.eventAggregator);
+    this.consoleWindow = new ConsoleWindow(this.eventAggregator);
+    this.htmlEditor = new HtmlEditor(this.eventAggregator);
+    this.cssEditor  = new CssEditor(this.eventAggregator);
+    this.htmlViewer = new HtmlViewer(this.eventAggregator);
+    this.visViewer  =new VisViewer(this.eventAggregator);
+
   }
 
-// TODO: fix the routing bug. See github repo for more information
-  activate(params) {
+activate(params) {
     if (params.id) {
-        this.pastebinId = params.id;
-        this.jsEditor.activate({ id: this.pastebinId }); 
-        this.htmlEditor.activate({ id: this.pastebinId }); 
-        this.cssEditor.activate({ id: this.pastebinId }); 
+      let id = params.id;
     } else {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
       
       this.pastebinId = firebase.push().key();
-
-      this.router.navigate(this.pastebinId);
+      this.router.navigateToRoute('pastebin', {id: this.pastebinId});
     }
-
-        
-   }
+    
+  }
 
   attached() {
-      
-      // Constructing the pastebin 
-      this.jsEditor.attached();
-      this.jsGutter.attached();      
-      this.htmlEditor.attached();
-      this.cssEditor.attached();
-      this.visViewer.attached();
-      this.htmlViewer.attached();
-      this.consoleWindow.attached();
+    this.jsEditor.attached({id: this.pastebinId});
+    this.htmlEditor.attached({id: this.pastebinId});
+    this.cssEditor.attached({id: this.pastebinId});
+    this.consoleWindow.attached();
+    this.jsGutter.attached();
+    this.visViewer.attached();
+    this.htmlViewer.attached();
+
 
        // Splitter
       $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
