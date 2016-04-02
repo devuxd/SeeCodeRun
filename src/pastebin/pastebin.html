@@ -1,67 +1,22 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-  <template>
-   <require from="jsEditor/js-editor.html"></require>
-   <require from="jsGutter/js-gutter.html"></require>
-   <require from="htmlEditor/html-editor.html"></require>
-   <require from="cssEditor/css-editor.html"></require>
-   <require from="visViewer/vis-viewer.html"></require>
-   <require from="htmlViewer/html-viewer.html"></require>
-   <require from="consoleWindow/console-window.html"></require>
-=======
-=======
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
 <template>
   <require from="jsEditor/js-editor.html"></require>
   <require from="consoleWindow/console-window.html"></require>
   <require from="jsGutter/js-gutter.html"></require>
-<<<<<<< HEAD
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
   <require from="htmlEditor/html-editor.html"></require>
   <require from="cssEditor/css-editor.html"></require>
   <require from="htmlViewer/html-viewer.html"></require>
-  <require from="visViewer/vis-viewer.html"></require>
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
 
   <section class="au-animate">
     <h2>${heading} ${pastebinId}</h2>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-       <div>
-
-      <div role="tabpanel" >
-      <ul class="nav nav-tabs">
-        <li role="presentation" class="active" >
-          <a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">output</a></li>
-          <li role="presentation" >
-          <a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
-=======
     <div class="row">
       <div class="col-sm-8">
         <ul class="nav nav-pills">
           <li class="active"><a data-toggle="pill" href="#html">HTML</a></li>
           <li><a data-toggle="pill" href="#js">JS</a></li>
           <li><a data-toggle="pill" href="#css">CSS</a></li>
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
         </ul>
 
-<<<<<<< HEAD
-        <div role="tabpanel" class="tab-pane active" id="preview" >
-             <html-viewer></html-viwer>
-=======
-    <div class="row">
-      <div class="col-sm-5">
-        <div>
-          <js-editor editor.bind="jsEditor"></js-editor>
-        </div>
-      </div>
-      <div class="col-sm-3">
-        <div>
-          <js-gutter gutter.bind="jsGutter"></js-gutter>
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
         <div class="tab-content">
           <div id="html" class="tab-pane fade in active">
             <div>
@@ -85,26 +40,13 @@
               <css-editor editor.bind="cssEditor"></css-editor>
             </div>
           </div>
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
         </div>
       </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-            </div>
-
-=======
-      <div class="col-sm-4">
-        <div class="row">
-        </div>
-        <div class="row">
-          <console-window console.bind="consoleWindow"></console-window>
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
       <div class="col-sm-4">
         <ul class="nav nav-pills">
           <li class="active"><a data-toggle="pill" href="#output">Output</a></li>
-          <li><a data-toggle="pill" href="#visualization">Visualization</a></li>
+         
         </ul>
         <div class="row">
           <div class="tab-content">
@@ -113,13 +55,8 @@
                 <html-viewer viewer.bind="htmlViewer"></html-viewer>
               </div>
             </div>
-            <div id="visualization" class="tab-pane fade">
-              <div>
-                <vis-viewer viewer.bind="visViewer"></vis-viewer>
-              </div>
-            </div>
+            
           </div>
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
         </div>
         <div class="row">
           <console-window console.bind="consoleWindow"></console-window>

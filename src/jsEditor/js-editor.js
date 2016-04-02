@@ -2,26 +2,12 @@
 /* global Firebase */
 /* global ace */
 import {inject} from 'aurelia-framework';
-<<<<<<< HEAD
-import {EventAggregator} from 'aurelia-event-aggregator';
-<<<<<<< HEAD
-=======
-import {Router} from 'aurelia-router';
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
+
 import {TraceService} from '../traceService/traceService';
 import '../mode-javascript';
 import '../theme-chrome';
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-@inject(EventAggregator)
-=======
-@inject(EventAggregator, Router)
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
+
 export class JsEditor {
 
   constructor(eventAggregator, router) {
@@ -31,29 +17,6 @@ export class JsEditor {
   }
 
   activate(params) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    
-    this.pastebinId = params.id;
-        
-  }
-
-  attached() {
-    let editor = ace.edit('aceJsEditorDiv');
-=======
-    if (params.id) {
-      this.pastebinId = params.id;
-    } else {
-      let baseURL = 'https://seecoderun.firebaseio.com';
-      let firebase = new Firebase(baseURL);
-      let pastebinId = firebase.push().key();
-    }
-  }
-
-  attached() {
-    let editor = ace.edit('editorDiv');
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
     if (params.id) {
       this.pastebinId = params.id;
     } 
@@ -61,7 +24,6 @@ export class JsEditor {
 
   attached() {
     let editor = ace.edit('jsEditorDiv');
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
     this.configureEditor(editor);
     
     this.editor = editor;
@@ -104,41 +66,12 @@ export class JsEditor {
       clearTimeout(editorChangedTimeout);
       editorChangedTimeout = setTimeout(function pub() { 
         let syntax = new TraceService().getTrace(editor.getValue());
-<<<<<<< HEAD
-<<<<<<< HEAD
-        let curs = editor.getCursorPosition().row+1;  
-       
-            // Two events for onEditorChanged 
-            
-            //This is been used by HtmlViewer  
-        ea.publish('onJsEditorChanged', {
-            js: editor.getValue(), 
-            length: session.getLength(), 
-            syntax: syntax,  
-            cursor: curs
-        });
-
-           // This is reserved for TraceServices
-         ea.publish('onEditorChanged', {
-            js: editor.getValue(), 
-            length: session.getLength(), 
-            syntax: syntax,  
-            cursor: curs
-=======
-
-        ea.publish('onEditorChanged', {
-            data: e,
-            length: session.getLength(),
-            syntax: syntax
->>>>>>> parent of 8e0a935... Merge pull request #57 from tlatoza/feature-30
-=======
 
         ea.publish('onJsEditorChanged', {
             js: editor.getValue(),
             data: e,
             length: session.getLength(),
             syntax: syntax
->>>>>>> parent of 82bf960... Merge pull request #69 from tlatoza/Abdulaziz
         });
       }, 2500);
     }
