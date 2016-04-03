@@ -4,36 +4,43 @@ export class TraceViewModel {
         this.tooltip = tooltipElement;
         this.gutterDecorationClassName = gutterDecorationCSSClassName;
         this.aceUtils = aceUtils;
-        this.traceGutterData = {  maxCount : 0, rows : []  }; // contains custom data to be shown in the gutter cell text
+        this.resetData();
         this.bind();
     }
-
+    
+    resetData(){
+        this.resetTraceGutterData();
+        this.resetTraceValuesData();
+    }
 
     bind(){
-        
-        this.resetTraceGutterData();
         let editor = this.editor;
         let tooltip = this.tooltip;
         let traceGutterData =  this.traceGutterData;
+        let traceValuesData =  this.traceValuesData;
         let gutterDecorationClassName = this.gutterDecorationClassName;
     	let aceUtils = this.aceUtils;
     	
     	aceUtils.setTraceGutterRenderer(editor, traceGutterData);
     	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceGutterData);
+    	aceUtils.subscribeToCodeHoverEvents(editor, tooltip, traceValuesData);
 
     }
     
-    onTraceChanged(trace = []){
+    onTraceChanged(traceHelper){
+            this.traceHelper = traceHelper;
+            
+            let stackTrace = traceHelper.getStackTrace();
+
             let previousRows = this.traceGutterData.rows;
-            this.updateTraceGutterData(trace);
-            let editor = this.editor;
-            let traceGutterData = this.traceGutterData;
-            let gutterDecorationClassName = this.gutterDecorationClassName;
-            this.aceUtils.updateGutterDecorations(editor, previousRows, traceGutterData.rows, gutterDecorationClassName);
+            this.updateTraceGutterData(stackTrace);
+            this.aceUtils.updateGutterDecorations(this.editor, previousRows, this.traceGutterData.rows, this.gutterDecorationClassName);
+            
+            this.traceValuesData.ranges = traceHelper.getExecutionTrace();
     }
     
-    updateTraceGutterData(trace){
-        let localTraceGutterData = this.extractTraceGutterData(trace);
+    updateTraceGutterData(stackTrace){
+        let localTraceGutterData = this.extractTraceGutterData(stackTrace);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
         this.traceGutterData.rows = localTraceGutterData.rows;
     }
@@ -46,6 +53,17 @@ export class TraceViewModel {
         this.traceGutterData.maxCount = 0;
         this.traceGutterData.rows = [];
     }
+    
+    resetTraceValuesData(){
+        if(!this.traceValuesData){
+            this.traceValuesData = { ranges: [] };
+            return;
+        }
+
+        this.traceValuesData.ranges = [];
+    }
+    
+    
     
     extractTraceGutterData(trace){
 	    let result = {  maxCount : 0, rows : []  };

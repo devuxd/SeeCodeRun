@@ -145,7 +145,7 @@ export class AutoLogTracer{
                     hits        : this.hits,
                     data        : this.data,
                     stack       : this.stack,
-                    execution   : this.exception,
+                    execution   : this.execution,
                     variables   : this.variables,
                     values      : this.values,
                     timeline    : this.timeline,

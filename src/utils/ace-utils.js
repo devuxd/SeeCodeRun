@@ -6,7 +6,15 @@ export class AceUtils{
 
      	editor.on("guttermousemove", function(e){ 
     	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
-    		let target = e.domEvent.target; 
+    		let target = e.domEvent.target;
+    		
+    		if(!dataModel){
+			    return;
+			}
+			
+			if(!dataModel.rows){
+			    return;
+			}
     		
     		if (target.className.indexOf(gutterDecorationClassName) == -1){ 
     			return;
@@ -42,14 +50,16 @@ export class AceUtils{
      	editor.on("mousemove", function (e){
 		let position = e.getDocumentPosition(), match;
 		if(position){ 
-            //TODO: Aurelia integration
-			let result = window.TRACE? window.TRACE.getExecutionTrace() : undefined;
-			if(!result){
+			if(!dataModel){
 			    return;
 			}
 			
-			for(let key in result){
-			    let data = result[key];
+			if(!dataModel.ranges){
+			    return;
+			}
+			
+			for(let key in dataModel.ranges){
+			    let data = dataModel.ranges[key];
 			    
     			 if(data.range && isPositionInRange(position, data.range)){
     			     if(match){
