@@ -51,21 +51,17 @@ body {
   font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   box-shadow: 0 10px 100px rgba(0, 0, 0, .4);
   background-color: rgba(255, 255, 255, 1);
-  font-size: 16px;/*changed from 18*/
+  font-size: 16px;
   line-height: 22px;
   color: #666;
   overflow: visible;
   position: fixed;
-  bottom: 0;/*added*/
-  right: 0;/*added*/
-  /*top: 60%;
-  left: 50%;*/
+  bottom: 0;
+  right: 0;
   z-index: 100;
   padding: 0;
-  /*margin-left: -200px;
-  margin-top: -250px;*/
-  width: 300px;/*adjusted width*/
-  height: 450px;/*adjusted height*/
+  width: 300px;
+  height: 450px;
   -webkit-animation: fadeInUp 1s;
   animation: fadeInUp 1s
 }
@@ -82,9 +78,7 @@ body {
 }
 
 .seecoderun-chat .seecoderun-chat-toolbar {
-  padding: 5px; /*changed* from 10px/
-  /*color: rgba(255, 255, 255, .8);
-  background: rgba(41, 128, 185, .9)*/
+  padding: 5px; 
   color: #888888;
   background: #f8f8f8;
  }
@@ -92,8 +86,7 @@ body {
 .seecoderun-chat .seecoderun-chat-toolbar>h2 {
   margin: 0;
   padding: 0;
-  /*text-align: center;*/
-  font-weight: 200;/*changed from 400*/
+  font-weight: 200;
   text-transform: uppercase;
   font-size: 12px;
   line-height: 20px;
@@ -107,7 +100,7 @@ body {
   box-sizing: border-box;
   padding: 0 10px;
   height: 30px;
-  font-size: 16px;/*changed* from 18px*/
+  font-size: 16px;
   width: 100%;
   font-weight: 400;
   outline: 0
@@ -115,31 +108,23 @@ body {
 }
 
 .seecoderun-chat input::-webkit-input-placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
 
 .seecoderun-chat input::-moz-placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
 }
 
 .seecoderun-chat input:-ms-input-placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
 }
 
 .seecoderun-chat input::placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
@@ -257,7 +242,7 @@ body {
 }
 
 .seecoderun-chatHeader{
-  background-color: #0066ff;/*same as nav underline*/
+  background-color: #0066ff;
   color: white;
   text-align: center;
   font-size: 18px;
