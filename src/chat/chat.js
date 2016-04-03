@@ -1,8 +1,7 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-
-
+/* global $ */
 
 export class Chat {
 
@@ -77,29 +76,18 @@ export class Chat {
 
     //Chat Box User Interface
 
-    $(document).ready(function() {
+    $(document).ready(function setUpChatBox() {
       $('#chatDiv').hide();
-      $('#hide').click(function() {
+      
+      $('#hide').click(function hideChatBox() {
         $('#chatDiv').toggle();
       });
-
+      
       $('#chatDiv').draggable();
-
-    });
-
-
-    //Chat box draggable   	
-    $(function() {
-      $("#chatDiv").draggable();
-    });
-
-    //Chat box resizable    
-    $(function() {
-      $("#chatDiv").resizable({
-        handles: "n, e, s, w, ne, se, sw, nw"
+      
+      $('#chatDiv').resizable({
+        handles: "n, e, s, w"
       });
     });
-
-
   }
 }

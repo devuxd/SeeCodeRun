@@ -1,3 +1,4 @@
+/* global $ */
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
@@ -12,10 +13,10 @@ import {VisViewer} from '../visViewer/vis-viewer'
 import {ConsoleWindow} from '../consoleWindow/console-window'
 import {Chat} from '../chat/chat';
 
-@inject(EventAggregator, Router, JsEditor, JsGutter, ConsoleWindow)
+@inject(EventAggregator, Router)
 export class Pastebin {
 
-  constructor(eventAggregator, router, jsEditor, jsGutter, consoleWindow) {
+  constructor(eventAggregator, router) {
     this.eventAggregator = eventAggregator;
     this.router = router;
     this.heading = 'Pastebin';
