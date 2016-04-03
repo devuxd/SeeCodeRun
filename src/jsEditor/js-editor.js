@@ -3,7 +3,6 @@
 /* global ace */
 import '../mode-javascript';
 import '../theme-chrome';
-import {TraceService} from '../traceService/traceService';
 
 export class JsEditor {
 
@@ -62,23 +61,17 @@ export class JsEditor {
       clearTimeout(editorChangedTimeout);
 	  
       editorChangedTimeout = setTimeout(function pub() { 
-        let editorText = editor.getValue();
+        let js = editor.getValue();
         let curs = editor.getCursorPosition().row+1;  
        
         // subscribe to this event to be notified with the following data when the JS-editor changed.   
         //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
         
          ea.publish('onJsEditorChanged', {
-            js: editorText, 
+            js: js, 
             length: session.getLength(), 
             cursor: curs
         });
-        
-        let publisher = ea;
-        let traceService  = new TraceService(publisher);
-        let payload = traceService.getInstrumentation(editorText);
-        publisher.publish(payload.status, payload);
-        
       }, 2500);
 }
      
@@ -168,4 +161,3 @@ export class JsEditor {
 }
  
 }
-

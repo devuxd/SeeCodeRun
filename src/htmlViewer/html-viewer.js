@@ -1,8 +1,10 @@
+import {TraceService} from '../traceService/traceService';
 
 export class HtmlViewer {
     
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
+        this.traceService  = new TraceService(eventAggregator);
         this.subscribe();
     }
      
@@ -20,9 +22,22 @@ subscribe() {
       });
       
       ea.subscribe('onJsEditorChanged', payload => {
-        this.js = payload.js;
+        let editorText = payload.js;
+        
+        let traceService  = this.traceService;
+        let tracePayload = traceService.getInstrumentation(editorText);
+        
+        if(payload.status === traceService.traceEvents.instrumented.event){
+        
+            this.js = tracePayload.data;
+        
+        }else{
+            console.log(JSON.stringify(tracePayload));
+            this.js = editorText;
+        }
+        
         this.addJsAndHtml();
-      })
+      });
     }
     
     attached() {  
@@ -42,6 +57,8 @@ subscribe() {
  
     
     addJsAndHtml() {
+        let publisher = this.eventAggregator;
+        let traceService = this.traceService;
         let doc = document.getElementById('htmlView')
                           .contentDocument;
                           
@@ -52,7 +69,13 @@ subscribe() {
         let script = doc.createElement('script');
         script.textContent = this.js;
         
+        try{
+            publisher.publish(traceService.executionEvents.running.event);
+            doc.body.appendChild(script);
+            publisher.publish(traceService.executionEvents.finished.event);
+        }catch(e){
+            publisher.publish(traceService.executionEvents.failed.event, e);
+        }
         
-        doc.body.appendChild(script);
     }
 }

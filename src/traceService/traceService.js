@@ -18,7 +18,8 @@ export class TraceService {
       };
       
       this.timeLimit = 3000; //default timeout
-      this.esTracer = new EsTracer(this.traceEvents);
+      this.esTracer = new EsTracer(this.traceEvents, this.timeLimit, eventAggregator);
+      this.subscribe();
     }
     /**
      * @desc This method should be called by Pastebin
@@ -48,9 +49,15 @@ export class TraceService {
     subscribe() {
      let ea = this.eventAggregator;
      if(ea){
-         ea.subscribe(this.executionEvents.running, this.esTracer.onCodeRunning);
-         ea.subscribe(this.executionEvents.finished, this.esTracer.onCodeFinished); 
-         ea.subscribe(this.executionEvents.failed, this.esTracer.onCodeFailed);
+        ea.subscribe(this.executionEvents.running.event, payload =>{
+            this.esTracer.onCodeRunning();
+        });
+        ea.subscribe(this.executionEvents.finished.event, payload =>{
+            this.esTracer.onCodeFinished();
+        }); 
+        ea.subscribe(this.executionEvents.failed.event, payload =>{
+            this.esTracer.onCodeFailed(payload);
+        });
      }else{
          throw "An EventAggregator is required to listen for code execution events";
      }

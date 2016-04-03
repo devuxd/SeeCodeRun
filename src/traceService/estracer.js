@@ -1,4 +1,3 @@
-//local imports
 import {EsAnalyzer} from './esanalyzer';
 import {EsInstrumenter} from './esinstrumenter';
 
@@ -72,7 +71,7 @@ export class EsTracer {
                     };
                 }
                 
-                if(window.ISCANCELLED){ // Allow external cancel
+                if(window.ISCANCELLED){
                     throw "Trace Cancelled.";
                 }
                 
@@ -120,22 +119,8 @@ export class EsTracer {
             }
         };
         
-  }
-  
-/**
- * description
- *  Usage: traceExecution( sourceCode, eventListener)
- *      @parameter sourceCode: a string with the source code
- *      @paremeter timeLimit : a integer value for the timeout in ms
- *      @parameter publisher : if more detailed information is required during execution
- *                              (e.g. UI updates), all the events are verbose there. it sends {event, payload} parameters.
- * Details: 1. Calls createTraceCollector() as the callback instrumented in the original code.
- *          2. traceInstrument() will analyze the original code, find the element types we need and append calls to the trace collector.
- *          3. traceInstrument() returns the instrumented code(rewritten code with added functionality) than is then executed with the eval()
- *          4. When the execution finishes, the eventListener callback will return status 'Finished' and the object this.TRACE will
- *          allow to obtain the execution trace data with the getExecutionTrace() call (i.e this.TRACE.getExecutionTrace())
- *
- **/
+    }
+
     cancelTrace(){
         window.ISCANCELLED = true;
     }
@@ -174,6 +159,10 @@ export class EsTracer {
         
         let publisher = this.publisher;
 
+        if(!window.TRACE){
+            console.log("No trace results found");
+            return;
+        }
         let data = window.TRACE.getExecutionTrace();
         
         let timestamp = (+new Date()) - this.startTimestamp ;
@@ -192,25 +181,20 @@ export class EsTracer {
         let  instrumentedCode;
         let payload = {'status' : 'NONE', 'description' : '', 'data' : {}};
         
-        try {
-            payload.status = this.events.started.event;
-            payload.description = this.events.started.description;
-
-                
+        // try {
             this.createTraceCollector();
             instrumentedCode = this.esInstrumenter.traceInstrument(sourceCode, this.esAnalyzer);
             
-            payload.status = this.events.running.event;
-            payload.description = this.events.running.description;
+            payload.status = this.events.instrumented.event;
+            payload.description = this.events.instrumented.description;
             payload.data = instrumentedCode;
                 
             return payload;
     
-        } catch (e) {
-            
-            payload.status = this.events.failed.event;
-            payload.description = `${this.events.failed.description}. Error: ${e.toString()}`;
-            return payload;
-        }
+        // } catch (e) {
+        //     payload.status = this.events.failed.event;
+        //     payload.description = `${this.events.failed.description}. Error: ${e.toString()}`;
+        //     return payload;
+        // }
     }
 }

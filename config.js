@@ -35,8 +35,8 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.35",
     "bootstrap": "github:twbs/bootstrap@3.3.6",
     "core-js": "npm:core-js@1.2.6",
-    "escodegen": "npm:escodegen@1.8.0",
     "d3": "npm:d3@3.5.16",
+    "escodegen": "npm:escodegen@1.8.0",
     "esprima": "npm:esprima@2.7.2",
     "estraverse": "npm:estraverse@4.1.1",
     "esutils": "npm:esutils@2.0.2",
@@ -45,6 +45,7 @@ System.config({
     "firepad": "npm:firepad@1.3.0",
     "font-awesome": "npm:font-awesome@4.5.0",
     "jslinq": "npm:jslinq@1.0.15",
+    "json": "github:systemjs/plugin-json@0.1.0",
     "tarball": "npm:tarball@0.0.5",
     "text": "github:systemjs/plugin-text@0.0.3",
     "github:jspm/nodelibs-assert@0.1.0": {

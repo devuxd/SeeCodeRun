@@ -1,54 +1,33 @@
 import escodegen from 'escodegen';
-
+import {EsprimaNodeFactory} from './models/esprimanodefactory';
 export class EsInstrumenter {
   
   constructor() {
       this.escodegen = escodegen;
       this.init();
+      this.esprimaNodeFactory = new EsprimaNodeFactory();
   }
     
   init(){
       let Syntax = {
         AssignmentExpression: 'AssignmentExpression',
-        // ArrayExpression: 'ArrayExpression',
-        // BlockStatement: 'BlockStatement',
-        BinaryExpression: 'BinaryExpression', // whole expression catch as part of expression statement, call expression and control flow ones
-        // BreakStatement: 'BreakStatement',
+        BinaryExpression: 'BinaryExpression', 
         CallExpression: 'CallExpression',
-        // CatchClause: 'CatchClause',
-        // ConditionalExpression: 'ConditionalExpression',// solves Unary and Update Expressions
-        // ContinueStatement: 'ContinueStatement',
-        DoWhileStatement: 'DoWhileStatement',// solves Unary and Update Expressions
-        // DebuggerStatement: 'DebuggerStatement',
-        // EmptyStatement: 'EmptyStatement',
-        ExpressionStatement: 'ExpressionStatement', // solves Unary and Update Expressions
-        ForStatement: 'ForStatement', // solves Unary and Update Expressions
-        ForInStatement: 'ForInStatement', // solves Unary and Update Expressions
+        DoWhileStatement: 'DoWhileStatement',
+        ExpressionStatement: 'ExpressionStatement', 
+        ForStatement: 'ForStatement', 
+        ForInStatement: 'ForInStatement', 
         FunctionDeclaration: 'FunctionDeclaration',
         FunctionExpression: 'FunctionExpression',
-        // Identifier: 'Identifier',
-        IfStatement: 'IfStatement', // solves Unary and Update Expressions
-        // Literal: 'Literal',
-        // LabeledStatement: 'LabeledStatement',
-        // LogicalExpression: 'LogicalExpression',
-        // MemberExpression: 'MemberExpression',
+        IfStatement: 'IfStatement', 
         NewExpression: 'NewExpression',
-        // ObjectExpression: 'ObjectExpression',
-        // Program: 'Program',
         Property: 'Property',
         ReturnStatement: 'ReturnStatement',
-        // SequenceExpression: 'SequenceExpression',
-        // SwitchStatement: 'SwitchStatement',
-        // SwitchCase: 'SwitchCase',
-        // ThisExpression: 'ThisExpression',
-        // ThrowStatement: 'ThrowStatement',
-        // TryStatement: 'TryStatement',
-        UnaryExpression: 'UnaryExpression', // done in parent
-        UpdateExpression: 'UpdateExpression', // done in parent
-        VariableDeclaration: 'VariableDeclaration', // done in children and parent
+        UnaryExpression: 'UnaryExpression',
+        UpdateExpression: 'UpdateExpression', 
+        VariableDeclaration: 'VariableDeclaration', 
         VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement',
-        // WithStatement: 'WithStatement'
+        WhileStatement: 'WhileStatement'
     };
     this.Syntax = Syntax;
     this.TraceParameters = {
@@ -82,418 +61,13 @@ export class EsInstrumenter {
         };
    }
   
-  getDefaultAutoLogNode(){
-       return {
-                "type": "CallExpression",
-                "callee": {
-                    "type": "MemberExpression",
-                    "computed": false,
-                    "object": {
-                        "type": "MemberExpression",
-                        "computed": false,
-                        "object": {
-                            "type": "Identifier",
-                            "name": "window"
-                        },
-                        "property": {
-                            "type": "Identifier",
-                            "name": "TRACE"
-                        }
-                    },
-                    "property": {
-                        "type": "Identifier",
-                        "name": "autoLog"
-                    }
-                },
-                "arguments": [
-                    {
-                        "type": "ObjectExpression",
-                        "properties": [
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Literal",
-                                    "value": "type",
-                                    "raw": "'type'"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "Literal",
-                                    "value": "",
-                                    "raw": "''"
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            },
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Literal",
-                                    "value": "id",
-                                    "raw": "'id'"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "Literal",
-                                    "value": "",
-                                    "raw": "''"
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            },
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Literal",
-                                    "value": "text",
-                                    "raw": "'text'"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "Literal",
-                                    "value": "",
-                                    "raw": "''"
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            },
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Literal",
-                                    "value": "value",
-                                    "raw": "'value'"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "Literal",
-                                    "value": "",
-                                    "raw": "''"
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            },
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Literal",
-                                    "value": "range",
-                                    "raw": "'range'"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "ObjectExpression",
-                                    "properties": [
-                                        {
-                                            "type": "Property",
-                                            "key": {
-                                                "type": "Literal",
-                                                "value": "start",
-                                                "raw": "'start'"
-                                            },
-                                            "computed": false,
-                                            "value": {
-                                                "type": "ObjectExpression",
-                                                "properties": [
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "row",
-                                                            "raw": "'row'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": 0,
-                                                            "raw": "0"
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    },
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "column",
-                                                            "raw": "'column'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": 0,
-                                                            "raw": "0"
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    }
-                                                ]
-                                            },
-                                            "kind": "init",
-                                            "method": false,
-                                            "shorthand": false
-                                        },
-                                        {
-                                            "type": "Property",
-                                            "key": {
-                                                "type": "Literal",
-                                                "value": "end",
-                                                "raw": "'end'"
-                                            },
-                                            "computed": false,
-                                            "value": {
-                                                "type": "ObjectExpression",
-                                                "properties": [
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "row",
-                                                            "raw": "'row'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": 0,
-                                                            "raw": "0"
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    },
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "column",
-                                                            "raw": "'column'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": 0,
-                                                            "raw": "0"
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    }
-                                                ]
-                                            },
-                                            "kind": "init",
-                                            "method": false,
-                                            "shorthand": false
-                                        }
-                                    ]
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            },
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Identifier",
-                                    "name": "indexRange"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "ArrayExpression",
-                                    "elements": [
-                                        {
-                                            "type": "Literal",
-                                            "value": 0,
-                                            "raw": "0"
-                                        },
-                                        {
-                                            "type": "Literal",
-                                            "value": 0,
-                                            "raw": "0"
-                                        }
-                                    ]
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            },
-                            {
-                                "type": "Property",
-                                "key": {
-                                    "type": "Literal",
-                                    "value": "extra",
-                                    "raw": "'extra'"
-                                },
-                                "computed": false,
-                                "value": {
-                                    "type": "Literal",
-                                    "value": "",
-                                    "raw": "''"
-                                },
-                                "kind": "init",
-                                "method": false,
-                                "shorthand": false
-                            }
-                        ]
-                    }
-                ]
-            };
+  getDefaultAutoLogNode(self = this){
+       return self.esprimaNodeFactory.getDefaultAutoLogNode();
    }
   
-  /*
-     validates if location and range from esprima nodes have values
-
-     post:  if location and range are undefined, returns undefined  otherwise
-            returns an AST nodes (Esprima format) in properties location and range, any undefined properties in inputs loc and range value are zeros 
-   */
-  getLocationDataNode(loc, range){
-       let aceRange, indexRange;
-
-       if(loc && range){
-            aceRange = {
-                'start'     : {'row' : ((loc.start && loc.start.line>0)? loc.start.line-1: 0), 'column' : (loc.start? loc.start.column: 0) } ,
-                'end'       : {'row' : ((loc.end && loc.end.line>0)? loc.end.line-1: 0), 'column' : (loc.end? loc.end.column: 0) }
-            };
-            indexRange = [
-                (range.length>0? range[0]: 0)   ,
-                (range.length>1? range[1]: 0) 
-                ];
-            
-       let data = {
-          'location' : {
-                                    "type": "ObjectExpression",
-                                    "properties": [
-                                        {
-                                            "type": "Property",
-                                            "key": {
-                                                "type": "Literal",
-                                                "value": "start",
-                                                "raw": "'start'"
-                                            },
-                                            "computed": false,
-                                            "value": {
-                                                "type": "ObjectExpression",
-                                                "properties": [
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "row",
-                                                            "raw": "'row'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": aceRange.start.row,
-                                                            "raw": ""+aceRange.start.row
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    },
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "column",
-                                                            "raw": "'column'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": aceRange.start.column,
-                                                            "raw": ""+aceRange.start.column
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    }
-                                                ]
-                                            },
-                                            "kind": "init",
-                                            "method": false,
-                                            "shorthand": false
-                                        },
-                                        {
-                                            "type": "Property",
-                                            "key": {
-                                                "type": "Literal",
-                                                "value": "end",
-                                                "raw": "'end'"
-                                            },
-                                            "computed": false,
-                                            "value": {
-                                                "type": "ObjectExpression",
-                                                "properties": [
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "row",
-                                                            "raw": "'row'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": aceRange.end.row,
-                                                            "raw": ""+aceRange.end.row
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    },
-                                                    {
-                                                        "type": "Property",
-                                                        "key": {
-                                                            "type": "Literal",
-                                                            "value": "column",
-                                                            "raw": "'column'"
-                                                        },
-                                                        "computed": false,
-                                                        "value": {
-                                                            "type": "Literal",
-                                                            "value": aceRange.end.column,
-                                                            "raw": ""+aceRange.end.column
-                                                        },
-                                                        "kind": "init",
-                                                        "method": false,
-                                                        "shorthand": false
-                                                    }
-                                                ]
-                                            },
-                                            "kind": "init",
-                                            "method": false,
-                                            "shorthand": false
-                                        }
-                                    ]
-                                },
-                      'range'  :           {
-                                    "type": "ArrayExpression",
-                                    "elements": [
-                                        {
-                                            "type": "Literal",
-                                            "value": indexRange[0],
-                                            "raw": ""+ indexRange[0]
-                                        },
-                                        {
-                                            "type": "Literal",
-                                            "value": indexRange[1],
-                                            "raw": ""+ indexRange[1]
-                                        }
-                                    ]
-                                }
-       };
-       return data;
-       } else {
-           return undefined;
-       }
-       
-   }
+  getLocationDataNode(loc, range, self = this){
+      return self.esprimaNodeFactory.getLocationDataNode(loc, range);
+  }
   
   setNodeValue(ref){
      ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
@@ -507,14 +81,14 @@ export class EsInstrumenter {
                     };
   }
   
-  instrumentVariableDeclarator(node, code){
-      let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-      let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+  instrumentVariableDeclarator(node, code, self = this){
+      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+      let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
      if(!node.init){
                 return undefined;
             }
@@ -526,27 +100,26 @@ export class EsInstrumenter {
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.id.range)} );
                  setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
                  setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
-                 locationData = getLocationDataNode(node.loc, node.range);
+                 locationData = getLocationDataNode(node.loc, node.range, self);
                  if(typeof locationData !== 'undefined'){
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                     setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
                  }
-                //setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : JSON.stringify(value)});
                 
                 node.init = autoLogNode;
             } 
   }
   
-  instrumentCallExpression(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+  instrumentCallExpression(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
                 
-        if(!node.callee || !node.range){ //range is not present in instrumented nodes, it prevents infinite traverse() recursion
+        if(!node.callee || !node.range){
                         return undefined;
         }
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
@@ -559,7 +132,7 @@ export class EsInstrumenter {
                 "arguments": node.arguments
              }
          });
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -569,28 +142,28 @@ export class EsInstrumenter {
         node.arguments= autoLogNode.arguments;
   }
   
-  instrumentAssignmentExpression(node, code){
-    let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-    let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+  instrumentAssignmentExpression(node, code, self = this){
+    let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+    let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
     
     if(!node.right){
         return undefined;
     }
     
     if(node.right.type === Syntax.FunctionExpression){
-        return undefined;// Backward Analysis
+        return undefined;
         
     }else{
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
-         locationData = getLocationDataNode(node.right.loc, node.right.range);
+         locationData = getLocationDataNode(node.right.loc, node.right.range, self);
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -600,28 +173,28 @@ export class EsInstrumenter {
      
   }
   
-    instrumentReturnStatement(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let Syntax = this.Syntax,
-                TraceParameters = this.TraceParameters,
-                setNodeValue = this.setNodeValue,
-                setNodeTextValue = this.setNodeTextValue,
-                getLocationDataNode = this.getLocationDataNode,
-                getTextRange = this.getTextRange;
+    instrumentReturnStatement(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+                TraceParameters = self.TraceParameters,
+                setNodeValue = self.setNodeValue,
+                setNodeTextValue = self.setNodeTextValue,
+                getLocationDataNode = self.getLocationDataNode,
+                getTextRange = self.getTextRange;
                 
         if(!node.argument){
             return undefined;
         }
         
         if(node.argument.type === Syntax.FunctionExpression){
-            return undefined;// Backward Analysis
+            return undefined;
             
         }else{
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.argument.range)} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.argument.range)} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.argument});
-             locationData = getLocationDataNode(node.argument.loc, node.argument.range);
+             locationData = getLocationDataNode(node.argument.loc, node.argument.range, self);
              if(typeof locationData !== 'undefined'){
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -631,14 +204,14 @@ export class EsInstrumenter {
      
     }
   
-    instrumentBinaryExpression(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let TraceParameters = this.TraceParameters,
-            getDefaultAutoLogNode= this.getDefaultAutoLogNode,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+    instrumentBinaryExpression(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let TraceParameters = self.TraceParameters,
+            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
             
         if(!(node.right && node.left)){
             return undefined;
@@ -647,12 +220,11 @@ export class EsInstrumenter {
 
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
         
-        // setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.right.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
         
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
-        locationData = getLocationDataNode(node.right.loc, node.right.range);
+        locationData = getLocationDataNode(node.right.loc, node.right.range, self);
         if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -660,13 +232,13 @@ export class EsInstrumenter {
        
         node.right = autoLogNode;
 
-        autoLogNode = getDefaultAutoLogNode();
+        autoLogNode = getDefaultAutoLogNode(self);
        
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.left.type} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.left.range)} );
         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.left});
-        locationData = getLocationDataNode(node.left.loc, node.left.range);
+        locationData = getLocationDataNode(node.left.loc, node.left.range, self);
         if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -676,13 +248,13 @@ export class EsInstrumenter {
      
   }
   
-  instrumentFunctionDeclaration(node, code){
-      let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-      let   TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            wrapInExpressionStatementNode = this.wrapInExpressionStatementNode;
+  instrumentFunctionDeclaration(node, code, self = this){
+      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+      let   TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
       
         if(!(node.body && node.body.body)){
             return undefined;
@@ -692,7 +264,7 @@ export class EsInstrumenter {
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : node.id.name} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : node.id.name} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.id.name});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -704,13 +276,13 @@ export class EsInstrumenter {
      
   }
   
-    instrumentProperty(node, code){
-      let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-      let TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+    instrumentProperty(node, code, self = this){
+      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+      let TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
         if(!(node.key && node.value)){
             return undefined;
         }
@@ -722,7 +294,7 @@ export class EsInstrumenter {
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.key.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.value.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.value});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
@@ -732,16 +304,14 @@ export class EsInstrumenter {
      
     }
   
-    instrumentExpressionStatement(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            getDefaultAutoLogNode= this.getDefaultAutoLogNode,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange,
-            wrapInExpressionStatementNode = this.wrapInExpressionStatementNode;
+    instrumentExpressionStatement(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
         
         if(!node.expression){
             return undefined;
@@ -757,7 +327,7 @@ export class EsInstrumenter {
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.expression.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.expression.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.expression});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
@@ -766,13 +336,13 @@ export class EsInstrumenter {
         node.expression = autoLogNode;
     }
   
-    instrumentControlStatementWithTest(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+    instrumentControlStatementWithTest(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
         
         if(!node.test){
             return undefined;
@@ -785,7 +355,7 @@ export class EsInstrumenter {
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.test.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.test.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.test});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
@@ -795,15 +365,15 @@ export class EsInstrumenter {
      
     }
   
-    instrumentForStatement(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            getDefaultAutoLogNode= this.getDefaultAutoLogNode,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange;
+    instrumentForStatement(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
             
         if(!node.init ||!node.test ||!node.update ){
             return undefined;
@@ -817,28 +387,28 @@ export class EsInstrumenter {
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.init.range)} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
-             locationData = getLocationDataNode(node.loc, node.range);
+             locationData = getLocationDataNode(node.loc, node.range, self);
              
              if(typeof locationData !== 'undefined'){
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
              }
             node.init = autoLogNode;
-            autoLogNode = getDefaultAutoLogNode();
+            autoLogNode = getDefaultAutoLogNode(self);
         }
 
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.test.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.test.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.test});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
          }
         node.test = autoLogNode;
-        autoLogNode = getDefaultAutoLogNode();
+        autoLogNode = getDefaultAutoLogNode(self);
          
         
         
@@ -847,7 +417,7 @@ export class EsInstrumenter {
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.update.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.update.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.update});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
@@ -858,16 +428,15 @@ export class EsInstrumenter {
      
     }
   
-    instrumentForInStatement(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            getDefaultAutoLogNode= this.getDefaultAutoLogNode,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            getTextRange = this.getTextRange,
-            wrapInExpressionStatementNode = this.wrapInExpressionStatementNode;
+    instrumentForInStatement(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
         
         if(!node.left ||!node.right ){
             return undefined;
@@ -881,21 +450,21 @@ export class EsInstrumenter {
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.left.range)} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.left});
-             locationData = getLocationDataNode(node.loc, node.range);
+             locationData = getLocationDataNode(node.loc, node.range, self);
              
              if(typeof locationData !== 'undefined'){
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
              }
             node.left = autoLogNode;
-            autoLogNode = getDefaultAutoLogNode();
+            autoLogNode = getDefaultAutoLogNode(self);
         }
 
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.right.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
-         locationData = getLocationDataNode(node.loc, node.range);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
@@ -905,14 +474,14 @@ export class EsInstrumenter {
      
     }
   
-    instrumentFunctionExpression(node, code){
-        let autoLogNode = this.getDefaultAutoLogNode(), locationData;
-        let Syntax = this.Syntax,
-            TraceParameters = this.TraceParameters,
-            setNodeValue = this.setNodeValue,
-            setNodeTextValue = this.setNodeTextValue,
-            getLocationDataNode = this.getLocationDataNode,
-            wrapInExpressionStatementNode = this.wrapInExpressionStatementNode;
+    instrumentFunctionExpression(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
         
         let identifier;
                     
@@ -946,7 +515,7 @@ export class EsInstrumenter {
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : identifier} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : identifier} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : identifier});
-             locationData = getLocationDataNode(node.loc, node.range);
+             locationData = getLocationDataNode(node.loc, node.range, self);
              if(typeof locationData !== 'undefined'){
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -959,110 +528,125 @@ export class EsInstrumenter {
     }
   
     traceInstrument(sourceCode, esanalyzer) {
-        let  instrumentedCode, autoLogTracer, tree;      
+        var self = this;
+        let  instrumentedCode, autoLogTracer, tree;
+        let Syntax = self.Syntax,
+            instrumentVariableDeclarator = self.instrumentVariableDeclarator,
+            instrumentCallExpression = self.instrumentCallExpression,
+            instrumentAssignmentExpression = self.instrumentAssignmentExpression,
+            instrumentReturnStatement = self.instrumentReturnStatement,
+            instrumentBinaryExpression = self.instrumentBinaryExpression,
+            instrumentFunctionDeclaration = self.instrumentFunctionDeclaration,
+            instrumentProperty = self.instrumentProperty,
+            instrumentExpressionStatement = self.instrumentExpressionStatement,
+            instrumentControlStatementWithTest = self.instrumentControlStatementWithTest,
+            instrumentForStatement = self.instrumentForStatement,
+            instrumentForInStatement = self.instrumentForInStatement,
+            instrumentFunctionExpression = self.instrumentFunctionExpression;
+            
 
-        autoLogTracer = this.autoLogTracer ;
+        autoLogTracer = function autoLogTracer(ref){
+            let isForwardAnalysis = true;
+            let node = ref.node, code = ref.code, path = ref.path;
+            
+            if(!Syntax.hasOwnProperty(node.type)){
+                return undefined;
+            }
+            if(!node.range){
+                return undefined;
+            }
+            //TODO: uncomment implemented types in Syntax to allow analysis. When finished, all types should have been implemented.
+            
+            //FORWARD ANALYSIS
+            
+            switch(node.type){
+                case Syntax.VariableDeclarator:
+                    instrumentVariableDeclarator(node, code, self);
+                    break;
+                    
+                case Syntax.CallExpression:
+                    instrumentCallExpression(node, code, self);
+                    break;
+    
+                case Syntax.AssignmentExpression:
+                    instrumentAssignmentExpression(node, code, self);
+                    break;
+    
+                case Syntax.ReturnStatement:
+                    instrumentReturnStatement(node, code, self);
+                    break;
+                    
+                case Syntax.BinaryExpression:
+                    instrumentBinaryExpression(node, code, self);
+                    break;
+    
+                case Syntax.FunctionDeclaration:
+                    instrumentFunctionDeclaration(node, code, self);
+                    break;
+    
+                case Syntax.Property:
+                    instrumentProperty(node, code, self);
+                    break;
+    
+                case Syntax.ExpressionStatement:
+                    instrumentExpressionStatement(node, code, self);
+                    break;
+    
+                case Syntax.IfStatement:
+                    instrumentControlStatementWithTest(node, code, self);
+                    break;
+    
+                case Syntax.DoWhileStatement:
+                    instrumentControlStatementWithTest(node, code, self);
+                    break;
+    
+                case Syntax.WhileStatement:
+                    instrumentControlStatementWithTest(node, code, self);
+                    break;
+    
+                case Syntax.ForStatement:
+                    instrumentForStatement(node, code, self);
+                    break;
+    
+                case Syntax.ForInStatement:
+                    instrumentForInStatement(node, code, self);
+                    break;
+                    
+                default:
+                    isForwardAnalysis = false;
+            }
+            
+            if(isForwardAnalysis){
+                return;
+            }
+                
+           //BACKWARD ANALYSIS, requires path to be defined        
+            if(!path){
+                return;
+            }   
+    
+            let parent = path[0] ;
+            //path[1] contains reference to parent array and ... check collectPath()
+            // learn that references are treoublesome in JS. fixing elements only in context
+    
+            switch(node.type){
+                case Syntax.FunctionExpression:
+                    instrumentFunctionExpression(node, parent, code);
+                    break;
+                    
+                default:
+            }
+        };
         
         tree = esanalyzer.traceAllAutoLog(sourceCode, autoLogTracer);
         
-        instrumentedCode = this.escodegen.generate(tree);
-        // Enclose in IIFE.
+        instrumentedCode = self.escodegen.generate(tree);
+
         instrumentedCode = '(function() {\n' + instrumentedCode + '\n}())';
 
         return instrumentedCode;
     }
   
-    autoLogTracer(ref){
-        let Syntax = this.Syntax, isForwardAnalysis = true;
-        let node = ref.node, code = ref.code, path = ref.path;
-        
-        if(!Syntax.hasOwnProperty(node.type)){
-            return undefined;
-        }
-        if(!node.range){
-            return undefined;
-        }
-        //TODO: uncomment implemented types in Syntax to allow analysis. When finished, all types should have been implemented.
-        
-        //FORWARD ANALYSIS
-        
-        switch(node.type){
-            case Syntax.VariableDeclarator:
-                this.instrumentVariableDeclarator(node, code);
-                break;
-                
-            case Syntax.CallExpression:
-                this.instrumentCallExpression(node, code);
-                break;
-
-            case Syntax.AssignmentExpression:
-                this.instrumentAssignmentExpression(node, code);
-                break;
-
-            case Syntax.ReturnStatement:
-                this.instrumentReturnStatement(node, code);
-                break;
-                
-            case Syntax.BinaryExpression:
-                this.instrumentBinaryExpression(node, code);
-                break;
-
-            case Syntax.FunctionDeclaration:
-                this.instrumentFunctionDeclaration(node, code);
-                break;
-
-            case Syntax.Property:
-                this.instrumentProperty(node, code);
-                break;
-
-            case Syntax.ExpressionStatement:
-                this.instrumentExpressionStatement(node, code);
-                break;
-
-            case Syntax.IfStatement:
-                this.instrumentControlStatementWithTest(node, code);
-                break;
-
-            case Syntax.DoWhileStatement:
-                this.instrumentControlStatementWithTest(node, code);
-                break;
-
-            case Syntax.WhileStatement:
-                this.instrumentControlStatementWithTest(node, code);
-                break;
-
-            case Syntax.ForStatement:
-                this.instrumentForStatement(node, code);
-                break;
-
-            case Syntax.ForInStatement:
-                this.instrumentForInStatement(node, code);
-                break;
-                
-            default:
-                isForwardAnalysis = false;
-        }
-        
-        if(isForwardAnalysis){
-            return;
-        }
-            
-       //BACKWARD ANALYSIS, requires path to be defined        
-        if(!path){
-            return;
-        }   
-
-        let parent = path[0] ;
-        //path[1] contains reference to parent array and ... check collectPath()
-        // learn that references are treoublesome in JS. fixing elements only in context
-
-        switch(node.type){
-            case Syntax.FunctionExpression:
-                this.instrumentFunctionExpression(node, parent, code);
-                break;
-                
-            default:
-        }
-    }
+    
 
 }
