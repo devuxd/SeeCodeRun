@@ -76,9 +76,13 @@ subscribe() {
             
             publisher.publish(traceService.executionEvents.finished.event, {data: result});
         }catch(e){
-            result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
-            
-            publisher.publish(traceService.executionEvents.failed.event, {data: result, error: e});
+            let error = e.toString();
+            try{
+                result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+            }catch(jsonError){
+                error += " "+ jsonError.toString();
+            }
+            publisher.publish(traceService.executionEvents.failed.event, {data: result, error: error});
         }
         
     }

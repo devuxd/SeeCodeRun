@@ -42,7 +42,7 @@ export class EsTracer {
         }
 
         if(!results){
-            console.log("No trace results found");
+          //  console.log("No trace results found");
             return;
         }
 
