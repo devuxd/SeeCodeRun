@@ -7,6 +7,7 @@ export class EsAnalyzer {
     this.estraverse = estraverse;
     this.init();
   }
+  
   init(){
         let Syntax = {
         AssignmentExpression: 'AssignmentExpression',
@@ -79,12 +80,7 @@ export class EsAnalyzer {
     this.Syntax = Syntax; 
   }
   
-  getEsprima(){
-    return this.esprima;
-  }
-  
-  // Executes visitor on the object and its children (recursively). Added key to modify object (repercusion?) path[0][objectKey] = new node...
-  traverse(object, visitor, master, objectKey) {
+    traverse(object, visitor, master, objectKey) {
         var key, child, parent, path;
 
         parent = (typeof master === 'undefined') ? [] : master;
@@ -108,8 +104,7 @@ export class EsAnalyzer {
 
     }
     
-  // from root to current node
-  collectPath( nodePath ){
+    collectPath( nodePath ){
         var path =[];
         
         while (typeof nodePath !== 'undefined'){
@@ -125,9 +120,9 @@ export class EsAnalyzer {
             }
         }
         return path;
-  }
+    }
   
-  beautifyPathSyntaxTypesOnly (path){
+    beautifyPathSyntaxTypesOnly (path){
         var beautifulString = "path: {";
         for( var i in path){
             var node = path[i];
@@ -139,10 +134,10 @@ export class EsAnalyzer {
         }
         beautifulString  += " }";
         return beautifulString;
-  }
+    }
     
 
-  traceAllAutoLog(code, autoLogTracer) {
+    traceAllAutoLog(code, autoLogTracer) {
  
             
             let tree = esprima.parse(code, { range: true, loc: true });

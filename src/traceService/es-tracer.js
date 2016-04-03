@@ -11,19 +11,11 @@ export class EsTracer {
       this.publisher = publisher;
     }
     
-    getEsAnalyzer(){
-      return this.esAnalyzer;
-    }
-    
-    getEsInstrumenter(){
-      return this.esInstrumenter;
-    }
     getTrace(code, callback) {
       this.esInstrumenter.traceInstrument(code, this.esAnalyzer);
     }
-    
 
-  createTraceCollector() {
+    createTraceCollector() {
         let traceTypes = this.esAnalyzer.traceTypes, Syntax = this.esAnalyzer.Syntax;
         window.CANTRACE = true;
         window.ISCANCELLED = false;
@@ -164,10 +156,7 @@ export class EsTracer {
             console.log("No trace results found");
             return;
         }
-        // let data = window.TRACE.getExecutionTrace();
-        // let data = JSON.parse(results);
         let data = results;
-        console.log(data);
         let timestamp = (+new Date()) - this.startTimestamp ;
         let description = `${event.description} Trace completed in ${1 + timestamp} ms. Error: ${error.toString()}`;
         

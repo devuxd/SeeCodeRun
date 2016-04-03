@@ -1,32 +1,21 @@
 export class AceUtils{
     constructor(){
-        //stateless
     }
-/**
-  *    @desc will add the tooltip rendering to a given editor.
-  *    It will find decorations and add show a tooltip if there row that matches the cursor.
-  *    @param datamodel must contain a "rows" property with an array of rows as indexes.
-  *    Each row of rows should have a "text" property to be shown.
-  *   todo: generalize this method with a ViewModel{ view, datamodel} and enum for ace's events
-**/
-    subscribeToEvents(editor, tooltip, gutterDecorationClassName, dataModel){
+    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel){
         let updateTooltip = this.updateTooltip;
-        let isPositionInRange = this.isPositionInRange;
-        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
 
-        // for tap/ click use guttermousedown
-    	editor.on("guttermousemove", function(e){ 
+     	editor.on("guttermousemove", function(e){ 
     	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
     		let target = e.domEvent.target; 
-    		// is this the element we want? They are Ace cells, "ace_gutter-cell", which have the gutterDecorationClassName CSS style
+    		
     		if (target.className.indexOf(gutterDecorationClassName) == -1){ 
     			return;
     		}
-    		// is this during user attention?
+
     		if (!editor.isFocused()){ 
     			return;
     		}
-    		// is not the folding icon to the right of the line number?
+
     		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){ 
     			return; 
     		}
@@ -42,11 +31,18 @@ export class AceUtils{
     		e.stop(); 
     		 
     	});
-    	
-    	editor.on("mousemove", function (e){
+        
+    }
+    
+    subscribeToCodeHoverEvents(editor, tooltip, dataModel){
+        let updateTooltip = this.updateTooltip;
+        let isPositionInRange = this.isPositionInRange;
+        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
+
+     	editor.on("mousemove", function (e){
 		let position = e.getDocumentPosition(), match;
 		if(position){ 
-            // todo: Aurelia style
+            //TODO: Aurelia integration
 			let result = window.TRACE? window.TRACE.getExecutionTrace() : undefined;
 			if(!result){
 			    return;
@@ -173,31 +169,21 @@ export class AceUtils{
         };
     }  
     
-    
-    
-    /**
-     * setTraceGutterRenderer
-     * parameters: 
-     *              @editor, 
-     * description: 
-     * pre: editor is defined
-     * post: 
-     **/
     setTraceGutterRenderer(editor, traceGutterData){
         
-        let session = editor.getSession(); // maybe attach the gutterdata to the session?
+        let session = editor.getSession(); 
         let traceGutterRenderer =  {
             getWidth: function(session, lastLineNumber, config) {
                 let format = "";
                 if(traceGutterData.maxCount > 0){
-                    format = "[] ";// adds the brackets and space chars 
+                    format = "[] ";
                 }
                 
                 return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
             },
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row].count; // "never" 0
+                    let count = traceGutterData.rows[row].count; 
                     return "["+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;
@@ -207,10 +193,6 @@ export class AceUtils{
         session.gutterRenderer = traceGutterRenderer;
     }
     
-/**
- * @desc: If more gutter customization is needed. modify this is more than text is needed. Taken from Ace's source code [gutter.js]    
- * usage: editor.on("afterRender", updateTraceAnnotations(editor)) // requires DOM access [Aurelia: call within attached()]
-**/
     customUpdateGutter(editor, traceGutterRenderer) {
         let dom = document;
         let gutter = editor.renderer.$gutterLayer;
@@ -283,7 +265,7 @@ export class AceUtils{
                     cell.foldWidget = dom.createElement("span");
                     cell.element.appendChild(cell.foldWidget);
                 }
-                var className = "ace_fold-widget ace_" + c;
+                className = "ace_fold-widget ace_" + c;
                 if (c == "start" && row == foldStart && row < fold.end.row)
                     className += " ace_closed";
                 else
@@ -291,7 +273,7 @@ export class AceUtils{
                 if (cell.foldWidget.className != className)
                     cell.foldWidget.className = className;
 
-                var height = config.lineHeight + "px";
+                height = config.lineHeight + "px";
                 if (cell.foldWidget.style.height != height)
                     cell.foldWidget.style.height = height;
             } else {

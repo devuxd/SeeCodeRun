@@ -531,7 +531,7 @@ export class EsInstrumenter {
   
     traceInstrument(sourceCode, esanalyzer) {
         var self = this;
-        let  instrumentedCode, autoLogTracer, tree;
+        let  instrumentedCode, instrumenter, tree;
         let Syntax = self.Syntax,
             instrumentVariableDeclarator = self.instrumentVariableDeclarator,
             instrumentCallExpression = self.instrumentCallExpression,
@@ -547,7 +547,7 @@ export class EsInstrumenter {
             instrumentFunctionExpression = self.instrumentFunctionExpression;
             
 
-        autoLogTracer = function autoLogTracer(ref){
+        instrumenter = function instrumenter(ref){
             let isForwardAnalysis = true;
             let node = ref.node, code = ref.code, path = ref.path;
             
@@ -557,10 +557,7 @@ export class EsInstrumenter {
             if(!node.range){
                 return undefined;
             }
-            //TODO: uncomment implemented types in Syntax to allow analysis. When finished, all types should have been implemented.
-            
-            //FORWARD ANALYSIS
-            
+
             switch(node.type){
                 case Syntax.VariableDeclarator:
                     instrumentVariableDeclarator(node, code, self);
@@ -622,14 +619,12 @@ export class EsInstrumenter {
                 return;
             }
                 
-           //BACKWARD ANALYSIS, requires path to be defined        
+              
             if(!path){
                 return;
             }   
     
             let parent = path[0] ;
-            //path[1] contains reference to parent array and ... check collectPath()
-            // learn that references are treoublesome in JS. fixing elements only in context
     
             switch(node.type){
                 case Syntax.FunctionExpression:
@@ -640,7 +635,7 @@ export class EsInstrumenter {
             }
         };
         
-        tree = esanalyzer.traceAllAutoLog(sourceCode, autoLogTracer);
+        tree = esanalyzer.traceAllAutoLog(sourceCode, instrumenter);
         
         instrumentedCode = self.escodegen.generate(tree);
 
@@ -652,9 +647,5 @@ export class EsInstrumenter {
 
         return instrumentedCode;
     }
-    
-    
-  
-    
 
 }

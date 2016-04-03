@@ -19,11 +19,11 @@ export class TraceViewModel {
     	let aceUtils = this.aceUtils;
     	
     	aceUtils.setTraceGutterRenderer(editor, traceGutterData);
-    	aceUtils.subscribeToEvents(editor, tooltip, gutterDecorationClassName, traceGutterData);
+    	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceGutterData);
 
     }
     
-    onTraceChanged(trace){
+    onTraceChanged(trace = []){
             let previousRows = this.traceGutterData.rows;
             this.updateTraceGutterData(trace);
             let editor = this.editor;
@@ -32,7 +32,6 @@ export class TraceViewModel {
             this.aceUtils.updateGutterDecorations(editor, previousRows, traceGutterData.rows, gutterDecorationClassName);
     }
     
-    // use only after execution trace ends
     updateTraceGutterData(trace){
         let localTraceGutterData = this.extractTraceGutterData(trace);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;

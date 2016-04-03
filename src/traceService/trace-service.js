@@ -4,20 +4,20 @@ export class TraceService {
 
     constructor(eventAggregator) {
       this.eventAggregator = eventAggregator;
-    // TraceService listens to these events
+      
       this.executionEvents = {
         running : {  event :'codeRunning'   , description : 'Tracing Code...' },
         finished: {  event :'codeFinished'  , description : 'Trace built successfully.' },
         failed  : {  event :'codeFailed'    , description : 'Code failed (Runtime error).' }
       };
-    // TraceService emits these events  
+      
       this.traceEvents = {
         instrumented    : {  event :'traceInstrumented'   , description : 'Code Instrumented successfully.' },
         changed         : {  event :'traceChanged'   , description : 'Trace results obtained succesfully.' },
         failed          : {  event :'instrumentationFailed'    , description : 'Code rewriting failed (Compilation error).' }
       };
       
-      this.timeLimit = 3000; //default timeout
+      this.timeLimit = 3000; 
       this.esTracer = new EsTracer(this.traceEvents, this.timeLimit, eventAggregator);
       this.subscribe();
     }
