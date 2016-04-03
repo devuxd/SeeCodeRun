@@ -1,4 +1,4 @@
-import {EsTracer} from './estracer';
+import {EsTracer} from './es-tracer';
 
 export class TraceService {
 
@@ -21,15 +21,6 @@ export class TraceService {
       this.esTracer = new EsTracer(this.traceEvents, this.timeLimit, eventAggregator);
       this.subscribe();
     }
-    /**
-     * @desc This method should be called by Pastebin
-     * 
-     * */
-    // onEditorChanged(editor, publisher) {
-    //         let traceService  = new TraceService(publisher);
-    //         let payload = traceService.getInstrumentation(editor.getValue());
-    //         publisher.publish(payload.status, payload);
-    // }
 
     getTimeLimit(){
        return this.timeLimit; 
@@ -53,7 +44,7 @@ export class TraceService {
             this.esTracer.onCodeRunning();
         });
         ea.subscribe(this.executionEvents.finished.event, payload =>{
-            this.esTracer.onCodeFinished();
+            this.esTracer.onCodeFinished(payload);
         }); 
         ea.subscribe(this.executionEvents.failed.event, payload =>{
             this.esTracer.onCodeFailed(payload);

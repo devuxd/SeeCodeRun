@@ -1,4 +1,4 @@
-import {TraceService} from '../traceService/traceService';
+import {TraceService} from '../traceService/trace-service';
 
 export class HtmlViewer {
     
@@ -10,6 +10,7 @@ export class HtmlViewer {
      
 subscribe() {
       let ea = this.eventAggregator;
+      let traceService  = this.traceService;
       
       ea.subscribe('onHtmlEditorChanged', payload => {
         this.html = payload;
@@ -24,10 +25,10 @@ subscribe() {
       ea.subscribe('onJsEditorChanged', payload => {
         let editorText = payload.js;
         
-        let traceService  = this.traceService;
+        
         let tracePayload = traceService.getInstrumentation(editorText);
         
-        if(payload.status === traceService.traceEvents.instrumented.event){
+        if(tracePayload.status === traceService.traceEvents.instrumented.event){
         
             this.js = tracePayload.data;
         
@@ -64,17 +65,23 @@ subscribe() {
                           
         doc.body.innerHTML = this.html;
   
-        
+        let out = doc.createElement('div');
+        out.style.display = 'none';
+        out.id = "trace_results";
+        doc.body.appendChild(out);
         
         let script = doc.createElement('script');
+
         script.textContent = this.js;
-        
+        let result = undefined;
         try{
             publisher.publish(traceService.executionEvents.running.event);
             doc.body.appendChild(script);
-            publisher.publish(traceService.executionEvents.finished.event);
+            result = out.innerHTML;
+            publisher.publish(traceService.executionEvents.finished.event, {data: result});
         }catch(e){
-            publisher.publish(traceService.executionEvents.failed.event, e);
+            result = out.innerHTML;
+            publisher.publish(traceService.executionEvents.failed.event, {data: result, error: e});
         }
         
     }

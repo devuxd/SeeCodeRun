@@ -1,21 +1,17 @@
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
+/* global ace */
 
-import {JsEditor} from '../jsEditor/js-editor';
-import {AceUtils} from "./aceutils";
-import {TraceViewModel} from "./traceviewmodel";
+import {AceUtils} from "./ace-utils";
+import {TraceViewModel} from "./trace-view-model";
 
-@inject(EventAggregator, JsEditor, AceUtils)
 export class TraceViewController{
     
-    constructor(eventAggregator, jsEditor, aceUtils){
+    constructor(eventAggregator){
         this.eventAggregator = eventAggregator;
-        this.jsEditor = jsEditor;
-        this.aceUtils = aceUtils;
+        this.aceUtils = new AceUtils();
     }
     // requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
     attached(){
-        let jsEditor = this.jsEditor, aceUtils = this.aceUtils;
+        let editor = ace.edit('aceJsEditorDiv'), aceUtils = this.aceUtils;
         let gutterDecorationClassName = "seecoderun_gutter_decoration";
         let tooltip = document.getElementById('tooltip_0');
         
@@ -29,14 +25,16 @@ export class TraceViewController{
         
         this.tooltip = tooltip;
         this.gutterDecorationClassName = gutterDecorationClassName;
-        this.traceViewModel = new TraceViewModel(aceUtils, jsEditor.editor, tooltip, gutterDecorationClassName); 
+        this.traceViewModel = new TraceViewModel(aceUtils, editor, tooltip, gutterDecorationClassName); 
+        this.subscribe();
     }
     subscribe(){
         let eventAggregator = this.eventAggregator, traceViewModel = this.traceViewModel;
         
         eventAggregator.subscribe(
-            "traceChanged", function payload(trace){
-                        traceViewModel.onTraceChanged(trace);
+            "traceChanged", payload =>{
+                        traceViewModel.onTraceChanged(payload.data);
+                        console.log(payload);
                     }
             );
     }

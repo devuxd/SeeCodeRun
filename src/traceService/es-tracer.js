@@ -1,5 +1,5 @@
-import {EsAnalyzer} from './esanalyzer';
-import {EsInstrumenter} from './esinstrumenter';
+import {EsAnalyzer} from './es-analyzer';
+import {EsInstrumenter} from './es-instrumenter';
 
 export class EsTracer {
 
@@ -144,27 +144,30 @@ export class EsTracer {
         this.startTimestamp = +new Date();
     }
     
-    onCodeFinished(){
+    onCodeFinished(payload){
         let event = this.events.changed;
-        this.traceChanged(event);
+        this.traceChanged(event, payload.data);
     }
     
-    onCodeFailed(error){
+    onCodeFailed(payload){
         let event = this.events.changed;
-        this.traceChanged(event, error);
+        this.traceChanged(event, payload.data, payload.error);
     }
     
-    traceChanged(event, error = ""){
-        window.clearTimeout(this.timeOut);
-        
+    traceChanged(event, results, error = ""){
+        if(this.timeOut){
+            window.clearTimeout(this.timeOut);
+        }
         let publisher = this.publisher;
 
-        if(!window.TRACE){
+        if(!results){
             console.log("No trace results found");
             return;
         }
-        let data = window.TRACE.getExecutionTrace();
-        
+        // let data = window.TRACE.getExecutionTrace();
+        // let data = JSON.parse(results);
+        let data = results;
+        console.log(data);
         let timestamp = (+new Date()) - this.startTimestamp ;
         let description = `${event.description} Trace completed in ${1 + timestamp} ms. Error: ${error.toString()}`;
         
@@ -181,7 +184,7 @@ export class EsTracer {
         let  instrumentedCode;
         let payload = {'status' : 'NONE', 'description' : '', 'data' : {}};
         
-        // try {
+        try {
             this.createTraceCollector();
             instrumentedCode = this.esInstrumenter.traceInstrument(sourceCode, this.esAnalyzer);
             
@@ -191,10 +194,10 @@ export class EsTracer {
                 
             return payload;
     
-        // } catch (e) {
-        //     payload.status = this.events.failed.event;
-        //     payload.description = `${this.events.failed.description}. Error: ${e.toString()}`;
-        //     return payload;
-        // }
+        } catch (e) {
+            payload.status = this.events.failed.event;
+            payload.description = `${this.events.failed.description}. Error: ${e.toString()}`;
+            return payload;
+        }
     }
 }
