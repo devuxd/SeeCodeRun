@@ -1,12 +1,14 @@
 <!-- 
  Order of Operation (March 26, 2016)
-1) [ ] Generate Execution Trace from example code (Han)
-2) [ ] Searchbox will be used to match user input in executiontrace (Dana)
-3) [ ] Collect search resuts in an array. (Dana)
-4) [ ] Present the results in a static table (actual UI) for the user. (Dana)
-5) [ ] Make the table dynamic with the Combo box different number of columns (jQuery) (Han)
-6) [ ] Integrate with Ace Editor (Dana and Han)
-7) [ ] Integrate with Aurelia (Working with David)
+1) [x] Generate Execution Trace from example code (Han)
+2) [X] Searchbox will be used to match user input in executiontrace (Dana)
+3) [X] Collect search resuts in an array. (Dana)
+4) [X] Present the results in a static table (actual UI) for the user. (Dana)
+5) [x] Make the table dynamic with the Combo box different number of columns (jQuery) (Dana and Han)
+6) [x] Refine the combo box options (Han)
+7) [ ] Import jlinq and jQuery for Aurelia (Dana and Han)
+8) [ ] Integrate with Ace Editor (Dana and Han)
+9) [ ] Integrate with Aurelia (Working with David)
 -->
 <template bindable="sandbox">
     <div id="sandBoxDiv" style="height: 1000px"></div>
@@ -15,39 +17,78 @@
 <html>
     <head>
         <script src="jlinq/JSLINQ.js"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <!--- execution trace scripts --->
+        <script src="traceServiceInterfaceAndTests/traceScripts/esprima.js" type="text/javascript" charset="utf-8"></script>
+        <script src="traceServiceInterfaceAndTests/traceScripts/escodegen.browser.js" type="text/javascript" charset="utf-8"></script>
+        <script src="traceServiceInterfaceAndTests/traceScripts/esmorph.js" type="text/javascript" charset="utf-8"></script>
+        <script src="traceServiceInterfaceAndTests/traceScripts/executiontrace.js" type="text/javascript" charset="utf-8"></script>
     </head>
     <body>
         <div id="page-wrapper">
+        <table border=1>
+            <tr><td>Ace Editor Mock</td></tr>
+<tr><td><textarea id='mockCode' rows="10" cols="100">
+var x = 5;
+while(x==5){
+    x--;
+}
+</textarea></td></tr>
+            <tr><td>Execution Trace Result:</td></tr>
+            <tr><td><div id="executionTraceResult">Empty</div></td></tr>
+        </table>
         <h3> Search Section</h3>
         <div>
             Enter Search Term:
             <input type="textfield" id="searchTerm" placeholder="ex. expression"> 
             <select name="optionSelected" id="optionSelected">
-              <option value="Any">Any</option>
-              <option value="ID">ID</option>
-              <option value="VariableDeclaration">Variable Declaration</option>
-              <option value="SyntaxType">Syntax Type</option>
+              <option value="any">Any</option>
+              <option value="id">ID</option>
+              <option value="type">Type</option>
+              <option value="text">Text</option>
+              <option value="values">Values</option>
             </select>
         </div>
         <br/>
         <h3> Search Results:</h3>
         <pre id='searchResultDisplayArea'></pre>
+
+
     </div>
     <script>
-    /* global jlinq */
+
         window.onload = function(){
+            updateTraceResult();
+            var trace;
+            $("#mockCode").change(function(e){
+                trace = updateTraceResult();
+                var select = document.getElementById("optionSelected").value;
+                var term = document.getElementById("searchTerm").value;
+                var query = JlinqQueryTrace(trace,term,select);
+                var combo = ["id","type","text","values"];
+                updateTable(query,combo);
+            })
             // var queryTerm = document.getElementById('searchTerm');
             // sample source code for playing with jlinq
-            var source = [  {"ID":1, "var":"x", "type":"expression"},
-                            {"ID":2, "var":"y", "type":"expression"},
-                            {"ID":3, "var":"z", "type":"Literal"},
-                            {"ID":4, "var":"z", "type":"Literal"},
-                            {"ID":5, "var":"y", "type":"expression"}
-                        ];
+            /*var source1 = [  {"id":1, "var":"x", "type":"expression"},
+                            {"id":2, "var":"y", "type":"expression"},
+                            {"id":3, "var":"z", "type":"Literal"},
+                            {"id":4, "var":"z", "type":"Literal"},
+                            {"id":5, "var":"y", "type":"expression"}
+                        ];*/
+            function updateTraceResult(){
+                window.traceExecution($("#mockCode").val(),
+                        function eventListener (event){
+                        if(event.status === "Finished"){
+                            trace = window.TRACE.getExecutionTrace();
+                            $("#executionTraceResult").html(visualizeExecutionTrace(trace));
+                        }
+                });      
+                return trace;
+            }
             function updateTable(query,cols){
                 var displayArea = document.getElementById('searchResultDisplayArea');
-                if(query.length==0){
+                if(query!=null&&query.length==0){
                     displayArea.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
                     return;
                 }
@@ -63,12 +104,21 @@
                     // generate the table
                     table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  i + " " +"</td>" 
                     for(c=0;c<cols.length;c++){
-                        if(cols[c]=="ID")
-                            qData = ("id"+":"+query[i].ID);
-                        else if(cols[c]=="VariableDeclaration")
-                            qData = ("var"+":"+query[i].var);
-                        else if(cols[c]=="SyntaxType")
-                            qData = ("type"+":"+query[i].type);
+                        if(cols[c]=="type")
+                            qData = ("type"+":"+query[i].type);                        
+                        else if(cols[c]=="id")
+                            qData = ("id"+":"+query[i].id);
+                        else if(cols[c]=="text")
+                            qData = ("text"+":"+query[i].text);
+                        else if(cols[c]=="values"){
+                            qData = ("values"+":");
+                            var a;
+                            for(a=0;a<query[i].values.length;a++){
+                                qData+=query[i].values[a].value;
+                                if(i+1<query[i].values.length)
+                                    qData+=","
+                            }
+                        }
                         table += "<td>" + qData + "</td>";
                     }
                     table+= "</tr>";
@@ -100,36 +150,55 @@
                 }     
                 return query;
             }
+            function JlinqQueryTrace(source,searchTerm,filterSelection){
+                var usingJlinq = JSLINQ(source);
+                if(filterSelection == "any"){
+                    var query = usingJlinq.Where(function(item){return item.id == searchTerm||item.type == searchTerm||
+                    item.text == searchTerm||item.values == searchTerm    
+                    }).ToArray();
+                }
+                else if(filterSelection == "id")
+                {
+                    var query = usingJlinq.Where(function(item){return item.id == searchTerm}).ToArray();
+                }
+                else if(filterSelection == "type")
+                {
+                    var query = usingJlinq.Where(function(item){return item.type == searchTerm}).ToArray();
+                }                
+                else if(filterSelection == "text")
+                {
+                    var query = usingJlinq.Where(function(item){return item.text == searchTerm}).ToArray();
+                }
+                else if(filterSelection == "values")
+                {
+                    var query = usingJlinq.Where(function(item){return item.values == searchTerm}).ToArray();
+                }
+                return query;
+            }
+            function visualizeExecutionTrace(executionTrace){
+            var i, entry;
+            var stackText= "";
+            for (i = 0; i < executionTrace.length; i += 1) {
+                entry = executionTrace[i];
+                stackText += i + " -- " + JSON.stringify(entry) + "<br/>";
+            }
+        	return stackText;  
+        
+        }
             $("#searchTerm").change(function(e){
                 // returns an object array of the queried results
                 var select = document.getElementById("optionSelected");
                 var option = select.options[select.selectedIndex].value; 
-                var query = JlinqQuery(this.value,option);
-                if(option=="Any"){
-                    var combo = ["ID","VariableDeclaration","SyntaxType"];
-                    updateTable(query,combo);
-                }
-                else{
-                    var combo = [option];
-                    updateTable(query,combo);
-                }
-                // alert(query);
-                // updateTable(query);
+                var query = JlinqQueryTrace(trace,this.value,option);
+                var combo = ["id","type","text","values"];
+                updateTable(query,combo);
             });
             $("#optionSelected").change(function(e){
                 // returns an object array of the queried results
                 var term = document.getElementById("searchTerm").value;
-                var query = JlinqQuery(term,this.value);
-                if(this.value=="Any"){
-                    var combo = ["ID","VariableDeclaration","SyntaxType"];
-                    updateTable(query,combo);
-                }
-                else{
-                    var combo = [this.value];
-                    updateTable(query,combo);
-                }
-                // alert(query);
-                // updateTable(query);
+                var query = JlinqQueryTrace(trace,term,this.value);
+                var combo = ["id","type","text","values"];
+                updateTable(query,combo);
             });
         }
         </script>
