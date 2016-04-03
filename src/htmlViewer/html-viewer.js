@@ -77,10 +77,10 @@ subscribe() {
         try{
             publisher.publish(traceService.executionEvents.running.event);
             doc.body.appendChild(script);
-            result = out.innerHTML;
+            result = JSON.parse(out.innerHTML);
             publisher.publish(traceService.executionEvents.finished.event, {data: result});
         }catch(e){
-            result = out.innerHTML;
+            result = JSON.parse(out.innerHTML);
             publisher.publish(traceService.executionEvents.failed.event, {data: result, error: e});
         }
         
