@@ -3,6 +3,7 @@
 /* global ace */
 
 
+
 export class Chat {
   
   constructor(baseURL, pastebinId) {
@@ -10,9 +11,10 @@ export class Chat {
     this.pastebinId = pastebinId;
   }
   
+
   attached() {
     
-    //New Firebasechat Reference
+    //New Firebase chat Reference
     var chatFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/chat');
     
     
@@ -67,16 +69,19 @@ export class Chat {
         $('#chatDiv').toggle();
     }); 
     
+     $('#chatDiv').draggable();
+    
  });
-
+ 
+  
   //Chat box draggable   	
-     $(function() {
-     $("#chatDiv").draggable();
-   });
+    $(function() {
+    $("#chatDiv").draggable();
+  });
   
   //Chat box resizable    
     $(function() {
-     $("#chatDiv").resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
+    $("#chatDiv").resizable({ handles: "n, e, s, w, ne, se, sw, nw"});
   });
  
    
