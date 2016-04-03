@@ -306,7 +306,7 @@ div.au-stagger {
 }
 
 
-.seecoderun_tooltip {
+.seecoderun-tooltip {
 	background-color: #FFF;
 	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
 	background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
@@ -332,7 +332,7 @@ div.au-stagger {
 	display: none;
 }
 
-.ace_gutter-cell.seecoderun_gutter_decoration{
+.ace_gutter-cell.seecoderun-gutter-decoration{
   background-color: #FFF;
   border-radius: 20px 0px 0px 20px; 
   box-shadow: 0px 0px 1px 1px red inset;

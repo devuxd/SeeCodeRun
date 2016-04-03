@@ -9,16 +9,16 @@ export class TraceViewController{
         this.eventAggregator = eventAggregator;
         this.aceUtils = new AceUtils();
     }
-    // requires CSS styles for decorations (.ace_gutter-cell.seecoderun_gutter_decoration) and tooltips (.seecoderun_tooltip)
+    // requires CSS styles for decorations (.ace_gutter-cell.seecoderun-gutter-decoration) and tooltips (.seecoderun-tooltip)
     attached(){
         let editor = ace.edit('aceJsEditorDiv'), aceUtils = this.aceUtils;
-        let gutterDecorationClassName = "seecoderun_gutter_decoration";
+        let gutterDecorationClassName = "seecoderun-gutter-decoration";
         let tooltip = document.getElementById('tooltip_0');
         
         if(tooltip === null){
         			tooltip = document.createElement('div');		
-        			tooltip.setAttribute('id', 'tooltip_0'); 
-        			tooltip.setAttribute('class', 'seecoderun_tooltip'); // and make sure myclass has some styles in css
+        			tooltip.setAttribute('id', 'tooltip-0'); 
+        			tooltip.setAttribute('class', 'seecoderun-tooltip'); // and make sure myclass has some styles in css
         			document.body.appendChild(tooltip);
         }
         
