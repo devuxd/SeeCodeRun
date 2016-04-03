@@ -32,6 +32,7 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.38",
     "bootstrap": "github:twbs/bootstrap@3.3.6",
     "core-js": "npm:core-js@1.2.6",
+    "d3": "npm:d3@3.5.16",
     "esprima": "npm:esprima@2.7.2",
     "fetch": "github:github/fetch@0.10.1",
     "firebase": "npm:firebase@2.4.2",

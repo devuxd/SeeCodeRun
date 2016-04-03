@@ -2,21 +2,15 @@
 /* global Firebase */
 /* global ace */
 
-
-@inject(EventAggregator)
 export class JsGutter {
   
   constructor(eventAggregator) {
        this.eventAggregator = eventAggregator;
        this.selectedLine = 1;
-
-
   }
   
   attached() {
-
-         this.subscribe();
-
+     this.subscribe();
   } 
   
  
@@ -36,11 +30,6 @@ export class JsGutter {
   subscribe() {
     let ea = this.eventAggregator;
     let session = this.session;
-<<<<<<< HEAD
-    
-    ea.subscribe('onEditorChanged', payload => {
-      let doc = session.doc;
-=======
 
 
     ea.subscribe('onCursorMoved', info => {
@@ -104,7 +93,6 @@ export class JsGutter {
          }
       }
 	  highlightLine(line, lastline){
->>>>>>> master
       
           let lastDiv = this.GetLastDiv();
           let iframeBody = $('#gutter');

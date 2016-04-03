@@ -27,7 +27,7 @@ export class Pastebin {
     this.cssEditor  = new CssEditor(this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer  =new VisViewer(this.eventAggregator);
-
+    this.chat = new Chat();
   }
 
 activate(params) {
@@ -37,11 +37,9 @@ activate(params) {
       this.jsEditor.activate({ id: id });
       this.htmlEditor.activate({ id: id });
       this.cssEditor.activate({ id: id });
-
-      this.chat = new Chat(baseURL, this.pastebinId);
-      
+      this.chat.activate({ id: id });
     } else {
-      
+      let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
       
       this.pastebinId = firebase.push().key();
@@ -58,18 +56,10 @@ activate(params) {
     this.jsGutter.attached();
     this.visViewer.attached();
     this.htmlViewer.attached();
-    this.chat.attached();
+    this.chat.attached({id: this.pastebinId});
+
+     // Splitter
+    $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
+    $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });      
   }
-
-
-       // Splitter
-      $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
-      $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });      
-  }
-
-
-
-
-
-
 }

@@ -1,11 +1,9 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-
 import '../mode-javascript';
 import '../theme-chrome';
 
-@inject(EventAggregator, Router)
 export class JsEditor {
 
   constructor(eventAggregator, router) {
