@@ -22,14 +22,6 @@ export class TraceService {
       this.subscribe();
     }
 
-    getTimeLimit(){
-       return this.timeLimit; 
-    }
-    setTimeLimit(timeLimit){
-       this.timeLimit = timeLimit; 
-    }
-
-    
     getInstrumentation(code, timeLimit = this.timeLimit,  publisher = this) {
         if(!code){ // standard result object across the service
           return {status: undefined, description : undefined , data : undefined};
@@ -38,29 +30,21 @@ export class TraceService {
     }
     
     subscribe() {
-     let ea = this.eventAggregator;
-     if(ea){
-        ea.subscribe(this.executionEvents.running.event, payload =>{
-            this.esTracer.onCodeRunning();
-        });
-        ea.subscribe(this.executionEvents.finished.event, payload =>{
-            this.esTracer.onCodeFinished(payload);
-        }); 
-        ea.subscribe(this.executionEvents.failed.event, payload =>{
-            this.esTracer.onCodeFailed(payload);
-        });
-     }else{
-         throw "An EventAggregator is required to listen for code execution events";
-     }
+         let ea = this.eventAggregator;
+         if(ea){
+            ea.subscribe(this.executionEvents.running.event, payload =>{
+                this.esTracer.onCodeRunning();
+            });
+            ea.subscribe(this.executionEvents.finished.event, payload =>{
+                this.esTracer.onCodeFinished(payload);
+            }); 
+            ea.subscribe(this.executionEvents.failed.event, payload =>{
+                this.esTracer.onCodeFailed(payload);
+            });
+         }else{
+             throw "An EventAggregator is required to listen for code execution events";
+         }
      
     }
-  
-  publish(event, payload){
-     let ea = this.eventAggregator;
-     if(ea){
-        ea.publish(event, payload);
-     }else{
-         console.log(`Event "${event}" contains this payload "${JSON.stringify(payload)}"`);
-     }
-  }
+
 }

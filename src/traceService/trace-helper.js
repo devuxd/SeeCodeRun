@@ -4,46 +4,24 @@ export class TraceHelper {
         this.executionTrace = executionTrace;
         this.Syntax = {
             AssignmentExpression: 'AssignmentExpression',
-            // ArrayExpression: 'ArrayExpression',
-            // BlockStatement: 'BlockStatement',
-            BinaryExpression: 'BinaryExpression', // whole expression catch as part of expression statement, call expression and control flow ones
-            // BreakStatement: 'BreakStatement',
+            BinaryExpression: 'BinaryExpression', 
             CallExpression: 'CallExpression',
-            // CatchClause: 'CatchClause',
-            // ConditionalExpression: 'ConditionalExpression',// solves Unary and Update Expressions
-            // ContinueStatement: 'ContinueStatement',
-            DoWhileStatement: 'DoWhileStatement',// solves Unary and Update Expressions
-            // DebuggerStatement: 'DebuggerStatement',
-            // EmptyStatement: 'EmptyStatement',
-            ExpressionStatement: 'ExpressionStatement', // solves Unary and Update Expressions
-            ForStatement: 'ForStatement', // solves Unary and Update Expressions
-            ForInStatement: 'ForInStatement', // solves Unary and Update Expressions
+            DoWhileStatement: 'DoWhileStatement',
+            ExpressionStatement: 'ExpressionStatement', 
+            ForStatement: 'ForStatement', 
+            ForInStatement: 'ForInStatement', 
             FunctionDeclaration: 'FunctionDeclaration',
             FunctionExpression: 'FunctionExpression',
-            // Identifier: 'Identifier',
-            IfStatement: 'IfStatement', // solves Unary and Update Expressions
-            // Literal: 'Literal',
-            // LabeledStatement: 'LabeledStatement',
-            // LogicalExpression: 'LogicalExpression',
-            // MemberExpression: 'MemberExpression',
+            IfStatement: 'IfStatement', 
             NewExpression: 'NewExpression',
-            // ObjectExpression: 'ObjectExpression',
-            // Program: 'Program',
             Property: 'Property',
             ReturnStatement: 'ReturnStatement',
-            // SequenceExpression: 'SequenceExpression',
-            // SwitchStatement: 'SwitchStatement',
-            // SwitchCase: 'SwitchCase',
-            // ThisExpression: 'ThisExpression',
-            // ThrowStatement: 'ThrowStatement',
-            // TryStatement: 'TryStatement',
-            UnaryExpression: 'UnaryExpression', // done in parent
-            UpdateExpression: 'UpdateExpression', // done in parent
-            VariableDeclaration: 'VariableDeclaration', // done in children and parent
+            UnaryExpression: 'UnaryExpression',
+            UpdateExpression: 'UpdateExpression', 
+            VariableDeclaration: 'VariableDeclaration', 
             VariableDeclarator: 'VariableDeclarator',
-            WhileStatement: 'WhileStatement',
-            // WithStatement: 'WithStatement'
-        };        
+            WhileStatement: 'WhileStatement'
+        };      
     }
     /*
      * getLineValues(lineNumber,valueTable)
