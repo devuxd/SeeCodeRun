@@ -1,6 +1,23 @@
 export class AutoLogTracer{
-    constructor(){
-        
+    constructor(traceDataContainer){
+        this.traceDataContainer = traceDataContainer;
+    }
+    
+    getTraceDataContainerCodeBoilerPlate(){
+        return `
+        var  out = document.getElementById("${this.traceDataContainer}");
+        if(!out){
+            out = document.createElement("div");
+            out.id = "${this.traceDataContainer}";
+        }
+        out.style.display = "none";
+        document.body.appendChild(out);
+        `;
+    }
+    getTraceDataCodeBoilerPlate(){
+        return `
+        out.innerHTML= JSON.stringify(window.TRACE.getTraceData());
+        `;
     }
     getAutologCodeBoilerPlate(){
         return `
@@ -72,7 +89,6 @@ export class AutoLogTracer{
         exception: []
         
     };
-        window.CANTRACE = true;
         window.ISCANCELLED = false;
         window.TRACE = {
             hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [], 
@@ -124,48 +140,19 @@ export class AutoLogTracer{
                 
                 return info.value;
             },
-            getStackTrace: function getStackTrace () {
-                var entry,
-                    stackData = [];
-                for (var i in this.stack) {
-                    if (this.stack.hasOwnProperty(i)) {
-                        entry = this.stack[i];
-                        stackData.push({ index: i, text: entry.split(':')[0], range: this.data[entry].range,  count: this.hits[entry]});
-                    }
-                }
-                return stackData;
-            },
-            getExecutionTraceAll: function getExecutionTraceAll() {
-                let result = [];
-                for (let i in this.execution) {
-                    let entry = this.execution[i];
-                    if (this.data.hasOwnProperty(entry)) {
-                        result.push(this.data[entry]);
-                    }
-                }
-                return result;
-            },
-            getExpressions: function getExpressions() {
-                return {variables : this.identifiers, timeline: this.timeline};
-            },
-            getVariables: function getVariables() {
-                return {variables : this.variables, values: this.values};
-            },
-            getExecutionTrace: function getExecutionTrace() {// getValues
-                var i, entry, data, stackData = [];
-                for (i in this.execution) {
-                    entry = this.execution[i];
-                    if (this.data.hasOwnProperty(entry)) {
-                        data =this.data[entry];
-                        if(traceTypes.Expression.indexOf(data.type) > -1  ){
-                            stackData.push(this.data[entry]);
-                        }
-                     }
-                }
-                return stackData;
+            getTraceData: function getTraceData() {
+                return {
+                    hits        : this.hits,
+                    data        : this.data,
+                    stack       : this.stack,
+                    execution   : this.exception,
+                    variables   : this.variables,
+                    values      : this.values,
+                    timeline    : this.timeline,
+                    identifiers : this.identifiers
+                };
             }
         };
-        
         `;
     }
 }

@@ -1,128 +1,18 @@
+import {TraceHelper} from './trace-helper';
 import {EsAnalyzer} from './es-analyzer';
 import {EsInstrumenter} from './es-instrumenter';
 
 export class EsTracer {
 
-    constructor(events, timeLimit = 3000, publisher) {
-      this.esAnalyzer = new EsAnalyzer();
-      this.esInstrumenter = new EsInstrumenter();
-      this.events = events;
-      this.timeLimit = timeLimit;
+    constructor(traceModel, publisher) {
+      this.esAnalyzer = new EsAnalyzer(traceModel);
+      this.esInstrumenter = new EsInstrumenter(traceModel);
+      this.traceModel = traceModel;
       this.publisher = publisher;
     }
     
-    getTrace(code, callback) {
-      this.esInstrumenter.traceInstrument(code, this.esAnalyzer);
-    }
-
-    createTraceCollector() {
-        let traceTypes = this.esAnalyzer.traceTypes, Syntax = this.esAnalyzer.Syntax;
-        window.CANTRACE = true;
-        window.ISCANCELLED = false;
-        window.TRACE = {
-            hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [], 
-            autoLog: function autoLog(info) {
-                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
-                
-                if(traceTypes.LocalStack.indexOf(info.type)>-1){
-    				this.stack.push(key) ;
-                }
-
-                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression){
-                   this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range}); 
-                }
-
-                this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});
-
-
-                var stackTop =	this.stack.length - 1;
-                
-				if (this.hits.hasOwnProperty(key)) {
-                    this.hits[key] = this.hits[key] + 1;
-                    this.data[key].hits = this.hits[key] + 1;
-                    this.data[key].values.push({'stackIndex': stackTop, 'value' :JSON.stringify(info.value)});
-                } else {
-                    
-                    if(info.type === Syntax.VariableDeclarator){
-                       this.variables.push({'id': info.id , 'range': info.range});
-                    }
-                    
-                    this.identifiers.push({'id': info.id , 'range': info.range});
-                    
-                    
-                    this.hits[key] = 1;
-                    this.execution.push(key);
-                    this.data[key] = {
-                        'type' : info.type,
-                        'id' : info.id,
-                        'text' : info.text,
-                        'values': [{'stackIndex': stackTop, 'value' :JSON.stringify(info.value)}],
-                        'range': info.range,
-                        'hits' : 1,
-                        'extra' : info.extra
-                    };
-                }
-                
-                if(window.ISCANCELLED){
-                    throw "Trace Cancelled.";
-                }
-                
-                return info.value;
-            },
-            getStackTrace: function getStackTrace () {
-                var entry,
-                    stackData = [];
-                for (var i in this.stack) {
-                    if (this.stack.hasOwnProperty(i)) {
-                        entry = this.stack[i];
-                        stackData.push({ index: i, text: entry.split(':')[0], range: this.data[entry].range,  count: this.hits[entry]});
-                    }
-                }
-                return stackData;
-            },
-            getExecutionTraceAll: function getExecutionTraceAll() {
-                let result = [];
-                for (let i in this.execution) {
-                    let entry = this.execution[i];
-                    if (this.data.hasOwnProperty(entry)) {
-                        result.push(this.data[entry]);
-                    }
-                }
-                return result;
-            },
-            getExpressions: function getExpressions() {
-                return {variables : this.identifiers, timeline: this.timeline};
-            },
-            getVariables: function getVariables() {
-                return {variables : this.variables, values: this.values};
-            },
-            getExecutionTrace: function getExecutionTrace() {// getValues
-                var i, entry, data, stackData = [];
-                for (i in this.execution) {
-                    entry = this.execution[i];
-                    if (this.data.hasOwnProperty(entry)) {
-                        data =this.data[entry];
-                        if(traceTypes.Expression.indexOf(data.type) > -1  ){
-                            stackData.push(this.data[entry]);
-                        }
-                     }
-                }
-                return stackData;
-            }
-        };
-        
-    }
-
-    cancelTrace(){
-        window.ISCANCELLED = true;
-    }
-    
-    onCancelTrace(){
-         this.cancelTrace();
-    }
-    
     onCodeRunning(){
-        let timeLimit = this.timeLimit;
+        let timeLimit = this.traceModel.timeLimit;
         let timeOutCallback = function timeOutCallback(){
                   throw `Execution time out. Excedeed ${timeLimit} ms`;
         };
@@ -130,40 +20,40 @@ export class EsTracer {
         if(this.timeOut){
             window.clearTimeout(this.timeOut);
         }
-        this.timeOut = window.setTimeout(timeLimit, timeOutCallback);
+        this.timeOut = window.setTimeout(this.traceModel.timeLimit, timeOutCallback);
         
         window.ISCANCELLED = false;
         this.startTimestamp = +new Date();
     }
     
     onCodeFinished(payload){
-        let event = this.events.changed;
+        let event = this.traceModel.traceEvents.changed;
         this.traceChanged(event, payload.data);
     }
     
     onCodeFailed(payload){
-        let event = this.events.changed;
-        this.traceChanged(event, payload.data, payload.error);
+        let event = this.traceModel.traceEvents.changed;
+        this.traceChanged(event, payload.data,  `Error: ${payload.error}`);
     }
     
     traceChanged(event, results, error = ""){
         if(this.timeOut){
             window.clearTimeout(this.timeOut);
         }
-        let publisher = this.publisher;
 
         if(!results){
             console.log("No trace results found");
             return;
         }
-        let data = results;
-        let timestamp = (+new Date()) - this.startTimestamp ;
-        let description = `${event.description} Trace completed in ${1 + timestamp} ms. Error: ${error.toString()}`;
+
+        let duration = (+new Date()) - this.startTimestamp ;
+        let description = `${event.description} Trace completed in ${1 + duration} ms.${error.toString()}`;
         
-        let payload = { status : event.event, description : description, data : data};
+        let traceHelper = new TraceHelper(results);
+        let payload = this.traceModel.makePayload(event.event, description, traceHelper);
         
-        if(publisher){
-            publisher.publish(payload.status, payload);
+        if(this.publisher){
+            this.publisher.publish(payload.status, payload);
         }
     }
     
@@ -171,21 +61,20 @@ export class EsTracer {
 
         this.timeLimit = timeLimit;
         let  instrumentedCode;
-        let payload = {'status' : 'NONE', 'description' : '', 'data' : {}};
+        let payload = this.traceModel.makeEmptyPayload();
         
         try {
-            this.createTraceCollector();
-            instrumentedCode = this.esInstrumenter.traceInstrument(sourceCode, this.esAnalyzer);
+            instrumentedCode = this.esInstrumenter.instrumentTracer(sourceCode, this.esAnalyzer);
             
-            payload.status = this.events.instrumented.event;
-            payload.description = this.events.instrumented.description;
+            payload.status = this.traceModel.traceEvents.instrumented.event;
+            payload.description = this.traceModel.traceEvents.instrumented.description;
             payload.data = instrumentedCode;
                 
             return payload;
     
         } catch (e) {
-            payload.status = this.events.failed.event;
-            payload.description = `${this.events.failed.description}. Error: ${e.toString()}`;
+            payload.status = this.traceModel.traceEvents.failed.event;
+            payload.description = `${this.traceModel.traceEvents.failed.description}. Error: ${e.toString()}`;
             return payload;
         }
     }

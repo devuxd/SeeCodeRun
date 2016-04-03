@@ -1,32 +1,27 @@
+import {TraceModel} from './trace-model';
 import {EsTracer} from './es-tracer';
 
 export class TraceService {
 
     constructor(eventAggregator) {
       this.eventAggregator = eventAggregator;
+      this.traceModel = new TraceModel();
       
-      this.executionEvents = {
-        running : {  event :'codeRunning'   , description : 'Tracing Code...' },
-        finished: {  event :'codeFinished'  , description : 'Trace built successfully.' },
-        failed  : {  event :'codeFailed'    , description : 'Code failed (Runtime error).' }
-      };
+      this.executionEvents = this.traceModel.executionEvents;
       
-      this.traceEvents = {
-        instrumented    : {  event :'traceInstrumented'   , description : 'Code Instrumented successfully.' },
-        changed         : {  event :'traceChanged'   , description : 'Trace results obtained succesfully.' },
-        failed          : {  event :'instrumentationFailed'    , description : 'Code rewriting failed (Compilation error).' }
-      };
-      
-      this.timeLimit = 3000; 
-      this.esTracer = new EsTracer(this.traceEvents, this.timeLimit, eventAggregator);
+      this.esTracer = new EsTracer(this.traceModel, eventAggregator);
       this.subscribe();
     }
+    
+    isValid(tracePayload){
+        return tracePayload.status === this.traceModel.traceEvents.instrumented.event;
+    }
 
-    getInstrumentation(code, timeLimit = this.timeLimit,  publisher = this) {
-        if(!code){ // standard result object across the service
-          return {status: undefined, description : undefined , data : undefined};
+    getInstrumentation(code) {
+        if(!code){ 
+          return this.traceModel.makeEmptyPayload();
         }
-        return this.esTracer.getInstrumentation(code, this.timeLimit,  publisher);
+        return this.esTracer.getInstrumentation(code,  this.eventAggregator);
     }
     
     subscribe() {

@@ -1,12 +1,13 @@
 import escodegen from 'escodegen';
-import {EsprimaNodeFactory} from './models/esprima-node-factory';
-import {AutoLogTracer} from './models/auto-log-tracer';
+import {EsprimaNodeFactory} from './external/esprima-node-factory';
+import {AutoLogTracer} from './external/auto-log-tracer';
 export class EsInstrumenter {
   
-  constructor() {
+  constructor(traceModel) {
+      this.traceModel = traceModel;
       this.escodegen = escodegen;
       this.esprimaNodeFactory = new EsprimaNodeFactory();
-      this.autoLogTracer = new AutoLogTracer();
+      this.autoLogTracer = new AutoLogTracer(traceModel.traceDataContainer);
       this.init();
   }
     
@@ -529,7 +530,7 @@ export class EsInstrumenter {
         }
     }
   
-    traceInstrument(sourceCode, esanalyzer) {
+    instrumentTracer(sourceCode, esanalyzer) {
         var self = this;
         let  instrumentedCode, instrumenter, tree;
         let Syntax = self.Syntax,
@@ -640,9 +641,10 @@ export class EsInstrumenter {
         instrumentedCode = self.escodegen.generate(tree);
 
         instrumentedCode = `
+            ${this.autoLogTracer.getTraceDataContainerCodeBoilerPlate()}
             ${this.autoLogTracer.getAutologCodeBoilerPlate()}
             ${instrumentedCode}
-            document.getElementById("trace_results").innerHTML= JSON.stringify(window.TRACE.getStackTrace());
+            ${this.autoLogTracer.getTraceDataCodeBoilerPlate()}
         `;
 
         return instrumentedCode;

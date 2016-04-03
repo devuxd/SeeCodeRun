@@ -26,14 +26,13 @@ subscribe() {
         let editorText = payload.js;
         
         
-        let tracePayload = traceService.getInstrumentation(editorText);
+        let instrumentationPayload = traceService.getInstrumentation(editorText);
         
-        if(tracePayload.status === traceService.traceEvents.instrumented.event){
-        
-            this.js = tracePayload.data;
+        if(traceService.isValid(instrumentationPayload)){
+            this.js = instrumentationPayload.data;
         
         }else{
-            console.log(JSON.stringify(tracePayload));
+            console.log(JSON.stringify(instrumentationPayload));
             this.js = editorText;
         }
         
@@ -60,27 +59,25 @@ subscribe() {
     addJsAndHtml() {
         let publisher = this.eventAggregator;
         let traceService = this.traceService;
-        let doc = document.getElementById('htmlView')
-                          .contentDocument;
+        let traceDataContainer = traceService.traceModel.traceDataContainer;
+        let doc = document.getElementById("htmlView").contentDocument;
                           
         doc.body.innerHTML = this.html;
-  
-        let out = doc.createElement('div');
-        out.style.display = 'none';
-        out.id = "trace_results";
-        doc.body.appendChild(out);
-        
-        let script = doc.createElement('script');
+
+        let script = doc.createElement("script");
 
         script.textContent = this.js;
         let result = undefined;
         try{
             publisher.publish(traceService.executionEvents.running.event);
+            
             doc.body.appendChild(script);
-            result = JSON.parse(out.innerHTML);
+            result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+            
             publisher.publish(traceService.executionEvents.finished.event, {data: result});
         }catch(e){
-            result = JSON.parse(out.innerHTML);
+            result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+            
             publisher.publish(traceService.executionEvents.failed.event, {data: result, error: e});
         }
         
