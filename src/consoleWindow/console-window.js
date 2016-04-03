@@ -1,7 +1,5 @@
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
 
-@inject(EventAggregator)
+
 export class ConsoleWindow {
     
     constructor(eventAggregator) {
@@ -9,6 +7,8 @@ export class ConsoleWindow {
         this.title = 'Console';
     }
     
+
+    // TODO: this does not wrok! see github repo for more information.
     attached() {
         let logger = console.log;
         let log = [];

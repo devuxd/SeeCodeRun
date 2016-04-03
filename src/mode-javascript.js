@@ -424,7 +424,7 @@ function JSX() {
         regex : "</?" + tagRegex + "",
         next: "jsxAttributes",
         nextState: "jsx"
-    };
+    }; 
     this.$rules.start.unshift(jsxTag);
     var jsxJsRule = {
         regex: "{",

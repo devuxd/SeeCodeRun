@@ -21,7 +21,7 @@ export class BlurImageCustomAttribute {
 This Snippet is using a modified Stack Blur js lib for blurring the header images.
 */
 
-/*
+/* 
 
 StackBlur - a fast almost Gaussian Blur For Canvas
 

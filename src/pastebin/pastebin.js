@@ -1,9 +1,15 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
+import jqxcore     from '../../jqxcore';
+import jqxsplitter from '../../jqxsplitter';
+import {HtmlEditor} from '../htmlEditor/html-editor';
+import {CssEditor} from '../cssEditor/css-editor'
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
-import {ConsoleWindow} from '../consoleWindow/console-window';
+import {HtmlViewer} from'../htmlViewer/html-viewer';
+import {VisViewer} from '../visViewer/vis-viewer'
+import {ConsoleWindow} from '../consoleWindow/console-window'
 import {Chat} from '../chat/chat';
 
 @inject(EventAggregator, Router, JsEditor, JsGutter, ConsoleWindow)
@@ -13,46 +19,57 @@ export class Pastebin {
     this.eventAggregator = eventAggregator;
     this.router = router;
     this.heading = 'Pastebin';
-    this.jsEditor = jsEditor;
-    this.jsGutter = jsGutter;
-    this.consoleWindow = consoleWindow;
-    
+    this.pastebinId ='';
+    this.jsEditor = new JsEditor(this.eventAggregator);
+    this.jsGutter = new JsGutter(this.eventAggregator);
+    this.consoleWindow = new ConsoleWindow(this.eventAggregator);
+    this.htmlEditor = new HtmlEditor(this.eventAggregator);
+    this.cssEditor  = new CssEditor(this.eventAggregator);
+    this.htmlViewer = new HtmlViewer(this.eventAggregator);
+    this.visViewer  =new VisViewer(this.eventAggregator);
+
   }
 
-  activate(params) {
-    let baseURL = 'https://seecoderun.firebaseio.com';
+activate(params) {
     if (params.id) {
       let id = params.id;
       this.pastebinId = id;
       this.jsEditor.activate({ id: id });
+      this.htmlEditor.activate({ id: id });
+      this.cssEditor.activate({ id: id });
+
       this.chat = new Chat(baseURL, this.pastebinId);
+      
     } else {
       
       let firebase = new Firebase(baseURL);
       
-      let id = firebase.push().key();
-      this.router.navigateToRoute('pastebin', { id: id });
+      this.pastebinId = firebase.push().key();
+      this.router.navigateToRoute('pastebin', {id: this.pastebinId});
     }
     
-    this.subscribe();
   }
 
   attached() {
-    this.jsEditor.attached();
-    this.jsGutter.attached();
+    this.jsEditor.attached({id: this.pastebinId});
+    this.htmlEditor.attached({id: this.pastebinId});
+    this.cssEditor.attached({id: this.pastebinId});
     this.consoleWindow.attached();
+    this.jsGutter.attached();
+    this.visViewer.attached();
+    this.htmlViewer.attached();
     this.chat.attached();
   }
 
-  subscribe() {
-    let ea = this.eventAggregator;
-    
-    ea.subscribe('onEditorChanged', payload => {
-      // add code for subscribe event
-    });
 
-    ea.subscribe('onCursorMoved', payload => {
-      // add code for subscribe event
-    });
+       // Splitter
+      $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
+      $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });      
   }
+
+
+
+
+
+
 }
