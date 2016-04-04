@@ -27,10 +27,6 @@ export class Chat {
     //New Firebase chat Reference
     var chatFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/chat');
 
-
-    // CREATE A REFERENCE TO FIREBASE
-    // var messagesRef = new Firebase('https://j3v3r219xav.firebaseio-demo.com/');
-
     // REGISTER DOM ELEMENTS
     var messageField = $('#messageInput');
     var nameField = $('#nameInput');
