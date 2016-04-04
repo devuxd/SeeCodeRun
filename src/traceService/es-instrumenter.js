@@ -49,9 +49,12 @@ export class EsInstrumenter {
   getTextRange(code, range){
        if(!range){
            return undefined;
-       }else if(range.length < 2){
+       }
+       
+       if(range.length < 2){
            return undefined;
        }
+       
        let from = range[0];
        let till = range[1];
        return code.substring(from, till);
