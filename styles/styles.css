@@ -133,13 +133,13 @@ ul.nav li.active a {
 
 /* Feature 22 style*/
 
-/*Steph Work to Change Link Style-Overrides Default Bootstrap*/
-ul.nav li a, ul.nav li a:visited {
+/*Nav Bar Link Style*/
+ul.nav li a, ul.nav li a:visited{
     color: #888888;
     font-size: 16px;
 }
 
-ul.nav li a:hover, ul.nav li a:active {
+ul.nav li a:hover, ul.nav li a:active{
     background-color: #f8f8f8;
     border-style:solid;
     border-width:5px;
@@ -149,12 +149,12 @@ ul.nav li a:hover, ul.nav li a:active {
     border-bottom-color: #0066ff;
 }
 
-ul.nav li.active a {
+ul.nav li.active a{
     color: #888888;
     font-size: 16px;
 }
 
-/*glyph style work*/
+/*glyph style*/
 .glyphicon{
     padding-right: 4px;
     font-size: 16px;

@@ -9,9 +9,15 @@ import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from'../htmlViewer/html-viewer';
+<<<<<<< HEAD
 import {VisViewer} from '../visViewer/vis-viewer'
 import {ConsoleWindow} from '../consoleWindow/console-window'
 import {Chat} from '../chat/chat';
+=======
+import {Chat} from '../chat/chat';
+import {VisViewer} from '../visViewer/vis-viewer';
+import {ConsoleWindow} from '../consoleWindow/console-window';
+>>>>>>> master
 import {TraceViewController} from '../utils/trace-view-controller';
 
 @inject(EventAggregator, Router)
@@ -29,8 +35,13 @@ export class Pastebin {
     this.cssEditor  = new CssEditor(this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer  =new VisViewer(this.eventAggregator);
+<<<<<<< HEAD
     this.traceViewController = new TraceViewController(this.eventAggregator);
     this.chat = new Chat();
+=======
+    this.chat = new Chat();
+    this.traceViewController = new TraceViewController(this.eventAggregator);
+>>>>>>> master
   }
 
 activate(params) {
@@ -59,8 +70,13 @@ activate(params) {
     this.jsGutter.attached();
     this.visViewer.attached();
     this.htmlViewer.attached();
+<<<<<<< HEAD
     this.traceViewController.attached();
     this.chat.attached({id: this.pastebinId});
+=======
+    this.chat.attached({id: this.pastebinId});
+    this.traceViewController.attached();
+>>>>>>> master
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
