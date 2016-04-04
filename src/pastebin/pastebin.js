@@ -1,3 +1,4 @@
+/* global $ */
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
@@ -10,12 +11,13 @@ import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from'../htmlViewer/html-viewer';
 import {VisViewer} from '../visViewer/vis-viewer'
 import {ConsoleWindow} from '../consoleWindow/console-window'
+import {Chat} from '../chat/chat';
 
-@inject(Router)
+@inject(EventAggregator, Router)
 export class Pastebin {
 
-  constructor(router) {
-    this.eventAggregator = new EventAggregator();
+  constructor(eventAggregator, router) {
+    this.eventAggregator = eventAggregator;
     this.router = router;
     this.heading = 'Pastebin';
     this.pastebinId ='';
@@ -26,7 +28,7 @@ export class Pastebin {
     this.cssEditor  = new CssEditor(this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer  =new VisViewer(this.eventAggregator);
-
+    this.chat = new Chat();
   }
 
 activate(params) {
@@ -36,7 +38,7 @@ activate(params) {
       this.jsEditor.activate({ id: id });
       this.htmlEditor.activate({ id: id });
       this.cssEditor.activate({ id: id });
-
+      this.chat.activate({ id: id });
     } else {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
@@ -55,16 +57,10 @@ activate(params) {
     this.jsGutter.attached();
     this.visViewer.attached();
     this.htmlViewer.attached();
+    this.chat.attached({id: this.pastebinId});
 
-
-       // Splitter
-      $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
-      $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });      
+     // Splitter
+    $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
+    $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });      
   }
-
-
-
-
-
-
 }

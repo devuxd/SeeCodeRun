@@ -2,20 +2,15 @@
 /* global Firebase */
 /* global ace */
 
-
 export class JsGutter {
   
   constructor(eventAggregator) {
        this.eventAggregator = eventAggregator;
        this.selectedLine = 1;
-
-
   }
   
   attached() {
-
-         this.subscribe();
-
+     this.subscribe();
   } 
   
  

@@ -6,15 +6,20 @@ import '../theme-chrome';
 
 export class JsEditor {
 
-  constructor(eventAggregator) {
+  constructor(eventAggregator, router) {
     this.eventAggregator = eventAggregator;
+    this.router = router;
     this.hasErrors = false;
   }
 
   activate(params) {
     if (params.id) {
       this.pastebinId = params.id;
-    } 
+    } else {
+      let baseURL = 'https://seecoderun.firebaseio.com';
+      let firebase = new Firebase(baseURL);
+      let pastebinId = firebase.push().key();
+    }
   }
   attached(params) {
     if (params.id) {
@@ -46,6 +51,7 @@ export class JsEditor {
     session.setUseWrapMode(true);
     session.setUseWorker(false);
     session.setMode('ace/mode/javascript');
+    session.addGutterDecoration(0, 'label label-info');
   }
 
   setupSessionEvents(session) {

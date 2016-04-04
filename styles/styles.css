@@ -133,6 +133,34 @@ ul.nav li.active a {
 
 /* Feature 22 style*/
 
+/*Nav Bar Link Style*/
+ul.nav li a, ul.nav li a:visited{
+    color: #888888;
+    font-size: 16px;
+}
+
+ul.nav li a:hover, ul.nav li a:active{
+    background-color: #f8f8f8;
+    border-style:solid;
+    border-width:5px;
+    border-left: none;
+    border-top: none;
+    border-right:none;
+    border-bottom-color: #0066ff;
+}
+
+ul.nav li.active a{
+    color: #888888;
+    font-size: 16px;
+}
+
+/*glyph style*/
+.glyphicon{
+    padding-right: 4px;
+    font-size: 16px;
+    
+}
+
 .splash {
   text-align: center;
   margin: 10% 0 0 0;
@@ -318,4 +346,18 @@ td, th {
 
 #vis-navbar {
   padding-bottom: 5px;
+}
+
+.page-host {
+  padding-top: 50px;
+}
+
+.navbar .navbar-brand img {
+  height: 125%;
+}
+
+.navbar-chat {
+  margin-top: 7px;
+  color: #888888;
+  font-size: 16px !important;
 }
