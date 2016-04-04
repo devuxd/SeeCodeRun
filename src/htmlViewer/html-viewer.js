@@ -4,9 +4,9 @@ export class HtmlViewer {
 
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
-        this.subscribe();
-        this.traceService  = new TraceService(eventAggregator);
+        this.traceService = new TraceService(eventAggregator);
         this.div = 'htmlView';
+        this.subscribe();
     }
     
     attached() {
@@ -30,8 +30,8 @@ export class HtmlViewer {
       
       ea.subscribe('onJsEditorChanged', payload => {
         let editorText = payload.js;
-        
-        let instrumentationPayload = traceService.getInstrumentation(editorText);
+
+        let instrumentationPayload = this.traceService.getInstrumentation(editorText);
         
         if (traceService.isValid(instrumentationPayload)) {
           this.js = instrumentationPayload.data;
