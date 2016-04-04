@@ -48,7 +48,7 @@ Bundling is performed by [Aurelia Bundler](http://github.com/aurelia/bundler). A
 
   ```shell
     gulp bundle
-  ```
+  ``` 
 
 You can also unbundle using the command bellow:
 
