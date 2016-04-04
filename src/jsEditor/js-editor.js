@@ -12,10 +12,9 @@ export class JsEditor {
   }
 
   activate(params) {
-    if (params.id) {
       this.pastebinId = params.id;
-    } 
   }
+  
   attached(params) {
     if (params.id) {
       this.pastebinId = params.id;
