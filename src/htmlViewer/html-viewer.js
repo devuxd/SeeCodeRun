@@ -1,13 +1,16 @@
+import {TraceService} from '../traceService/trace-service';
 
 export class HtmlViewer {
     
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
+        this.traceService  = new TraceService(eventAggregator);
         this.subscribe();
     }
      
 subscribe() {
       let ea = this.eventAggregator;
+      let traceService  = this.traceService;
       
       ea.subscribe('onHtmlEditorChanged', payload => {
         this.html = payload;
@@ -20,9 +23,21 @@ subscribe() {
       });
       
       ea.subscribe('onJsEditorChanged', payload => {
-        this.js = payload.js;
+        let editorText = payload.js;
+        
+        
+        let instrumentationPayload = traceService.getInstrumentation(editorText);
+        
+        if(traceService.isValid(instrumentationPayload)){
+            this.js = instrumentationPayload.data;
+        
+        }else{
+            console.log(JSON.stringify(instrumentationPayload));
+            this.js = editorText;
+        }
+        
         this.addJsAndHtml();
-      })
+      });
     }
     
     attached() {  
@@ -42,17 +57,33 @@ subscribe() {
  
     
     addJsAndHtml() {
-        let doc = document.getElementById('htmlView')
-                          .contentDocument;
+        let publisher = this.eventAggregator;
+        let traceService = this.traceService;
+        let traceDataContainer = traceService.traceModel.traceDataContainer;
+        let doc = document.getElementById("htmlView").contentDocument;
                           
         doc.body.innerHTML = this.html;
-  
-        
-        
-        let script = doc.createElement('script');
+
+        let script = doc.createElement("script");
+
         script.textContent = this.js;
+        let result = undefined;
+        try{
+            publisher.publish(traceService.executionEvents.running.event);
+            
+            doc.body.appendChild(script);
+            result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+            
+            publisher.publish(traceService.executionEvents.finished.event, {data: result});
+        }catch(e){
+            let error = e.toString();
+            try{
+                result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+            }catch(jsonError){
+                error += " "+ jsonError.toString();
+            }
+            publisher.publish(traceService.executionEvents.failed.event, {data: result, error: error});
+        }
         
-        
-        doc.body.appendChild(script);
     }
 }

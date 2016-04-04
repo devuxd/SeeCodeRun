@@ -4,12 +4,13 @@ import {Router} from 'aurelia-router';
 import jqxcore     from '../../jqxcore';
 import jqxsplitter from '../../jqxsplitter';
 import {HtmlEditor} from '../htmlEditor/html-editor';
-import {CssEditor} from '../cssEditor/css-editor'
+import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from'../htmlViewer/html-viewer';
-import {VisViewer} from '../visViewer/vis-viewer'
-import {ConsoleWindow} from '../consoleWindow/console-window'
+import {VisViewer} from '../visViewer/vis-viewer';
+import {ConsoleWindow} from '../consoleWindow/console-window';
+import {TraceViewController} from '../utils/trace-view-controller';
 
 @inject(Router)
 export class Pastebin {
@@ -26,7 +27,7 @@ export class Pastebin {
     this.cssEditor  = new CssEditor(this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer  =new VisViewer(this.eventAggregator);
-
+    this.traceViewController = new TraceViewController(this.eventAggregator);
   }
 
 activate(params) {
@@ -55,6 +56,7 @@ activate(params) {
     this.jsGutter.attached();
     this.visViewer.attached();
     this.htmlViewer.attached();
+    this.traceViewController.attached();
 
 
        // Splitter
