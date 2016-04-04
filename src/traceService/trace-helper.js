@@ -1,8 +1,9 @@
 import {TraceModel} from './trace-model';
-
+import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
     constructor(trace){
         this.traceModel = new TraceModel();
+        this.traceQueryManager = new TraceQueryManager();
         this.Syntax = this.traceModel.traceSyntax;
         this.makeTrace(trace);
     }
