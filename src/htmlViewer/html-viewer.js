@@ -85,10 +85,15 @@ export class HtmlViewer {
     
     addCss() {
       let doc = this.getContentDocument();
-      let style = doc.createElement('style');
-      style.textContent = this.css;
       
-      doc.head.appendChild(style);
+      if (!this.style) {
+        this.style = doc.createElement('style');
+        this.style.type = 'text/css';
+      }
+      
+      this.style.textContent = this.css;
+      
+      doc.head.appendChild(this.style);
     }
     
     addHtml() {
