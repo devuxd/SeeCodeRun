@@ -5,13 +5,14 @@ import {Router} from 'aurelia-router';
 import jqxcore     from '../../jqxcore';
 import jqxsplitter from '../../jqxsplitter';
 import {HtmlEditor} from '../htmlEditor/html-editor';
-import {CssEditor} from '../cssEditor/css-editor'
+import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from'../htmlViewer/html-viewer';
-import {VisViewer} from '../visViewer/vis-viewer'
-import {ConsoleWindow} from '../consoleWindow/console-window'
 import {Chat} from '../chat/chat';
+import {VisViewer} from '../visViewer/vis-viewer';
+import {ConsoleWindow} from '../consoleWindow/console-window';
+import {TraceViewController} from '../utils/trace-view-controller';
 
 @inject(EventAggregator, Router)
 export class Pastebin {
@@ -29,6 +30,7 @@ export class Pastebin {
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
+    this.traceViewController = new TraceViewController(this.eventAggregator);
   }
 
 activate(params) {
@@ -58,6 +60,7 @@ activate(params) {
     this.visViewer.attached();
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
+    this.traceViewController.attached();
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
