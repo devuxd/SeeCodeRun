@@ -1,31 +1,47 @@
 /* global $ */
+import {TraceModel} from '../traceService/trace-model';
+
 export class TraceSearch{
     constructor(eventAggregator){
         this.eventAggregator = eventAggregator;
+        this.traceModel = new TraceModel();
+        this.searchBox = {
+            $searchTermDiv: undefined,
+            $optionSelectedDiv: undefined,
+            searchBoxChanged: this.searchBoxChanged,
+            updateTable: this.updateTable,
+            searchOptions: this.traceModel.traceSearchfilters,
+            traceHelper: undefined
+        };
     }
+
+
     attached(){
-        let searchTermDiv = $("#searchTerm");
-        let optionSelectedDiv = $("optionSelected");
-        let updateTable = this.updateTable;
-        let traceHelper = this.trace;
-        searchTermDiv.change(function searchTermChanged(e){
-            
-            let option = optionSelectedDiv.options[optionSelectedDiv.selectedIndex].value;
-            
-            if(this.traceHelper){
-                let query = this.traceHelper.traceQueryManager.query(traceHelper.trace,this.value,option);
-                let combo = ["id","type","text","values"];
-                updateTable(query,combo);
-            }
-        });
+        let searchBox = this.searchBox;
+        searchBox.$searchTermDiv = $("#searchTerm");
+        searchBox.$searchFilter = $("#searchFilter");
         
-        optionSelectedDiv.change(function(e){
-            // returns an object array of the queried results
-            var term = searchTermDiv.value;
-            var query = JlinqQueryTrace(trace,term,this.value);
-            var combo = ["id","type","text","values"];
-            this.updateTable(query,combo);
-        });
+        searchBox.$searchFilter.empty();
+        let options ="";
+        for (let id in searchBox.searchOptions){
+            let value = searchBox.searchOptions[id];
+            options += `<option value="${id}">${value}</option>`;
+        }
+        searchBox.$searchFilter.append(options);
+
+        let searchBoxChanged = function searchBoxChanged(e){
+            
+            let option = searchBox.$optionSelectedDiv.options[searchBox.optionSelectedDiv.selectedIndex].value;
+            let value = searchBox.$searchTermDiv.value;
+            
+            if(searchBox.traceHelper){
+                let query = searchBox.traceHelper.traceQueryManager.query(searchBox.traceHelper.trace, value, option);
+                searchBox.updateTable(query,combo);
+            }
+    }
+        searchBox.$searchTermDiv.change(searchBoxChanged );
+        
+        searchBox.$searchFilter.change(searchBoxChanged);
         
        this.subscribe(); 
     }
@@ -37,11 +53,12 @@ export class TraceSearch{
     }
     onTraceChanged(payload){
                 let traceHelper= payload.data;
+                let variableValues =traceHelper.getVariables().values;
                 let select = document.getElementById("optionSelected").value;
                 let term = document.getElementById("searchTerm").value;
-                let query = traceHelper.traceQueryManager.JlinqQueryTrace(traceHelper.trace,term,select);
+                let query = traceHelper.traceQueryManager.query(variableValues,term,select);
                 let combo = ["id","type","text","values"];
-                this.updateTable(query,combo);
+               // this.updateTable(query,combo);
     }
     
     updateTable(query,cols){

@@ -13,7 +13,7 @@ import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import {TraceViewController} from '../utils/trace-view-controller';
-import {TraceSearch} from '../searchBox/trace-search';
+import {TraceSearch} from '../searchTab/trace-search';
 
 @inject(EventAggregator, Router)
 export class Pastebin {

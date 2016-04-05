@@ -1,6 +1,14 @@
 import {Trace} from './trace';
 export class TraceModel{
     constructor(){
+        this.traceSearchfilters = {
+			Any: "Any",
+			ID: "ID",
+			Type: "Type",
+			Text: "Text",
+			Values: "Values"
+		};
+		
         this.traceDataContainer = "SeeCodeRunTraceDataResults";
         this.traceSyntax = {
             AssignmentExpression: 'AssignmentExpression',

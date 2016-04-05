@@ -3,12 +3,12 @@ import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
     constructor(trace){
         this.traceModel = new TraceModel();
-        this.traceQueryManager = new TraceQueryManager();
+        this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.Syntax = this.traceModel.traceSyntax;
-        this.makeTrace(trace);
+        this.setTrace(trace);
     }
     
-    makeTrace(trace){
+    setTrace(trace){
         this.trace = this.traceModel.makeTrace(trace);
     }
     

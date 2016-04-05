@@ -1,13 +1,8 @@
 import JsLinQ from "jslinq";
+
 export class TraceQueryManager{
-	constructor(){
-		this.filters = {
-			Any: "Any",
-			ID: "ID",
-			Type: "Type",
-			Text: "Text",
-			Values: "Values"
-		};
+	constructor(traceModel){
+		this.filters = traceModel.traceSearchfilters;
 	}
 	
     contains(a,b){

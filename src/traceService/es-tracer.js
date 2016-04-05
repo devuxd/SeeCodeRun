@@ -52,7 +52,6 @@ export class EsTracer {
         let traceHelper = new TraceHelper(results);
         let payload = this.traceModel.makePayload(event.event, description, traceHelper);
         
-        traceHelper.traceQueryManager.querySomething(traceHelper.getStackTrace());
         if(this.publisher){
             this.publisher.publish(payload.status, payload);
         }
