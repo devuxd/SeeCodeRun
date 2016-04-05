@@ -1,0 +1,14 @@
+<template bindable="traceSearch">
+	<div id="traceSearchDiv" >
+        <input type="textfield" id="searchTerm" placeholder="ex. expression"/> 
+        <select name="optionSelected" id="optionSelected">
+          <option value="any">Any</option>
+          <option value="id">ID</option>
+          <option value="type">Type</option>
+          <option value="text">Text</option>
+          <option value="values">Values</option>
+        </select>
+        <h3> Search Results:</h3>
+        <pre id='searchResultDisplayArea'></pre>
+	</div>
+</template>

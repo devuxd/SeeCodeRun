@@ -22,36 +22,22 @@ export class TraceHelper {
      * @ comment - line number should start with 1, which is same as the gutter
      */
     getLineValues(lineNumber,valueTable){
-        // if the execution trace is undefined the return undefined
         if(valueTable===undefined || lineNumber<=0){
             return false;
         }
-        // sorts out the conflict for the ace editor starting with row #0
     	lineNumber--;
-    	// new array for storing all the return values
     	var returnValues = [];
-    	// i = iteration, entry = each traced element
 		var i,entry;
-        // iterates through all the elements of the execution trace
         for(i=0;i<valueTable.length;i++){
-            // stores current element in entry
         	entry = valueTable[i];
-        	// retrieves all the keys for the current element in the trace
-            // Object.keys(valueTable[entry]);
-            // check to see if the current entry element has the range property
             if(entry.hasOwnProperty("range")){
-                // determines if the current range element row number matches line number
                 if(entry.range.start.row===lineNumber){
-                    // calls this.getValues() to get the value based on the range
                     var entryResult = this.getValues(entry.range);
-                    // if the returned result is not false
                     if(entryResult!=[])
-                        // push the result into the array
                 	    returnValues.push(entryResult);
                 }
             }
         }
-        // return all the values for the current line
         return returnValues;
     }
     /*
@@ -66,42 +52,32 @@ export class TraceHelper {
      */    
     getValues(esprimaRange,valueTable){
         if(esprimaRange===undefined){
-            return []; // return false if inputEsprimaRange is undefined
+            return [];
         }
-        // find the element that meets the range requirement
         var i, entry, allValues = [];
-        // iterates through all the elements of the execution trace
         for(i=0;i<valueTable.length;i++){
-            // stores current element in entry
             entry = valueTable[i];
-            // check to see if the current entry element has the range property
             if(entry.hasOwnProperty("range")){
-                // check to see if inputEsprimaRange is within the entry.range
                 if(this.isRangeInRange(esprimaRange,entry.range)){
-                        //alert(Object.keys(this.valueTable[i]));
-                        // check to see if the current entry element has the values property
                         if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
                             if(entry.type==="WhileStatement"){
                                 allValues.push(entry.hits-1);                            
                             }
                             else{
-                                //alert(entry.values); // if return stackIndex + values
-                                // returns the value within thin the range
                                 var i;
                                 for(i=0;i<entry.values.length;i++){
-                                    //alert(entry.values[i].value);
                                     allValues.push(entry.values[i].value);
                                 }
                             }
                             return allValues;
                         }
                         else { 
-                            return []; //return false if not found
+                            return [];
                         }
                 }
             }
         }
-        return []; // return false if not found
+        return [];
     }
     /*
      * getLineValuesWithType(lineNumber)
@@ -114,20 +90,13 @@ export class TraceHelper {
      */    
     getValuesWithType(esprimaRange,valueTable){
         if(esprimaRange===undefined){
-            return []; // return false if inputEsprimaRange is undefined
+            return []; 
         }
-        // find the element that meets the range requirement
         var i, entry, allValues = {};
-        // iterates through all the elements of the execution trace
         for(i=0;i<valueTable.length;i++){
-            // stores current element in entry
             entry = valueTable[i];
-            // check to see if the current entry element has the range property
             if(entry.hasOwnProperty("range")){
-                // check to see if inputEsprimaRange is within the entry.range
                 if(this.isRangeInRange(esprimaRange,entry.range)){
-                        //alert(Object.keys(this.valueTable[i]));
-                        // check to see if the current entry element has the values property
                         if(entry.hasOwnProperty("values")&&entry.hasOwnProperty("type")){
                             if(entry.type===this.Syntax.WhileStatement
                             || entry.type===this.Syntax.ForStatement || entry.type===this.Syntax.ForInStatement){

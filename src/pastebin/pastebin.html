@@ -7,6 +7,7 @@
   <require from="htmlViewer/html-viewer.html"></require>
   <require from="consoleWindow/console-window.html"></require>
   <require from="chat/chat.html"></require>
+  <require from="searchBox/trace-search.html"></require>
 
   <div class="container-fluid" style="padding-left: 0px; padding-right: 0px; padding-left: 7px;">
 
@@ -69,11 +70,11 @@
           <div id="right-splitter-bottom">
             <console-window console.bind='consoleWindow'></console-window>
             <chat chat.bind="chat"></chat>
+            <trace-search traceSearch.bind="traceSearch"></trace-search>
           </div>
         </div>
       </div>
     </div>
 
   </div>
-
 </template>
