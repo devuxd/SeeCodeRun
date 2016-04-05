@@ -34,6 +34,16 @@ export class JsEditor {
     this.firepad = this.createFirepad(editor);        
     this.setupSessionEvents(session);
     this.subscribe(session);
+    
+    window.onerror =
+      function JsEditorOnError(msg, jsFirebaseRef, linenumber){
+          console.log(
+                `Error message: ${msg}
+                url: ${jsFirebaseRef}
+                Line Number: ${linenumber}`
+                );
+          return false;
+      };
   }
 
   configureEditor(editor) {
@@ -125,7 +135,8 @@ export class JsEditor {
 
   createFirepad(editor) {
     let baseURL = 'https://seecoderun.firebaseio.com';
-    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/js');
+    this.pastenBinURL = baseURL + '/' + this.pastebinId + '/content/js';
+    let firebase = new Firebase(this.pastenBinURL);
 
     return Firepad.fromACE(
       firebase,
