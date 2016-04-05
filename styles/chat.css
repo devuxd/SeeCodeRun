@@ -42,10 +42,6 @@
   }
 }
 
-body {
-  background: url(../images/clouds.jpg) no-repeat center center fixed;
-  background-size: cover
-}
 
 .seecoderun-chat {
   font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
