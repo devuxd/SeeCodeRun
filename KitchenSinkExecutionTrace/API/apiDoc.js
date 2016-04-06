@@ -1,2 +1,0 @@
-var path;
-var a;
