@@ -2,11 +2,32 @@ import {Trace} from './trace';
 export class TraceModel{
     constructor(){
         this.traceSearchfilters = {
-			Any: "Any",
-			ID: "ID",
-			Type: "Type",
-			Text: "Text",
-			Values: "Values"
+			any: "Any",
+			id: "ID",
+			type: "Type",
+			text: "Text",
+			value: "Value"
+		};
+       	
+		let traceParameters = {
+            type : 0,
+            id : 1,
+            text : 2,
+            value : 3,
+            range : 4,
+            indexRange : 5,
+            extra : 6
+            
+        };
+        
+        this.traceParameters = traceParameters;
+        
+        this.traceSearchFilterToParameter = {
+			any: [traceParameters.type],
+			id: [traceParameters.id],
+			type: [traceParameters.type],
+			text: [traceParameters.text],
+			value: [traceParameters.value]
 		};
 		
         this.traceDataContainer = "SeeCodeRunTraceDataResults";
@@ -102,16 +123,6 @@ export class TraceModel{
         
         this.esSyntax = Syntax;
         
-        this.TraceParameters = {
-            type : 0,
-            id : 1,
-            text : 2,
-            value : 3,
-            range : 4,
-            indexRange : 5,
-            extra : 6
-            
-        };
         
         this.executionEvents = {
             running : {  event :'codeRunning'   , description : 'Tracing Code...' },

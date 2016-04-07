@@ -8,7 +8,7 @@
   <require from="consoleWindow/console-window.html"></require>
   <require from="chat/chat.html"></require>
   <require from="searchTab/trace-search.html"></require>
-
+  
   <div class="container-fluid" style="padding-left: 0px; padding-right: 0px; padding-left: 7px;">
 
     <div id="mainSplitter" class="col-md-7" style="padding-left: 2px; padding-right: 2px">
@@ -56,19 +56,18 @@
                   <a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">output</a></li>
                 <li role="presentation">
                   <a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
-                <li role="presentation">
-                    <a href="#search-tab" aria-controls="search-tab" role="tab" data-toggle="tab">trace search</a></li>
-                </ul>
+              </ul>
             </div>
             <div class="tab-content">
               <div role="tabpanel" class="tab-pane active" id="preview">
                 <html-viewer></html-viewer>
               </div>
-              <div role="tabpanel" class="tab-pane iframeCssPreview" id="visualization-container">
-                <vis-viewer vis.bind="visViewer"></vis-viewer>
-              </div>
-              <div role="tabpanel" class="tab-pane" id="search-tab">
-                 <trace-search traceSearch.bind="traceSearch"></trace-search>
+              <div role="tabpanel"  class="tab-pane iframeCssPreview" id="visualization-container">
+                <trace-search traceSearch.bind="traceSearch"></trace-search>
+                <p>
+                <div>
+                  <vis-viewer vis.bind="visViewer"></vis-viewer>
+                </div>
               </div>
             </div>
           </div>

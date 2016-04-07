@@ -224,11 +224,14 @@ export class TraceHelper {
     }
     
     getExpressions() {
-         return {variables : this.trace.identifiers, timeline: this.trace.timeline};
+         return {identifiers : this.trace.identifiers, timeline: this.trace.timeline};
     }
     
     getVariables(){
-        return {variables : this.trace.variables, values: this.trace.values};
+        return this.trace.variables;
+    }
+    getValues(){
+        return this.trace.values;
     }
     
     getExecutionTrace() {

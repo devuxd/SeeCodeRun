@@ -2,15 +2,17 @@
 import {TraceModel} from '../traceService/trace-model';
 
 export class TraceSearch{
-    constructor(eventAggregator){
+    constructor(eventAggregator, $table){
+        this.$table = $table;
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
         this.searchBox = {
-            $searchTermDiv: undefined,
-            $optionSelectedDiv: undefined,
-            searchBoxChanged: this.searchBoxChanged,
+            $searchTerm: undefined,
+            $searchFilter: undefined,
+            $table : $table,
+            searchBoxChanged: undefined,
             updateTable: this.updateTable,
-            searchOptions: this.traceModel.traceSearchfilters,
+            searchFilters: this.traceModel.traceSearchfilters,
             traceHelper: undefined
         };
     }
@@ -18,89 +20,89 @@ export class TraceSearch{
 
     attached(){
         let searchBox = this.searchBox;
-        searchBox.$searchTermDiv = $("#searchTerm");
+        
+        searchBox.$searchTerm = $("#searchTerm");
         searchBox.$searchFilter = $("#searchFilter");
+        
+        if(this.$table){
+            searchBox.$table = this.$table;
+        }else{
+            searchBox.$table = $("#traceTable");
+        }
         
         searchBox.$searchFilter.empty();
         let options ="";
-        for (let id in searchBox.searchOptions){
-            let value = searchBox.searchOptions[id];
+        for (let id in searchBox.searchFilters){
+            let value = searchBox.searchFilters[id];
             options += `<option value="${id}">${value}</option>`;
         }
         searchBox.$searchFilter.append(options);
-
+        
         let searchBoxChanged = function searchBoxChanged(e){
-            
-            let option = searchBox.$optionSelectedDiv.options[searchBox.optionSelectedDiv.selectedIndex].value;
-            let value = searchBox.$searchTermDiv.value;
+            let selectedFilter = searchBox.$searchFilter.find(":selected").val();
+            let value = searchBox.$searchTerm.val();
             
             if(searchBox.traceHelper){
-                let query = searchBox.traceHelper.traceQueryManager.query(searchBox.traceHelper.trace, value, option);
-                searchBox.updateTable(query,combo);
+                
+                let variableValues =searchBox.traceHelper.getValues();
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
+                searchBox.updateTable(searchBox, query);
             }
-    }
-        searchBox.$searchTermDiv.change(searchBoxChanged );
-        
+        };
+        searchBox.searchBoxChanged = searchBoxChanged;
+        searchBox.$searchTerm.change(searchBoxChanged);
         searchBox.$searchFilter.change(searchBoxChanged);
         
        this.subscribe(); 
     }
     subscribe(){
-        let onTraceChanged = this.onTraceChanged;
-        this.eventAggregator.subscribe(this.traceModel.traceEvents.changed, payload =>{
-            onTraceChanged(payload);
+        let searchBox = this.searchBox;
+        let traceChangedEvent = this.traceModel.traceEvents.changed.event;
+        this.eventAggregator.subscribe( traceChangedEvent, payload =>{
+            searchBox.traceHelper = payload.data;
+            searchBox.searchBoxChanged(traceChangedEvent);
         });
     }
-    onTraceChanged(payload){
-                let traceHelper= payload.data;
-                let variableValues =traceHelper.getVariables().values;
-                let select = document.getElementById("optionSelected").value;
-                let term = document.getElementById("searchTerm").value;
-                let query = traceHelper.traceQueryManager.query(variableValues,term,select);
-                let combo = ["id","type","text","values"];
-               // this.updateTable(query,combo);
-    }
+
     
-    updateTable(query,cols){
-                var displayArea = document.getElementById('searchResultDisplayArea');
-                if(query!=null&&query.length==0){
-                    displayArea.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
+    updateTable(searchBox, query){
+                let $table = searchBox.$table;
+                
+                if(!$table){
+                    throw "No table container received.";
+                }
+        
+                if(!query){
+                    throw "No query received.";
+                }
+                
+                if(query.count()<1){
+                    $table.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
                     return;
                 }
-                // var allAssociatedKeys = "";
-                var table =" ";
-                var i,c, qData;
-                table = "<table border='1'>";
-                for(i=0;i<query.length;i++){
-                    // for(var key in query[i]){
-                    //     allAssociatedKeys+="key:"+key+"\n";
-                    // }
-                    // alert(allAssociatedKeys);
-                    // generate the table
-                    table += "<tr><td>" +  "Row No. " + "</td>" + "<td>"+  i + " " +"</td>" 
-                    for(c=0;c<cols.length;c++){
-                        if(cols[c]=="type")
-                            qData = ("type"+":"+query[i].type);                        
-                        else if(cols[c]=="id")
-                            qData = ("id"+":"+query[i].id);
-                        else if(cols[c]=="text")
-                            qData = ("text"+":"+query[i].text);
-                        else if(cols[c]=="values"){
-                            qData = ("values"+":");
-                            var a;
-                            for(a=0;a<query[i].values.length;a++){
-                                qData+=query[i].values[a].value;
-                                if(i+1<query[i].values.length)
-                                    qData+=","
-                            }
-                        }
-                        table += "<td>" + qData + "</td>";
-                    }
-                    table+= "</tr>";
+                let table = `<table border="1">`;
+
+                let header ="<tr>";
+                for(let key in query.items[0]){
+                    header += `<td>${key}</td>`;
                 }
-                table += "</table><br/>";
-                displayArea.innerHTML =  table;
-                //displayArea.innerHTML = JSON.stringify(query2);                  
+                header += "</tr>";
+                
+                table += header;
+                
+                for(let i = 0; i < query.items.length; i++){
+                    
+                    let row = "<tr>";
+                    for(let key in query.items[i]){
+                        row += `<td>${JSON.stringify(query.items[i][key])}</td>`;
+                    }
+                    row += "</tr>";
+                    
+                    table+= row;
+                 }
+                
+                table += "</table>";
+                $table.html(table);                
     }
     
   

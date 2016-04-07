@@ -8,44 +8,11 @@ export class EsInstrumenter {
       this.escodegen = escodegen;
       this.esprimaNodeFactory = new EsprimaNodeFactory();
       this.autoLogTracer = new AutoLogTracer(traceModel.traceDataContainer);
-      this.init();
+      this.Syntax = this.traceModel.traceSyntax;
+      this.TraceParameters = this.traceModel.traceParameters;
+    
   }
-    
-  init(){
-      let Syntax = {
-        AssignmentExpression: 'AssignmentExpression',
-        BinaryExpression: 'BinaryExpression', 
-        CallExpression: 'CallExpression',
-        DoWhileStatement: 'DoWhileStatement',
-        ExpressionStatement: 'ExpressionStatement', 
-        ForStatement: 'ForStatement', 
-        ForInStatement: 'ForInStatement', 
-        FunctionDeclaration: 'FunctionDeclaration',
-        FunctionExpression: 'FunctionExpression',
-        IfStatement: 'IfStatement', 
-        NewExpression: 'NewExpression',
-        Property: 'Property',
-        ReturnStatement: 'ReturnStatement',
-        UnaryExpression: 'UnaryExpression',
-        UpdateExpression: 'UpdateExpression', 
-        VariableDeclaration: 'VariableDeclaration', 
-        VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement'
-    };
-    this.Syntax = Syntax;
-    this.TraceParameters = {
-        type : 0,
-        id : 1,
-        text : 2,
-        value : 3,
-        range : 4,
-        indexRange : 5,
-        extra : 6
-        
-    };
-    
-    }
-    
+
   getTextRange(code, range){
        if(!range){
            return undefined;
