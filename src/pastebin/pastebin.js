@@ -8,7 +8,7 @@ import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
-import {HtmlViewer} from'../htmlViewer/html-viewer';
+import {HtmlViewer} from '../htmlViewer/html-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
