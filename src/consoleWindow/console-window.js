@@ -1,14 +1,11 @@
-
-
 export class ConsoleWindow {
     
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
         this.title = 'Console';
+        this.subscribe();
     }
     
-
-    // TODO: this does not wrok! see github repo for more information.
     attached() {
         let logger = console.log;
         let log = [];
@@ -19,5 +16,17 @@ export class ConsoleWindow {
   	    };
   	    
   	    this.log = log;
+    }
+    
+    subscribe() {
+      let ea = this.eventAggregator;
+
+      ea.subscribe('iframeError', payload => {
+        console.log(JSON.stringify(payload.err));
+      });
+      
+      ea.subscribe('iframeConsoleLog', payload => {
+        console.log(JSON.stringify(payload.log)); 
+      });
     }
 }
