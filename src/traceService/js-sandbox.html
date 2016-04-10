@@ -185,7 +185,7 @@ while(x==5){
         	return stackText;  
         
         }
-            $("#searchTerm").change(function(e){
+            $("#searchTerm").keyup(function(e){
                 // returns an object array of the queried results
                 var select = document.getElementById("optionSelected");
                 var option = select.options[select.selectedIndex].value; 
