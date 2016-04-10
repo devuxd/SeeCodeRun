@@ -930,9 +930,6 @@ System.config({
       "prelude-ls": "npm:prelude-ls@1.1.2",
       "type-check": "npm:type-check@0.3.2"
     },
-    "npm:line-numbers@0.2.0": {
-      "left-pad": "npm:left-pad@0.0.3"
-    },
     "npm:lodash@3.10.1": {
       "process": "github:jspm/nodelibs-process@0.1.2"
     },

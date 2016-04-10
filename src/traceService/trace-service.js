@@ -37,7 +37,7 @@ export class TraceService {
                 this.esTracer.onCodeFailed(payload);
             });
          }else{
-             throw "An EventAggregator is required to listen for code execution events";
+            //  throw "An EventAggregator is required to listen for code execution events";
          }
      
     }

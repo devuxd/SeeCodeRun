@@ -9,12 +9,13 @@ export class JsEditor {
   constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
     this.hasErrors = false;
+    this.editorText = '1';
   }
 
   activate(params) {
-      this.pastebinId = params.id;
+    this.pastebinId = params.id;
   }
-  
+
   attached(params) {
     if (params.id) {
       this.pastebinId = params.id;
@@ -22,16 +23,16 @@ export class JsEditor {
 
     let editor = ace.edit('aceJsEditorDiv');
     this.configureEditor(editor);
-    
+
     this.editor = editor;
-    
+
     let session = editor.getSession();
     this.configureSession(session);
 
     let selection = editor.getSelection();
     this.session = session;
     this.selection = selection;
-    this.firepad = this.createFirepad(editor);        
+    this.firepad = this.createFirepad(editor);
     this.setupSessionEvents(session);
     this.subscribe(session);
   }
@@ -50,33 +51,52 @@ export class JsEditor {
   setupSessionEvents(session) {
     let ea = this.eventAggregator;
     let editor = this.editor;
+    let editorText = this.editorText;
+
     session.on('change',
       onEditorChanged);
 
     let editorChangedTimeout;
-    
+
     function onEditorChanged(e) {
-	  
+
       clearTimeout(editorChangedTimeout);
-	  
-      editorChangedTimeout = setTimeout(function pub() { 
+
+      editorChangedTimeout = setTimeout(function pub() {
         let js = editor.getValue();
-        let curs = editor.getCursorPosition().row+1;  
-       
+        let curs = editor.getCursorPosition().row + 1;
+        let hash = js.replace(/\s+/g, '');
+        hash = CryptoJS.MD5(hash);
+
+        if (editorText > hash || editorText < hash) {
+          console.info("Changed");
+          editorText = hash;
+
+          ea.publish('onJsEditorChanged', {
+            js: js,
+            length: session.getLength(),
+            cursor: curs
+
+          });
+
+        }
+
+        else {
+          editorText = hash;
+
+          console.info("Not changed");
+
+        }
         // subscribe to this event to be notified with the following data when the JS-editor changed.   
         //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
-        
-         ea.publish('onJsEditorChanged', {
-            js: js, 
-            length: session.getLength(), 
-            cursor: curs
-        });
-      }, 2500);
-}
-     
-     
- 
 
+
+      }, 2500);
+    }
+
+
+
+    this.editorText = editorText;
     this.editorChangedTimeout = editorChangedTimeout;
 
     session.on('changeAnnotation',
@@ -97,30 +117,28 @@ export class JsEditor {
         annotation: null
       });
     }
-      
 
-      // Copy event for Vis-viewer
-      editor.on('copy', expression =>
-      {
-           ea.publish('onEditorCopy', {
-            expression: expression,
-            row: editor.getCursorPosition().row +1,
-            column: editor.getCursorPosition().column+1
-            
-      });});
 
-       //For gutter
-    session.selection.on
-           ('changeCursor', () => {
+    // Copy event for Vis-viewer
+    editor.on('copy', expression => {
+      ea.publish('onEditorCopy', {
+        expression: expression,
+        row: editor.getCursorPosition().row + 1,
+        column: editor.getCursorPosition().column + 1
 
-           let info =
-           {
-              cursor : this.editor.getCursorPosition().row+1,
-              lastVisibleRow: session.getLength()
-               
-           }; 
-            ea.publish('onCursorMoved', info );
-          });
+      });
+    });
+
+    //For gutter
+    session.selection.on('changeCursor', () => {
+
+      let info = {
+        cursor: this.editor.getCursorPosition().row + 1,
+        lastVisibleRow: session.getLength()
+
+      };
+      ea.publish('onCursorMoved', info);
+    });
   }
 
   createFirepad(editor) {
@@ -129,8 +147,7 @@ export class JsEditor {
 
     return Firepad.fromACE(
       firebase,
-      editor,
-      {
+      editor, {
         defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
       });
   }
@@ -146,17 +163,22 @@ export class JsEditor {
 
       if (payload.hasErrors) {
         console.log('has errors at: ' + payload.annotation);
-      } else {
+      }
+      else {
         console.log('no errors');
       }
     });
 
-    
-    // This is event is published by js-gutter.js to scroll the JS editor. 
-     ea.subscribe('onScrolled', info =>  {     
+
+    // This  event is published by js-gutter.js to scroll the JS editor. 
+    ea.subscribe('onScrolled', info => {
       session.setScrollTop(info.top);
     });
-  
-}
- 
+
+  }
+
+  setEditorText(hash) {
+    this.editorText = hash;
+  }
+
 }
