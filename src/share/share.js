@@ -25,7 +25,9 @@ export class Share {
     }
 
     //New Firebase share Reference
-    var shareFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId);
+   // var shareFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId);
+    
+    var shareFirebaseRef2 = 'https://seecode.run/#' + this.pastebinId;
 
     $(document).ready(function setUpShareBox() {
           $('#shareDiv').hide();
@@ -37,7 +39,7 @@ export class Share {
         });
 
 
-    document.getElementById("copyTarget").value = shareFirebaseRef;
+    document.getElementById("copyTarget").value = shareFirebaseRef2;
     
     document.getElementById("copyButton").addEventListener("click", function() {
         copyToClipboard(document.getElementById("copyTarget"));
