@@ -6,9 +6,15 @@ export class TraceQueryManager{
 	}
 	
     contains(a,b){
+        if(!a){
+            return false;
+        }
         return (a.toString().indexOf(b) > -1);
     }
     containsIgnoreCase(a,b){
+        if(!a){
+            return false;
+        }
         return (a.toString().toLowerCase().indexOf(b) > -1);
     }
 
