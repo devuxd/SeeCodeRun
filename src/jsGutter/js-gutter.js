@@ -6,12 +6,13 @@ import {
 }
 from '../traceService/trace-helper';
 
+import {TraceModel} from '../traceService/trace-model';
 export class JsGutter {
 
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
         this.selectedLine = 1;
-        this.traceHelper = new TraceHelper();
+        this.traceModel = new TraceModel();
 
     }
 
@@ -63,15 +64,23 @@ export class JsGutter {
 
         });
 
-        ea.subscribe('traceChanged', payload => {
-                this.updateGutter(payload.data.trace);
-            }
-
-        );
+    //   Gettting vaules from TraceHelper 
+        let traceChangedEvent = this.traceModel.traceEvents.changed.event;
+        ea.subscribe( traceChangedEvent, payload =>{
+            let traceHelper = payload.data;
+                this.updateGutter(traceHelper.getValues());
+        });
 
     }
+    
+    
 
-    updateGutter(trace) {
+    updateGutter(values) {
+        
+
+         console.info(values);
+        
+        
         // let values1_1 = ['Executed 10 times from 0...9'];
         // this.setContentGutter(1, values1_1);
 

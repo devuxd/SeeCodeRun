@@ -65,8 +65,11 @@ export class JsEditor {
       editorChangedTimeout = setTimeout(function pub() {
         let js = editor.getValue();
         let curs = editor.getCursorPosition().row + 1;
-        let hash = js.replace(/\s+/g, '');
-        hash = CryptoJS.MD5(hash);
+       
+       
+        let newStr = js.replace(/(\s+$)/g,'');
+        // console.info(newStr);
+        let hash = CryptoJS.MD5(newStr);
 
         if (editorText > hash || editorText < hash) {
           console.info("Changed");
@@ -85,7 +88,6 @@ export class JsEditor {
           editorText = hash;
 
           console.info("Not changed");
-
         }
         // subscribe to this event to be notified with the following data when the JS-editor changed.   
         //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
