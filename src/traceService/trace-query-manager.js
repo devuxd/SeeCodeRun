@@ -28,7 +28,7 @@ export class TraceQueryManager{
         switch(filters[filterSelection]){
         	case filters.any:
                 query = dataSet.where(function(item){return contains(item.id,searchTerm)||contains(item.type,searchTerm)||
-                    contains(item.text,searchTerm)||contains(item.values,searchTerm);    
+                    contains(item.text,searchTerm)||contains(item.value,searchTerm);    
                     });
         		break;
         	default:
