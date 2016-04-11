@@ -34,6 +34,7 @@ export class TraceModel{
         this.traceSyntax = {
             AssignmentExpression: 'AssignmentExpression',
             BinaryExpression: 'BinaryExpression', 
+            BlockStatement: 'BlockStatement',
             CallExpression: 'CallExpression',
             DoWhileStatement: 'DoWhileStatement',
             ExpressionStatement: 'ExpressionStatement', 
@@ -43,6 +44,7 @@ export class TraceModel{
             FunctionExpression: 'FunctionExpression',
             IfStatement: 'IfStatement', 
             NewExpression: 'NewExpression',
+            Program: 'Program',
             Property: 'Property',
             ReturnStatement: 'ReturnStatement',
             UnaryExpression: 'UnaryExpression',
@@ -55,8 +57,8 @@ export class TraceModel{
         let Syntax = {
             AssignmentExpression: 'AssignmentExpression',
             ArrayExpression: 'ArrayExpression',
-            BlockStatement: 'BlockStatement',
             BinaryExpression: 'BinaryExpression',
+            BlockStatement: 'BlockStatement',
             BreakStatement: 'BreakStatement',
             CallExpression: 'CallExpression',
             CatchClause: 'CatchClause',

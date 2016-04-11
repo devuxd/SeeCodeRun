@@ -3,6 +3,17 @@ export class AutoLogTracer{
         this.traceDataContainer = traceDataContainer;
     }
     
+    wrapCodeInTimeOut(code, timeLimit){
+        return `
+            var codeRunningtimeOut = setTimeout(function(){ throw "Code execution exceeded time limit of ${timeLimit}"; }, ${timeLimit});
+            
+            ${code}
+            
+            clearTimeout(codeRunningtimeOut);
+        `;
+        
+    }
+    
     getTraceDataContainerCodeBoilerPlate(){
         return `
         var  out = document.getElementById("${this.traceDataContainer}");
@@ -64,7 +75,7 @@ export class AutoLogTracer{
         WithStatement: 'WithStatement'
     };
     var traceTypes = {
-        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement],
         Expression: [
             Syntax.UnaryExpression,
             Syntax.UpdateExpression,
@@ -93,7 +104,8 @@ export class AutoLogTracer{
         window.TRACE = {
             hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [], 
             autoLog: function autoLog(info) {
-                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
+                var extra = info.extra ? info.extra : '';
+                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1] + ':' + extra;
                 
                 if(traceTypes.LocalStack.indexOf(info.type)>-1){
     				this.stack.push(key);
