@@ -13,7 +13,8 @@ export class TraceSearch{
             searchBoxChanged: undefined,
             updateTable: this.updateTable,
             searchFilters: this.traceModel.traceSearchfilters,
-            traceHelper: undefined
+            traceHelper: undefined,
+            $searchNumResults: undefined
         };
     }
 
@@ -23,6 +24,7 @@ export class TraceSearch{
         
         searchBox.$searchTerm = $("#searchTerm");
         searchBox.$searchFilter = $("#searchFilter");
+        searchBox.$searchNumResults = $("#numResultCount");
         
         if(this.$table){
             searchBox.$table = this.$table;
@@ -68,6 +70,8 @@ export class TraceSearch{
     updateTable(searchBox, query){
                 let $table = searchBox.$table;
                 
+                let $numResults = searchBox.$searchNumResults;
+                
                 if(!$table){
                     throw "No table container received.";
                 }
@@ -80,7 +84,7 @@ export class TraceSearch{
                     $table.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
                     return;
                 }
-                let table = `<table border="1">`;
+                let table = "<table>";
 
                 let header ="<tr>";
                 for(let key in query.items[0]){
@@ -102,7 +106,8 @@ export class TraceSearch{
                  }
                 
                 table += "</table>";
-                $table.html(table);                
+                $table.html(table);   
+                $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
     }
     
   

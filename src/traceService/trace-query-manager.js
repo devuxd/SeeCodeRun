@@ -1,4 +1,4 @@
-import JsLinQ from "jslinq";
+import jslinq from "jslinq";
 
 export class TraceQueryManager{
 	constructor(traceModel){
@@ -6,14 +6,14 @@ export class TraceQueryManager{
 	}
 	
     contains(a,b){
-        return (a.toString().indexOf(b) > -1);
+        return (a!=null ? a.toString().indexOf(b) > -1 : false);
     }
     containsIgnoreCase(a,b){
-        return (a.toString().toLowerCase().indexOf(b) > -1);
+        return (a!=null ? a.toString().toLowerCase().indexOf(b) > -1 : false);
     }
 
     getQuery(rawData, filterSelection, searchTerm){
-        let contains = this.contains, filters = this.filters, dataSet = JsLinQ(rawData), query;
+        let contains = this.contains, filters = this.filters, dataSet = jslinq(rawData), query;
         
         if(searchTerm === ""){
             return dataSet;
@@ -21,14 +21,14 @@ export class TraceQueryManager{
         
         switch(filters[filterSelection]){
         	case filters.any:
-                query = dataSet.where(function(item){return contains(item.id,searchTerm)||contains(item.type,searchTerm)||
-                    contains(item.text,searchTerm)||contains(item.values,searchTerm);    
-                    }).ToArray();
+                query = dataSet.where(function(item){
+                    return (contains(item.id,searchTerm)||contains(item.type,searchTerm)||contains(item.text,searchTerm)||contains(item.value,searchTerm));    
+                    });
         		break;
         	default:
                 query = dataSet.where(function(item){
-                    return contains(item[filterSelection],searchTerm);
-                    }).ToArray();
+                    return (contains(item[filterSelection],searchTerm));
+                    });
         		break;  
         }
         return query;
