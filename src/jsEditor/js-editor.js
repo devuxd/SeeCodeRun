@@ -65,10 +65,9 @@ export class JsEditor {
       editorChangedTimeout = setTimeout(function pub() {
         let js = editor.getValue();
         let curs = editor.getCursorPosition().row + 1;
-       
-       
-        let newStr = js.replace(/(\s+$)/g,'');
-        // console.info(newStr);
+
+
+        let newStr = js.replace(/(\s+$)/g, '');
         let hash = CryptoJS.MD5(newStr);
 
         if (editorText > hash || editorText < hash) {
@@ -81,7 +80,7 @@ export class JsEditor {
             cursor: curs
 
           });
-
+          console.info("Changed Event published!");
         }
 
         else {
