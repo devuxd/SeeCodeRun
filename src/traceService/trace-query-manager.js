@@ -23,12 +23,12 @@ export class TraceQueryManager{
         	case filters.any:
                 query = dataSet.where(function(item){return contains(item.id,searchTerm)||contains(item.type,searchTerm)||
                     contains(item.text,searchTerm)||contains(item.values,searchTerm);    
-                    }).ToArray();
+                    });
         		break;
         	default:
                 query = dataSet.where(function(item){
                     return contains(item[filterSelection],searchTerm);
-                    }).ToArray();
+                    });
         		break;  
         }
         return query;

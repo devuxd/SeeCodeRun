@@ -96,10 +96,10 @@ export class AutoLogTracer{
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
                 
                 if(traceTypes.LocalStack.indexOf(info.type)>-1){
-    				this.stack.push(key) ;
+    				this.stack.push(key);
                 }
 
-                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression){
+                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression||info.type === Syntax.UpdateExpression){
                    this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range}); 
                 }
 
