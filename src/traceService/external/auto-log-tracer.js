@@ -3,13 +3,14 @@ export class AutoLogTracer{
         this.traceDataContainer = traceDataContainer;
     }
     
-    wrapCodeInTimeOut(code, timeLimit){
+    wrapCodeInTryCatch(code){
         return `
-            var codeRunningtimeOut = setTimeout(function(){ throw "Code execution exceeded time limit of ${timeLimit}"; }, ${timeLimit});
-            
-            ${code}
-            
-            clearTimeout(codeRunningtimeOut);
+            try{
+                ${code}
+            }catch(e){
+                console.log(e);
+                throw e;
+            }
         `;
         
     }
@@ -30,8 +31,11 @@ export class AutoLogTracer{
         out.innerHTML= JSON.stringify(window.TRACE.getTraceData());
         `;
     }
-    getAutologCodeBoilerPlate(){
+    getAutologCodeBoilerPlate(timeLimit){
         return `
+        window.START_TIME = +new Date();
+        window.TIME_LIMIT = ${timeLimit};
+        
         var Syntax = {
         AssignmentExpression: 'AssignmentExpression',
         ArrayExpression: 'ArrayExpression',
@@ -104,6 +108,13 @@ export class AutoLogTracer{
         window.TRACE = {
             hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [], 
             autoLog: function autoLog(info) {
+                if(this.hits.length < 1){
+                    window.START_TIME = +new Date();
+                }
+                var duration = (+new Date()) - window.START_TIME ;
+                if(duration > window.TIME_LIMIT){
+                     throw "Trace Timeout. Running code exceeded " + window.TIME_LIMIT + " ms time limit.";
+                }
                 var extra = info.extra ? info.extra : '';
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1] + ':' + extra;
                 

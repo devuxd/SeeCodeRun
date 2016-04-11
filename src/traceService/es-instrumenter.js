@@ -702,8 +702,8 @@ export class EsInstrumenter {
 
         instrumentedCode = `
             ${this.autoLogTracer.getTraceDataContainerCodeBoilerPlate()}
-            ${this.autoLogTracer.getAutologCodeBoilerPlate()}
-            ${this.autoLogTracer.wrapCodeInTimeOut(instrumentedCode, this.traceModel.timeLimit)}
+            ${this.autoLogTracer.getAutologCodeBoilerPlate(this.traceModel.timeLimit)}
+            ${this.autoLogTracer.wrapCodeInTryCatch(instrumentedCode)}
             ${this.autoLogTracer.getTraceDataCodeBoilerPlate()}
         `;
 
