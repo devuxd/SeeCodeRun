@@ -66,32 +66,26 @@ export class JsEditor {
         let js = editor.getValue();
         let curs = editor.getCursorPosition().row + 1;
 
-
+        // This line strip out the spaces at the end of the documents
         let newStr = js.replace(/(\s+$)/g, '');
+        // then, hash it and store it in hash variable 
         let hash = CryptoJS.MD5(newStr);
 
         if (editorText > hash || editorText < hash) {
           console.info("Changed");
           editorText = hash;
-
+          // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
             js: js,
             length: session.getLength(),
             cursor: curs
-
           });
           console.info("Changed Event published!");
         }
-
         else {
           editorText = hash;
 
-          console.info("Not changed");
         }
-        // subscribe to this event to be notified with the following data when the JS-editor changed.   
-        //TODO: make this smarter by only publishing the event when there is an actual input i.e. not empty space.
-
-
       }, 2500);
     }
 
