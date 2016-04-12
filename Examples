@@ -1,0 +1,23 @@
+
+
+var a= false;
+var b = 0;
+while(b< 5){
+    var  c=b+1;
+    
+    b++;
+}
+
+
+
+
+var a= false;
+var b = 0;
+
+while(b< 5){
+    var c=b%5;
+    
+    b= b+1*2/4;
+    
+    a = b%2 == 0 ? true : false; 
+}
