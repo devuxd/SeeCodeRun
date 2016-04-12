@@ -3,6 +3,18 @@ export class AutoLogTracer{
         this.traceDataContainer = traceDataContainer;
     }
     
+    wrapCodeInTryCatch(code){
+        return `
+            try{
+                ${code}
+            }catch(e){
+                console.log(e);
+                throw e;
+            }
+        `;
+        
+    }
+    
     getTraceDataContainerCodeBoilerPlate(){
         return `
         var  out = document.getElementById("${this.traceDataContainer}");
@@ -19,8 +31,11 @@ export class AutoLogTracer{
         out.innerHTML= JSON.stringify(window.TRACE.getTraceData());
         `;
     }
-    getAutologCodeBoilerPlate(){
+    getAutologCodeBoilerPlate(timeLimit){
         return `
+        window.START_TIME = +new Date();
+        window.TIME_LIMIT = ${timeLimit};
+        
         var Syntax = {
         AssignmentExpression: 'AssignmentExpression',
         ArrayExpression: 'ArrayExpression',
@@ -64,7 +79,7 @@ export class AutoLogTracer{
         WithStatement: 'WithStatement'
     };
     var traceTypes = {
-        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+        Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
         Expression: [
             Syntax.UnaryExpression,
             Syntax.UpdateExpression,
@@ -73,12 +88,14 @@ export class AutoLogTracer{
             Syntax.VariableDeclarator,
             Syntax.AssignmentExpression,
             Syntax.BinaryExpression,
+            Syntax.Identifier,
             Syntax.ReturnStatement,
             Syntax.ForStatement,
             Syntax.ForInStatement,
             Syntax.WhileStatement,
             Syntax.DoWhileStatement,
-            Syntax.ExpressionStatement
+            Syntax.ExpressionStatement,
+            Syntax.SwitchStatement
             ],
         ExpressionStatement : [
             Syntax.ExpressionStatement
@@ -93,14 +110,26 @@ export class AutoLogTracer{
         window.TRACE = {
             hits: {}, data: {}, stack : [], execution : [], variables: [], values : [], timeline: [], identifiers: [], 
             autoLog: function autoLog(info) {
-                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1];
+                if(this.hits.length < 1){
+                    window.START_TIME = +new Date();
+                }
+                var duration = (+new Date()) - window.START_TIME ;
+                if(duration > window.TIME_LIMIT){
+                     throw "Trace Timeout. Running code exceeded " + window.TIME_LIMIT + " ms time limit.";
+                }
+                var extra = info.extra ? info.extra : '';
+                var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1] + ':' + extra;
                 
-                if(traceTypes.LocalStack.indexOf(info.type)>-1){
-    				this.stack.push(key) ;
+                if(traceTypes.Stack.indexOf(info.type)>-1){
+    				this.stack.push(key);
                 }
 
-                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression){
-                   this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range}); 
+                if(traceTypes.Expression.indexOf(info.type)>-1){
+                    if(info.id){
+                        this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range});
+                    }else{
+                        this.values.push({'id': info.text , 'value': JSON.stringify(info.value), 'range': info.range});
+                    }
                 }
 
                 this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});

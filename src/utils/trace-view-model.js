@@ -30,7 +30,7 @@ export class TraceViewModel {
     onTraceChanged(traceHelper){
             this.traceHelper = traceHelper;
             
-            let stackTrace = traceHelper.getStackTrace();
+            let stackTrace = traceHelper.getStackBlockCounts();
 
             let previousRows = this.traceGutterData.rows;
             this.updateTraceGutterData(stackTrace);

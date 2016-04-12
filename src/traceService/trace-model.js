@@ -34,6 +34,7 @@ export class TraceModel{
         this.traceSyntax = {
             AssignmentExpression: 'AssignmentExpression',
             BinaryExpression: 'BinaryExpression', 
+            BlockStatement: 'BlockStatement',
             CallExpression: 'CallExpression',
             DoWhileStatement: 'DoWhileStatement',
             ExpressionStatement: 'ExpressionStatement', 
@@ -41,10 +42,14 @@ export class TraceModel{
             ForInStatement: 'ForInStatement', 
             FunctionDeclaration: 'FunctionDeclaration',
             FunctionExpression: 'FunctionExpression',
+            Identifier: 'Identifier',
             IfStatement: 'IfStatement', 
             NewExpression: 'NewExpression',
+            Program: 'Program',
             Property: 'Property',
             ReturnStatement: 'ReturnStatement',
+            SwitchStatement: 'SwitchStatement',
+            SwitchCase: 'SwitchCase',
             UnaryExpression: 'UnaryExpression',
             UpdateExpression: 'UpdateExpression', 
             VariableDeclaration: 'VariableDeclaration', 
@@ -55,8 +60,8 @@ export class TraceModel{
         let Syntax = {
             AssignmentExpression: 'AssignmentExpression',
             ArrayExpression: 'ArrayExpression',
-            BlockStatement: 'BlockStatement',
             BinaryExpression: 'BinaryExpression',
+            BlockStatement: 'BlockStatement',
             BreakStatement: 'BreakStatement',
             CallExpression: 'CallExpression',
             CatchClause: 'CatchClause',
@@ -96,7 +101,7 @@ export class TraceModel{
         };
         
         this.traceTypes = {
-            LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+            Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
             Expression: [
                 Syntax.UnaryExpression,
                 Syntax.UpdateExpression,
@@ -105,12 +110,14 @@ export class TraceModel{
                 Syntax.VariableDeclarator,
                 Syntax.AssignmentExpression,
                 Syntax.BinaryExpression,
+                Syntax.Identifier,
                 Syntax.ReturnStatement,
                 Syntax.ForStatement,
                 Syntax.ForInStatement,
                 Syntax.WhileStatement,
                 Syntax.DoWhileStatement,
-                Syntax.ExpressionStatement
+                Syntax.ExpressionStatement,
+                Syntax.SwitchStatement
                 ],
             ExpressionStatement : [
                 Syntax.ExpressionStatement
@@ -119,10 +126,10 @@ export class TraceModel{
             Condition: [],
             Loop: [Syntax.WhileStatement],
             exception: []
+            
         };
         
         this.esSyntax = Syntax;
-        
         
         this.executionEvents = {
             running : {  event :'codeRunning'   , description : 'Tracing Code...' },
