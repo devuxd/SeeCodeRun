@@ -10,7 +10,6 @@ export class ConsoleWindow {
     attached() {
         let logger = console.log;
         let log = [];
-        console.count();
         console.log = function () {
             log.push(Array.prototype.slice.call(arguments));
   	        logger.apply(this, Array.prototype.slice.call(arguments));

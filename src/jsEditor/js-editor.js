@@ -72,7 +72,6 @@ export class JsEditor {
         let hash = CryptoJS.MD5(newStr);
 
         if (editorText > hash || editorText < hash) {
-          console.info("Changed");
           editorText = hash;
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
@@ -80,7 +79,6 @@ export class JsEditor {
             length: session.getLength(),
             cursor: curs
           });
-          console.info("Changed Event published!");
         }
         else {
           editorText = hash;
