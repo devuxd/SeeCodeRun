@@ -79,7 +79,7 @@ export class AutoLogTracer{
         WithStatement: 'WithStatement'
     };
     var traceTypes = {
-        LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement],
+        Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
         Expression: [
             Syntax.UnaryExpression,
             Syntax.UpdateExpression,
@@ -88,12 +88,14 @@ export class AutoLogTracer{
             Syntax.VariableDeclarator,
             Syntax.AssignmentExpression,
             Syntax.BinaryExpression,
+            Syntax.Identifier,
             Syntax.ReturnStatement,
             Syntax.ForStatement,
             Syntax.ForInStatement,
             Syntax.WhileStatement,
             Syntax.DoWhileStatement,
-            Syntax.ExpressionStatement
+            Syntax.ExpressionStatement,
+            Syntax.SwitchStatement
             ],
         ExpressionStatement : [
             Syntax.ExpressionStatement
@@ -118,12 +120,16 @@ export class AutoLogTracer{
                 var extra = info.extra ? info.extra : '';
                 var key = info.text + ':' + info.indexRange[0]+':' + info.indexRange[1] + ':' + extra;
                 
-                if(traceTypes.LocalStack.indexOf(info.type)>-1){
+                if(traceTypes.Stack.indexOf(info.type)>-1){
     				this.stack.push(key);
                 }
 
-                if(info.type === Syntax.VariableDeclarator || info.type === Syntax.AssignmentExpression||info.type === Syntax.UpdateExpression){
-                   this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range}); 
+                if(traceTypes.Expression.indexOf(info.type)>-1){
+                    if(info.id){
+                        this.values.push({'id': info.id , 'value': JSON.stringify(info.value), 'range': info.range});
+                    }else{
+                        this.values.push({'id': info.text , 'value': JSON.stringify(info.value), 'range': info.range});
+                    }
                 }
 
                 this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});

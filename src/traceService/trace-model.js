@@ -42,11 +42,14 @@ export class TraceModel{
             ForInStatement: 'ForInStatement', 
             FunctionDeclaration: 'FunctionDeclaration',
             FunctionExpression: 'FunctionExpression',
+            Identifier: 'Identifier',
             IfStatement: 'IfStatement', 
             NewExpression: 'NewExpression',
             Program: 'Program',
             Property: 'Property',
             ReturnStatement: 'ReturnStatement',
+            SwitchStatement: 'SwitchStatement',
+            SwitchCase: 'SwitchCase',
             UnaryExpression: 'UnaryExpression',
             UpdateExpression: 'UpdateExpression', 
             VariableDeclaration: 'VariableDeclaration', 
@@ -98,7 +101,7 @@ export class TraceModel{
         };
         
         this.traceTypes = {
-            LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+            Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
             Expression: [
                 Syntax.UnaryExpression,
                 Syntax.UpdateExpression,
@@ -107,12 +110,14 @@ export class TraceModel{
                 Syntax.VariableDeclarator,
                 Syntax.AssignmentExpression,
                 Syntax.BinaryExpression,
+                Syntax.Identifier,
                 Syntax.ReturnStatement,
                 Syntax.ForStatement,
                 Syntax.ForInStatement,
                 Syntax.WhileStatement,
                 Syntax.DoWhileStatement,
-                Syntax.ExpressionStatement
+                Syntax.ExpressionStatement,
+                Syntax.SwitchStatement
                 ],
             ExpressionStatement : [
                 Syntax.ExpressionStatement
@@ -121,10 +126,10 @@ export class TraceModel{
             Condition: [],
             Loop: [Syntax.WhileStatement],
             exception: []
+            
         };
         
         this.esSyntax = Syntax;
-        
         
         this.executionEvents = {
             running : {  event :'codeRunning'   , description : 'Tracing Code...' },
