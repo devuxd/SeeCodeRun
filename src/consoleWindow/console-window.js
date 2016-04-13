@@ -3,7 +3,6 @@ export class ConsoleWindow {
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
         this.title = 'Console';
-        this.errorFormat= ' color:red;'
         this.subscribe();
     }
     
