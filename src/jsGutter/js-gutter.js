@@ -91,8 +91,7 @@ export class JsGutter {
         if (line > lastDiv) {
             throw ("Line " + line + " does not exist" + "last visible line is  " + lastDiv);
         }
-        let iframeBody = $('#gutter');
-        iframeBody.find("#line" + line).append(" [ " + contents + " ] ");
+        this.iframeBody.find("#line" + line).append(" [ " + contents + " ] ");
     }
 
     createLine(line) {

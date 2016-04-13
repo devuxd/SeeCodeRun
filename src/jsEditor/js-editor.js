@@ -67,13 +67,12 @@ export class JsEditor {
         let js = editor.getValue();
         let curs = editor.getCursorPosition().row + 1;
 
-        // This line strip out the spaces at the end of the documents
+        // This line strip out the spaces at the end of the documents.
         let newStr = js.replace(/(\s+$)/g, '');
-        // then, hash it and store it in localHash variable 
+        // then, hash it and store it in localHash variable.
         let localHash = md5(newStr);
         if (editorHashedText != localHash ) {
           editorHashedText = localHash; 
-          console.info(localHash);
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
             js: js,
@@ -81,7 +80,6 @@ export class JsEditor {
             cursor: curs
           });
         }
-            console.info(localHash);
 
 
       }, 2500);

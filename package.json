@@ -1,6 +1,6 @@
 {
   "name": "SeeCode.Run",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A JavaScript IDE with execution trace visualizations",
   "keywords": [
     "seecoderun"
