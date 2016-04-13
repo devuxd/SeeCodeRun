@@ -394,3 +394,9 @@ td, th {
   color: #888888;
   font-size: 16px !important;
 }
+
+.w3-table, .w3-table tr, .w3-table td {
+   border-collapse: collapse; 
+   border: 2px solid black;
+}
+
