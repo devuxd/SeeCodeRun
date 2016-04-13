@@ -3,13 +3,14 @@
 /* global ace */
 import '../mode-javascript';
 import '../theme-chrome';
-
+import md5 from 'md5';
 export class JsEditor {
 
   constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
     this.hasErrors = false;
-    this.editorText = '1';
+    this.editorHashedText = '1';
+    this.md5=md5;
   }
 
   activate(params) {
@@ -51,7 +52,7 @@ export class JsEditor {
   setupSessionEvents(session) {
     let ea = this.eventAggregator;
     let editor = this.editor;
-    let editorText = this.editorText;
+    let editorHashedText = this.editorHashedText;
 
     session.on('change',
       onEditorChanged);
@@ -68,11 +69,11 @@ export class JsEditor {
 
         // This line strip out the spaces at the end of the documents
         let newStr = js.replace(/(\s+$)/g, '');
-        // then, hash it and store it in hash variable 
-        let hash = CryptoJS.MD5(newStr);
-
-        if (editorText > hash || editorText < hash) {
-          editorText = hash;
+        // then, hash it and store it in localHash variable 
+        let localHash = md5(newStr);
+        if (editorHashedText != localHash ) {
+          editorHashedText = localHash; 
+          console.info(localHash);
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
             js: js,
@@ -80,13 +81,15 @@ export class JsEditor {
             cursor: curs
           });
         }
-        
+            console.info(localHash);
+
+
       }, 2500);
     }
 
 
 
-    this.editorText = editorText;
+    this.editorHashedText = editorHashedText;
     this.editorChangedTimeout = editorChangedTimeout;
 
     session.on('changeAnnotation',

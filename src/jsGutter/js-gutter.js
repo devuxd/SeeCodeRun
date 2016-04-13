@@ -14,12 +14,14 @@ export class JsGutter {
 
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
-        this.selectedLine = 1;
+        this.selectedLine = '';
         this.traceModel = new TraceModel();
 
     }
 
     attached() {
+        this.iframeBody = $('#gutter');
+
         this.subscribe();
 
     }
@@ -44,19 +46,18 @@ export class JsGutter {
         ea.subscribe('onCursorMoved', info => {
 
             let lastDiv = this.getLastDiv();
-            let iframeBody = $('#gutter');
             let line = info.cursor;
             let lastline = info.lastVisibleRow;
 
-            if (iframeBody.find('#line' + lastline).length == 0) {
-                this.CreateLine(lastline);
+            if (this.iframeBody.find('#line' + lastline).length == 0) {
+                this.createLine(lastline);
             }
             if (lastline < lastDiv) {
                 this.removeLine(lastline, lastDiv);
             }
 
-            iframeBody.find("#line" + this.selectedLine).removeClass("highlight_gutter");
-            iframeBody.find("#line" + line).addClass("highlight_gutter");
+            this.iframeBody.find("#line" + this.selectedLine).removeClass("highlight_gutter");
+            this.iframeBody.find("#line" + line).addClass("highlight_gutter");
             this.selectedLine = line;
 
 
@@ -94,43 +95,39 @@ export class JsGutter {
         iframeBody.find("#line" + line).append(" [ " + contents + " ] ");
     }
 
-    CreateLine(line) {
-        let iframeBody = $('#gutter');
+    createLine(line) {
         let indexOfDiv = this.getLastDiv();
         for (indexOfDiv; indexOfDiv <= line; indexOfDiv++) {
-            iframeBody.append("<div id=line" + indexOfDiv + "></div>");
-            iframeBody.find("#line" + indexOfDiv).addClass("line_height");
+            this.iframeBody.append("<div id=line" + indexOfDiv + "></div>");
+            this.iframeBody.find("#line" + indexOfDiv).addClass("line_height");
         }
     }
     getLastDiv() {
-        let iframeBody = $('#gutter');
         let indexOfDiv = 1;
-        while (iframeBody.find('#line' + indexOfDiv).length != 0) {
+        while (this.iframeBody.find('#line' + indexOfDiv).length != 0) {
             indexOfDiv++;
         }
         return indexOfDiv;
     }
     removeLine(lastline, lastDiv) {
-        let iframeBody = $('#gutter');
         while (lastline < lastDiv) {
-            iframeBody.find('#line' + lastDiv).remove();
+            this.iframeBody.find('#line' + lastDiv).remove();
             lastDiv--;
         }
     }
     highlightLine(line, lastline) {
 
         let lastDiv = this.getLastDiv();
-        let iframeBody = $('#gutter');
         let selectedLine = this.selectedLine;
-        if (iframeBody.find('#line' + lastline).length == 0) {
-            this.CreateLine(lastline);
+        if (this.iframeBody.find('#line' + lastline).length == 0) {
+            this.createLine(lastline);
         }
         if (lastline < lastDiv) {
             this.removeLine(lastline, lastDiv);
         }
 
-        iframeBody.find("#line" + selectedLine).removeClass("highlight_gutter");
-        iframeBody.find("#line" + line).addClass("highlight_gutter");
+        this.iframeBody.find("#line" + selectedLine).removeClass("highlight_gutter");
+        this.iframeBody.find("#line" + line).addClass("highlight_gutter");
         this.selectedLine = line;
 
 
@@ -138,10 +135,9 @@ export class JsGutter {
     }
 
     clearGutter() {
-        let iframeBody = $('#gutter');
         let lines = this.getLastDiv();
         while (lines > 0) {
-            iframeBody.find("#line" + lines).html('');
+            this.iframeBody.find("#line" + lines).html('');
             lines--;
         }
     }
