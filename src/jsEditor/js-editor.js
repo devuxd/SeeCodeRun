@@ -80,10 +80,7 @@ export class JsEditor {
             cursor: curs
           });
         }
-        else {
-          editorText = hash;
-
-        }
+        
       }, 2500);
     }
 
