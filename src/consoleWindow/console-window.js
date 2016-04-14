@@ -9,7 +9,6 @@ export class ConsoleWindow {
     attached() {
         let logger = console.log;
         let log = [];
-        
         console.log = function () {
             log.push(Array.prototype.slice.call(arguments));
   	        logger.apply(this, Array.prototype.slice.call(arguments));
@@ -26,7 +25,7 @@ export class ConsoleWindow {
       });
       
       ea.subscribe('iframeConsoleLog', payload => {
-        console.log(JSON.stringify(payload.log)); 
+        console.log(JSON.stringify(payload.log));
       });
     }
 }

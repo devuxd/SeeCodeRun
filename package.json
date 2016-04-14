@@ -1,6 +1,6 @@
 {
   "name": "SeeCode.Run",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A JavaScript IDE with execution trace visualizations",
   "keywords": [
     "seecoderun"
@@ -85,6 +85,7 @@
       "jquery-ui": "github:components/jqueryui@^1.11.4",
       "jslinq": "npm:jslinq@^1.0.15",
       "json": "github:systemjs/plugin-json@^0.1.0",
+      "md5": "npm:md5@^2.1.0",
       "tarball": "npm:tarball@^0.0.5",
       "text": "github:systemjs/plugin-text@^0.0.3"
     },
