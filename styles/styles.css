@@ -394,3 +394,15 @@ td, th {
   color: #888888;
   font-size: 16px !important;
 }
+
+.vis-dropdown > li > a {
+  cursor: pointer;
+}
+
+vis-viewer div.vis-dropdown > ul > li {
+  cursor: pointer;
+}
+
+vis-viewer .vis-container {
+  border: 1px solid black;
+}

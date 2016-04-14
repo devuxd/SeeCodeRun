@@ -1,50 +1,53 @@
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {inject} from 'aurelia-framework';
-import * as d3 from 'd3'; 
+import * as d3 from 'd3';
 import {VisualizationFactory} from '../visualization/visualizationFactory';
 import {Visualization} from '../visualization/visualization';
- 
+
 @inject(EventAggregator)
 export class VisViewer {
-    
-    constructor(eventAggregator) {
-        this.eventAggregator = eventAggregator;
-        
-        this.visualizations = [];
-        
-        let factory = new VisualizationFactory();
-        
-        let dataTableConfig = factory.getVisualizationByType('DataTable');
-        let dataTableVisualization = new Visualization(d3, this.eventAggregator, dataTableConfig.config);
 
-        this.visualizations.push(dataTableVisualization);
-        
-          this.isChecked = false;
-          this.subscribe();
+  constructor(eventAggregator) {
+    this.eventAggregator = eventAggregator;
 
+    this.visualizations = [];
+    this.visTypeSelected = "";
+
+    let factory = new VisualizationFactory();
+    this.visualizationTypes = factory.getVisualizationTypes();
+
+    let dataTableConfig = factory.getVisualizationByType('DataTable');
+    let dataTableVisualization = new Visualization(d3, this.eventAggregator, dataTableConfig.config);
+
+    this.visualizations.push(dataTableVisualization);
+
+    this.isChecked = false;
+    this.addVisualization = this.addVis;
+    this.subscribe();
+  }
+
+  attached() {
+    for (let visualization of this.visualizations) {
+      visualization.attached();
     }
+  }
 
-    attached() {
-        for (let visualization of this.visualizations) {
-            visualization.attached();
-        }
-    }
+  subscribe() {
+    let ea = this.eventAggregator;
 
-    subscribe(){
-        let ea = this. eventAggregator;
+    ea.subscribe('onEditorCopy', payload => {
+      if (this.isChecked) {
+        this.publish(payload);
+      }
+    });
+  }
 
-        ea.subscribe('onEditorCopy', payload => {
-           if(this.isChecked){
-             this.publish(payload);       
-       }
-        }); 
-    }
-
-   publish(payload){
-        let ea = this. eventAggregator;
-         ea.publish('onVisRequest', payload);   
-           
-   }
-
-    
+  publish(payload) {
+    let ea = this.eventAggregator;
+    ea.publish('onVisRequest', payload);
+  }
+  
+  addVis() {
+    this.visualizations.push({});
+  }
 }

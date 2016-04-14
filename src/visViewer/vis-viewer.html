@@ -1,13 +1,23 @@
-<template bindable="vis" >
+<template bindable="vis">
   <require from="visualization/visualization.html"></require>
-      	 
-	 <input type="checkbox" id="checkbox2" checked.bind="vis.isChecked" ui-checkbox>
-      <label for="checkbox2">Activate Visualization</label>
-      </br><span show.bind= "vis.isChecked"> Now, select and copy any expression to view its visualization.</span>
-    <div>
 
-        <div repeat.for="visualization of vis.visualizations">
-            <visualization vis.bind="visualization"></visualization>
-        </div>
+  <input type="checkbox" id="checkbox2" checked.bind="vis.isChecked" ui-checkbox>
+  <label for="checkbox2">Activate Visualization</label>
+  </br>
+  <div show.bind="vis.isChecked" class="add-vis">
+    <button type="button" class="btn btn-default" click.trigger="vis.addVisualization()">Add Visualization</button>
+  </div>
+  <br/>
+  <div class="vis-container" repeat.for="visualization of vis.visualizations">
+    <div show.bind="vis.isChecked" class="vis-dropdown dropdown open">
+      <select class="btn btn-default" value.bind="visTypeSelected">
+        <option repeat.for="type of vis.visualizationTypes" value.bind="type.value">${type.name}</option>
+      </select>
     </div>
+    <visualization vis.bind="visualization">
+      <div show.bind="visTypeSelected === 'DataTable'">
+        blah
+      </div>
+    </visualization>
+  </div>
 </template>
