@@ -71,7 +71,7 @@ export class JsEditor {
         let newStr = js.replace(/(\s+$)/g, '');
         // then, hash it and store it in localHash variable.
         let localHash = md5(newStr);
-        if (editorHashedText != localHash ) {
+        if (editorHashedText !== localHash ) {
           editorHashedText = localHash; 
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {

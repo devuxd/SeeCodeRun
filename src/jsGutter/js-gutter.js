@@ -1,10 +1,6 @@
 /* global Firepad */
 /* global Firebase */
 /* global ace */
-import {
-    TraceHelper
-}
-from '../traceService/trace-helper';
 
 import {
     TraceModel
