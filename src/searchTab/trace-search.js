@@ -14,10 +14,12 @@ export class TraceSearch{
             updateTable: this.updateTable,
             searchFilters: this.traceModel.traceSearchfilters,
             traceHelper: undefined,
-            $searchNumResults: undefined
+            $searchNumResults: undefined,
+            traceSearchEvents : this.traceModel.traceSearchEvents,
+            eventAggregator: eventAggregator,
+            publishTraceSearchChanged: this.publishTraceSearchChanged
         };
     }
-
 
     attached(){
         let searchBox = this.searchBox;
@@ -44,27 +46,41 @@ export class TraceSearch{
             let selectedFilter = searchBox.$searchFilter.find(":selected").val();
             let value = searchBox.$searchTerm.val();
             
-            if(searchBox.traceHelper){
-                let variableValues =searchBox.traceHelper.getValues();
-                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
-                searchBox.updateTable(searchBox, query);
-            }
+            searchBox.publishTraceSearchChanged(searchBox, value, selectedFilter);
         };
         searchBox.searchBoxChanged = searchBoxChanged;
         searchBox.$searchTerm.change(searchBoxChanged);
         searchBox.$searchFilter.change(searchBoxChanged);
         
-       this.subscribe(); 
+        this.subscribe(); 
+    }
+    
+    publishTraceSearchChanged(searchBox, searchTermText, searchFilterId){
+        searchBox.eventAggregator.publish(searchBox.traceSearchEvents.searchBoxChanged.event, 
+            { searchTermText: searchTermText, searchFilterId: searchFilterId }
+        );
     }
     subscribe(){
         let searchBox = this.searchBox;
         let traceChangedEvent = this.traceModel.traceEvents.changed.event;
+        let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+        
         this.eventAggregator.subscribe( traceChangedEvent, payload =>{
             searchBox.traceHelper = payload.data;
             searchBox.searchBoxChanged(traceChangedEvent);
         });
+        
+        this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
+            let value = payload.searchTermText;
+            let selectedFilter = payload.searchFilterId;
+            
+            if(searchBox.traceHelper){
+                let variableValues =searchBox.traceHelper.getValues();
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
+                searchBox.updateTable(searchBox, query);
+            }
+        });
     }
-
     
     updateTable(searchBox, query){
                 let $table = searchBox.$table;

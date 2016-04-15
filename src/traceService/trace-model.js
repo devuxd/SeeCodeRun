@@ -1,6 +1,9 @@
 import {Trace} from './trace';
 export class TraceModel{
     constructor(){
+        this.traceSearchEvents = {
+            searchBoxChanged : {  event :'searchBoxChanged'   , description : 'User changed the search box parameters...' }
+        };
         this.traceSearchfilters = {
 			any: "Any",
 			id: "ID",
