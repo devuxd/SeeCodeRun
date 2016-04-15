@@ -58,6 +58,10 @@ export class AceUtils{
 			    return;
 			}
 			
+			if (!editor.isFocused()){ 
+    			return;
+    		}
+			
 			for(let key in dataModel.ranges){
 			    let data = dataModel.ranges[key];
 			    
@@ -90,10 +94,10 @@ export class AceUtils{
 			div.style.top = position.pageY + 'px';
 			if(text){
 				div.style.display = "block";
-				div.innerText = text;
+				div.innerHTML = text;
 			}else{
 				div.style.display = "none";
-				div.innerText = "";
+				div.innerHTML = "";
 			}
 	}
 	

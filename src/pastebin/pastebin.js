@@ -12,7 +12,7 @@ import {HtmlViewer} from '../htmlViewer/html-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
-import {TraceViewController} from '../utils/trace-view-controller';
+import {TraceViewController} from '../traceView/trace-view-controller';
 import {TraceSearch} from '../searchTab/trace-search';
 
 @inject(EventAggregator, Router)
