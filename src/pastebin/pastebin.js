@@ -67,6 +67,6 @@ activate(params) {
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
-    $('#rightSplitter').jqxSplitter({ width: '100%', height: 700, orientation: 'horizontal', panels: [{ size: '80%'}] });      
+    $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] });      
   }
 }
