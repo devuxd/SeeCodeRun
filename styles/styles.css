@@ -82,7 +82,6 @@
    }
    .highlight_gutter {
      color: black;
-<<<<<<< HEAD
     background: #eeeeee;
     display: table-row;
 }
@@ -391,7 +390,6 @@ td, th {
    border: 2px solid black;
 }
 
-=======
      background: #eeeeee;
      display: table-row;
    }
@@ -696,4 +694,3 @@ td, th {
    font-size: 16px !important;
  }
  
->>>>>>> 1272a6c731193321eb43815fcda67f70d78ab498
