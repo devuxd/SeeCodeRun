@@ -88,12 +88,10 @@
  }
  
  .iframeCssPreview {
-   height: 100vh;
-   /* Viewport-relative units */
-   width: 100vw;
+   
    border: none;
    overflow: auto;
-   ;
+   
  }
  
  ul.nav li a,
