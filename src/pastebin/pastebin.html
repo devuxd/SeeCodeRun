@@ -3,6 +3,7 @@
   <require from="jsGutter/js-gutter.html"></require>
   <require from="htmlEditor/html-editor.html"></require>
   <require from="cssEditor/css-editor.html"></require>
+  <require from="historyViewer/history-viewer.html"></require>
   <require from="visViewer/vis-viewer.html"></require>
   <require from="htmlViewer/html-viewer.html"></require>
   <require from="consoleWindow/console-window.html"></require>
@@ -37,9 +38,9 @@
               </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="html-container">
+              <history-viewer historyViewer.bind="historyViewer"></history-viewer>
               <html-editor htmlEditor.bind="htmlEditor"></html-editor>
             </div>
-
             <div role="tabpanel" class="tab-pane" id="css-container">
               <css-editor cssEditor.bind="cssEditor"></css-editor>
             </div>

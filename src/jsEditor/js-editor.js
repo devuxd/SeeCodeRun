@@ -37,9 +37,9 @@ export class JsEditor {
     this.setupSessionEvents(session);
     this.subscribe(session);
     
+}
 
-
-  configureEditor(editor) {
+  configureEditor(editor){
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
   }

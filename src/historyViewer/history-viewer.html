@@ -1,0 +1,8 @@
+<template bindable="historyViewer">
+    <div class = "row" style = "width:500px;"><div class = "col-md-offset-1">
+    	<input name="slider" id="historySlider" type="range" min="1" max="50" value="0" step="1" /> 
+        <span id="range">1</span></div>
+    	<button type="button" name = "mybutton" id="editbutton" click.delegate="clickedit()" style = "float:right; height:20px ; width:40px" disabled >Edit</button>
+	</div>
+	<div id="aceHtmlHistoryEditorDiv" style="height: 700px; display:none"></div>
+</template>
