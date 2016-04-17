@@ -48,6 +48,7 @@ System.config({
     "jquery-ui": "github:components/jqueryui@1.11.4",
     "jslinq": "npm:jslinq@1.0.15",
     "json": "github:systemjs/plugin-json@0.1.0",
+    "md5": "npm:md5@2.1.0",
     "tarball": "npm:tarball@0.0.5",
     "text": "github:systemjs/plugin-text@0.0.3",
     "github:components/jqueryui@1.11.4": {
@@ -856,6 +857,9 @@ System.config({
       "loose-envify": "npm:loose-envify@1.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
+    "npm:is-buffer@1.1.3": {
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0"
+    },
     "npm:is-finite@1.0.1": {
       "number-is-nan": "npm:number-is-nan@1.0.0"
     },
@@ -943,6 +947,13 @@ System.config({
       "pseudomap": "npm:pseudomap@1.0.2",
       "util": "github:jspm/nodelibs-util@0.1.0",
       "yallist": "npm:yallist@2.0.0"
+    },
+    "npm:md5@2.1.0": {
+      "assert": "github:jspm/nodelibs-assert@0.1.0",
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0",
+      "charenc": "npm:charenc@0.0.1",
+      "crypt": "npm:crypt@0.0.1",
+      "is-buffer": "npm:is-buffer@1.1.3"
     },
     "npm:miller-rabin@4.0.0": {
       "bn.js": "npm:bn.js@4.11.1",
