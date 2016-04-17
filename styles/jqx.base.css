@@ -62,13 +62,11 @@
     border: none;
     outline: none;   
     position: absolute;
-    overflow: hidden;
 }
 /* This class is added to a nested splitter.*/
 .jqx-splitter-nested, .jqx-splitter-panel-nested
 {
     border: none;
-    overflow: hidden;
 }
 /*          Splitter Endin                             */
 
