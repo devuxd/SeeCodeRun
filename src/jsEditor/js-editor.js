@@ -35,16 +35,7 @@ export class JsEditor {
     this.setupSessionEvents(session);
     this.subscribe(session);
     
-    window.onerror =
-      function JsEditorOnError(msg, jsFirebaseRef, linenumber){
-          console.log(
-                `Error message: ${msg}
-                url: ${jsFirebaseRef}
-                Line Number: ${linenumber}`
-                );
-          return false;
-      };
-  }
+
 
   configureEditor(editor) {
     editor.setTheme('ace/theme/chrome');
