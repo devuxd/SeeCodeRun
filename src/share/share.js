@@ -27,7 +27,10 @@ export class Share {
     //New Firebase share Reference
    // var shareFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId);
     
-    var shareFirebaseRef2 = 'https://seecode.run/#' + this.pastebinId;
+    let firebase = new Firebase(this.baseURL);
+    this.pastebinIdshare = firebase.push().key();
+    
+    var shareFirebaseRef2 = 'https://seecode.run/#' + this.pastebinIdshare;
 
     $(document).ready(function setUpShareBox() {
           $('#shareDiv').hide();
