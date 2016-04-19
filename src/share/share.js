@@ -23,29 +23,55 @@ export class Share {
     if (params.id) {
       this.pastebinId = params.id;
     }
-
-    //New Firebase share Reference
-   // var shareFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId);
     
+     //New Firebase share Reference
     let firebase = new Firebase(this.baseURL);
     this.pastebinIdshare = firebase.push().key();
-    
-    function copyFbRecord(oldFB, newFB) {   
-      let shareBaseURL = 'https://seecoderun.firebaseio.com';
-      let fb = new Firebase(shareBaseURL);
-      let fbOld = fb.child(oldFB);
-      let fbNew = fb.child(newFB);
-      
-     fbOld.once('value', function(snap)  {
-          fbNew.set( snap.value(), function(error) {
-               if( error && typeof(console) !== 'undefined' && console.error ) {  console.error(error); }
-          });
-     });
-}
-    
+   
+   //Concatenate SeeCode.Run base URL and new Share ID 
     var shareFirebaseRef2 = 'https://seecode.run/#' + this.pastebinIdshare;
 
-    $(document).ready(function setUpShareBox() {
+    //Place new share Firebase URL in Share text box
+    document.getElementById("copyTarget").value = shareFirebaseRef2;
+    
+    //Copy Event Listener that triggers copying from the Old Pastebin ID to the New Shared One && Copying the New Pastebin Link
+    document.getElementById("copyButton").addEventListener("click", function() {
+        copyToClipboard(document.getElementById("copyTarget"));
+        copyFbRecord(this.pastebinId, this.pastebinIdshare);
+    });
+    
+     //Copy From Current Pastebin's Firebase ID to New Shared Pastebin's Firebase ID
+    function copyFbRecord(oldFB, newFB) {   
+              let shareBaseURL = 'https://seecoderun.firebaseio.com';
+              //let firebase = new Firebase(shareBaseURL);
+              //let fb = new Firebase(shareBaseURL);
+    
+              
+              var oldFbRef = new Firebase(shareBaseURL + '/' + oldFB);
+              var newFbRef = new Firebase(shareBaseURL + '/' + newFB);
+              
+              //ignore child, want to call val() from baseURL + '/' + oldFB (needs to be a string)
+              //then set to baseURL + '/' + newFB
+              
+            //var fredRef = new Firebase("https://docs-examples.firebaseio.com/samplechat/users/fred");
+            // fredRef.once("value", function(snapshot) {
+            //   var data = snapshot.val();
+            //  data equals { "name": { "first": "Fred", "last": "Flintstone" }, "age": 53 }
+              
+           
+           
+            //   let fbOld = fb.child(oldFB);
+            //   let fbNew = fb.child(newFB);
+              
+             oldFbRef.once('value', function(snapshot)  {
+                  newFbRef.set( snapshot.val(), function(error) {
+                       if( error && typeof(console) !== 'undefined' && console.error ) {  console.error(error); }
+                  });
+             });
+        }
+    
+    //Toggle Share Box
+     $(document).ready(function setUpShareBox() {
           $('#shareDiv').hide();
           
           $('#share').click(function hideShareBox() {
@@ -53,14 +79,8 @@ export class Share {
           });
         
         });
-
-    document.getElementById("copyTarget").value = shareFirebaseRef2;
     
-    document.getElementById("copyButton").addEventListener("click", function() {
-        copyToClipboard(document.getElementById("copyTarget"));
-        copyFbRecord(this.pastebinId, this.pastebinIdshare);
-    });
-    
+    //Copy Function
     function copyToClipboard(elem) {
     
         var targetId = "_hiddenCopyText_";
