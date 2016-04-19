@@ -35,7 +35,8 @@ export class HistoryViewer{
         let baseURL = 'https://seecoderun.firebaseio.com';
         let firebase = new Firebase(baseURL + '/' + pastebinId + '/content/html');
         let tempfirebase = firebase.child('temp');
-        this.temporaryFirebase = tempfirebase;
+        this.temporaryFirebase = tempfirebase
+        //console.log('this is the link' + this.temporaryFirebase.toString());
 
         this.historyFirepad = Firepad.fromACE(tempfirebase, historyEditor);
 
@@ -60,42 +61,64 @@ export class HistoryViewer{
     // TODO: USE JQUERY
    // let historySlider = this.historySlider;// this is how you get the reference
    console.log('reached');
-    let newValue = self.sliderValue;
+    let newValue = document.getElementById('historySlider').value;
+    //this.sliderValue = newValue;
     let historyDiv = document.getElementById('aceHtmlHistoryEditorDiv');
 	historyDiv.style.display = 'block';
 	
 	let htmlDiv = document.getElementById('aceHtmlEditorDiv');
 	htmlDiv.style.display = 'none';
-	
+	//console.log('slider value: '+ newValue);
 	document.getElementById("range").innerHTML = newValue;
-	
+    
 	self.updateHistory();
   }
   
    updateHistory(){
+       let historyEditor = this.historyEditor;
        let firebase = this.firebase;
-       let temporaryFirebase = this.temporaryFirebase;
+       var temporaryFirebase = this.temporaryFirebase;
     var z = document.getElementById('editbutton');
 	z.disabled = false;
 	var y = document.getElementById('historySlider');
-	var number = y.value;
 	
+	var number = y.value-1;
+	//console.log(number);
 	temporaryFirebase.remove();
 	
 	firebase.once("value",function(snapuser){
 	  temporaryFirebase.set(snapuser.val());
+	  //console.log(temporaryFirebase.toString());
+	  //console.log(snapuser.val());
 	});
+	
+	temporaryFirebase.once("value",function(snn){
+	    //console.log('temp entire');
+	    //console.log(snn.val());
+	});
+	
 	this.historyEditor.setValue('');
 	temporaryFirebase.child('history').remove();
 	
 	number = Number(number);
 	
-	firebase.limitToFirst(number).once("value", function(snaphis){
+	firebase.child('history').limitToFirst(number).once("value", function(snaphis){
 	  temporaryFirebase.child('history').set(snaphis.val());
 	  
 	});
+	
 	//var t = hisfirepad.getText();
-	this.historyFirepad = Firepad.fromACE(temporaryFirebase, this.historyEditor);
+	var historyFirepad = Firepad.fromACE(temporaryFirebase, historyEditor);
+	var x =this.historyEditor.getValue();
+	console.log('x is: '+x);
+	temporaryFirebase.once("value",function(sn){
+	    console.log(sn.val());
+	});
+	
+	//this.historyFirepad.on('ready', function() {
+    //console.log(this.historyFirepad.getText());
+  
+//});
 	
 	//console.log(this.historyFirepad.getText());
 	
