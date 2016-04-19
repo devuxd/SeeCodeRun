@@ -30,15 +30,16 @@ export class Visualization {
   
   subscribe() {
     let ea = this.eventAggregator;
-    let renderVisualization = this.renderVisualization;
+    let visualization = this;
     
-    ea.subscribe('onTraceChanged', payload => {
-      this.trace = payload.data;
-      renderVisualization();
+    ea.subscribe('traceChanged', payload => {
+      console.log(payload.data);
+      visualization.trace = payload.data.trace;
+      visualization.renderVisualization();
     });
     
     ea.subscribe('onTraceFailed', payload => {
-      this.hasError = true;
+      visualization.hasError = true;
     });
 
     ea.subscribe('onVisRequest',payload => {
