@@ -30,6 +30,14 @@ export class Share {
     let firebase = new Firebase(this.baseURL);
     this.pastebinIdshare = firebase.push().key();
     
+    function copyFbRecord(oldFB, newFB) {    
+     oldFB.once('value', function(snap)  {
+          newFB.set( snap.value(), function(error) {
+               if( error && typeof(console) !== 'undefined' && console.error ) {  console.error(error); }
+          });
+     });
+}
+    
     var shareFirebaseRef2 = 'https://seecode.run/#' + this.pastebinIdshare;
 
     $(document).ready(function setUpShareBox() {
@@ -41,11 +49,11 @@ export class Share {
         
         });
 
-
     document.getElementById("copyTarget").value = shareFirebaseRef2;
     
     document.getElementById("copyButton").addEventListener("click", function() {
         copyToClipboard(document.getElementById("copyTarget"));
+        copyFbRecord(this.pastebinId, this.pastebinIdshare);
     });
     
     function copyToClipboard(elem) {
