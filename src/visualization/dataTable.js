@@ -69,8 +69,6 @@ export class DataTable {
     if (!trace)
       return;
       
-    console.log(trace);
-    
     // clear the div element  
     d3.select(divElement).html("");
     
