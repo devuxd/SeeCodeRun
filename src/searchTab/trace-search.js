@@ -1,11 +1,20 @@
+/* global Firepad */
+/* global Firebase */
+/* global ace */
 /* global $ */
+
+
 import {TraceModel} from '../traceService/trace-model';
 
 export class TraceSearch{
+    
     constructor(eventAggregator, $table){
+        
+        this.baseURL = 'https://seecoderun.firebaseio.com';
         this.$table = $table;
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
+        
         this.searchBox = {
             $searchTerm: undefined,
             $searchFilter: undefined,
@@ -18,10 +27,30 @@ export class TraceSearch{
             traceSearchEvents : this.traceModel.traceSearchEvents,
             eventAggregator: eventAggregator,
             publishTraceSearchChanged: this.publishTraceSearchChanged
+
         };
     }
+  
+    activate(params) {
+    if (params.id) {
+      this.pastebinId = params.id;
+    }
+    else {
+      let firebase = new Firebase(this.baseURL);
+      this.pastebinId = firebase.push().key();
+    }
+    }
+ 
+ 
+    attached(params){
+    
+    if (params.id) {
+      this.pastebinId = params.id;
+    }
 
-    attached(){
+        //New Firebase visualisation Reference
+        this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
+     
         let searchBox = this.searchBox;
         
         searchBox.$searchTerm = $("#searchTerm");
@@ -53,6 +82,15 @@ export class TraceSearch{
         searchBox.$searchFilter.change(searchBoxChanged);
         
         this.subscribe(); 
+        
+            // retrieve.
+            this.firebase.limitToLast(1).on('child_added', function(snapshot) {
+                //GET DATA
+            var data = snapshot.val();
+            console.info(data.filter);
+            console.info(data.searchterm);
+                });    
+    
     }
     
     publishTraceSearchChanged(searchBox, searchTermText, searchFilterId){
@@ -73,8 +111,15 @@ export class TraceSearch{
         this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
             let value = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
-            
-            if(searchBox.traceHelper){
+                
+                //store values
+                this.firebase.push({
+                    filter: selectedFilter,
+                searchterm: value
+                        });
+
+                
+                if(searchBox.traceHelper){
                 let variableValues =searchBox.traceHelper.getValues();
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
                 searchBox.updateTable(searchBox, query);
@@ -125,5 +170,5 @@ export class TraceSearch{
                 $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
     }
     
-  
+ 
 }

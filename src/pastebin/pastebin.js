@@ -43,6 +43,7 @@ activate(params) {
       this.htmlEditor.activate({ id: id });
       this.cssEditor.activate({ id: id });
       this.chat.activate({ id: id });
+      this.traceSearch.activate({ id: id });
     } else {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
@@ -62,8 +63,9 @@ activate(params) {
     this.visViewer.attached();
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
+    //this.traceSearch.attached({id: this.pastebinId});
     this.traceViewController.attached();
-    this.traceSearch.attached();
+    this.traceSearch.attached({id: this.pastebinId});
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
