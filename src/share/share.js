@@ -30,7 +30,9 @@ export class Share {
     let firebase = new Firebase(this.baseURL);
     this.pastebinIdshare = firebase.push().key();
     
-    function copyFbRecord(oldFB, newFB) {    
+    function copyFbRecord(oldFB, newFB) {   
+      let o = new Firebase(oldFB);
+      let n = new Firebase(newFB);
      oldFB.once('value', function(snap)  {
           newFB.set( snap.value(), function(error) {
                if( error && typeof(console) !== 'undefined' && console.error ) {  console.error(error); }
