@@ -1,15 +1,17 @@
 /* global $ */
+/* global ace */
 import {TraceModel} from '../traceService/trace-model';
 
 export class TraceSearch{
-    constructor(eventAggregator, $table){
-        this.$table = $table;
+    constructor(eventAggregator){
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
         this.searchBox = {
+            aceEditor: undefined,
+            updateAceMarkers: this.updateAceMarkers,
             $searchTerm: undefined,
             $searchFilter: undefined,
-            $table : $table,
+            $table : undefined,
             searchBoxChanged: undefined,
             updateTable: this.updateTable,
             searchFilters: this.traceModel.traceSearchfilters,
@@ -21,18 +23,14 @@ export class TraceSearch{
         };
     }
 
-    attached(){
+    attached(aceEditor, $table = $("#traceTable")){
         let searchBox = this.searchBox;
         
+        searchBox.aceEditor = aceEditor;
+        searchBox.$table = $table;
         searchBox.$searchTerm = $("#searchTerm");
         searchBox.$searchFilter = $("#searchFilter");
         searchBox.$searchNumResults = $("#numResultCount");
-        
-        if(this.$table){
-            searchBox.$table = this.$table;
-        }else{
-            searchBox.$table = $("#traceTable");
-        }
         
         searchBox.$searchFilter.empty();
         let options ="";
@@ -60,6 +58,7 @@ export class TraceSearch{
             { searchTermText: searchTermText, searchFilterId: searchFilterId }
         );
     }
+    
     subscribe(){
         let searchBox = this.searchBox;
         let traceChangedEvent = this.traceModel.traceEvents.changed.event;
@@ -83,47 +82,88 @@ export class TraceSearch{
     }
     
     updateTable(searchBox, query){
-                let $table = searchBox.$table;
-                
-                let $numResults = searchBox.$searchNumResults;
-                
-                if(!$table){
-                    throw "No table container received.";
-                }
         
-                if(!query){
-                    throw "No query received.";
-                }
-                
-                if(query.count()<1){
-                    $table.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
-                    return;
-                }
-                let table = "<table>";
+        var Range = ace.require("ace/range").Range;
+        
+        let $table = searchBox.$table;
+        let $numResults = searchBox.$searchNumResults;
+        
+        if(!$table){
+            throw "No table container received.";
+        }
 
-                let header ="<tr>";
-                for(let key in query.items[0]){
-                    header += `<td>${key}</td>`;
-                }
-                header += "</tr>";
-                
-                table += header;
-                
-                for(let i = 0; i < query.items.length; i++){
-                    
-                    let row = "<tr>";
-                    for(let key in query.items[i]){
-                        row += `<td>${JSON.stringify(query.items[i][key])}</td>`;
-                    }
-                    row += "</tr>";
-                    
-                    table+= row;
-                 }
-                
-                table += "</table>";
-                $table.html(table);   
-                $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
+        if(!query){
+            throw "No query received.";
+        }
+        
+        if(query.count()<1){
+            $table.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
+            return;
+        }
+        let table = "<table>";
+
+        let header ="<tr>";
+        let hasRange = false;
+        
+        let columns = [];
+        for(let key in query.items[0]){
+            if(key === "range"){
+                hasRange = true;
+            }else{
+                header += `<td>${key}</td>`;
+                columns[key] = true;
+            }
+        }
+        header += "</tr>";
+        
+        table += header;
+        let ranges =[];
+        
+        for(let i = 0; i < query.items.length; i++){
+            
+            if (hasRange){
+                let itemRange = query.items[i]["range"];
+                let range = new Range(itemRange.start.row, itemRange.start.column, itemRange.end.row, itemRange.end.column);
+                ranges.push(range);
+            }
+            
+            let row = "<tr>";
+            for(let key in columns){
+                //TODO add tooltip and new css when selected
+                row += `<td>${JSON.stringify(query.items[i][key])}</td>`;
+            }
+            row += "</tr>";
+            
+            table+= row;
+         }
+        
+        table += "</table>";
+        $table.html(table);   
+        $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
+        
+        if(ranges){
+            searchBox.updateAceMarkers(ranges);
+        }
     }
     
+    updateAceMarkers(ranges, self = this){
+        let editSession = self.aceEditor.getSession();
+        
+        if(self.markers){
+            let oldmarkers = self.markers;
+            for(let i in oldmarkers){
+                let marker = oldmarkers[i];
+                editSession.removeMarker(marker);
+            }
+        }
+        
+        let newMarkers = [];
+        for(let i in ranges){
+            let range = ranges[i];
+            let marker = editSession.addMarker(range, "expression-range", "text");
+            newMarkers.push(marker);
+        }
+        self.markers = newMarkers;
+    }
   
 }

@@ -1,5 +1,4 @@
 /* global ace */
-
 import {AceUtils} from "../utils/ace-utils";
 import {TraceViewModel} from "./trace-view-model";
 import {TraceModel} from '../traceService/trace-model';

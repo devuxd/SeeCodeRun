@@ -63,7 +63,7 @@ activate(params) {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
-    this.traceSearch.attached();
+    this.traceSearch.attached(this.jsEditor.editor);
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });

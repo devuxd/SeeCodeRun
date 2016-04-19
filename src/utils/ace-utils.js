@@ -1,9 +1,10 @@
+import {Range} from '../utils/range';
+
 export class AceUtils{
     constructor(){
+        this.range = new Range();
     }
-    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel){
-        let updateTooltip = this.updateTooltip;
-
+    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
      	editor.on("guttermousemove", function(e){ 
     	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
     		let target = e.domEvent.target;
@@ -42,8 +43,7 @@ export class AceUtils{
         
     }
     
-    subscribeToCodeHoverEvents(editor, tooltip, dataModel){
-        let updateTooltip = this.updateTooltip;
+    subscribeToCodeHoverEvents(editor, tooltip, dataModel, updateTooltip = this.updateTooltip){
         let isPositionInRange = this.isPositionInRange;
         let isRangeInRangeStrict = this.isRangeInRangeStrict; 
 
