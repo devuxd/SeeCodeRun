@@ -31,10 +31,13 @@ export class Share {
     this.pastebinIdshare = firebase.push().key();
     
     function copyFbRecord(oldFB, newFB) {   
-      let o = new Firebase(oldFB);
-      let n = new Firebase(newFB);
-     oldFB.once('value', function(snap)  {
-          newFB.set( snap.value(), function(error) {
+      let shareBaseURL = 'https://seecoderun.firebaseio.com';
+      let fb = new Firebase(shareBaseURL);
+      let fbOld = fb.child(oldFB);
+      let fbNew = fb.child(newFB);
+      
+     fbOld.once('value', function(snap)  {
+          fbNew.set( snap.value(), function(error) {
                if( error && typeof(console) !== 'undefined' && console.error ) {  console.error(error); }
           });
      });
