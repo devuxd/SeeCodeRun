@@ -53,7 +53,7 @@ export class HistoryViewer{
         //tempfirebase.remove();
         
 
-         firebase.child('history').once("value",function(snap){
+         firebase.child('history').once("child_added",function(snap){
           let num = snap.numChildren();
           let v = historySlider;
           v.max = num;
