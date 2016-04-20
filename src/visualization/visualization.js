@@ -1,7 +1,6 @@
 import {inject} from 'aurelia-framework';
 import * as d3 from 'd3';
 import {TraceModel} from '../traceService/trace-model';
-import {TraceHelper} from '../traceService/trace-helper';
 
 export class Visualization {
   static inject() {
@@ -19,8 +18,6 @@ export class Visualization {
     this.errorMessage = config.config.errorMessage;
     this.hasError = false;
     this.requestSelectionRange = this.getSelectionRange;
-    this.traceModel = new TraceModel();
-    this.traceHelper = new TraceHelper();
   }
 
   attached() {
@@ -28,11 +25,6 @@ export class Visualization {
     this.subscribe();
   }
   
-  getSelectionRange() {
-    let ea = this.eventAggregator;
-    ea.publish('selectionRangeRequested');
-  }
-
   renderVisualization() {
     let formattedTrace = this.formatTrace(this.trace);
     this.render(formattedTrace, `#${this.type}`);
@@ -40,16 +32,18 @@ export class Visualization {
   
   subscribe() {
     let ea = this.eventAggregator;
-    let renderVisualization = this.renderVisualization;
+    let visualization = this;
+    let traceModel = new TraceModel();
+    let traceHelper = null;
     
-    let traceChangedEvent = this.traceModel.traceEvents.changed.event;
-    ea.subscribe(traceChangedEvent, payload => {
-      this.traceHelper = payload.data;
-      this.trace = payload.data.trace;
+    ea.subscribe(traceModel.traceEvents.changed.event, payload => {
+      traceHelper = payload.data;
+      visualization.trace = payload.data.trace;
+      visualization.renderVisualization();
     });
     
-    ea.subscribe('onTraceFailed', payload => {
-      this.hasError = true;
+    ea.subscribe(traceModel.executionEvents.failed.event, payload => {
+      visualization.hasError = true;
     });
 
     ea.subscribe('onVisRequest',payload => {
@@ -59,12 +53,17 @@ export class Visualization {
     
     ea.subscribe('selectionRangeResponse', payload => {
       let expsInRange = [];
-      let expressions = this.traceHelper.getExpressions();
+      let expressions = traceHelper.getExpressions();
       for(let i = 0; i < expressions.variables.length; i++) {
         if(this.traceHelper.isRangeInRange(expressions.variables[i].range, payload.range)) {
           expsInRange.push(expressions.variables[i]);
         }
       }
     });
+  }
+  
+  getSelectionRange() {
+    let ea = this.eventAggregator;
+    ea.publish('selectionRangeRequested');
   }
 }
