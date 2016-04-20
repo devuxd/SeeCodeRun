@@ -63,7 +63,6 @@ activate(params) {
     this.visViewer.attached();
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
-    //this.traceSearch.attached({id: this.pastebinId});
     this.traceViewController.attached();
     this.traceSearch.attached({id: this.pastebinId});
 

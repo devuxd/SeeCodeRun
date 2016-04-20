@@ -83,7 +83,7 @@ export class TraceSearch{
         
         this.subscribe(); 
         
-            // retrieve.
+            // Retrieve.
             this.firebase.limitToLast(1).on('child_added', function(snapshot) {
                 //GET DATA
             var data = snapshot.val();
@@ -112,7 +112,7 @@ export class TraceSearch{
             let value = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
                 
-                //store values
+                //Store values
                 this.firebase.push({
                     filter: selectedFilter,
                 searchterm: value
