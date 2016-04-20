@@ -9,9 +9,11 @@ export class TraceSearch{
         this.searchBox = {
             aceEditor: undefined,
             updateAceMarkers: this.updateAceMarkers,
+            updateAceMarkersDelay: 500,
             $searchTerm: undefined,
             $searchFilter: undefined,
             $table : undefined,
+            markers: undefined,
             searchBoxChanged: undefined,
             updateTable: this.updateTable,
             searchFilters: this.traceModel.traceSearchfilters,
@@ -19,7 +21,8 @@ export class TraceSearch{
             $searchNumResults: undefined,
             traceSearchEvents : this.traceModel.traceSearchEvents,
             eventAggregator: eventAggregator,
-            publishTraceSearchChanged: this.publishTraceSearchChanged
+            publishTraceSearchChanged: this.publishTraceSearchChanged,
+            publishAceMarkersChanged: this.publishAceMarkersChanged
         };
     }
 
@@ -58,11 +61,17 @@ export class TraceSearch{
             { searchTermText: searchTermText, searchFilterId: searchFilterId }
         );
     }
+    publishAceMarkersChanged(searchBox, ranges){
+        searchBox.eventAggregator.publish(searchBox.traceSearchEvents.aceMarkersChanged.event,
+            {ranges: ranges}
+        );
+    }
     
     subscribe(){
         let searchBox = this.searchBox;
         let traceChangedEvent = this.traceModel.traceEvents.changed.event;
         let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+        let aceMarkersChangedEvent = this.traceModel.traceSearchEvents.aceMarkersChanged.event;
         
         this.eventAggregator.subscribe( traceChangedEvent, payload =>{
             searchBox.traceHelper = payload.data;
@@ -79,6 +88,19 @@ export class TraceSearch{
                 searchBox.updateTable(searchBox, query);
             }
         });
+        
+        let updateAceMarkersTimeout;
+        let updateAceMarkersSetTimeout = window.setTimeout;
+        let updateAceMarkersClearTimeout = window.clearTimeout;
+        
+        this.eventAggregator.subscribe( aceMarkersChangedEvent, payload =>{
+            let ranges = payload.ranges;
+            updateAceMarkersClearTimeout(updateAceMarkersTimeout);
+            updateAceMarkersTimeout = updateAceMarkersSetTimeout(
+                searchBox.updateAceMarkers(ranges),
+                searchBox.updateAceMarkersDelay);
+        });
+        
     }
     
     updateTable(searchBox, query){
@@ -138,12 +160,13 @@ export class TraceSearch{
          }
         
         table += "</table>";
-        $table.html(table);   
-        $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
         
         if(ranges){
-            searchBox.updateAceMarkers(ranges);
+            searchBox.publishAceMarkersChanged(searchBox, ranges);
         }
+        
+        $table.html(table);   
+        $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
     }
     
     updateAceMarkers(ranges, self = this){
