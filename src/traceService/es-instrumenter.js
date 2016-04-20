@@ -693,9 +693,9 @@ export class EsInstrumenter {
             instrumentForStatement = self.instrumentForStatement,
             instrumentForInStatement = self.instrumentForInStatement,
             instrumentFunctionExpression = self.instrumentFunctionExpression,
-            instrumentSwitchCase = this.instrumentSwitchCase,
-            instrumentSwitchStatement = this.instrumentSwitchStatement,
-            instrumentIdentifier = this.instrumentIdentifier;
+            instrumentSwitchCase = self.instrumentSwitchCase,
+            instrumentSwitchStatement = self.instrumentSwitchStatement,
+            instrumentIdentifier = self.instrumentIdentifier;
             
 
         instrumenter = function instrumenter(ref){
