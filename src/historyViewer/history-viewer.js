@@ -15,47 +15,65 @@ export class HistoryViewer{
         let pastebinId = seeCodeRunEditor.pastebinId;
         
         let historyEditor = ace.edit("aceHtmlHistoryEditorDiv");
+        //this.configureEditor(historyEditor);
+       
+        let historySession = historyEditor.getSession();
+        //this.configureSession(historySession);
+        this.historySession = historySession;
         
         let historySlider = document.getElementById("historySlider");
+         this.hisDiv = document.getElementById("aceHtmlHistoryEditorDiv");
+         this.htmlDiv = document.getElementById("aceHtmlEditorDiv");
+        let editbutton = document.getElementById("editbutton");
         
         let setSliderValue = this.setSliderValue;
         let self = this;
         
         let onSliderChanged = function onSliderChanged(){
             console.log('onchange');
+          // historyEditor.destroy();
+           //firebase.child('temp').remove();
           setSliderValue(self);  
         };
         
+        let clickedit = this.clickedit;
+        let oneditclick = function oneditclick(){
+            clickedit(self);
+        };
+        
+        editbutton.onclick = oneditclick;
         historySlider.onchange = onSliderChanged ;
         
-        let historySession = historyEditor.getSession();
-        seeCodeRunEditor.configureSession(historySession);
-        this.historySession = historySession;
+       
         
         let baseURL = 'https://seecoderun.firebaseio.com';
         let firebase = new Firebase(baseURL + '/' + pastebinId + '/content/html');
-        let tempfirebase = firebase.child('temp');
-        this.temporaryFirebase = tempfirebase
-        //console.log('this is the link' + this.temporaryFirebase.toString());
+        //let tempfirebase = firebase.child('temp');
+        //this.temporaryFirebase = tempfirebase;
+        //tempfirebase.remove();
+        
 
-        this.historyFirepad = Firepad.fromACE(tempfirebase, historyEditor);
-
-         firebase.child('history').on("child_added",function(snap){
+         firebase.child('history').once("value",function(snap){
           let num = snap.numChildren();
           let v = historySlider;
           v.max = num;
-          console.log(snap.numChildren());
+          v.value = num;
+          document.getElementById('range').innerHTML = num;
+         
               });
               
-        firebase.once("value",function(snappp){
-          console.log(snappp.val());
-        });
+    
         
         this.firebase = firebase;
         this.historyEditor = historyEditor;
         this.historySlider = historySlider;
         this.parentEditor = parentEditor;
+        //self = this;
+        
     }
+    
+    
+    
     
     setSliderValue(self){
     // TODO: USE JQUERY
@@ -70,73 +88,109 @@ export class HistoryViewer{
 	htmlDiv.style.display = 'none';
 	//console.log('slider value: '+ newValue);
 	document.getElementById("range").innerHTML = newValue;
+	
+	   
+	  // self.firebase.child('temp').remove();
+
+
+  console.log('1'); 
+  self.historyEditor.setValue('');
     
-	self.updateHistory();
+	let tempref = self.newupdateHistory();
+	
+	
+	console.log('2');
+	
+
+	
+var	historyfirepad = Firepad.fromACE(tempref,self.historyEditor);
+
+
+	console.log('3');
+
   }
   
-   updateHistory(){
-       let historyEditor = this.historyEditor;
-       let firebase = this.firebase;
-       var temporaryFirebase = this.temporaryFirebase;
+ 
+  
+  clickedit(self){
+    var g = document.getElementById('editbutton');
+    g.disabled = true;
+    
+    //var cc = this.hiseditor.getValue();
+    //this.editor.setValue(cc);
+    
+   // var tabh = document.getElementById('aceHTMLhisEditorDiv');
+	self.hisDiv.style.display = 'none';
+	
+	//var tab = document.getElementById('aceHTMLEditorDiv');
+	self.htmlDiv.style.display = 'block';
+    
+    var cc =self.historyEditor.getValue();
+    console.log(cc);
+    
+    self.parentEditor.setValue(cc);
+    
+  }
+  
+  
+  
+ configureEditor(editor) {
+    editor.setTheme('ace/theme/chrome');
+    editor.setShowFoldWidgets(false);
+  }
+
+  configureSession(session) {
+    session.setUseWrapMode(true);
+    session.setUseWorker(false);
+    session.setMode('ace/mode/html');
+  }
+  
+  newupdateHistory(){
+   
+    
+      let historyEditor = this.historyEditor;
+      let firebase = this.firebase;
+      let temporaryFirebase = firebase.child('temp');
+       
+       
     var z = document.getElementById('editbutton');
 	z.disabled = false;
 	var y = document.getElementById('historySlider');
 	
-	var number = y.value-1;
-	//console.log(number);
+	var numberOnSlider = y.value;
+	numberOnSlider = Number(numberOnSlider);
+	
+
 	temporaryFirebase.remove();
+
 	
-	firebase.once("value",function(snapuser){
-	  temporaryFirebase.set(snapuser.val());
-	  //console.log(temporaryFirebase.toString());
-	  //console.log(snapuser.val());
+	firebase.child('users').once("value", function(s){
+	   
+	    let data = s.val();
+	    temporaryFirebase.child('users').set(data);
+	    
+	});
+
+	let temphistoryFirebase = temporaryFirebase.child('history');
+
+	
+	firebase.child('history').limitToFirst(numberOnSlider).once("value",function(snaphistory){
+	    temphistoryFirebase.set(snaphistory.val());
 	});
 	
-	temporaryFirebase.once("value",function(snn){
-	    //console.log('temp entire');
-	    //console.log(snn.val());
-	});
-	
-	this.historyEditor.setValue('');
-	temporaryFirebase.child('history').remove();
-	
-	number = Number(number);
-	
-	firebase.child('history').limitToFirst(number).once("value", function(snaphis){
-	  temporaryFirebase.child('history').set(snaphis.val());
-	  
-	});
-	
-	//var t = hisfirepad.getText();
-	var historyFirepad = Firepad.fromACE(temporaryFirebase, historyEditor);
-	var x =this.historyEditor.getValue();
-	console.log('x is: '+x);
-	temporaryFirebase.once("value",function(sn){
-	    console.log(sn.val());
-	});
-	
-	//this.historyFirepad.on('ready', function() {
-    //console.log(this.historyFirepad.getText());
-  
-//});
-	
-	//console.log(this.historyFirepad.getText());
-	
+
+	return temporaryFirebase;
+//	
+	 
+
   }
   
-  clickedit(){
-    var g = document.getElementById('editbutton');
-    g.disabled = true;
-    
-    var cc = this.hiseditor.getValue();
-    this.editor.setValue(cc);
-    
-    var tabh = document.getElementById('aceHTMLhisEditorDiv');
-	tabh.style.display = 'none';
-	
-	var tab = document.getElementById('aceHTMLEditorDiv');
-	tab.style.display = 'block';
-    
-  }
+ 
+  
+  
+  
+  
+  
+  
     
 }
