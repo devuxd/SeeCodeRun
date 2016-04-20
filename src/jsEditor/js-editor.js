@@ -85,8 +85,6 @@ export class JsEditor {
       }, 2500);
     }
 
-
-
     this.editorHashedText = editorHashedText;
     this.editorChangedTimeout = editorChangedTimeout;
 
@@ -164,6 +162,13 @@ export class JsEditor {
     // This  event is published by js-gutter.js to scroll the JS editor. 
     ea.subscribe('onScrolled', info => {
       session.setScrollTop(info.top);
+    });
+    
+    ea.subscribe('selectionRangeRequested', () => {
+      let selection = {
+        range: session.selection.getRange()
+      };
+      ea.publish('selectionRangeResponse', selection);
     });
 
   }

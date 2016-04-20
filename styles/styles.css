@@ -385,3 +385,12 @@ body {
    color: #888888;
    font-size: 16px !important;
  }
+ 
+ .vis-container {
+   border: 1px solid black;
+ }
+ 
+ .vis-container .visualization-title {
+   font-size: 16px !important;
+   font-weight: bold;
+ }

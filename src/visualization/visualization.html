@@ -1,7 +1,10 @@
 <template bindable="vis">
-  <section class="au-animate">
-    <div class="visualization-title">${vis.title}</div>
-    <div if.bind="vis.hasError" class="alert alert-danger" role="alert">${vis.errorMessage}</div>
-    <div id="${vis.type}"></div>
-  </section>
+  <div class="visualization-title">${vis.title}</div>
+  <div if.bind="vis.hasError" class="alert alert-danger" role="alert">${vis.errorMessage}</div>
+  <div if.bind="vis.type === 'DataTable'">
+    Highlight the expression you would like to add to the table and click 'Add Column'.
+    <br/>
+    <button type="button" class="btn btn-default" click.trigger="vis.requestSelectionRange()">Add Column</button>
+  </div>
+  <div id="${vis.type}"></div>
 </template>
