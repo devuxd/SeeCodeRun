@@ -7,9 +7,9 @@ export class TraceModel{
         };
         this.traceSearchfilters = {
 			any: "Any",
-			id: "ID",
-			type: "Type",
-			text: "Text",
+			id: "Id",
+// 			type: "Type",
+// 			text: "Text",
 			value: "Value"
 		};
        	

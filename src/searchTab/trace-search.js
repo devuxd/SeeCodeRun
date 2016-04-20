@@ -12,6 +12,7 @@ export class TraceSearch{
             updateAceMarkersDelay: 500,
             $searchTerm: undefined,
             $searchFilter: undefined,
+            $filteredOptions: undefined,
             $table : undefined,
             markers: undefined,
             searchBoxChanged: undefined,
@@ -33,13 +34,14 @@ export class TraceSearch{
         searchBox.$table = $table;
         searchBox.$searchTerm = $("#searchTerm");
         searchBox.$searchFilter = $("#searchFilter");
-        searchBox.$searchNumResults = $("#numResultCount");
+        searchBox.$filteredOptions = $("#filteredOptions");
+        searchBox.$searchNumResults = $("#resultCount");
         
         searchBox.$searchFilter.empty();
         let options ="";
         for (let id in searchBox.searchFilters){
             let value = searchBox.searchFilters[id];
-            options += `<option value="${id}">${value}</option>`;
+            options += `<option value = "${id}">${value}</option>`;
         }
         searchBox.$searchFilter.append(options);
         
@@ -109,6 +111,7 @@ export class TraceSearch{
         
         let $table = searchBox.$table;
         let $numResults = searchBox.$searchNumResults;
+        let selectedFilter = searchBox.$searchFilter.find(":selected").val();
         
         if(!$table){
             throw "No table container received.";
@@ -141,6 +144,8 @@ export class TraceSearch{
         table += header;
         let ranges =[];
         
+        
+        let dataList = [];
         for(let i = 0; i < query.items.length; i++){
             
             if (hasRange){
@@ -152,7 +157,12 @@ export class TraceSearch{
             let row = "<tr>";
             for(let key in columns){
                 //TODO add tooltip and new css when selected
-                row += `<td>${JSON.stringify(query.items[i][key])}</td>`;
+                let value = query.items[i][key];
+                row += `<td>${value}</td>`;
+                
+                if(selectedFilter === "any" || key === selectedFilter){
+                   dataList[value]++;
+                }
             }
             row += "</tr>";
             
@@ -165,8 +175,15 @@ export class TraceSearch{
             searchBox.publishAceMarkersChanged(searchBox, ranges);
         }
         
+        searchBox.$filteredOptions.empty();
+        let options ="";
+        for(let value in dataList){
+             options += `<option>${value}</option>`;
+        }
+        searchBox.$filteredOptions.append(options);
+        
         $table.html(table);   
-        $numResults.html("<p>Number of Search Results: "+query.count()+"</p>");
+        $numResults.html(`<p>Number of Search Results: ${query.count()}</p>`);
     }
     
     updateAceMarkers(ranges, self = this){
