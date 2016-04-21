@@ -1,9 +1,60 @@
-import {Range} from '../utils/range';
+/* global ace */
 
 export class AceUtils{
     constructor(){
-        this.range = new Range();
     }
+    
+    makeAceMarkerManager(aceEditor){
+        return {    
+                aceEditor: aceEditor,
+                markers: [],
+                markerRenderer: "expression-range",
+                markerType: "text",
+                inFront: false
+                };
+    }
+    
+    updateAceMarkers(aceMarkerManager, elementsWithRangeProperty){
+        var Range = ace.require("ace/range").Range;
+        let ranges = [];    
+        for(let key in elementsWithRangeProperty){
+            
+            if(elementsWithRangeProperty.hasOwnProperty(key)){
+                
+                let element = elementsWithRangeProperty[key];
+                 
+                if (element.hasOwnProperty("range")){
+                            let elementRange = element.range;
+                            let range = new Range(  elementRange.start.row,
+                                                    elementRange.start.column,
+                                                    elementRange.end.row,
+                                                    elementRange.end.column
+                                        );
+                            ranges.push(range);
+                }
+            }
+        }
+        
+        let editSession = aceMarkerManager.aceEditor.getSession();
+        
+        if(aceMarkerManager.markers){
+            let oldmarkers = aceMarkerManager.markers;
+            for(let i in oldmarkers){
+                let marker = oldmarkers[i];
+                editSession.removeMarker(marker);
+            }
+        }
+        
+        let newMarkers = [];
+        let markerRenderer = aceMarkerManager.markerRenderer, markerType = aceMarkerManager.markerType, inFront = aceMarkerManager.inFront;
+        for(let i in ranges){
+            let range = ranges[i];
+            let marker = editSession.addMarker(range, markerRenderer, markerType, inFront);
+            newMarkers.push(marker);
+        }
+        aceMarkerManager.markers = newMarkers;
+    }
+    
     subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
      	editor.on("guttermousemove", function(e){ 
     	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));

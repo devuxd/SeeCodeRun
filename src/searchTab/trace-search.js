@@ -1,14 +1,15 @@
 /* global $ */
-/* global ace */
 import {TraceModel} from '../traceService/trace-model';
+import {AceUtils} from '../utils/ace-utils';
 
 export class TraceSearch{
     constructor(eventAggregator){
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
+        this.aceUtils = new AceUtils();
         this.searchBox = {
-            aceEditor: undefined,
-            updateAceMarkers: this.updateAceMarkers,
+            aceMarkerManager: undefined,
+            updateAceMarkers: this.aceUtils.updateAceMarkers,
             updateAceMarkersDelay: 500,
             $searchTerm: undefined,
             $searchFilter: undefined,
@@ -30,7 +31,7 @@ export class TraceSearch{
     attached(aceEditor, $table = $("#traceTable")){
         let searchBox = this.searchBox;
         
-        searchBox.aceEditor = aceEditor;
+        searchBox.aceMarkerManager = this.aceUtils.makeAceMarkerManager(aceEditor);
         searchBox.$table = $table;
         searchBox.$searchTerm = $("#searchTerm");
         searchBox.$searchFilter = $("#searchFilter");
@@ -63,9 +64,9 @@ export class TraceSearch{
             { searchTermText: searchTermText, searchFilterId: searchFilterId }
         );
     }
-    publishAceMarkersChanged(searchBox, ranges){
+    publishAceMarkersChanged(searchBox, itemsWithRanges){
         searchBox.eventAggregator.publish(searchBox.traceSearchEvents.aceMarkersChanged.event,
-            {ranges: ranges}
+            {items: itemsWithRanges}
         );
     }
     
@@ -96,18 +97,16 @@ export class TraceSearch{
         let updateAceMarkersClearTimeout = window.clearTimeout;
         
         this.eventAggregator.subscribe( aceMarkersChangedEvent, payload =>{
-            let ranges = payload.ranges;
+            let items = payload.items;
             updateAceMarkersClearTimeout(updateAceMarkersTimeout);
             updateAceMarkersTimeout = updateAceMarkersSetTimeout(
-                searchBox.updateAceMarkers(ranges),
+                searchBox.updateAceMarkers(searchBox.aceMarkerManager, items),
                 searchBox.updateAceMarkersDelay);
         });
         
     }
     
     updateTable(searchBox, query){
-        
-        var Range = ace.require("ace/range").Range;
         
         let $table = searchBox.$table;
         let $numResults = searchBox.$searchNumResults;
@@ -128,13 +127,9 @@ export class TraceSearch{
         let table = "<table>";
 
         let header ="<tr>";
-        let hasRange = false;
-        
         let columns = [];
         for(let key in query.items[0]){
-            if(key === "range"){
-                hasRange = true;
-            }else{
+            if(key !== "range"){
                 header += `<td>${key}</td>`;
                 columns[key] = true;
             }
@@ -142,18 +137,10 @@ export class TraceSearch{
         header += "</tr>";
         
         table += header;
-        let ranges =[];
-        
         
         let dataList = [];
         for(let i = 0; i < query.items.length; i++){
-            
-            if (hasRange){
-                let itemRange = query.items[i]["range"];
-                let range = new Range(itemRange.start.row, itemRange.start.column, itemRange.end.row, itemRange.end.column);
-                ranges.push(range);
-            }
-            
+
             let row = "<tr>";
             for(let key in columns){
                 //TODO add tooltip and new css when selected
@@ -170,10 +157,8 @@ export class TraceSearch{
          }
         
         table += "</table>";
-        
-        if(ranges){
-            searchBox.publishAceMarkersChanged(searchBox, ranges);
-        }
+
+        searchBox.publishAceMarkersChanged(searchBox, query.items);
         
         searchBox.$filteredOptions.empty();
         let options ="";
@@ -186,24 +171,6 @@ export class TraceSearch{
         $numResults.html(`<p>Number of Search Results: ${query.count()}</p>`);
     }
     
-    updateAceMarkers(ranges, self = this){
-        let editSession = self.aceEditor.getSession();
-        
-        if(self.markers){
-            let oldmarkers = self.markers;
-            for(let i in oldmarkers){
-                let marker = oldmarkers[i];
-                editSession.removeMarker(marker);
-            }
-        }
-        
-        let newMarkers = [];
-        for(let i in ranges){
-            let range = ranges[i];
-            let marker = editSession.addMarker(range, "expression-range", "text");
-            newMarkers.push(marker);
-        }
-        self.markers = newMarkers;
-    }
+    
   
 }
