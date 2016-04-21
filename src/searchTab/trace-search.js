@@ -10,7 +10,6 @@ export class TraceSearch{
     
     constructor(eventAggregator, $table){
         
-        this.baseURL = 'https://seecoderun.firebaseio.com';
         this.$table = $table;
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
@@ -31,26 +30,8 @@ export class TraceSearch{
         };
     }
   
-    activate(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-    else {
-      let firebase = new Firebase(this.baseURL);
-      this.pastebinId = firebase.push().key();
-    }
-    }
- 
- 
-    attached(params){
+        attached(){
     
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-
-        //New Firebase visualisation Reference
-        this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
-     
         let searchBox = this.searchBox;
         
         searchBox.$searchTerm = $("#searchTerm");
@@ -83,13 +64,7 @@ export class TraceSearch{
         
         this.subscribe(); 
         
-            // Retrieve.
-            this.firebase.limitToLast(1).on('child_added', function(snapshot) {
-                //GET DATA
-            var data = snapshot.val();
-            console.info(data.filter);
-            console.info(data.searchterm);
-                });    
+                
     
     }
     
@@ -106,18 +81,13 @@ export class TraceSearch{
         this.eventAggregator.subscribe( traceChangedEvent, payload =>{
             searchBox.traceHelper = payload.data;
             searchBox.searchBoxChanged(traceChangedEvent);
+            
         });
         
         this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
             let value = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
-                
-                //Store values
-                this.firebase.push({
-                    filter: selectedFilter,
-                searchterm: value
-                        });
-
+                //alert(value);
                 
                 if(searchBox.traceHelper){
                 let variableValues =searchBox.traceHelper.getValues();

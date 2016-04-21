@@ -14,6 +14,7 @@ import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import {TraceViewController} from '../traceView/trace-view-controller';
 import {TraceSearch} from '../searchTab/trace-search';
+import {TraceSearchHistory} from '../searchTab/trace-search-history';
 
 @inject(EventAggregator, Router)
 export class Pastebin {
@@ -33,6 +34,8 @@ export class Pastebin {
     this.chat = new Chat();
     this.traceViewController = new TraceViewController(this.eventAggregator);
     this.traceSearch = new TraceSearch(this.eventAggregator);
+    this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator);
+
   }
 
 activate(params) {
@@ -43,7 +46,6 @@ activate(params) {
       this.htmlEditor.activate({ id: id });
       this.cssEditor.activate({ id: id });
       this.chat.activate({ id: id });
-      this.traceSearch.activate({ id: id });
     } else {
       let baseURL = 'https://seecoderun.firebaseio.com';
       let firebase = new Firebase(baseURL);
@@ -64,7 +66,8 @@ activate(params) {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
-    this.traceSearch.attached({id: this.pastebinId});
+    this.traceSearch.attached();
+    this.traceSearchHistory.attached({id: this.pastebinId});
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
