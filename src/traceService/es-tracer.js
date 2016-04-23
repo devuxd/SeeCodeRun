@@ -27,7 +27,6 @@ export class EsTracer {
     
     traceChanged(event, results, error = ""){
          if(!results){
-          //  console.log("No trace results found");
             return;
         }
 

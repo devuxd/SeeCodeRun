@@ -11,8 +11,18 @@ export class EsInstrumenter {
       this.Syntax = this.traceModel.traceSyntax;
       this.TraceParameters = this.traceModel.traceParameters;
       this.blockCounter = 0;
+      this.blocks= {};
+      this.blocks[this.blockCounter] ={ identifier: "program", parent: -1, children: [] };
       this.programCounter = 0;
     
+  }
+  
+  getNewBlock(self, parent, identifier){
+      let block = { identifier: identifier, parent: parent, children: [] };
+      if(parent > -1 && self.blocks[parent]){
+        self.blocks[parent].children.push(block);
+      }
+      return block;
   }
 
   getTextRange(code, range){
@@ -155,7 +165,8 @@ export class EsInstrumenter {
                 setNodeValue = self.setNodeValue,
                 setNodeTextValue = self.setNodeTextValue,
                 getLocationDataNode = self.getLocationDataNode,
-                getTextRange = self.getTextRange;
+                getTextRange = self.getTextRange,
+                blockCounter = self.blockCounter -1;
                 
         if(!node.argument){
             return undefined;
@@ -174,6 +185,8 @@ export class EsInstrumenter {
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
              }
+            // todo: this.blocks[this.blockCounter] ={ identifier
+             
              node.argument = autoLogNode;
         }
      
@@ -270,6 +283,7 @@ export class EsInstrumenter {
         if(!(node.body)){
             return undefined;
         }
+        let block = self.getNewBlock(self, blockCounter, getTextRange(code, node.range));
 
 
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
@@ -299,6 +313,7 @@ export class EsInstrumenter {
         
         node.body.push(wrapInExpressionStatementNode(autoLogNode));
         
+        self.blocks[blockCounter] = block;
         self.blockCounter++;
   }
     
@@ -678,9 +693,9 @@ export class EsInstrumenter {
             instrumentForStatement = self.instrumentForStatement,
             instrumentForInStatement = self.instrumentForInStatement,
             instrumentFunctionExpression = self.instrumentFunctionExpression,
-            instrumentSwitchCase = this.instrumentSwitchCase,
-            instrumentSwitchStatement = this.instrumentSwitchStatement,
-            instrumentIdentifier = this.instrumentIdentifier;
+            instrumentSwitchCase = self.instrumentSwitchCase,
+            instrumentSwitchStatement = self.instrumentSwitchStatement,
+            instrumentIdentifier = self.instrumentIdentifier;
             
 
         instrumenter = function instrumenter(ref){
