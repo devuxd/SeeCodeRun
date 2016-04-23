@@ -3,57 +3,66 @@
 /* global ace */
 /* global $ */
 
-import {TraceModel} from '../traceService/trace-model';
+import {
+    TraceModel
+}
+from '../traceService/trace-model';
 
 export class TraceSearchHistory {
-	 constructor(eventAggregator){
+    constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
         this.baseURL = 'https://seecoderun.firebaseio.com';
-	 }
-	 
-    attached(params){
-    
-    if (params.id) {
-      this.pastebinId = params.id;
+        this.data = undefined;
     }
+
+    attached(params) {
+
+        if (params.id) {
+            this.pastebinId = params.id;
+        }
 
         //New Firebase visualisation Reference
         this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
-     
-        
-        this.subscribe();        
-        
-    // Retrieve.
-            this.firebase.limitToLast(1).on('child_added', function(snapshot) {
-    
-    //GET DATA
-            let data = snapshot.val();
-            console.info(data.filter);
-            console.info(data.searchterm);
-   
 
-            });
+        this.subscribe();
 
+
+        // Retrieve.
+       
     }
-    
 
-subscribe(){
 
-let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
 
-        this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
-            let value = payload.searchTermText;
-            let selectedFilter = payload.searchFilterId;
-            alert(value);
-            alert(selectedFilter);
-             //Store values
-                this.firebase.push({
-                    filter: selectedFilter,
-                searchterm: value
-                        });
-        });
-            }
+    subscribe() {
+            let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+            let eventAggregator =this.eventAggregator;
             
-	
+            
+            this.firebase.on('value', function(snapshot) {
+            let data = snapshot.val();
+            console.info(`${data.searchFilterId} inside subscribe firebase`);
+            console.info(`${data.searchTermText} inside subscribe firebase`);
+            
+            // Publishing an event for searchBox;
+            eventAggregator.publish(searchBoxChangedEvent, data);
+
+        });
+
+
+
+        this.eventAggregator.subscribe(searchBoxChangedEvent, payload => {
+            let searchTermText = payload.searchTermText;
+            let searchFilterId = payload.searchFilterId;
+            console.info(`${searchTermText} inside subscribe searchBoxChangedEvent`);
+            console.info(`${searchFilterId} inside subscribe searchBoxChangedEvent`);
+            //Store values
+            this.firebase.update({
+                searchFilterId: searchFilterId,
+                searchTermText: searchTermText
+            });
+        });
+    }
+
+
 }

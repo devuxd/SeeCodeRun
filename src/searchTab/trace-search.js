@@ -93,6 +93,7 @@ export class TraceSearch{
                 let variableValues =searchBox.traceHelper.getValues();
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
                 searchBox.updateTable(searchBox, query);
+                
             }
         });
     }
