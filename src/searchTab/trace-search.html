@@ -14,7 +14,7 @@
       <div class="w3-group">
         <label class="w3-label">Search Term</label>
         <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" list="filteredOptions">
-        <datalist  repeat.for="[id, expression]  of search.rows" id.bind="expression.id" model.bind="expression.id">hello</datalist>
+        <datalist  repeat.for="expression  of search.rows" id.bind="expression.id" model.bind="expression.id">hello</datalist>
       </div>
     </div>
   </div>
@@ -27,11 +27,13 @@
       </tr>
       </thead>
         <tbody>
-        <tr repeat.for="[id, expression]  of search.rows">
-
-          <td >${expression.id}</td>
-          <td>${expression.value}</td>
+        <tr repeat.for="row of search.rows">
+          <td><input type="checkbox" id="${row.id}" change.delegate="search.addCheckedExpression({$index})"  value.bind="row.isChecked"></input></td>
+          <td>${row.id}</td>
+          <td>${row.value}</td>
+          
         </tr>
+        </tbody>
     </table>
   </div>
 

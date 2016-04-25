@@ -18,8 +18,9 @@ export class TraceSearch {
         this.aceUtils = new AceUtils();
         this.options = [];
         this.selectedFilter = 2;
-        this.heads=[];
-        this.rows = new Map();
+        this.heads = [];
+        this.rows = [];
+        this.selectedExpressions = [];
         this.searchBox = {
             aceMarkerManager: undefined,
             updateAceMarkers: this.aceUtils.updateAceMarkers,
@@ -50,7 +51,7 @@ export class TraceSearch {
         searchBox.$filteredOptions = $("#filteredOptions");
         searchBox.$searchNumResults = $("#resultCount");
 
-         this.searchBox = searchBox;  
+        this.searchBox = searchBox;
         // searchBox.$searchFilter.empty();
 
         for (let filter in searchBox.searchFilters) {
@@ -62,7 +63,7 @@ export class TraceSearch {
 
         }
 
-       
+
         this.subscribe();
 
 
@@ -75,7 +76,7 @@ export class TraceSearch {
             searchFilterId: searchFilterId
         });
     }
-    publishAceMarkersChanged( itemsWithRanges) {
+    publishAceMarkersChanged(itemsWithRanges) {
         this.eventAggregator.publish('aceMarkersChanged', {
             items: itemsWithRanges
         });
@@ -83,10 +84,10 @@ export class TraceSearch {
 
     subscribe() {
         let searchBox = this.searchBox;
-       
+
         this.eventAggregator.subscribe('traceChanged', payload => {
             searchBox.traceHelper = payload.data;
-        //   searchBox.searchBoxChanged('traceChanged');
+            //   searchBox.searchBoxChanged('traceChanged');
         });
 
         this.eventAggregator.subscribe('searchBoxChanged', payload => {
@@ -96,10 +97,10 @@ export class TraceSearch {
 
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
-              //update ta
-               let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
-            //   console.info(query.item[0]);
-               this.updateTable(searchBox,query);
+                //update ta
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
+                //   console.info(query.item[0]);
+                this.updateTable(searchBox, query);
             }
         });
 
@@ -119,101 +120,126 @@ export class TraceSearch {
 
     updateTable(searchBox, query) {
 
-        //     let $table = searchBox.$table;
-        //     let $numResults = searchBox.$searchNumResults;
-        // let selectedFilter = this.selectedFilter;
+            //     let $table = searchBox.$table;
+            //     let $numResults = searchBox.$searchNumResults;
+            // let selectedFilter = this.selectedFilter;
 
-        //     if(!$table){
-        //         throw "No table container received.";
-        //     }
+            //     if(!$table){
+            //         throw "No table container received.";
+            //     }
 
-        //     if(!query){
-        //         throw "No query received.";
-        //     }
+            //     if(!query){
+            //         throw "No query received.";
+            //     }
 
-        //     if(query.count()<1){
-        //         $table.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
-        //         return;
-        //     }
-        //     let table = "<table>";
+            //     if(query.count()<1){
+            //         $table.innerHTML = "No Results Found. Try a different Search Term with Filter Option.";
+            //         return;
+            //     }
+            //     let table = "<table>";
 
             // let header ="<tr>";
-            
-            this.heads=[];
-            for(let key in query.items[0]){
-                if(key !== "range"){
-                   
-                   
+
+            this.heads = [];
+            this.heads.push("select");
+            for (let key in query.items[0]) {
+                if (key !== "range") {
+
+
                     this.heads.push(key);
                     // header += `<td>${key}</td>`;
                     // columns[key] = true;
                 }
             }
             // console.info(this.heads);
-        //     header += "</tr>";
+            //     header += "</tr>";
 
-        //     table += header;
+            //     table += header;
 
-        //     let dataList = [];
-          
+            //     let dataList = [];
 
-            for(let i = 0; i < query.items.length; i++){
-                let contents ={};
-                for(let key of this.heads){
-        //             //TODO add tooltip and new css when selected
-        //             let value = query.items[i][key];
-        //             row += `<td>${value}</td>`;
-                    contents[key] =query.items[i][key];
-        //             if(selectedFilter === "any" || key === selectedFilter){
-        //               dataList[value]++;
-        //             }
-        //         }
-        //         row += "</tr>";
+            this.rows = [];
+            for (let i = 0; i < query.items.length; i++) {
+                let contents = {};
+                for (let key of this.heads) {
+                    //             //TODO add tooltip and new css when selected
+                    //             let value = query.items[i][key];
+                    //             row += `<td>${value}</td>`;
 
-        //         table+= row;
-             }
-             console.info("Hello");
-                this.rows.set(i,contents);
+                    contents[key] = query.items[i][key];
+                    //             if(selectedFilter === "any" || key === selectedFilter){
+                    //               dataList[value]++;
+                    //             }
+                    //         }
+                    //         row += "</tr>";
+
+                    //         table+= row;
+                }
+                contents["range"] = query.items[i]["range"];
+                if (contents.value !== undefined) {
+                    contents["isChecked"] = false;
+                    this.rows.push(contents);
+
+                }
 
             }
-        //     table += "</table>";
 
-        //   searchBox.publishAceMarkersChanged(searchBox, query.items);
+            console.info(this.rows);
+            //     table += "</table>";
 
-        //     searchBox.$filteredOptions.empty();
-        //     let options ="";
-        //       for(let value  of this.rows.values()){
-        //           options += `<option>${value}</option>`;
-                  
-        //           console.info(value);
+            //   searchBox.publishAceMarkersChanged(searchBox, query.items);
+
+            //     searchBox.$filteredOptions.empty();
+            //     let options ="";
+            //       for(let value  of this.rows.values()){
+            //           options += `<option>${value}</option>`;
+
+            //           console.info(value);
             //   }
-        //     searchBox.$filteredOptions.append(options);
+            //     searchBox.$filteredOptions.append(options);
 
-        //     $table.html(table);   
-        //     $numResults.html(`<p>Number of Search Results: ${query.count()}</p>`);
-    
-        
-        this.numberOfResult=this.rows.size;
-    }
-                // console.info(this.rows);
+            //     $table.html(table);   
+            //     $numResults.html(`<p>Number of Search Results: ${query.count()}</p>`);
 
-    
+
+            this.numberOfResult = this.rows.length;
+        }
+        // console.info(this.rows);
+
+
 
     filterChanged() {
-        this.selectedFilter= this.selectedFilter;
+        this.selectedFilter = this.selectedFilter;
         // console.info(this.selectedFilter);
         let searchBox = this.searchBox;
-         let selectedFilter = this.selectedFilter
-        // console.info(`First ${selectedFilter}`)
-       
+        let selectedFilter = this.selectedFilter
+            // console.info(`First ${selectedFilter}`)
 
-            let value = searchBox.$searchTerm.val();
-            // console.info(`Second  ${selectedFilter}`)
 
-            searchBox.publishTraceSearchChanged(value, selectedFilter);
-        
-       
+        let value = searchBox.$searchTerm.val();
+        // console.info(`Second  ${selectedFilter}`)
+
+        searchBox.publishTraceSearchChanged(value, selectedFilter);
+        console.info(this.selectedExpressions);
+
 
     }
+    addCheckedExpression(rows) {
+        let target = this.rows[rows.$index];
+        let exist = this.selectedExpressions.includes(target); //ECMAScript 2016 
+        if (!exist) {
+          this.selectedExpressions.push(target);
+         console.info("Object added");
+        }
+        else{
+           this.selectedExpressions= this.selectedExpressions.filter( elem => {
+                return elem.range.start.row !== target.range.start.row &&
+                       elem.range.start.column !== target.range.start.column;
+                });
+            console.info(this.selectedExpressions);
+        }
+
+
+}
 
 }
