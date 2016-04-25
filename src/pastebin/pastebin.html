@@ -60,10 +60,10 @@
             </div>
             <div class="tab-content">
               <div role="tabpanel" class="tab-pane active" id="preview">
-                <html-viewer></html-viewer>
+                <html-viewer Viewer.bind="htmlViewer"></html-viewer>
               </div>
               <div role="tabpanel"  class="tab-pane iframeCssPreview" id="visualization-container">
-                <trace-search traceSearch.bind="traceSearch"></trace-search>
+                <trace-search search.bind="traceSearch"></trace-search>
                 <p>
                 <div>
                   <vis-viewer vis.bind="visViewer"></vis-viewer>

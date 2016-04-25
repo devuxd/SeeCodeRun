@@ -1,24 +1,38 @@
-<template bindable="traceSearch">
-	<link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
-	
+<template bindable="search">
+  <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+
   <div class="w3-row-padding">
-    <div class="w3-col" style="width:90px;" >
-    	<div class="w3-group" >
-    		<label class="w3-label">Filter By</label>
-    		<select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" ><option>None</option></select>
-    	</div>
+    <div class="w3-col" style="width:90px;">
+      <div class="w3-group">
+        <label class="w3-label">Filter By</label>
+        <select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
+          <option repeat.for="option of search.options" model.bind="option">${option}</option>
+        </select>
+      </div>
     </div>
     <div class="w3-quarter">
-    	<div class="w3-group" >
-    		<label class="w3-label">Search Term</label>
-    		<input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" list = "filteredOptions"> 		
-    		<datalist id="filteredOptions"></datalist>
-    	</div>
+      <div class="w3-group">
+        <label class="w3-label">Search Term</label>
+        <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" list="filteredOptions">
+        <datalist  repeat.for="[id, expression]  of search.rows" id.bind="expression.id" model.bind="expression.id">hello</datalist>
+      </div>
     </div>
   </div>
-  <div class="w3-table" id="resultCount">Number of Search Results: 0</div>
+  <div class="w3-table" id="resultCount">Number of Search Results: ${search.numberOfResult}</div>
   <div class="w3-table" name="traceTable" id="traceTable">
-    No results.
+    <table>
+        <thead>
+      <tr>
+    <th repeat.for="head of search.heads" value.bind="head">${head}</th>    
+      </tr>
+      </thead>
+        <tbody>
+        <tr repeat.for="[id, expression]  of search.rows">
+
+          <td >${expression.id}</td>
+          <td>${expression.value}</td>
+        </tr>
+    </table>
   </div>
-  
+
 </template>
