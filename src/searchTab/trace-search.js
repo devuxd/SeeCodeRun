@@ -18,6 +18,7 @@ export class TraceSearch {
         this.aceUtils = new AceUtils();
         this.options = [];
         this.selectedFilter = 2;
+        this.searchedValue = undefined;
         this.heads = [];
         this.rows = [];
         this.selectedExpressions = [];
@@ -88,19 +89,25 @@ export class TraceSearch {
         this.eventAggregator.subscribe('traceChanged', payload => {
             searchBox.traceHelper = payload.data;
             //   searchBox.searchBoxChanged('traceChanged');
+            let variableValues = searchBox.traceHelper.getValues();
+
+            let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
+
+            this.updateTable(query);
         });
 
         this.eventAggregator.subscribe('searchBoxChanged', payload => {
-            let value = payload.searchTermText;
+            this.searchedValue = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
             //alert(value);
 
+            console.info(this.searchedValue);
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
                 //update ta
-                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, this.searchedValue);
                 //   console.info(query.item[0]);
-                this.updateTable(searchBox, query);
+                this.updateTable(query);
             }
         });
 
@@ -118,7 +125,7 @@ export class TraceSearch {
 
     }
 
-    updateTable(searchBox, query) {
+    updateTable(query) {
 
             //     let $table = searchBox.$table;
             //     let $numResults = searchBox.$searchNumResults;
@@ -184,7 +191,7 @@ export class TraceSearch {
 
             }
 
-            console.info(this.rows);
+            // console.info(query.items);
             //     table += "</table>";
 
             //   searchBox.publishAceMarkersChanged(searchBox, query.items);
@@ -203,6 +210,10 @@ export class TraceSearch {
 
 
             this.numberOfResult = this.rows.length;
+            
+            // this.selectedExpressions.forEach()
+            // this.publishAceMarkersChanged(this.selectedExpressions);
+
         }
         // console.info(this.rows);
 
@@ -212,8 +223,8 @@ export class TraceSearch {
         this.selectedFilter = this.selectedFilter;
         // console.info(this.selectedFilter);
         let searchBox = this.searchBox;
-        let selectedFilter = this.selectedFilter
-            // console.info(`First ${selectedFilter}`)
+        let selectedFilter = this.selectedFilter;
+        // console.info(`First ${selectedFilter}`)
 
 
         let value = searchBox.$searchTerm.val();
@@ -226,20 +237,34 @@ export class TraceSearch {
     }
     addCheckedExpression(rows) {
         let target = this.rows[rows.$index];
+        // console.log("Target Object");
+        // console.log(target);
+
+
         let exist = this.selectedExpressions.includes(target); //ECMAScript 2016 
         if (!exist) {
-          this.selectedExpressions.push(target);
-         console.info("Object added");
+            this.selectedExpressions.push(target);
+            // console.info("Object added");
+            // console.info(target);
         }
-        else{
-           this.selectedExpressions= this.selectedExpressions.filter( elem => {
-                return elem.range.start.row !== target.range.start.row &&
-                       elem.range.start.column !== target.range.start.column;
-                });
-            console.info(this.selectedExpressions);
+        else {
+            this.selectedExpressions = this.selectedExpressions.filter(elem => {
+                return elem.range.start.row == target.range.start.row ? elem.range.start.column !== target.range.start.column : true;
+            });
+
+            // console.info("Object deleted");
+            // console.info(this.selectedExpressions);
+
         }
+        // console.info(this.isChecked);
+
+        this.publishAceMarkersChanged(this.selectedExpressions);
 
 
-}
+    }
+    showVis(){
+        
+        console.info(this.selectedExpressions);
+    }
 
 }

@@ -14,27 +14,30 @@
       <div class="w3-group">
         <label class="w3-label">Search Term</label>
         <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" list="filteredOptions">
-        <datalist  repeat.for="expression  of search.rows" id.bind="expression.id" model.bind="expression.id">hello</datalist>
+        <datalist repeat.for="expression  of search.rows" id.bind="expression.id" model.bind="expression.id">hello</datalist>
       </div>
     </div>
   </div>
   <div class="w3-table" id="resultCount">Number of Search Results: ${search.numberOfResult}</div>
   <div class="w3-table" name="traceTable" id="traceTable">
     <table>
-        <thead>
-      <tr>
-    <th repeat.for="head of search.heads" value.bind="head">${head}</th>    
-      </tr>
+      <thead>
+        <tr>
+          <th repeat.for="head of search.heads" value.bind="head">${head}</th>
+        </tr>
       </thead>
-        <tbody>
+      <tbody>
         <tr repeat.for="row of search.rows">
-          <td><input type="checkbox" id="${row.id}" change.delegate="search.addCheckedExpression({$index})"  value.bind="row.isChecked"></input></td>
+          <td>
+            <input type="checkbox" id="${row.id}" change.delegate="search.addCheckedExpression({$index})" checked.delegate="search.isChecked"></input>
+          </td>
           <td>${row.id}</td>
           <td>${row.value}</td>
-          
         </tr>
-        </tbody>
+      </tbody>
     </table>
+
   </div>
+  <button click.trigger="search.showVis()" disabled.bind="search.selectedExpressions.length == 0 ? true : false" style=" padding: 10px; margin-top: 5px; margin-left: 5px; " class="btn btn-info active">show visualisation</button>
 
 </template>
