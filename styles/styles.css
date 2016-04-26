@@ -390,7 +390,8 @@
    font-size: 16px !important;
  }
  
- .w3-table, .w3-table tr, .w3-table td {
-   border-collapse: collapse; 
-   border: 2px solid black;
+
+.table tbody tr:hover td, .table tbody tr:hover th {
+    background-color: #f6f6bd;
+    border-bottom-color: black;
 }

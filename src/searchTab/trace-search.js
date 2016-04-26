@@ -113,7 +113,6 @@ export class TraceSearch {
 
     updateTable(query) {
         this.heads = [];
-        this.heads.push("select");
         for (let key in query.items[0]) {
             if (key !== "range") {
                 this.heads.push(key);
@@ -143,26 +142,17 @@ export class TraceSearch {
         let selectedFilter = this.selectedFilter;
         let value = searchBox.$searchTerm.val();
         searchBox.publishTraceSearchChanged(value, selectedFilter);
-        console.info(this.selectedExpressions);
-
     }
 
-    addCheckedExpression(row) {
-        let target = this.rows[row.$index];
-        let exist = this.selectedExpressions.includes(target); //ECMAScript 2016 
-        if (!exist) {
-            this.selectedExpressions.push(target);
-        }
-        else {
-            this.selectedExpressions = this.selectedExpressions.filter(elem => {
-                return elem.range.start.row == target.range.start.row ? elem.range.start.column !== target.range.start.column : true;
-            });
-
-        }
-
+   
+    domouseover(row){
+         let target = this.rows[row.$index];
+         this.selectedExpressions.push(target);
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
-    showVis() {
-        console.info(this.selectedExpressions);
+    
+    domouseout(row){
+        this.selectedExpressions.pop();
+        this.publishAceMarkersChanged(this.selectedExpressions);
     }
 }

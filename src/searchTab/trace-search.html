@@ -28,10 +28,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr repeat.for="row of search.rows">
-          <td>
-            <input type="checkbox" id="${row.id}" change.delegate="search.addCheckedExpression({$index})" checked.delegate="search.isChecked"></input>
-          </td>
+        <tr repeat.for="row of search.rows"  mouseover.delegate="search.domouseover({$index})" mouseout.delegate="search.domouseout({$index})" class = "table-hover"  >
+          <!--<td>-->
+          <!--  <input type="checkbox" id="${row.id}" change.delegate="search.addCheckedExpression({$index})" checked.delegate="search.isChecked"></input>-->
+          <!--</td>-->
           <td>${row.id}</td>
           <td>${row.value}</td>
         </tr>
@@ -41,7 +41,6 @@
   <div class=" container-fluid">
     <div class="row">
       <div class="col-md-6 col-offset-2">
-        <button click.trigger="search.showVis()" disabled.bind="search.selectedExpressions.length == 0 ? true : false" class="btn btn-info active">show visualization</button>
       </div>
       <div class="col-md-4">
         <div>Number of Search Results: ${search.numberOfResult}</div>
