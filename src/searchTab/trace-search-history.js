@@ -29,29 +29,28 @@ export class TraceSearchHistory {
 
 
         // Retrieve.
-       
+
     }
 
 
 
     subscribe() {
-            let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
-            let eventAggregator =this.eventAggregator;
-            
-            
-            this.firebase.on('value', function(snapshot) {
+        let eventAggregator = this.eventAggregator;
+        let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+        let traceSearchHistory= this;
+
+        this.firebase.on('value', function(snapshot) {
             let data = snapshot.val();
             console.info(`${data.searchFilterId} inside subscribe firebase`);
             console.info(`${data.searchTermText} inside subscribe firebase`);
-            
-            // Publishing an event for searchBox;
-            eventAggregator.publish(searchBoxChangedEvent, data);
 
+            // Publishing an event for searchBox;
+            traceSearchHistory.publish(data);
         });
 
 
 
-        this.eventAggregator.subscribe(searchBoxChangedEvent, payload => {
+        eventAggregator.subscribe(searchBoxChangedEvent, payload => {
             let searchTermText = payload.searchTermText;
             let searchFilterId = payload.searchFilterId;
             console.info(`${searchTermText} inside subscribe searchBoxChangedEvent`);
@@ -65,4 +64,12 @@ export class TraceSearchHistory {
     }
 
 
+
+
+    publish(data) {
+        let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+
+        this.eventAggregator.publish(searchBoxChangedEvent, data);
+        this.eventAggregator.publish("traceSearchHistory", data);
+    }
 }
