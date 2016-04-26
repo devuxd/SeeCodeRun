@@ -2,9 +2,9 @@ import {TraceService} from '../traceService/trace-service';
 
 export class HtmlViewer {
 
-    constructor(eventAggregator) {
+    constructor(eventAggregator, traceModel) {
         this.eventAggregator = eventAggregator;
-        this.traceService = new TraceService(eventAggregator);
+        this.traceService = new TraceService(eventAggregator, traceModel);
         this.div = 'htmlView';
         this.subscribe();
     }

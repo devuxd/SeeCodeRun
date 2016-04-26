@@ -1,12 +1,10 @@
 /* global $ */
-import {TraceModel} from '../traceService/trace-model';
-import {AceUtils} from '../utils/ace-utils';
 
 export class TraceSearch{
-    constructor(eventAggregator){
+    constructor(eventAggregator, traceModel, aceUtils){
         this.eventAggregator = eventAggregator;
-        this.traceModel = new TraceModel();
-        this.aceUtils = new AceUtils();
+        this.traceModel = traceModel;
+        this.aceUtils = aceUtils;
         this.searchBox = {
             aceMarkerManager: undefined,
             updateAceMarkers: this.aceUtils.updateAceMarkers,

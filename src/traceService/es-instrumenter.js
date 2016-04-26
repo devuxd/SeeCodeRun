@@ -678,7 +678,7 @@ export class EsInstrumenter {
   
     instrumentTracer(sourceCode, esanalyzer) {
         var self = this;
-        let  instrumentedCode, instrumenter, tree;
+        let  instrumentedCode, instrumenter;
         let Syntax = self.Syntax,
             instrumentVariableDeclarator = self.instrumentVariableDeclarator,
             instrumentCallExpression = self.instrumentCallExpression,
@@ -805,7 +805,8 @@ export class EsInstrumenter {
             }
         };
         
-        tree = esanalyzer.traceAllAutoLog(sourceCode, instrumenter);
+        let analysis = esanalyzer.traceAllAutoLog(sourceCode, instrumenter);
+        let tree = analysis.tree;
         
         instrumentedCode = self.escodegen.generate(tree);
 

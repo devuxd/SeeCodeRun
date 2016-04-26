@@ -1,14 +1,12 @@
 /* global ace */
-import {AceUtils} from "../utils/ace-utils";
 import {TraceViewModel} from "./trace-view-model";
-import {TraceModel} from '../traceService/trace-model';
 
 export class TraceViewController{
     
-    constructor(eventAggregator){
+    constructor(eventAggregator, traceModel, aceUtils){
         this.eventAggregator = eventAggregator;
-        this.traceModel = new TraceModel();
-        this.aceUtils = new AceUtils();
+        this.traceModel = traceModel;
+        this.aceUtils = aceUtils;
     }
     
     attached(){

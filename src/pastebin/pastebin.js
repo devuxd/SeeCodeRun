@@ -12,15 +12,19 @@ import {HtmlViewer} from '../htmlViewer/html-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
+import {TraceModel} from '../traceService/trace-model';
 import {TraceViewController} from '../traceView/trace-view-controller';
 import {TraceSearch} from '../searchTab/trace-search';
+import {AceUtils} from '../utils/ace-utils';
 
-@inject(EventAggregator, Router)
+@inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
 
-  constructor(eventAggregator, router) {
+  constructor(eventAggregator, router, traceModel, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.router = router;
+    this.traceModel = traceModel;
+    this.aceUtils = aceUtils;
     this.heading = 'Pastebin';
     this.pastebinId ='';
     this.jsEditor = new JsEditor(this.eventAggregator);
@@ -28,11 +32,11 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(this.eventAggregator);
     this.htmlEditor = new HtmlEditor(this.eventAggregator);
     this.cssEditor  = new CssEditor(this.eventAggregator);
-    this.htmlViewer = new HtmlViewer(this.eventAggregator);
+    this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
-    this.traceViewController = new TraceViewController(this.eventAggregator);
-    this.traceSearch = new TraceSearch(this.eventAggregator);
+    this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
+    this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
   }
 
 activate(params) {
