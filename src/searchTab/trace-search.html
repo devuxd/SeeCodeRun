@@ -18,9 +18,10 @@
       </div>
     </div>
   </div>
-  <div class="w3-table" id="resultCount">Number of Search Results: ${search.numberOfResult}</div>
-  <div class="w3-table" name="traceTable" id="traceTable">
-    <table>
+
+  <div class="container-fluid">
+
+    <table class="table table-striped table-bordered">
       <thead>
         <tr>
           <th repeat.for="head of search.heads" value.bind="head">${head}</th>
@@ -36,8 +37,17 @@
         </tr>
       </tbody>
     </table>
-
   </div>
-  <button click.trigger="search.showVis()" disabled.bind="search.selectedExpressions.length == 0 ? true : false" style=" padding: 10px; margin-top: 5px; margin-left: 5px; " class="btn btn-info active">show visualisation</button>
-
+  <div class=" container-fluid">
+    <div class="row">
+      <div class="col-md-6 col-offset-2">
+        <button click.trigger="search.showVis()" disabled.bind="search.selectedExpressions.length == 0 ? true : false" class="btn btn-info active">show visualization</button>
+      </div>
+      <div class="col-md-4">
+        <div>Number of Search Results: ${search.numberOfResult}</div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <br>
 </template>
