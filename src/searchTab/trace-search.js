@@ -10,10 +10,11 @@ import {
     AceUtils
 }
 from '../utils/ace-utils';
-
+ 
 export class TraceSearch {
-    constructor(eventAggregator) {
+    constructor(eventAggregator, element) {
         this.eventAggregator = eventAggregator;
+        this.element =element;
         this.traceModel = new TraceModel();
         this.aceUtils = new AceUtils();
         this.options = [];
@@ -22,6 +23,8 @@ export class TraceSearch {
         this.heads = [];
         this.rows = [];
         this.selectedExpressions = [];
+        this.searchText = "";
+        this.noResult= false;
         this.searchBox = {
             aceMarkerManager: undefined,
             updateAceMarkers: this.aceUtils.updateAceMarkers,
@@ -88,7 +91,6 @@ export class TraceSearch {
             this.searchedValue = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
 
-            console.info(this.searchedValue);
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
                 //update table
@@ -127,11 +129,11 @@ export class TraceSearch {
             }
             contents["range"] = query.items[i]["range"];
             if (contents.value !== undefined) {
-                contents["isChecked"] = false;
                 this.rows.push(contents);
             }
         }
         this.numberOfResult = this.rows.length;
+        this.noResult = this.numberOfResult == 0 ? true :false;
     }
 
 
@@ -144,15 +146,22 @@ export class TraceSearch {
         searchBox.publishTraceSearchChanged(value, selectedFilter);
     }
 
-   
-    domouseover(row){
-         let target = this.rows[row.$index];
-         this.selectedExpressions.push(target);
+
+    domouseover(row) {
+        let target = this.rows[row.$index];
+        this.selectedExpressions.push(target);
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
-    
-    domouseout(row){
+
+    domouseout(row) {
         this.selectedExpressions.pop();
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
+    keyPressed() {
+       this.selectedFilter = this.selectedFilter;
+        let searchBox = this.searchBox;
+        let selectedFilter = this.selectedFilter;
+        let value = searchBox.$searchTerm.val();
+        searchBox.publishTraceSearchChanged(value, selectedFilter);
+}
 }
