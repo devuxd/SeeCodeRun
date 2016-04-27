@@ -12,7 +12,7 @@
         </div>
         <div class="col-md-4">
           <label class="w3-label">Search Term</label>
-          <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" input.delegate="search.keyPressed()" value.bind="search.searchText">
+          <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" input.delegate="search.keyPressed()">
         </div>
         <div class="col-md-4" if.bind="!search.noResult">
           <br>
@@ -29,7 +29,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr repeat.for="row of search.rows" mouseover.delegate="search.domouseover({$index})" mouseout.delegate="search.domouseout({$index})" class="table-hover">
+        <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut()" class="table-hover">
           <td>${row.id}</td>
           <td>${row.value}</td>
         </tr>

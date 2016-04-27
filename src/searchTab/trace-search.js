@@ -23,7 +23,6 @@ export class TraceSearch {
         this.heads = [];
         this.rows = [];
         this.selectedExpressions = [];
-        this.searchText = "";
         this.noResult= false;
         this.searchBox = {
             aceMarkerManager: undefined,
@@ -147,18 +146,17 @@ export class TraceSearch {
     }
 
 
-    domouseover(row) {
+    doMouseOver(row) {
         let target = this.rows[row.$index];
         this.selectedExpressions.push(target);
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
 
-    domouseout(row) {
+    doMouseOut() {
         this.selectedExpressions.pop();
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
     keyPressed() {
-       this.selectedFilter = this.selectedFilter;
         let searchBox = this.searchBox;
         let selectedFilter = this.selectedFilter;
         let value = searchBox.$searchTerm.val();
