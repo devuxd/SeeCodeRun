@@ -2,8 +2,14 @@
 /* global Firebase */
 /* global ace */
 /* global $ */
-import {TraceModel}from '../traceService/trace-model';
-import {AceUtils}from '../utils/ace-utils';
+import {
+    TraceModel
+}
+from '../traceService/trace-model';
+import {
+    AceUtils
+}
+from '../utils/ace-utils';
 export class TraceSearch {
     constructor(eventAggregator, element) {
         this.eventAggregator = eventAggregator;
@@ -17,49 +23,33 @@ export class TraceSearch {
         this.rows = [];
         this.selectedExpressions = [];
         this.noResult = false;
+        this.noSearchYet = true;
         this.searchBox = {
             aceMarkerManager: undefined,
             updateAceMarkers: this.aceUtils.updateAceMarkers,
             updateAceMarkersDelay: 500,
-            $searchTerm: undefined,
-            $searchFilter: undefined,
-            $filteredOptions: undefined,
-            $table: undefined,
-            markers: undefined,
-            searchBoxChanged: undefined,
-            updateTable: this.updateTable,
             searchFilters: this.traceModel.traceSearchfilters,
             traceHelper: undefined,
-            $searchNumResults: undefined,
-            traceSearchEvents: this.traceModel.traceSearchEvents,
-            eventAggregator: eventAggregator,
-            publishTraceSearchChanged: this.publishTraceSearchChanged,
-            publishAceMarkersChanged: this.publishAceMarkersChanged
         };
     }
-    
-    attached(aceEditor, $table = $("#traceTable")) {
+
+    attached(aceEditor) {
         let searchBox = this.searchBox;
         searchBox.aceMarkerManager = this.aceUtils.makeAceMarkerManager(aceEditor);
-        searchBox.$table = $table;
-        searchBox.$searchTerm = $("#searchTerm");
-        searchBox.$searchFilter = $("#searchFilter");
-        searchBox.$filteredOptions = $("#filteredOptions");
-        searchBox.$searchNumResults = $("#resultCount");
         this.searchBox = searchBox;
         for (let filter in searchBox.searchFilters) {
             this.options.push(filter);
         }
         this.subscribe();
     }
-    
+
     publishTraceSearchChanged(searchTermText, searchFilterId) {
         this.eventAggregator.publish('searchBoxChanged', {
             searchTermText: searchTermText,
             searchFilterId: searchFilterId
         });
     }
-    
+
     publishAceMarkersChanged(itemsWithRanges) {
         this.eventAggregator.publish('aceMarkersChanged', {
             items: itemsWithRanges
@@ -100,7 +90,7 @@ export class TraceSearch {
         });
 
     }
-    
+
     updateTable(query) {
         this.heads = [];
         for (let key in query.items[0]) {
@@ -108,7 +98,6 @@ export class TraceSearch {
                 this.heads.push(key);
             }
         }
-
         this.rows = [];
         for (let i = 0; i < query.items.length; i++) {
             let contents = {};
@@ -121,12 +110,14 @@ export class TraceSearch {
             }
         }
         this.numberOfResult = this.rows.length;
-        this.noResult = this.numberOfResult == 0 ? true : false;
+        this.noSearchYet = this.searchedValue.replace(/^\s+|\s+$/g, '')=="";
+        this.noResult = this.numberOfResult == 0 && !this.noSearchYet ;
+
     }
-    
+
     filterChanged() {
-        let value = this.searchBox.$searchTerm.val();
-        this.searchBox.publishTraceSearchChanged(value, this.selectedFilter);
+        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+
     }
 
     doMouseOver(row) {
@@ -139,9 +130,8 @@ export class TraceSearch {
         this.selectedExpressions.pop();
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
-    
+
     keyPressed() {
-        let value = this.searchBox.$searchTerm.val();
-        this.searchBox.publishTraceSearchChanged(value, this.selectedFilter);
+        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
     }
 }
