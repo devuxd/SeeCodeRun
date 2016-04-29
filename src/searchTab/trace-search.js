@@ -17,7 +17,7 @@ export class TraceSearch {
         this.traceModel = new TraceModel();
         this.aceUtils = new AceUtils();
         this.options = [];
-        this.selectedFilter = 2;
+        this.selectedFilter = 'id';
         this.searchedValue = undefined;
         this.heads = [];
         this.rows = [];
@@ -67,12 +67,12 @@ export class TraceSearch {
 
         this.eventAggregator.subscribe('searchBoxChanged', payload => {
             this.searchedValue = payload.searchTermText;
-            let selectedFilter = payload.searchFilterId;
+             this.selectedFilter = payload.searchFilterId;
 
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
                 //update table
-                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, this.searchedValue);
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
                 this.updateTable(query);
             }
         });
