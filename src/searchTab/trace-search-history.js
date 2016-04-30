@@ -45,6 +45,7 @@ export class TraceSearchHistory {
             // console.info(`${data.searchTermText} inside subscribe firebase`);
             
             // Publishing an event for searchBox;
+            if(data != null)
             eventAggregator.publish(searchBoxChangedEvent, data);
 
         });

@@ -121,13 +121,23 @@ export class JsEditor {
       });
     });
 
+
+    editor.on("mousemove", e => { 
+      ea.publish('onEditorHover', {
+        position: e.getDocumentPosition(),
+        lastVisibleRow: this.editor.getCursorPositionScreen()
+      });
+      
+      
+    });
+
     //For gutter
     session.selection.on('changeCursor', () => {
 
       let info = {
         cursor: this.editor.getCursorPosition().row + 1,
-        lastVisibleRow: session.getLength()
-
+        lastVisibleRow: session.getLength(),
+        position: this.editor.getCursorPosition()
       };
       ea.publish('onCursorMoved', info);
     });

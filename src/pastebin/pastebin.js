@@ -15,6 +15,7 @@ import {ConsoleWindow} from '../consoleWindow/console-window';
 import {TraceViewController} from '../traceView/trace-view-controller';
 import {TraceSearch} from '../searchTab/trace-search';
 import {TraceSearchHistory} from '../searchTab/trace-search-history';
+import {ExpressionSelection} from '../expressionSelection/expression-selection';
 
 @inject(EventAggregator, Router)
 export class Pastebin {
@@ -35,7 +36,7 @@ export class Pastebin {
     this.traceViewController = new TraceViewController(this.eventAggregator);
     this.traceSearch = new TraceSearch(this.eventAggregator);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator);
-
+    this.expressionSelection = new ExpressionSelection(this.eventAggregator);
   }
 
 activate(params) {

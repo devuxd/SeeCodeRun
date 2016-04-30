@@ -17,8 +17,8 @@ export class TraceSearch {
         this.traceModel = new TraceModel();
         this.aceUtils = new AceUtils();
         this.options = [];
-        this.selectedFilter = 'id';
-        this.searchedValue = undefined;
+        this.selectedFilter = '';
+        this.searchedValue = '';
         this.heads = [];
         this.rows = [];
         this.selectedExpressions = [];
