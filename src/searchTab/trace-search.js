@@ -11,9 +11,8 @@ import {
 }
 from '../utils/ace-utils';
 export class TraceSearch {
-    constructor(eventAggregator, element) {
+    constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
-        this.element = element;
         this.traceModel = new TraceModel();
         this.aceUtils = new AceUtils();
         this.options = [];
@@ -31,16 +30,12 @@ export class TraceSearch {
             searchFilters: this.traceModel.traceSearchfilters,
             traceHelper: undefined,
         };
+        this.subscribe();
+
     }
 
-    attached(aceEditor) {
-        let searchBox = this.searchBox;
-        searchBox.aceMarkerManager = this.aceUtils.makeAceMarkerManager(aceEditor);
-        this.searchBox = searchBox;
-        for (let filter in searchBox.searchFilters) {
-            this.options.push(filter);
-        }
-        this.subscribe();
+    attached() {
+        this.optionsBuilder();
     }
 
     publishTraceSearchChanged(searchTermText, searchFilterId) {
@@ -58,6 +53,12 @@ export class TraceSearch {
 
     subscribe() {
         let searchBox = this.searchBox;
+
+        this.eventAggregator.subscribe("onEditorReady", editor => {
+            this.searchBox.aceMarkerManager = this.aceUtils.makeAceMarkerManager(editor);
+        });
+
+
         this.eventAggregator.subscribe('traceChanged', payload => {
             searchBox.traceHelper = payload.data;
             let variableValues = searchBox.traceHelper.getValues();
@@ -67,7 +68,7 @@ export class TraceSearch {
 
         this.eventAggregator.subscribe('searchBoxChanged', payload => {
             this.searchedValue = payload.searchTermText;
-             this.selectedFilter = payload.searchFilterId;
+            this.selectedFilter = payload.searchFilterId;
 
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
@@ -91,27 +92,27 @@ export class TraceSearch {
 
     }
 
+    optionsBuilder() {
+
+        for (let filter in this.searchBox.searchFilters) {
+            this.options.push(filter);
+        }
+    }
+
     updateTable(query) {
         this.heads = [];
-        for (let key in query.items[0]) {
-            if (key !== "range") {
-                this.heads.push(key);
+        for (let head in query.items[0]) {
+            if (head !== "range") {
+                this.heads.push(head);
             }
         }
-        this.rows = [];
-        for (let i = 0; i < query.items.length; i++) {
-            let contents = {};
-            for (let key of this.heads) {
-                contents[key] = query.items[i][key];
-            }
-            contents["range"] = query.items[i]["range"];
-            if (contents.value !== undefined) {
-                this.rows.push(contents);
-            }
-        }
+        this.rows = query.items.filter(row => {
+            return row.value !== undefined; //This line removes rows with undefined value. TODO: Do not inculde undefined vaules in the trace.  
+        });
+
         this.numberOfResult = this.rows.length;
-        this.noSearchYet = this.searchedValue.replace(/^\s+|\s+$/g, '')=="";
-        this.noResult = this.numberOfResult == 0 && !this.noSearchYet ;
+        this.noSearchYet = this.searchedValue.replace(/^\s+|\s+$/g, '') == "";
+        this.noResult = this.numberOfResult == 0 && !this.noSearchYet;
 
     }
 

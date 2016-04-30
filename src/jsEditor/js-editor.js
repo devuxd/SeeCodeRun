@@ -55,6 +55,8 @@ export class JsEditor {
     let editor = this.editor;
     let editorHashedText = this.editorHashedText;
 
+     ea.publish("onEditorReady", this.editor);
+
     session.on('change',
       onEditorChanged);
 
