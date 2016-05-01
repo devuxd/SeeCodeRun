@@ -1,3 +1,6 @@
+/* global Firepad */
+/* global Firebase */
+/* global ace */
 /* global $ */
 import {TraceModel} from '../traceService/trace-model';
 import {AceUtils} from '../utils/ace-utils';
@@ -57,6 +60,9 @@ export class TraceSearch{
         searchBox.$searchFilter.change(searchBoxChanged);
         
         this.subscribe(); 
+        
+                
+    
     }
     
     publishTraceSearchChanged(searchBox, searchTermText, searchFilterId){
@@ -79,16 +85,19 @@ export class TraceSearch{
         this.eventAggregator.subscribe( traceChangedEvent, payload =>{
             searchBox.traceHelper = payload.data;
             searchBox.searchBoxChanged(traceChangedEvent);
+            
         });
         
         this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
             let value = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
-            
-            if(searchBox.traceHelper){
+                //alert(value);
+                
+                if(searchBox.traceHelper){
                 let variableValues =searchBox.traceHelper.getValues();
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
                 searchBox.updateTable(searchBox, query);
+                
             }
         });
         
