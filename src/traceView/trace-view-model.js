@@ -60,6 +60,7 @@ export class TraceViewModel {
             this.aceUtils.updateGutterDecorations(this.editor, previousRows, this.traceGutterData.rows, this.gutterDecorationClassName);
             
             this.traceValuesData.ranges = traceHelper.getExecutionTrace();
+            this.traceValuesData.positionMatcher = traceHelper;
     }
     
     updateTraceGutterData(stackTrace){

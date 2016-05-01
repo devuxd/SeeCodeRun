@@ -238,13 +238,13 @@ export class EsInstrumenter {
         }
 
 
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
         
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.range)} );
         
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
-        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
-        locationData = getLocationDataNode(node.right.loc, node.right.range, self);
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
+        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node});
+        locationData = getLocationDataNode(node.loc, node.range, self);
         if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -619,7 +619,7 @@ export class EsInstrumenter {
      
     }
   
-    instrumentFunctionExpression(node, code, self = this){
+    instrumentFunctionExpression(node, parent, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let Syntax = self.Syntax,
             TraceParameters = self.TraceParameters,
@@ -672,10 +672,20 @@ export class EsInstrumenter {
         }
     }
     
-    instrumentIdentifier(node, code, self = this){
-        //TODO: implement
+    instrumentIdentifier(node, parent, code, self = this){
+        let Syntax = self.Syntax;
+        switch (parent.type) {
+            case Syntax.AssignmentExpression:
+                break;
+            case Syntax.VariableDeclarator:
+                break;
+            case Syntax.MemberExpression:
+                break;
+            default:
+              //  self.instrumentIdentifierExpression(node, code, self);
+        }
     }
-  
+    
     instrumentTracer(sourceCode, esanalyzer) {
         var self = this;
         let  instrumentedCode, instrumenter, tree;
@@ -795,10 +805,10 @@ export class EsInstrumenter {
     
             switch(node.type){
                 case Syntax.FunctionExpression:
-                    instrumentFunctionExpression(node, parent, code);
+                    instrumentFunctionExpression(node, parent, code, self);
                     break;
                 case Syntax.Identifier:
-                    instrumentIdentifier(node, parent, code);
+                    instrumentIdentifier(node, parent, code, self);
                     break;
                     
                 default:

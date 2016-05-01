@@ -95,8 +95,6 @@ export class AceUtils{
     }
     
     subscribeToCodeHoverEvents(editor, tooltip, dataModel, updateTooltip = this.updateTooltip){
-        let isPositionInRange = this.isPositionInRange;
-        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
 
      	editor.on("mousemove", function (e){
 		let position = e.getDocumentPosition(), match;
@@ -109,24 +107,20 @@ export class AceUtils{
 			    return;
 			}
 			
+			if(!dataModel.positionMatcher){
+    		    return;
+    		}
+    		
+    		if(!dataModel.positionMatcher.getMatchAtPosition){
+    		    return;
+    		}
+			
 			if (!editor.isFocused()){ 
     			return;
     		}
+    		
+			match = dataModel.positionMatcher.getMatchAtPosition(dataModel.ranges, position);
 			
-			for(let key in dataModel.ranges){
-			    let data = dataModel.ranges[key];
-			    
-    			 if(data.range && isPositionInRange(position, data.range)){
-    			     if(match){
-    			         if(isRangeInRangeStrict(data.range, match.range)){
-    			             match = data;
-    			         }
-    			     }else{
-    			        match = data;
-    			     }
-    			 
-    			 }
-			}
 			if(match){
     				let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
     				pixelPosition.pageY += editor.renderer.lineHeight;
@@ -151,55 +145,6 @@ export class AceUtils{
 				div.innerHTML = "";
 			}
 	}
-	
-	isPositionInRange(position, inRange){
-        
-        let matchesInOneLine = (
-                position.row == inRange.start.row 
-                && inRange.start.row  == inRange.end.row
-                && position.column >= inRange.start.column
-                && position.column <= inRange.end.column
-            );
-            
-        if(matchesInOneLine){
-            return true;
-        }
-            
-        let matchesStart = (
-                position.row == inRange.start.row 
-                && inRange.start.row  < inRange.end.row
-                && position.column >= inRange.start.column
-            );
-           
-        if(matchesStart){
-            return true;
-        }
-        
-        let matchesEnd = (
-                position.row == inRange.end.row
-                && inRange.start.row  < inRange.end.row
-                && position.column <= inRange.end.column
-            );
-
-        return matchesEnd;
-
-    }
-    
-    isRangeInRange(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
-    			);
-    }
-    
-    isRangeInRangeStrict(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
-    			);
-    }
     
     updateGutterDecorations(editor, previousRows, rows, gutterDecorationClassName){
         this.removeGutterDecorations(editor, previousRows, gutterDecorationClassName);
