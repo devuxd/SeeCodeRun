@@ -1,9 +1,12 @@
+
+
+
 export class ExpressionSelection {
 
     constructor(eventAggregator) {
 
         this.ea = eventAggregator;
-        // this.subscribe();
+        //  this.subscribe();
     }
 
 
@@ -15,13 +18,22 @@ export class ExpressionSelection {
 
             console.info(payload.position);
         });
-    
-        this.ea.subscribe('onEditorHover', payload =>{
-            
-            if(payload.position.isEnd)
-            console.info(payload.position);
+
+        this.ea.subscribe('onEditorHover', payload => {
+
+                console.info(payload.position);
         });
+
+
+    }
+    
+    
+    publish(){
         
+        
+         this.eventAggregator.publish('aceMarkersChanged', {
+            // items: itemsWithRanges
+        });
     }
 
 

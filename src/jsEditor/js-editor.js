@@ -75,6 +75,8 @@ export class JsEditor {
         // then, hash it and store it in localHash variable.
         let localHash = md5(newStr);
         if (editorHashedText !== localHash ) {
+          
+          console.info("changed "+ newStr);
           editorHashedText = localHash; 
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
@@ -152,7 +154,7 @@ export class JsEditor {
     return Firepad.fromACE(
       firebase,
       editor, {
-        defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
+        defaultText: '\ngo(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
       });
   }
 

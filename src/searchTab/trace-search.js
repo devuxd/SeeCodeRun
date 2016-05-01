@@ -15,14 +15,15 @@ export class TraceSearch {
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
         this.aceUtils = new AceUtils();
-        this.options = [];
-        this.selectedFilter = '';
+        this.options;
+        this.selectedFilter = 'any';
         this.searchedValue = '';
-        this.heads = [];
         this.rows = [];
         this.selectedExpressions = [];
         this.noResult = false;
         this.noSearchYet = true;
+        this.suggestionMessage = '';
+        this.test='';
         this.searchBox = {
             aceMarkerManager: undefined,
             updateAceMarkers: this.aceUtils.updateAceMarkers,
@@ -62,6 +63,7 @@ export class TraceSearch {
         this.eventAggregator.subscribe('traceChanged', payload => {
             searchBox.traceHelper = payload.data;
             let variableValues = searchBox.traceHelper.getValues();
+            console.info(variableValues);
             let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
             this.updateTable(query);
         });
@@ -94,30 +96,28 @@ export class TraceSearch {
 
     optionsBuilder() {
 
-        for (let filter in this.searchBox.searchFilters) {
-            this.options.push(filter);
-        }
+            this.options= this.searchBox.searchFilters;
+            
+
     }
 
     updateTable(query) {
-        this.heads = [];
-        for (let head in query.items[0]) {
-            if (head !== "range") {
-                this.heads.push(head);
-            }
-        }
         this.rows = query.items.filter(row => {
             return row.value !== undefined; //This line removes rows with undefined value. TODO: Do not inculde undefined vaules in the trace.  
         });
-
+        
         this.numberOfResult = this.rows.length;
+        this.suggestionMessage = this.numberOfResult ==0 ? 
+                                'There is no javascript code.Try to write some and then comeback here :)':
+                                `Type any expression to see its value. Try ${this.rows[0].id} or ${this.rows[0].value}`;
+
         this.noSearchYet = this.searchedValue.replace(/^\s+|\s+$/g, '') == "";
         this.noResult = this.numberOfResult == 0 && !this.noSearchYet;
-
+        this.errorMessage = `Oops, no results found for "${this.searchedValue}" with "${this.selectedFilter}" filter. Remember, the search term is case sensitive.`;
     }
 
     filterChanged() {
-        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+        // this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
 
     }
 
@@ -133,6 +133,6 @@ export class TraceSearch {
     }
 
     keyPressed() {
-        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+        // this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
     }
 }

@@ -6,11 +6,11 @@ export class TraceModel{
             aceMarkersChanged : {  event :'aceMarkersChanged'   , description : 'Trace results updated. Update Ace markers' }
         };
         this.traceSearchfilters = {
-			any: "Any",
-			id: "Id",
+			any: "any",
+			id: "id",
 // 			type: "Type",
 // 			text: "Text",
-			value: "Value"
+			value: "value"
 		};
        	
 		let traceParameters = {
