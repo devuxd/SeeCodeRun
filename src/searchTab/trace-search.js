@@ -95,10 +95,7 @@ export class TraceSearch {
     }
 
     optionsBuilder() {
-
             this.options= this.searchBox.searchFilters;
-            
-
     }
 
     updateTable(query) {
@@ -117,7 +114,7 @@ export class TraceSearch {
     }
 
     filterChanged() {
-        // this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
 
     }
 
@@ -133,6 +130,6 @@ export class TraceSearch {
     }
 
     keyPressed() {
-        // this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
     }
 }

@@ -33,10 +33,11 @@ export class Pastebin {
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
-    this.traceViewController = new TraceViewController(this.eventAggregator);
     this.traceSearch = new TraceSearch(this.eventAggregator);
-    // this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator);
+    this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator);
     this.expressionSelection = new ExpressionSelection(this.eventAggregator);
+    this.traceViewController = new TraceViewController(this.eventAggregator);
+  
   }
 
 activate(params) {
@@ -67,7 +68,7 @@ activate(params) {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
-    // this.traceSearchHistory.attached({id: this.pastebinId});
+    this.traceSearchHistory.attached({id: this.pastebinId});
     this.traceSearch.attached();
 
      // Splitter

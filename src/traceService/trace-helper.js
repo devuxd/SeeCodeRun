@@ -1,11 +1,13 @@
 import {TraceModel} from './trace-model';
 import {TraceQueryManager} from './trace-query-manager';
+
 export class TraceHelper {
-    constructor(trace){
+    constructor(trace,eventAggregator){
         this.traceModel = new TraceModel();
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.Syntax = this.traceModel.traceSyntax;
         this.setTrace(trace);
+        
     }
     
     isValid(){
@@ -27,7 +29,7 @@ export class TraceHelper {
     getValuesAtPosition(traceData, acePosition){
         let isPositionInRange = this.isPositionInRange;
         let isRangeInRangeStrict = this.isRangeInRangeStrict; 
-        
+       
         if(!acePosition || !traceData){
             return undefined;
         }

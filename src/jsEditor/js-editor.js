@@ -145,6 +145,10 @@ export class JsEditor {
       };
       ea.publish('onCursorMoved', info);
     });
+    
+    editor.on("click", ()=>{
+        ea.publish("onEditorClick");
+    });
   }
 
   createFirepad(editor) {

@@ -23,9 +23,9 @@ export class TraceSearchHistory {
         }
 
         //New Firebase visualisation Reference
-        // this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
+        this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
 
-        // this.subscribe();
+        this.subscribe();
 
 
         // Retrieve.
@@ -45,8 +45,8 @@ export class TraceSearchHistory {
             // console.info(`${data.searchTermText} inside subscribe firebase`);
             console.info(data);
             // Publishing an event for searchBox;
-            // if(data != null)
-            // eventAggregator.publish(searchBoxChangedEvent, data);
+            if(data != null)
+            eventAggregator.publish(searchBoxChangedEvent, data);
 
         });
 
@@ -58,10 +58,10 @@ export class TraceSearchHistory {
             // console.info(`${searchTermText} inside subscribe searchBoxChangedEvent`);
             // console.info(`${searchFilterId} inside subscribe searchBoxChangedEvent`);
             //Store values
-            // this.firebase.update({
-            //     searchFilterId: searchFilterId,
-            //     searchTermText: searchTermText
-            // });
+            this.firebase.update({
+                searchFilterId: searchFilterId,
+                searchTermText: searchTermText
+            });
         });
     }
 

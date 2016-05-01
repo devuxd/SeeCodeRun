@@ -1,7 +1,9 @@
 /* global ace */
 
 export class AceUtils{
-    constructor(){
+    constructor(eventAggregator){
+        this.ea =eventAggregator;
+        
     }
     
     makeAceMarkerManager(aceEditor){
@@ -95,7 +97,7 @@ export class AceUtils{
     }
     
     subscribeToCodeHoverEvents(editor, tooltip, dataModel, updateTooltip = this.updateTooltip){
-
+         let ea = this.ea;
      	editor.on("mousemove", function (e){
 		let position = e.getDocumentPosition(), match;
 		if(position){ 
@@ -118,9 +120,10 @@ export class AceUtils{
 			if (!editor.isFocused()){ 
     			return;
     		}
-    		
 			match = dataModel.positionMatcher.getMatchAtPosition(dataModel.ranges, position);
-			
+			if(ea){
+                ea.publish("onExpressionHover", match);
+   			}
 			if(match){
     				let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
     				pixelPosition.pageY += editor.renderer.lineHeight;

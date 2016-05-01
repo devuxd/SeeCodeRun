@@ -8,7 +8,7 @@ export class TraceViewController{
     constructor(eventAggregator){
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
-        this.aceUtils = new AceUtils();
+        this.aceUtils = new AceUtils(eventAggregator);
     }
     
     attached(){
