@@ -3,12 +3,13 @@ export class TraceModel{
     constructor(){
         this.traceSearchEvents = {
             searchBoxChanged : {  event :'searchBoxChanged'   , description : 'User changed the search box parameters...' },
+            searchStateUpdated : {  event :'searchStateChanged'   , description : 'Updated search parameters in Firebase...' },
             aceMarkersChanged : {  event :'aceMarkersChanged'   , description : 'Trace results updated. Update Ace markers' }
         };
         this.traceSearchfilters = {
 			any: "Any",
 			id: "Id",
-// 			type: "Type",
+//TODO 			dom: "DOM",
 // 			text: "Text",
 			value: "Value"
 		};

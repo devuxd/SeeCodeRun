@@ -1,7 +1,5 @@
-/* global Firepad */
-/* global Firebase */
-/* global ace */
 /* global $ */
+
 import {TraceModel} from '../traceService/trace-model';
 import {AceUtils} from '../utils/ace-utils';
 
@@ -80,6 +78,7 @@ export class TraceSearch{
         let searchBox = this.searchBox;
         let traceChangedEvent = this.traceModel.traceEvents.changed.event;
         let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+        let searchStateUpdated = this.traceModel.traceSearchEvents.searchStateUpdated.event;
         let aceMarkersChangedEvent = this.traceModel.traceSearchEvents.aceMarkersChanged.event;
         
         this.eventAggregator.subscribe( traceChangedEvent, payload =>{
@@ -91,14 +90,22 @@ export class TraceSearch{
         this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
             let value = payload.searchTermText;
             let selectedFilter = payload.searchFilterId;
-                //alert(value);
-                
-                if(searchBox.traceHelper){
+            
+            if(searchBox.traceHelper){
                 let variableValues =searchBox.traceHelper.getValues();
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
                 searchBox.updateTable(searchBox, query);
                 
             }
+        });
+        
+        this.eventAggregator.subscribe( searchStateUpdated, payload =>{
+            let value = payload.searchTermText;
+            let selectedFilter = payload.searchFilterId;
+            
+            searchBox.$searchTerm.val(value);
+            searchBox.$searchFilter.val(selectedFilter);
+
         });
         
         let updateAceMarkersTimeout;
