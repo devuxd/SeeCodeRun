@@ -12,7 +12,9 @@ import {HtmlViewer} from '../htmlViewer/html-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
-import {TraceViewController} from '../utils/trace-view-controller';
+import {TraceViewController} from '../traceView/trace-view-controller';
+import {TraceSearch} from '../searchTab/trace-search';
+import {TraceSearchHistory} from '../searchTab/trace-search-history';
 
 @inject(EventAggregator, Router)
 export class Pastebin {
@@ -31,6 +33,9 @@ export class Pastebin {
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
     this.traceViewController = new TraceViewController(this.eventAggregator);
+    this.traceSearch = new TraceSearch(this.eventAggregator);
+    this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator);
+
   }
 
 activate(params) {
@@ -61,6 +66,8 @@ activate(params) {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
+    this.traceSearchHistory.attached({id: this.pastebinId});
+    this.traceSearch.attached(this.jsEditor.editor);
 
      // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });

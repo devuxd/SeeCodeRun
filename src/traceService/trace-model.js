@@ -1,10 +1,45 @@
 import {Trace} from './trace';
 export class TraceModel{
     constructor(){
+        this.traceSearchEvents = {
+            searchBoxChanged : {  event :'searchBoxChanged'   , description : 'User changed the search box parameters...' },
+            searchStateUpdated : {  event :'searchStateChanged'   , description : 'Updated search parameters in Firebase...' },
+            aceMarkersChanged : {  event :'aceMarkersChanged'   , description : 'Trace results updated. Update Ace markers' }
+        };
+        this.traceSearchfilters = {
+			any: "Any",
+			id: "Id",
+//TODO 			dom: "DOM",
+// 			text: "Text",
+			value: "Value"
+		};
+       	
+		let traceParameters = {
+            type : 0,
+            id : 1,
+            text : 2,
+            value : 3,
+            range : 4,
+            indexRange : 5,
+            extra : 6
+            
+        };
+        
+        this.traceParameters = traceParameters;
+        
+        this.traceSearchFilterToParameter = {
+			any: [traceParameters.type],
+			id: [traceParameters.id],
+			type: [traceParameters.type],
+			text: [traceParameters.text],
+			value: [traceParameters.value]
+		};
+		
         this.traceDataContainer = "SeeCodeRunTraceDataResults";
         this.traceSyntax = {
             AssignmentExpression: 'AssignmentExpression',
             BinaryExpression: 'BinaryExpression', 
+            BlockStatement: 'BlockStatement',
             CallExpression: 'CallExpression',
             DoWhileStatement: 'DoWhileStatement',
             ExpressionStatement: 'ExpressionStatement', 
@@ -12,10 +47,16 @@ export class TraceModel{
             ForInStatement: 'ForInStatement', 
             FunctionDeclaration: 'FunctionDeclaration',
             FunctionExpression: 'FunctionExpression',
-            IfStatement: 'IfStatement', 
+            Identifier: 'Identifier',
+            IfStatement: 'IfStatement',
+            LogicalExpression: 'LogicalExpression',
+            MemberExpression: 'MemberExpression',
             NewExpression: 'NewExpression',
+            Program: 'Program',
             Property: 'Property',
             ReturnStatement: 'ReturnStatement',
+            SwitchStatement: 'SwitchStatement',
+            SwitchCase: 'SwitchCase',
             UnaryExpression: 'UnaryExpression',
             UpdateExpression: 'UpdateExpression', 
             VariableDeclaration: 'VariableDeclaration', 
@@ -26,8 +67,8 @@ export class TraceModel{
         let Syntax = {
             AssignmentExpression: 'AssignmentExpression',
             ArrayExpression: 'ArrayExpression',
-            BlockStatement: 'BlockStatement',
             BinaryExpression: 'BinaryExpression',
+            BlockStatement: 'BlockStatement',
             BreakStatement: 'BreakStatement',
             CallExpression: 'CallExpression',
             CatchClause: 'CatchClause',
@@ -67,7 +108,12 @@ export class TraceModel{
         };
         
         this.traceTypes = {
-            LocalStack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression],
+            Stack: [
+                Syntax.FunctionDeclaration,
+                Syntax.FunctionExpression,
+                Syntax.BlockStatement,
+                Syntax.SwitchCase
+                ],
             Expression: [
                 Syntax.UnaryExpression,
                 Syntax.UpdateExpression,
@@ -76,34 +122,57 @@ export class TraceModel{
                 Syntax.VariableDeclarator,
                 Syntax.AssignmentExpression,
                 Syntax.BinaryExpression,
+                Syntax.LogicalExpression,
+                Syntax.Identifier,
                 Syntax.ReturnStatement,
                 Syntax.ForStatement,
                 Syntax.ForInStatement,
                 Syntax.WhileStatement,
                 Syntax.DoWhileStatement,
+                Syntax.ExpressionStatement,
+                Syntax.SwitchStatement
+                ],
+            ExpressionStatement: [
                 Syntax.ExpressionStatement
                 ],
-            ExpressionStatement : [
-                Syntax.ExpressionStatement
+            ObjectOriented: [
+                Syntax.NewExpression,
+                Syntax.ObjectExpression,
+                Syntax.MemberExpression,
+                Syntax.ArrayExpression,
+                Syntax.Property
                 ],
-            ControlFlow : [],
-            Condition: [],
-            Loop: [Syntax.WhileStatement],
-            exception: []
+            CallFlow: [
+                Syntax.CallExpression
+                ],
+            ControlFlow: [
+                Syntax.IfStatement,
+                Syntax.WhileStatement,
+                Syntax.DoWhileStatement,
+                Syntax.ForStatement,
+                Syntax.ForInStatement,
+                Syntax.SwitchStatement,
+                Syntax.TryStatement,
+                Syntax.CatchClause
+                ],
+            Condition: [
+                Syntax.IfStatement,
+                Syntax.SwitchStatement,
+                Syntax.SwitchCase
+                ],
+            Loop: [
+                Syntax.WhileStatement,
+                Syntax.DoWhileStatement,
+                Syntax.ForStatement,
+                Syntax.ForInStatement
+                ],
+            Exception: [
+                Syntax.TryStatement,
+                Syntax.CatchClause
+                ]
         };
         
         this.esSyntax = Syntax;
-        
-        this.TraceParameters = {
-            type : 0,
-            id : 1,
-            text : 2,
-            value : 3,
-            range : 4,
-            indexRange : 5,
-            extra : 6
-            
-        };
         
         this.executionEvents = {
             running : {  event :'codeRunning'   , description : 'Tracing Code...' },

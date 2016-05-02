@@ -30,7 +30,6 @@ export class HtmlViewer {
       
       ea.subscribe('onJsEditorChanged', payload => {
         let editorText = payload.js;
-
         let instrumentationPayload = this.traceService.getInstrumentation(editorText);
         
         if (traceService.isValid(instrumentationPayload)) {
