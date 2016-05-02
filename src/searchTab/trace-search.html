@@ -32,7 +32,7 @@
       </thead>
       <tbody>
         <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut({$index})" class="table-hover"
-          id="link" click.delegate="search.doOnClickJumpToCode({$index})"> 
+          id="link" click.delegate="search.doOnClickJumpToCode({$index})" style="cursor: pointer"> 
           <td><a href="#link" click.delegate="search.doOnClickHighlight({$index})">${row.id}</a></td>
           <td>${row.value}</td>
         </tr>
