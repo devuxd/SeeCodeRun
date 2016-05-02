@@ -12,6 +12,7 @@ import {
 from '../utils/ace-utils';
 export class TraceSearch {
     constructor(eventAggregator) {
+        this.clickedRow = [];
         this.eventAggregator = eventAggregator;
         this.traceModel = new TraceModel();
         this.aceUtils = new AceUtils();
@@ -122,17 +123,32 @@ export class TraceSearch {
     }
 
     doMouseOver(row) {
-        let target = this.rows[row.$index];
-        this.selectedExpressions.push(target);
+        if(this.selectedExpressions.indexOf(this.rows[row.$index])==-1)
+            this.selectedExpressions.push(this.rows[row.$index]);
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
 
-    doMouseOut() {
-        this.selectedExpressions.pop();
+    doMouseOut(row) {
+        let indexFound2 = this.clickedRow.indexOf(this.rows[row.$index]);
+        if(indexFound2==-1){
+            let indexFound = this.selectedExpressions.indexOf(this.rows[row.$index]);
+            this.selectedExpressions.splice(indexFound, 1);
+        }
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
-
+    
     keyPressed() {
         this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+    }
+    
+    doOnClick(row) {
+        let indexFound = this.clickedRow.indexOf(this.rows[row.$index]);
+        if(indexFound==-1){
+            this.clickedRow.push(this.rows[row.$index]);
+            this.searchBox.doMouseOver(row);
+        }
+        else{
+            this.clickedRow.splice(indexFound, 1);
+        }
     }
 }
