@@ -142,13 +142,16 @@ export class TraceSearch {
     }
     
     doOnClick(row) {
+        //let editor = ace.edit('aceJsEditorDiv');
+        //console.log(row);
+        //editor.gotoLine(row.$index);
         let indexFound = this.clickedRow.indexOf(this.rows[row.$index]);
         if(indexFound==-1){
             this.clickedRow.push(this.rows[row.$index]);
-            this.searchBox.doMouseOver(row);
         }
         else{
             this.clickedRow.splice(indexFound, 1);
         }
     }
+    
 }
