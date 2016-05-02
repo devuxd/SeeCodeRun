@@ -1,9 +1,8 @@
 <template bindable="vis" >
   <require from="visualization/visualization.html"></require>
       	 
-	 <input type="checkbox" id="checkbox2" checked.bind="vis.isChecked" ui-checkbox>
-      <label for="checkbox2">Activate Visualization</label>
-      </br><span show.bind= "vis.isChecked"> Now, select and copy any expression to view its visualization.</span>
+	         <button click.trigger="vis.showVis()" disabled.bind="vis.disable" class="btn btn-info active">show visualization</button>
+
     <div>
 
         <div repeat.for="visualization of vis.visualizations">

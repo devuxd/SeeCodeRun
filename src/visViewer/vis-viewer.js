@@ -1,26 +1,40 @@
-import {EventAggregator} from 'aurelia-event-aggregator';
-import {inject} from 'aurelia-framework';
-import * as d3 from 'd3'; 
-import {VisualizationFactory} from '../visualization/visualizationFactory';
-import {Visualization} from '../visualization/visualization';
- 
-@inject(EventAggregator)
+import {
+    EventAggregator
+}
+from 'aurelia-event-aggregator';
+import {
+    inject
+}
+from 'aurelia-framework';
+import * as d3 from 'd3';
+import {
+    VisualizationFactory
+}
+from '../visualization/visualizationFactory';
+import {
+    Visualization
+}
+from '../visualization/visualization';
+
+@
+inject(EventAggregator)
 export class VisViewer {
-    
+
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
-        
+
         this.visualizations = [];
-        
+
         let factory = new VisualizationFactory();
-        
+
         let dataTableConfig = factory.getVisualizationByType('DataTable');
         let dataTableVisualization = new Visualization(d3, this.eventAggregator, dataTableConfig.config);
 
         this.visualizations.push(dataTableVisualization);
-        
-          this.isChecked = false;
-          this.subscribe();
+
+        this.selectedExpressions = [];
+        this.disable = true;
+        this.subscribe();
 
     }
 
@@ -30,21 +44,17 @@ export class VisViewer {
         }
     }
 
-    subscribe(){
-        let ea = this. eventAggregator;
+    subscribe() {
+        let ea = this.eventAggregator;
 
-        ea.subscribe('onEditorCopy', payload => {
-           if(this.isChecked){
-             this.publish(payload);       
-       }
-        }); 
+        ea.subscribe('onSelectionedExpressionsChanged', payload => {
+            this.selectedExpressions = payload;
+            this.disable = this.selectedExpressions.items.length == 0;
+
+        });
     }
+    showVis() {
+        console.info(this.selectedExpressions);
 
-   publish(payload){
-        let ea = this. eventAggregator;
-         ea.publish('onVisRequest', payload);   
-           
-   }
-
-    
+    }
 }

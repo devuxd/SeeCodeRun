@@ -8,10 +8,10 @@ import {
 }
 from '../utils/ace-utils';
 export class TraceSearch {
-    constructor(eventAggregator) {
+    constructor(eventAggregator, traceModel ,aceUtils) {
         this.eventAggregator = eventAggregator;
-        this.traceModel = new TraceModel();
-        this.aceUtils = new AceUtils();
+        this.traceModel = traceModel;
+        this.aceUtils = aceUtils;
         this.options;
         this.selectedFilter = 'any';
         this.searchedValue = '';

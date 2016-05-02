@@ -24,7 +24,7 @@ export class TraceSearchHistory {
             console.info(data);
             // Publishing an event for searchBox;
             if(data != null)
-            eventAggregator.publish(searchBoxChangedEvent, data);
+           traceSearchHistory.eventAggregator.publish("searchBoxChanged", data);
 
         });
 
