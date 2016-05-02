@@ -35,7 +35,6 @@ export class Visualization {
     let traceModel = new TraceModel();
     
     ea.subscribe(traceModel.traceEvents.changed.event, payload => {
-      console.log(payload.data);
       visualization.trace = payload.data.trace;
       visualization.renderVisualization();
     });
@@ -46,7 +45,7 @@ export class Visualization {
 
     ea.subscribe('onVisRequest',payload => {
         // Insert code here
-        console.info(payload);
+
     });
   }
 }

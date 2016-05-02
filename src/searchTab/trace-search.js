@@ -1,6 +1,3 @@
-/* global Firepad */
-/* global Firebase */
-/* global ace */
 /* global $ */
 import {
     TraceModel

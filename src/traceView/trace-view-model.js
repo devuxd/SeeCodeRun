@@ -1,10 +1,11 @@
 export class TraceViewModel {
-    constructor(aceUtils, aceEditor, tooltipElement, gutterDecorationCSSClassName, toolTipDelay = 500){
+    constructor(aceUtils, aceEditor, tooltipElement, gutterDecorationCSSClassName, showToolTipDelay = 500, hideToolTipDelay = 250){
         this.editor= aceEditor;
         this.tooltip = tooltipElement;
         this.gutterDecorationClassName = gutterDecorationCSSClassName;
         this.aceUtils = aceUtils;
-        this.toolTipDelay = toolTipDelay;
+        this.showToolTipDelay = showToolTipDelay;
+        this.hideToolTipDelay = hideToolTipDelay;
         this.resetData();
         this.bind();
     }
@@ -21,26 +22,29 @@ export class TraceViewModel {
         let traceValuesData =  this.traceValuesData;
         let gutterDecorationClassName = this.gutterDecorationClassName;
     	let aceUtils = this.aceUtils;
-    	let toolTipDelay = this.toolTipDelay;
+    	let showToolTipDelay = this.showToolTipDelay;
+    	let hideToolTipDelay = this.hideToolTipDelay;
     	let tooltipSetTimeout = window.setTimeout;
     	let tooltipClearTimeout = window.clearTimeout;
     	let tooltipTimeout;
-    	let tooltipUpdateWithDelay = function tooltipUpdateWithDelay(div, position, text){
-    	    if(!text){
-        	    div.style.display = "none";
-        		div.innerHTML = "";
+    	let tooltipUpdateWithDelay = function tooltipUpdateWithDelay(div, position, content){
+    	    let toolTipDelay = showToolTipDelay;
+    	    if(!content){
+    	        toolTipDelay = hideToolTipDelay;
     	    }
-			tooltipClearTimeout(tooltipTimeout);
-			
+    	    
+    	    tooltipClearTimeout(tooltipTimeout);
 			tooltipTimeout = tooltipSetTimeout(
 			function delayedToolTip(){
 			    div.style.left = position.pageX + 'px';
     			div.style.top = position.pageY + 'px';
-    			if(text){
+    			if(content){
     				div.style.display = "block";
-    				div.innerHTML = text;
-    			}
-			    
+    				div.innerHTML = content;
+    			}else{
+            	    div.style.display = "none";
+            		div.innerHTML = "";
+    	        }
 			}, toolTipDelay);
 	    };
     	
