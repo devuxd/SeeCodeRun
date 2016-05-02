@@ -1,15 +1,14 @@
-import {TraceModel} from './trace-model';
 import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
-    constructor(trace){
-        this.traceModel = new TraceModel();
+    constructor(trace, error, traceModel){
+        this.traceModel = traceModel;
+        this.error = error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
-        this.Syntax = this.traceModel.traceSyntax;
         this.setTrace(trace);
     }
     
     isValid(){
-        
+        return (this.error === "" && this.trace);
     }
     
     setTrace(trace){

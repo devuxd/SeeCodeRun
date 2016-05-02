@@ -98,7 +98,8 @@ export class AceUtils{
 
      	editor.on("mousemove", function (e){
 		let position = e.getDocumentPosition(), match;
-		if(position){ 
+		if(position){
+		    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(position));
 			if(!dataModel){
 			    return;
 			}
@@ -125,8 +126,6 @@ export class AceUtils{
     				let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
     				pixelPosition.pageY += editor.renderer.lineHeight;
     				updateTooltip(tooltip, pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
-    		}else{
-    				updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(position));
     		}
 		}
 		});

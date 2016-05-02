@@ -26,14 +26,10 @@ export class EsTracer {
     }
     
     traceChanged(event, results, error = ""){
-         if(!results){
-            return;
-        }
-
         let duration = (+new Date()) - this.startTimestamp ;
         let description = `${event.description} Trace completed in ${1 + duration} ms.${error.toString()}`;
         
-        let traceHelper = new TraceHelper(results);
+        let traceHelper = new TraceHelper(results, error, this.traceModel);
         let payload = this.traceModel.makePayload(event.event, description, traceHelper);
         
         if(this.publisher){
