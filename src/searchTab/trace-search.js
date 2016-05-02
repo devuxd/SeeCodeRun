@@ -68,6 +68,7 @@ export class TraceSearch{
             { searchTermText: searchTermText, searchFilterId: searchFilterId }
         );
     }
+    
     publishAceMarkersChanged(searchBox, itemsWithRanges){
         searchBox.eventAggregator.publish(searchBox.traceSearchEvents.aceMarkersChanged.event,
             {items: itemsWithRanges}
@@ -105,7 +106,6 @@ export class TraceSearch{
             
             searchBox.$searchTerm.val(value);
             searchBox.$searchFilter.val(selectedFilter);
-
         });
         
         let updateAceMarkersTimeout;
@@ -186,7 +186,4 @@ export class TraceSearch{
         $table.html(table);   
         $numResults.html(`<p>Number of Search Results: ${query.count()}</p>`);
     }
-    
-    
-  
 }

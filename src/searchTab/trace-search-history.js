@@ -14,6 +14,7 @@ export class TraceSearchHistory {
         if (params.id) {
             this.pastebinId = params.id;
         }
+        
         this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
         
         let traceSearchHistory= this;
@@ -25,8 +26,6 @@ export class TraceSearchHistory {
 
         this.subscribe();
     }
-
-
 
     subscribe() {
         let eventAggregator = this.eventAggregator;
