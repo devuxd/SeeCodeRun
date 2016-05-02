@@ -743,9 +743,7 @@ export class EsInstrumenter {
             }
             
             if(!node.range){
-                // if(node.type !== Syntax.CallExpression){
                     return undefined;
-                // }
             }
             
     
