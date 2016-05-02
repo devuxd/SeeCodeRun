@@ -140,11 +140,14 @@ export class TraceSearch {
     keyPressed() {
         this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
     }
-    
-    doOnClick(row) {
-        //let editor = ace.edit('aceJsEditorDiv');
-        //console.log(row);
-        //editor.gotoLine(row.$index);
+    // jumps to current line in the editor
+    doOnClickJumpToCode(row) {
+        let editor = ace.edit('aceJsEditorDiv');
+        editor.gotoLine(this.rows[row.$index].range.start.row+1);
+        
+    }
+    // highlights current line in the ditor
+    doOnClickHighlight(row){
         let indexFound = this.clickedRow.indexOf(this.rows[row.$index]);
         if(indexFound==-1){
             this.clickedRow.push(this.rows[row.$index]);
@@ -153,5 +156,4 @@ export class TraceSearch {
             this.clickedRow.splice(indexFound, 1);
         }
     }
-    
 }
