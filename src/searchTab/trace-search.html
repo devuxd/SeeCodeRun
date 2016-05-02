@@ -18,7 +18,7 @@
           <br>
           <br>
           <div if.bind="!search.noResult && !search.noSearchYet" >Number of Search Results: ${search.numberOfResult}</div>
-        </div>
+        </div>gul
       </div>
     </div>
   </div>
@@ -34,7 +34,7 @@
         <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut({$index})" class="table-hover"
           id="link" click.delegate="search.doOnClickJumpToCode({$index})"> 
           <td><a href="#link" click.delegate="search.doOnClickHighlight({$index})">${row.id}</a></td>
-          <td>${row.value}</a></td>
+          <td><a href="#link" click.delegate="search.doOnClickHighlight({$index})">${row.value}</a></td>
         </tr>
       </tbody>
     </table>
