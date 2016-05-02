@@ -49,6 +49,7 @@ export class TraceModel{
             FunctionExpression: 'FunctionExpression',
             Identifier: 'Identifier',
             IfStatement: 'IfStatement',
+            LogicalExpression: 'LogicalExpression',
             MemberExpression: 'MemberExpression',
             NewExpression: 'NewExpression',
             Program: 'Program',
@@ -107,7 +108,12 @@ export class TraceModel{
         };
         
         this.traceTypes = {
-            Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
+            Stack: [
+                Syntax.FunctionDeclaration,
+                Syntax.FunctionExpression,
+                Syntax.BlockStatement,
+                Syntax.SwitchCase
+                ],
             Expression: [
                 Syntax.UnaryExpression,
                 Syntax.UpdateExpression,
@@ -116,6 +122,7 @@ export class TraceModel{
                 Syntax.VariableDeclarator,
                 Syntax.AssignmentExpression,
                 Syntax.BinaryExpression,
+                Syntax.LogicalExpression,
                 Syntax.Identifier,
                 Syntax.ReturnStatement,
                 Syntax.ForStatement,
@@ -125,14 +132,44 @@ export class TraceModel{
                 Syntax.ExpressionStatement,
                 Syntax.SwitchStatement
                 ],
-            ExpressionStatement : [
+            ExpressionStatement: [
                 Syntax.ExpressionStatement
                 ],
-            ControlFlow : [],
-            Condition: [],
-            Loop: [Syntax.WhileStatement],
-            exception: []
-            
+            ObjectOriented: [
+                Syntax.NewExpression,
+                Syntax.ObjectExpression,
+                Syntax.MemberExpression,
+                Syntax.ArrayExpression,
+                Syntax.Property
+                ],
+            CallFlow: [
+                Syntax.CallExpression
+                ],
+            ControlFlow: [
+                Syntax.IfStatement,
+                Syntax.WhileStatement,
+                Syntax.DoWhileStatement,
+                Syntax.ForStatement,
+                Syntax.ForInStatement,
+                Syntax.SwitchStatement,
+                Syntax.TryStatement,
+                Syntax.CatchClause
+                ],
+            Condition: [
+                Syntax.IfStatement,
+                Syntax.SwitchStatement,
+                Syntax.SwitchCase
+                ],
+            Loop: [
+                Syntax.WhileStatement,
+                Syntax.DoWhileStatement,
+                Syntax.ForStatement,
+                Syntax.ForInStatement
+                ],
+            Exception: [
+                Syntax.TryStatement,
+                Syntax.CatchClause
+                ]
         };
         
         this.esSyntax = Syntax;

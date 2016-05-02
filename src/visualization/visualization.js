@@ -46,7 +46,7 @@ export class Visualization {
 
     ea.subscribe('onVisRequest',payload => {
         // Insert code here
-        console.info(payload);
+
     });
   }
 }

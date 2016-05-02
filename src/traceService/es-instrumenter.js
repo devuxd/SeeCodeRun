@@ -1,31 +1,53 @@
 import escodegen from 'escodegen';
 import {EsprimaNodeFactory} from './external/esprima-node-factory';
 import {AutoLogTracer} from './external/auto-log-tracer';
+
 export class EsInstrumenter {
   
-  constructor(traceModel) {
-      this.traceModel = traceModel;
-      this.escodegen = escodegen;
-      this.esprimaNodeFactory = new EsprimaNodeFactory();
-      this.autoLogTracer = new AutoLogTracer(traceModel.traceDataContainer);
-      this.Syntax = this.traceModel.traceSyntax;
-      this.TraceParameters = this.traceModel.traceParameters;
-      this.blockCounter = 0;
-      this.blocks= {};
-      this.blocks[this.blockCounter] ={ identifier: "program", parent: -1, children: [] };
-      this.programCounter = 0;
+    constructor(traceModel) {
+        this.traceModel = traceModel;
+        this.escodegen = escodegen;
+        this.esprimaNodeFactory = new EsprimaNodeFactory();
+        this.autoLogTracer = new AutoLogTracer(traceModel.traceDataContainer);
+        this.Syntax = this.traceModel.traceSyntax;
+        this.traceTypes = this.traceModel.traceTypes;
+        this.TraceParameters = this.traceModel.traceParameters;
+        this.blockCounter = 0;
+        this.blocks= {};
+        this.blocks[this.blockCounter] ={ identifier: "program", parent: -1, children: [] };
+        this.programCounter = 0;
+    }
     
-  }
+    isAutoLogNode(node, self = this){
+        let Syntax = self.Syntax;
+        if(node.type === Syntax.CallExpression){
+            if(node.callee.type === Syntax.MemberExpression){
+                if(node.callee && node.callee.property.type === Syntax.Identifier && node.callee.property.name === "autoLog"){
+                    if(node.callee.object && node.callee.object.type === Syntax.MemberExpression){
+                        if(node.callee.object.property  && node.callee.object.property.type === Syntax.Identifier && node.callee.object.property.name === "TRACE"){
+                            if(node.callee.object.object && node.callee.object.object.type === Syntax.Identifier && node.callee.object.object.name === "window"){
+                                return true;
+                            }
+                        }
+                        
+                    }
+                }
+            }
+        }
+        
+        return false;
+        
+    }
   
-  getNewBlock(self, parent, identifier){
+    getNewBlock(self, parent, identifier){
       let block = { identifier: identifier, parent: parent, children: [] };
       if(parent > -1 && self.blocks[parent]){
         self.blocks[parent].children.push(block);
       }
       return block;
-  }
+    }
 
-  getTextRange(code, range){
+    getTextRange(code, range){
        if(!range){
            return undefined;
        }
@@ -37,75 +59,82 @@ export class EsInstrumenter {
        let from = range[0];
        let till = range[1];
        return code.substring(from, till);
-   }
+    }
  
-  wrapInExpressionStatementNode(autoLogNode){
+    wrapInExpressionStatementNode(autoLogNode){
         return { 
             "type": "ExpressionStatement",
             "expression": autoLogNode
         };
-   }
+    }
   
-  getDefaultAutoLogNode(self = this){
+    getDefaultAutoLogNode(self = this){
        return self.esprimaNodeFactory.getDefaultAutoLogNode();
-   }
-  
-  getLocationDataNode(loc, range, self = this){
-      return self.esprimaNodeFactory.getLocationDataNode(loc, range);
-  }
-  
-  setNodeValue(ref){
-     ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
-  }
+    }
     
-  setNodeTextValue(ref){
+    getLocationDataNode(loc, range, self = this){
+      return self.esprimaNodeFactory.getLocationDataNode(loc, range);
+    }
+    
+    setNodeValue(ref){
+     ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
+    }
+    
+    setNodeTextValue(ref){
         ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = {
                         "type": "Literal",
                         "value": ref.value,
                         "raw": ref.value
                     };
-  }
-  
-  instrumentVariableDeclarator(node, code, self = this){
-      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-      let Syntax = self.Syntax,
-            TraceParameters = self.TraceParameters,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange;
-     if(!node.init){
-                return undefined;
-            }
-            if(node.init.type === Syntax.FunctionExpression){
-                return undefined;// Backward Analysis
-                 
-            }else{
-                 setNodeTextValue({autoLogNode: autoLogNode, propertyIndex: TraceParameters.type, value : node.type} );
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.id.range)} );
-                 setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
-                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
-                 locationData = getLocationDataNode(node.loc, node.range, self);
-                 if(typeof locationData !== 'undefined'){
-                    setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-                    setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-                 }
+    }
+    
+    instrumentVariableDeclarator(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+                TraceParameters = self.TraceParameters,
+                setNodeValue = self.setNodeValue,
+                setNodeTextValue = self.setNodeTextValue,
+                getLocationDataNode = self.getLocationDataNode,
+                getTextRange = self.getTextRange;
                 
-                node.init = autoLogNode;
-            } 
-  }
-  
-  instrumentCallExpression(node, code, self = this){
+        if(!node.init){
+            return undefined;
+        }
+        
+        if(node.init.type === Syntax.FunctionExpression){
+            return undefined;// Backward Analysis
+             
+        }else{
+             setNodeTextValue({autoLogNode: autoLogNode, propertyIndex: TraceParameters.type, value : node.type} );
+             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.id.range)} );
+             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
+             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
+             locationData = getLocationDataNode(node.loc, node.range, self);
+             if(typeof locationData !== 'undefined'){
+                setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+                setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+             }
+            
+            node.init = autoLogNode;
+        } 
+    }
+    
+    instrumentCallExpression(node, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let Syntax = self.Syntax,
             TraceParameters = self.TraceParameters,
             setNodeValue = self.setNodeValue,
             setNodeTextValue = self.setNodeTextValue,
             getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange;
-                
+            getTextRange = self.getTextRange,
+            isAutoLogNode = self.isAutoLogNode;
+            
+        if(isAutoLogNode(node, self)){
+            return undefined;
+        }
+         
         if(!node.callee || !node.range){
-                        return undefined;
+            return undefined;
         }
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.callee.range)} );
@@ -125,9 +154,9 @@ export class EsInstrumenter {
          
         node.callee = autoLogNode.callee;
         node.arguments= autoLogNode.arguments;
-  }
-  
-  instrumentAssignmentExpression(node, code, self = this){
+    }
+    
+    instrumentAssignmentExpression(node, code, self = this){
     let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
     let Syntax = self.Syntax,
             TraceParameters = self.TraceParameters,
@@ -148,7 +177,7 @@ export class EsInstrumenter {
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
-         locationData = getLocationDataNode(node.right.loc, node.right.range, self);
+         locationData = getLocationDataNode(node.loc, node.range, self);
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -156,8 +185,8 @@ export class EsInstrumenter {
          node.right = autoLogNode;
     }
      
-  }
-  
+    }
+    
     instrumentReturnStatement(node, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let Syntax = self.Syntax,
@@ -191,235 +220,7 @@ export class EsInstrumenter {
         }
      
     }
-  
-  instrumentExpressionStatement(node, code, self = this){
-        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-        let Syntax = self.Syntax,
-            TraceParameters = self.TraceParameters,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange;
-        
-        if(!node.expression){
-            return undefined;
-        }
-        if(!node.expression.range){ 
-            return undefined;
-        }
-         if(!(node.expression.type === Syntax.UnaryExpression || node.expression.type === Syntax.UpdateExpression)){ 
-            return undefined;
-        }
-         
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.expression.type} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.expression.range)} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.expression.range)} );
-         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.expression});
-         locationData = getLocationDataNode(node.loc, node.range, self);
-         
-         if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-         }
-        node.expression = autoLogNode;
-    }
     
-    instrumentBinaryExpression(node, code, self = this){
-        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-        let TraceParameters = self.TraceParameters,
-            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange;
-            
-        if(!(node.right && node.left)){
-            return undefined;
-        }
-
-
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.range)} );
-        
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
-        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node});
-        locationData = getLocationDataNode(node.loc, node.range, self);
-        if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-        }
-       
-        node.right = autoLogNode;
-
-        autoLogNode = getDefaultAutoLogNode(self);
-       
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.left.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.left.range)} );
-        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.left});
-        locationData = getLocationDataNode(node.left.loc, node.left.range, self);
-        if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-        }
-       
-        node.left = autoLogNode;
-     
-    }
-  
-    
-    instrumentBlockStatement(node, code, self = this){
-        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-        let TraceParameters = self.TraceParameters,
-            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange,
-            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode,
-            blockCounter = self.blockCounter;
-            
-        if(!(node.body)){
-            return undefined;
-        }
-        let block = self.getNewBlock(self, blockCounter, getTextRange(code, node.range));
-
-
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
-        locationData = getLocationDataNode(node.loc, node.range, self);
-        if(locationData){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-        }
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Enter`} );
-        
-        node.body.unshift(wrapInExpressionStatementNode(autoLogNode));
-
-        autoLogNode = getDefaultAutoLogNode(self);
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
-        locationData = getLocationDataNode(node.loc, node.range, self);
-        if(locationData){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-        }
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Exit`} );
-        
-        node.body.push(wrapInExpressionStatementNode(autoLogNode));
-        
-        self.blocks[blockCounter] = block;
-        self.blockCounter++;
-  }
-    
-    instrumentSwitchCase(node, code, self = this){
-        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-        let TraceParameters = self.TraceParameters,
-            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange,
-            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode,
-            blockCounter = self.blockCounter;
-            
-        if(!(node.consequent)){
-            return undefined;
-        }
-
-
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
-        locationData = getLocationDataNode(node.loc, node.range, self);
-        if(locationData){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-        }
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Enter`} );
-        
-        node.consequent.unshift(wrapInExpressionStatementNode(autoLogNode));
-
-        autoLogNode = getDefaultAutoLogNode(self);
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
-        locationData = getLocationDataNode(node.loc, node.range, self);
-        if(locationData){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-        }
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Exit`} );
-        
-        node.consequent.push(wrapInExpressionStatementNode(autoLogNode));
-        
-        self.blockCounter++;
-  }
-  
-  
-  instrumentFunctionDeclaration(node, code, self = this){
-      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-      let   TraceParameters = self.TraceParameters,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
-      
-        if(!(node.body && node.body.body)){
-            return undefined;
-        }
-         
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : node.id.name} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : node.id.name} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.id.name});
-         locationData = getLocationDataNode(node.loc, node.range, self);
-         if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-         }
-         
-         autoLogNode = wrapInExpressionStatementNode(autoLogNode);
-         node.body.body.unshift(autoLogNode);
-                 
-     
-  }
-  
-    instrumentProperty(node, code, self = this){
-      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
-      let TraceParameters = self.TraceParameters,
-            setNodeValue = self.setNodeValue,
-            setNodeTextValue = self.setNodeTextValue,
-            getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange;
-        if(!(node.key && node.value)){
-            return undefined;
-        }
-        if(!node.value.range){
-            return undefined;
-        }
-                 
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.key.range)} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.value.range)} );
-         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.value});
-         locationData = getLocationDataNode(node.loc, node.range, self);
-         
-         if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-         }
-         node.value = autoLogNode;
-     
-    }
-  
     instrumentExpressionStatement(node, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let Syntax = self.Syntax,
@@ -451,7 +252,247 @@ export class EsInstrumenter {
          }
         node.expression = autoLogNode;
     }
-  
+    
+    instrumentBinaryExpression(node, parent, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let TraceParameters = self.TraceParameters,
+            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
+
+        if(!(node.right && node.left)){
+            return undefined;
+        }
+    
+    
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.right.type} );
+        
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.right.range)} );
+        
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
+        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.right});
+        locationData = getLocationDataNode(node.right.loc, node.right.range, self);
+        if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+       
+        node.right = autoLogNode;
+    
+        autoLogNode = getDefaultAutoLogNode(self);
+       
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.left.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.left.range)} );
+        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.left});
+        locationData = getLocationDataNode(node.left.loc, node.left.range, self);
+        if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+       
+        node.left = autoLogNode;
+}
+    
+    
+    instrumentBlockStatement(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let TraceParameters = self.TraceParameters,
+            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange,
+            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode,
+            blockCounter = self.blockCounter;
+            
+        if(!(node.body)){
+            return undefined;
+        }
+        let block = self.getNewBlock(self, blockCounter, getTextRange(code, node.range));
+    
+    
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
+        locationData = getLocationDataNode(node.loc, node.range, self);
+        if(locationData){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Enter`} );
+        
+        node.body.unshift(wrapInExpressionStatementNode(autoLogNode));
+    
+        autoLogNode = getDefaultAutoLogNode(self);
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
+        locationData = getLocationDataNode(node.loc, node.range, self);
+        if(locationData){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Exit`} );
+        
+        node.body.push(wrapInExpressionStatementNode(autoLogNode));
+        
+        self.blocks[blockCounter] = block;
+        self.blockCounter++;
+    }
+    
+    instrumentSwitchCase(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let TraceParameters = self.TraceParameters,
+            getDefaultAutoLogNode= self.getDefaultAutoLogNode,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange,
+            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode,
+            blockCounter = self.blockCounter;
+        
+        if(!node.range){ 
+            return undefined;
+        }
+            
+        if(!(node.consequent)){
+            return undefined;
+        }
+    
+    
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
+        locationData = getLocationDataNode(node.loc, node.range, self);
+        if(locationData){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Enter`} );
+        
+        node.consequent.unshift(wrapInExpressionStatementNode(autoLogNode));
+    
+        autoLogNode = getDefaultAutoLogNode(self);
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
+        locationData = getLocationDataNode(node.loc, node.range, self);
+        if(locationData){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.extra, 'value' : `Block${blockCounter}:Exit`} );
+        
+        node.consequent.push(wrapInExpressionStatementNode(autoLogNode));
+        
+        self.blockCounter++;
+    }
+    
+    
+    instrumentFunctionDeclaration(node, code, self = this){
+      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+      let   TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
+        
+        if(!node.range){ 
+            return undefined;
+        }
+        
+        if(!(node.body && node.body.body)){
+            return undefined;
+        }
+         
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : node.id.name} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : node.id.name} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.id.name});
+         locationData = getLocationDataNode(node.loc, node.range, self);
+         if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+         }
+         
+         autoLogNode = wrapInExpressionStatementNode(autoLogNode);
+         node.body.body.unshift(autoLogNode);
+                 
+     
+    }
+    
+    instrumentProperty(node, code, self = this){
+      let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+      let TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
+        if(!(node.key && node.value)){
+            return undefined;
+        }
+        if(!node.value.range){
+            return undefined;
+        }
+                 
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.key.range)} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.value.range)} );
+         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.value});
+         locationData = getLocationDataNode(node.loc, node.range, self);
+         
+         if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+         }
+         node.value = autoLogNode;
+     
+    }
+    
+    instrumentExpressionStatement(node, code, self = this){
+        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let Syntax = self.Syntax,
+            TraceParameters = self.TraceParameters,
+            setNodeValue = self.setNodeValue,
+            setNodeTextValue = self.setNodeTextValue,
+            getLocationDataNode = self.getLocationDataNode,
+            getTextRange = self.getTextRange;
+        
+        if(!node.expression){
+            return undefined;
+        }
+        
+        if(!node.range){ 
+            return undefined;
+        }
+        
+        if(!node.expression.range){ 
+            return undefined;
+        }
+         if(!(node.expression.type === Syntax.UnaryExpression || node.expression.type === Syntax.UpdateExpression)){ 
+            return undefined;
+        }
+         
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.expression.type} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.expression.range)} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.expression.range)} );
+         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.expression});
+         locationData = getLocationDataNode(node.expression.loc, node.expression.range, self);
+         
+         if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+         }
+        node.expression = autoLogNode;
+    }
+    
     instrumentControlStatementWithTest(node, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let TraceParameters = self.TraceParameters,
@@ -463,22 +504,18 @@ export class EsInstrumenter {
         if(!node.test){
             return undefined;
         }
-        if(!node.test.range){ 
-            return undefined;
-        }
-
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+        
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.test.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.test.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.test.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.test});
-         locationData = getLocationDataNode(node.loc, node.range, self);
+         locationData = getLocationDataNode(node.test.loc, node.test.range, self);
          
          if(typeof locationData !== 'undefined'){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
          }
         node.test = autoLogNode;
-     
     }
     
     instrumentSwitchStatement(node, code, self = this){
@@ -495,7 +532,7 @@ export class EsInstrumenter {
         if(!node.discriminant.range){ 
             return undefined;
         }
-
+    
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.discriminant.range)} );
@@ -509,9 +546,9 @@ export class EsInstrumenter {
         node.discriminant = autoLogNode;
      
     }
-  
+    
     instrumentForStatement(node, code, self = this){
-        let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
+        let autoLogNode, locationData;
         let Syntax = self.Syntax,
             TraceParameters = self.TraceParameters,
             getDefaultAutoLogNode= self.getDefaultAutoLogNode,
@@ -527,52 +564,50 @@ export class EsInstrumenter {
             return undefined;
         }
         
-        if(node.init.type !== Syntax.VariableDeclaration){
-            setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
+        if(node.init.type !== Syntax.VariableDeclaration && node.init.type !== Syntax.AssignmentExpression){
+            autoLogNode = self.getDefaultAutoLogNode(self);
+            setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.init.type} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.init.range)} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.init.range)} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.init});
-             locationData = getLocationDataNode(node.loc, node.range, self);
+             locationData = getLocationDataNode(node.init.loc, node.init.range, self);
              
              if(typeof locationData !== 'undefined'){
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
              }
             node.init = autoLogNode;
-            autoLogNode = getDefaultAutoLogNode(self);
+        }else{
+            //Handled in other cases
         }
-
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.test.range)} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.test.range)} );
-         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.test});
-         locationData = getLocationDataNode(node.loc, node.range, self);
-         
-         if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-         }
-        node.test = autoLogNode;
+        
         autoLogNode = getDefaultAutoLogNode(self);
-         
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.test.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.test.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.test.range)} );
+        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.test});
+        locationData = getLocationDataNode(node.test.loc, node.test.range, self);
         
-        
-        
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.update.range)} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.update.range)} );
-         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.update});
-         locationData = getLocationDataNode(node.loc, node.range, self);
-         
-         if(typeof locationData !== 'undefined'){
+        if(locationData){
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-         }
-        node.update = autoLogNode;
+        }
+        node.test = autoLogNode;
         
-     
+        autoLogNode = getDefaultAutoLogNode(self);
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.update.type} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.update.range)} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.update.range)} );
+        setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.update});
+        locationData = getLocationDataNode(node.update.loc, node.update.range, self);
+        
+        if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+        }
+        node.update = autoLogNode;
     }
-  
+    
     instrumentForInStatement(node, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let Syntax = self.Syntax,
@@ -589,7 +624,7 @@ export class EsInstrumenter {
         if(!node.left.range ||!node.right.range ){ 
             return undefined;
         }
-
+    
          if(node.left.type !== Syntax.VariableDeclaration){
             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.left.range)} );
@@ -604,7 +639,7 @@ export class EsInstrumenter {
             node.left = autoLogNode;
             autoLogNode = getDefaultAutoLogNode(self);
         }
-
+    
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.right.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.right.range)} );
@@ -618,7 +653,7 @@ export class EsInstrumenter {
         node.right = autoLogNode;
      
     }
-  
+    
     instrumentFunctionExpression(node, parent, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let Syntax = self.Syntax,
@@ -627,6 +662,12 @@ export class EsInstrumenter {
             setNodeTextValue = self.setNodeTextValue,
             getLocationDataNode = self.getLocationDataNode,
             wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
+            
+        if(!parent){
+            return;
+        }
+        
+    
         
         let identifier;
                     
@@ -682,8 +723,10 @@ export class EsInstrumenter {
             case Syntax.MemberExpression:
                 break;
             default:
-              //  self.instrumentIdentifierExpression(node, code, self);
+                //self.instrumentIdentifierExpression(node, code, self);
+                console.log(JSON.stringify(node));
         }
+        
     }
     
     instrumentTracer(sourceCode, esanalyzer) {
@@ -707,7 +750,7 @@ export class EsInstrumenter {
             instrumentSwitchStatement = self.instrumentSwitchStatement,
             instrumentIdentifier = self.instrumentIdentifier;
             
-
+    
         instrumenter = function instrumenter(ref){
             let isForwardAnalysis = true;
             let node = ref.node, code = ref.code, path = ref.path;
@@ -715,10 +758,14 @@ export class EsInstrumenter {
             if(!Syntax.hasOwnProperty(node.type)){
                 return undefined;
             }
+            
             if(!node.range){
-                return undefined;
+                // if(node.type !== Syntax.CallExpression){
+                    return undefined;
+                // }
             }
-
+            
+    
             switch(node.type){
                 case Syntax.VariableDeclarator:
                     instrumentVariableDeclarator(node, code, self);
@@ -740,10 +787,6 @@ export class EsInstrumenter {
                     instrumentBlockStatement(node, code, self);
                     break;
                     
-                case Syntax.BinaryExpression:
-                    instrumentBinaryExpression(node, code, self);
-                    break;
-    
                 case Syntax.FunctionDeclaration:
                     instrumentFunctionDeclaration(node, code, self);
                     break;
@@ -791,19 +834,23 @@ export class EsInstrumenter {
                 default:
                     isForwardAnalysis = false;
             }
+        
             
             if(isForwardAnalysis){
-                return;
+                return undefined;
             }
-                
-              
-            if(!path){
-                return;
-            }   
-    
-            let parent = path[0] ;
-    
+
+            let parent = path[0];
+            
             switch(node.type){
+                case Syntax.BinaryExpression:
+                    instrumentBinaryExpression(node, parent, code, self);
+                    break;
+                
+                case Syntax.LogicalExpression:
+                    instrumentBinaryExpression(node, parent, code, self);
+                    break;
+                    
                 case Syntax.FunctionExpression:
                     instrumentFunctionExpression(node, parent, code, self);
                     break;
@@ -818,14 +865,14 @@ export class EsInstrumenter {
         tree = esanalyzer.traceAllAutoLog(sourceCode, instrumenter);
         
         instrumentedCode = self.escodegen.generate(tree);
-
+    
         instrumentedCode = `
             ${this.autoLogTracer.getTraceDataContainerCodeBoilerPlate()}
             ${this.autoLogTracer.getAutologCodeBoilerPlate(this.traceModel.timeLimit)}
             ${this.autoLogTracer.wrapCodeInTryCatch(instrumentedCode)}
             ${this.autoLogTracer.getTraceDataCodeBoilerPlate()}
         `;
-
+    
         return instrumentedCode;
     }
 
