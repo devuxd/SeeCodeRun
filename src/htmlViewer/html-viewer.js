@@ -35,7 +35,6 @@ export class HtmlViewer {
         if (traceService.isValid(instrumentationPayload)) {
           this.js = instrumentationPayload.data;
         } else {
-          console.log(JSON.stringify(instrumentationPayload));
           this.js = editorText;
         }
         

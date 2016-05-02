@@ -1,6 +1,8 @@
+import {TraceModel} from '../trace-model';
 export class AutoLogTracer{
     constructor(traceDataContainer){
         this.traceDataContainer = traceDataContainer;
+        this.traceModel = new TraceModel();
     }
     
     wrapCodeInTryCatch(code){
@@ -36,76 +38,8 @@ export class AutoLogTracer{
         window.START_TIME = +new Date();
         window.TIME_LIMIT = ${timeLimit};
         
-        var Syntax = {
-        AssignmentExpression: 'AssignmentExpression',
-        ArrayExpression: 'ArrayExpression',
-        BlockStatement: 'BlockStatement',
-        BinaryExpression: 'BinaryExpression',
-        BreakStatement: 'BreakStatement',
-        CallExpression: 'CallExpression',
-        CatchClause: 'CatchClause',
-        ConditionalExpression: 'ConditionalExpression',
-        ContinueStatement: 'ContinueStatement',
-        DoWhileStatement: 'DoWhileStatement',
-        DebuggerStatement: 'DebuggerStatement',
-        EmptyStatement: 'EmptyStatement',
-        ExpressionStatement: 'ExpressionStatement',
-        ForStatement: 'ForStatement',
-        ForInStatement: 'ForInStatement',
-        FunctionDeclaration: 'FunctionDeclaration',
-        FunctionExpression: 'FunctionExpression',
-        Identifier: 'Identifier',
-        IfStatement: 'IfStatement',
-        Literal: 'Literal',
-        LabeledStatement: 'LabeledStatement',
-        LogicalExpression: 'LogicalExpression',
-        MemberExpression: 'MemberExpression',
-        NewExpression: 'NewExpression',
-        ObjectExpression: 'ObjectExpression',
-        Program: 'Program',
-        Property: 'Property',
-        ReturnStatement: 'ReturnStatement',
-        SequenceExpression: 'SequenceExpression',
-        SwitchStatement: 'SwitchStatement',
-        SwitchCase: 'SwitchCase',
-        ThisExpression: 'ThisExpression',
-        ThrowStatement: 'ThrowStatement',
-        TryStatement: 'TryStatement',
-        UnaryExpression: 'UnaryExpression',
-        UpdateExpression: 'UpdateExpression',
-        VariableDeclaration: 'VariableDeclaration',
-        VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement',
-        WithStatement: 'WithStatement'
-    };
-    var traceTypes = {
-        Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
-        Expression: [
-            Syntax.UnaryExpression,
-            Syntax.UpdateExpression,
-            Syntax.CallExpression,
-            Syntax.Property,
-            Syntax.VariableDeclarator,
-            Syntax.AssignmentExpression,
-            Syntax.BinaryExpression,
-            Syntax.Identifier,
-            Syntax.ReturnStatement,
-            Syntax.ForStatement,
-            Syntax.ForInStatement,
-            Syntax.WhileStatement,
-            Syntax.DoWhileStatement,
-            Syntax.ExpressionStatement,
-            Syntax.SwitchStatement
-            ],
-        ExpressionStatement : [
-            Syntax.ExpressionStatement
-            ],
-        ControlFlow : [],
-        Condition: [],
-        Loop: [Syntax.WhileStatement],
-        exception: []
-        
-    };
+        var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
+        var traceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
             hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],

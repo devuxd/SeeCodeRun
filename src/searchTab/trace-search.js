@@ -1,5 +1,4 @@
 /* global $ */
-
 export class TraceSearch{
     constructor(eventAggregator, traceModel, aceUtils){
         this.eventAggregator = eventAggregator;
@@ -55,6 +54,9 @@ export class TraceSearch{
         searchBox.$searchFilter.change(searchBoxChanged);
         
         this.subscribe(); 
+        
+                
+    
     }
     
     publishTraceSearchChanged(searchBox, searchTermText, searchFilterId){
@@ -62,6 +64,7 @@ export class TraceSearch{
             { searchTermText: searchTermText, searchFilterId: searchFilterId }
         );
     }
+    
     publishAceMarkersChanged(searchBox, itemsWithRanges){
         searchBox.eventAggregator.publish(searchBox.traceSearchEvents.aceMarkersChanged.event,
             {items: itemsWithRanges}
@@ -72,11 +75,13 @@ export class TraceSearch{
         let searchBox = this.searchBox;
         let traceChangedEvent = this.traceModel.traceEvents.changed.event;
         let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
+        let searchStateUpdated = this.traceModel.traceSearchEvents.searchStateUpdated.event;
         let aceMarkersChangedEvent = this.traceModel.traceSearchEvents.aceMarkersChanged.event;
         
         this.eventAggregator.subscribe( traceChangedEvent, payload =>{
             searchBox.traceHelper = payload.data;
             searchBox.searchBoxChanged(traceChangedEvent);
+            
         });
         
         this.eventAggregator.subscribe( searchBoxChangedEvent, payload =>{
@@ -87,7 +92,16 @@ export class TraceSearch{
                 let variableValues =searchBox.traceHelper.getValues();
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, selectedFilter, value);
                 searchBox.updateTable(searchBox, query);
+                
             }
+        });
+        
+        this.eventAggregator.subscribe( searchStateUpdated, payload =>{
+            let value = payload.searchTermText;
+            let selectedFilter = payload.searchFilterId;
+            
+            searchBox.$searchTerm.val(value);
+            searchBox.$searchFilter.val(selectedFilter);
         });
         
         let updateAceMarkersTimeout;
@@ -168,7 +182,4 @@ export class TraceSearch{
         $table.html(table);   
         $numResults.html(`<p>Number of Search Results: ${query.count()}</p>`);
     }
-    
-    
-  
 }

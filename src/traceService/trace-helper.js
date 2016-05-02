@@ -16,6 +16,41 @@ export class TraceHelper {
         this.trace = this.traceModel.makeTrace(trace);
     }
     
+    getMatchAtPosition(position){
+        return this.getValuesAtPosition(this.trace, position);
+    }
+    
+    getMatchAtPosition(dataModel, position){
+        return this.getValuesAtPosition(dataModel, position);
+    }
+    
+    getValuesAtPosition(traceData, acePosition){
+        let isPositionInRange = this.isPositionInRange;
+        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
+        
+        if(!acePosition || !traceData){
+            return undefined;
+        }
+        let match = undefined;
+        for(let i = 0; i < traceData.length; i++){
+            let entry = traceData[i];
+            if(entry.hasOwnProperty("range")){
+                if( isPositionInRange(acePosition, entry.range)){
+    			     if(match){
+    			         if(isRangeInRangeStrict(entry.range, match.range)){
+    			             match = entry;
+    			         }
+    			     }else{
+    			        match = entry;
+    			     }
+    			 
+    			 }
+            }
+        }
+        return match;
+	    
+	}
+    
     /*
      * getTraceDataInRange(traceData, aceRange)
      * @ param traceData - an array based on the available properties of a Trace, that is, arrays with each entry having a range.
@@ -96,12 +131,53 @@ export class TraceHelper {
     			);
     }
     
+    isRangeInRangeStrict(isRange, inRange){
+        return (
+                (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
+    			 &&
+    			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
+    			);
+    }
+    
     isRangeInLine(isRange, inLine){
         return(
             (isRange.start.row === (inLine - 1))
             ||
             (isRange.end.row === (inLine - 1))
         );
+    }
+    
+    isPositionInRange(position, inRange){
+        
+        let matchesInOneLine = (
+                position.row == inRange.start.row 
+                && inRange.start.row  == inRange.end.row
+                && position.column >= inRange.start.column
+                && position.column <= inRange.end.column
+            );
+            
+        if(matchesInOneLine){
+            return true;
+        }
+            
+        let matchesStart = (
+                position.row == inRange.start.row 
+                && inRange.start.row  < inRange.end.row
+                && position.column >= inRange.start.column
+            );
+           
+        if(matchesStart){
+            return true;
+        }
+        
+        let matchesEnd = (
+                position.row == inRange.end.row
+                && inRange.start.row  < inRange.end.row
+                && position.column <= inRange.end.column
+            );
+
+        return matchesEnd;
+
     }
     
     getStackBlockCounts() {
