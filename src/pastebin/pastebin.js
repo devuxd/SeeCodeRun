@@ -2,8 +2,6 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
-import jqxcore     from '../../jqxcore';
-import jqxsplitter from '../../jqxsplitter';
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
@@ -13,6 +11,8 @@ import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import {TraceViewController} from '../utils/trace-view-controller';
+import '/jqxcore';
+import '/jqxsplitter';
 
 @inject(EventAggregator, Router)
 export class Pastebin {
