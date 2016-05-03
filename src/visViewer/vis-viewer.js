@@ -16,8 +16,7 @@ import {
 }
 from '../visualization/visualization';
 
-@
-inject(EventAggregator)
+@inject(EventAggregator)
 export class VisViewer {
 
     constructor(eventAggregator) {
@@ -33,7 +32,8 @@ export class VisViewer {
         this.visualizations.push(dataTableVisualization);
 
         this.selectedExpressions = [];
-        this.disable = true;
+        this.showVisButton = false;
+        this.showClearButton = false;
         this.subscribe();
 
     }
@@ -45,23 +45,23 @@ export class VisViewer {
     }
 
     subscribe() {
-        let ea = this.eventAggregator;
-
-        ea.subscribe('onSelectedExpressionsChanged', payload => {
+        
+        this.eventAggregator.subscribe('onSelectedExpressionsChanged', payload => {
             this.selectedExpressions = payload.items;
-            this.disable = !this.selectedExpressions.length > 0;
-
+            this.showClearButton = this.showVisButton = this.selectedExpressions.length >= 2 ;
+            
 
         });
     }
     showVis() {
+        // TODO: publish an event with payload = this.selectedExpression. The visualization module should subscribe to this event.
         console.info(this.selectedExpressions);
 
     }
-    
-     clearSelection() {
-      
-      // notify expressionSelection service to clear the selected expressions 
-       this.eventAggregator.publish("onClearSelectionRequest");
+
+    clearSelection() {
+
+        // notify expressionSelection service to clear the selected expressions 
+        this.eventAggregator.publish("onClearSelectionRequest");
     }
 }

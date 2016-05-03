@@ -3,8 +3,8 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <button click.trigger="vis.showVis()" disabled.bind="vis.disable" class="btn btn-info active">show visualization</button>
-                <button click.trigger="vis.clearSelection()" if.bind="!vis.disable" class="btn btn-danger">clear selections</button>
+                <button click.trigger="vis.showVis()" disabled.bind="!vis.showVisButton" class="btn btn-info active">show visualization</button>
+                <button click.trigger="vis.clearSelection()" if.bind="vis.showClearButton" class="btn btn-danger">clear selections</button>
             </div>
         </div>
     </div>
