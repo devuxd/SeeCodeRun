@@ -49,7 +49,7 @@ export class VisViewer {
 
         ea.subscribe('onSelectedExpressionsChanged', payload => {
             this.selectedExpressions = payload.items;
-            this.disable = this.selectedExpressions.length == 1;
+            this.disable = !this.selectedExpressions.length > 0;
 
 
         });
@@ -57,5 +57,11 @@ export class VisViewer {
     showVis() {
         console.info(this.selectedExpressions);
 
+    }
+    
+     clearSelection() {
+      
+      // notify expressionSelection service to clear the selected expressions 
+       this.eventAggregator.publish("onClearSelectionRequest");
     }
 }

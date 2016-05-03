@@ -22,6 +22,20 @@ export class ExpressionSelection {
         this.ea.subscribe("onEditorClick", () => {
             this.click = this.currentTarget != undefined;
         });
+
+        this.ea.subscribe("onClearSelectionRequest", () => {
+            this.selectedExpressions = [];
+            this.currentTarget = undefined;
+            this.previousTarget = undefined;
+            this.setMarker();
+            this.publishNewSelection();
+            this.editor.focus();
+        });
+
+        this.ea.subscribe("onEditorReady", editor => {
+
+            this.editor = editor;
+        });
     }
 
     setMarker() {
@@ -59,7 +73,7 @@ export class ExpressionSelection {
                 let i = this.selectedExpressions.indexOf(this.previousTarget);
                 if (i > -1)
                     this.selectedExpressions.splice(i, 1);
-                    
+
                 this.previousTarget = undefined;
             }
 
