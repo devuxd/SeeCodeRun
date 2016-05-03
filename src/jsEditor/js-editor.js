@@ -76,7 +76,6 @@ export class JsEditor {
         let localHash = md5(newStr);
         if (editorHashedText !== localHash ) {
           
-          console.info("changed "+ newStr);
           editorHashedText = localHash; 
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
@@ -114,27 +113,6 @@ export class JsEditor {
       });
     }
 
-
-    // Copy event for Vis-viewer
-    editor.on('copy', expression => {
-      ea.publish('onEditorCopy', {
-        expression: expression,
-        row: editor.getCursorPosition().row + 1,
-        column: editor.getCursorPosition().column + 1
-
-      });
-    });
-
-
-    editor.on("mousemove", e => { 
-      ea.publish('onEditorHover', {
-        position: e.getDocumentPosition(),
-        lastVisibleRow: this.editor.getCursorPositionScreen()
-      });
-      
-      
-    });
-
     //For gutter
     session.selection.on('changeCursor', () => {
 
@@ -146,6 +124,7 @@ export class JsEditor {
       ea.publish('onCursorMoved', info);
     });
     
+    //For exprssions selection
     editor.on("click", ()=>{
         ea.publish("onEditorClick");
     });

@@ -19,10 +19,7 @@ export class TraceSearchHistory {
 
         this.firebase.on('value', function(snapshot) {
             let data = snapshot.val();
-            // console.info(`${data.searchFilterId} inside subscribe firebase`);
-            // console.info(`${data.searchTermText} inside subscribe firebase`);
-            console.info(data);
-            // Publishing an event for searchBox;
+           
             if(data != null)
            traceSearchHistory.eventAggregator.publish("searchBoxChanged", data);
 
@@ -38,9 +35,6 @@ export class TraceSearchHistory {
         eventAggregator.subscribe(searchBoxChangedEvent, payload => {
             let searchTermText = payload.searchTermText;
             let searchFilterId = payload.searchFilterId;
-            // console.info(`${searchTermText} inside subscribe searchBoxChangedEvent`);
-            // console.info(`${searchFilterId} inside subscribe searchBoxChangedEvent`);
-            //Store values
             this.firebase.update({
                 searchFilterId: searchFilterId,
                 searchTermText: searchTermText

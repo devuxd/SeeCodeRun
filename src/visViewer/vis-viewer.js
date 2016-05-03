@@ -47,9 +47,10 @@ export class VisViewer {
     subscribe() {
         let ea = this.eventAggregator;
 
-        ea.subscribe('onSelectionedExpressionsChanged', payload => {
-            this.selectedExpressions = payload;
-            this.disable = this.selectedExpressions.items.length == 0;
+        ea.subscribe('onSelectedExpressionsChanged', payload => {
+            this.selectedExpressions = payload.items;
+            this.disable = this.selectedExpressions.length == 1;
+
 
         });
     }

@@ -60,7 +60,6 @@ export class TraceSearch {
         this.eventAggregator.subscribe('traceChanged', payload => {
             searchBox.traceHelper = payload.data;
             let variableValues = searchBox.traceHelper.getValues();
-            console.info(variableValues);
             let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
             this.updateTable(query);
         });
@@ -122,7 +121,7 @@ export class TraceSearch {
     }
 
     doMouseOut() {
-        this.selectedExpressions.pop();
+        this.selectedExpressions=[];
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
 
