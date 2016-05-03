@@ -12,17 +12,6 @@ export class EsTracer {
     }
     
     onCodeRunning(){
-        let timeLimit = this.traceModel.timeLimit;
-        let timeOutCallback = function timeOutCallback(){
-                  throw `Execution time out. Excedeed ${timeLimit} ms`;
-        };
-        
-        if(this.timeOut){
-            window.clearTimeout(this.timeOut);
-        }
-        this.timeOut = window.setTimeout(this.traceModel.timeLimit, timeOutCallback);
-        
-        window.ISCANCELLED = false;
         this.startTimestamp = +new Date();
     }
     
@@ -37,19 +26,10 @@ export class EsTracer {
     }
     
     traceChanged(event, results, error = ""){
-        if(this.timeOut){
-            window.clearTimeout(this.timeOut);
-        }
-
-        if(!results){
-          //  console.log("No trace results found");
-            return;
-        }
-
         let duration = (+new Date()) - this.startTimestamp ;
         let description = `${event.description} Trace completed in ${1 + duration} ms.${error.toString()}`;
         
-        let traceHelper = new TraceHelper(results);
+        let traceHelper = new TraceHelper(results, error, this.traceModel);
         let payload = this.traceModel.makePayload(event.event, description, traceHelper);
         
         if(this.publisher){

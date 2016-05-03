@@ -1,5 +1,6 @@
 import {inject} from 'aurelia-framework';
 import * as d3 from 'd3';
+import {TraceModel} from '../traceService/trace-model';
 
 export class Visualization {
   static inject() {
@@ -30,20 +31,21 @@ export class Visualization {
   
   subscribe() {
     let ea = this.eventAggregator;
-    let renderVisualization = this.renderVisualization;
+    let visualization = this;
+    let traceModel = new TraceModel();
     
-    ea.subscribe('onTraceChanged', payload => {
-      this.trace = payload.data;
-      renderVisualization();
+    ea.subscribe(traceModel.traceEvents.changed.event, payload => {
+      visualization.trace = payload.data.trace;
+      visualization.renderVisualization();
     });
     
-    ea.subscribe('onTraceFailed', payload => {
-      this.hasError = true;
+    ea.subscribe(traceModel.executionEvents.failed.event, payload => {
+      visualization.hasError = true;
     });
 
     ea.subscribe('onVisRequest',payload => {
         // Insert code here
-        console.info(payload);
+
     });
   }
 }
