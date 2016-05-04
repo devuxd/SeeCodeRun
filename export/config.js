@@ -9,7 +9,7 @@ System.config({
     ]
   },
   paths: {
-    "*": "/dist/*",
+    "*": "./dist/*",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
@@ -45,10 +45,12 @@ System.config({
     "font-awesome": "npm:font-awesome@4.5.0",
     "jquery": "npm:jquery@2.2.2",
     "jquery-ui": "github:components/jqueryui@1.11.4",
+    "jqwidgets-framework": "npm:jqwidgets-framework@4.1.2",
     "jslinq": "npm:jslinq@1.0.15",
     "json": "github:systemjs/plugin-json@0.1.0",
+    "md5": "npm:md5@2.1.0",
     "tarball": "npm:tarball@0.0.5",
-    "text": "github:systemjs/plugin-text@0.0.7",
+    "text": "github:systemjs/plugin-text@0.0.3",
     "github:components/jqueryui@1.11.4": {
       "jquery": "npm:jquery@2.2.2"
     },
@@ -855,6 +857,9 @@ System.config({
       "loose-envify": "npm:loose-envify@1.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
+    "npm:is-buffer@1.1.3": {
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0"
+    },
     "npm:is-finite@1.0.1": {
       "number-is-nan": "npm:number-is-nan@1.0.0"
     },
@@ -878,6 +883,9 @@ System.config({
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "crypto": "github:jspm/nodelibs-crypto@0.1.0",
       "jsbn": "npm:jsbn@0.1.0"
+    },
+    "npm:jqwidgets-framework@4.1.2": {
+      "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:jsdom@8.3.0": {
       "abab": "npm:abab@1.0.3",
@@ -942,6 +950,13 @@ System.config({
       "pseudomap": "npm:pseudomap@1.0.2",
       "util": "github:jspm/nodelibs-util@0.1.0",
       "yallist": "npm:yallist@2.0.0"
+    },
+    "npm:md5@2.1.0": {
+      "assert": "github:jspm/nodelibs-assert@0.1.0",
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0",
+      "charenc": "npm:charenc@0.0.1",
+      "crypt": "npm:crypt@0.0.1",
+      "is-buffer": "npm:is-buffer@1.1.3"
     },
     "npm:miller-rabin@4.0.0": {
       "bn.js": "npm:bn.js@4.11.1",
@@ -1308,14 +1323,12 @@ System.config({
       "webidl-conversions": "npm:webidl-conversions@3.0.1"
     }
   },
-  depCache: {},
   bundles: {
-    "dist/app-build-d41d8cd98f.js": [],
-    "dist/aurelia-eada008989.js": [
+    "aurelia-f088e39245.js": [
       "github:components/jquery@2.2.1.js",
       "github:components/jquery@2.2.1/jquery.js",
       "github:twbs/bootstrap@3.3.6.js",
-      "github:twbs/bootstrap@3.3.6/css/bootstrap.css!github:systemjs/plugin-text@0.0.7.js",
+      "github:twbs/bootstrap@3.3.6/css/bootstrap.css!github:systemjs/plugin-text@0.0.3.js",
       "github:twbs/bootstrap@3.3.6/js/bootstrap.js",
       "npm:aurelia-animator-css@1.0.0-beta.1.2.0.js",
       "npm:aurelia-animator-css@1.0.0-beta.1.2.0/aurelia-animator-css.js",
@@ -1400,6 +1413,516 @@ System.config({
       "npm:aurelia-templating-router@1.0.0-beta.1.2.0/router-view.js",
       "npm:aurelia-templating@1.0.0-beta.1.2.1.js",
       "npm:aurelia-templating@1.0.0-beta.1.2.1/aurelia-templating.js"
+    ],
+    "app-build-7657e54312.js": [
+      "app.html!github:systemjs/plugin-text@0.0.3.js",
+      "app.js",
+      "chat/chat.css!github:systemjs/plugin-text@0.0.3.js",
+      "chat/chat.html!github:systemjs/plugin-text@0.0.3.js",
+      "chat/chat.js",
+      "consoleWindow/console-window.html!github:systemjs/plugin-text@0.0.3.js",
+      "consoleWindow/console-window.js",
+      "cssEditor/css-editor.html!github:systemjs/plugin-text@0.0.3.js",
+      "cssEditor/css-editor.js",
+      "github:components/jquery@2.2.1.js",
+      "github:components/jquery@2.2.1/jquery.js",
+      "github:components/jqueryui@1.11.4.js",
+      "github:components/jqueryui@1.11.4/jquery-ui.js",
+      "github:jspm/nodelibs-buffer@0.1.0.js",
+      "github:jspm/nodelibs-buffer@0.1.0/index.js",
+      "github:jspm/nodelibs-path@0.1.0.js",
+      "github:jspm/nodelibs-path@0.1.0/index.js",
+      "github:jspm/nodelibs-process@0.1.2.js",
+      "github:jspm/nodelibs-process@0.1.2/index.js",
+      "github:twbs/bootstrap@3.3.6.js",
+      "github:twbs/bootstrap@3.3.6/js/bootstrap.js",
+      "htmlEditor/html-editor.html!github:systemjs/plugin-text@0.0.3.js",
+      "htmlEditor/html-editor.js",
+      "htmlViewer/html-viewer.html!github:systemjs/plugin-text@0.0.3.js",
+      "htmlViewer/html-viewer.js",
+      "jqxcore.js",
+      "jqxsplitter.js",
+      "jsEditor/js-editor.html!github:systemjs/plugin-text@0.0.3.js",
+      "jsEditor/js-editor.js",
+      "jsGutter/js-gutter.html!github:systemjs/plugin-text@0.0.3.js",
+      "jsGutter/js-gutter.js",
+      "layout/nav-bar.html!github:systemjs/plugin-text@0.0.3.js",
+      "main.js",
+      "mode-css.js",
+      "mode-html.js",
+      "mode-javascript.js",
+      "npm:amdefine@1.0.0.js",
+      "npm:amdefine@1.0.0/amdefine.js",
+      "npm:aurelia-binding@1.0.0-beta.1.3.1.js",
+      "npm:aurelia-binding@1.0.0-beta.1.3.1/aurelia-binding.js",
+      "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0/aurelia-dependency-injection.js",
+      "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0/aurelia-event-aggregator.js",
+      "npm:aurelia-framework@1.0.0-beta.1.2.1.js",
+      "npm:aurelia-framework@1.0.0-beta.1.2.1/aurelia-framework.js",
+      "npm:aurelia-history@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-history@1.0.0-beta.1.2.0/aurelia-history.js",
+      "npm:aurelia-loader@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-loader@1.0.0-beta.1.2.0/aurelia-loader.js",
+      "npm:aurelia-logging@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-logging@1.0.0-beta.1.2.0/aurelia-logging.js",
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0/aurelia-metadata.js",
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-pal@1.0.0-beta.1.2.0/aurelia-pal.js",
+      "npm:aurelia-path@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-path@1.0.0-beta.1.2.0/aurelia-path.js",
+      "npm:aurelia-route-recognizer@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-route-recognizer@1.0.0-beta.1.2.0/aurelia-route-recognizer.js",
+      "npm:aurelia-router@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-router@1.0.0-beta.1.2.0/aurelia-router.js",
+      "npm:aurelia-task-queue@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-task-queue@1.0.0-beta.1.2.0/aurelia-task-queue.js",
+      "npm:aurelia-templating@1.0.0-beta.1.2.1.js",
+      "npm:aurelia-templating@1.0.0-beta.1.2.1/aurelia-templating.js",
+      "npm:base64-js@0.0.8.js",
+      "npm:base64-js@0.0.8/lib/b64.js",
+      "npm:buffer@3.6.0.js",
+      "npm:buffer@3.6.0/index.js",
+      "npm:charenc@0.0.1.js",
+      "npm:charenc@0.0.1/charenc.js",
+      "npm:crypt@0.0.1.js",
+      "npm:crypt@0.0.1/crypt.js",
+      "npm:d3@3.5.16.js",
+      "npm:d3@3.5.16/d3.js",
+      "npm:escodegen@1.8.0.js",
+      "npm:escodegen@1.8.0/escodegen.js",
+      "npm:escodegen@1.8.0/package.json!github:systemjs/plugin-json@0.1.0.js",
+      "npm:esprima@2.7.2.js",
+      "npm:esprima@2.7.2/esprima.js",
+      "npm:estraverse@1.9.3.js",
+      "npm:estraverse@1.9.3/estraverse.js",
+      "npm:estraverse@4.2.0.js",
+      "npm:estraverse@4.2.0/estraverse.js",
+      "npm:estraverse@4.2.0/package.json!github:systemjs/plugin-json@0.1.0.js",
+      "npm:esutils@2.0.2.js",
+      "npm:esutils@2.0.2/lib/ast.js",
+      "npm:esutils@2.0.2/lib/code.js",
+      "npm:esutils@2.0.2/lib/keyword.js",
+      "npm:esutils@2.0.2/lib/utils.js",
+      "npm:ieee754@1.1.6.js",
+      "npm:ieee754@1.1.6/index.js",
+      "npm:is-buffer@1.1.3.js",
+      "npm:is-buffer@1.1.3/index.js",
+      "npm:isarray@1.0.0.js",
+      "npm:isarray@1.0.0/index.js",
+      "npm:jquery@2.2.2.js",
+      "npm:jquery@2.2.2/dist/jquery.js",
+      "npm:md5@2.1.0.js",
+      "npm:md5@2.1.0/md5.js",
+      "npm:path-browserify@0.0.0.js",
+      "npm:path-browserify@0.0.0/index.js",
+      "npm:process@0.11.2.js",
+      "npm:process@0.11.2/browser.js",
+      "npm:source-map@0.2.0.js",
+      "npm:source-map@0.2.0/lib/source-map.js",
+      "npm:source-map@0.2.0/lib/source-map/array-set.js",
+      "npm:source-map@0.2.0/lib/source-map/base64-vlq.js",
+      "npm:source-map@0.2.0/lib/source-map/base64.js",
+      "npm:source-map@0.2.0/lib/source-map/basic-source-map-consumer.js",
+      "npm:source-map@0.2.0/lib/source-map/binary-search.js",
+      "npm:source-map@0.2.0/lib/source-map/indexed-source-map-consumer.js",
+      "npm:source-map@0.2.0/lib/source-map/mapping-list.js",
+      "npm:source-map@0.2.0/lib/source-map/source-map-consumer.js",
+      "npm:source-map@0.2.0/lib/source-map/source-map-generator.js",
+      "npm:source-map@0.2.0/lib/source-map/source-node.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js",
+      "pastebin/pastebin.html!github:systemjs/plugin-text@0.0.3.js",
+      "pastebin/pastebin.js",
+      "theme-chrome.js",
+      "traceService/es-analyzer.js",
+      "traceService/es-instrumenter.js",
+      "traceService/es-tracer.js",
+      "traceService/external/auto-log-tracer.js",
+      "traceService/external/esprima-node-factory.js",
+      "traceService/trace-helper.js",
+      "traceService/trace-model.js",
+      "traceService/trace-service.js",
+      "traceService/trace.js",
+      "utils/ace-utils.js",
+      "utils/trace-view-controller.js",
+      "utils/trace-view-model.js",
+      "visViewer/vis-viewer.html!github:systemjs/plugin-text@0.0.3.js",
+      "visViewer/vis-viewer.js",
+      "visualization/dataTable.js",
+      "visualization/visualization.html!github:systemjs/plugin-text@0.0.3.js",
+      "visualization/visualization.js",
+      "visualization/visualizationFactory.js"
+    ]
+  },
+  depCache: {
+    "visViewer/vis-viewer.js": [
+      "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-framework@1.0.0-beta.1.2.1.js",
+      "npm:d3@3.5.16.js",
+      "visualization/visualizationFactory.js",
+      "visualization/visualization.js"
+    ],
+    "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0/aurelia-event-aggregator.js"
+    ],
+    "npm:aurelia-framework@1.0.0-beta.1.2.1.js": [
+      "npm:aurelia-framework@1.0.0-beta.1.2.1/aurelia-framework.js"
+    ],
+    "npm:d3@3.5.16.js": [
+      "npm:d3@3.5.16/d3.js"
+    ],
+    "visualization/visualizationFactory.js": [
+      "visualization/dataTable.js"
+    ],
+    "visualization/visualization.js": [
+      "npm:aurelia-framework@1.0.0-beta.1.2.1.js",
+      "npm:d3@3.5.16.js",
+      "traceService/trace-model.js"
+    ],
+    "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0/aurelia-event-aggregator.js": [
+      "npm:aurelia-logging@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-framework@1.0.0-beta.1.2.1/aurelia-framework.js": [
+      "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-binding@1.0.0-beta.1.3.1.js",
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-templating@1.0.0-beta.1.2.1.js",
+      "npm:aurelia-loader@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-task-queue@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-path@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-logging@1.0.0-beta.1.2.0.js"
+    ],
+    "visualization/dataTable.js": [
+      "npm:d3@3.5.16.js"
+    ],
+    "traceService/trace-model.js": [
+      "traceService/trace.js"
+    ],
+    "npm:aurelia-logging@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-logging@1.0.0-beta.1.2.0/aurelia-logging.js"
+    ],
+    "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0/aurelia-dependency-injection.js"
+    ],
+    "npm:aurelia-binding@1.0.0-beta.1.3.1.js": [
+      "npm:aurelia-binding@1.0.0-beta.1.3.1/aurelia-binding.js"
+    ],
+    "npm:aurelia-metadata@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0/aurelia-metadata.js"
+    ],
+    "npm:aurelia-templating@1.0.0-beta.1.2.1.js": [
+      "npm:aurelia-templating@1.0.0-beta.1.2.1/aurelia-templating.js"
+    ],
+    "npm:aurelia-loader@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-loader@1.0.0-beta.1.2.0/aurelia-loader.js"
+    ],
+    "npm:aurelia-task-queue@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-task-queue@1.0.0-beta.1.2.0/aurelia-task-queue.js"
+    ],
+    "npm:aurelia-path@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-path@1.0.0-beta.1.2.0/aurelia-path.js"
+    ],
+    "npm:aurelia-pal@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-pal@1.0.0-beta.1.2.0/aurelia-pal.js"
+    ],
+    "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0/aurelia-dependency-injection.js": [
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-binding@1.0.0-beta.1.3.1/aurelia-binding.js": [
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-task-queue@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-metadata@1.0.0-beta.1.2.0/aurelia-metadata.js": [
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-templating@1.0.0-beta.1.2.1/aurelia-templating.js": [
+      "npm:aurelia-logging@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-path@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-loader@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-binding@1.0.0-beta.1.3.1.js",
+      "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-task-queue@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-loader@1.0.0-beta.1.2.0/aurelia-loader.js": [
+      "npm:aurelia-path@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-metadata@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-task-queue@1.0.0-beta.1.2.0/aurelia-task-queue.js": [
+      "npm:aurelia-pal@1.0.0-beta.1.2.0.js"
+    ],
+    "utils/trace-view-controller.js": [
+      "utils/ace-utils.js",
+      "utils/trace-view-model.js"
+    ],
+    "traceService/trace-service.js": [
+      "traceService/trace-model.js",
+      "traceService/es-tracer.js"
+    ],
+    "traceService/es-tracer.js": [
+      "traceService/trace-helper.js",
+      "traceService/es-analyzer.js",
+      "traceService/es-instrumenter.js"
+    ],
+    "traceService/trace-helper.js": [
+      "traceService/trace-model.js"
+    ],
+    "traceService/es-analyzer.js": [
+      "npm:esprima@2.7.2.js",
+      "npm:estraverse@4.2.0.js"
+    ],
+    "traceService/es-instrumenter.js": [
+      "npm:escodegen@1.8.0.js",
+      "traceService/external/esprima-node-factory.js",
+      "traceService/external/auto-log-tracer.js"
+    ],
+    "npm:esprima@2.7.2.js": [
+      "npm:esprima@2.7.2/esprima.js"
+    ],
+    "npm:estraverse@4.2.0.js": [
+      "npm:estraverse@4.2.0/estraverse.js"
+    ],
+    "npm:escodegen@1.8.0.js": [
+      "npm:escodegen@1.8.0/escodegen.js"
+    ],
+    "npm:estraverse@4.2.0/estraverse.js": [
+      "npm:estraverse@4.2.0/package.json!github:systemjs/plugin-json@0.1.0.js"
+    ],
+    "npm:escodegen@1.8.0/escodegen.js": [
+      "npm:estraverse@1.9.3.js",
+      "npm:esutils@2.0.2.js",
+      "npm:source-map@0.2.0.js",
+      "npm:escodegen@1.8.0/package.json!github:systemjs/plugin-json@0.1.0.js"
+    ],
+    "npm:estraverse@1.9.3.js": [
+      "npm:estraverse@1.9.3/estraverse.js"
+    ],
+    "npm:esutils@2.0.2.js": [
+      "npm:esutils@2.0.2/lib/utils.js"
+    ],
+    "npm:source-map@0.2.0.js": [
+      "npm:source-map@0.2.0/lib/source-map.js"
+    ],
+    "npm:esutils@2.0.2/lib/utils.js": [
+      "npm:esutils@2.0.2/lib/ast.js",
+      "npm:esutils@2.0.2/lib/code.js",
+      "npm:esutils@2.0.2/lib/keyword.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map.js": [
+      "npm:source-map@0.2.0/lib/source-map/source-map-generator.js",
+      "npm:source-map@0.2.0/lib/source-map/source-map-consumer.js",
+      "npm:source-map@0.2.0/lib/source-map/source-node.js"
+    ],
+    "npm:esutils@2.0.2/lib/keyword.js": [
+      "npm:esutils@2.0.2/lib/code.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/source-map-generator.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/base64-vlq.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js",
+      "npm:source-map@0.2.0/lib/source-map/array-set.js",
+      "npm:source-map@0.2.0/lib/source-map/mapping-list.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/source-map-consumer.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js",
+      "npm:source-map@0.2.0/lib/source-map/indexed-source-map-consumer.js",
+      "npm:source-map@0.2.0/lib/source-map/basic-source-map-consumer.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/source-node.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/source-map-generator.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js",
+      "github:jspm/nodelibs-process@0.1.2.js"
+    ],
+    "npm:amdefine@1.0.0.js": [
+      "npm:amdefine@1.0.0/amdefine.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/base64-vlq.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/base64.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/util.js": [
+      "npm:amdefine@1.0.0.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/array-set.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/mapping-list.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/indexed-source-map-consumer.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js",
+      "npm:source-map@0.2.0/lib/source-map/binary-search.js",
+      "npm:source-map@0.2.0/lib/source-map/source-map-consumer.js",
+      "npm:source-map@0.2.0/lib/source-map/basic-source-map-consumer.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/basic-source-map-consumer.js": [
+      "npm:amdefine@1.0.0.js",
+      "npm:source-map@0.2.0/lib/source-map/util.js",
+      "npm:source-map@0.2.0/lib/source-map/binary-search.js",
+      "npm:source-map@0.2.0/lib/source-map/array-set.js",
+      "npm:source-map@0.2.0/lib/source-map/base64-vlq.js",
+      "npm:source-map@0.2.0/lib/source-map/source-map-consumer.js"
+    ],
+    "github:jspm/nodelibs-process@0.1.2.js": [
+      "github:jspm/nodelibs-process@0.1.2/index.js"
+    ],
+    "npm:amdefine@1.0.0/amdefine.js": [
+      "github:jspm/nodelibs-path@0.1.0.js",
+      "github:jspm/nodelibs-process@0.1.2.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/base64.js": [
+      "npm:amdefine@1.0.0.js"
+    ],
+    "npm:source-map@0.2.0/lib/source-map/binary-search.js": [
+      "npm:amdefine@1.0.0.js"
+    ],
+    "github:jspm/nodelibs-process@0.1.2/index.js": [
+      "npm:process@0.11.2.js"
+    ],
+    "github:jspm/nodelibs-path@0.1.0.js": [
+      "github:jspm/nodelibs-path@0.1.0/index.js"
+    ],
+    "npm:process@0.11.2.js": [
+      "npm:process@0.11.2/browser.js"
+    ],
+    "github:jspm/nodelibs-path@0.1.0/index.js": [
+      "npm:path-browserify@0.0.0.js"
+    ],
+    "npm:path-browserify@0.0.0.js": [
+      "npm:path-browserify@0.0.0/index.js"
+    ],
+    "npm:path-browserify@0.0.0/index.js": [
+      "github:jspm/nodelibs-process@0.1.2.js"
+    ],
+    "pastebin/pastebin.js": [
+      "npm:aurelia-framework@1.0.0-beta.1.2.1.js",
+      "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-router@1.0.0-beta.1.2.0.js",
+      "htmlEditor/html-editor.js",
+      "cssEditor/css-editor.js",
+      "jsEditor/js-editor.js",
+      "jsGutter/js-gutter.js",
+      "htmlViewer/html-viewer.js",
+      "chat/chat.js",
+      "visViewer/vis-viewer.js",
+      "consoleWindow/console-window.js",
+      "utils/trace-view-controller.js",
+      "jqxcore.js",
+      "jqxsplitter.js"
+    ],
+    "htmlEditor/html-editor.js": [
+      "mode-html.js",
+      "theme-chrome.js"
+    ],
+    "cssEditor/css-editor.js": [
+      "mode-css.js",
+      "theme-chrome.js"
+    ],
+    "jsEditor/js-editor.js": [
+      "mode-javascript.js",
+      "theme-chrome.js",
+      "npm:md5@2.1.0.js"
+    ],
+    "jsGutter/js-gutter.js": [
+      "traceService/trace-model.js"
+    ],
+    "htmlViewer/html-viewer.js": [
+      "traceService/trace-service.js"
+    ],
+    "npm:md5@2.1.0.js": [
+      "npm:md5@2.1.0/md5.js"
+    ],
+    "npm:md5@2.1.0/md5.js": [
+      "npm:crypt@0.0.1.js",
+      "npm:charenc@0.0.1.js",
+      "npm:is-buffer@1.1.3.js"
+    ],
+    "npm:crypt@0.0.1.js": [
+      "npm:crypt@0.0.1/crypt.js"
+    ],
+    "npm:charenc@0.0.1.js": [
+      "npm:charenc@0.0.1/charenc.js"
+    ],
+    "npm:is-buffer@1.1.3.js": [
+      "npm:is-buffer@1.1.3/index.js"
+    ],
+    "npm:is-buffer@1.1.3/index.js": [
+      "github:jspm/nodelibs-buffer@0.1.0.js"
+    ],
+    "github:jspm/nodelibs-buffer@0.1.0.js": [
+      "github:jspm/nodelibs-buffer@0.1.0/index.js"
+    ],
+    "github:jspm/nodelibs-buffer@0.1.0/index.js": [
+      "npm:buffer@3.6.0.js"
+    ],
+    "npm:buffer@3.6.0.js": [
+      "npm:buffer@3.6.0/index.js"
+    ],
+    "npm:buffer@3.6.0/index.js": [
+      "npm:base64-js@0.0.8.js",
+      "npm:ieee754@1.1.6.js",
+      "npm:isarray@1.0.0.js"
+    ],
+    "npm:base64-js@0.0.8.js": [
+      "npm:base64-js@0.0.8/lib/b64.js"
+    ],
+    "npm:ieee754@1.1.6.js": [
+      "npm:ieee754@1.1.6/index.js"
+    ],
+    "npm:isarray@1.0.0.js": [
+      "npm:isarray@1.0.0/index.js"
+    ],
+    "npm:aurelia-router@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-router@1.0.0-beta.1.2.0/aurelia-router.js"
+    ],
+    "npm:aurelia-router@1.0.0-beta.1.2.0/aurelia-router.js": [
+      "npm:aurelia-logging@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-route-recognizer@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-dependency-injection@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-history@1.0.0-beta.1.2.0.js",
+      "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0.js"
+    ],
+    "npm:aurelia-history@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-history@1.0.0-beta.1.2.0/aurelia-history.js"
+    ],
+    "npm:aurelia-route-recognizer@1.0.0-beta.1.2.0.js": [
+      "npm:aurelia-route-recognizer@1.0.0-beta.1.2.0/aurelia-route-recognizer.js"
+    ],
+    "npm:aurelia-route-recognizer@1.0.0-beta.1.2.0/aurelia-route-recognizer.js": [
+      "npm:aurelia-path@1.0.0-beta.1.2.0.js"
+    ],
+    "main.js": [
+      "github:twbs/bootstrap@3.3.6.js",
+      "github:components/jqueryui@1.11.4.js"
+    ],
+    "github:twbs/bootstrap@3.3.6.js": [
+      "github:twbs/bootstrap@3.3.6/js/bootstrap.js"
+    ],
+    "github:components/jqueryui@1.11.4.js": [
+      "github:components/jqueryui@1.11.4/jquery-ui.js"
+    ],
+    "github:twbs/bootstrap@3.3.6/js/bootstrap.js": [
+      "github:components/jquery@2.2.1.js"
+    ],
+    "github:components/jqueryui@1.11.4/jquery-ui.js": [
+      "npm:jquery@2.2.2.js"
+    ],
+    "github:components/jquery@2.2.1.js": [
+      "github:components/jquery@2.2.1/jquery.js"
+    ],
+    "npm:jquery@2.2.2.js": [
+      "npm:jquery@2.2.2/dist/jquery.js"
     ]
   }
-});
+})

@@ -1,6 +1,6 @@
 {
   "firebase": "seecoderun",
-  "public": "dist",
+  "public": "export",
   "ignore": [
     "firebase.json",
     "**/.*",

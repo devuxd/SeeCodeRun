@@ -9,11 +9,10 @@ System.config({
     ]
   },
   paths: {
-    "*": "/dist/*",
+    "*": "./dist/*",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
-
   map: {
     "ace": "github:ajaxorg/ace-builds@1.2.3",
     "ansi-styles": "npm:ansi-styles@2.2.1",
@@ -46,6 +45,7 @@ System.config({
     "font-awesome": "npm:font-awesome@4.5.0",
     "jquery": "npm:jquery@2.2.2",
     "jquery-ui": "github:components/jqueryui@1.11.4",
+    "jqwidgets-framework": "npm:jqwidgets-framework@4.1.2",
     "jslinq": "npm:jslinq@1.0.15",
     "json": "github:systemjs/plugin-json@0.1.0",
     "md5": "npm:md5@2.1.0",
@@ -884,6 +884,9 @@ System.config({
       "crypto": "github:jspm/nodelibs-crypto@0.1.0",
       "jsbn": "npm:jsbn@0.1.0"
     },
+    "npm:jqwidgets-framework@4.1.2": {
+      "process": "github:jspm/nodelibs-process@0.1.2"
+    },
     "npm:jsdom@8.3.0": {
       "abab": "npm:abab@1.0.3",
       "acorn": "npm:acorn@2.7.0",
@@ -1320,4 +1323,4 @@ System.config({
       "webidl-conversions": "npm:webidl-conversions@3.0.1"
     }
   }
-});
+})

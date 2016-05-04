@@ -3,8 +3,7 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
-import {jqxcore}     from '../../jqxcore';
-import {jqxsplitter} from '../../jqxsplitter';
+
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
@@ -13,6 +12,8 @@ import {HtmlViewer} from '../htmlViewer/html-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
+import '/jqxcore';
+import '/jqxsplitter';
 import {TraceViewController} from '../utils/trace-view-controller';
 import {Share} from '../share/share';
 import {TraceModel} from '../traceService/trace-model';
