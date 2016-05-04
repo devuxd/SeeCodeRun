@@ -27,8 +27,8 @@ export class DataTable {
     }
     
     for (let variable of trace.timeline) {
-      if (variable.type !== 'VariableDeclarator' && variable.type !== 'AssignmentExpression')
-        continue;
+     /* if (variable.type !== 'VariableDeclarator' && variable.type !== 'AssignmentExpression')
+        continue;*/
 
       for (let t of transformation) {
         if (t.name !== variable.id) {

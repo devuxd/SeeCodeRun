@@ -18,6 +18,7 @@ export class Visualization {
     this.errorMessage = config.config.errorMessage;
     this.hasError = false;
     this.requestSelectionRange = this.getSelectionRange;
+    this.traceHelper = null;
   }
 
   attached() {
@@ -34,12 +35,13 @@ export class Visualization {
     let ea = this.eventAggregator;
     let visualization = this;
     let traceModel = new TraceModel();
-    let traceHelper = null;
     
     ea.subscribe(traceModel.traceEvents.changed.event, payload => {
-      traceHelper = payload.data;
+      this.traceHelper = payload.data;
       visualization.trace = payload.data.trace;
-      visualization.renderVisualization();
+      if(visualization.type !== 'DataTable') {
+        visualization.renderVisualization(); 
+      }
     });
     
     ea.subscribe(traceModel.executionEvents.failed.event, payload => {
@@ -52,13 +54,34 @@ export class Visualization {
     });
     
     ea.subscribe('selectionRangeResponse', payload => {
-      let expsInRange = [];
-      let expressions = traceHelper.getExpressions();
+      let expressions = this.traceHelper.getExpressions();
+      let variables = this.traceHelper.getVariables();
+      let trace = {
+        timeline: [],
+        variables: [],
+        values: []
+        
+      };
       for(let i = 0; i < expressions.variables.length; i++) {
         if(this.traceHelper.isRangeInRange(expressions.variables[i].range, payload.range)) {
-          expsInRange.push(expressions.variables[i]);
+          trace.variables.push(expressions.variables[i]);
+          
+          for(let j = 0; j < expressions.timeline.length; j++) {
+            if(this.traceHelper.isRangeInRange(expressions.timeline[j].range, payload.range)) {
+              trace.timeline.push(expressions.timeline[j]);    
+            }
+          }
         }
       }
+      
+      for(let k = 0; k < variables.variables.length; k++) {
+          if(this.traceHelper.isRangeInRange(variables.variables[k].range, payload.range)) {
+            trace.values.push(variables.variables[k]);
+          }
+      }
+      
+      visualization.trace = trace;
+      visualization.renderVisualization();
     });
   }
   
