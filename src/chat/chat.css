@@ -248,7 +248,12 @@ body {
   font-size: 18px;
 }
   
-  
+/*User name input section*/
+ .seecoderun-chat-toolbar input {
+   display: inline-block;
+   width: 180px;
+   font-size: 14px;
+         }  
   
   
 }
