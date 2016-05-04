@@ -2,9 +2,10 @@
   "bundles": {
     "dist/app-build": {
       "includes": [
-        "[*.js]",
-        "*.html!text",
-        "*.css!text"
+        "**/*.js",
+        "**/*.html!text",
+        "**/*.css!text", 
+        "styles/*.css"
       ],
       "options": {
         "inject": true,

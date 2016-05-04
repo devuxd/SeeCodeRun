@@ -1,4 +1,5 @@
 import {DataTable} from '../visualization/dataTable';
+import {ScatterPlot} from '../visualization/scatterPlot';
 
 export class VisualizationFactory {
   
@@ -9,6 +10,8 @@ export class VisualizationFactory {
     switch (type) {
       case "DataTable":
         return this.getFormattedDataTable();
+      case "ScatterPlot":
+        return this.getFormattedScatterPlot();
       default:
         break;
     }
@@ -18,5 +21,11 @@ export class VisualizationFactory {
     var dataTable = new DataTable();
     dataTable.config.trace = dataTable.config.formatTraceFx();
     return dataTable;
+  }
+  
+  getFormattedScatterPlot() {
+    var scatterPlot = new ScatterPlot();
+    scatterPlot.config.trace = scatterPlot.config.formatTraceFx();
+    return scatterPlot;
   }
 }
