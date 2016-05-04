@@ -68,7 +68,7 @@ export class JsGutter {
         let traceChangedEvent = this.traceModel.traceEvents.changed.event;
         ea.subscribe(traceChangedEvent, payload => {
             let traceHelper = payload.data;
-            this.updateGutter(traceHelper.getVariables().values);
+            this.updateGutter(traceHelper.getValues());
         });
 
     }

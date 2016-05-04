@@ -18,11 +18,6 @@ export class VisViewer {
     this.factory = new VisualizationFactory();
     this.visualizationTypes = this.factory.getVisualizationTypes();
 
-    /*let dataTableConfig = this.factory.getVisualizationByType('DataTable');
-    let dataTableVisualization = new Visualization(d3, this.eventAggregator, dataTableConfig.config);*/
-
-    //this.visualizations.push(dataTableVisualization);
-
     this.isChecked = false;
     this.addVisualization = this.addVis;
     this.subscribe();

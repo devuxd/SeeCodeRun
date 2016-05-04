@@ -88,12 +88,10 @@ body {
  }
  
  .iframeCssPreview {
-   height: 100vh;
-   /* Viewport-relative units */
-   width: 100vw;
+   
    border: none;
    overflow: auto;
-   ;
+   
  }
  
  ul.nav li a,
@@ -358,6 +356,12 @@ body {
    background-position: 2px center;
  }
  
+ .ace-chrome .ace_marker-layer .expression-range {
+   position: absolute;
+   background: rgb(250, 250, 155);
+   border: 1px solid rgb(200, 200, 150);
+ }
+ 
  td,
  th {
    padding: 1px 4px;
@@ -394,3 +398,7 @@ body {
    font-size: 16px !important;
    font-weight: bold;
  }
+ .w3-table, .w3-table tr, .w3-table td {
+   border-collapse: collapse; 
+   border: 2px solid black;
+}

@@ -1,9 +1,11 @@
 export class TraceViewModel {
-    constructor(aceUtils, aceEditor, tooltipElement, gutterDecorationCSSClassName){
+    constructor(aceUtils, aceEditor, tooltipElement, gutterDecorationCSSClassName, showToolTipDelay = 500, hideToolTipDelay = 250){
         this.editor= aceEditor;
         this.tooltip = tooltipElement;
         this.gutterDecorationClassName = gutterDecorationCSSClassName;
         this.aceUtils = aceUtils;
+        this.showToolTipDelay = showToolTipDelay;
+        this.hideToolTipDelay = hideToolTipDelay;
         this.resetData();
         this.bind();
     }
@@ -20,23 +22,49 @@ export class TraceViewModel {
         let traceValuesData =  this.traceValuesData;
         let gutterDecorationClassName = this.gutterDecorationClassName;
     	let aceUtils = this.aceUtils;
+    	let showToolTipDelay = this.showToolTipDelay;
+    	let hideToolTipDelay = this.hideToolTipDelay;
+    	let tooltipSetTimeout = window.setTimeout;
+    	let tooltipClearTimeout = window.clearTimeout;
+    	let tooltipTimeout;
+    	let tooltipUpdateWithDelay = function tooltipUpdateWithDelay(div, position, content){
+    	    let toolTipDelay = showToolTipDelay;
+    	    if(!content){
+    	        toolTipDelay = hideToolTipDelay;
+    	    }
+    	    
+    	    tooltipClearTimeout(tooltipTimeout);
+			tooltipTimeout = tooltipSetTimeout(
+			function delayedToolTip(){
+			    div.style.left = position.pageX + 'px';
+    			div.style.top = position.pageY + 'px';
+    			if(content){
+    				div.style.display = "block";
+    				div.innerHTML = content;
+    			}else{
+            	    div.style.display = "none";
+            		div.innerHTML = "";
+    	        }
+			}, toolTipDelay);
+	    };
     	
     	aceUtils.setTraceGutterRenderer(editor, traceGutterData);
     	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceGutterData);
-    	aceUtils.subscribeToCodeHoverEvents(editor, tooltip, traceValuesData);
+    	aceUtils.subscribeToCodeHoverEvents(editor, tooltip, traceValuesData, tooltipUpdateWithDelay);
 
     }
     
     onTraceChanged(traceHelper){
             this.traceHelper = traceHelper;
             
-            let stackTrace = traceHelper.getStackTrace();
+            let stackTrace = traceHelper.getStackBlockCounts();
 
             let previousRows = this.traceGutterData.rows;
             this.updateTraceGutterData(stackTrace);
             this.aceUtils.updateGutterDecorations(this.editor, previousRows, this.traceGutterData.rows, this.gutterDecorationClassName);
             
             this.traceValuesData.ranges = traceHelper.getExecutionTrace();
+            this.traceValuesData.positionMatcher = traceHelper;
     }
     
     updateTraceGutterData(stackTrace){
