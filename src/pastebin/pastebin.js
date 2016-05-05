@@ -14,7 +14,7 @@ import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import '/jqxcore';
 import '/jqxsplitter';
-import {TraceViewController} from '../utils/trace-view-controller';
+import {TraceViewController} from '../traceView/trace-view-controller';
 import {Share} from '../share/share';
 import {TraceModel} from '../traceService/trace-model';
 import {TraceSearch} from '../searchTab/trace-search';
@@ -39,7 +39,7 @@ export class Pastebin {
     this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
-    this.share = new Share();
+   // this.share = new Share();
     this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
@@ -73,7 +73,7 @@ export class Pastebin {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
-    this.share.attached({id: this.pastebinId});
+    //this.share.attached({id: this.pastebinId});
     this.traceSearchHistory.attached({id: this.pastebinId});
     this.traceSearch.attached(this.jsEditor.editor);
 

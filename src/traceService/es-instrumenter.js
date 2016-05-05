@@ -297,7 +297,7 @@ export class EsInstrumenter {
 }
     
     
-    instrumentBlockStatement(node, code, self = this){
+    instrumentBlockStatement(node, parent, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let TraceParameters = self.TraceParameters,
             getDefaultAutoLogNode= self.getDefaultAutoLogNode,
@@ -307,15 +307,20 @@ export class EsInstrumenter {
             getTextRange = self.getTextRange,
             wrapInExpressionStatementNode = self.wrapInExpressionStatementNode,
             blockCounter = self.blockCounter;
-            
+        
         if(!(node.body)){
             return undefined;
+        }
+        
+        let id = `Block: ${blockCounter}`;
+        if(parent && parent.type){
+            id = `${parent.type}: ${blockCounter}`;
         }
         let block = self.getNewBlock(self, blockCounter, getTextRange(code, node.range));
     
     
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : `${id}:Enter`} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
         locationData = getLocationDataNode(node.loc, node.range, self);
@@ -329,7 +334,7 @@ export class EsInstrumenter {
     
         autoLogNode = getDefaultAutoLogNode(self);
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : `${id}:Exit`} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
         locationData = getLocationDataNode(node.loc, node.range, self);
@@ -363,10 +368,15 @@ export class EsInstrumenter {
         if(!(node.consequent)){
             return undefined;
         }
+        
+        let id = `Block: ${blockCounter}`;
+        if(parent && parent.type){
+            id = `${parent.type}: ${blockCounter}`;
+        }
     
     
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : `${id}:Enter`} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
         locationData = getLocationDataNode(node.loc, node.range, self);
@@ -380,7 +390,7 @@ export class EsInstrumenter {
     
         autoLogNode = getDefaultAutoLogNode(self);
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : `${id}:Exit`} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
         locationData = getLocationDataNode(node.loc, node.range, self);
@@ -524,7 +534,8 @@ export class EsInstrumenter {
             setNodeValue = self.setNodeValue,
             setNodeTextValue = self.setNodeTextValue,
             getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange;
+            getTextRange = self.getTextRange,
+            blockCounter = self.blockCounter;
         
         if(!node.discriminant){
             return undefined;
@@ -532,9 +543,14 @@ export class EsInstrumenter {
         if(!node.discriminant.range){ 
             return undefined;
         }
+
+        let id = `Block: ${blockCounter}`;
+        if(parent && parent.type){
+            id = `${parent.type}: ${blockCounter}`;
+        }
     
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : `${id}:Enter`} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.discriminant.range)} );
          setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.discriminant});
          locationData = getLocationDataNode(node.discriminant.loc, node.discriminant.range, self);
@@ -764,10 +780,6 @@ export class EsInstrumenter {
                     instrumentReturnStatement(node, code, self);
                     break;
                     
-                case Syntax.BlockStatement:
-                    instrumentBlockStatement(node, code, self);
-                    break;
-                    
                 case Syntax.FunctionDeclaration:
                     instrumentFunctionDeclaration(node, code, self);
                     break;
@@ -834,6 +846,10 @@ export class EsInstrumenter {
                     
                 case Syntax.FunctionExpression:
                     instrumentFunctionExpression(node, parent, code, self);
+                    break;
+                    
+                case Syntax.BlockStatement:
+                    instrumentBlockStatement(node, parent, code, self);
                     break;
                   
                 default:
