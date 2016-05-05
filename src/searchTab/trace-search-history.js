@@ -19,7 +19,9 @@ export class TraceSearchHistory {
 
         this.firebase.on('value', function(snapshot) {
             let data = snapshot.val();
-            traceSearchHistory.publish(data);
+            if(data){
+                traceSearchHistory.publish(data);
+            }
         });
 
         this.subscribe();
