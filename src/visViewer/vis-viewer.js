@@ -15,13 +15,23 @@ export class VisViewer {
         let factory = new VisualizationFactory();
         
         let dataTableConfig = factory.getVisualizationByType('DataTable');
-        let dataTableVisualization = new Visualization(d3, this.eventAggregator, dataTableConfig.config);
+        let dataTableVisualization = new Visualization(
+          d3,
+          this.eventAggregator, 
+          dataTableConfig.config);
 
         this.visualizations.push(dataTableVisualization);
         
-          this.isChecked = false;
-          this.subscribe();
-
+        let scatterPlotConfig = factory.getVisualizationByType('ScatterPlot');
+        let scatterPlotVisualization = new Visualization(
+          d3, 
+          this.eventAggregator, 
+          scatterPlotConfig.config);
+        
+        this.visualizations.push(scatterPlotVisualization);
+        
+        this.isChecked = false;
+        this.subscribe();
     }
 
     attached() {

@@ -148,8 +148,8 @@ let tref = self.updateHistory();
    
 	
 	// Get the value from the slider
-	var y = $("#historySlider");
-	var numberOnSlider = y.val();
+	var hitstorySlider = $("#historySlider");
+	var numberOnSlider = hitstorySlider.val();
 
 	numberOnSlider = Number(numberOnSlider);
 	

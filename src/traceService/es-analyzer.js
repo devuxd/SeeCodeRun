@@ -71,12 +71,14 @@ export class EsAnalyzer {
     
     traceAllAutoLog(code, autoLogTracer) {
             let tree = esprima.parse(code, { range: true, loc: true });
+            let traverseResults = {};
             
             this.traverse(tree, function traceVisitor(node, path, nodeKey) {
-                autoLogTracer({node : node, code : code, path :path, nodeKey :nodeKey});
+                traverseResults = {node: node, code: code, path: path, nodeKey: nodeKey};
+                autoLogTracer(traverseResults);
             });
             
-          return tree;
+          return {tree: tree, traverseResults: traverseResults};
     }
    
 }

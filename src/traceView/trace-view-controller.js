@@ -1,13 +1,12 @@
 /* global ace */
-
-import {AceUtils} from "./ace-utils";
 import {TraceViewModel} from "./trace-view-model";
 
 export class TraceViewController{
     
-    constructor(eventAggregator){
+    constructor(eventAggregator, traceModel, aceUtils){
         this.eventAggregator = eventAggregator;
-        this.aceUtils = new AceUtils();
+        this.traceModel = traceModel;
+        this.aceUtils = aceUtils;
     }
     
     attached(){
@@ -32,7 +31,7 @@ export class TraceViewController{
         let eventAggregator = this.eventAggregator, traceViewModel = this.traceViewModel;
         
         eventAggregator.subscribe(
-            "traceChanged", payload =>{
+            this.traceModel.traceEvents.changed.event, payload =>{
                         traceViewModel.onTraceChanged(payload.data);
                     }
             );

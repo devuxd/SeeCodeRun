@@ -2,9 +2,9 @@ import {TraceService} from '../traceService/trace-service';
 
 export class HtmlViewer {
 
-    constructor(eventAggregator) {
+    constructor(eventAggregator, traceModel) {
         this.eventAggregator = eventAggregator;
-        this.traceService = new TraceService(eventAggregator);
+        this.traceService = new TraceService(eventAggregator, traceModel);
         this.div = 'htmlView';
         this.subscribe();
     }
@@ -30,13 +30,11 @@ export class HtmlViewer {
       
       ea.subscribe('onJsEditorChanged', payload => {
         let editorText = payload.js;
-
         let instrumentationPayload = this.traceService.getInstrumentation(editorText);
         
         if (traceService.isValid(instrumentationPayload)) {
           this.js = instrumentationPayload.data;
         } else {
-          console.log(JSON.stringify(instrumentationPayload));
           this.js = editorText;
         }
         

@@ -1,9 +1,61 @@
+/* global ace */
+
 export class AceUtils{
     constructor(){
     }
-    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel){
-        let updateTooltip = this.updateTooltip;
-
+    
+    makeAceMarkerManager(aceEditor){
+        return {    
+                aceEditor: aceEditor,
+                markers: [],
+                markerRenderer: "expression-range",
+                markerType: "text",
+                inFront: false
+                };
+    }
+    
+    updateAceMarkers(aceMarkerManager, elementsWithRangeProperty){
+        var Range = ace.require("ace/range").Range;
+        let ranges = [];    
+        for(let key in elementsWithRangeProperty){
+            
+            if(elementsWithRangeProperty.hasOwnProperty(key)){
+                
+                let element = elementsWithRangeProperty[key];
+                 
+                if (element.hasOwnProperty("range")){
+                            let elementRange = element.range;
+                            let range = new Range(  elementRange.start.row,
+                                                    elementRange.start.column,
+                                                    elementRange.end.row,
+                                                    elementRange.end.column
+                                        );
+                            ranges.push(range);
+                }
+            }
+        }
+        
+        let editSession = aceMarkerManager.aceEditor.getSession();
+        
+        if(aceMarkerManager.markers){
+            let oldmarkers = aceMarkerManager.markers;
+            for(let i in oldmarkers){
+                let marker = oldmarkers[i];
+                editSession.removeMarker(marker);
+            }
+        }
+        
+        let newMarkers = [];
+        let markerRenderer = aceMarkerManager.markerRenderer, markerType = aceMarkerManager.markerType, inFront = aceMarkerManager.inFront;
+        for(let i in ranges){
+            let range = ranges[i];
+            let marker = editSession.addMarker(range, markerRenderer, markerType, inFront);
+            newMarkers.push(marker);
+        }
+        aceMarkerManager.markers = newMarkers;
+    }
+    
+    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
      	editor.on("guttermousemove", function(e){ 
     	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
     		let target = e.domEvent.target;
@@ -42,14 +94,12 @@ export class AceUtils{
         
     }
     
-    subscribeToCodeHoverEvents(editor, tooltip, dataModel){
-        let updateTooltip = this.updateTooltip;
-        let isPositionInRange = this.isPositionInRange;
-        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
+    subscribeToCodeHoverEvents(editor, tooltip, dataModel, updateTooltip = this.updateTooltip){
 
      	editor.on("mousemove", function (e){
 		let position = e.getDocumentPosition(), match;
-		if(position){ 
+		if(position){
+		    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(position));
 			if(!dataModel){
 			    return;
 			}
@@ -58,26 +108,24 @@ export class AceUtils{
 			    return;
 			}
 			
-			for(let key in dataModel.ranges){
-			    let data = dataModel.ranges[key];
-			    
-    			 if(data.range && isPositionInRange(position, data.range)){
-    			     if(match){
-    			         if(isRangeInRangeStrict(data.range, match.range)){
-    			             match = data;
-    			         }
-    			     }else{
-    			        match = data;
-    			     }
-    			 
-    			 }
-			}
+			if(!dataModel.positionMatcher){
+    		    return;
+    		}
+    		
+    		if(!dataModel.positionMatcher.getMatchAtPosition){
+    		    return;
+    		}
+			
+			if (!editor.isFocused()){ 
+    			return;
+    		}
+    		
+			match = dataModel.positionMatcher.getMatchAtPosition(dataModel.ranges, position);
+			
 			if(match){
     				let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
     				pixelPosition.pageY += editor.renderer.lineHeight;
     				updateTooltip(tooltip, pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
-    		}else{
-    				updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(position));
     		}
 		}
 		});
@@ -90,61 +138,12 @@ export class AceUtils{
 			div.style.top = position.pageY + 'px';
 			if(text){
 				div.style.display = "block";
-				div.innerText = text;
+				div.innerHTML = text;
 			}else{
 				div.style.display = "none";
-				div.innerText = "";
+				div.innerHTML = "";
 			}
 	}
-	
-	isPositionInRange(position, inRange){
-        
-        let matchesInOneLine = (
-                position.row == inRange.start.row 
-                && inRange.start.row  == inRange.end.row
-                && position.column >= inRange.start.column
-                && position.column <= inRange.end.column
-            );
-            
-        if(matchesInOneLine){
-            return true;
-        }
-            
-        let matchesStart = (
-                position.row == inRange.start.row 
-                && inRange.start.row  < inRange.end.row
-                && position.column >= inRange.start.column
-            );
-           
-        if(matchesStart){
-            return true;
-        }
-        
-        let matchesEnd = (
-                position.row == inRange.end.row
-                && inRange.start.row  < inRange.end.row
-                && position.column <= inRange.end.column
-            );
-
-        return matchesEnd;
-
-    }
-    
-    isRangeInRange(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
-    			);
-    }
-    
-    isRangeInRangeStrict(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
-    			);
-    }
     
     updateGutterDecorations(editor, previousRows, rows, gutterDecorationClassName){
         this.removeGutterDecorations(editor, previousRows, gutterDecorationClassName);

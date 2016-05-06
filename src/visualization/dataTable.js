@@ -14,22 +14,64 @@ export class DataTable {
   }
 
   formatTraceFx(trace) {
+    if(!trace)
+      return;
+    
+    let columns = [];
+    let values = [];
+    let transformation = [];
+    
+    for (let variable of trace.variables) {
+      columns.push(variable.id);
+      transformation.push({ name: variable.id, values: [] });
+    }
+    
+    for (let variable of trace.timeline) {
+      if (variable.type !== 'VariableDeclarator' && variable.type !== 'AssignmentExpression')
+        continue;
+
+      for (let t of transformation) {
+        if (t.name !== variable.id) {
+          if (t.values.length > 0) {
+            
+            // set the current time periods value to the previous value
+            t.values.push(t.values[t.values.length - 1]);
+          } else {
+            
+            // the variable does not exist so insert a blank value
+            t.values.push('');
+          }
+        } else {
+          
+          // the variable changed so add the new value
+          t.values.push(variable.value); 
+        }
+      }
+    }
+    
+    for (let i = 0; i < trace.values.length; i++) {
+      let toAdd = {};
+      
+      for (let t of transformation) {
+        toAdd[t.name] = t.values[i];
+      }
+      
+      values.push(toAdd);
+    }
+    
     return {
-      columns: [
-        "a",
-        "b"
-      ],
-      values: [{
-        a: 3,
-        b: 5
-      }, {
-        a: 4,
-        b: 6
-      }]
+      columns: columns,
+      values: values
     };
   }
 
   renderFx(trace, divElement) {
+    if (!trace)
+      return;
+      
+    // clear the div element  
+    d3.select(divElement).html("");
+    
     let data = trace;
     let columns = data.columns;
     let values = data.values;
@@ -71,16 +113,5 @@ export class DataTable {
       .html(function(d) {
         return d.value;
       });
-  }
-
-  getVariables(trace) {
-    let vars = new Set();
-    for (let t of trace) {
-      if (t.type === 'VariableDeclarator') {
-        vars.add(t.id);
-      }
-    }
-
-    return Array.from(vars);
   }
 }

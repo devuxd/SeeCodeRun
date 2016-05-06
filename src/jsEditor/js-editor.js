@@ -42,6 +42,7 @@ export class JsEditor {
   configureEditor(editor){
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
+    editor.$blockScrolling = Infinity;
   }
 
   configureSession(session) {

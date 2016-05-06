@@ -1,9 +1,9 @@
+/* global Firebase */
 /* global $ */
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
-import jqxcore     from '../../jqxcore';
-import jqxsplitter from '../../jqxsplitter';
+
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
@@ -13,14 +13,22 @@ import {HistoryViewer} from '../historyViewer/history-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
-import {TraceViewController} from '../utils/trace-view-controller';
+import '/jqxcore';
+import '/jqxsplitter';
+import {TraceModel} from '../traceService/trace-model';
+import {TraceViewController} from '../traceView/trace-view-controller';
+import {TraceSearch} from '../searchTab/trace-search';
+import {AceUtils} from '../utils/ace-utils';
+import {TraceSearchHistory} from '../searchTab/trace-search-history';
 
-@inject(EventAggregator, Router)
+@inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
 
-  constructor(eventAggregator, router) {
+  constructor(eventAggregator, router, traceModel, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.router = router;
+    this.traceModel = traceModel;
+    this.aceUtils = aceUtils;
     this.heading = 'Pastebin';
     this.pastebinId ='';
     this.jsEditor = new JsEditor(this.eventAggregator);
@@ -28,16 +36,22 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(this.eventAggregator);
     this.htmlEditor = new HtmlEditor(this.eventAggregator);
     this.cssEditor  = new CssEditor(this.eventAggregator);
+<<<<<<< HEAD
     
     this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, this.eventAggregator);
     
     this.htmlViewer = new HtmlViewer(this.eventAggregator);
+=======
+    this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
+>>>>>>> cfce800e1616a76c12fe28727aa4ce6dac812002
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
-    this.traceViewController = new TraceViewController(this.eventAggregator);
+    this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
+    this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
+    this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
   }
 
-activate(params) {
+  activate(params) {
     if (params.id) {
       let id = params.id;
       this.pastebinId = id;
@@ -68,8 +82,9 @@ activate(params) {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
+    this.traceSearchHistory.attached({id: this.pastebinId});
+    this.traceSearch.attached(this.jsEditor.editor);
 
-     // Splitter
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
     $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] });      
   }

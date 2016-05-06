@@ -1,14 +1,11 @@
-import {TraceModel} from './trace-model';
 import {EsTracer} from './es-tracer';
 
 export class TraceService {
 
-    constructor(eventAggregator) {
+    constructor(eventAggregator, traceModel) {
       this.eventAggregator = eventAggregator;
-      this.traceModel = new TraceModel();
-      
+      this.traceModel = traceModel;
       this.executionEvents = this.traceModel.executionEvents;
-      
       this.esTracer = new EsTracer(this.traceModel, eventAggregator);
       this.subscribe();
     }
