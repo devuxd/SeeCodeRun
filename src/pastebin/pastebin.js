@@ -19,7 +19,6 @@ import {TraceSearch} from '../searchTab/trace-search';
 import {AceUtils} from '../utils/ace-utils';
 import {TraceSearchHistory} from '../searchTab/trace-search-history';
 import {ExpressionSelection} from '../expressionSelection/expression-selection';
-
 @inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
 

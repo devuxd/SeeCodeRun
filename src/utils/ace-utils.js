@@ -2,14 +2,12 @@
 
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
-
 @inject(EventAggregator)
 export class AceUtils{
     constructor(eventAggregator){
         this.ea =eventAggregator;
         
     }
-    
     makeAceMarkerManager(aceEditor){
         return {    
                 aceEditor: aceEditor,
