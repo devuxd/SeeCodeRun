@@ -36,14 +36,10 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(this.eventAggregator);
     this.htmlEditor = new HtmlEditor(this.eventAggregator);
     this.cssEditor  = new CssEditor(this.eventAggregator);
-<<<<<<< HEAD
     
     this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, this.eventAggregator);
-    
-    this.htmlViewer = new HtmlViewer(this.eventAggregator);
-=======
     this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
->>>>>>> cfce800e1616a76c12fe28727aa4ce6dac812002
+    
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
     this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
