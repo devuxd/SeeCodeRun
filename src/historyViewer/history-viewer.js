@@ -12,7 +12,7 @@ export class HistoryViewer{
     }
     attached(){
         let seeCodeRunEditor = this.seeCodeRunEditor;
-        let parentEditor = seeCodeRunEditor.editor; // this is how you access the editor of the htmleditor
+        let parentEditor = seeCodeRunEditor.editor; 
         let pastebinId = seeCodeRunEditor.pastebinId;
        
        
@@ -71,7 +71,7 @@ export class HistoryViewer{
               
         var historyDivision = $('#aceHtmlHistoryEditorDiv');
         historyDivision.keypress(function(e) {
-               // Disable the edit button
+              
    
     
     // Switch from the History div to the HTML div
@@ -93,7 +93,7 @@ export class HistoryViewer{
         this.historyEditor = historyEditor;
         this.historySlider = historySlider;
         this.parentEditor = parentEditor;
-        //self = this;
+        
         
     }
     
@@ -101,7 +101,7 @@ export class HistoryViewer{
     
     // function to set the slider value
     setSliderValue(self){
-    // TODO: USE JQUERY
+    
    
      var historySlider= $('#historySlider');
      var historyDiv = $('#aceHtmlHistoryEditorDiv');
@@ -121,7 +121,7 @@ export class HistoryViewer{
 	   
 	  
     	self.firebase.on("value",function (c){
-	   // console.log(c.numChildren());
+	   
 	});
     
 
@@ -134,7 +134,7 @@ let tref = self.updateHistory();
 
     // Get the values from the history firebase and display it to the history editor 
 	self.historyfirepad = Firepad.fromACE(tref,self.historyEditor);
-//	console.log('3');
+
 
   }
   
