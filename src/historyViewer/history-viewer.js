@@ -8,59 +8,84 @@ export class HistoryViewer{
         this.seeCodeRunEditor = seeCodeRunEditor;
         this.eventAggregator = eventAggregator;
         this.sliderValue = 0;
+    
     }
     attached(){
         let seeCodeRunEditor = this.seeCodeRunEditor;
         let parentEditor = seeCodeRunEditor.editor; // this is how you access the editor of the htmleditor
         let pastebinId = seeCodeRunEditor.pastebinId;
-        
-        let historyEditor = ace.edit("aceHtmlHistoryEditorDiv");
-        //this.configureEditor(historyEditor);
        
+       
+      
+       
+       // Define history firepad
+        var historyfirepad;
+         this.historyfirepad = historyfirepad;
+        let historyEditor = ace.edit("aceHtmlHistoryEditorDiv");
+        this.configureEditor(historyEditor);
         let historySession = historyEditor.getSession();
-        //this.configureSession(historySession);
+        this.configureSession(historySession);
         this.historySession = historySession;
         
-        let historySlider = document.getElementById("historySlider");
-         this.hisDiv = document.getElementById("aceHtmlHistoryEditorDiv");
-         this.htmlDiv = document.getElementById("aceHtmlEditorDiv");
-        let editbutton = document.getElementById("editbutton");
+        
+        // define historyslider , history div , html div , edit button
+        var historySlider = $('#historySlider');
+         var historyDiv = $('#aceHtmlHistoryEditorDiv');
+         var htmlDiv = $('aceHtmlEditorDiv');
+        
         
         let setSliderValue = this.setSliderValue;
         let self = this;
+        self.historyfirepad = historyfirepad;
         
+        
+        // Function for the event of slider change
         let onSliderChanged = function onSliderChanged(){
-            console.log('onchange');
-          // historyEditor.destroy();
-           //firebase.child('temp').remove();
+            historyEditor.setValue('');
           setSliderValue(self);  
         };
         
-        let clickedit = this.clickedit;
-        let oneditclick = function oneditclick(){
-            clickedit(self);
-        };
         
-        editbutton.onclick = oneditclick;
-        historySlider.onchange = onSliderChanged ;
+       
+        historySlider.change(onSliderChanged);
         
        
         
         let baseURL = 'https://seecoderun.firebaseio.com';
         let firebase = new Firebase(baseURL + '/' + pastebinId + '/content/html');
-        //let tempfirebase = firebase.child('temp');
-        //this.temporaryFirebase = tempfirebase;
-        //tempfirebase.remove();
-        
-
-         firebase.child('history').once("child_added",function(snap){
-          let num = snap.numChildren();
-          let v = historySlider;
-          v.max = num;
-          v.value = num;
-          document.getElementById('range').innerHTML = num;
-         
+       let tref = firebase.child('temp');
+       
+       
+       // update the history slider as more children are added to the history of the firebase
+         firebase.child('history').on("child_added",function(snap){
+             firebase.child('history').once("value",function(sna){
+                 
+          let num = sna.numChildren();
+          
+          $('#historySlider').attr("max",num.toString());
+          $('#historySlider').val(num);
+          $('#range').text(num.toString());
+             });
               });
+              
+              
+        var historyDivision = $('#aceHtmlHistoryEditorDiv');
+        historyDivision.keypress(function(e) {
+               // Disable the edit button
+   
+    
+    // Switch from the History div to the HTML div
+	$('#aceHtmlHistoryEditorDiv').css("display","none");
+	$('#aceHtmlEditorDiv').css("display","block");
+	
+	
+	// Get the values from the editor and copy them to the html editor
+    var cc =self.historyEditor.getValue();
+    self.parentEditor.setValue('');
+    self.parentEditor.setValue(cc);
+    
+            
+        });
               
     
         
@@ -74,65 +99,89 @@ export class HistoryViewer{
     
     
     
-    
+    // function to set the slider value
     setSliderValue(self){
     // TODO: USE JQUERY
-   // let historySlider = this.historySlider;// this is how you get the reference
-   console.log('reached');
-    let newValue = document.getElementById('historySlider').value;
-    //this.sliderValue = newValue;
-    let historyDiv = document.getElementById('aceHtmlHistoryEditorDiv');
-	historyDiv.style.display = 'block';
+   
+     var historySlider= $('#historySlider');
+     var historyDiv = $('#aceHtmlHistoryEditorDiv');
+     var htmlDiv = $('#aceHtmlEditorDiv');
+     
+    let newValue = historySlider.val();
+    console.log(newValue);
+    
+    
+    //Switch from the HTML Div to the History Div
+	historyDiv.css("display","block");
+	htmlDiv.css("display","none");
 	
-	let htmlDiv = document.getElementById('aceHtmlEditorDiv');
-	htmlDiv.style.display = 'none';
-	//console.log('slider value: '+ newValue);
-	document.getElementById("range").innerHTML = newValue;
+	//update the value displayed under the slider
+	$('#range').text(newValue.toString());
 	
 	   
-	  // self.firebase.child('temp').remove();
-
-
-  console.log('1'); 
-  self.historyEditor.setValue('');
+	  
+    	self.firebase.on("value",function (c){
+	   // console.log(c.numChildren());
+	});
     
-	let tempref = self.newupdateHistory();
-	
-	
-	console.log('2');
-	
+
+// calls the update function
+let tref = self.updateHistory();
 
 	
-var	historyfirepad = Firepad.fromACE(tempref,self.historyEditor);
+// Clear the Editor
+ self.historyEditor.setValue('');
 
-
-	console.log('3');
+    // Get the values from the history firebase and display it to the history editor 
+	self.historyfirepad = Firepad.fromACE(tref,self.historyEditor);
+//	console.log('3');
 
   }
   
- 
-  
-  clickedit(self){
-    var g = document.getElementById('editbutton');
-    g.disabled = true;
-    
-    //var cc = this.hiseditor.getValue();
-    //this.editor.setValue(cc);
-    
-   // var tabh = document.getElementById('aceHTMLhisEditorDiv');
-	self.hisDiv.style.display = 'none';
+ updateHistory(){
+     
+      let historyEditor = this.historyEditor;
+      let firebase = this.firebase;
+      let temporaryFirebase = firebase.child('temp');
+       
+     
+   
 	
-	//var tab = document.getElementById('aceHTMLEditorDiv');
-	self.htmlDiv.style.display = 'block';
-    
-    var cc =self.historyEditor.getValue();
-    console.log(cc);
-    
-    self.parentEditor.setValue(cc);
-    
-  }
+	// Get the value from the slider
+	var y = $("#historySlider");
+	var numberOnSlider = y.val();
+
+	numberOnSlider = Number(numberOnSlider);
+	
+	// Remove the temp folder from the firebase
+	firebase.child('temp').remove();
+	
+	
+	// Copy the entire firebase to the temporary firebase 
+	firebase.once("value",function(snap){
+	    firebase.child('temp').set(snap.val());
+	});
+	
+	this.historyEditor.setValue('');
+	
+	// Remove the history from the temporary firebase
+	firebase.child('temp/history').remove();
+	this.historyEditor.setValue('');
+	
+	
+	// Copy history from the firebase to the temorary firebase to display values till a specific point in history.
+	firebase.child('history').limitToFirst(numberOnSlider).once("value",function(snap){
+	    firebase.child('temp/history').set(snap.val());
+	});
+	
+	
+	// return the temporary firebase address
+	return firebase.child('temp');
+	
+ }
   
   
+
   
  configureEditor(editor) {
     editor.setTheme('ace/theme/chrome');
@@ -144,53 +193,6 @@ var	historyfirepad = Firepad.fromACE(tempref,self.historyEditor);
     session.setUseWorker(false);
     session.setMode('ace/mode/html');
   }
-  
-  newupdateHistory(){
-   
-    
-      let historyEditor = this.historyEditor;
-      let firebase = this.firebase;
-      let temporaryFirebase = firebase.child('temp');
-       
-       
-    var z = document.getElementById('editbutton');
-	z.disabled = false;
-	var y = document.getElementById('historySlider');
-	
-	var numberOnSlider = y.value;
-	numberOnSlider = Number(numberOnSlider);
-	
-
-	temporaryFirebase.remove();
-
-	
-	firebase.child('users').once("value", function(s){
-	   
-	    let data = s.val();
-	    temporaryFirebase.child('users').set(data);
-	    
-	});
-
-	let temphistoryFirebase = temporaryFirebase.child('history');
-
-	
-	firebase.child('history').limitToFirst(numberOnSlider).once("value",function(snaphistory){
-	    temphistoryFirebase.set(snaphistory.val());
-	});
-	
-
-	return temporaryFirebase;
-//	
-	 
-
-  }
-  
- 
-  
-  
-  
-  
-  
   
     
 }
