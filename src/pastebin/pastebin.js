@@ -20,6 +20,7 @@ import {TraceModel} from '../traceService/trace-model';
 import {TraceSearch} from '../searchTab/trace-search';
 import {AceUtils} from '../utils/ace-utils';
 import {TraceSearchHistory} from '../searchTab/trace-search-history';
+import {TracePlay} from '../tracePlay/play';
 
 @inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
@@ -43,6 +44,7 @@ export class Pastebin {
     this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
+    this.tracePlay = new TracePlay(this.eventAggregator);
   }
 
   activate(params) {
@@ -76,6 +78,7 @@ export class Pastebin {
     //this.share.attached({id: this.pastebinId});
     this.traceSearchHistory.attached({id: this.pastebinId});
     this.traceSearch.attached(this.jsEditor.editor);
+    this.tracePlay.attached();
 
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
     $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] });      
