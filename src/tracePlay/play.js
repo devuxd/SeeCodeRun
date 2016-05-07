@@ -1,9 +1,8 @@
 /* global $ */
 /* global ace */
 import {TraceModel} from '../traceService/trace-model';
-import {AceUtils} from "./ace-utils";
-import {TraceViewModel} from "./trace-view-model";
-import $ from 'jquery';
+import {TraceViewModel} from "../traceView/trace-view-model";
+import {AceUtils} from "../utils/ace-utils";
 
 export class TracePlay{
     constructor(eventAggregator){
@@ -16,13 +15,6 @@ export class TracePlay{
 
         let tooltip = document.getElementById('tooltip_1');
         
-        if(tooltip === null){
-        			tooltip = document.createElement('div');		
-        			tooltip.setAttribute('id', 'tooltip-1'); 
-        			tooltip.setAttribute('class', 'seecoderun-tooltip'); 
-        			document.body.appendChild(tooltip);
-        }
-    
         let editor = ace.edit('aceJsEditorDiv'), aceUtils = this.aceUtils;
         if(tooltip === null){
         			tooltip = document.createElement('div');		
