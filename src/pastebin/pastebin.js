@@ -39,10 +39,7 @@ export class Pastebin {
     this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
-<<<<<<< HEAD
-   // this.share = new Share();
-=======
->>>>>>> cfce800e1616a76c12fe28727aa4ce6dac812002
+
     this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
@@ -77,10 +74,7 @@ export class Pastebin {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
-<<<<<<< HEAD
-    //this.share.attached({id: this.pastebinId});
-=======
->>>>>>> cfce800e1616a76c12fe28727aa4ce6dac812002
+
     this.traceSearchHistory.attached({id: this.pastebinId});
     this.traceSearch.attached(this.jsEditor.editor);
     this.tracePlay.attached();
