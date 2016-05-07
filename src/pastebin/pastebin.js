@@ -14,9 +14,13 @@ import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import '/jqxcore';
 import '/jqxsplitter';
+<<<<<<< HEAD
 import {TraceViewController} from '../traceView/trace-view-controller';
 import {Share} from '../share/share';
+=======
+>>>>>>> cfce800e1616a76c12fe28727aa4ce6dac812002
 import {TraceModel} from '../traceService/trace-model';
+import {TraceViewController} from '../traceView/trace-view-controller';
 import {TraceSearch} from '../searchTab/trace-search';
 import {AceUtils} from '../utils/ace-utils';
 import {TraceSearchHistory} from '../searchTab/trace-search-history';
@@ -39,7 +43,6 @@ export class Pastebin {
     this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
-   // this.share = new Share();
     this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
@@ -73,7 +76,10 @@ export class Pastebin {
     this.htmlViewer.attached();
     this.chat.attached({id: this.pastebinId});
     this.traceViewController.attached();
+<<<<<<< HEAD
     //this.share.attached({id: this.pastebinId});
+=======
+>>>>>>> cfce800e1616a76c12fe28727aa4ce6dac812002
     this.traceSearchHistory.attached({id: this.pastebinId});
     this.traceSearch.attached(this.jsEditor.editor);
 
