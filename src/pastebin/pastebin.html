@@ -7,7 +7,6 @@
   <require from="htmlViewer/html-viewer.html"></require>
   <require from="consoleWindow/console-window.html"></require>
   <require from="chat/chat.html"></require>
-  <require from="share/share.html"></require>
   <require from="tracePlay/play.html"></require>
   <require from="searchTab/trace-search.html"></require>
   
@@ -67,9 +66,9 @@
                 <html-viewer></html-viewer>
               </div>
               <div role="tabpanel"  class="tab-pane iframeCssPreview" id="visualization-container">
+                <play tracePlay.bind="tracePlay"></play>
                 <trace-search traceSearch.bind="traceSearch"></trace-search>
                 <p>
-                <play tracePlay.bind="tracePlay"></play>
                 <div>
                   <vis-viewer vis.bind="visViewer"></vis-viewer>
                 </div>

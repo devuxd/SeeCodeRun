@@ -7,7 +7,7 @@ export class TracePlay{
         this.traceModel = traceModel;
         this.aceUtils = aceUtils;
         this.refreshRate = 2000;
-        this.traceValuesData.ranges = [];
+        this.traceValuesData= {ranges: []};
     }
 
     attached(){
@@ -45,8 +45,29 @@ export class TracePlay{
         let refreshRate = this.refreshRate;
         let updateTooltip = this.aceUtils.updateTooltip;
         let index = -1,
-            flag = false,
+            isPlaying = false,
             interval;
+        
+        let enablePlayBack = function enablePlayBack(){
+		    $("#play").html('Play');
+		    $("#remove").removeAttr('disabled');
+		    $("#remove").removeAttr('title');
+		    $("#play").removeClass('btn-danger').addClass('btn-success');
+		};
+		
+		let disablePlayBack = function disablePlayBack(){
+		    $("#play").html('Pause');
+		    $("#remove").prop('disabled', 'disabled');
+		    $("#remove").prop('title', 'Pause to hide tooltip');
+		    $("#play").removeClass('btn-success').addClass('btn-danger');
+		};
+		
+		let resetPlayBack = function resetPlayBack(){
+	    	index = 0;
+		    isPlaying = false;
+		    clearInterval(interval);
+		    enablePlayBack();
+		};
         
         let updatePlayer = function updatePlayer(){
              if(!dataModel){
@@ -58,8 +79,7 @@ export class TracePlay{
 			}
 			
 			if(index > dataModel.ranges.length -1 ){
-			    index = 0;
-			    clearInterval(interval);
+                resetPlayBack();
 			}
 			
 			if(index < 0){
@@ -75,7 +95,7 @@ export class TracePlay{
      	
      	$("#next").click(function (e){
 			index++;
-			updatePlayer();
+			updatePlayer(index);
 		});
 		
 		$("#prev").click(function (e){
@@ -83,26 +103,24 @@ export class TracePlay{
 			updatePlayer();
 		});
 		
-			
-    	$("#play").click(function(){
-    	    flag = !flag;
+		$("#play").click(function(){
+    	    isPlaying = !isPlaying;
 			clearInterval(interval);
-			if(flag){
-			    $("#play").html('Pause');
-			    $("#remove").prop('disabled', 'disabled');
-			    $("#remove").prop('title', 'Pause to hide tooltip');
-			    $("#play").removeClass('btn-success').addClass('btn-danger');
-    			interval = setInterval(updatePlayer(), refreshRate);
+			if(isPlaying){
+                disablePlayBack();
+    			interval = setInterval(
+    			    function incrementAndUpdatePlayer(){
+    			        index++;
+    			        updatePlayer();
+    			    }
+    			    , refreshRate);
     	    }else{
-    	        $("#play").html('Play');
-			    $("#remove").removeAttr('disabled');
-			    $("#remove").removeAttr('title');
-			    $("#play").removeClass('btn-danger').addClass('btn-success');
+    	       enablePlayBack();
     	    }
     	});
     	
     	$("#remove").click(function(){
-    	    updateTooltip(tooltip);
+    	    updateTooltip(tooltip, {pageY: 0, pageX: 0});
     	});
     }
 }
