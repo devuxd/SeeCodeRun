@@ -43,7 +43,7 @@ export class Pastebin {
     this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
-    this.tracePlay = new TracePlay(this.eventAggregator);
+    this.tracePlay = new TracePlay(this.eventAggregator, this.traceModel, this.aceUtils);
   }
 
   activate(params) {

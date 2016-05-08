@@ -7,6 +7,7 @@
   <require from="htmlViewer/html-viewer.html"></require>
   <require from="consoleWindow/console-window.html"></require>
   <require from="chat/chat.html"></require>
+  <require from="share/share.html"></require>
   <require from="tracePlay/play.html"></require>
   <require from="searchTab/trace-search.html"></require>
   
@@ -48,9 +49,11 @@
           </div>
         </div>
       </div>
+        
       <div id="main-splitter-right">
+        
         <div id="rightSplitter" class="col-md-5" style="padding-left: 2px; padding-right: 2px">
-        <div id="right-splitter-top" class = "flow">
+          <div id="right-splitter-top" class = "flow">
             <div role="tabpanel">
               <ul class="nav nav-tabs">
                 <li role="presentation" class="active">
@@ -66,6 +69,7 @@
               <div role="tabpanel"  class="tab-pane iframeCssPreview" id="visualization-container">
                 <trace-search traceSearch.bind="traceSearch"></trace-search>
                 <p>
+                <play tracePlay.bind="tracePlay"></play>
                 <div>
                   <vis-viewer vis.bind="visViewer"></vis-viewer>
                 </div>
