@@ -36,9 +36,10 @@ export class JsEditor {
     this.firepad = this.createFirepad(editor);
     this.setupSessionEvents(session);
     this.subscribe(session);
-  }
+    
+}
 
-  configureEditor(editor) {
+  configureEditor(editor){
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
     editor.$blockScrolling = Infinity;
@@ -135,7 +136,8 @@ export class JsEditor {
 
   createFirepad(editor) {
     let baseURL = 'https://seecoderun.firebaseio.com';
-    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/js');
+    this.pastenBinURL = baseURL + '/' + this.pastebinId + '/content/js';
+    let firebase = new Firebase(this.pastenBinURL);
 
     return Firepad.fromACE(
       firebase,
