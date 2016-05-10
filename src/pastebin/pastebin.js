@@ -8,6 +8,7 @@ import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
+import {HistoryViewer} from '../historyViewer/history-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
@@ -18,7 +19,10 @@ import {TraceViewController} from '../traceView/trace-view-controller';
 import {TraceSearch} from '../searchTab/trace-search';
 import {AceUtils} from '../utils/ace-utils';
 import {TraceSearchHistory} from '../searchTab/trace-search-history';
+import {TracePlay} from '../tracePlay/play';
+
 import {ExpressionSelection} from '../expressionSelection/expression-selection';
+
 @inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
 
@@ -34,14 +38,18 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(this.eventAggregator);
     this.htmlEditor = new HtmlEditor(this.eventAggregator);
     this.cssEditor  = new CssEditor(this.eventAggregator);
+    
+    this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
+    
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
 
     this.traceViewController = new TraceViewController(this.eventAggregator, this.aceUtils);
+    this.expressionSelection = new ExpressionSelection(this.eventAggregator);
+    this.tracePlay = new TracePlay(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
-    this.expressionSelection = new ExpressionSelection(this.eventAggregator);
   }
 
   activate(params) {
@@ -66,6 +74,9 @@ export class Pastebin {
     this.jsEditor.attached({id: this.pastebinId});
     this.htmlEditor.attached({id: this.pastebinId});
     this.cssEditor.attached({id: this.pastebinId});
+    
+    this.htmlEditorHistoryViewer.attached();
+    
     this.consoleWindow.attached();
     this.jsGutter.attached();
     this.visViewer.attached();
@@ -74,6 +85,7 @@ export class Pastebin {
     this.traceViewController.attached();
 
     this.traceSearchHistory.attached({id: this.pastebinId});
+    this.tracePlay.attached();
     this.traceSearch.attached();
 
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
