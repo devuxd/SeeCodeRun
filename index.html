@@ -28,6 +28,21 @@
 
 <body>
   <div class="container-fluid">
+	  <div class="row">
+		  <div class="col-md-10" style="padding-left: 0px; padding-right: 0px">
+			  <div class="bs-callout bs-callout-primary">
+				  <h4>Programming task (??? minutes)</h4>
+				  Please complete the task below. When you have finished your work on the task below,
+				  click the "I'm finished" button at the right to exit the task and receive your completion code.
+				  You have ???? minutes in which to work.
+			  </div>
+		  </div>
+		  <div class="col-md-2" style="padding-left: 30px; padding-right: 2px">
+			  <BR><BR>
+			  <button type="button" class="btn btn-primary">I'm finished</button>
+		  </div>
+	  </div>
+
   	<div class="row">
 	  <div class="col-md-5" style="padding-left: 0px; padding-right: 0px">	  
 	  	<div role="tabpanel" >
@@ -53,11 +68,23 @@
 
 	    <!-- <button onClick="updateIframe();" id="runCode" class="btn btn-default btn-primary" >Run</button> -->
 	  </div>
-	  <div class="col-md-7" style="padding-left: 2px; padding-right: 2px">
+	  <div class="col-md-4" style="padding-left: 2px; padding-right: 2px">
 	  		<div id="html-output"><iframe id="preview" style="height: 650px; width: 100%"></iframe></div>
 	  		<div id="console-output"></div>
 	  </div>
-  	</div>
+		<!-- chat pane -->
+		<div class="col-md-3" style="padding-left: 2px; padding-right: 0px">
+			<div class="example-chat l-demo-container">
+				<header>Chat with workers</header>
+				<ul id='example-messages' class="example-chat-messages"></ul>
+
+				<footer>
+					<input type='text' id='messageInput'  placeholder='Type a message...'>
+				</footer>
+			</div>
+		</div>
+
+	</div>
   </div>
   
 
@@ -103,13 +130,20 @@
 		$("#preview").contents().find("head").append('<style>' + cssEditor.getValue() + '</style>'
 				+ '<script src="https://code.jquery.com/jquery-2.1.4.min.js"><\/script>'
 				+ '<script>' + jsEditor.getValue() + '<\/script>');
+
+		// Listen for runtime errors.
+		// should work to listen only on iframe, but does not: document.getElementById("preview").contentWindow.onerror
+		window.onerror = function(errorMsg, url, lineNumber) {
+			console.log('Error: ' + errorMsg + '.  Line: ' + lineNumber);
+			return false;
+		}
 	}
 	
 	// Global vars
 	var editorChangedTimeout = null;
 
 	// Initialize Firebase Refs for js, html, and css
-	var baseURL = 'https://seecoderun.firebaseio.com';
+	var baseURL = 'https://programmingstudies.firebaseio.com/studies/microtaskWorkflow/test1/pastebins';
 	var uniqueCodeURL = getUniqueCodeURL(baseURL);
 	var jsFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/js');
 	var htmlFirebaseRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/content/html');
@@ -184,7 +218,47 @@
   	  e.preventDefault();
   	  $(this).tab('show');
   	});
-    
+
+	// Functionality for worker chat
+	var messagesRef = new Firebase(baseURL + '/' + uniqueCodeURL + '/chat');
+
+	// REGISTER DOM ELEMENTS
+	var messageField = $('#messageInput');
+	var thisworkerName = 'worker1';
+	var messageList = $('#example-messages');
+
+	// LISTEN FOR KEYPRESS EVENT
+	messageField.keypress(function (e) {
+		if (e.keyCode == 13) {
+			//FIELD VALUES
+			var message = messageField.val();
+
+			//SAVE DATA TO FIREBASE AND EMPTY FIELD
+			messagesRef.push({name:thisworkerName, text:message});
+			messageField.val('');
+		}
+	});
+
+	// Add a callback that is triggered for each chat message.
+	messagesRef.limitToLast(10).on('child_added', function (snapshot) {
+		//GET DATA
+		var data = snapshot.val();
+		var username = data.name || "anonymous";
+		var message = data.text;
+
+		//CREATE ELEMENTS MESSAGE & SANITIZE TEXT
+		var messageElement = $("<li>");
+		var nameElement = $("<strong class='example-chat-username'></strong>")
+		nameElement.text(username);
+		messageElement.text(message).prepend(nameElement);
+
+		//ADD MESSAGE
+		messageList.append(messageElement)
+
+		//SCROLL TO BOTTOM OF MESSAGE LIST
+		messageList[0].scrollTop = messageList[0].scrollHeight;
+	});
+
 </script>
 
 </body>
