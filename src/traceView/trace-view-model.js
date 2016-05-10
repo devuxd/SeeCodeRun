@@ -1,33 +1,29 @@
 export class TraceViewModel {
-    constructor(aceUtils, aceEditor, tooltipElement, gutterDecorationCSSClassName, showToolTipDelay = 500, hideToolTipDelay = 250){
-        this.editor= aceEditor;
+    constructor(tooltipElement, showToolTipDelay = 500, hideToolTipDelay = 250){
         this.tooltip = tooltipElement;
-        this.gutterDecorationClassName = gutterDecorationCSSClassName;
-        this.aceUtils = aceUtils;
         this.showToolTipDelay = showToolTipDelay;
         this.hideToolTipDelay = hideToolTipDelay;
         this.resetData();
-        this.bind();
     }
     
     resetData(){
         this.resetTraceGutterData();
         this.resetTraceValuesData();
     }
+    
+    attached(){
+        this.attachTooltipUpdateWithDelay();
+    }
 
-    bind(){
-        let editor = this.editor;
-        let tooltip = this.tooltip;
-        let traceGutterData =  this.traceGutterData;
-        let traceValuesData =  this.traceValuesData;
-        let gutterDecorationClassName = this.gutterDecorationClassName;
-    	let aceUtils = this.aceUtils;
+    attachTooltipUpdateWithDelay(){
+        let div =   this.tooltip;
     	let showToolTipDelay = this.showToolTipDelay;
     	let hideToolTipDelay = this.hideToolTipDelay;
     	let tooltipSetTimeout = window.setTimeout;
     	let tooltipClearTimeout = window.clearTimeout;
     	let tooltipTimeout;
-    	let tooltipUpdateWithDelay = function tooltipUpdateWithDelay(div, position, content){
+    	
+    	this.tooltipUpdateWithDelay = function tooltipUpdateWithDelay(position, content){
     	    let toolTipDelay = showToolTipDelay;
     	    if(!content){
     	        toolTipDelay = hideToolTipDelay;
@@ -36,8 +32,15 @@ export class TraceViewModel {
     	    tooltipClearTimeout(tooltipTimeout);
 			tooltipTimeout = tooltipSetTimeout(
 			function delayedToolTip(){
-			    div.style.left = position.pageX + 'px';
-    			div.style.top = position.pageY + 'px';
+			    if(!div){
+			        return;
+			    }
+			    
+			    if(position){
+    			    div.style.left = position.pageX + 'px';
+        			div.style.top = position.pageY + 'px';
+			    }
+			    
     			if(content){
     				div.style.display = "block";
     				div.innerHTML = content;
@@ -47,24 +50,34 @@ export class TraceViewModel {
     	        }
 			}, toolTipDelay);
 	    };
-    	
-    	aceUtils.setTraceGutterRenderer(editor, traceGutterData);
-    	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceGutterData);
-    	aceUtils.subscribeToCodeHoverEvents(editor, tooltip, traceValuesData, tooltipUpdateWithDelay);
 
     }
     
-    onTraceChanged(traceHelper){
-            this.traceHelper = traceHelper;
-            
-            let stackTrace = traceHelper.getStackBlockCounts();
-
-            let previousRows = this.traceGutterData.rows;
-            this.updateTraceGutterData(stackTrace);
-            this.aceUtils.updateGutterDecorations(this.editor, previousRows, this.traceGutterData.rows, this.gutterDecorationClassName);
-            
-            this.traceValuesData.ranges = traceHelper.getExecutionTrace();
-            this.traceValuesData.positionMatcher = traceHelper;
+    
+    isDataModelRepOK(){
+	    if(!this.traceValuesData.ranges){
+		    return false;
+		}
+		
+		if(!this.traceHelper){
+		    return false;
+		}
+		return true;
+	}
+	
+    getExpressionAtPosition(mousePosition){
+        if(this.isDataModelRepOK()){
+            return this.traceHelper.getExpressionAtPosition(this.traceHelper.getExecutionTrace(), mousePosition);
+        }
+        return undefined;
+    }
+    
+    onExpressionHovered(match, pixelPosition){
+        if(match){
+            this.tooltipUpdateWithDelay(pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
+        }else{
+            this.tooltipUpdateWithDelay();
+        }
     }
     
     updateTraceGutterData(stackTrace){
@@ -91,15 +104,13 @@ export class TraceViewModel {
         this.traceValuesData.ranges = [];
     }
     
-    
-    
     extractTraceGutterData(trace){
 	    let result = {  maxCount : 0, rows : []  };
 
         for (let i = 0; i < trace.length; i ++) {
             let entry = trace[i];
 			let row = entry.range.start.row;
-			
+
 			if(!result.rows.hasOwnProperty(row)){
              result.rows[row] = {count: entry.count, text: "This block has been called " + entry.count + " times"};
 			}

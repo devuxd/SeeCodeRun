@@ -3,7 +3,6 @@
 import {inject} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
-
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
@@ -20,6 +19,8 @@ import {TraceSearch} from '../searchTab/trace-search';
 import {AceUtils} from '../utils/ace-utils';
 import {TraceSearchHistory} from '../searchTab/trace-search-history';
 import {TracePlay} from '../tracePlay/play';
+
+import {ExpressionSelection} from '../expressionSelection/expression-selection';
 
 @inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
@@ -40,10 +41,11 @@ export class Pastebin {
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
 
-    this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
+    this.traceViewController = new TraceViewController(this.eventAggregator, this.aceUtils);
+    this.expressionSelection = new ExpressionSelection(this.eventAggregator);
+    this.tracePlay = new TracePlay(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
-    this.tracePlay = new TracePlay(this.eventAggregator, this.traceModel, this.aceUtils);
   }
 
   activate(params) {
@@ -76,8 +78,8 @@ export class Pastebin {
     this.traceViewController.attached();
 
     this.traceSearchHistory.attached({id: this.pastebinId});
-    this.traceSearch.attached(this.jsEditor.editor);
     this.tracePlay.attached();
+    this.traceSearch.attached();
 
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
     $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] });      

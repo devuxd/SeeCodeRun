@@ -1,24 +1,57 @@
-<template bindable="traceSearch">
-	<link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
-	
-  <div class="w3-row-padding">
-    <div class="w3-col" style="width:90px;" >
-    	<div class="w3-group" >
-    		<label class="w3-label">Filter By</label>
-    		<select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" ><option>None</option></select>
-    	</div>
-    </div>
-    <div class="w3-quarter">
-    	<div class="w3-group" >
-    		<label class="w3-label">Search Term</label>
-    		<input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="a variable name" list = "filteredOptions"> 		
-    		<datalist id="filteredOptions"></datalist>
-    	</div>
+<template bindable="search">
+  <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+
+  <div class="container-fluid">
+    <div class="w3-group">
+      <div class="row">
+        <div class="col-md-4">
+          <label class="w3-label">Filter By</label>
+          <select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
+            <option selected disabled>select a filter</option>
+            <option>${search.options.none}</option>
+            <option>${search.options.any}</option>
+            <option>${search.options.id}</option>
+            <option>${search.options.value}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="w3-label">Search Term</label>
+          <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue" list = "filteredOptions"> 
+            <datalist id="filteredOptions" > <option repeat.for="row of search.filteredOptions" innerHTML.bind="row"></option> </datalist>
+        </div>
+        <div class="col-md-4">
+          <br>
+          <br>
+          <div if.bind="!search.noResult && !search.noSearchYet">Number of Search Results: ${search.numberOfResult}</div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="w3-table" id="resultCount">Number of Search Results: 0</div>
-  <div class="w3-table" name="traceTable" id="traceTable">
-    No results.
+  <div class="container-fluid" if.bind="!search.noResult && !search.noSearchYet">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut()" class="table-hover">
+          <td innerHTML.bind="row.id"></td>
+          <td innerHTML.bind="row.value"></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-  
+  <div class=" container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div if.bind="search.noResult" class="alert alert-danger" role="alert" innerHTML.bind="search.errorMessage"></div>
+        <div if.bind="search.noSearchYet" class="alert alert-info" role="alert" innerHTML.bind="search.suggestionMessage"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <br>
 </template>

@@ -10,6 +10,7 @@
   <require from="tracePlay/play.html"></require>
   <require from="searchTab/trace-search.html"></require>
   
+
   <div class="container-fluid" style="padding-left: 0px; padding-right: 0px; padding-left: 7px;">
 
     <div id="mainSplitter" class="col-md-7" style="padding-left: 2px; padding-right: 2px">
@@ -67,7 +68,7 @@
               </div>
               <div role="tabpanel"  class="tab-pane iframeCssPreview" id="visualization-container">
                 <play tracePlay.bind="tracePlay"></play>
-                <trace-search traceSearch.bind="traceSearch"></trace-search>
+                <trace-search search.bind="traceSearch"></trace-search>
                 <p>
                 <div>
                   <vis-viewer vis.bind="visViewer"></vis-viewer>

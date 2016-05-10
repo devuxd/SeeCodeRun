@@ -55,6 +55,8 @@ export class JsEditor {
     let editor = this.editor;
     let editorHashedText = this.editorHashedText;
 
+     ea.publish("onEditorReady", this.editor);
+
     session.on('change',
       onEditorChanged);
 
@@ -73,6 +75,7 @@ export class JsEditor {
         // then, hash it and store it in localHash variable.
         let localHash = md5(newStr);
         if (editorHashedText !== localHash ) {
+          
           editorHashedText = localHash; 
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
@@ -110,26 +113,20 @@ export class JsEditor {
       });
     }
 
-
-    // Copy event for Vis-viewer
-    editor.on('copy', expression => {
-      ea.publish('onEditorCopy', {
-        expression: expression,
-        row: editor.getCursorPosition().row + 1,
-        column: editor.getCursorPosition().column + 1
-
-      });
-    });
-
     //For gutter
     session.selection.on('changeCursor', () => {
 
       let info = {
         cursor: this.editor.getCursorPosition().row + 1,
-        lastVisibleRow: session.getLength()
-
+        lastVisibleRow: session.getLength(),
+        position: this.editor.getCursorPosition()
       };
       ea.publish('onCursorMoved', info);
+    });
+    
+    //For exprssions selection
+    editor.on("click", ()=>{
+        ea.publish("onEditorClick");
     });
   }
 
@@ -140,7 +137,7 @@ export class JsEditor {
     return Firepad.fromACE(
       firebase,
       editor, {
-        defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
+        defaultText: '\ngo(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
       });
   }
 

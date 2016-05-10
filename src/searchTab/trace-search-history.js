@@ -4,7 +4,7 @@ export class TraceSearchHistory {
     constructor(eventAggregator, traceModel) {
         this.eventAggregator = eventAggregator;
         this.traceModel = traceModel;
-        this.baseURL = 'https://seecoderun.firebaseio.com';
+        this.baseURL = "https://seecoderun.firebaseio.com";
         this.data = undefined;
     }
 
@@ -13,15 +13,17 @@ export class TraceSearchHistory {
             this.pastebinId = params.id;
         }
         
-        this.firebase = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/search');
+        this.firebase = new Firebase(`${this.baseURL}/${this.pastebinId}/content/search`);
         
         let traceSearchHistory= this;
 
-        this.firebase.on('value', function(snapshot) {
+        this.firebase.on("value", function(snapshot) {
             let data = snapshot.val();
+           
             if(data){
-                traceSearchHistory.publish(data);
+                 traceSearchHistory.eventAggregator.publish("searchBoxChanged", data);
             }
+
         });
 
         this.subscribe();
@@ -29,9 +31,8 @@ export class TraceSearchHistory {
 
     subscribe() {
         let eventAggregator = this.eventAggregator;
-        let searchBoxChangedEvent = this.traceModel.traceSearchEvents.searchBoxChanged.event;
         
-        eventAggregator.subscribe(searchBoxChangedEvent, payload => {
+        eventAggregator.subscribe("searchBoxChanged", payload => {
             let searchTermText = payload.searchTermText;
             let searchFilterId = payload.searchFilterId;
             this.firebase.update({
@@ -41,8 +42,4 @@ export class TraceSearchHistory {
         });
     }
 
-    publish(data) {
-        let searchStateUpdated = this.traceModel.traceSearchEvents.searchStateUpdated.event;
-        this.eventAggregator.publish(searchStateUpdated, data);
-    }
 }
