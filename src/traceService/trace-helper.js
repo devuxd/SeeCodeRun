@@ -15,11 +15,7 @@ export class TraceHelper {
         this.trace = this.traceModel.makeTrace(trace);
     }
     
-    getMatchAtPosition(position){
-        return this.getValuesAtPosition(this.trace, position);
-    }
-    
-    getMatchAtPosition(dataModel, position){
+    getExpressionAtPosition(dataModel, position){
         return this.getValuesAtPosition(dataModel, position);
     }
     
