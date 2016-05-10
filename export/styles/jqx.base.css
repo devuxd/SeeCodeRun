@@ -1,0 +1,94 @@
+
+/*          Splitter start                             */
+/* jqxSplitter */
+.jqx-splitter
+{
+    overflow: hidden;
+    border: 1px solid transparent;
+    position: relative;
+}
+/* Split bar's class when the jqxSplitter is with horizontal orientation */
+.jqx-splitter-splitbar-vertical
+{
+    border: 1px solid transparent;
+    border-top-width: 0px;
+    border-bottom-width: 0px;
+    cursor: e-resize;
+    cursor: col-resize;
+    position: absolute;
+}
+/* Split bar's mouse over state */
+.jqx-splitter-splitbar-hover
+{
+    background-color: transparent;
+}
+/* Split bar's class when the jqxSplitter is with horizontal orientation. */
+.jqx-splitter-splitbar-horizontal
+{
+    position: absolute;
+    border: 1px solid transparent;
+    border-left-width: 0px;
+    border-right-width: 0px;   
+    cursor: n-resize;
+    cursor: row-resize;
+}
+/* This class is applied to the splitter when it's dragged to it's max left/right boundary */
+.jqx-splitter-splitbar-invalid
+{
+   background: #FF0000 !important;
+}
+/* This class is added to split bar's collapse button when the splitter is with vectical orientation. */
+.jqx-splitter-collapse-button-horizontal
+{
+    cursor: pointer;
+    width: 45px;
+    height: 5px;
+}
+/* This class is added to split bar's collapse button when the splitter is with horizontal orientation. */
+.jqx-splitter-collapse-button-vertical
+{
+    cursor: pointer;
+    width: 5px;
+    height: 45px;
+}
+/* This class is added when the user disable the splitter. */
+.jqx-splitter-splitbar-collapsed
+{
+    cursor: default;
+}
+/* Applied to the jqxSplitter panels. */
+.jqx-splitter-panel
+{
+    border: none;
+    outline: none;   
+    position: absolute;
+}
+/* This class is added to a nested splitter.*/
+.jqx-splitter-nested, .jqx-splitter-panel-nested
+{
+    border: none;
+}
+/*          Splitter Endin                             */
+
+
+
+/* Test cut 3*/
+
+
+
+
+
+/*applied to all widgets*/
+
+
+
+/*applied to containers to set a background and border color. Tabs, NavigationBar, Calendar content.*/
+/*applied to header areas. Tabs, Menu, Window, Calendar.*/
+
+
+
+.jqx-fill-state-normal{-moz-box-sizing: 1px solid; box-sizing: 1px solid; -ms-touch-action: none; border-color:#eeeeee; background: white; }
+.jqx-fill-state-hover {-moz-box-sizing: 1px solid; box-sizing: 1px solid; border-color:#999;  background: #efefef;}
+.jqx-fill-state-pressed{-moz-box-sizing: 1px solid; box-sizing: 1px solid; border-color: #999;  background: #C0C0C0;}
+
+

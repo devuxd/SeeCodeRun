@@ -1,20 +1,50 @@
-import {TraceModel} from './trace-model';
 import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
-    constructor(trace){
-        this.traceModel = new TraceModel();
+    constructor(trace, error, traceModel){
+        this.traceModel = traceModel;
+        this.error = error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
-        this.Syntax = this.traceModel.traceSyntax;
         this.setTrace(trace);
     }
     
     isValid(){
-        
+        return (this.error === "" && this.trace);
     }
     
     setTrace(trace){
         this.trace = this.traceModel.makeTrace(trace);
     }
+    
+    getExpressionAtPosition(dataModel, position){
+        return this.getValuesAtPosition(dataModel, position);
+    }
+    
+    getValuesAtPosition(traceData, acePosition){
+        let isPositionInRange = this.isPositionInRange;
+        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
+        
+        if(!acePosition || !traceData){
+            return undefined;
+        }
+        let match = undefined;
+        for(let i = 0; i < traceData.length; i++){
+            let entry = traceData[i];
+            if(entry.hasOwnProperty("range")){
+                if( isPositionInRange(acePosition, entry.range)){
+    			     if(match){
+    			         if(isRangeInRangeStrict(entry.range, match.range)){
+    			             match = entry;
+    			         }
+    			     }else{
+    			        match = entry;
+    			     }
+    			 
+    			 }
+            }
+        }
+        return match;
+	    
+	}
     
     /*
      * getTraceDataInRange(traceData, aceRange)
@@ -96,12 +126,53 @@ export class TraceHelper {
     			);
     }
     
+    isRangeInRangeStrict(isRange, inRange){
+        return (
+                (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
+    			 &&
+    			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
+    			);
+    }
+    
     isRangeInLine(isRange, inLine){
         return(
             (isRange.start.row === (inLine - 1))
             ||
             (isRange.end.row === (inLine - 1))
         );
+    }
+    
+    isPositionInRange(position, inRange){
+        
+        let matchesInOneLine = (
+                position.row == inRange.start.row 
+                && inRange.start.row  == inRange.end.row
+                && position.column >= inRange.start.column
+                && position.column <= inRange.end.column
+            );
+            
+        if(matchesInOneLine){
+            return true;
+        }
+            
+        let matchesStart = (
+                position.row == inRange.start.row 
+                && inRange.start.row  < inRange.end.row
+                && position.column >= inRange.start.column
+            );
+           
+        if(matchesStart){
+            return true;
+        }
+        
+        let matchesEnd = (
+                position.row == inRange.end.row
+                && inRange.start.row  < inRange.end.row
+                && position.column <= inRange.end.column
+            );
+
+        return matchesEnd;
+
     }
     
     getStackBlockCounts() {

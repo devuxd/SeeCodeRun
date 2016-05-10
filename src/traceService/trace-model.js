@@ -1,16 +1,18 @@
-import {Trace} from './trace';
+import {Trace} from "./trace";
 export class TraceModel{
     constructor(){
         this.traceSearchEvents = {
-            searchBoxChanged : {  event :'searchBoxChanged'   , description : 'User changed the search box parameters...' },
-            aceMarkersChanged : {  event :'aceMarkersChanged'   , description : 'Trace results updated. Update Ace markers' }
+            searchBoxChanged : {  event :"searchBoxChanged"   , description : "User changed the search box parameters..." },
+            searchStateUpdated : {  event :"searchStateChanged"   , description : "Updated search parameters in Firebase..." },
+            aceMarkersChanged : {  event :"aceMarkersChanged"   , description : "Trace results updated. Update Ace markers" }
         };
         this.traceSearchfilters = {
-			any: "Any",
-			id: "Id",
-// 			type: "Type",
+			none: "none",
+			any: "any",
+			id: "id",
+//TODO 			dom: "DOM",
 // 			text: "Text",
-			value: "Value"
+			value: "value"
 		};
        	
 		let traceParameters = {
@@ -36,76 +38,83 @@ export class TraceModel{
 		
         this.traceDataContainer = "SeeCodeRunTraceDataResults";
         this.traceSyntax = {
-            AssignmentExpression: 'AssignmentExpression',
-            BinaryExpression: 'BinaryExpression', 
-            BlockStatement: 'BlockStatement',
-            CallExpression: 'CallExpression',
-            DoWhileStatement: 'DoWhileStatement',
-            ExpressionStatement: 'ExpressionStatement', 
-            ForStatement: 'ForStatement', 
-            ForInStatement: 'ForInStatement', 
-            FunctionDeclaration: 'FunctionDeclaration',
-            FunctionExpression: 'FunctionExpression',
-            Identifier: 'Identifier',
-            IfStatement: 'IfStatement', 
-            NewExpression: 'NewExpression',
-            Program: 'Program',
-            Property: 'Property',
-            ReturnStatement: 'ReturnStatement',
-            SwitchStatement: 'SwitchStatement',
-            SwitchCase: 'SwitchCase',
-            UnaryExpression: 'UnaryExpression',
-            UpdateExpression: 'UpdateExpression', 
-            VariableDeclaration: 'VariableDeclaration', 
-            VariableDeclarator: 'VariableDeclarator',
-            WhileStatement: 'WhileStatement'
+            AssignmentExpression: "AssignmentExpression",
+            BinaryExpression: "BinaryExpression", 
+            BlockStatement: "BlockStatement",
+            CallExpression: "CallExpression",
+            DoWhileStatement: "DoWhileStatement",
+            ExpressionStatement: "ExpressionStatement", 
+            ForStatement: "ForStatement", 
+            ForInStatement: "ForInStatement", 
+            FunctionDeclaration: "FunctionDeclaration",
+            FunctionExpression: "FunctionExpression",
+            Identifier: "Identifier",
+            IfStatement: "IfStatement",
+            LogicalExpression: "LogicalExpression",
+            MemberExpression: "MemberExpression",
+            NewExpression: "NewExpression",
+            Program: "Program",
+            Property: "Property",
+            ReturnStatement: "ReturnStatement",
+            SwitchStatement: "SwitchStatement",
+            SwitchCase: "SwitchCase",
+            UnaryExpression: "UnaryExpression",
+            UpdateExpression: "UpdateExpression", 
+            VariableDeclaration: "VariableDeclaration", 
+            VariableDeclarator: "VariableDeclarator",
+            WhileStatement: "WhileStatement"
         };
         
         let Syntax = {
-            AssignmentExpression: 'AssignmentExpression',
-            ArrayExpression: 'ArrayExpression',
-            BinaryExpression: 'BinaryExpression',
-            BlockStatement: 'BlockStatement',
-            BreakStatement: 'BreakStatement',
-            CallExpression: 'CallExpression',
-            CatchClause: 'CatchClause',
-            ConditionalExpression: 'ConditionalExpression',
-            ContinueStatement: 'ContinueStatement',
-            DoWhileStatement: 'DoWhileStatement',
-            DebuggerStatement: 'DebuggerStatement',
-            EmptyStatement: 'EmptyStatement',
-            ExpressionStatement: 'ExpressionStatement',
-            ForStatement: 'ForStatement',
-            ForInStatement: 'ForInStatement',
-            FunctionDeclaration: 'FunctionDeclaration',
-            FunctionExpression: 'FunctionExpression',
-            Identifier: 'Identifier',
-            IfStatement: 'IfStatement',
-            Literal: 'Literal',
-            LabeledStatement: 'LabeledStatement',
-            LogicalExpression: 'LogicalExpression',
-            MemberExpression: 'MemberExpression',
-            NewExpression: 'NewExpression',
-            ObjectExpression: 'ObjectExpression',
-            Program: 'Program',
-            Property: 'Property',
-            ReturnStatement: 'ReturnStatement',
-            SequenceExpression: 'SequenceExpression',
-            SwitchStatement: 'SwitchStatement',
-            SwitchCase: 'SwitchCase',
-            ThisExpression: 'ThisExpression',
-            ThrowStatement: 'ThrowStatement',
-            TryStatement: 'TryStatement',
-            UnaryExpression: 'UnaryExpression',
-            UpdateExpression: 'UpdateExpression',
-            VariableDeclaration: 'VariableDeclaration',
-            VariableDeclarator: 'VariableDeclarator',
-            WhileStatement: 'WhileStatement',
-            WithStatement: 'WithStatement'
+            AssignmentExpression: "AssignmentExpression",
+            ArrayExpression: "ArrayExpression",
+            BinaryExpression: "BinaryExpression",
+            BlockStatement: "BlockStatement",
+            BreakStatement: "BreakStatement",
+            CallExpression: "CallExpression",
+            CatchClause: "CatchClause",
+            ConditionalExpression: "ConditionalExpression",
+            ContinueStatement: "ContinueStatement",
+            DoWhileStatement: "DoWhileStatement",
+            DebuggerStatement: "DebuggerStatement",
+            EmptyStatement: "EmptyStatement",
+            ExpressionStatement: "ExpressionStatement",
+            ForStatement: "ForStatement",
+            ForInStatement: "ForInStatement",
+            FunctionDeclaration: "FunctionDeclaration",
+            FunctionExpression: "FunctionExpression",
+            Identifier: "Identifier",
+            IfStatement: "IfStatement",
+            Literal: "Literal",
+            LabeledStatement: "LabeledStatement",
+            LogicalExpression: "LogicalExpression",
+            MemberExpression: "MemberExpression",
+            NewExpression: "NewExpression",
+            ObjectExpression: "ObjectExpression",
+            Program: "Program",
+            Property: "Property",
+            ReturnStatement: "ReturnStatement",
+            SequenceExpression: "SequenceExpression",
+            SwitchStatement: "SwitchStatement",
+            SwitchCase: "SwitchCase",
+            ThisExpression: "ThisExpression",
+            ThrowStatement: "ThrowStatement",
+            TryStatement: "TryStatement",
+            UnaryExpression: "UnaryExpression",
+            UpdateExpression: "UpdateExpression",
+            VariableDeclaration: "VariableDeclaration",
+            VariableDeclarator: "VariableDeclarator",
+            WhileStatement: "WhileStatement",
+            WithStatement: "WithStatement"
         };
         
         this.traceTypes = {
-            Stack : [Syntax.FunctionDeclaration, Syntax.FunctionExpression, Syntax.BlockStatement, Syntax.SwitchCase],
+            Stack: [
+                Syntax.FunctionDeclaration,
+                Syntax.FunctionExpression,
+                Syntax.BlockStatement,
+                Syntax.SwitchCase
+                ],
             Expression: [
                 Syntax.UnaryExpression,
                 Syntax.UpdateExpression,
@@ -114,6 +123,7 @@ export class TraceModel{
                 Syntax.VariableDeclarator,
                 Syntax.AssignmentExpression,
                 Syntax.BinaryExpression,
+                Syntax.LogicalExpression,
                 Syntax.Identifier,
                 Syntax.ReturnStatement,
                 Syntax.ForStatement,
@@ -123,29 +133,65 @@ export class TraceModel{
                 Syntax.ExpressionStatement,
                 Syntax.SwitchStatement
                 ],
-            ExpressionStatement : [
+            ExpressionStatement: [
                 Syntax.ExpressionStatement
                 ],
-            ControlFlow : [],
-            Condition: [],
-            Loop: [Syntax.WhileStatement],
-            exception: []
-            
+            ObjectOriented: [
+                Syntax.NewExpression,
+                Syntax.ObjectExpression,
+                Syntax.MemberExpression,
+                Syntax.ArrayExpression,
+                Syntax.Property
+                ],
+            CallFlow: [
+                Syntax.CallExpression
+                ],
+            ControlFlow: [
+                Syntax.IfStatement,
+                Syntax.WhileStatement,
+                Syntax.DoWhileStatement,
+                Syntax.ForStatement,
+                Syntax.ForInStatement,
+                Syntax.SwitchStatement,
+                Syntax.TryStatement,
+                Syntax.CatchClause
+                ],
+            Condition: [
+                Syntax.IfStatement,
+                Syntax.SwitchStatement,
+                Syntax.SwitchCase
+                ],
+            Loop: [
+                Syntax.WhileStatement,
+                Syntax.DoWhileStatement,
+                Syntax.ForStatement,
+                Syntax.ForInStatement
+                ],
+            Exception: [
+                Syntax.TryStatement,
+                Syntax.CatchClause
+                ]
         };
         
         this.esSyntax = Syntax;
         
         this.executionEvents = {
-            running : {  event :'codeRunning'   , description : 'Tracing Code...' },
-            finished: {  event :'codeFinished'  , description : 'Trace built successfully.' },
-            failed  : {  event :'codeFailed'    , description : 'Code failed (Runtime error).' }
+            running : {  event :"codeRunning"   , description : "Tracing Code..." },
+            finished: {  event :"codeFinished"  , description : "Trace built successfully." },
+            failed  : {  event :"codeFailed"    , description : "Code failed (Runtime error)." }
         };
           
         this.traceEvents = {
-            instrumented    : {  event :'traceInstrumented'   , description : 'Code Instrumented successfully.' },
-            changed         : {  event :'traceChanged'   , description : 'Trace results obtained succesfully.' },
-            failed          : {  event :'instrumentationFailed'    , description : 'Code rewriting failed (Compilation error).' }
+            instrumented    : {  event :"traceInstrumented"   , description : "Code Instrumented successfully." },
+            changed         : {  event :"traceChanged"   , description : "Trace results obtained succesfully." },
+            failed          : {  event :"instrumentationFailed"    , description : "Code rewriting failed (Compilation error)." }
          };
+         
+         this.traceViewEvents = {
+             expressionHovered    : {  event :"expressionHovered"   , description : "An expression[code] from an editor with trace values was hovered." },
+             gutterHovered    : {  event :"gutterHovered"   , description : "A block[code] from an editor that was executed was hovered." }
+         };
+         
       
         this.timeLimit = 3000; 
         

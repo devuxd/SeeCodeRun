@@ -1,17 +1,15 @@
 /* global ace */
-import {AceUtils} from "../utils/ace-utils";
 import {TraceViewModel} from "./trace-view-model";
-import {TraceModel} from '../traceService/trace-model';
 
 export class TraceViewController{
     
-    constructor(eventAggregator){
+    constructor(eventAggregator, aceUtils){
         this.eventAggregator = eventAggregator;
-        this.traceModel = new TraceModel();
-        this.aceUtils = new AceUtils();
+        this.aceUtils = aceUtils;
     }
     
     attached(){
+        let eventAggregator = this.eventAggregator;
         let editor = ace.edit('aceJsEditorDiv'), aceUtils = this.aceUtils;
         let gutterDecorationClassName = "seecoderun-gutter-decoration";
         let tooltip = document.getElementById('tooltip_0');
@@ -24,19 +22,53 @@ export class TraceViewController{
         }
         
         
-        this.tooltip = tooltip;
+        
+        let traceViewModel = new TraceViewModel(tooltip); 
+        traceViewModel.attached();
+        
+        aceUtils.setTraceGutterRenderer(editor, traceViewModel.traceGutterData);
+    	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceViewModel.traceGutterData);
+    	
+    	this.editor = editor;
         this.gutterDecorationClassName = gutterDecorationClassName;
-        this.traceViewModel = new TraceViewModel(aceUtils, editor, tooltip, gutterDecorationClassName); 
+        this.tooltip = tooltip;
+    	this.traceViewModel = traceViewModel;
+    	
+    	aceUtils.publishExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+    	
         this.subscribe();
     }
+    
     subscribe(){
-        let eventAggregator = this.eventAggregator, traceViewModel = this.traceViewModel;
+        let self = this, eventAggregator = this.eventAggregator, aceUtils = this.aceUtils, editor =  this.editor, traceViewModel = this.traceViewModel;
         
         eventAggregator.subscribe(
-            this.traceModel.traceEvents.changed.event, payload =>{
-                        traceViewModel.onTraceChanged(payload.data);
+            "traceChanged", payload =>{
+                        self.onTraceChanged(payload.data);
                     }
-            );
+        );
+            
+        aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+    }
+    
+    onTraceChanged(traceHelper){
+        
+            if(!traceHelper){
+                throw "onTraceChanged() called without a Trace Helper.";
+            }
+            
+            let traceViewModel = this.traceViewModel;
+            
+            traceViewModel.traceHelper = traceHelper;
+            
+            let stackTrace = traceHelper.getStackBlockCounts();
+
+            let previousRows = traceViewModel.traceGutterData.rows;
+            traceViewModel.updateTraceGutterData(stackTrace);
+            
+            this.aceUtils.updateGutterDecorations(this.editor, previousRows, traceViewModel.traceGutterData.rows, this.gutterDecorationClassName);
+            
+            traceViewModel.traceValuesData.ranges = traceHelper.getExecutionTrace();
     }
     
 }

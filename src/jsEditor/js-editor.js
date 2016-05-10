@@ -36,9 +36,10 @@ export class JsEditor {
     this.firepad = this.createFirepad(editor);
     this.setupSessionEvents(session);
     this.subscribe(session);
-  }
+    
+}
 
-  configureEditor(editor) {
+  configureEditor(editor){
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
     editor.$blockScrolling = Infinity;
@@ -75,6 +76,7 @@ export class JsEditor {
         // then, hash it and store it in localHash variable.
         let localHash = md5(newStr);
         if (editorHashedText !== localHash ) {
+          
           editorHashedText = localHash; 
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
@@ -112,27 +114,6 @@ export class JsEditor {
       });
     }
 
-
-    // Copy event for Vis-viewer
-    editor.on('copy', expression => {
-      ea.publish('onEditorCopy', {
-        expression: expression,
-        row: editor.getCursorPosition().row + 1,
-        column: editor.getCursorPosition().column + 1
-
-      });
-    });
-
-
-    editor.on("mousemove", e => { 
-      ea.publish('onEditorHover', {
-        position: e.getDocumentPosition(),
-        lastVisibleRow: this.editor.getCursorPositionScreen()
-      });
-      
-      
-    });
-
     //For gutter
     session.selection.on('changeCursor', () => {
 
@@ -143,16 +124,22 @@ export class JsEditor {
       };
       ea.publish('onCursorMoved', info);
     });
+    
+    //For exprssions selection
+    editor.on("click", ()=>{
+        ea.publish("onEditorClick");
+    });
   }
 
   createFirepad(editor) {
     let baseURL = 'https://seecoderun.firebaseio.com';
-    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/js');
+    this.pastenBinURL = baseURL + '/' + this.pastebinId + '/content/js';
+    let firebase = new Firebase(this.pastenBinURL);
 
     return Firepad.fromACE(
       firebase,
       editor, {
-        defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
+        defaultText: '\ngo(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
       });
   }
 
