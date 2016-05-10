@@ -1,11 +1,6 @@
 
 export class TraceSearch {
-<<<<<<< HEAD
-    constructor(eventAggregator) {
-        this.clickedRow = [];
-=======
     constructor(eventAggregator, traceModel ,aceUtils) {
->>>>>>> c0cbbf31d9d859c539b3486b81d10779fbd3d8c6
         this.eventAggregator = eventAggregator;
         this.traceModel = traceModel;
         this.aceUtils = aceUtils;
