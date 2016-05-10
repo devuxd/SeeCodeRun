@@ -38,7 +38,7 @@ export class Pastebin {
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
 
-    this.traceViewController = new TraceViewController(this.eventAggregator, this.traceModel, this.aceUtils);
+    this.traceViewController = new TraceViewController(this.eventAggregator, this.aceUtils);
     this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
     this.expressionSelection = new ExpressionSelection(this.eventAggregator);

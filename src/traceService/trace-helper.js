@@ -1,12 +1,10 @@
 import {TraceQueryManager} from './trace-query-manager';
-
 export class TraceHelper {
     constructor(trace, error, traceModel){
         this.traceModel = traceModel;
         this.error = error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
-        
     }
     
     isValid(){
@@ -17,18 +15,14 @@ export class TraceHelper {
         this.trace = this.traceModel.makeTrace(trace);
     }
     
-    getMatchAtPosition(position){
-        return this.getValuesAtPosition(this.trace, position);
-    }
-    
-    getMatchAtPosition(dataModel, position){
+    getExpressionAtPosition(dataModel, position){
         return this.getValuesAtPosition(dataModel, position);
     }
     
     getValuesAtPosition(traceData, acePosition){
         let isPositionInRange = this.isPositionInRange;
         let isRangeInRangeStrict = this.isRangeInRangeStrict; 
-       
+        
         if(!acePosition || !traceData){
             return undefined;
         }

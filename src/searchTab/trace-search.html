@@ -8,15 +8,16 @@
           <label class="w3-label">Filter By</label>
           <select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
             <option selected disabled>select a filter</option>
+            <option>${search.options.none}</option>
             <option>${search.options.any}</option>
             <option>${search.options.id}</option>
             <option>${search.options.value}</option>
-
           </select>
         </div>
         <div class="col-md-4">
           <label class="w3-label">Search Term</label>
-          <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue">
+          <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue" list = "filteredOptions"> 
+            <datalist id="filteredOptions" > <option repeat.for="row of search.filteredOptions" innerHTML.bind="row"></option> </datalist>
         </div>
         <div class="col-md-4">
           <br>
@@ -36,8 +37,8 @@
       </thead>
       <tbody>
         <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut()" class="table-hover">
-          <td>${row.id}</td>
-          <td>${row.value}</td>
+          <td innerHTML.bind="row.id"></td>
+          <td innerHTML.bind="row.value"></td>
         </tr>
       </tbody>
     </table>
@@ -45,8 +46,8 @@
   <div class=" container-fluid">
     <div class="row">
       <div class="col-md-12">
-        <div if.bind="search.noResult" class="alert alert-danger" role="alert">${search.errorMessage}</div>
-        <div if.bind="search.noSearchYet" class="alert alert-info" role="alert"> ${search.suggestionMessage}</div>
+        <div if.bind="search.noResult" class="alert alert-danger" role="alert" innerHTML.bind="search.errorMessage"></div>
+        <div if.bind="search.noSearchYet" class="alert alert-info" role="alert" innerHTML.bind="search.suggestionMessage"></div>
       </div>
     </div>
   </div>

@@ -1,21 +1,14 @@
-/* global $ */
-import {
-    TraceModel
-}
-from '../traceService/trace-model';
-import {
-    AceUtils
-}
-from '../utils/ace-utils';
+
 export class TraceSearch {
     constructor(eventAggregator, traceModel ,aceUtils) {
         this.eventAggregator = eventAggregator;
         this.traceModel = traceModel;
         this.aceUtils = aceUtils;
         this.options;
-        this.selectedFilter = 'any';
-        this.searchedValue = '';
+        this.selectedFilter = "any";
+        this.searchedValue = "";
         this.rows = [];
+        this.filteredOptions = [];
         this.selectedExpressions = [];
         this.noResult = false;
         this.noSearchYet = true;
@@ -37,14 +30,14 @@ export class TraceSearch {
     }
 
     publishTraceSearchChanged(searchTermText, searchFilterId) {
-        this.eventAggregator.publish('searchBoxChanged', {
+        this.eventAggregator.publish("searchBoxChanged", {
             searchTermText: searchTermText,
             searchFilterId: searchFilterId
         });
     }
 
     publishAceMarkersChanged(itemsWithRanges) {
-        this.eventAggregator.publish('aceMarkersChanged', {
+        this.eventAggregator.publish("aceMarkersChanged", {
             items: itemsWithRanges
         });
     }
@@ -57,20 +50,19 @@ export class TraceSearch {
         });
 
 
-        this.eventAggregator.subscribe('traceChanged', payload => {
+        this.eventAggregator.subscribe("traceChanged", payload => {
             searchBox.traceHelper = payload.data;
             let variableValues = searchBox.traceHelper.getValues();
             let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
             this.updateTable(query);
         });
 
-        this.eventAggregator.subscribe('searchBoxChanged', payload => {
+        this.eventAggregator.subscribe("searchBoxChanged", payload => {
             this.searchedValue = payload.searchTermText;
             this.selectedFilter = payload.searchFilterId;
 
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
-                //update table
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
                 this.updateTable(query);
             }
@@ -80,7 +72,7 @@ export class TraceSearch {
         let updateAceMarkersSetTimeout = window.setTimeout;
         let updateAceMarkersClearTimeout = window.clearTimeout;
 
-        this.eventAggregator.subscribe('aceMarkersChanged', payload => {
+        this.eventAggregator.subscribe("aceMarkersChanged", payload => {
             let items = payload.items;
             updateAceMarkersClearTimeout(updateAceMarkersTimeout);
             updateAceMarkersTimeout = updateAceMarkersSetTimeout(
@@ -95,12 +87,19 @@ export class TraceSearch {
     }
 
     updateTable(query) {
-        this.rows = query.items.filter(row => {
-            return row.value !== undefined; //This line removes rows with undefined value. TODO: Do not inculde undefined vaules in the trace.  
-        });
+        let selectedFilter = this.selectedFilter;
+        let dataList = [];
+        this.rows = query.where( function whereFilter(row) {
+            if(row[selectedFilter]){
+                dataList.push(row[selectedFilter]);
+            }
+            return row.value !== undefined;
+        }).items;
+        
+        this.filteredOptions =new Set(dataList);
         
         this.numberOfResult = this.rows.length;
-        this.suggestionMessage = this.numberOfResult ==0 ? 
+        this.suggestionMessage = this.numberOfResult == 0 ? 
                                 'There is no javascript code.Try to write some and then comeback here :)':
                                 `Type any expression to see its value. Try ${this.rows[0].id} or ${this.rows[0].value}`;
 

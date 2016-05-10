@@ -1,12 +1,7 @@
 /* global ace */
 
-import {inject} from 'aurelia-framework';
-import {EventAggregator} from 'aurelia-event-aggregator';
-@inject(EventAggregator)
 export class AceUtils{
-    constructor(eventAggregator){
-        this.ea =eventAggregator;
-        
+    constructor(){
     }
     makeAceMarkerManager(aceEditor){
         return {    
@@ -98,52 +93,87 @@ export class AceUtils{
         
     }
     
-    subscribeToCodeHoverEvents(editor, tooltip, dataModel, updateTooltip = this.updateTooltip){
-         let ea = this.ea;
+    publishExpressionHoverEvents(editor, eventAggregator, mousePositionHandler){
+        
+        if(!editor){
+			    throw "An Ace editor is required";
+		}
+		
+		if(!eventAggregator){
+			    throw "An event aggregator (or an object with a publish('Event_Name', data_structure ) method) is required";
+		}
+		
+		if(!mousePositionHandler){
+			    throw "A mouse position handler object  with a getExpressionAtPosition(position) method (e.g. a Trace Helper) is required";
+		}
+		
      	editor.on("mousemove", function (e){
-		let position = e.getDocumentPosition(), match;
-		if(position){
-		    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(position));
-			if(!dataModel){
-			    return;
-			}
-			
-			if(!dataModel.ranges){
-			    return;
-			}
-			
-			if(!dataModel.positionMatcher){
-    		    return;
+     	    
+            
+    		let position = e.getDocumentPosition();
+    		let isTextMatch = undefined;
+    		
+    		if(position){
+    		    isTextMatch = editor.getSession().getWordRange(position); 
     		}
     		
-    		if(!dataModel.positionMatcher.getMatchAtPosition){
-    		    return;
+
+    		if(isTextMatch && editor.isFocused()){
+    			let match = mousePositionHandler.getExpressionAtPosition(position);
+                eventAggregator.publish("expressionHovered", match);
+    		}else{
+    		     eventAggregator.publish("expressionHovered", undefined);
     		}
-			
-			if (!editor.isFocused()){ 
-    			return;
-    		}
-			match = dataModel.positionMatcher.getMatchAtPosition(dataModel.ranges, position);
-			if(ea){
-                ea.publish("onExpressionHover", match);
-   			}
-			if(match){
-    				let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
-    				pixelPosition.pageY += editor.renderer.lineHeight;
-    				updateTooltip(tooltip, pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
-    		}
-		}
+		
 		});
         
     }
     
-    updateTooltip(div, position, text){
+    subscribeToExpressionHoverEvents(editor, eventAggregator, renderer, isToRenderAboveExpression){
+        if(!editor){
+			    throw "An Ace editor is required";
+		}
+		
+		if(!eventAggregator){
+			    throw "An event aggregator (or an object with a subscribe('Event_Name', callback_function ) method) is required";
+		}
+		
+		if(!renderer){
+			    throw "A renderer (or an object with an onExpressionHovered(match, pixelPosition ) method) is required";
+		}
+        
+        eventAggregator.subscribe("expressionHovered", match =>{
+            
+    		if(match){
+    			let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
+    			
+    			if(isToRenderAboveExpression){
+    			    pixelPosition.pageY -= editor.renderer.lineHeight;
+    			}else{
+    			    pixelPosition.pageY += editor.renderer.lineHeight;
+    			}
+    			
+    			renderer.onExpressionHovered(match, pixelPosition);
+    		}else{
+    		    renderer.onExpressionHovered();
+    		}
+        });
+        
+    }
+    
+    updateTooltip(div, position, content){
+            if(!div){
+                return;
+            }
 			
-			div.style.left = position.pageX + 'px';
-			div.style.top = position.pageY + 'px';
-			if(text){
+			if(position){
+		        div.style.left = position.pageX + 'px';
+			    div.style.top = position.pageY + 'px';
+			}
+		
+			if(content){
 				div.style.display = "block";
-				div.innerHTML = text;
+				div.innerHTML = content;
 			}else{
 				div.style.display = "none";
 				div.innerHTML = "";
