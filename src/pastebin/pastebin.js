@@ -8,6 +8,7 @@ import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
+import {HistoryViewer} from '../historyViewer/history-viewer';
 import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
@@ -37,7 +38,10 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(this.eventAggregator);
     this.htmlEditor = new HtmlEditor(this.eventAggregator);
     this.cssEditor  = new CssEditor(this.eventAggregator);
+    
+    this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, this.eventAggregator);
     this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
+    
     this.visViewer  =new VisViewer(this.eventAggregator);
     this.chat = new Chat();
 
@@ -70,6 +74,9 @@ export class Pastebin {
     this.jsEditor.attached({id: this.pastebinId});
     this.htmlEditor.attached({id: this.pastebinId});
     this.cssEditor.attached({id: this.pastebinId});
+    
+    this.htmlEditorHistoryViewer.attached();
+    
     this.consoleWindow.attached();
     this.jsGutter.attached();
     this.visViewer.attached();
