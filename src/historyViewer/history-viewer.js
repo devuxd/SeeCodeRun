@@ -22,9 +22,9 @@ export class HistoryViewer{
         var historyfirepad;
          this.historyfirepad = historyfirepad;
         let historyEditor = ace.edit("aceHtmlHistoryEditorDiv");
-        this.configureEditor(historyEditor);
+        seeCodeRunEditor.configureEditor(historyEditor);
         let historySession = historyEditor.getSession();
-        this.configureSession(historySession);
+        seeCodeRunEditor.configureSession(historySession);
         this.historySession = historySession;
         
         
@@ -180,19 +180,4 @@ let tref = self.updateHistory();
 	
  }
   
-  
-
-  
- configureEditor(editor) {
-    editor.setTheme('ace/theme/chrome');
-    editor.setShowFoldWidgets(false);
-  }
-
-  configureSession(session) {
-    session.setUseWrapMode(true);
-    session.setUseWorker(false);
-    session.setMode('ace/mode/html');
-  }
-  
-    
 }
