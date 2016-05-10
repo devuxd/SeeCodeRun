@@ -120,6 +120,9 @@ export class TraceSearch {
     }
 
     doMouseOut(row) {
+        if(!this.clickedRow){
+            return;
+        }
         let indexFound2 = this.clickedRow.indexOf(this.rows[row.$index]);
         if(indexFound2==-1){
             let indexFound = this.selectedExpressions.indexOf(this.rows[row.$index]);
