@@ -114,17 +114,37 @@ export class TraceSearch {
     }
 
     doMouseOver(row) {
-        let target = this.rows[row.$index];
-        this.selectedExpressions.push(target);
+        if(this.selectedExpressions.indexOf(this.rows[row.$index])==-1)
+            this.selectedExpressions.push(this.rows[row.$index]);
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
 
-    doMouseOut() {
-        this.selectedExpressions=[];
+    doMouseOut(row) {
+        let indexFound2 = this.clickedRow.indexOf(this.rows[row.$index]);
+        if(indexFound2==-1){
+            let indexFound = this.selectedExpressions.indexOf(this.rows[row.$index]);
+            this.selectedExpressions.splice(indexFound, 1);
+        }
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
-
+    
     keyPressed() {
         this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+    }
+    // jumps to current line in the editor
+    doOnClickJumpToCode(row) {
+        let editor = ace.edit('aceJsEditorDiv');
+        editor.gotoLine(this.rows[row.$index].range.start.row+1);
+        
+    }
+    // highlights current line in the ditor
+    doOnClickHighlight(row){
+        let indexFound = this.clickedRow.indexOf(this.rows[row.$index]);
+        if(indexFound==-1){
+            this.clickedRow.push(this.rows[row.$index]);
+        }
+        else{
+            this.clickedRow.splice(indexFound, 1);
+        }
     }
 }
