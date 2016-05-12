@@ -121,6 +121,7 @@ export class TraceSearch {
 
     doMouseOut(row) {
         if(!this.clickedRow){
+            this.publishAceMarkersChanged([]);
             return;
         }
         let indexFound2 = this.clickedRow.indexOf(this.rows[row.$index]);

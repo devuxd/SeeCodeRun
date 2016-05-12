@@ -14,14 +14,15 @@ import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 import '/jqxcore';
 import '/jqxsplitter';
+
+import {AceUtils} from '../utils/ace-utils';
 import {TraceModel} from '../traceService/trace-model';
 import {TraceViewController} from '../traceView/trace-view-controller';
-import {TraceSearch} from '../searchTab/trace-search';
-import {AceUtils} from '../utils/ace-utils';
-import {TraceSearchHistory} from '../searchTab/trace-search-history';
+import {ExpressionSelection} from '../expressionSelection/expression-selection';
+import {TraceSearch} from '../traceSearch/trace-search';
+import {TraceSearchHistory} from '../traceSearch/trace-search-history';
 import {TracePlay} from '../tracePlay/play';
 
-import {ExpressionSelection} from '../expressionSelection/expression-selection';
 
 @inject(EventAggregator, Router, TraceModel, AceUtils)
 export class Pastebin {
@@ -67,7 +68,6 @@ export class Pastebin {
       this.pastebinId = firebase.push().key();
       this.router.navigateToRoute('pastebin', {id: this.pastebinId});
     }
-    
   }
 
   attached() {
@@ -89,6 +89,15 @@ export class Pastebin {
     this.traceSearch.attached();
 
     $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
-    $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] });      
+    $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] }); 
+    
+    let self = this; 
+    $(document).ready( function() {
+      window.setTimeout(self.attachedAfterHTML(), 2000);
+    });
+  }
+  
+  attachedAfterHTML(){
+    this.chat.attachedAfterHTML();
   }
 }
