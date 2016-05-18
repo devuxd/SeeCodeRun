@@ -124,7 +124,7 @@
  
  ul.nav li a,
  ul.nav li a:visited {
-   color: #888888;
+   color: blue;
    font-size: 16px;
  }
  
@@ -138,11 +138,14 @@
    border-right: none;
    border-bottom-color: #0066ff;
  }
- 
+ul.nav li.hover a{
+    color: #ff0000;
+}
  ul.nav li.active a {
-   color: #888888;
+   color: green;
    font-size: 16px;
  }
+ 
  /*glyph style*/
  
  .glyphicon {
@@ -390,7 +393,6 @@
    font-size: 16px !important;
  }
  
-
 .table tbody tr:hover td, .table tbody tr:hover th {
     background-color: #f6f6bd;
     border-bottom-color: black;
