@@ -1,12 +1,10 @@
 <template bindable="search">
-  <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
-
   <div class="container-fluid">
     <div class="w3-group">
       <div class="row">
         <div class="col-md-4">
           <label class="w3-label">Filter By</label>
-          <select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
+          <select class="w3-select"  name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
             <option selected disabled>select a filter</option>
             <option>${search.options.none}</option>
             <option>${search.options.any}</option>

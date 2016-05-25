@@ -1,19 +1,13 @@
-/* global Firebase */
 
 export class TraceSearchHistory {
-    constructor(eventAggregator, traceModel) {
+    constructor(eventAggregator, firebaseManager) {
         this.eventAggregator = eventAggregator;
-        this.traceModel = traceModel;
-        this.baseURL = "https://seecoderun.firebaseio.com";
+        this.firebaseManager = firebaseManager;
         this.data = undefined;
     }
 
-    attached(params) {
-        if (params.id) {
-            this.pastebinId = params.id;
-        }
-        
-        this.firebase = new Firebase(`${this.baseURL}/${this.pastebinId}/content/search`);
+    attached() {
+        this.firebase = this.firebaseManager.makeTraceSearchHistoryFirebase();
         
         let traceSearchHistory= this;
 

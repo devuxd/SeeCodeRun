@@ -10,10 +10,10 @@ System.config({
   },
   paths: {
     "*": "./dist/*",
+    "include": "./include/",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
-
   map: {
     "ace": "github:ajaxorg/ace-builds@1.2.3",
     "ansi-styles": "npm:ansi-styles@2.2.1",
@@ -26,6 +26,7 @@ System.config({
     "aurelia-http-client": "npm:aurelia-http-client@1.0.0-beta.1.2.0",
     "aurelia-loader-default": "npm:aurelia-loader-default@1.0.0-beta.1.2.0",
     "aurelia-logging-console": "npm:aurelia-logging-console@1.0.0-beta.1.2.0",
+    "aurelia-pal": "npm:aurelia-pal@1.0.0-beta.1.2.2",
     "aurelia-router": "npm:aurelia-router@1.0.0-beta.1.2.0",
     "aurelia-templating-binding": "npm:aurelia-templating-binding@1.0.0-beta.1.2.1",
     "aurelia-templating-resources": "npm:aurelia-templating-resources@1.0.0-beta.1.2.1",
@@ -44,7 +45,7 @@ System.config({
     "firebase": "npm:firebase@2.4.2",
     "firepad": "npm:firepad@1.3.0",
     "font-awesome": "npm:font-awesome@4.5.0",
-    "jquery": "npm:jquery@2.2.2",
+    "jquery": "npm:jquery@2.2.4",
     "jquery-ui": "github:components/jqueryui@1.11.4",
     "jqwidgets-framework": "npm:jqwidgets-framework@4.1.2",
     "jslinq": "npm:jslinq@1.0.15",
@@ -53,7 +54,7 @@ System.config({
     "tarball": "npm:tarball@0.0.5",
     "text": "github:systemjs/plugin-text@0.0.3",
     "github:components/jqueryui@1.11.4": {
-      "jquery": "npm:jquery@2.2.2"
+      "jquery": "npm:jquery@2.2.4"
     },
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"

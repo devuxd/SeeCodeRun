@@ -88,12 +88,10 @@
  }
  
  .iframeCssPreview {
-   height: 100vh;
-   /* Viewport-relative units */
-   width: 100vw;
+   
    border: none;
    overflow: auto;
-   ;
+   
  }
  
  ul.nav li a,
@@ -358,6 +356,12 @@
    background-position: 2px center;
  }
  
+ .ace-chrome .ace_marker-layer .expression-range {
+   position: absolute;
+   background: rgb(250, 250, 155);
+   border: 1px solid rgb(200, 200, 150);
+ }
+ 
  td,
  th {
    padding: 1px 4px;
@@ -386,3 +390,8 @@
    font-size: 16px !important;
  }
  
+
+.table tbody tr:hover td, .table tbody tr:hover th {
+    background-color: #f6f6bd;
+    border-bottom-color: black;
+}

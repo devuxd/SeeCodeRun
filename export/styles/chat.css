@@ -42,35 +42,21 @@
   }
 }
 
-body {
-  background: url(../images/clouds.jpg) no-repeat center center fixed;
-  background-size: cover
-}
-
 .seecoderun-chat {
   font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   box-shadow: 0 10px 100px rgba(0, 0, 0, .4);
   background-color: rgba(255, 255, 255, 1);
   font-size: 16px;
-  /*changed from 18*/
   line-height: 22px;
   color: #666;
   overflow: visible;
   position: fixed;
   bottom: 0;
-  /*added*/
   right: 0;
-  /*added*/
-  /*top: 60%;
-  left: 50%;*/
   z-index: 100;
   padding: 0;
-  /*margin-left: -200px;
-  margin-top: -250px;*/
   width: 300px;
-  /*adjusted width*/
   height: 450px;
-  /*adjusted height*/
   -webkit-animation: fadeInUp 1s;
   animation: fadeInUp 1s
 }
@@ -88,9 +74,6 @@ body {
 
 .seecoderun-chat .seecoderun-chat-toolbar {
   padding: 5px;
-  /*changed* from 10px/
-  /*color: rgba(255, 255, 255, .8);
-  background: rgba(41, 128, 185, .9)*/
   color: #888888;
   background: #f8f8f8;
 }
@@ -100,7 +83,6 @@ body {
   padding: 0;
   /*text-align: center;*/
   font-weight: 200;
-  /*changed from 400*/
   text-transform: uppercase;
   font-size: 12px;
   line-height: 20px;
@@ -114,50 +96,37 @@ body {
   padding: 0 10px;
   height: 30px;
   font-size: 16px;
-  /*changed* from 18px*/
   width: 100%;
   font-weight: 400;
   outline: 0
 }
 
 .seecoderun-chat input::-webkit-input-placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
 
 .seecoderun-chat input::-moz-placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
 
-
-}
 .seecoderun-chat input:-ms-input-placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
-  
   color: #888888;
   font-weight: lighter
 }
 
-}
 .seecoderun-chat input::placeholder {
-  /*color: rgba(255, 255, 255, .5);
-  font-weight: lighter*/
   color: #888888;
   font-weight: lighter
 }
 
-}
 .seecoderun-chat .seecoderun-chat-username-field {
   background: rgba(52, 152, 219, .7);
   padding: 10px;
   position: relative
 }
+
 .seecoderun-chat .seecoderun-chat-username-field .seecoderun-chat-avatar {
   position: absolute;
   top: 10px;
@@ -172,6 +141,7 @@ body {
   font-size: 20px;
   color: #217dbb
 }
+
 .seecoderun-chat .seecoderun-chat-username-field label {
   text-transform: uppercase;
   line-height: 32px;
@@ -182,12 +152,14 @@ body {
   left: 20px;
   z-index: 1
 }
+
 .seecoderun-chat .seecoderun-chat-username-field input {
   padding-left: 50px;
   color: #FFF;
   height: 40px;
   font-size: 20px
 }
+
 .seecoderun-chat ul {
   list-style: none;
   margin: 0;
@@ -200,18 +172,22 @@ body {
   bottom: 80px;
   z-index: 1
 }
+
 .seecoderun-chat ul li {
   margin-bottom: 10px;
   line-height: 24px;
   -webkit-animation: fadeIn 1s;
   animation: fadeIn 1s
 }
+
 .seecoderun-chat ul li:last-child {
   margin: 0
 }
+
 .seecoderun-chat ul .seecoderun-chat-username {
   margin-right: 10px
 }
+
 .seecoderun-chat footer {
   background-color: rgba(255, 255, 255, .7);
   position: absolute;
@@ -222,6 +198,7 @@ body {
   display: block;
   padding: 10px
 }
+
 .seecoderun-chat footer .icon-chat {
   color: rgba(52, 73, 94, .2);
   position: absolute;
@@ -230,6 +207,7 @@ body {
   z-index: 1;
   font-size: 30px
 }
+
 .seecoderun-chat footer input {
   background: 0 0;
   border: none;
@@ -237,18 +215,23 @@ body {
   color: #34495e;
   padding-left: 40px
 }
+
 .seecoderun-chat footer input::-webkit-input-placeholder {
   color: rgba(52, 73, 94, .4)
 }
+
 .seecoderun-chat footer input::-moz-placeholder {
   color: rgba(52, 73, 94, .4)
 }
+
 .seecoderun-chat footer input:-ms-input-placeholder {
   color: rgba(52, 73, 94, .4)
 }
+
 .seecoderun-chat footer input::placeholder {
   color: rgba(52, 73, 94, .4)
 }
+
 .seecoderun-chatHeader {
   background-color: #0066ff;
   /*same as nav underline*/
@@ -257,4 +240,8 @@ body {
   font-size: 18px;
 }
 
+.seecoderun-chat-toolbar input {
+   display: inline-block;
+   width: 180px;
+   font-size: 14px;
 }

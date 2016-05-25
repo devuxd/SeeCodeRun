@@ -10,6 +10,7 @@ System.config({
   },
   paths: {
     "*": "./dist/*",
+    "include": "./include/",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
@@ -25,6 +26,7 @@ System.config({
     "aurelia-http-client": "npm:aurelia-http-client@1.0.0-beta.1.2.0",
     "aurelia-loader-default": "npm:aurelia-loader-default@1.0.0-beta.1.2.0",
     "aurelia-logging-console": "npm:aurelia-logging-console@1.0.0-beta.1.2.0",
+    "aurelia-pal": "npm:aurelia-pal@1.0.0-beta.1.2.2",
     "aurelia-router": "npm:aurelia-router@1.0.0-beta.1.2.0",
     "aurelia-templating-binding": "npm:aurelia-templating-binding@1.0.0-beta.1.2.1",
     "aurelia-templating-resources": "npm:aurelia-templating-resources@1.0.0-beta.1.2.1",
@@ -43,7 +45,7 @@ System.config({
     "firebase": "npm:firebase@2.4.2",
     "firepad": "npm:firepad@1.3.0",
     "font-awesome": "npm:font-awesome@4.5.0",
-    "jquery": "npm:jquery@2.2.2",
+    "jquery": "npm:jquery@2.2.4",
     "jquery-ui": "github:components/jqueryui@1.11.4",
     "jqwidgets-framework": "npm:jqwidgets-framework@4.1.2",
     "jslinq": "npm:jslinq@1.0.15",
@@ -52,7 +54,7 @@ System.config({
     "tarball": "npm:tarball@0.0.5",
     "text": "github:systemjs/plugin-text@0.0.3",
     "github:components/jqueryui@1.11.4": {
-      "jquery": "npm:jquery@2.2.2"
+      "jquery": "npm:jquery@2.2.4"
     },
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"
@@ -1324,7 +1326,7 @@ System.config({
     }
   },
   bundles: {
-    "aurelia-f088e39245.js": [
+    "aurelia-176ba542fa.js": [
       "github:components/jquery@2.2.1.js",
       "github:components/jquery@2.2.1/jquery.js",
       "github:twbs/bootstrap@3.3.6.js",
@@ -1414,7 +1416,7 @@ System.config({
       "npm:aurelia-templating@1.0.0-beta.1.2.1.js",
       "npm:aurelia-templating@1.0.0-beta.1.2.1/aurelia-templating.js"
     ],
-    "app-build-7657e54312.js": [
+    "app-build-956c62dcd4.js": [
       "app.html!github:systemjs/plugin-text@0.0.3.js",
       "app.js",
       "chat/chat.css!github:systemjs/plugin-text@0.0.3.js",
@@ -1424,6 +1426,7 @@ System.config({
       "consoleWindow/console-window.js",
       "cssEditor/css-editor.html!github:systemjs/plugin-text@0.0.3.js",
       "cssEditor/css-editor.js",
+      "expressionSelection/expression-selection.js",
       "github:components/jquery@2.2.1.js",
       "github:components/jquery@2.2.1/jquery.js",
       "github:components/jqueryui@1.11.4.js",
@@ -1436,12 +1439,14 @@ System.config({
       "github:jspm/nodelibs-process@0.1.2/index.js",
       "github:twbs/bootstrap@3.3.6.js",
       "github:twbs/bootstrap@3.3.6/js/bootstrap.js",
+      "historyViewer/history-viewer.html!github:systemjs/plugin-text@0.0.3.js",
+      "historyViewer/history-viewer.js",
       "htmlEditor/html-editor.html!github:systemjs/plugin-text@0.0.3.js",
       "htmlEditor/html-editor.js",
       "htmlViewer/html-viewer.html!github:systemjs/plugin-text@0.0.3.js",
       "htmlViewer/html-viewer.js",
-      "jqxcore.js",
-      "jqxsplitter.js",
+      "include/jqxcore.js",
+      "include/jqxsplitter.js",
       "jsEditor/js-editor.html!github:systemjs/plugin-text@0.0.3.js",
       "jsEditor/js-editor.js",
       "jsGutter/js-gutter.html!github:systemjs/plugin-text@0.0.3.js",
@@ -1512,8 +1517,10 @@ System.config({
       "npm:is-buffer@1.1.3/index.js",
       "npm:isarray@1.0.0.js",
       "npm:isarray@1.0.0/index.js",
-      "npm:jquery@2.2.2.js",
-      "npm:jquery@2.2.2/dist/jquery.js",
+      "npm:jquery@2.2.4.js",
+      "npm:jquery@2.2.4/dist/jquery.js",
+      "npm:jslinq@1.0.15.js",
+      "npm:jslinq@1.0.15/src/jslinq.js",
       "npm:md5@2.1.0.js",
       "npm:md5@2.1.0/md5.js",
       "npm:path-browserify@0.0.0.js",
@@ -1535,7 +1542,13 @@ System.config({
       "npm:source-map@0.2.0/lib/source-map/util.js",
       "pastebin/pastebin.html!github:systemjs/plugin-text@0.0.3.js",
       "pastebin/pastebin.js",
+      "persistence/firebase-manager.js",
       "theme-chrome.js",
+      "tracePlay/play.html!github:systemjs/plugin-text@0.0.3.js",
+      "tracePlay/play.js",
+      "traceSearch/trace-search-history.js",
+      "traceSearch/trace-search.html!github:systemjs/plugin-text@0.0.3.js",
+      "traceSearch/trace-search.js",
       "traceService/es-analyzer.js",
       "traceService/es-instrumenter.js",
       "traceService/es-tracer.js",
@@ -1543,14 +1556,17 @@ System.config({
       "traceService/external/esprima-node-factory.js",
       "traceService/trace-helper.js",
       "traceService/trace-model.js",
+      "traceService/trace-query-manager.js",
       "traceService/trace-service.js",
       "traceService/trace.js",
+      "traceView/trace-view-controller.js",
+      "traceView/trace-view-model.js",
       "utils/ace-utils.js",
-      "utils/trace-view-controller.js",
-      "utils/trace-view-model.js",
+      "utils/range.js",
       "visViewer/vis-viewer.html!github:systemjs/plugin-text@0.0.3.js",
       "visViewer/vis-viewer.js",
       "visualization/dataTable.js",
+      "visualization/scatterPlot.js",
       "visualization/visualization.html!github:systemjs/plugin-text@0.0.3.js",
       "visualization/visualization.js",
       "visualization/visualizationFactory.js"
@@ -1574,7 +1590,8 @@ System.config({
       "npm:d3@3.5.16/d3.js"
     ],
     "visualization/visualizationFactory.js": [
-      "visualization/dataTable.js"
+      "visualization/dataTable.js",
+      "visualization/scatterPlot.js"
     ],
     "visualization/visualization.js": [
       "npm:aurelia-framework@1.0.0-beta.1.2.1.js",
@@ -1596,6 +1613,9 @@ System.config({
       "npm:aurelia-logging@1.0.0-beta.1.2.0.js"
     ],
     "visualization/dataTable.js": [
+      "npm:d3@3.5.16.js"
+    ],
+    "visualization/scatterPlot.js": [
       "npm:d3@3.5.16.js"
     ],
     "traceService/trace-model.js": [
@@ -1657,12 +1677,10 @@ System.config({
     "npm:aurelia-task-queue@1.0.0-beta.1.2.0/aurelia-task-queue.js": [
       "npm:aurelia-pal@1.0.0-beta.1.2.0.js"
     ],
-    "utils/trace-view-controller.js": [
-      "utils/ace-utils.js",
-      "utils/trace-view-model.js"
+    "traceView/trace-view-controller.js": [
+      "traceView/trace-view-model.js"
     ],
     "traceService/trace-service.js": [
-      "traceService/trace-model.js",
       "traceService/es-tracer.js"
     ],
     "traceService/es-tracer.js": [
@@ -1671,7 +1689,7 @@ System.config({
       "traceService/es-instrumenter.js"
     ],
     "traceService/trace-helper.js": [
-      "traceService/trace-model.js"
+      "traceService/trace-query-manager.js"
     ],
     "traceService/es-analyzer.js": [
       "npm:esprima@2.7.2.js",
@@ -1682,6 +1700,9 @@ System.config({
       "traceService/external/esprima-node-factory.js",
       "traceService/external/auto-log-tracer.js"
     ],
+    "traceService/trace-query-manager.js": [
+      "npm:jslinq@1.0.15.js"
+    ],
     "npm:esprima@2.7.2.js": [
       "npm:esprima@2.7.2/esprima.js"
     ],
@@ -1690,6 +1711,12 @@ System.config({
     ],
     "npm:escodegen@1.8.0.js": [
       "npm:escodegen@1.8.0/escodegen.js"
+    ],
+    "traceService/external/auto-log-tracer.js": [
+      "traceService/trace-model.js"
+    ],
+    "npm:jslinq@1.0.15.js": [
+      "npm:jslinq@1.0.15/src/jslinq.js"
     ],
     "npm:estraverse@4.2.0/estraverse.js": [
       "npm:estraverse@4.2.0/package.json!github:systemjs/plugin-json@0.1.0.js"
@@ -1809,17 +1836,25 @@ System.config({
       "npm:aurelia-framework@1.0.0-beta.1.2.1.js",
       "npm:aurelia-event-aggregator@1.0.0-beta.1.2.0.js",
       "npm:aurelia-router@1.0.0-beta.1.2.0.js",
+      "traceService/trace-model.js",
+      "utils/ace-utils.js",
+      "persistence/firebase-manager.js",
       "htmlEditor/html-editor.js",
       "cssEditor/css-editor.js",
       "jsEditor/js-editor.js",
       "jsGutter/js-gutter.js",
       "htmlViewer/html-viewer.js",
+      "historyViewer/history-viewer.js",
       "chat/chat.js",
       "visViewer/vis-viewer.js",
       "consoleWindow/console-window.js",
-      "utils/trace-view-controller.js",
-      "jqxcore.js",
-      "jqxsplitter.js"
+      "include/jqxcore.js",
+      "include/jqxsplitter.js",
+      "traceView/trace-view-controller.js",
+      "expressionSelection/expression-selection.js",
+      "traceSearch/trace-search.js",
+      "traceSearch/trace-search-history.js",
+      "tracePlay/play.js"
     ],
     "htmlEditor/html-editor.js": [
       "mode-html.js",
@@ -1833,9 +1868,6 @@ System.config({
       "mode-javascript.js",
       "theme-chrome.js",
       "npm:md5@2.1.0.js"
-    ],
-    "jsGutter/js-gutter.js": [
-      "traceService/trace-model.js"
     ],
     "htmlViewer/html-viewer.js": [
       "traceService/trace-service.js"
@@ -1916,13 +1948,13 @@ System.config({
       "github:components/jquery@2.2.1.js"
     ],
     "github:components/jqueryui@1.11.4/jquery-ui.js": [
-      "npm:jquery@2.2.2.js"
+      "npm:jquery@2.2.4.js"
     ],
     "github:components/jquery@2.2.1.js": [
       "github:components/jquery@2.2.1/jquery.js"
     ],
-    "npm:jquery@2.2.2.js": [
-      "npm:jquery@2.2.2/dist/jquery.js"
+    "npm:jquery@2.2.4.js": [
+      "npm:jquery@2.2.4/dist/jquery.js"
     ]
   }
-})
+});

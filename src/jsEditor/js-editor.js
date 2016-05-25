@@ -1,42 +1,39 @@
-/* global Firepad */
-/* global Firebase */
+/* global $ */
 /* global ace */
+
 import '../mode-javascript';
 import '../theme-chrome';
 import md5 from 'md5';
-export class JsEditor {
 
-  constructor(eventAggregator) {
+export class JsEditor {
+  aceJsEditorDiv = "aceJsEditorDiv";
+  
+  constructor(eventAggregator, firebaseManager) {
     this.eventAggregator = eventAggregator;
+    this.firebaseManager = firebaseManager;
     this.hasErrors = false;
     this.editorHashedText = '1';
-    this.md5=md5;
+    this.md5 = md5;
+    this.height = 700;
   }
 
-  activate(params) {
-    this.pastebinId = params.id;
-  }
-
-  attached(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-
-    let editor = ace.edit('aceJsEditorDiv');
+  
+  attached() {
+    $(`#${this.aceJsEditorDiv}`).css("height",`${$("#mainContainer").height()}px`);
+    let editor = ace.edit(this.aceJsEditorDiv);
     this.configureEditor(editor);
-
-    this.editor = editor;
+    this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
 
     let session = editor.getSession();
     this.configureSession(session);
 
     let selection = editor.getSelection();
-    this.session = session;
     this.selection = selection;
-    this.firepad = this.createFirepad(editor);
-    this.setupSessionEvents(session);
+    this.setupSessionEvents(editor, session);
     this.subscribe(session);
     
+    this.session = session;
+    this.editor = editor;
 }
 
   configureEditor(editor){
@@ -51,12 +48,11 @@ export class JsEditor {
     session.setMode('ace/mode/javascript');
   }
 
-  setupSessionEvents(session) {
+  setupSessionEvents(editor, session) {
     let ea = this.eventAggregator;
-    let editor = this.editor;
     let editorHashedText = this.editorHashedText;
 
-     ea.publish("onEditorReady", this.editor);
+     ea.publish("onEditorReady", editor);
 
     session.on('change',
       onEditorChanged);
@@ -85,7 +81,6 @@ export class JsEditor {
             cursor: curs
           });
         }
-
 
       }, 2500);
     }
@@ -129,18 +124,6 @@ export class JsEditor {
     editor.on("click", ()=>{
         ea.publish("onEditorClick");
     });
-  }
-
-  createFirepad(editor) {
-    let baseURL = 'https://seecoderun.firebaseio.com';
-    this.pastenBinURL = baseURL + '/' + this.pastebinId + '/content/js';
-    let firebase = new Firebase(this.pastenBinURL);
-
-    return Firepad.fromACE(
-      firebase,
-      editor, {
-        defaultText: '\ngo(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
-      });
   }
 
   subscribe(session) {

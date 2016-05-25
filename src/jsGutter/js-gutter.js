@@ -1,33 +1,20 @@
-/* global Firepad */
-/* global Firebase */
-/* global ace */
+/* global $ */
 
-import {
-    TraceModel
-}
-from '../traceService/trace-model';
 export class JsGutter {
-
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
         this.selectedLine = '';
-        this.traceModel = new TraceModel();
-
     }
 
     attached() {
         this.iframeBody = $('#gutter');
-
+        $('#gutter').css("height",`${$("#mainContainer").height()}px`);
         this.subscribe();
-
     }
-
 
     publish(e) {
         let ea = this.eventAggregator;
-
         let info = {
-
             top: e.target.scrollTop
         };
 
@@ -64,16 +51,12 @@ export class JsGutter {
 
         });
 
-        //   Gettting vaules from TraceHelper 
-        let traceChangedEvent = this.traceModel.traceEvents.changed.event;
-        ea.subscribe(traceChangedEvent, payload => {
+        ea.subscribe("traceChanged", payload => {
             let traceHelper = payload.data;
             this.updateGutter(traceHelper.getValues());
         });
 
     }
-
-
 
     updateGutter(values) {
         this.clearGutter();
@@ -136,8 +119,5 @@ export class JsGutter {
             lines--;
         }
     }
-
-
-
-
+    
 }
