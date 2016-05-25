@@ -3,6 +3,8 @@ jspm_packages
 bower_components
 .idea
 .DS_STORE
+dist
+export
 build/reports
 coverage
 test/e2e/dist
