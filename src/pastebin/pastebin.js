@@ -7,7 +7,7 @@ import {TraceModel} from '../traceService/trace-model';
 import {AceUtils} from '../utils/ace-utils';
 import {FirebaseManager} from "../persistence/firebase-manager";
 
-import {NavBar} from '../layout/nav-bar';
+import {NavigationBar} from '../layout/navigationBar/navigation-bar';
 import {UserList} from '../userList/user-list';
 
 import {HtmlEditor} from '../htmlEditor/html-editor';
@@ -40,7 +40,7 @@ export class Pastebin {
     this.firebaseManager = firebaseManager;
     this.domElement = domElement;
     this.heading = 'Pastebin';
-    this.navBar = new NavBar();
+    this.navigationBar = new NavigationBar();
     this.userList = new UserList(firebaseManager);
     this.jsGutter = new JsGutter(eventAggregator);
     this.consoleWindow = new ConsoleWindow(eventAggregator);

@@ -12,7 +12,7 @@
     "jspm_packages/github/github/fetch@0.10.1.js",
     "jspm_packages/github/github/fetch@0.10.1/fetch.js",
     "jspm_packages/github/twbs/bootstrap@3.3.6/fonts/*",
-    "src/layout/SeeCodeRunTitle.png",
+    "res/*",
     "include/*.js",
     "styles/*.css"
   ]

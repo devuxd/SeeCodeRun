@@ -1,8 +1,9 @@
 <template bindable="console">
-    <span class='glyphicon glyphicon-console'></span>
-    <br>
-    <div repeat.for="output of console.log">
-        ${output}
+<require from="./console-window.css"></require>
+    <div id = "console-window" > <span class='glyphicon glyphicon-console'></span> <br>
+        <div repeat.for="output of console.log">
+            ${output}
+        </div>
     </div>
 </template>
 

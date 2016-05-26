@@ -1,4 +1,6 @@
 <template>
+  <require from="layout/codeSection/code-section.css"></require>
+  
   <require from="jsEditor/js-editor.html"></require>
   <require from="jsGutter/js-gutter.html"></require>
   <require from="htmlEditor/html-editor.html"></require>
@@ -20,6 +22,7 @@
         <div class="row">
           <div role="tabpanel">
             <ul class="nav nav-tabs">
+              <div id = "code-section-icon"><span class='glyphicon glyphicon-edit'></span></div>
               <li role="presentation" class="active">
                 <a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">JS</a></li>
               <li role="presentation">
@@ -52,11 +55,11 @@
         </div>
       </div>
         
-      <div id="main-splitter-right" >
-        
+      <div id="main-splitter-right">
         <div id="rightSplitter" class="col-md-5" style="padding-left: 2px; padding-right: 2px">
           <div id="right-splitter-top" class = "flow">
             <div role="tabpanel">
+              <span class='glyphicon glyphicon-globe'></span>
               <ul class="nav nav-tabs">
                 <li role="presentation" class="active">
                   <a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">Output</a></li>

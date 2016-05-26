@@ -10,6 +10,8 @@ System.config({
   },
   paths: {
     "*": "./dist/*",
+    "res": "./res/",
+    "styles": "./styles/",
     "include": "./include/",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"

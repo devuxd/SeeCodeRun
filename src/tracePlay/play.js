@@ -92,7 +92,7 @@ export class TracePlay{
 			let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
 			pixelPosition.pageY += editor.renderer.lineHeight;
 			updateTooltip(tooltip, pixelPosition, JSON.stringify(match.values));
-		    $("#remove").html("<span class='glyphicon glyphicon-eye-open'></span>");
+		    $("#remove").html("<span class='glyphicon glyphicon-eye-close'></span>");
         };
      	
      	$("#next").click(function (e){
@@ -123,7 +123,7 @@ export class TracePlay{
     	
     	$("#remove").click(function(){
     	    updateTooltip(tooltip, {pageY: 0, pageX: 0});
-		    $("#remove").html("<span class='glyphicon glyphicon-eye-close'></span>");
+		    $("#remove").html("<span class='glyphicon glyphicon-eye-open'></span>");
     	});
     }
 }

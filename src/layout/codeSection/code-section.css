@@ -1,0 +1,20 @@
+/* container-icon class for all*/
+#code-section-icon {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+}
+#code-section-icon {
+  z-index: 10;
+}
+
+#code-section-icon span{
+ display: block;
+}
+
+#code-section-icon:hover span{
+  display: none;
+}

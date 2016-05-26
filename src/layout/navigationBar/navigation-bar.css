@@ -1,3 +1,18 @@
+/*.navbar {*/
+/*    max-height: 40px;*/
+/*}*/
+/*#navigation-bar label{*/
+/*    font-size: 10px;*/
+/*    cursor: pointer;*/
+/*}*/
+/*#navigation-bar label{*/
+/*    display: none;*/
+/*}*/
+
+/*#navigation-bar:hover label{*/
+/*    display: block;*/
+/*}*/
+
 #vis-navbar {
     padding-bottom: 5px;
 }

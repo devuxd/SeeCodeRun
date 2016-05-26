@@ -1,0 +1,17 @@
+#console-window span{
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+}
+#console-window span{
+  z-index: 10;
+}
+
+#console-window span{
+ display: block;
+}
+
+#console-window:hover span{
+  display: none;
+}
