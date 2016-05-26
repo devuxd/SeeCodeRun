@@ -12,6 +12,10 @@ export class FirebaseManager{
         }
     }
     
+    makePastebinFirebaseReference(){
+        return new Firebase(`${this.baseURL}/${this.pastebinId}/`);
+    }
+    
     makeTraceSearchHistoryFirebase(){
         return new Firebase(`${this.baseURL}/${this.pastebinId}/content/search`);
     }

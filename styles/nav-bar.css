@@ -1,0 +1,45 @@
+#vis-navbar {
+    padding-bottom: 5px;
+}
+ 
+.navbar-nav .loader {
+    margin: 10px 10px 10px 10px;
+}
+
+.navbar .navbar-brand img {
+    height: 110%;
+}
+
+.navbar-item {
+    margin-top: 4px;
+    color: #888888;
+    font-size: 16px;
+}
+
+ul.nav li a,
+ul.nav li a:visited {
+    color: #888888;
+    font-size: 16px;
+}
+
+.glyphicon {
+    padding-right: 4px;
+    font-size: 16px;
+}
+
+
+ul.nav li a:hover,
+ul.nav li a:active {
+    background-color: #f8f8f8;
+    border-style: solid;
+    border-width: 5px;
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    border-bottom-color: #0066ff;
+}
+
+ul.nav .active a {
+    color: #888888;
+    font-size: 16px;
+}

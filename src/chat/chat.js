@@ -6,7 +6,7 @@ export class Chat {
     this.firebaseManager = firebaseManager;
   }
   
-  attached(params) {
+  attached() {
     let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
     let $chat = $('#chatDiv');
     
@@ -44,7 +44,7 @@ export class Chat {
         messageList[0].scrollTop = messageList[0].scrollHeight;
     });
 
-    $('#hide').click(function hideChatBox() {
+    $('#hideChatBox').click(function hideChatBox() {
       $chat.toggle();
       let isVisible = $chat.is( ":visible" );
       if(isVisible){

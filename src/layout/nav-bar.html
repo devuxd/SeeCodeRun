@@ -1,27 +1,34 @@
 <template bindable="router">
-
-	<nav class="navbar navbar-default navbar-fixed-top">
-		<div class="container-fluid">
-
-			<div class="navbar navbar-brand">
-				<img src="src\layout\SeeCodeRunTitle.png" alt="See Code Run">
-			</div>
-
-			<ul class="nav navbar-nav navbar-right">
-				<li>
-					<div id="hide" class="btn navbar-chat"><span class='glyphicon glyphicon-share'></span>Chat</a></div>
-				</li>
-				<li>
-					<a href="https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!"><span class='glyphicon glyphicon-question-sign'></span>Help</a>
-				</li>
-				<li>
-					<a href="mailto:contact@seecode.run"><span class='glyphicon glyphicon-envelope'></span>Contact Us</a>
-				</li>
-				<li>
-					<a href="https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run"><span class='glyphicon glyphicon-info-sign'></span>About</a>
-				</li>
-			</ul>
-		</div>
+<div class="container-fluid">
+	<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+		<div class="navbar-header">
+	      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+	        <span class="sr-only">Toggle Navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
+	      <a class="navbar-brand" href.bind="router.pastebinId">
+	        <img src="src\layout\SeeCodeRunTitle.png" alt="${router.title}">
+	      </a>
+	    </div>
+		<ul class="nav navbar-nav navbar-right" id="navbar-collapse-1">
+			<li>
+				<div id="hideUserList" class="btn navbar-item"><span class='glyphicon glyphicon-user'></span>Users</div>
+			</li>
+			<li>
+				<div id="hideChatBox" class="btn navbar-item"><span class='glyphicon glyphicon-share'></span>Chat</div>
+			</li>
+			<li>
+				<div class="btn navbar-item" onclick="location.href='https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!'"><span class='glyphicon glyphicon-question-sign'></span>Help</div>
+			</li>
+			<li>
+				<div class="btn navbar-item" onclick="location.href='mailto:contact@seecode.run'"><span class='glyphicon glyphicon-envelope'></span>Contact Us</div>
+			</li>
+			<li>
+				<div class="btn navbar-item" onclick="https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run'"><span class='glyphicon glyphicon-info-sign'></span>About	&nbsp;</div>
+			</li>
+		</ul>
 	</nav>
-
+</div>
 </template>

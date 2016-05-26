@@ -8,13 +8,14 @@
   <require from="htmlViewer/html-viewer.html"></require>
   <require from="consoleWindow/console-window.html"></require>
   <require from="chat/chat.html"></require>
+  <require from="userList/user-list.html"></require>
   <require from="tracePlay/play.html"></require>
   <require from="traceSearch/trace-search.html"></require>
   
 
-  <div id = "mainContainer"class="container-fluid" style="padding-left: 0px; padding-right: 0px; padding-left: 7px;">
+  <div id = "mainContainer"class="container-fluid" style="padding-left: 0px; padding-right: 0px;">
 
-    <div id="mainSplitter" class="col-md-7" style="padding-left: 2px; padding-right: 2px">
+    <div id="mainSplitter" class="col-md-7" >
       <div id="main-splitter-left">
         <div class="row">
           <div role="tabpanel">
@@ -79,12 +80,10 @@
           </div>
           <div id="right-splitter-bottom"  class= "flow" >
             <console-window console.bind='consoleWindow'></console-window>
-            <chat chat.bind="chat" id="link"></chat>
           </div>
         </div>
       </div>
     </div>
-
-  </div>
-
+ <chat chat.bind="chat" id="link"></chat>
+ <user-list userList.bind="userList" id="link"></user-list>
 </template>
