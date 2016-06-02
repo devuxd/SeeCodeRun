@@ -1,27 +1,27 @@
 <template bindable="tracePlay">
-	<div class="row">
-            <p style="padding:10px;"></p>
-    </div>
     <div class="panel panel-default">
-        <div class="panel-heading">
-          <b>Trace Player</b>
+        <div class="panel-heading" data-toggle="collapse" href="#tracePlayerPanelBody">
+            <span class='glyphicon glyphicon-play-circle'></span>Trace Player
         </div>
-    <div class="panel-body">
-        
-        <div class="row">
-            <div class="col col-sm-2">
-                <button class="btn btn-primary btn-block" id="prev" title="Previous"><span class='glyphicon glyphicon-backward'></span></button>
-            </div>
-            <div class="col col-sm-2">
-                <button class="btn btn-success btn-block" id="play" title="Auto-Play pr pause the collected trace"><span class='glyphicon glyphicon-play'></span></button>
-            </div>
-            <div class="col col-sm-2">
-                <button class="btn btn-primary btn-block" id="next" title="Next"><span class='glyphicon glyphicon-forward'></span></button>
-            </div>
-            <div class="col col-sm-3">
-                <button class="btn btn-warning btn-block" id="remove" data-toggle="tooltip" data-placement="top" title="Hide Tooltip"><span class='glyphicon glyphicon-eye-open'></span></button>
+        <div id="tracePlayerPanelBody" class="panel-body">
+            <div class="btn-toolbar" role="toolbar" aria-label="play menu">
+                <div class="btn-group" role="group" aria-label="play buttons">
+                    <button class="btn btn-default btn-primary" id="prev" title="Previous">
+                        <span class='glyphicon glyphicon-backward'></span>
+                    </button>
+                    <button class="btn btn-success" id="play" title="Auto-Play or pause the collected trace">
+                        <span class='glyphicon glyphicon-play'></span>
+                    </button>
+                    <button class="btn btn-primary" id="next" title="Next">
+                        <span class='glyphicon glyphicon-forward'></span>
+                    </button>
+                </div>
+                <div class="btn-group" role="group" aria-label="hide or show info">
+                    <button class="btn btn-warning" id="remove" data-toggle="tooltip" data-placement="top" title="Hide Info">
+                        <span class='glyphicon glyphicon-eye-open'></span>
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 </template>

@@ -19,7 +19,7 @@ export class JsEditor {
 
   
   attached() {
-    $(`#${this.aceJsEditorDiv}`).css("height",`${$("#mainContainer").height()}px`);
+    $(`#${this.aceJsEditorDiv}`).css("height",`${$("#mainContainer").height() + $("#mainContainer").offset()['top'] - $("#js-container").offset()['top']}px`);
     let editor = ace.edit(this.aceJsEditorDiv);
     this.configureEditor(editor);
     this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
@@ -123,6 +123,14 @@ export class JsEditor {
     //For exprssions selection
     editor.on("click", ()=>{
         ea.publish("onEditorClick");
+    });
+    
+    editor.getSession().on('changeScrollTop', function(scrollTop) {
+        let info = {
+            top: scrollTop
+        };
+
+        ea.publish('jsEditorchangeScrollTop', info);
     });
   }
 

@@ -8,12 +8,16 @@ export class FirebaseManager{
         if(pastebinId){
             this.pastebinId = pastebinId;
         }else{
-            this.pastebinId = new Firebase(this.baseURL).push().key();
+            this.pastebinId = this.makeNewPastebinFirebaseReferenceId();
         }
     }
     
-    makePastebinFirebaseReference(){
-        return new Firebase(`${this.baseURL}/${this.pastebinId}/`);
+    makeNewPastebinFirebaseReferenceId(){
+        return new Firebase(this.baseURL).push().key();
+    }
+    
+    makePastebinFirebaseReference(pastebinId = this.pastebinId ){
+        return new Firebase(`${this.baseURL}/${pastebinId}/`);
     }
     
     makeTraceSearchHistoryFirebase(){
@@ -49,4 +53,15 @@ export class FirebaseManager{
             defaultText: defaultText
           });
     }
+    
+    makePastebinFirebaseReferenceCopy(source, destination) {
+        source.once("value", function(snapshot) {
+            destination.set(snapshot.val(), function(error) {
+                if (error && typeof(console) !== 'undefined' && console.error) {
+                    console.error(error);
+                }
+            });
+        });
+    }
+    
 }

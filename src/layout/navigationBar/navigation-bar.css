@@ -12,7 +12,13 @@
 /*#navigation-bar:hover label{*/
 /*    display: block;*/
 /*}*/
-
+#shareBox {
+    width: 800px;
+    float: right;
+    position: absolute;
+  display: none;
+  /*top: 200;*/
+}
 #vis-navbar {
     padding-bottom: 5px;
 }

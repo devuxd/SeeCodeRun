@@ -1,5 +1,9 @@
-/* global $ */
+import {customElement} from 'aurelia-framework';
 
+import $ from 'jquery';
+import { draggable, resizable } from 'jquery-ui';
+
+@customElement('chat')
 export class Chat {
 
   constructor(firebaseManager) {
@@ -44,15 +48,13 @@ export class Chat {
         messageList[0].scrollTop = messageList[0].scrollHeight;
     });
 
-    $('#hideChatBox').click(function hideChatBox() {
+    $('#chatButton').click(function hideChatBox() {
       $chat.toggle();
-      let isVisible = $chat.is( ":visible" );
-      if(isVisible){
-        $chat.draggable();
-        $chat.resizable({
-          handles: "n, e, s, w"
-        });
-      }
+    });
+
+    $chat.draggable();
+    $chat.resizable({
+      handles: "n, e, s, w"
     });
   }
 }

@@ -1,13 +1,14 @@
 <template bindable="router">
 <require from="./navigation-bar.css"></require>
+<require from="../../share/share-box.html"></require>
+<require from="../../userList/user-list.html"></require>
+ <require from="../../chat/chat.html"></require>
+
 	<div id="navigation-bar" class="container-fluid">
 		<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
 			<div class="navbar-header">
 		      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
-		        <span class="sr-only">Toggle Navigation</span>
-		        <span class="icon-bar"></span>
-		        <span class="icon-bar"></span>
-		        <span class="icon-bar"></span>
+		        <span class='glyphicon glyphicon-menu-hamburger'></span>
 		      </button>
 		      <a class="navbar-brand" href.bind="router.pastebinId">
 		        <img src="res/SeeCodeRunTitle.png" alt="${router.title}">
@@ -15,14 +16,23 @@
 		    </div>
 			<ul class="nav navbar-nav navbar-right" id="navbar-collapse-1">
 				<li>
-					<div id="hideUserList" class="btn navbar-item">
+					<div id="userlistButton" class="btn navbar-item">
 						<span class='glyphicon glyphicon-user'></span>
 						<label>Users</label>
 					</div>
 				</li>
 				<li>
-					<div id="hideChatBox" class="btn navbar-item">
+					<div id="shareButton" class="btn navbar-item">
 						<span class='glyphicon glyphicon-share'></span>
+						<label>Share</label>
+					</div>
+					<div id="shareBox" >
+						<share-box shareBox.bind="shareBox"></share-box>
+					</div>
+				</li>
+				<li>
+					<div id="chatButton" class="btn navbar-item">
+						<span class='glyphicon glyphicon-comment'></span>
 						<label>Chat</label>
 					</div>
 				</li>
@@ -46,5 +56,9 @@
 				</li>
 			</ul>
 		</nav>
+  		<user-list userList.bind="userList"></user-list>
+   		<chat chat.bind="chatBox"></chat>
 	</div>
+	
+		
 </template>

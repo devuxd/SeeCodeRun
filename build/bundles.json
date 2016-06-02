@@ -29,11 +29,12 @@
         "aurelia-history-browser",
         "aurelia-logging-console",
         "bootstrap",
-        "bootstrap/css/bootstrap.css!text"
+        "bootstrap/css/bootstrap.css!text",
+        "aurelia-computed"
       ],
       "options": {
         "inject": true,
-        "minify": false,
+        "minify": true,
         "rev": true
       }
     }

@@ -1,10 +1,14 @@
 import 'bootstrap';
-import 'jquery-ui';
+// import 'jquery-ui';
 
 export function configure(aurelia) {
   aurelia.use
     .standardConfiguration()
-    .developmentLogging();
+    // .developmentLogging()
+    .plugin('aurelia-computed', {
+      // enableLogging: true
+    })
+    ;
 
   //Uncomment the line below to enable animation.
   //aurelia.use.plugin('aurelia-animator-css');

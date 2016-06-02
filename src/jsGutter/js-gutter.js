@@ -8,24 +8,22 @@ export class JsGutter {
 
     attached() {
         this.iframeBody = $('#gutter');
-        $('#gutter').css("height",`${$("#mainContainer").height()}px`);
+        $('#gutter').css("height",`${$("#js-editor-code").height()}px`);
+        
         this.subscribe();
     }
-
-    publish(e) {
-        let ea = this.eventAggregator;
-        let info = {
-            top: e.target.scrollTop
-        };
-
-        ea.publish('onScrolled', info);
-    }
-
-
 
     subscribe() {
         let ea = this.eventAggregator;
 
+        $('#gutter').scroll(function scroll(e) {
+                let info = {
+                    top: e.target.scrollTop
+                };
+        
+                ea.publish('onScrolled', info);
+            }
+        );
         ea.subscribe('onCursorMoved', info => {
 
             let lastDiv = this.getLastDiv();
@@ -55,6 +53,12 @@ export class JsGutter {
             let traceHelper = payload.data;
             this.updateGutter(traceHelper.getValues());
         });
+        
+        ea.subscribe("jsEditorchangeScrollTop", payload => {
+            let scrollTop = payload.top;
+            this.iframeBody.scrollTop(scrollTop);
+        });
+
 
     }
 
@@ -63,6 +67,7 @@ export class JsGutter {
         for (let value of values) {
             this.setContentGutter(value.range.start.row + 1, value.id + " = " + value.value);
         }
+        this.eventAggregator.publish("jsGutterUpdated", {data:values});
     }
 
     setContentGutter(line, contents) {
@@ -80,6 +85,7 @@ export class JsGutter {
             this.iframeBody.find("#line" + indexOfDiv).addClass("line_height");
         }
     }
+    
     getLastDiv() {
         let indexOfDiv = 1;
         while (this.iframeBody.find('#line' + indexOfDiv).length != 0) {
@@ -87,12 +93,14 @@ export class JsGutter {
         }
         return indexOfDiv;
     }
+    
     removeLine(lastline, lastDiv) {
         while (lastline < lastDiv) {
             this.iframeBody.find('#line' + lastDiv).remove();
             lastDiv--;
         }
     }
+    
     highlightLine(line, lastline) {
 
         let lastDiv = this.getLastDiv();

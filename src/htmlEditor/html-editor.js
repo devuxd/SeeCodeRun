@@ -12,6 +12,7 @@ export class HtmlEditor {
   }
     
   attached() {
+    $('#aceHtmlEditorDiv').css("height",`${$("#js-editor-code").height()}px`);
     let editor = ace.edit(this.aceHtmlEditorDiv);
     this.configureEditor(editor);
     this.firepad = this.firebaseManager.makeHtmlEditorFirepad(editor);

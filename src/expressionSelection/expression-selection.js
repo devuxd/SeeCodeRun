@@ -1,7 +1,6 @@
 export class ExpressionSelection {
 
     constructor(eventAggregator) {
-
         this.ea = eventAggregator;
         this.selectedExpressions = [];
         this.currentTarget;
@@ -9,11 +8,9 @@ export class ExpressionSelection {
         this.click = false;
         this.selectedExpressionsChanged = false;
         this.subscribe();
-
     }
 
     subscribe() {
-
         this.ea.subscribe("onExpressionHover", payload => {
             this.currentTarget = payload;
             this.setMarker();
@@ -39,7 +36,6 @@ export class ExpressionSelection {
     }
 
     setMarker() {
-
         if (this.currentTarget) {
 
             if (this.click) {
@@ -94,6 +90,5 @@ export class ExpressionSelection {
             items: this.selectedExpressions
         });
     }
-
 
 }
