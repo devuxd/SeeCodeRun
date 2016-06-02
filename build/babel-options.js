@@ -2,7 +2,7 @@ module.exports = {
   modules: 'system',
   moduleIds: false,
   comments: false,
-  compact: true,
+  compact: false,
   stage: 2,
   optional: [
     'es7.decorators',

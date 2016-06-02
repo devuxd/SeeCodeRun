@@ -1,5 +1,17 @@
 {
   "bundles": {
+    "dist/common/lib": {
+      "includes": [
+        "jquery",
+        "bootstrap"
+      ],
+      "options": {
+        "inject": true,
+        "minify": false,
+        "depCache": true,
+        "rev": false
+      }
+    },
     "dist/app-build": {
       "includes": [
         "include/*.js",
@@ -10,7 +22,7 @@
       ],
       "options": {
         "inject": true,
-        "minify": true,
+        "minify": false,
         "depCache": true,
         "rev": true
       }
@@ -34,7 +46,7 @@
       ],
       "options": {
         "inject": true,
-        "minify": true,
+        "minify": false,
         "rev": true
       }
     }

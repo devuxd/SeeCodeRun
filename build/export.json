@@ -4,6 +4,8 @@
     "config.js",
     "favicon.ico",
     "LICENSE",
+    "jspm_packages/npm/aurelia-bootstrapper@1.0.0-beta.1.2.1.js",
+    "jspm_packages/github/twbs/bootstrap@3.3.6/js/bootstrap.js",
     "jspm_packages/system.js",
     "jspm_packages/system-polyfills.js",
     "jspm_packages/system-csp-production.js",
