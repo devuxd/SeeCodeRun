@@ -19,25 +19,20 @@
     
     background-repeat: no-repeat;
     background-position: 50%;
-    
-    z-index: 100;
 }
 
 
 .gutter.gutter-horizontal {
     cursor: ew-resize;
     background-image: url('../res/vertical.png');
-    z-index: 100;
 }
 
 .gutter.gutter-vertical {
     cursor: ns-resize;
     background-image: url('../res/horizontal.png');
-    z-index: 100;
 }
 
 .split.split-horizontal, .gutter.gutter-horizontal {
     height: 100%;
     float: left;
-    z-index: 100;
 }

@@ -1,23 +1,8 @@
-/*.navbar {*/
-/*    max-height: 40px;*/
-/*}*/
-/*#navigation-bar label{*/
-/*    font-size: 10px;*/
-/*    cursor: pointer;*/
-/*}*/
-/*#navigation-bar label{*/
-/*    display: none;*/
-/*}*/
-
-/*#navigation-bar:hover label{*/
-/*    display: block;*/
-/*}*/
 #shareBox {
     width: 800px;
     float: right;
     position: absolute;
-  display: none;
-  /*top: 200;*/
+    display: none;
 }
 #vis-navbar {
     padding-bottom: 5px;
@@ -34,18 +19,19 @@
 .navbar-item {
     margin-top: 4px;
     color: #888888;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 ul.nav li a,
 ul.nav li a:visited {
     color: #888888;
-    font-size: 16px;
+    font-size: 14px;
+    font-style: italic;
 }
 
 .glyphicon {
     padding-right: 4px;
-    font-size: 16px;
+    font-size: 12px;
 }
 
 
@@ -53,7 +39,7 @@ ul.nav li a:hover,
 ul.nav li a:active {
     background-color: #f8f8f8;
     border-style: solid;
-    border-width: 5px;
+    border-width: 2px;
     border-left: none;
     border-top: none;
     border-right: none;
@@ -62,5 +48,5 @@ ul.nav li a:active {
 
 ul.nav .active a {
     color: #888888;
-    font-size: 16px;
+    font-weight: bold;
 }

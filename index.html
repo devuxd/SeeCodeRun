@@ -1,39 +1,40 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-	<title>SeeCode.Run</title>
-	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<head>
+		<title>SeeCode.Run</title>
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+			
+		<link rel="stylesheet" href="styles/w3.css" />
+		<link rel="stylesheet" href="styles/styles.css">
 		
-	<link rel="stylesheet" href="styles/w3.css" />
-	<link rel="stylesheet" href="styles/styles.css">
+		<link rel="stylesheet" href="styles/split.js.css" />
+		<link rel="stylesheet" href="styles/firepad-user-list.css" />
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+	</head>
 	
-	<link rel="stylesheet" href="styles/split.js.css" />
-	<link rel="stylesheet" href="styles/firepad-user-list.css" />
+	<body aurelia-app="main">
+		<div class="splash">
+			<div class="message">SeeCode.Run</div>
+			<i class="fa fa-spinner fa-spin"></i>
+			<footer class="w3-container w3-blue">
+			  <h5>&copy;George Mason University, 2015</h5>
+			</footer>
+		</div>
 	
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-
-<body aurelia-app="main">
-	<div class="splash">
-		<div class="message">SeeCode.Run</div>
-		<i class="fa fa-spinner fa-spin"></i>
-	</div>
-
-	<script src="jspm_packages/system.js"></script>
-	<script src="config.js"></script>
-
-	<script>
-		System.import('aurelia-bootstrapper');
-	</script>
-
-	<script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
-	<script src="https://ajaxorg.github.io/ace-builds/src-min-noconflict/ace.js"></script>
-	<script src="https://cdn.firebase.com/libs/firepad/1.3.0/firepad.js"></script>
+		<script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
+		<script src="https://ajaxorg.github.io/ace-builds/src-min-noconflict/ace.js"></script>
+		<script src="https://cdn.firebase.com/libs/firepad/1.3.0/firepad.js"></script>
+		
+		<script src="include/pure-js-pre-loader.js"></script>
+		<script src="include/split.js"></script>
+		
+		<script src="jspm_packages/system.js"></script>
+		<script src="config.js"></script>
 	
-	<script src="include/pure-js-pre-loader.js"></script>
-	<script src="include/split.js"></script>
-</body>
-
+		<script>
+			System.import('aurelia-bootstrapper');
+		</script>
+	</body>
 </html>

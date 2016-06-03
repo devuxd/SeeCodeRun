@@ -106,13 +106,21 @@ export class TraceViewModel {
     
     extractTraceGutterData(trace){
 	    let result = {  maxCount : 0, rows : []  };
-
         for (let i = 0; i < trace.length; i ++) {
             let entry = trace[i];
 			let row = entry.range.start.row;
 
 			if(!result.rows.hasOwnProperty(row)){
-             result.rows[row] = {count: entry.count, text: "This block has been called " + entry.count + " times"};
+			    let navigator = `
+			    <div class = "w3-container">
+			        <div class = "w3-row">This block has been called ${entry.count} time(s)</div>
+			        <div class = "w3-row">
+			            <div class = "w3-container w3-half">Previous</div>
+			            <div class = "w3-container w3-half">Next</div>
+			        </div>
+			     </div>`;
+
+                result.rows[row] = {count: entry.count, text: navigator};
 			}
             
             if(result.maxCount< entry.count){
