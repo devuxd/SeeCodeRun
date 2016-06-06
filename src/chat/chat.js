@@ -27,7 +27,8 @@ export class Chat {
 
         chatFirebaseRef.push({
           name: username,
-          text: message
+          text: message,
+          color: "80b9ff"
         });
         messageField.val('');
       }
@@ -38,9 +39,10 @@ export class Chat {
         let data = snapshot.val();
         let username = data.name;
         let message = data.text;
+        let color = data.color;
   
         let messageElement = $("<li>");
-        let nameElement = $("<strong class='seecoderun-chat-username'></strong>");
+        let nameElement = $(`<strong style = "color: #${color}" class='seecoderun-chat-username'></strong>`);
         nameElement.text(username);
         messageElement.text(message).prepend(nameElement);
   

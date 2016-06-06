@@ -85,7 +85,7 @@ export class AceUtils{
                     text = dataModel.rows[row].text; 
     				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
     				pixelPosition.pageY += editor.renderer.lineHeight;
-    				updateTooltip(tooltip, pixelPosition, text);
+    				updateTooltip(tooltip, pixelPosition, JSON.stringify(text));
     		}
     		e.stop(); 
     		 
@@ -172,11 +172,13 @@ export class AceUtils{
 			}
 		
 			if(content){
-				div.style.display = "block";
+			//	div.style.display = "block";
+				$('#tooltip_0').popover("show");
 				div.innerHTML = content;
 			}else{
-				div.style.display = "none";
-				div.innerHTML = "";
+			//	div.style.display = "none";
+					$('#tooltip_0').popover("hide");
+			//	div.innerHTML = "";
 			}
 	}
     

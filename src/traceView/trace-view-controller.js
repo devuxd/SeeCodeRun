@@ -15,10 +15,15 @@ export class TraceViewController{
         let tooltip = document.getElementById('tooltip_0');
         
         if(tooltip === null){
-        			tooltip = document.createElement('div');		
+        			tooltip = document.createElement('div');
         			tooltip.setAttribute('id', 'tooltip-0'); 
+        			tooltip.setAttribute('title', 'Navigation'); 
+        			tooltip.setAttribute('data-toggle', 'popover');  
+        			tooltip.setAttribute('data-placement', 'right'); 
+        			tooltip.setAttribute('data-content', 'Branch'); 
         			tooltip.setAttribute('class', 'seecoderun-tooltip'); 
         			document.body.appendChild(tooltip);
+        			$('#tooltip_0').popover(); 
         }
         
         
@@ -27,7 +32,7 @@ export class TraceViewController{
         traceViewModel.attached();
         
         aceUtils.setTraceGutterRenderer(editor, traceViewModel.traceGutterData);
-    	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceViewModel.traceGutterData);
+    	aceUtils.subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, traceViewModel.traceGutterData, traceViewModel.tooltipUpdateWithDelay);
     	
     	this.editor = editor;
         this.gutterDecorationClassName = gutterDecorationClassName;
