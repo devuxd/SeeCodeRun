@@ -56,7 +56,7 @@ export class AceUtils{
     
     subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
      	editor.on("guttermousemove", function(e){ 
-    	    updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
+    	   // updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
     		let target = e.domEvent.target;
     		
     		if(!dataModel){
@@ -79,13 +79,12 @@ export class AceUtils{
     			return; 
     		}
     		let row = e.getDocumentPosition().row;
-    		let text = "";
-    		
+    		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
-                    text = dataModel.rows[row].text; 
+    		        content = dataModel.rows[row].text; 
     				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
     				pixelPosition.pageY += editor.renderer.lineHeight;
-    				updateTooltip(tooltip, pixelPosition, JSON.stringify(text));
+    				updateTooltip(tooltip, pixelPosition, content);
     		}
     		e.stop(); 
     		 
@@ -172,13 +171,11 @@ export class AceUtils{
 			}
 		
 			if(content){
-			//	div.style.display = "block";
-				$('#tooltip_0').popover("show");
+				div.style.display = "block";
 				div.innerHTML = content;
 			}else{
-			//	div.style.display = "none";
-					$('#tooltip_0').popover("hide");
-			//	div.innerHTML = "";
+				div.style.display = "none";
+				div.innerHTML = "";
 			}
 	}
     
