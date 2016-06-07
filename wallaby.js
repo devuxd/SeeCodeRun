@@ -5,12 +5,9 @@ var babel = require('babel');
 module.exports = function(wallaby) {
   return {
     files: [
-
       {pattern: 'jspm_packages/system.js', instrument: false},
       {pattern: 'config.js', instrument: false},
-
       {pattern: 'src/**/*.js', load: false}
-
     ],
 
     tests: [

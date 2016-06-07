@@ -1,0 +1,17 @@
+.wrap {
+    width: 100%;
+    font-size: 0;
+}
+.resizable {
+    width: 50%;
+    display: inline-block;
+}
+
+.ui-resizable-e { 
+    cursor: e-resize; 
+    width: 2px; 
+    right: -1px; 
+    top: 0; 
+    bottom: 0; 
+    background-color: #eee;
+}

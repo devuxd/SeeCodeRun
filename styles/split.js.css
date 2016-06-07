@@ -1,0 +1,38 @@
+.split {
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+    
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 100;
+}
+
+.content {
+    border: 1px solid #C0C0C0;
+    box-shadow: inset 0 1px 2px #e4e4e4;
+    background-color: #fff;
+}
+
+.gutter {
+    background-color: #eee;
+    
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+
+.gutter.gutter-horizontal {
+    cursor: ew-resize;
+    background-image: url('../res/vertical.png');
+}
+
+.gutter.gutter-vertical {
+    cursor: ns-resize;
+    background-image: url('../res/horizontal.png');
+}
+
+.split.split-horizontal, .gutter.gutter-horizontal {
+    height: 100%;
+    float: left;
+}

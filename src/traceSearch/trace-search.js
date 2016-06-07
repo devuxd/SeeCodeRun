@@ -22,7 +22,6 @@ export class TraceSearch {
             traceHelper: undefined,
         };
         this.subscribe();
-
     }
 
     attached() {

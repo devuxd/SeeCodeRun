@@ -4,17 +4,21 @@
     "config.js",
     "favicon.ico",
     "LICENSE",
+    "jspm_packages/npm/aurelia-bootstrapper@1.0.0-beta.1.2.1.js",
+    "jspm_packages/github/twbs/bootstrap@3.3.6/js/bootstrap.js",
     "jspm_packages/system.js",
     "jspm_packages/system-polyfills.js",
     "jspm_packages/system-csp-production.js",
-    "jspm_packages/npm/font-awesome@4.5.0/css/font-awesome.min.css",
-    "jspm_packages/npm/font-awesome@4.5.0/fonts/*",
+    "jspm_packages/github/systemjs/plugin-text@0.0.3.js",
+    "jspm_packages/github/systemjs/plugin-text@0.0.3/text.js",
+    "jspm_packages/npm/font-awesome@4.6.3/css/font-awesome.css",
+    "jspm_packages/npm/font-awesome@4.6.3/fonts/*",
     "jspm_packages/github/github/fetch@0.10.1.js",
     "jspm_packages/github/github/fetch@0.10.1/fetch.js",
     "jspm_packages/github/twbs/bootstrap@3.3.6/fonts/*",
-    "src/layout/SeeCodeRunTitle.png",
-    "styles/*.css",
-    "dist/jqxcore.js",
-    "dist/jqxsplitter.js"
+    "jspm_packages/npm/aurelia-computed@0.9.1.js",
+    "res/**/*",
+    "include/*.js",
+    "styles/*.css"
   ]
 }

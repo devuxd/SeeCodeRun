@@ -1,60 +1,55 @@
 <template bindable="search">
-  <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
-
-  <div class="container-fluid">
-    <div class="w3-group">
-      <div class="row">
-        <div class="col-md-4">
-          <label class="w3-label">Filter By</label>
-          <select class="w3-select" style="margin-top: 9px;" name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
-            <option selected disabled>select a filter</option>
+  <div class="panel panel-default">
+    <div class="panel-heading" data-toggle="collapse" href="#traceSearchPanelBody">
+            <span class='glyphicon glyphicon-search'></span>Trace Search
+    </div>
+    <div id="traceSearchPanelBody" class="panel-body">
+      <div class="w3-row-padding">
+        <div class="w3-quarter">
+          <label class="w3-label w3-text-blue">Filter By</label>
+          <select class="w3-select w3-hover-light-grey w3-text-blue"  name="searchFilter" id="searchFilter" value.bind="search.selectedFilter" change.trigger="search.filterChanged()">
+            <option selected disabled class="w3-text-blue" >select a filter</option>
             <option>${search.options.none}</option>
             <option>${search.options.any}</option>
             <option>${search.options.id}</option>
             <option>${search.options.value}</option>
           </select>
         </div>
-        <div class="col-md-4">
-          <label class="w3-label">Search Term</label>
-          <input class="w3-input" type="text" name="searchTerm" id="searchTerm" placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue" list = "filteredOptions"> 
-            <datalist id="filteredOptions" > <option repeat.for="row of search.filteredOptions" innerHTML.bind="row"></option> </datalist>
+        <div class="w3-rest">
+          <label class="w3-label w3-text-blue">Search Term</label>
+          <input id="searchTerm" w3-text-blue type="text" class="w3-input  w3-hover-light-grey" name="searchTerm"  placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue" list = "filteredOptions"> 
+          <label class="w3-label w3-text-grey" if.bind="!search.noResult && !search.noSearchYet">Matches: <span class="w3-badge w3-green">${search.numberOfResult}</span></label>
+            <datalist id="filteredOptions" >
+               <option repeat.for="row of search.filteredOptions" innerHTML.bind="row"></option> 
+            </datalist>
         </div>
-        <div class="col-md-4">
-          <br>
-          <br>
-          <div if.bind="!search.noResult && !search.noSearchYet">Number of Search Results: ${search.numberOfResult}</div>
+      </div>
+    <div class="container-fluid" if.bind="!search.noResult && !search.noSearchYet">
+      <a id="link" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut()" ></a>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut({$index})" class="table-hover"
+            id="link" click.delegate="search.doOnClickJumpToCode({$index})"> 
+            <td innerHTML.bind="row.id"><a href="#link" click.delegate="search.doOnClickHighlight({$index})"></a></td>
+            <td innerHTML.bind="row.value"><a href="#link" click.delegate="search.doOnClickHighlight({$index})"></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class=" container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <div if.bind="search.noResult" class="alert alert-danger" role="alert" innerHTML.bind="search.errorMessage"></div>
+          <div if.bind="search.noSearchYet" class="alert alert-info" role="alert" innerHTML.bind="search.suggestionMessage"></div>
         </div>
       </div>
     </div>
   </div>
-  <div class="container-fluid" if.bind="!search.noResult && !search.noSearchYet">
-    <a id="link" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut()" ></a>
-    <table class="table table-striped table-bordered">
-      <thead>
-        <tr>
-          <th>Id</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr repeat.for="row of search.rows" mouseover.delegate="search.doMouseOver({$index})" mouseout.delegate="search.doMouseOut({$index})" class="table-hover"
-          id="link" click.delegate="search.doOnClickJumpToCode({$index})"> 
-          <td innerHTML.bind="row.id"><a href="#link" click.delegate="search.doOnClickHighlight({$index})"></a></td>
-          <td innerHTML.bind="row.value"><a href="#link" click.delegate="search.doOnClickHighlight({$index})"></a></td>
-        </tr>
-      </tbody>
-    </table>
   </div>
-  <div class=" container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div if.bind="search.noResult" class="alert alert-danger" role="alert" innerHTML.bind="search.errorMessage"></div>
-        <div if.bind="search.noSearchYet" class="alert alert-info" role="alert" innerHTML.bind="search.suggestionMessage"></div>
-      </div>
-      
-    </div>
-  </div>
-  </div>
-
-  <br>
 </template>

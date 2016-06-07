@@ -1,0 +1,11 @@
+#code-section > span {
+  float:right;
+}
+
+#code-section > span{
+ visibility: hidden;
+}
+
+#code-section:hover > span{
+  visibility: visible;
+}

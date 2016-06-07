@@ -42,11 +42,6 @@
   }
 }
 
-body {
-  background: url(../images/clouds.jpg) no-repeat center center fixed;
-  background-size: cover
-}
-
 .seecoderun-chat {
   font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   box-shadow: 0 10px 100px rgba(0, 0, 0, .4);
@@ -78,20 +73,20 @@ body {
 }
 
 .seecoderun-chat .seecoderun-chat-toolbar {
-  padding: 5px; 
+  padding: 5px;
   color: #888888;
   background: #f8f8f8;
- }
+}
 
 .seecoderun-chat .seecoderun-chat-toolbar>h2 {
   margin: 0;
   padding: 0;
+  /*text-align: center;*/
   font-weight: 200;
   text-transform: uppercase;
   font-size: 12px;
   line-height: 20px;
   letter-spacing: 1px
-
 }
 
 .seecoderun-chat input {
@@ -104,7 +99,6 @@ body {
   width: 100%;
   font-weight: 400;
   outline: 0
-
 }
 
 .seecoderun-chat input::-webkit-input-placeholder {
@@ -116,18 +110,15 @@ body {
   color: #888888;
   font-weight: lighter
 }
-}
 
 .seecoderun-chat input:-ms-input-placeholder {
   color: #888888;
   font-weight: lighter
 }
-}
 
 .seecoderun-chat input::placeholder {
   color: #888888;
   font-weight: lighter
-}
 }
 
 .seecoderun-chat .seecoderun-chat-username-field {
@@ -241,14 +232,16 @@ body {
   color: rgba(52, 73, 94, .4)
 }
 
-.seecoderun-chatHeader{
+.seecoderun-chatHeader {
   background-color: #0066ff;
+  /*same as nav underline*/
   color: white;
   text-align: center;
   font-size: 18px;
 }
-  
-  
-  
-  
+
+.seecoderun-chat-toolbar input {
+   display: inline-block;
+   width: 180px;
+   font-size: 14px;
 }

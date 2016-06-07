@@ -1,0 +1,17 @@
+.js-gutter {
+   overflow-y: scroll;
+   padding-left: 4px;
+}
+
+.line_height {
+    white-space: nowrap;
+    color: #999487;
+    font-size: 11px;
+    height: 14px;
+}
+
+.highlight_gutter {
+    color: black;
+    background: #eeeeee;
+    display: table-row;
+}

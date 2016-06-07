@@ -1,103 +1,128 @@
-/* global Firebase */
-/* global $ */
-import {inject} from 'aurelia-framework';
+/* global Split */
+import {inject, DOM} from 'aurelia-framework';
 import {EventAggregator} from 'aurelia-event-aggregator';
 import {Router} from 'aurelia-router';
+
+import {TraceModel} from '../traceService/trace-model';
+import {AceUtils} from '../utils/ace-utils';
+import {FirebaseManager} from "../persistence/firebase-manager";
+
+import {NavigationBar} from '../layout/navigationBar/navigation-bar';
+
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
 import {HistoryViewer} from '../historyViewer/history-viewer';
-import {Chat} from '../chat/chat';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
-import '/jqxcore';
-import '/jqxsplitter';
 
-import {AceUtils} from '../utils/ace-utils';
-import {TraceModel} from '../traceService/trace-model';
 import {TraceViewController} from '../traceView/trace-view-controller';
 import {ExpressionSelection} from '../expressionSelection/expression-selection';
 import {TraceSearch} from '../traceSearch/trace-search';
 import {TraceSearchHistory} from '../traceSearch/trace-search-history';
 import {TracePlay} from '../tracePlay/play';
 
+import {customElement} from 'aurelia-framework';
 
-@inject(EventAggregator, Router, TraceModel, AceUtils)
+import $ from 'jquery';
+import { resizable } from 'jquery-ui';
+
+@customElement('pastebin')
+@inject(EventAggregator, Router, TraceModel, AceUtils, FirebaseManager, DOM.Element)
 export class Pastebin {
 
-  constructor(eventAggregator, router, traceModel, aceUtils) {
+  constructor(eventAggregator, router, traceModel, aceUtils, firebaseManager, domElement) {
     this.eventAggregator = eventAggregator;
     this.router = router;
     this.traceModel = traceModel;
     this.aceUtils = aceUtils;
+    this.firebaseManager = firebaseManager;
+    this.domElement = domElement;
     this.heading = 'Pastebin';
-    this.pastebinId ='';
-    this.jsEditor = new JsEditor(this.eventAggregator);
-    this.jsGutter = new JsGutter(this.eventAggregator);
-    this.consoleWindow = new ConsoleWindow(this.eventAggregator);
-    this.htmlEditor = new HtmlEditor(this.eventAggregator);
-    this.cssEditor  = new CssEditor(this.eventAggregator);
-    
-    this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, this.eventAggregator);
-    this.htmlViewer = new HtmlViewer(this.eventAggregator, this.traceModel);
-    
-    this.visViewer  =new VisViewer(this.eventAggregator);
-    this.chat = new Chat();
+    this.navigationBar = new NavigationBar(firebaseManager);
 
-    this.traceViewController = new TraceViewController(this.eventAggregator, this.aceUtils);
-    this.expressionSelection = new ExpressionSelection(this.eventAggregator);
-    this.tracePlay = new TracePlay(this.eventAggregator, this.traceModel, this.aceUtils);
-    this.traceSearch = new TraceSearch(this.eventAggregator, this.traceModel, this.aceUtils);
-    this.traceSearchHistory = new TraceSearchHistory(this.eventAggregator, this.traceModel);
+    this.consoleWindow = new ConsoleWindow(eventAggregator);
+    
+    this.jsEditor = new JsEditor(eventAggregator, firebaseManager);
+    this.jsGutter = new JsGutter(eventAggregator);
+    this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager);
+    this.cssEditor  = new CssEditor(eventAggregator, firebaseManager);
+    
+    this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
+    this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
+    this.visViewer  =new VisViewer(eventAggregator);
+
+    this.traceViewController = new TraceViewController(eventAggregator, aceUtils);
+    this.expressionSelection = new ExpressionSelection(eventAggregator);
+    this.tracePlay = new TracePlay(eventAggregator, traceModel, aceUtils);
+    
+    this.traceSearch = new TraceSearch(eventAggregator, traceModel, aceUtils);
+    this.traceSearchHistory = new TraceSearchHistory(eventAggregator, firebaseManager);
   }
 
   activate(params) {
-    if (params.id) {
-      let id = params.id;
-      this.pastebinId = id;
-      this.jsEditor.activate({ id: id });
-      this.htmlEditor.activate({ id: id });
-      this.cssEditor.activate({ id: id });
-      this.chat.activate({ id: id });
-    } else {
-      let baseURL = 'https://seecoderun.firebaseio.com';
-      let firebase = new Firebase(baseURL);
-      
-      this.pastebinId = firebase.push().key();
-      this.router.navigateToRoute('pastebin', {id: this.pastebinId});
+    this.firebaseManager.activate(params.id);
+    if(!params.id){
+      window.history.replaceState({}, null, window.location + "#"+ this.firebaseManager.pastebinId);
     }
+  }
+  
+  bind(){
+    
   }
 
   attached() {
-    this.jsEditor.attached({id: this.pastebinId});
-    this.htmlEditor.attached({id: this.pastebinId});
-    this.cssEditor.attached({id: this.pastebinId});
+    
+    Split(['#main-splitter-left', '#main-splitter-right'], {
+          sizes: [50, 50],
+          gutterSize: 3,
+          cursor: 'col-resize',
+          minSize: 250
+    });
+    
+    this.consoleWindow.attached();
+    
+    this.jsEditor.attached();
+    this.jsGutter.attached();
+    this.htmlEditor.attached();
+    this.cssEditor.attached();
     
     this.htmlEditorHistoryViewer.attached();
     
-    this.consoleWindow.attached();
-    this.jsGutter.attached();
-    this.visViewer.attached();
     this.htmlViewer.attached();
-    this.chat.attached({id: this.pastebinId});
+    this.visViewer.attached();
+    
+    Split(['#right-splitter-top', '#right-splitter-bottom'], {
+          direction: 'vertical',
+          sizes: [90, 10],
+          gutterSize: 3,
+          cursor: 'row-resize',
+          minSize: 100
+    });
+    
     this.traceViewController.attached();
-
-    this.traceSearchHistory.attached({id: this.pastebinId});
     this.tracePlay.attached();
     this.traceSearch.attached();
-
-    $('#mainSplitter').jqxSplitter({ width: '99.8%', height: 760, panels: [{ size: '45%' }] });
-    $('#rightSplitter').jqxSplitter({ width: '100%', height: 750, orientation: 'horizontal', panels: [{ size: '80%'}] }); 
+    this.traceSearchHistory.attached();
     
-    let self = this; 
-    $(document).ready( function() {
-      window.setTimeout(self.attachedAfterHTML(), 2000);
+    
+    this.navigationBar.attached();
+    
+    let gutterSplit = function (){
+      $("#js-editor-code").resizable(
+    {
+        maxWidth: $("#main-splitter-left").width() - 100,
+        autoHide: false,
+        handles: 'e, w'
     });
+    
+    };
+    gutterSplit();
+    // this.eventAggregator.subscribe("jsGutterUpdated", payload =>{
+    //   gutterSplit();
+    // });
   }
-  
-  attachedAfterHTML(){
-    this.chat.attachedAfterHTML();
-  }
+
 }

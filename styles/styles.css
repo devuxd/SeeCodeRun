@@ -1,12 +1,12 @@
  body {
-   padding-top: 50px;
+   padding-top: 0px;
    min-height: 100%;
    margin: 0;
  }
  
  @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 1) {
    body {
-     padding-top: 40px;
+     padding-top: 0px;
      min-height: 100%;
      margin: 0;
    }
@@ -18,7 +18,7 @@
  
  @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 2) and (min-resolution: 192dpi) {
    body {
-     padding-top: 50px;
+     padding-top: 0px;
      min-height: 100%;
      margin: 0;
    }
@@ -47,19 +47,6 @@
    float: right;
  }
  
- .line_height {
-   white-space: nowrap;
-   color: #999487;
-   font-size: 11px;
-   height: 14px;
- }
- 
- .highlight_gutter {
-   color: black;
-   background: #eeeeee;
-   display: table-row;
- }
- 
  .iframeCss {
    height: 700px;
    width: 100%;
@@ -70,7 +57,6 @@
  
  .flow {
    overflow: auto;
-
  }
  
  @-moz-document url-prefix() {
@@ -92,62 +78,6 @@
    border: none;
    overflow: auto;
    
- }
- 
- ul.nav li a,
- ul.nav li a:visited {
-   color: #888888;
-   font-size: 16px;
- }
- 
- ul.nav li a:hover,
- ul.nav li a:active {
-   background-color: #eeeeee;
-   border-left: none;
-   border-top: none;
-   border-right: none;
-   font-size: 16px;
- }
- 
- ul.nav li.active a {
-   color: #888888;
-   font-size: 16px;
- }
- /*glyph style work*/
- 
- .glyphicon {
-   padding-right: 4px;
-   font-size: 16px;
- }
- /* Feature 22 style*/
- /*Nav Bar Link Style*/
- 
- ul.nav li a,
- ul.nav li a:visited {
-   color: #888888;
-   font-size: 16px;
- }
- 
- ul.nav li a:hover,
- ul.nav li a:active {
-   background-color: #f8f8f8;
-   border-style: solid;
-   border-width: 5px;
-   border-left: none;
-   border-top: none;
-   border-right: none;
-   border-bottom-color: #0066ff;
- }
- 
- ul.nav li.active a {
-   color: #888888;
-   font-size: 16px;
- }
- /*glyph style*/
- 
- .glyphicon {
-   padding-right: 4px;
-   font-size: 16px;
  }
  
  .splash {
@@ -195,10 +125,6 @@
  
  section {
    margin: 0 20px;
- }
- 
- .navbar-nav li.loader {
-   margin: 12px 24px 0 6px;
  }
  
  .pictureDetail {
@@ -372,25 +298,10 @@
    padding-top: 5px;
  }
  
- #vis-navbar {
-   padding-bottom: 5px;
- }
- 
  .page-host {
-   padding-top: 50px;
+   padding-top: 0px;
  }
  
- .navbar .navbar-brand img {
-   height: 125%;
- }
- 
- .navbar-chat {
-   margin-top: 7px;
-   color: #888888;
-   font-size: 16px !important;
- }
- 
-
 .table tbody tr:hover td, .table tbody tr:hover th {
     background-color: #f6f6bd;
     border-bottom-color: black;
