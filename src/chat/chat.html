@@ -1,20 +1,14 @@
 <template bindable="chat">
 <require from="./chat.css"></require>
-  <div id="chatDiv" class="seecoderun-chat l-demo-container" >
-    <div class="seecoderun-chatHeader">
-      <header>SeeCode.Run Chat</header>
+  <div id="chatDiv" class="seecoderun-chat" >
+    <header>Chat</header>
+    <div id = 'chatToolbar' class='seecoderun-chat-toolbar'>
+      <label for="chatUserNameInput">Username:</label>
+      <input type='text' id='chatUserNameInput' placeholder='Enter Your Username...'>
     </div>
-    <div class='seecoderun-chat-toolbar'>
-      <label for="nameInput">Username:</label>
-      <input type='text' id='nameInput' placeholder='Enter Your Username...'>
-    </div>
-
-    <ul id='seecoderun-messages' class="seecoderun-chat-messages"></ul>
-
-    <div class="seecoderun-chat-footer">
-      <footer>
-        <input type='text' id='messageInput' placeholder='Type Message Here...'>
-      </footer>
-    </div>
+    <ul id='chatMessages' ></ul>
+    <footer>
+      <input type='text' id='chatMessageInput' placeholder='Type Message Here...'>
+    </footer>
   </div>
 </template>
