@@ -16,6 +16,7 @@ System.config({
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
+
   map: {
     "ansi-styles": "npm:ansi-styles@2.2.1",
     "aurelia-animator-css": "npm:aurelia-animator-css@1.0.0-beta.1.2.1",
@@ -112,9 +113,6 @@ System.config({
     },
     "github:jspm/nodelibs-timers@0.1.0": {
       "timers-browserify": "npm:timers-browserify@1.4.2"
-    },
-    "github:jspm/nodelibs-tty@0.1.0": {
-      "tty-browserify": "npm:tty-browserify@0.0.0"
     },
     "github:jspm/nodelibs-url@0.1.0": {
       "url": "npm:url@0.10.3"
@@ -560,12 +558,7 @@ System.config({
       "randombytes": "npm:randombytes@2.0.3"
     },
     "npm:debug@2.2.0": {
-      "fs": "github:jspm/nodelibs-fs@0.1.2",
-      "ms": "npm:ms@0.7.1",
-      "net": "github:jspm/nodelibs-net@0.1.2",
-      "process": "github:jspm/nodelibs-process@0.1.2",
-      "tty": "github:jspm/nodelibs-tty@0.1.0",
-      "util": "github:jspm/nodelibs-util@0.1.0"
+      "ms": "npm:ms@0.7.1"
     },
     "npm:des.js@1.0.0": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
