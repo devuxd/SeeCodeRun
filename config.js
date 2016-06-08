@@ -10,13 +10,12 @@ System.config({
   },
   paths: {
     "*": "./dist/*",
-    "res": "./res/*",
+    "res": "./res/",
     "styles": "./styles/",
     "include": "./include/",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
-
   map: {
     "ansi-styles": "npm:ansi-styles@2.2.1",
     "aurelia-animator-css": "npm:aurelia-animator-css@1.0.0-beta.1.2.1",

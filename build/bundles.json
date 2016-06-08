@@ -1,33 +1,24 @@
 {
   "bundles": {
-    "dist/common/lib": {
-      "includes": [
-        "jquery",
-        "bootstrap"
-      ],
-      "options": {
-        "inject": true,
-        "minify": false,
-        "depCache": true,
-        "rev": false
-      }
-    },
+
     "dist/app-build": {
       "includes": [
-        "include/*.js",
+        "jquery",
+        "jquery-ui",
+        "bootstrap",
+        "bootstrap/css/bootstrap.css!text",
         "**/*.js",
         "**/*.html!text",
-        "**/*.css!text", 
-        "styles/*.css"
+        "**/*.css!text" 
       ],
       "options": {
         "inject": true,
-        "minify": false,
+        "minify": true,
         "depCache": true,
         "rev": true
       }
     },
-    "dist/aurelia": {
+    "dist/aurelia-build": {
       "includes": [
         "aurelia-framework",
         "aurelia-bootstrapper",
@@ -40,13 +31,11 @@
         "aurelia-loader-default",
         "aurelia-history-browser",
         "aurelia-logging-console",
-        "bootstrap",
-        "bootstrap/css/bootstrap.css!text",
         "aurelia-computed"
       ],
       "options": {
         "inject": true,
-        "minify": false,
+        "minify": true,
         "rev": true
       }
     }
