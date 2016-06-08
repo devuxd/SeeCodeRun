@@ -131,6 +131,8 @@ export class Chat {
   
         $chatMessages.append($messageElement);
         
+        $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
+        
         if(self.currentUsername === username){
           $chatMessages.stop().animate({
             scrollTop: $chatMessages[0].scrollHeight
