@@ -207,9 +207,11 @@
   display: block;
 }
 
-.seecoderun-chat footer .icon-chat {
-  color: rgba(52, 73, 94, .2);
-  font-size: 30px
+#chatMessageFeedbackSent, #chatMessageFeedbackNotSent {
+  position: absolute;
+  right: 0;
+  display: none;
+  z-index: 2;
 }
 
 .seecoderun-chat footer input {

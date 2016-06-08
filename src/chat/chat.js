@@ -7,7 +7,8 @@ import { draggable, resizable } from 'jquery-ui';
 export class Chat {
   currentUsername = "";
   currentUsercolor = "";
-
+  isFirstToggle = true;
+  
   constructor(firebaseManager) {
     this.firebaseManager = firebaseManager;
   }
@@ -44,21 +45,43 @@ export class Chat {
     });
     
     $chatUserNameInput.keyup(function(e) {
+      if (e.keyCode == 13) {
+        $chatMessageInput.focus();
+      }
         let username = $chatUserNameInput.val();
+        if(!username.trim().length){
+          username = "anonymous";
+        }
+        
         let color = userToColorMap[username];
         
         if(color){
           self.currentUsercolor = color;
           $chatToolbar.css("border-color", `#${color}`);
         }
+        
+        if(!username){
+          username = "anonymous";
+        }
+        
         self.currentUsername = username;
     });
     
     $chatMessageInput.keypress(function(e) {
       if (e.keyCode == 13) {
-        let username = $chatUserNameInput.val();
-        self.currentUsername = username;
+        
         let message = $chatMessageInput.val();
+        
+        if(!message.trim().length){
+          $("#chatMessageFeedbackNotSent").css("display", "inline").fadeOut(750);
+          return;
+        }
+        
+        let username = $chatUserNameInput.val();
+        if(!username.trim().length){
+          username = "anonymous";
+        }
+        self.currentUsername = username;
         let color = self.currentUsercolor;
         
         if(!color){
@@ -74,6 +97,13 @@ export class Chat {
           color: color
         });
         $chatMessageInput.val('');
+        $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
+          
+        $(`#${username} .seecoderun-chat-username`).each( function() {
+          if($(this).html() === username){
+            $(this).html('You');
+          }
+        });
       }
     });
     
@@ -93,25 +123,31 @@ export class Chat {
           colors.push(color);
         }
   
-        let messageElement = $(`<li>`);
-        messageElement.css("border-color", `#${color}`);
-        let nameElement = $(`<strong class='seecoderun-chat-username'></strong>`);
-        nameElement.text(username);
-        messageElement.text(message).prepend('<br />').prepend(nameElement);
+        let $messageElement = $(`<li id =${username}>`);
+        $messageElement.css("border-color", `#${color}`);
+        let $nameElement = $(`<strong class='seecoderun-chat-username'></strong>`);
+        $nameElement.text(username);
+        $messageElement.text(message).prepend('<br />').prepend($nameElement);
   
-        $chatMessages.append(messageElement);
+        $chatMessages.append($messageElement);
         
         if(self.currentUsername === username){
-          nameElement.text("You");
-          $chatMessages.scrollTop($chatMessages[0].scrollHeight);
+          $chatMessages.stop().animate({
+            scrollTop: $chatMessages[0].scrollHeight
+          }, 1000);
         }
     });
-
+    
+    
     $('#chatButton').click(function hideChatBox() {
       $chat.toggle();
-      $chatMessages.stop().animate({
-        scrollTop: $chatMessages[0].scrollHeight
-      }, 1000);
+      if(self.isFirstToggle){
+        $chatMessages.scrollTop($chatMessages[0].scrollHeight);
+        $chatUserNameInput.focus();
+        self.isFirstToggle = false;
+      }else{
+        $chatMessageInput.focus();
+      }
     });
 
     $chat.draggable();
