@@ -44,7 +44,7 @@
 
 .seecoderun-chat {
   font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  box-shadow: 0 10px 100px rgba(0, 0, 0, .4);
+  box-shadow: 0px 5px 50px rgba(0, 0, 0, .4);
   background-color: rgba(255, 255, 255, 1);
   font-size: 16px;
   line-height: 22px;
@@ -73,15 +73,17 @@
 }
 
 .seecoderun-chat .seecoderun-chat-toolbar {
+  height: 40px;
   padding: 5px;
   color: #888888;
   background: #f8f8f8;
+  border-style:solid;
+  border-width: 0px 0px 0px 3px;
 }
 
 .seecoderun-chat .seecoderun-chat-toolbar>h2 {
   margin: 0;
   padding: 0;
-  /*text-align: center;*/
   font-weight: 200;
   text-transform: uppercase;
   font-size: 12px;
@@ -139,7 +141,7 @@
   text-align: center;
   line-height: 40px;
   font-size: 20px;
-  color: #217dbb
+  color: #217dbb;
 }
 
 .seecoderun-chat .seecoderun-chat-username-field label {
@@ -150,34 +152,40 @@
   position: absolute;
   top: 10px;
   left: 20px;
-  z-index: 1
+  z-index: 1;
 }
 
 .seecoderun-chat .seecoderun-chat-username-field input {
   padding-left: 50px;
   color: #FFF;
   height: 40px;
-  font-size: 20px
+  font-size: 20px;
+  word-wrap: break-word;
 }
 
 .seecoderun-chat ul {
   list-style: none;
   margin: 0;
-  padding: 20px;
+  padding: 0px;
   overflow: auto;
   position: absolute;
-  top: 100px;
+  top: 62px;
   left: 0;
   right: 0;
-  bottom: 80px;
-  z-index: 1
+  bottom: 40px;
+  z-index: 1;
 }
 
 .seecoderun-chat ul li {
-  margin-bottom: 10px;
+  margin-bottom: 1px;
   line-height: 24px;
   -webkit-animation: fadeIn 1s;
-  animation: fadeIn 1s
+  animation: fadeIn 1s;
+  border-style:solid;
+  border-width: 0px 0px 0px 3px;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);
+  padding-left: 5px;
+  word-wrap: break-word;
 }
 
 .seecoderun-chat ul li:last-child {
@@ -190,22 +198,20 @@
 
 .seecoderun-chat footer {
   background-color: rgba(255, 255, 255, .7);
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 1;
   display: block;
-  padding: 10px
 }
 
-.seecoderun-chat footer .icon-chat {
-  color: rgba(52, 73, 94, .2);
+#chatMessageFeedbackSent, #chatMessageFeedbackNotSent {
   position: absolute;
-  top: 15px;
-  left: 10px;
-  z-index: 1;
-  font-size: 30px
+  right: 0;
+  display: none;
+  z-index: 2;
 }
 
 .seecoderun-chat footer input {
@@ -213,7 +219,8 @@
   border: none;
   height: 40px;
   color: #34495e;
-  padding-left: 40px
+  padding-left: 10px;
+  word-wrap: break-word;
 }
 
 .seecoderun-chat footer input::-webkit-input-placeholder {
@@ -232,9 +239,8 @@
   color: rgba(52, 73, 94, .4)
 }
 
-.seecoderun-chatHeader {
+.seecoderun-chat header {
   background-color: #0066ff;
-  /*same as nav underline*/
   color: white;
   text-align: center;
   font-size: 18px;
