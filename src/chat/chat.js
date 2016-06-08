@@ -1,48 +1,57 @@
 import {customElement} from 'aurelia-framework';
+import {BindingLanguage} from 'aurelia-framework';
 
 import $ from 'jquery';
 import { draggable, resizable } from 'jquery-ui';
 
+//there is a simple way:
+//http://stackoverflow.com/questions/221294/how-do-you-get-a-timestamp-in-javascript
+// export function configure(aurelia)
+// {
+//   aurelia.use;
+//     .standardConfiguration()
+//     .developmentLogging();
+//   aurelia.use.plugin('aurelia-date-observer');
+  
+// }
 @customElement('chat')
 export class Chat {
-  currentUsername = "";
+  currentUsername = ""; //defining variables
   currentUsercolor = "";
   isFirstToggle = true;
-  
   constructor(firebaseManager) {
     this.firebaseManager = firebaseManager;
   }
   
   attached() {
-    //todo: add timestamp
-    let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
+    let chatFirebaseRef = this.firebaseManager.makeChatFirebase(); //declaring chatFirebaseRef variable and self
     let self = this;
     
     let $chat = $('#chatDiv');
-    $chat.hide();
+    $chat.hide();                                 //hides the chat box
 
-    let $chatToolbar= $('#chatToolbar');
+    let $chatToolbar= $('#chatToolbar');    //is this calling from html file?
     let $chatUserNameInput = $('#chatUserNameInput');
     let $chatMessages = $('#chatMessages');
     let $chatMessageInput = $('#chatMessageInput');
     
-    let userToColorMap = {};
-    let colors = [];
+    let userToColorMap = {};  //??
+    let colors = [];        //making array for colors
     
     chatFirebaseRef.on("value", function(snapshot) {
-        let data = snapshot.val();
+        let data = snapshot.val(); //is this taking value from firebase?
         if(!data){
           return;
         }
-        let username = data.name;
+        let username = data.name; //data  from firebase
         let color = data.color;
         
         if(color){
-          userToColorMap[username] = color;
-          colors.push(color);
+          userToColorMap[username] = color; //??
+          colors.push(color);   //adding to the array of colors
         }
     }, function (errorObject) {
-      console.log("Chat read failed: " + errorObject.code);
+      console.log("Chat read failed: " + errorObject.code); //raising error
     });
     
     $chatUserNameInput.keyup(function(e) {
@@ -131,6 +140,8 @@ export class Chat {
         $messageElement.text(message).prepend('<br />').prepend($nameElement);
   
         $chatMessages.append($messageElement);
+        
+        $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
         
         if(self.currentUsername === username){
           $chatMessages.stop().animate({

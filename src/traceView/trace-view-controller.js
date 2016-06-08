@@ -1,4 +1,6 @@
 /* global ace */
+import $ from "jquery";
+import {popover} from "bootstrap";
 import {TraceViewModel} from "./trace-view-model";
 
 export class TraceViewController{

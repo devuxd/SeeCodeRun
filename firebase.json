@@ -1,9 +1,11 @@
 {
-  "firebase": "seecoderun",
-  "public": "export",
-  "ignore": [
-    "firebase.json",
-    "**/.*",
-    "**/node_modules/**"
-  ]
+  "hosting":{
+    "firebase": "seecoderun",
+    "public": "export",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
 }
