@@ -14,6 +14,7 @@ export class Chat {
   }
   
   attached() {
+    //todo: add timestamp
     let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
     let self = this;
     
