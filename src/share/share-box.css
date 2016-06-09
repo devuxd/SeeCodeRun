@@ -1,15 +1,15 @@
 .share-box {
-    width: 700px;
+    /*width: 700px;*/
     /*position: relative;*/
   /*display: none;*/
   /*top: 200;*/
   border-color: blue;
 }
 
-.share-box {
-  float: right;
-}
+/*.share-box {*/
+/*  float: right;*/
+/*}*/
 
-.share-box input {
-  width: 300px;
-} 
+/*.share-box input {*/
+  /*width: auto;*/
+/*} */

@@ -3,6 +3,7 @@
 
     "dist/app-build": {
       "includes": [
+        "text",
         "jquery",
         "jquery-ui",
         "bootstrap",
@@ -36,6 +37,7 @@
       "options": {
         "inject": true,
         "minify": true,
+        "depCache": true,
         "rev": true
       }
     }

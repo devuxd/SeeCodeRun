@@ -2,10 +2,10 @@
 <require from="./navigation-bar.css"></require>
 <require from="../../share/share-box.html"></require>
 <require from="../../userList/user-list.html"></require>
- <require from="../../chat/chat.html"></require>
+<require from="../../chat/chat.html"></require>
 
 	<div id="navigation-bar" class="container-fluid">
-		<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+		<nav class="navbar  navbar-fixed-top navbar-xs" role="navigation">
 			<div class="navbar-header">
 		      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
 		        <span class='glyphicon glyphicon-menu-hamburger'></span>
@@ -21,15 +21,16 @@
 						<label>Users</label>
 					</div>
 				</li>
-				<li>
-					<div id="shareButton" class="btn navbar-item">
-						<span class='glyphicon glyphicon-share'></span>
-						<label>Share</label>
-					</div>
-					<div id="shareBox" >
-						<share-box shareBox.bind="shareBox"></share-box>
-					</div>
-				</li>
+				<li >
+		          <div id="shareButton" class="btn navbar-item" data-toggle="#shareBox" href="#">
+		          	<span class='glyphicon glyphicon-share'></span>
+					<label>Share</label>
+				  </div>
+		          <ul id="shareBox" class = "dropdown-menu">
+		            <share-box shareBox.bind="shareBox"></share-box>
+		          </ul>
+		        </li>
+				
 				<li>
 					<div id="chatButton" class="btn navbar-item">
 						<span class='glyphicon glyphicon-comment'></span>

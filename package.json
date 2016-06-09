@@ -3,14 +3,14 @@
   "version": "0.2.0",
   "description": "A Cloud IDE for Web apps with enhanced execution trace visualizations",
   "keywords": [
-    "seecoderun"
+    "seecoderun", "computer human interaction", "program comprehension", "software analysis", "debug", "javascript"
   ],
   "homepage": "https://github.com/seecoderun",
   "bugs": {
     "url": "https://github.com/tlatoza/SeeCodeRun/issues"
   },
-  "license": "Apache-2.0",
-  "author": "",
+  "license": "MIT",
+  "author": "Thomas LaToza",
   "main": "dist/main.js",
   "repository": {
     "type": "git",
@@ -105,9 +105,5 @@
     }
   },
   "dependencies": {
-    "jquery": "^2.2.4",
-    "esprima": "^2.7.2",
-    "escodegen": "^1.8.0",
-    "estraverse": "^4.1.1"
   }
 }

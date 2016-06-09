@@ -1,3 +1,37 @@
+ul.nav li a,
+ul.nav li a:visited {
+    color: #888888;
+    font-size: 13px;
+    font-style: italic;
+}
+.nav-tabs > li > a
+{
+    padding-top: 5px; 
+    padding-bottom: 5px;
+}
+
+.glyphicon {
+    padding-right: 2px;
+    font-size: 13px;
+}
+
+
+ul.nav li a:hover,
+ul.nav li a:active {
+    background-color: #f8f8f8;
+    border-style: solid;
+    border-width: 2px;
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    border-bottom-color: #0066ff;
+}
+
+ul.nav .active a {
+    font-weight: bold;
+}
+
+
 .wrap {
     width: 100%;
     font-size: 0;
