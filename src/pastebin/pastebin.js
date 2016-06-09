@@ -110,6 +110,8 @@ export class Pastebin {
     
     this.navigationBar.attached();
     
+    $('.panel-heading').click();
+    
     let gutterSplit = function (){
       $("#js-editor-code").resizable(
     {

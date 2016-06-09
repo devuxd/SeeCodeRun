@@ -1,8 +1,4 @@
 #shareBox {
-    /*width: 800px;*/
-    /*top: 40px;*/
-    /*right: 0px;*/
-    /*position: absolute;*/
     padding-left: 2px;
     word-wrap: break-word;
     display: none;
@@ -39,7 +35,15 @@
     max-height: 50%;
 }
 
-.navbar-item {
+ul > li label, ul > li span {
     color: #888888;
-    font-size: 14px;
+    font-weight: 100;
+    font-size: 12px;
 }
+
+ul > li div:hover label, ul > li div:hover span {
+    color: 	#0066ff;
+    font-weight: 200;
+    cursor: pointer;
+}
+

@@ -1,3 +1,6 @@
+ .panel-heading {
+     cursor: pointer;
+ }
  .ace_scrollbar {
    display: none !important;
  }

@@ -1,3 +1,4 @@
+/*global $ */ 
 import {bindable} from 'aurelia-framework';
 
 
@@ -19,5 +20,7 @@ export class NavigationBar {
       this.shareBox.attached();
       this.userList.attached();
       this.chatBox.attached();
+      
+      $('.navbar-toggle').click();
   }
 }
