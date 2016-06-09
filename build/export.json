@@ -1,9 +1,9 @@
 {
   "list": [
     "res/**/*", 
-    "include/*.js",
-    "styles/*.css",
-    "dist/*.js",
+    "include/**/*.js",
+    "styles/**/*.css",
+    "dist/*-build*.js",
     "index.html",
     "config.js",
     "favicon.ico",

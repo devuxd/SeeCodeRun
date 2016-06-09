@@ -1,8 +1,8 @@
 /* global $ */
 /* global ace */
 
-import '../mode-javascript';
-import '../theme-chrome';
+import '../aceThemes/mode-javascript';
+import '../aceThemes/theme-chrome';
 import md5 from 'md5';
 
 export class JsEditor {

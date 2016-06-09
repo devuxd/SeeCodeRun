@@ -3,9 +3,6 @@
     word-wrap: break-word;
     display: none;
 }
-#vis-navbar {
-    padding-bottom: 2px;
-}
 
 .navbar-xs {
     min-height:28px;
@@ -32,14 +29,24 @@
 }
 
 .navbar .navbar-brand img {
-    max-height: 50%;
+    max-height: 40%;
+}
+.navbar .navbar-brand i{
+    padding-top: 4px;
+    padding-left: -6px;
+    padding-right: -6px;
+    margin-left: -6px;
+    margin-right: -6px;
+    display: inline;
 }
 
 ul > li label, ul > li span {
+    padding-top: 2px;
     color: #888888;
     font-weight: 100;
     font-size: 12px;
 }
+
 
 ul > li div:hover label, ul > li div:hover span {
     color: 	#0066ff;

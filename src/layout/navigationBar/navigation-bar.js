@@ -1,13 +1,12 @@
 /*global $ */ 
 import {bindable} from 'aurelia-framework';
 
-
 import {UserList} from '../../userList/user-list';
 import {ShareBox} from '../../share/share-box';
 import {Chat} from '../../chat/chat';
 
 export class NavigationBar {
-  @bindable router = null
+  @bindable router = null;
   
   constructor(firebaseManager){
       this.firebaseManager = firebaseManager;

@@ -28,52 +28,33 @@ body {
  }
  
  .splash {
-   height: 250px;
    text-align: center;
    margin: 10% 0 0 0;
    box-sizing: border-box;
  }
  
- .splash .message {
-   font-size: 72px;
+ .splash .logo i{
+    padding-left: -30px;
+    padding-right: -30px;
+    margin-left: -30px;
+    margin-right: -30px;
+    display: inline;
+}
+ 
+ .material-icons.md-giant { font-size: 200px; }
+ 
+ .splash .title {
+   font-size: 64px;
    text-shadow: rgba(0, 0, 0, 0.5) 0 0 15px;
    text-transform: uppercase;
-   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
  }
- 
+ .splash .spinner-box {
+   height: 100px;
+ }
  .splash .fa-spinner {
    text-align: center;
    display: inline-block;
-   font-size: 72px;
- }
- 
- .page-host {
-   position: absolute;
-   left: 0;
-   right: 0;
-   top: 35px;
-   bottom: 0;
-   overflow-x: hidden;
-   overflow-y: auto;
-   z-index: 10;
- }
- 
- .page-host {
-   padding-top: 0px;
- }
- 
- 
- @media print {
-   .page-host {
-     position: absolute;
-     left: 10px;
-     right: 0;
-     top: 35px;
-     bottom: 0;
-     overflow-y: inherit;
-     overflow-x: inherit;
-     z-index: 10;
-   }
+   font-size: 100px;
  }
  
  section {

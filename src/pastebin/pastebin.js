@@ -74,6 +74,7 @@ export class Pastebin {
   }
 
   attached() {
+    this.navigationBar.attached();
     
     Split(['#main-splitter-left', '#main-splitter-right'], {
           sizes: [50, 50],
@@ -84,12 +85,28 @@ export class Pastebin {
     
     this.consoleWindow.attached();
     
-    this.jsEditor.attached();
-    this.jsGutter.attached();
-    this.htmlEditor.attached();
-    this.cssEditor.attached();
+    let $codeSection = $("#js-editor-code");
     
-    this.htmlEditorHistoryViewer.attached();
+    this.jsEditor.attached($codeSection);
+    this.jsGutter.attached($codeSection);
+    let gutterSplit = function (){
+      $codeSection.resizable(
+        {
+            maxWidth: $("#main-splitter-left").width() - 100,
+            autoHide: false,
+            handles: 'e, w'
+        }
+      );
+    };
+    gutterSplit();
+    // this.eventAggregator.subscribe("jsGutterUpdated", payload =>{
+    //   gutterSplit();
+    // });
+    
+    this.htmlEditor.attached($codeSection);
+    this.cssEditor.attached($codeSection);
+    
+    this.htmlEditorHistoryViewer.attached($codeSection);
     
     this.htmlViewer.attached();
     this.visViewer.attached();
@@ -107,24 +124,7 @@ export class Pastebin {
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
     
-    
-    this.navigationBar.attached();
-    
     $('.panel-heading').click();
-    
-    let gutterSplit = function (){
-      $("#js-editor-code").resizable(
-    {
-        maxWidth: $("#main-splitter-left").width() - 100,
-        autoHide: false,
-        handles: 'e, w'
-    });
-    
-    };
-    gutterSplit();
-    // this.eventAggregator.subscribe("jsGutterUpdated", payload =>{
-    //   gutterSplit();
-    // });
   }
 
 }

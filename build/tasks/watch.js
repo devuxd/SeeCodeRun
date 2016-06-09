@@ -1,6 +1,6 @@
 var gulp = require('gulp');
 var paths = require('../paths');
-var browserSync = require('browser-sync');
+var browserSync = require('browser-sync').create();
 
 // outputs changes to files to the console
 function reportChange(event) {

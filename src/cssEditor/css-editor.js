@@ -1,7 +1,8 @@
+/* global $ */
 /* global ace */
 
-import '../mode-css';
-import '../theme-chrome';
+import '../aceThemes/mode-css';
+import '../aceThemes/theme-chrome';
 
 export class CssEditor {
   cssEditorDiv = "cssEditorDiv";
@@ -11,8 +12,8 @@ export class CssEditor {
     this.firebaseManager = firebaseManager;
   } 
 
-  attached(params) {
-    $('#cssEditorDiv').css("height",`${$("#js-editor-code").height()}px`);
+  attached($parentDiv) {
+    $(`#${this.cssEditorDiv}`).css("height",`${$parentDiv.height()}px`);
     let editor = ace.edit(this.cssEditorDiv);
     this.configureEditor(editor);
     this.firepad = this.firebaseManager.makeCssEditorFirepad(editor);
