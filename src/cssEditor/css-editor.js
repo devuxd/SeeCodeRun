@@ -1,43 +1,30 @@
-/* global Firepad */
-/* global Firebase */
+/* global $ */
 /* global ace */
 
-import '../mode-css';
-import '../theme-chrome';
+import '../aceThemes/mode-css';
+import '../aceThemes/theme-chrome';
 
 export class CssEditor {
- 
+  cssEditorDiv = "cssEditorDiv";
 
-    constructor(eventAggregator) { 
-         this.eventAggregator = eventAggregator; 
-     } 
+  constructor(eventAggregator, firebaseManager) {
+    this.eventAggregator = eventAggregator;
+    this.firebaseManager = firebaseManager;
+  } 
 
-  
-   activate(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    } 
+  attached($parentDiv) {
+    $(`#${this.cssEditorDiv}`).css("height",`${$parentDiv.height()}px`);
+    let editor = ace.edit(this.cssEditorDiv);
+    this.configureEditor(editor);
+    this.firepad = this.firebaseManager.makeCssEditorFirepad(editor);
+    
+    let session = editor.getSession();
+    this.configureSession(session);
+    this.setupSessionEvents(editor, session);
+    
+    this.editor = editor;
+    this.session = session;
   }
-  attached(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-
-        this.pastebinId = params.id;
-
-        let editor = ace.edit('cssEditorDiv');
-        this.configureEditor(editor);
-        
-        this.editor = editor;
-        
-        let session = editor.getSession();
-        this.configureSession(session);
-        this.setupSessionEvents(session);
-        
-        this.session = session;
-        
-        this.firepad = this.createFirepad(editor);
-    }
     
   configureEditor(editor) {
     editor.setTheme('ace/theme/chrome');
@@ -51,9 +38,8 @@ export class CssEditor {
     session.setMode('ace/mode/css');
   }
   
-  setupSessionEvents(session) {
+  setupSessionEvents(editor, session) {
       let ea = this.eventAggregator;
-      let editor = this.editor;
       
       session.on('change', onEditorChanged);
       
@@ -69,15 +55,4 @@ export class CssEditor {
       this.editorChangedTimeout = editorChangedTimeout;
   }
   
-  createFirepad(editor) {
-    let baseURL = 'https://seecoderun.firebaseio.com';
-    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/css');
-
-    return Firepad.fromACE(
-      firebase,
-      editor,
-      {
-        defaultText: 'h1 { font-weight: bold; }'
-      });
-  }
 }

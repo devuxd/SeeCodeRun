@@ -1,12 +1,10 @@
 /* global $ */
 
-import {EventAggregator} from 'aurelia-event-aggregator';
-import {inject} from 'aurelia-framework';
 import * as d3 from 'd3';
 import {VisualizationFactory} from '../visualization/visualizationFactory';
 import {Visualization} from '../visualization/visualization';
 
-@inject(EventAggregator)
+
 export class VisViewer {
 
   constructor(eventAggregator) {
@@ -17,12 +15,10 @@ export class VisViewer {
 
     this.factory = new VisualizationFactory();
     this.visualizationTypes = this.factory.getVisualizationTypes();
-
     this.isChecked = false;
-    this.addVisualization = this.addVis;
     this.subscribe();
   }
-
+  
   attached() {
     for (let visualization of this.visualizations) {
       visualization.attached();
@@ -30,29 +26,93 @@ export class VisViewer {
   }
 
   subscribe() {
+    let self = this;
     let ea = this.eventAggregator;
-
-    ea.subscribe('onEditorCopy', payload => {
-      if (this.isChecked) {
-        this.publish(payload);
+    ea.subscribe('onSelectedExpressionsChanged', payload => {
+        self.selectedExpressions = payload.items;
+        self.showClearButton = self.showVisButton = self.selectedExpressions.length >= 2 ;
+    });
+        
+    ea.subscribe("traceChanged", payload => {
+      self.traceHelper = payload.data;
+      self.trace = payload.data.trace;
+      for (let visualization of this.visualizations) {
+        visualization.traceHelper = self.traceHelper;
+        visualization.trace = self.trace;
+        if(visualization.type !== 'DataTable') {
+          visualization.renderVisualization(); 
+        }
       }
     });
+    
+    ea.subscribe("instrumentationFailed", payload => {
+      self.hasError = true;
+      ea.publish('onVisRequest', payload );
+    });
+    
+    ea.subscribe('selectionRangeResponse', payload => {
+      if(!self.traceHelper){
+        return;
+      }
+      let expressions = self.traceHelper.getExpressions();
+      let variables = self.traceHelper.getVariables();
+      let trace = {
+        timeline: [],
+        variables: [],
+        values: []
+      };
+      for(let i = 0; i < expressions.variables.length; i++) {
+        if(self.traceHelper.isRangeInRange(expressions.variables[i].range, payload.range)) {
+          trace.variables.push(expressions.variables[i]);
+          
+          for(let j = 0; j < expressions.timeline.length; j++) {
+            if(self.traceHelper.isRangeInRange(expressions.timeline[j].range, payload.range)) {
+              trace.timeline.push(expressions.timeline[j]);    
+            }
+          }
+        }
+      }
+      
+      for(let k = 0; k < variables.variables.length; k++) {
+          if(self.traceHelper.isRangeInRange(variables.variables[k].range, payload.range)) {
+            trace.values.push(variables.variables[k]);
+          }
+      }
+      
+      self.trace = trace;
+      ea.publish('onVisRequest', {trace: trace, traceHelper: self.traceHelper} );
+    });
   }
+  // showVis() {
+  //     // TODO: publish an event with payload = this.selectedExpression. The visualization module should subscribe to this event.
+  //     console.info(this.selectedExpressions);
+
+  // }
+
+  // clearSelection() {
+  //     // notify expressionSelection service to clear the selected expressions 
+  //     this.eventAggregator.publish("onClearSelectionRequest");
+  // }
 
   publish(payload) {
     let ea = this.eventAggregator;
     ea.publish('onVisRequest', payload);
   }
   
-  addVis() {
-    if(this.tempVis) {
-      if(!this.checkVisExists(this.tempVis.type)) {
-        this.visualizations.push(this.tempVis);
+  addVisualization() {
+    let self =this;
+    let tempVis = this.tempVis;
+    console.log(tempVis);
+    if(tempVis) {
+      if(!this.checkVisExists(tempVis.type)) {
+        tempVis.traceHelper = self.traceHelper;
+        tempVis.trace = self.trace;
+        this.visualizations.push(tempVis);
         let vis = this.visualizations[this.visualizations.length-1];
         setTimeout(function() {
           vis.attached();
         }, 50);
-        this.removeVisType(this.tempVis.type);
+        this.removeVisType(tempVis.type);
       }
     }
   }

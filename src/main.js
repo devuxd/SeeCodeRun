@@ -1,10 +1,27 @@
-import 'bootstrap';
+import 'jquery';
 import 'jquery-ui';
+import 'bootstrap';
+
+import {MainConfig} from "main-config";
 
 export function configure(aurelia) {
-  aurelia.use
+  let mainConfig = new MainConfig();
+  if(mainConfig.debug){
+    aurelia.use
     .standardConfiguration()
-    .developmentLogging();
+    .developmentLogging()
+    .plugin('aurelia-computed', {
+      enableLogging: true
+    })
+    ;
+  }else{
+    aurelia.use
+    .standardConfiguration()
+    .plugin('aurelia-computed')
+    ;
+    
+  }
+
 
   //Uncomment the line below to enable animation.
   //aurelia.use.plugin('aurelia-animator-css');

@@ -1,0 +1,57 @@
+ul.nav .glyphicon {
+    padding-right: 2px;
+    font-size: 13px;
+}
+
+.nav-tabs > li > a {
+  border-radius: 0;
+}
+
+.nav-tabs > li > a {
+    padding-top: 0px;
+    padding-bottom: 8px;
+}
+
+ul.nav li a,
+ul.nav li a:visited {
+    color: #888888;
+    font-size: 13px;
+    font-style: italic;
+    border-style: solid;
+    border-width: 2px;
+    border-left: none;
+    border-top: none;
+    border-right: none;
+}
+
+ul.nav li a:hover {
+    border-left: none;
+    border-top: none;
+    border-right: none;
+}
+
+ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
+    font-weight: bold;
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    border-bottom-color: #0066ff;
+}
+
+.wrap {
+    width: 100%;
+    font-size: 0;
+}
+.resizable {
+    width: 50%;
+    display: inline-block;
+}
+
+.ui-resizable-e { 
+    cursor: e-resize; 
+    width: 2px; 
+    right: -1px; 
+    top: 0; 
+    bottom: 0; 
+    background-color: #888888;
+}

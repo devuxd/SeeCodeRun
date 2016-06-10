@@ -1,15 +1,14 @@
 export class ConsoleWindow {
-    
+    title = 'Console';
     constructor(eventAggregator) {
         this.eventAggregator = eventAggregator;
-        this.title = 'Console';
         this.subscribe();
     }
     
     attached() {
         let logger = console.log;
         let log = [];
-        console.log = function () {
+        console.log = function consoleWindowLog() {
             log.push(Array.prototype.slice.call(arguments));
   	        logger.apply(this, Array.prototype.slice.call(arguments));
   	    };
@@ -21,11 +20,11 @@ export class ConsoleWindow {
       let ea = this.eventAggregator;
 
       ea.subscribe('iframeError', payload => {
-        console.log(JSON.stringify(payload.err));
+        console.log(payload.err);
       });
       
       ea.subscribe('iframeConsoleLog', payload => {
-        console.log(JSON.stringify(payload.log));
+        console.log(payload.log);
       });
     }
 }

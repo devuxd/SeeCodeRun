@@ -1,0 +1,23 @@
+#console-window > span{
+  float:right;
+}
+
+#console-window > span{
+ visibility: visible;
+}
+
+#console-window:hover > span{
+  visibility: hidden;
+}
+
+#console-window > label{
+  float:right;
+}
+
+#console-window > label{
+ visibility: hidden;
+}
+
+#console-window:hover > label{
+  visibility: hidden;
+}

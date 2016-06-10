@@ -1,0 +1,69 @@
+<template bindable="router">
+<require from="./navigation-bar.css"></require>
+<require from="../../share/share-box.html"></require>
+<require from="../../userList/user-list.html"></require>
+<require from="../../chat/chat.html"></require>
+
+	<div id="navigation-bar" class="container-fluid">
+		<nav class="navbar-xs navbar " role="navigation">
+			<div class="navbar-header">
+		      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+		        <span class='glyphicon glyphicon-menu-hamburger'></span>
+		      </button>
+		      <a class="navbar-brand">
+		        <!--<img src="res/SeeCodeRunTitle.png" alt="${router.title}">-->
+		       <i class="material-icons md-48">chevron_left</i>
+		       <i class="material-icons">cloud</i>
+		       <i class="material-icons">play_circle_outline</i>
+		       <i class="material-icons md-48">chevron_right</i>
+		      </a>
+		    </div>
+			<ul class="nav navbar-nav navbar-right" id="navbar-collapse-1">
+				<li>
+					<div id="userlistButton" class="btn navbar-item">
+						<span class='glyphicon glyphicon-user'></span>
+						<label>Users</label>
+					</div>
+				</li>
+				<li >
+		          <div id="shareButton" class="btn navbar-item" data-toggle="#shareBox" href="#">
+		          	<span class='glyphicon glyphicon-share'></span>
+					<label>Share</label>
+				  </div>
+		          <ul id="shareBox" class = "dropdown-menu">
+		            <share-box shareBox.bind="shareBox"></share-box>
+		          </ul>
+		        </li>
+				
+				<li>
+					<div id="chatButton" class="btn navbar-item">
+						<span class='glyphicon glyphicon-comment'></span>
+						<label>Chat</label>
+					</div>
+				</li>
+				<li>
+					<div class="btn navbar-item" onclick="window.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');">
+						<span class='glyphicon glyphicon-question-sign'></span>
+						<label>Help</label>
+					</div>
+				</li>
+				<li>
+					<div class="btn navbar-item" onclick="window.open('mailto:contact@seecode.run', '_blank');">
+						<span class='glyphicon glyphicon-envelope'></span>
+						<label>Contact Us</label>
+					</div>
+				</li>
+				<li>
+					<div class="btn navbar-item" onclick="window.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');">
+						<span class='glyphicon glyphicon-info-sign'></span>
+						<label>About	&nbsp;</label>
+						</div>
+				</li>
+			</ul>
+		</nav>
+  		<user-list userList.bind="userList"></user-list>
+   		<chat chat.bind="chatBox"></chat>
+	</div>
+	
+		
+</template>

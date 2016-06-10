@@ -1,90 +1,83 @@
 <template>
-  <require from="jsEditor/js-editor.html"></require>
-  <require from="jsGutter/js-gutter.html"></require>
-  <require from="htmlEditor/html-editor.html"></require>
-  <require from="cssEditor/css-editor.html"></require>
-  <require from="visViewer/vis-viewer.html"></require>
-  <require from="htmlViewer/html-viewer.html"></require>
-  <require from="consoleWindow/console-window.html"></require>
-  <require from="chat/chat.html"></require>
-  <require from="share/share.html"></require>
-
-  <require from="searchTab/trace-search.html"></require>
+  <require from = "layout/codeSection/code-section.css"></require>
+  <require from = "pastebin/pastebin.css"></require>
   
-  <div class="container-fluid" style="padding-left: 0px; padding-right: 0px; padding-left: 7px;">
+  <require from = "jsEditor/js-editor.html"></require>
+  <require from = "jsGutter/js-gutter.html"></require>
+  <require from = "htmlEditor/html-editor.html"></require>
+  <require from = "cssEditor/css-editor.html"></require>
+  <require from = "historyViewer/history-viewer.html"></require>
+  <require from = "visViewer/vis-viewer.html"></require>
+  <require from = "htmlViewer/html-viewer.html"></require>
+  <require from = "consoleWindow/console-window.html"></require>
+  <require from = "tracePlay/play.html"></require>
+  <require from = "traceSearch/trace-search.html"></require>
 
-    <div id="mainSplitter" class="col-md-7" style="padding-left: 2px; padding-right: 2px">
-      <div id="main-splitter-left">
-        <div class="row">
-          <div role="tabpanel">
-            <ul class="nav nav-tabs">
-              <li role="presentation" class="active">
-                <a href="#js-container" aria-controls="js-container" role="tab" data-toggle="tab">js</a></li>
-              <li role="presentation">
-                <a href="#html-container" aria-controls="html-container" role="tab" data-toggle="tab">html</a></li>
-              <li role="presentation">
-                <a href="#css-container" aria-controls="css-container" role="tab" data-toggle="tab">css</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="row">
-          <div class="tab-content">
-            <div role="tabpanel" class="tab-pane active" id="js-container">
-              <div class="row">
-                <div class="col-md-9 col-xs-7 col-sm-7" style="padding-right: 10px;padding-top: 5px;">
-                  <js-editor jsEditor.bind="jsEditor"></js-editor>
-                </div>
-                <div class="col-md-3 col-xs-5 col-sm-5" style="padding-left: 10px; padding-right: 32px; padding-top:3px">
-                  <js-gutter gutter.bind="jsGutter"> </js-gutter>
-                </div>
-              </div>
-            </div>
-            <div role="tabpanel" class="tab-pane" id="html-container">
-              <html-editor htmlEditor.bind="htmlEditor"></html-editor>
-            </div>
-
-            <div role="tabpanel" class="tab-pane" id="css-container">
-              <css-editor cssEditor.bind="cssEditor"></css-editor>
-            </div>
-          </div>
-        </div>
+  <div id = "mainContainer" style = "box-sizing: border-box; height: 100%;" class="container-fluid">
+    
+    <div id = "main-splitter-left"  class = "split split-horizontal">
+      <div role = "tabpanel">
+        <ul class = "nav nav-tabs">
+          <li role = "presentation" class = "active">
+            <a href = "#js-container" aria-controls = "js-container" role = "tab" data-toggle = "tab">JS</a></li>
+          <li role = "presentation">
+            <a href = "#html-container" aria-controls = "html-container" role = "tab" data-toggle = "tab">HTML</a></li>
+          <li role = "presentation">
+            <a href = "#css-container" aria-controls = "css-container" role = "tab" data-toggle = "tab">CSS</a></li>
+        </ul>
       </div>
-        
-      <div id="main-splitter-right">
-        
-        <div id="rightSplitter" class="col-md-5" style="padding-left: 2px; padding-right: 2px">
-          <share share.bind="share"></share>
-          <div id="right-splitter-top">
-          <div id="right-splitter-top" class = "flow">
-            <div role="tabpanel">
-              <ul class="nav nav-tabs">
-                <li role="presentation" class="active">
-                  <a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">output</a></li>
-                <li role="presentation">
-                  <a href="#visualization-container" aria-controls="visualization-container" role="tab" data-toggle="tab">visualization</a></li>
-              </ul>
+      <div class = "tab-content clearfix">
+        <div role = "tabpanel" class = "tab-pane active" id = "js-container">
+          <div id = "code-section" class = "w3-row" >
+            <div id = "js-editor-code" class = "w3-container w3-threequarter" style = "padding: 0px 1px 0px 0px;">
+              <js-editor jsEditor.bind = "jsEditor"></js-editor>
             </div>
-            <div class="tab-content">
-              <div role="tabpanel" class="tab-pane active" id="preview">
-                <html-viewer></html-viewer>
-              </div>
-              <div role="tabpanel"  class="tab-pane iframeCssPreview" id="visualization-container">
-                <trace-search traceSearch.bind="traceSearch"></trace-search>
-                <p>
-                <div>
-                  <vis-viewer vis.bind="visViewer"></vis-viewer>
-                </div>
-              </div>
+            <!--<span class = 'glyphicon glyphicon-edit'></span>-->
+            <div id = "js-editor-trace-gutter" class = "w3-container w3-rest" style = "padding: 0px 1px 0px 0px;">
+              <js-gutter jsGutter.bind = "jsGutter"></js-gutter>
             </div>
           </div>
-          <div id="right-splitter-bottom"  class= "flow" >
-            <console-window console.bind='consoleWindow'></console-window>
-            <chat chat.bind="chat"></chat>
-          </div>
+        </div>
+        <div role = "tabpanel" class = "tab-pane" id = "html-container">
+          <history-viewer historyViewer.bind = "historyViewer"></history-viewer>
+          <html-editor htmlEditor.bind = "htmlEditor"></html-editor>
+        </div>
+        <div role = "tabpanel" class = "tab-pane" id = "css-container">
+          <css-editor cssEditor.bind = "cssEditor"></css-editor>
         </div>
       </div>
     </div>
-
-  </div>
-
+      
+    <div id = "main-splitter-right" class = "split split-horizontal" >
+      <div role = "tabpanel">
+          <ul class = "nav nav-tabs">
+            <li role = "presentation" class = "active">
+              <a href = "#preview" aria-controls = "preview" role = "tab" data-toggle = "tab"><span class = 'glyphicon glyphicon-globe'></span>Output</a></li>
+            <li role = "presentation">
+              <a href = "#visualization-container" aria-controls = "visualization-container" role = "tab" data-toggle = "tab"><span class = 'glyphicon glyphicon-tasks'></span>See</a></li>
+          </ul>
+      </div>
+      <div id = "right-splitter" style = "box-sizing: border-box; height: 95%;">
+        <div id = "right-splitter-top" class = "split split-vertical">
+          
+          <div class = "tab-content clearfix">
+            <div role = "tabpanel" class = "tab-pane active" id = "preview">
+              <html-viewer></html-viewer>
+            </div>
+            <div role = "tabpanel"  class = "tab-pane iframeCssPreview" id = "visualization-container">
+              <play tracePlay.bind = "tracePlay"></play>
+              <trace-search search.bind = "traceSearch"></trace-search>
+              <div>
+                <vis-viewer vis.bind = "visViewer"></vis-viewer>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div id = "right-splitter-bottom" class = "split split-vertical">
+          <console-window console.bind = 'consoleWindow'></console-window>
+        </div>
+      </div>
+    </div>
+ </div>
 </template>

@@ -15,11 +15,7 @@ export class TraceHelper {
         this.trace = this.traceModel.makeTrace(trace);
     }
     
-    getMatchAtPosition(position){
-        return this.getValuesAtPosition(this.trace, position);
-    }
-    
-    getMatchAtPosition(dataModel, position){
+    getExpressionAtPosition(dataModel, position){
         return this.getValuesAtPosition(dataModel, position);
     }
     
@@ -193,11 +189,11 @@ export class TraceHelper {
     }
     
     getExpressions() {
-         return {identifiers : this.trace.identifiers, timeline: this.trace.timeline};
+         return {variables : this.trace.identifiers, timeline: this.trace.timeline};
     }
     
     getVariables(){
-        return this.trace.variables;
+        return {variables : this.trace.identifiers};
     }
     getValues(){
         return this.trace.values;

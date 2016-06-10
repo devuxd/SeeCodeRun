@@ -1,44 +1,42 @@
-/* global Firepad */
-/* global Firebase */
+/* global $ */
 /* global ace */
-import '../mode-javascript';
-import '../theme-chrome';
-import md5 from 'md5';
-export class JsEditor {
 
-  constructor(eventAggregator) {
+import '../aceThemes/mode-javascript';
+import '../aceThemes/theme-chrome';
+import md5 from 'md5';
+
+export class JsEditor {
+  aceJsEditorDiv = "aceJsEditorDiv";
+  
+  constructor(eventAggregator, firebaseManager) {
     this.eventAggregator = eventAggregator;
+    this.firebaseManager = firebaseManager;
     this.hasErrors = false;
     this.editorHashedText = '1';
-    this.md5=md5;
+    this.md5 = md5;
+    this.height = 700;
   }
 
-  activate(params) {
-    this.pastebinId = params.id;
-  }
-
-  attached(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-
-    let editor = ace.edit('aceJsEditorDiv');
+  
+  attached() {
+    $(`#${this.aceJsEditorDiv}`).css("height",`${$("#mainContainer").height() + $("#mainContainer").offset()['top'] - $("#js-container").offset()['top']}px`);
+    let editor = ace.edit(this.aceJsEditorDiv);
     this.configureEditor(editor);
-
-    this.editor = editor;
+    this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
 
     let session = editor.getSession();
     this.configureSession(session);
 
     let selection = editor.getSelection();
-    this.session = session;
     this.selection = selection;
-    this.firepad = this.createFirepad(editor);
-    this.setupSessionEvents(session);
+    this.setupSessionEvents(editor, session);
     this.subscribe(session);
-  }
+    
+    this.session = session;
+    this.editor = editor;
+}
 
-  configureEditor(editor) {
+  configureEditor(editor){
     editor.setTheme('ace/theme/chrome');
     editor.setShowFoldWidgets(false);
     editor.$blockScrolling = Infinity;
@@ -50,10 +48,11 @@ export class JsEditor {
     session.setMode('ace/mode/javascript');
   }
 
-  setupSessionEvents(session) {
+  setupSessionEvents(editor, session) {
     let ea = this.eventAggregator;
-    let editor = this.editor;
     let editorHashedText = this.editorHashedText;
+
+     ea.publish("onEditorReady", editor);
 
     session.on('change',
       onEditorChanged);
@@ -73,6 +72,7 @@ export class JsEditor {
         // then, hash it and store it in localHash variable.
         let localHash = md5(newStr);
         if (editorHashedText !== localHash ) {
+          
           editorHashedText = localHash; 
           // subscribe to this event to be notified with the following data when the JS-editor changed.   
           ea.publish('onJsEditorChanged', {
@@ -81,7 +81,6 @@ export class JsEditor {
             cursor: curs
           });
         }
-
 
       }, 2500);
     }
@@ -108,48 +107,37 @@ export class JsEditor {
       });
     }
 
-
-    // Copy event for Vis-viewer
-    editor.on('copy', expression => {
-      ea.publish('onEditorCopy', {
-        expression: expression,
-        row: editor.getCursorPosition().row + 1,
-        column: editor.getCursorPosition().column + 1
-
-      });
-    });
-
     //For gutter
     session.selection.on('changeCursor', () => {
 
       let info = {
         cursor: this.editor.getCursorPosition().row + 1,
-        lastVisibleRow: session.getLength()
-
+        lastVisibleRow: session.getLength(),
+        position: this.editor.getCursorPosition()
       };
       ea.publish('onCursorMoved', info);
     });
-  }
+    
+    //For exprssions selection
+    editor.on("click", ()=>{
+        ea.publish("onEditorClick");
+    });
+    
+    editor.getSession().on('changeScrollTop', function(scrollTop) {
+        let info = {
+            top: scrollTop
+        };
 
-  createFirepad(editor) {
-    let baseURL = 'https://seecoderun.firebaseio.com';
-    let firebase = new Firebase(baseURL + '/' + this.pastebinId + '/content/js');
-
-    return Firepad.fromACE(
-      firebase,
-      editor, {
-        defaultText: 'go(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}'
-      });
+        ea.publish('jsEditorchangeScrollTop', info);
+    });
   }
 
   subscribe(session) {
     let ea = this.eventAggregator;
-    let hasErrors = this.hasErrors;
-    let editor = this.editor;
-
+    let self = this;
 
     ea.subscribe('onAnnotationChanged', payload => {
-      hasErrors = payload.hasErrors;
+      self.hasErrors = payload.hasErrors;
 
       if (payload.hasErrors) {
         console.log('has errors at: ' + payload.annotation);

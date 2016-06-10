@@ -1,89 +1,160 @@
-/* global Firepad */
-/* global Firebase */
-/* global ace */
-/* global $ */
+import {customElement} from 'aurelia-framework';
 
+import $ from 'jquery';
+import { draggable, resizable } from 'jquery-ui';
+
+@customElement('chat')
 export class Chat {
-
-  constructor() {
-    this.baseURL = 'https://seecoderun.firebaseio.com';
+  currentUsername = "";
+  currentUsercolor = "";
+  isFirstToggle = true;
+  
+  constructor(firebaseManager) {
+    this.firebaseManager = firebaseManager;
   }
+  
+  attached() {
+    let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
+    let self = this;
+    
+    let $chat = $('#chatDiv');
+    $chat.hide();
 
-  activate(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-    else {
-      let firebase = new Firebase(this.baseURL);
-      this.pastebinId = firebase.push().key();
-    }
-  }
-
-  attached(params) {
-    if (params.id) {
-      this.pastebinId = params.id;
-    }
-
-    //New Firebase chat Reference
-    var chatFirebaseRef = new Firebase(this.baseURL + '/' + this.pastebinId + '/content/chat');
-
-    // REGISTER DOM ELEMENTS
-    var messageField = $('#messageInput');
-    var nameField = $('#nameInput');
-    var messageList = $('#seecoderun-messages');
-
-    // LISTEN FOR KEYPRESS EVENT
-    messageField.keypress(function(e) {
+    let $chatToolbar= $('#chatToolbar');
+    let $chatUserNameInput = $('#chatUserNameInput');
+    let $chatMessages = $('#chatMessages');
+    let $chatMessageInput = $('#chatMessageInput');
+    
+    let userToColorMap = {};
+    let colors = [];
+    
+    chatFirebaseRef.on("value", function(snapshot) {
+        let data = snapshot.val();
+        if(!data){
+          return;
+        }
+        let username = data.name;
+        let color = data.color;
+        
+        if(color){
+          userToColorMap[username] = color;
+          colors.push(color);
+        }
+    }, function (errorObject) {
+      console.log("Chat read failed: " + errorObject.code);
+    });
+    
+    $chatUserNameInput.keyup(function(e) {
       if (e.keyCode == 13) {
-        //FIELD VALUES
-        var username = nameField.val();
-        var message = messageField.val();
-
-        //SAVE DATA TO FIREBASE AND EMPTY FIELD
+        $chatMessageInput.focus();
+      }
+        let username = $chatUserNameInput.val();
+        if(!username.trim().length){
+          username = "anonymous";
+        }
+        
+        let color = userToColorMap[username];
+        
+        if(color){
+          self.currentUsercolor = color;
+          $chatToolbar.css("border-color", `#${color}`);
+        }
+        
+        if(!username){
+          username = "anonymous";
+        }
+        
+        self.currentUsername = username;
+    });
+    
+    $chatMessageInput.keypress(function(e) {
+      if (e.keyCode == 13) {
+        
+        let message = $chatMessageInput.val();
+        
+        if(!message.trim().length){
+          $("#chatMessageFeedbackNotSent").css("display", "inline").fadeOut(750);
+          return;
+        }
+        
+        let username = $chatUserNameInput.val();
+        if(!username.trim().length){
+          username = "anonymous";
+        }
+        self.currentUsername = username;
+        let color = self.currentUsercolor;
+        
+        if(!color){
+          do{
+            color = "000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+          }while(colors.indexOf(color)> -1);
+        }
+        self.currentUsercolor = color;
+        
         chatFirebaseRef.push({
           name: username,
-          text: message
+          text: message,
+          color: color
         });
-        messageField.val('');
+        $chatMessageInput.val('');
+        $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
+          
+        $(`#${username} .seecoderun-chat-username`).each( function() {
+          if($(this).html() === username){
+            $(this).html('You');
+          }
+        });
+      }
+    });
+    
+    chatFirebaseRef.limitToLast(100).on('child_added', function child_added(snapshot) {
+
+        let data = snapshot.val();
+        if(!data){
+          return;
+        }
+        
+        let username = data.name;
+        let message = data.text;
+        let color = data.color;
+        
+        if(color){
+          userToColorMap[username] = color;
+          colors.push(color);
+        }
+  
+        let $messageElement = $(`<li id =${username}>`);
+        $messageElement.css("border-color", `#${color}`);
+        let $nameElement = $(`<strong class='seecoderun-chat-username'></strong>`);
+        $nameElement.text(username);
+        $messageElement.text(message).prepend('<br />').prepend($nameElement);
+  
+        $chatMessages.append($messageElement);
+        
+        $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
+        
+        if(self.currentUsername === username){
+          $chatMessages.stop().animate({
+            scrollTop: $chatMessages[0].scrollHeight
+          }, 1000);
+        }
+    });
+    
+    
+    $('#chatButton').click(function hideChatBox() {
+      $chat.toggle();
+      if(self.isFirstToggle){
+        $chatMessages.scrollTop($chatMessages[0].scrollHeight);
+        $chatUserNameInput.focus();
+        self.isFirstToggle = false;
+      }else{
+        $chatMessageInput.focus();
       }
     });
 
-    // Add a callback that is triggered for each chat message.
-    chatFirebaseRef.limitToLast(10).on('child_added', function(snapshot) {
-      //GET DATA
-      var data = snapshot.val();
-      var username = data.name;
-      var message = data.text;
-
-      //CREATE ELEMENTS MESSAGE & SANITIZE TEXT
-      var messageElement = $("<li>");
-      var nameElement = $("<strong class='seecoderun-chat-username'></strong>")
-      nameElement.text(username);
-      messageElement.text(message).prepend(nameElement);
-
-      //ADD MESSAGE
-      messageList.append(messageElement)
-
-      //SCROLL TO BOTTOM OF MESSAGE LIST
-      messageList[0].scrollTop = messageList[0].scrollHeight;
-    });
-
-    //End Firebase Code
-
-    //Chat Box User Interface
-
-    $(document).ready(function setUpChatBox() {
-      $('#chatDiv').hide();
-      
-      $('#hide').click(function hideChatBox() {
-        $('#chatDiv').toggle();
-      });
-      
-      $('#chatDiv').draggable();
-      
-      $('#chatDiv').resizable({
-        handles: "n, e, s, w"
-      });
+    $chat.draggable();
+    $chat.resizable({
+      handles: "n, e, s, w"
     });
   }
 }

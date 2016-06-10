@@ -1,40 +1,103 @@
+/* global $ */
 /* global ace */
 import {TraceViewModel} from "./trace-view-model";
 
 export class TraceViewController{
+    gutterTooltipSelector = "#gutterTooltip";
+    gutterTooltipShowDelay = 250;
+    gutterTooltipHideDelay = 1500;
     
-    constructor(eventAggregator, traceModel, aceUtils){
+    editorTooltipSelector = "#editorTooltip";
+    editorTooltipShowDelay = 500;
+    editorTooltipHideDelay = 500;
+    
+    aceEditorDivId = "aceJsEditorDiv";
+    gutterDecorationClassName = "seecoderun-gutter-decoration";
+    
+    constructor(eventAggregator, aceUtils){
         this.eventAggregator = eventAggregator;
-        this.traceModel = traceModel;
         this.aceUtils = aceUtils;
     }
     
     attached(){
-        let editor = ace.edit('aceJsEditorDiv'), aceUtils = this.aceUtils;
-        let gutterDecorationClassName = "seecoderun-gutter-decoration";
-        let tooltip = document.getElementById('tooltip_0');
+        let eventAggregator = this.eventAggregator;
+        let aceUtils = this.aceUtils;
+        let editor = ace.edit(this.aceEditorDivId);
+        let gutterDecorationClassName = this.gutterDecorationClassName;
         
-        if(tooltip === null){
-        			tooltip = document.createElement('div');		
-        			tooltip.setAttribute('id', 'tooltip-0'); 
-        			tooltip.setAttribute('class', 'seecoderun-tooltip'); 
-        			document.body.appendChild(tooltip);
+        let $editorTooltip = $(this.editorTooltipSelector);
+        
+        if(!$editorTooltip.length){
+			$editorTooltip = $(`<div id='${this.editorTooltipSelector}' />`);
         }
         
+        $editorTooltip.attr({
+            "data-toggle": "popover",
+            "data-placement": "bottom",
+            "data-content": "",
+            "delay": {
+                show: this.editorTooltipShowDelay,
+                hide: this.editorTooltipHideDelay
+            }
+        });
+		$editorTooltip.popover({
+		    title: "Current Values",
+		    html: true,
+		  //  selector: '[rel="popover"]',
+            content: function $editorTooltipPopoverContent() {
+                // return $('#branchNavigator').html();
+            },
+		    padding: 4
+		});
+		
+        $editorTooltip.appendTo('body');  
         
-        this.tooltip = tooltip;
+        let traceViewModel = new TraceViewModel($editorTooltip); 
+        traceViewModel.attached();
+        
+        aceUtils.setTraceGutterRenderer(editor, traceViewModel.traceGutterData);
+    	aceUtils.subscribeToGutterEvents(editor, $editorTooltip, gutterDecorationClassName, traceViewModel.traceGutterData, traceViewModel.update$Tooltip);
+    	
+    	this.editor = editor;
         this.gutterDecorationClassName = gutterDecorationClassName;
-        this.traceViewModel = new TraceViewModel(aceUtils, editor, tooltip, gutterDecorationClassName); 
+        this.$editorTooltip = $editorTooltip;
+    	this.traceViewModel = traceViewModel;
+    	
+    	aceUtils.publishExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+    	
         this.subscribe();
     }
+    
     subscribe(){
-        let eventAggregator = this.eventAggregator, traceViewModel = this.traceViewModel;
+        let self = this, eventAggregator = this.eventAggregator, aceUtils = this.aceUtils, editor =  this.editor, traceViewModel = this.traceViewModel;
         
         eventAggregator.subscribe(
-            this.traceModel.traceEvents.changed.event, payload =>{
-                        traceViewModel.onTraceChanged(payload.data);
+            "traceChanged", payload =>{
+                        self.onTraceChanged(payload.data);
                     }
-            );
+        );
+            
+        aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+    }
+    
+    onTraceChanged(traceHelper){
+        
+            if(!traceHelper){
+                throw "onTraceChanged() called without a Trace Helper.";
+            }
+            
+            let traceViewModel = this.traceViewModel;
+            
+            traceViewModel.traceHelper = traceHelper;
+            
+            let stackTrace = traceHelper.getStackBlockCounts();
+
+            let previousRows = traceViewModel.traceGutterData.rows;
+            traceViewModel.updateTraceGutterData(stackTrace);
+            
+            this.aceUtils.updateGutterDecorations(this.editor, previousRows, traceViewModel.traceGutterData.rows, this.gutterDecorationClassName);
+            
+            traceViewModel.traceValuesData.ranges = traceHelper.getExecutionTrace();
     }
     
 }

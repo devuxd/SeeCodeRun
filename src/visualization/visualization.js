@@ -1,6 +1,5 @@
 import {inject} from 'aurelia-framework';
 import * as d3 from 'd3';
-import {TraceModel} from '../traceService/trace-model';
 
 export class Visualization {
   static inject() {
@@ -27,61 +26,21 @@ export class Visualization {
   }
   
   renderVisualization() {
+    if(!this.trace){
+      console.log(`No trace found when rendering visualization #${this.type}`);
+    }
     let formattedTrace = this.formatTrace(this.trace);
     this.render(formattedTrace, `#${this.type}`);
   }
   
   subscribe() {
     let ea = this.eventAggregator;
-    let visualization = this;
-    let traceModel = new TraceModel();
-    
-    ea.subscribe(traceModel.traceEvents.changed.event, payload => {
-      this.traceHelper = payload.data;
-      visualization.trace = payload.data.trace;
-      if(visualization.type !== 'DataTable') {
-        visualization.renderVisualization(); 
-      }
-    });
-    
-    ea.subscribe(traceModel.executionEvents.failed.event, payload => {
-      visualization.hasError = true;
-    });
+    let self = this;
 
-    ea.subscribe('onVisRequest',payload => {
-        // Insert code here
-
-    });
-    
-    ea.subscribe('selectionRangeResponse', payload => {
-      let expressions = this.traceHelper.getExpressions();
-      let variables = this.traceHelper.getVariables();
-      let trace = {
-        timeline: [],
-        variables: [],
-        values: []
-        
-      };
-      for(let i = 0; i < expressions.variables.length; i++) {
-        if(this.traceHelper.isRangeInRange(expressions.variables[i].range, payload.range)) {
-          trace.variables.push(expressions.variables[i]);
-          
-          for(let j = 0; j < expressions.timeline.length; j++) {
-            if(this.traceHelper.isRangeInRange(expressions.timeline[j].range, payload.range)) {
-              trace.timeline.push(expressions.timeline[j]);    
-            }
-          }
-        }
-      }
-      
-      for(let k = 0; k < variables.variables.length; k++) {
-          if(this.traceHelper.isRangeInRange(variables.variables[k].range, payload.range)) {
-            trace.values.push(variables.variables[k]);
-          }
-      }
-      
-      visualization.trace = trace;
-      visualization.renderVisualization();
+    ea.subscribe('onVisRequest', payload => {
+        self.traceHelper = payload.traceHelper;
+        self.trace = payload.trace;
+        self.renderVisualization();
     });
   }
   
