@@ -8,13 +8,22 @@
             <div class="container-fluid">
                 <div class="row">
                         <div class="col-md-12">
-                            <button click.trigger="vis.showVis()" disabled.bind="!vis.showVisButton" class="btn btn-info active">show visualization</button>
-                            <button click.trigger="vis.clearSelection()" if.bind="vis.showClearButton" class="btn btn-danger">clear selections</button>
+                            <input type="checkbox" id="checkbox2" checked.bind="vis.isChecked" ui-checkbox>
+                            <label for="checkbox2">Activate Visualization</label>
+                            <!--<button click.trigger="vis.showVis()" disabled.bind="!vis.showVisButton" class="btn btn-info active">show visualization</button>-->
+                            <!--<button click.trigger="vis.clearSelection()" if.bind="vis.showClearButton" class="btn btn-danger">clear selections</button>-->
                         </div>
-                    </div>
+                </div class="row">
+                <div show.bind="vis.isChecked" class="add-vis">
+                    <select id="visSelect${$index}" class="btn btn-default" change.trigger="vis.onSelectChange($event, $index)">
+                      <option repeat.for="type of vis.visualizationTypes" value.bind="type.value">${type.name}</option>
+                    </select>
+                    <button type="button" class="btn btn-default" click.trigger="vis.addVisualization()">Add Visualization</button>
+                 </div>
             </div>
-            <div>
-                <div repeat.for="visualization of vis.visualizations">
+            
+            <div class="container-fluid">
+                <div class="vis-container" repeat.for="visualization of vis.visualizations">
                     <visualization vis.bind="visualization"></visualization>
                 </div>
             </div>

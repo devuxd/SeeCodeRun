@@ -1,23 +1,21 @@
-#shareBox {
-    padding-left: 2px;
-    word-wrap: break-word;
-    display: none;
-}
-
 .navbar-xs {
     min-height:28px;
     height: 28px;
-    border-style: solid;
-    border-width: 2px;
-    border-left: none;
-    border-top: none;
-    border-right: none;
-    border-bottom-color: #0066ff;
+    /*border-style: solid;*/
+    /*border-width: 2px;*/
+    /*border-left: none;*/
+    /*border-top: none;*/
+    /*border-right: none;*/
+    /*border-bottom-color: #0066ff;*/
 }
 .navbar-xs .navbar-brand{
     padding: 0px 4px;
     font-size: 16px;
     line-height: 20px;
+}
+
+.navbar-xs .navbar-brand .material-icons { 
+    color: #0066ff;
 }
 .navbar-xs .navbar-nav > li > a {
     padding-top: 0px;
@@ -41,13 +39,14 @@
 }
 
 ul > li label, ul > li span {
-    padding-top: 2px;
     color: #888888;
     font-weight: 100;
     font-size: 12px;
 }
 
-
+div .navbar-item {
+     padding-top: 2px;
+}
 ul > li div:hover label, ul > li div:hover span {
     color: 	#0066ff;
     font-weight: 200;

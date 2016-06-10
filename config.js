@@ -13,8 +13,8 @@ System.config({
     "res": "./res/",
     "styles": "./styles/",
     "include": "./include/",
-    "github:*": "jspm_packages/github/*",
-    "npm:*": "jspm_packages/npm/*"
+    "github:*": "./jspm_packages/github/*",
+    "npm:*": "./jspm_packages/npm/*"
   },
   map: {
     "ansi-styles": "npm:ansi-styles@2.2.1",

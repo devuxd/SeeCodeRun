@@ -8,7 +8,7 @@ var paths = require('../paths');
 var compilerOptions = require('../babel-options');
 var assign = Object.assign || require('object.assign');
 var notify = require("gulp-notify");
-var browserSync = require('browser-sync').create();
+var browserSync = require('browser-sync');
 
 // transpiles changed es6 files to SystemJS format
 // the plumber() call prevents 'pipe breaking' caused

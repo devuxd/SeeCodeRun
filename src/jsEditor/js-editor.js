@@ -85,8 +85,6 @@ export class JsEditor {
       }, 2500);
     }
 
-
-
     this.editorHashedText = editorHashedText;
     this.editorChangedTimeout = editorChangedTimeout;
 
@@ -136,12 +134,10 @@ export class JsEditor {
 
   subscribe(session) {
     let ea = this.eventAggregator;
-    let hasErrors = this.hasErrors;
-    let editor = this.editor;
-
+    let self = this;
 
     ea.subscribe('onAnnotationChanged', payload => {
-      hasErrors = payload.hasErrors;
+      self.hasErrors = payload.hasErrors;
 
       if (payload.hasErrors) {
         console.log('has errors at: ' + payload.annotation);
@@ -155,6 +151,13 @@ export class JsEditor {
     // This  event is published by js-gutter.js to scroll the JS editor. 
     ea.subscribe('onScrolled', info => {
       session.setScrollTop(info.top);
+    });
+    
+    ea.subscribe('selectionRangeRequested', () => {
+      let selection = {
+        range: session.selection.getRange()
+      };
+      ea.publish('selectionRangeResponse', selection);
     });
 
   }

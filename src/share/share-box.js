@@ -1,6 +1,7 @@
 import $ from 'jquery';
 
 export class ShareBox {
+    selectedEffect = "fold";
 
     constructor(firebaseManager) {
         this.firebaseManager = firebaseManager;
@@ -8,10 +9,11 @@ export class ShareBox {
 
     attached() {
         let self = this;
+        let options = {};
         $('#shareBox').hide();
 
         $('#shareButton').click(function hideShareBox() {
-            $('#shareBox').toggle();
+            $('#shareBox').toggle( this.selectedEffect, options, 500 );
         });
         
         let firebaseManager = this.firebaseManager;
