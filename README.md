@@ -12,11 +12,8 @@ To run the app, follow these steps:
   ```
 3. Ensure that [Gulp](http://gulpjs.com/) is installed globally. If you need to install it, use the following command:
 
-  ```shell
-  npm install --global gulp-cli
-  npm install --save-dev gulp
-  npm install --save-dev gulp-changed
-  
+  ```sh
+  npm install -g gulp
   ```
   > **Note:** Gulp must be installed globally, but a local version will also be installed to ensure a compatible version is used for the project.
 4. Ensure that [jspm](http://jspm.io/) is installed globally. If you need to install it, use the following command:
