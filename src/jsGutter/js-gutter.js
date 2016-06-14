@@ -8,7 +8,12 @@ export class JsGutter {
 
     attached() {
         this.$gutter = $('#gutter');
-        this.$gutter.css("height",`${$('#codeContent').height()}px`);
+        // this.$gutter.css(
+        // "height",
+        // `${
+        //   $("#codeContent").height()
+        // }px`
+        // );
         this.subscribe();
     }
 
@@ -16,7 +21,7 @@ export class JsGutter {
         let ea = this.eventAggregator;
         let $gutter= this.$gutter;
 
-        $gutter.scroll(function scroll(e) {
+        $(window).on( 'scroll', 'div#gutter', function scroll(e) {
                 let info = {
                     top: e.target.scrollTop
                 };
@@ -25,7 +30,12 @@ export class JsGutter {
         );
         
         ea.subscribe("jsEditorResize", jsEditorLayout => {
-           $gutter.css("height",`${$('#codeContent').height()}px`);
+        //   $gutter.css(
+        //         "height",
+        //         `${
+        //           $("#codeContent").height()
+        //         }px`
+        //     );
         });
         ea.subscribe('onCursorMoved', info => {
 
@@ -93,13 +103,13 @@ export class JsGutter {
     }
     
     getLast$LineNumber() {
-        let indexOfDiv = 1;
+        let indexOfDiv = 0;
         let $lineDiv = null;
         do {
             $lineDiv = this.$gutter.find('#line' + indexOfDiv);
         } while ($lineDiv && $lineDiv.length != 0 && ++indexOfDiv);
         
-        return indexOfDiv;
+        return indexOfDiv+1;
     }
     
     removeLine(lastline, lastDiv) {

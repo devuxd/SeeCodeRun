@@ -24,9 +24,15 @@ export class JsEditor {
         "height",
         `${
           $("#codeContent").height()
-          - $("#codeTabs").height()
         }px`
     );
+    $('#gutter').css(
+        "height",
+        `${
+          $(".ace_content").height()
+        }px`
+    );
+    //todo: run on ace gutter render
     $('.line_height').css("font-size", $editorDiv.css("font-size"));
     $('.line_height').css("font-family", $editorDiv.css("font-family"));
     
@@ -40,8 +46,23 @@ export class JsEditor {
   
   attached() {
     let editor = ace.edit(this.aceJsEditorDiv);
+    let $editorDiv =$(`#${this.aceJsEditorDiv}`);
     this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
+    let getVisible = function getVisible() {    
+        var $el = $editorDiv,
+            scrollTop = $(this).scrollTop(),
+            scrollBot = scrollTop + $(this).height(),
+            elTop = $el.offset().top,
+            elBottom = elTop + $el.outerHeight(),
+            visibleTop = elTop < scrollTop ? scrollTop : elTop,
+            visibleBottom = elBottom > scrollBot ? scrollBot : elBottom;
+            let visibleHeight = visibleBottom - visibleTop;
+            $("#codeContent").height(`${visibleHeight -50}px`);
+        // $('#notification').text(visibleBottom - visibleTop);
+    };
+
+    $(window).on('scroll resize', getVisible);
 
     let session = editor.getSession();
     this.aceUtils.configureSession(session);
@@ -152,6 +173,7 @@ export class JsEditor {
     });
     
     editor.renderer.on('afterRender', function() {
+      self.onWindowResize();
       let config = editor.renderer.layerConfig;
       ea.publish('jsEditorAfterRender', config);
     });

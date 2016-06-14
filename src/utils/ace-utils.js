@@ -10,7 +10,7 @@ export class AceUtils{
         editor.setTheme(theme);
         editor.setShowFoldWidgets(false);
         editor.setShowPrintMargin(false);
-        editor.setAutoScrollEditorIntoView(true);
+        // editor.setAutoScrollEditorIntoView(true);
         editor.$blockScrolling = Infinity;
     }
     

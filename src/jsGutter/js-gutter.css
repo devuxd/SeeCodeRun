@@ -1,8 +1,12 @@
 .js-gutter {
-    overflow-y: scroll;
-    padding-left: 4px;
+    overflow-y: hidden;
+    overflow-x: hidden;
     border: 0px;
-    height: 300px;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    padding-left: 4px;
+    height: 800px;
 }
 
 .js-gutter .line_height {

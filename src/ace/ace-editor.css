@@ -1,13 +1,11 @@
 .ace_editor {
+    overflow-y: hidden;
+    overflow-x: visible;
     border: 0px;
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;
     border-radius: 0px;
-    margin: auto;
-    height: 1000px;
-    width: 100%;
-    top: 0;
-    bottom: 0;
+    height: 800px;
 }
 
 .ace_scrollbar {
