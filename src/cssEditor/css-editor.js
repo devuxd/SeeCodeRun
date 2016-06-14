@@ -1,41 +1,27 @@
 /* global $ */
 /* global ace */
 
-import '../aceThemes/mode-css';
-import '../aceThemes/theme-chrome';
-
 export class CssEditor {
   cssEditorDiv = "cssEditorDiv";
 
-  constructor(eventAggregator, firebaseManager) {
+  constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
+    this.aceUtils = aceUtils;
   } 
 
   attached($parentDiv) {
-    $(`#${this.cssEditorDiv}`).css("height",`${$parentDiv.height()}px`);
+    // $(`#${this.cssEditorDiv}`).css("height",`${$parentDiv.height()}px`);
     let editor = ace.edit(this.cssEditorDiv);
-    this.configureEditor(editor);
+    this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeCssEditorFirepad(editor);
     
     let session = editor.getSession();
-    this.configureSession(session);
+    this.aceUtils.configureSession(session, 'ace/mode/css');
     this.setupSessionEvents(editor, session);
     
     this.editor = editor;
     this.session = session;
-  }
-    
-  configureEditor(editor) {
-    editor.setTheme('ace/theme/chrome');
-    editor.setShowFoldWidgets(false);
-    editor.$blockScrolling = Infinity;
-  } 
-
-  configureSession(session) {
-    session.setUseWrapMode(true);
-    session.setUseWorker(false);
-    session.setMode('ace/mode/css');
   }
   
   setupSessionEvents(editor, session) {

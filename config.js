@@ -13,9 +13,10 @@ System.config({
     "res": "./res/",
     "styles": "./styles/",
     "include": "./include/",
-    "github:*": "./jspm_packages/github/*",
-    "npm:*": "./jspm_packages/npm/*"
+    "github:*": "jspm_packages/github/*",
+    "npm:*": "jspm_packages/npm/*"
   },
+
   map: {
     "ansi-styles": "npm:ansi-styles@2.2.1",
     "aurelia-animator-css": "npm:aurelia-animator-css@1.0.0-beta.1.2.1",
@@ -53,7 +54,6 @@ System.config({
     "jqwidgets-framework": "npm:jqwidgets-framework@4.1.2",
     "jslinq": "npm:jslinq@1.0.15",
     "json": "github:systemjs/plugin-json@0.1.2",
-    "md5": "npm:md5@2.1.0",
     "tarball": "npm:tarball@0.0.5",
     "text": "github:systemjs/plugin-text@0.0.3",
     "github:components/jqueryui@1.11.4": {
@@ -99,7 +99,7 @@ System.config({
       "path-browserify": "npm:path-browserify@0.0.0"
     },
     "github:jspm/nodelibs-process@0.1.2": {
-      "process": "npm:process@0.11.3"
+      "process": "npm:process@0.11.4"
     },
     "github:jspm/nodelibs-querystring@0.1.0": {
       "querystring": "npm:querystring@0.2.0"
@@ -697,9 +697,6 @@ System.config({
       "loose-envify": "npm:loose-envify@1.2.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
-    "npm:is-buffer@1.1.3": {
-      "buffer": "github:jspm/nodelibs-buffer@0.1.0"
-    },
     "npm:is-finite@1.0.1": {
       "number-is-nan": "npm:number-is-nan@1.0.0"
     },
@@ -726,13 +723,6 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.2",
       "stream": "github:jspm/nodelibs-stream@0.1.0",
       "util": "github:jspm/nodelibs-util@0.1.0"
-    },
-    "npm:md5@2.1.0": {
-      "assert": "github:jspm/nodelibs-assert@0.1.0",
-      "buffer": "github:jspm/nodelibs-buffer@0.1.0",
-      "charenc": "npm:charenc@0.0.1",
-      "crypt": "npm:crypt@0.0.1",
-      "is-buffer": "npm:is-buffer@1.1.3"
     },
     "npm:miller-rabin@4.0.0": {
       "bn.js": "npm:bn.js@4.11.4",
@@ -802,6 +792,9 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:process@0.11.3": {
+      "assert": "github:jspm/nodelibs-assert@0.1.0"
+    },
+    "npm:process@0.11.4": {
       "assert": "github:jspm/nodelibs-assert@0.1.0"
     },
     "npm:public-encrypt@4.0.0": {

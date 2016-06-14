@@ -8,6 +8,8 @@ export class Chat {
   currentUsername = "";
   currentUsercolor = "";
   isFirstToggle = true;
+  colors = [];
+  userToColorMap = {};
   
   constructor(firebaseManager) {
     this.firebaseManager = firebaseManager;
@@ -25,9 +27,6 @@ export class Chat {
     let $chatMessages = $('#chatMessages');
     let $chatMessageInput = $('#chatMessageInput');
     
-    let userToColorMap = {};
-    let colors = [];
-    
     chatFirebaseRef.on("value", function(snapshot) {
         let data = snapshot.val();
         if(!data){
@@ -37,8 +36,7 @@ export class Chat {
         let color = data.color;
         
         if(color){
-          userToColorMap[username] = color;
-          colors.push(color);
+          self.updateUserToColorMapping(color, username);
         }
     }, function (errorObject) {
       console.log("Chat read failed: " + errorObject.code);
@@ -53,11 +51,12 @@ export class Chat {
           username = "anonymous";
         }
         
-        let color = userToColorMap[username];
+        self.currentUsercolor = self.userToColorMap[username];
         
-        if(color){
-          self.currentUsercolor = color;
-          $chatToolbar.css("border-color", `#${color}`);
+        if(self.currentUsercolor){
+          $chatToolbar.css("border-color", `#${self.currentUsercolor}`);
+        }else{
+          $chatToolbar.css("border-color", "initial");
         }
         
         if(!username){
@@ -82,28 +81,26 @@ export class Chat {
           username = "anonymous";
         }
         self.currentUsername = username;
-        let color = self.currentUsercolor;
         
-        if(!color){
-          do{
-            color = "000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-          }while(colors.indexOf(color)> -1);
+        if(!self.currentUsercolor){
+          self.currentUsercolor =self.getRandomColor(self.currentUsercolor);
+          self.updateUserToColorMapping(self.currentUsercolor, username);
         }
-        self.currentUsercolor = color;
         
         chatFirebaseRef.push({
           name: username,
           text: message,
-          color: color
+          color: self.currentUsercolor
         });
         $chatMessageInput.val('');
         $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
-          
-        $(`#${username} .seecoderun-chat-username`).each( function() {
-          if($(this).html() === username){
-            $(this).html('You');
-          }
-        });
+        
+        // todo: if user changes names or a match happens while it type, it corrupts naming. needs shadow ids
+        // $(`#${username} .seecoderun-chat-username`).each( function() {
+        //   if($(this).html() === username){
+        //     $(this).html('You');
+        //   }
+        // });
       }
     });
     
@@ -119,8 +116,7 @@ export class Chat {
         let color = data.color;
         
         if(color){
-          userToColorMap[username] = color;
-          colors.push(color);
+          self.updateUserToColorMapping(color, username);
         }
   
         let $messageElement = $(`<li id =${username}>`);
@@ -134,6 +130,7 @@ export class Chat {
         $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
         
         if(self.currentUsername === username){
+          $chatToolbar.css("border-color", `#${color}`);
           $chatMessages.stop().animate({
             scrollTop: $chatMessages[0].scrollHeight
           }, 1000);
@@ -157,4 +154,17 @@ export class Chat {
       handles: "n, e, s, w"
     });
   }
+  
+  getRandomColor(color, colors = this.colors){
+    do{
+        color = "000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+      }while(colors.indexOf(color)> -1);
+    return color;
+  }
+  
+  updateUserToColorMapping(color, username, self = this){
+    self.userToColorMap[username] = color;
+    self.colors.push(color);
+  }
+    
 }

@@ -29,6 +29,7 @@ export class TraceViewController{
         
         if(!$editorTooltip.length){
 			$editorTooltip = $(`<div id='${this.editorTooltipSelector}' />`);
+// 			$editorTooltip.addClassName("");
         }
         
         $editorTooltip.attr({

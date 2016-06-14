@@ -50,37 +50,13 @@ export class VisViewer {
       ea.publish('onVisRequest', payload );
     });
     
-    ea.subscribe('selectionRangeResponse', payload => {
+    ea.subscribe('selectionRangeResponse', expression => {
       if(!self.traceHelper){
         return;
       }
-      let expressions = self.traceHelper.getExpressions();
-      let variables = self.traceHelper.getVariables();
-      let trace = {
-        timeline: [],
-        variables: [],
-        values: []
-      };
-      for(let i = 0; i < expressions.variables.length; i++) {
-        if(self.traceHelper.isRangeInRange(expressions.variables[i].range, payload.range)) {
-          trace.variables.push(expressions.variables[i]);
-          
-          for(let j = 0; j < expressions.timeline.length; j++) {
-            if(self.traceHelper.isRangeInRange(expressions.timeline[j].range, payload.range)) {
-              trace.timeline.push(expressions.timeline[j]);    
-            }
-          }
-        }
-      }
-      
-      for(let k = 0; k < variables.variables.length; k++) {
-          if(self.traceHelper.isRangeInRange(variables.variables[k].range, payload.range)) {
-            trace.values.push(variables.variables[k]);
-          }
-      }
-      
-      self.trace = trace;
-      ea.publish('onVisRequest', {trace: trace, traceHelper: self.traceHelper} );
+      self.trace = self.traceHelper.getTraceForExpression(expression);
+
+      ea.publish('onVisRequest', {trace: self.trace, traceHelper: self.traceHelper} );
     });
   }
   // showVis() {
@@ -102,7 +78,6 @@ export class VisViewer {
   addVisualization() {
     let self =this;
     let tempVis = this.tempVis;
-    console.log(tempVis);
     if(tempVis) {
       if(!this.checkVisExists(tempVis.type)) {
         tempVis.traceHelper = self.traceHelper;

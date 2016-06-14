@@ -1,11 +1,10 @@
 .split {
     -webkit-box-sizing: border-box;
-       -moz-box-sizing: border-box;
-            box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
     
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 100;
 }
 
 .content {
@@ -34,5 +33,6 @@
 
 .split.split-horizontal, .gutter.gutter-horizontal {
     height: 100%;
+    width: 100%;
     float: left;
 }

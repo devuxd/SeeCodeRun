@@ -7,46 +7,46 @@ export class JsGutter {
     }
 
     attached() {
-        this.iframeBody = $('#gutter');
-        $('#gutter').css("height",`${$("#js-editor-code").height()}px`);
-        
+        this.$gutter = $('#gutter');
+        this.$gutter.css("height",`${$('#codeContent').height()}px`);
         this.subscribe();
     }
 
     subscribe() {
         let ea = this.eventAggregator;
+        let $gutter= this.$gutter;
 
-        $('#gutter').scroll(function scroll(e) {
+        $gutter.scroll(function scroll(e) {
                 let info = {
                     top: e.target.scrollTop
                 };
-        
                 ea.publish('onScrolled', info);
             }
         );
+        
+        ea.subscribe("jsEditorResize", jsEditorLayout => {
+           $gutter.css("height",`${$('#codeContent').height()}px`);
+        });
         ea.subscribe('onCursorMoved', info => {
 
-            let lastDiv = this.getLastDiv();
-            let line = info.cursor;
+            let last$LineNumber = this.getLast$LineNumber();
+            this.selectedLine = info.cursor ||1;
             let lastline = info.lastVisibleRow;
+            let $lastLine = $gutter.find('#line' + lastline);
 
-            if (this.iframeBody.find('#line' + lastline).length == 0) {
+            if ($lastLine || $lastLine.length < 1) {
                 this.createLine(lastline);
             }
-            if (lastline < lastDiv) {
-                this.removeLine(lastline, lastDiv);
+            if (lastline < last$LineNumber) {
+                this.removeLine(lastline, last$LineNumber);
             }
 
-            this.iframeBody.find("#line" + this.selectedLine).removeClass("highlight_gutter");
-            this.iframeBody.find("#line" + line).addClass("highlight_gutter");
-            this.selectedLine = line;
-
+            $gutter.find("#line" + this.selectedLine).removeClass("highlight_gutter");
+            $gutter.find("#line" + this.selectedLine).addClass("highlight_gutter");
 
             this.LastVisibleRow = info.lastVisibleRow;
 
-            this.highlightLine(line, lastline);
-
-
+            this.highlightLine(this.selectedLine, lastline);
         });
 
         ea.subscribe("traceChanged", payload => {
@@ -56,76 +56,82 @@ export class JsGutter {
         
         ea.subscribe("jsEditorchangeScrollTop", payload => {
             let scrollTop = payload.top;
-            this.iframeBody.scrollTop(scrollTop);
+            this.$gutter.scrollTop(scrollTop);
         });
-
-
     }
 
     updateGutter(values) {
         this.clearGutter();
         for (let value of values) {
-            this.setContentGutter(value.range.start.row + 1, value.id + " = " + value.value);
+            this.setGutterLineContent(value.range.start.row + 1, value.id + " = " + value.value);
         }
         this.eventAggregator.publish("jsGutterUpdated", {data:values});
     }
 
-    setContentGutter(line, contents) {
-        let lastDiv = this.getLastDiv();
-        if (line > lastDiv) {
-            throw ("Line " + line + " does not exist" + "last visible line is  " + lastDiv);
+    setGutterLineContent(line, contents) {
+        let $line = this.$gutter.find("#line" + line);
+        if (!($line && $line.length)) {
+            this.createLine(line);
+            $line = this.$gutter.find("#line" + line);
         }
-        this.iframeBody.find("#line" + line).append(" [ " + contents + " ] ");
+        $line.append(" [ " + contents + " ] ");
     }
 
     createLine(line) {
-        let indexOfDiv = this.getLastDiv();
+        let self =this;
+        let indexOfDiv = this.getLast$LineNumber();
         for (indexOfDiv; indexOfDiv <= line; indexOfDiv++) {
-            this.iframeBody.append("<div id=line" + indexOfDiv + "></div>");
-            this.iframeBody.find("#line" + indexOfDiv).addClass("line_height");
+            this.$gutter.append("<div id = line" + indexOfDiv + "></div>");
+            let $newLine = this.$gutter.find("#line" + indexOfDiv);
+            $newLine.addClass("line_height");
+            $newLine.click( () =>{
+                    let row = indexOfDiv -1;
+                    self.eventAggregator.publish("jsGutterLineClick", row);
+                }
+            );
         }
     }
     
-    getLastDiv() {
+    getLast$LineNumber() {
         let indexOfDiv = 1;
-        while (this.iframeBody.find('#line' + indexOfDiv).length != 0) {
-            indexOfDiv++;
-        }
+        let $lineDiv = null;
+        do {
+            $lineDiv = this.$gutter.find('#line' + indexOfDiv);
+        } while ($lineDiv && $lineDiv.length != 0 && ++indexOfDiv);
+        
         return indexOfDiv;
     }
     
     removeLine(lastline, lastDiv) {
         while (lastline < lastDiv) {
-            this.iframeBody.find('#line' + lastDiv).remove();
+            let $toRemove = this.$gutter.find('#line' + lastDiv);
+            if($toRemove && $toRemove.length > 0){
+                $toRemove.remove();
+            }
             lastDiv--;
         }
     }
     
     highlightLine(line, lastline) {
 
-        let lastDiv = this.getLastDiv();
-        let selectedLine = this.selectedLine;
-        if (this.iframeBody.find('#line' + lastline).length == 0) {
+        let lastDiv = this.getLast$LineNumber();
+        if (this.$gutter.find('#line' + lastline).length < 1) {
             this.createLine(lastline);
         }
         if (lastline < lastDiv) {
             this.removeLine(lastline, lastDiv);
         }
 
-        this.iframeBody.find("#line" + selectedLine).removeClass("highlight_gutter");
-        this.iframeBody.find("#line" + line).addClass("highlight_gutter");
+        this.$gutter.find(".line_height").removeClass("highlight_gutter");
+        this.$gutter.find("#line" + line).addClass("highlight_gutter");
         this.selectedLine = line;
-
-
-
     }
 
     clearGutter() {
-        let lines = this.getLastDiv();
+        let lines = this.getLast$LineNumber();
         while (lines > 0) {
-            this.iframeBody.find("#line" + lines).html('');
+            this.$gutter.find("#line" + lines).html('');
             lines--;
         }
     }
-    
 }

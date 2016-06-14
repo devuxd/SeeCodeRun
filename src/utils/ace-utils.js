@@ -1,8 +1,25 @@
 /* global ace */
+import '../ace/theme/theme-chrome';
+import '../ace/mode/mode-javascript';
+import '../ace/mode/mode-html';
+import '../ace/mode/mode-css';
 
 export class AceUtils{
-    constructor(){
+
+    configureEditor(editor, theme = 'ace/theme/chrome'){
+        editor.setTheme(theme);
+        editor.setShowFoldWidgets(false);
+        editor.setShowPrintMargin(false);
+        editor.setAutoScrollEditorIntoView(true);
+        editor.$blockScrolling = Infinity;
     }
+    
+    configureSession(session, mode = 'ace/mode/javascript') {
+        session.setUseWrapMode(true);
+        session.setUseWorker(false);
+        session.setMode(mode);
+    }
+    
     makeAceMarkerManager(aceEditor){
         return {    
                 aceEditor: aceEditor,
@@ -236,12 +253,39 @@ export class AceUtils{
         session.gutterRenderer = traceGutterRenderer;
     }
     
+    
+    
+    getGutterLayout(editor){
+        let session = editor.getSession();
+        let config = editor.renderer.layerConfig;
+        let lineHeight = editor.renderer.lineHeight + "px";
+        let firstLineNumber = session.$firstLineNumber;
+        let firstRow = config.firstRow;
+        let lastRow = Math.min(config.lastRow + config.gutterOffset,  // needed to compensate for hor scollbar
+            session.getLength() - 1);
+            
+        let gutterLayout = {
+            lineHeight: lineHeight,
+            firstLineNumber: firstLineNumber,
+            firstRow: firstRow,
+            lastRow: lastRow,
+            getRowHeight: function(row){
+                return session.getRowLength(row) * config.lineHeight + "px";
+            }
+        };
+        return gutterLayout;
+    }
+    
     customUpdateGutter(editor, traceGutterRenderer) {
         let dom = document;
         let gutter = editor.renderer.$gutterLayer;
-        session.gutterRenderer = traceGutterRenderer;
         let config = editor.renderer.layerConfig;
         let session = editor.getSession();
+        
+        if(traceGutterRenderer){
+         session.gutterRenderer = traceGutterRenderer;
+        }
+        
         let firstRow = config.firstRow;
         var lastRow = Math.min(config.lastRow + config.gutterOffset,  // needed to compensate for hor scollbar
             session.getLength() - 1);
@@ -365,9 +409,46 @@ export class AceUtils{
         }
         return annotations;
     }
+    
+    getCompactJsCode(jsCode){
+        let codeWithoutComments = jsCode.replace(/\/\*.*\*\/|\/\/.*[\n\r]/g, "");
+        let codeTrimmed = codeWithoutComments.replace(/^[\s\xA0]+|[\s\xA0]+$/, "");
+        let editorCompactedText = codeTrimmed.replace(/(["'`]([^"'`]*)["'`])?[\s\xA0]+/g, "$1 ");
+        return editorCompactedText;
+    }
   
     count(value, singular, plural) {
         return (value === 1) ? (`${value} ${singular}`) : (`${value} ${plural}`);
     }
     
+    bindAceEvents(editorDivId, editor, ea){
+        let aceEvents = this.aceEvents;
+        for(let component in aceEvents.components){
+            let componentEvents = aceEvents[component];
+            for(let i in componentEvents){
+                let event = componentEvents[i];
+                editor[component].on(event, data =>{
+                    ea.publish(event, data);
+                });
+                
+            }
+        }
+    }
+    // Events as Ace 2.3.1
+    aceEvents = {
+        editor: [
+            
+        ],
+        components: {
+            session: [],
+            renderer: [
+                "beforeRender",
+                "changeCharacterSize",
+                "beforeRender",
+                "afterRender",
+                "autosize",
+                "scrollbarVisibilityChanged"
+            ]
+        }
+    };
 }

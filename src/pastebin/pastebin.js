@@ -45,10 +45,10 @@ export class Pastebin {
 
     this.consoleWindow = new ConsoleWindow(eventAggregator);
     
-    this.jsEditor = new JsEditor(eventAggregator, firebaseManager);
+    this.jsEditor = new JsEditor(eventAggregator, firebaseManager, aceUtils);
     this.jsGutter = new JsGutter(eventAggregator);
-    this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager);
-    this.cssEditor  = new CssEditor(eventAggregator, firebaseManager);
+    this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
+    this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
     
     this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
@@ -74,6 +74,13 @@ export class Pastebin {
   }
 
   attached() {
+    let ea = this.eventAggregator;
+    
+    $(window).on('resize', function () {
+      let dimensions = {height: window.innerHeight, with: window.innerWidth};
+        ea.publish("windowResize", dimensions);
+    });
+    
     this.navigationBar.attached();
     
     Split(['#main-splitter-left', '#main-splitter-right'], {
@@ -92,7 +99,9 @@ export class Pastebin {
     let gutterSplit = function (){
       $codeSection.resizable(
         {
-            maxWidth: $("#main-splitter-left").width() - 100,
+            // maxWidth: $("#main-splitter-left").width() - 100,
+            // alsoResize: "#js-editor-trace-gutter",
+            containment: "parent",
             autoHide: false,
             handles: 'e, w'
         }
@@ -116,7 +125,7 @@ export class Pastebin {
           sizes: [90, 10],
           gutterSize: 3,
           cursor: 'row-resize',
-          minSize: 100
+          minSize: 50
     });
     
     this.traceViewController.attached();

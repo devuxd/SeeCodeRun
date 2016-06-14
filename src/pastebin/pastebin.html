@@ -1,6 +1,8 @@
 <template>
   <require from = "layout/codeSection/code-section.css"></require>
+  <require from = "ace/ace-editor.css"></require>
   <require from = "pastebin/pastebin.css"></require>
+  <require from = "traceView/trace-view.css"></require>
   
   <require from = "jsEditor/js-editor.html"></require>
   <require from = "jsGutter/js-gutter.html"></require>
@@ -13,22 +15,19 @@
   <require from = "tracePlay/play.html"></require>
   <require from = "traceSearch/trace-search.html"></require>
 
-  <div id = "mainContainer" style = "box-sizing: border-box; height: 100%;" class="container-fluid">
-    
-    <div id = "main-splitter-left"  class = "split split-horizontal">
-      <div role = "tabpanel">
-        <ul class = "nav nav-tabs">
-          <li role = "presentation" class = "active">
-            <a href = "#js-container" aria-controls = "js-container" role = "tab" data-toggle = "tab">JS</a></li>
-          <li role = "presentation">
-            <a href = "#html-container" aria-controls = "html-container" role = "tab" data-toggle = "tab">HTML</a></li>
-          <li role = "presentation">
-            <a href = "#css-container" aria-controls = "css-container" role = "tab" data-toggle = "tab">CSS</a></li>
-        </ul>
-      </div>
-      <div class = "tab-content clearfix">
-        <div role = "tabpanel" class = "tab-pane active" id = "js-container">
-          <div id = "code-section" class = "w3-row" >
+  <div id = "mainContainer">
+    <div id = "main-splitter-left"  class = "split split-horizontal container-fluid">
+      <ul id = "codeTabs" class = "nav nav-tabs" role = "tablist">
+        <li id =  "jsTab" class = "active" role = "tab" aria-controls = "js-container">
+          <a href = "#js-container" data-toggle = "tab">JS</a></li>
+        <li id =  "htmlTab" role = "tab" aria-controls = "html-container">
+          <a href = "#html-container" data-toggle = "tab">HTML</a></li>
+        <li id =  "cssTab" role = "tab" aria-controls = "css-container">
+          <a href = "#css-container" data-toggle = "tab">CSS</a></li>
+      </ul>
+      <div id = "codeContent" class = "tab-content"> 
+        <div id = "js-container" class = "tab-pane fade in active" >
+          <div id = "code-section" class = "w3-row"  role = "tabpanel" aria-labelledby="jsTab">
             <div id = "js-editor-code" class = "w3-container w3-threequarter" style = "padding: 0px 1px 0px 0px;">
               <js-editor jsEditor.bind = "jsEditor"></js-editor>
             </div>
@@ -38,43 +37,40 @@
             </div>
           </div>
         </div>
-        <div role = "tabpanel" class = "tab-pane" id = "html-container">
+        <div id = "html-container" class = "tab-pane fade"  role = "tabpanel" aria-labelledby="htmlTab">
           <history-viewer historyViewer.bind = "historyViewer"></history-viewer>
           <html-editor htmlEditor.bind = "htmlEditor"></html-editor>
         </div>
-        <div role = "tabpanel" class = "tab-pane" id = "css-container">
+        <div id = "css-container"  class = "tab-pane fade" role = "tabpanel" aria-labelledby="cssTab">
           <css-editor cssEditor.bind = "cssEditor"></css-editor>
         </div>
       </div>
     </div>
       
-    <div id = "main-splitter-right" class = "split split-horizontal" >
-      <div role = "tabpanel">
-          <ul class = "nav nav-tabs">
-            <li role = "presentation" class = "active">
-              <a href = "#preview" aria-controls = "preview" role = "tab" data-toggle = "tab"><span class = 'glyphicon glyphicon-globe'></span>Output</a></li>
-            <li role = "presentation">
-              <a href = "#visualization-container" aria-controls = "visualization-container" role = "tab" data-toggle = "tab"><span class = 'glyphicon glyphicon-tasks'></span>See</a></li>
-          </ul>
-      </div>
-      <div id = "right-splitter" style = "box-sizing: border-box; height: 95%;">
+    <div id = "main-splitter-right" class = "split split-horizontal container-fluid" >
+      <div id = "right-splitter">
         <div id = "right-splitter-top" class = "split split-vertical">
-          
-          <div class = "tab-content clearfix">
-            <div role = "tabpanel" class = "tab-pane active" id = "preview">
-              <html-viewer></html-viewer>
+          <ul id = "reviewTabs" class = "nav nav-tabs" role = "tablist">
+            <li id = "previewTab" class = "active" role = "tab" aria-controls = "preview">
+              <a href = "#preview" data-toggle = "tab"><span class = 'glyphicon glyphicon-globe'></span>Output</a></li>
+            <li id = "visualizationTab" role = "tab" aria-controls = "visualization-container">
+              <a href = "#visualization-container"  data-toggle = "tab"><span class = 'glyphicon glyphicon-tasks'></span>See</a></li>
+          </ul>
+          <div  class = "tab-content">
+          <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
+            <html-viewer></html-viewer>
+          </div>
+          <div id = "visualization-container" class = "tab-pane fade container-fluid"  role = "tabpanel" aria-labelledby="visualizationTab">
+            <play tracePlay.bind = "tracePlay"></play>
+            <trace-search search.bind = "traceSearch"></trace-search>
+            <div>
+              <vis-viewer vis.bind = "visViewer"></vis-viewer>
             </div>
-            <div role = "tabpanel"  class = "tab-pane iframeCssPreview" id = "visualization-container">
-              <play tracePlay.bind = "tracePlay"></play>
-              <trace-search search.bind = "traceSearch"></trace-search>
-              <div>
-                <vis-viewer vis.bind = "visViewer"></vis-viewer>
-              </div>
-            </div>
+          </div>
           </div>
         </div>
         
-        <div id = "right-splitter-bottom" class = "split split-vertical">
+        <div id = "right-splitter-bottom" class = "split split-vertical container-fluid">
           <console-window console.bind = 'consoleWindow'></console-window>
         </div>
       </div>

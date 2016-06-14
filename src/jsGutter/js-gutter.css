@@ -1,17 +1,32 @@
 .js-gutter {
-   overflow-y: scroll;
-   padding-left: 4px;
+    overflow-y: scroll;
+    padding-left: 4px;
+    border: 0px;
+    height: 300px;
 }
 
-.line_height {
+.js-gutter .line_height {
     white-space: nowrap;
     color: #999487;
     font-size: 11px;
     height: 14px;
 }
 
-.highlight_gutter {
+.js-gutter .highlight_gutter {
     color: black;
     background: #eeeeee;
-    display: table-row;
 }
+
+ @-moz-document url-prefix() {
+.js-gutter .line_height {
+     white-space: nowrap;
+     color: #999487;
+     font-size: 11px;
+     height: 14px;
+}
+
+.js-gutter .highlight_gutter {
+     color: black;
+     background: #eeeeee;
+   }
+ }

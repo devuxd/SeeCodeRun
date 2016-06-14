@@ -1,3 +1,59 @@
+#mainContainer{
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+#main-splitter-left{
+    overflow-y: hidden;
+    padding-right: 0px;
+}
+
+#main-splitter-right{
+    overflow-y: hidden;
+    padding-left: 0px;
+}
+
+#codeContent{
+    min-height: 96%;
+    height: 100%;
+    bottom: 0px;
+    overflow-y: hidden;
+}
+
+#codeContent .fade {
+   -webkit-transition: opacity 0.07s linear;
+      -moz-transition: opacity 0.07s linear;
+       -ms-transition: opacity 0.07s linear;
+        -o-transition: opacity 0.07s linear;
+           transition: opacity 0.07s linear;
+}
+
+#right-splitter{
+    bottom: 0px;
+    margin-bottom: 0;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; 
+    height: 100%;
+}
+
+#visualization-container{
+    padding-top: 5px;
+    padding-right: 0px;
+}
+
+#visualization-container .panel {
+    margin-bottom: 5px;
+}
+
+#visualization-container .panel-heading {
+     cursor: pointer;
+}
+
+
+
 ul.nav .glyphicon {
     padding-right: 2px;
     font-size: 13px;

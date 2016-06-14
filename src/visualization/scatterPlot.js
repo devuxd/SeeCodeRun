@@ -111,7 +111,7 @@ export class ScatterPlot {
     });
   
     x.domain(d3.extent(data, function(d) { return d.timePeriod; })).nice();
-    y.domain(d3.extent(data, function(d) { return isNaN(d.value)? 0 : d.value; })).nice();
+    y.domain(d3.extent(data, function(d) { return d.value; })).nice();
   
     svg.append("g")
         .attr("class", "x axis")

@@ -4,13 +4,12 @@
    right: 0;
    top: 30px;
    bottom: 0;
-   overflow-x: hidden;
+   overflow-x: auto;
    overflow-y: auto;
-   z-index: 10;
  }
  
  .page-host {
-   padding-top: 2px;
+   padding-top: 0px;
  }
  
  
