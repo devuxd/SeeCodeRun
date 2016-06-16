@@ -71,7 +71,7 @@ export class JsGutter {
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data:values});
             }
-            self.$gutter.scrollTop(self.scrollTop);
+            // self.$gutter.scrollTop(self.scrollTop);
             self.isTraceServiceProccesing = false;
         }
         
@@ -124,12 +124,13 @@ export class JsGutter {
     }
 
     subscribe() {
+        let self = this;
         let $gutter= this.$gutter;
         let ea = this.eventAggregator;
         
         ea.subscribe("windowResize", layout =>{
             $gutter.height(layout.editorHeight);
-            this.update();
+            self.update();
           }
         );
         
