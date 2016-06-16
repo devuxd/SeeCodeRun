@@ -20,17 +20,17 @@ export class EsTracer {
         this.traceChanged(event, payload.data);
     }
     
-    onCodeFailed(payload){
-        let event = this.traceModel.traceEvents.changed;
-        this.traceChanged(event, payload.data,  `Error: ${payload.error}`);
-    }
-    
-    traceChanged(event, results, error = ""){
+    traceChanged(event, results){
         let duration = (+new Date()) - this.startTimestamp ;
-        let description = `${event.description} Trace completed in ${1 + duration} ms.${error.toString()}`;
+        results.description = `${event.description} Trace completed in ${1 + duration} ms.`;
         
-        let traceHelper = new TraceHelper(results, error, this.traceModel);
-        let payload = this.traceModel.makePayload(event.event, description, traceHelper);
+        let traceHelper = new TraceHelper(results, this.traceModel);
+        
+        let details = results.description;
+        if(results.error){
+            details += ` Error: ${results.error.toString()}`;
+        }
+        let payload = this.traceModel.makePayload(event.event, details, traceHelper);
         
         if(this.publisher){
             this.publisher.publish(payload.status, payload);

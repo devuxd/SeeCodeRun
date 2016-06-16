@@ -30,9 +30,6 @@ export class TraceService {
             ea.subscribe(this.executionEvents.finished.event, payload =>{
                 this.esTracer.onCodeFinished(payload);
             }); 
-            ea.subscribe(this.executionEvents.failed.event, payload =>{
-                this.esTracer.onCodeFailed(payload);
-            });
          }else{
              throw "An EventAggregator is required to listen for code execution events";
          }

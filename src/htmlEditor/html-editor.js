@@ -3,6 +3,7 @@
 
 export class HtmlEditor {
   aceHtmlEditorDiv = "aceHtmlEditorDiv";
+  aceHtmlEditorSelector = "#aceHtmlEditorDiv";
 
   constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
@@ -10,8 +11,7 @@ export class HtmlEditor {
     this.aceUtils =aceUtils;
   }
     
-  attached($parentDiv) {
-    // $(`#${this.aceHtmlEditorDiv}`).css("height",`${$parentDiv.height()}px`);
+  attached() {
     let editor = ace.edit(this.aceHtmlEditorDiv);
     this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeHtmlEditorFirepad(editor);
@@ -24,6 +24,7 @@ export class HtmlEditor {
     
     this.session = session;
     this.editor = editor;
+    this.subscribe();
   }
 
   setupSessionEvents(editor, session) {
@@ -41,6 +42,15 @@ export class HtmlEditor {
       }
       
       this.editorChangedTimeout = editorChangedTimeout;
+  }
+  
+  subscribe(){
+    let ea = this.eventAggregator;
+    ea.subscribe("windowResize", layout =>{
+        $(this.aceHtmlEditorSelector).height(layout.editorHeight);
+        this.editor.resize();
+      }
+    );
   }
   
 }

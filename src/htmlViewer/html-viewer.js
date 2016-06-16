@@ -1,12 +1,27 @@
 import {TraceService} from '../traceService/trace-service';
 
 export class HtmlViewer {
+    errors = "";
 
     constructor(eventAggregator, traceModel) {
         this.eventAggregator = eventAggregator;
         this.traceService = new TraceService(eventAggregator, traceModel);
         this.div = 'htmlView';
         this.subscribe();
+    }
+    
+    pushError(errorRef){
+      let error = "";
+      if(errorRef){
+        error = errorRef.toString();
+      }
+      this.errors = this.errors? this.errors + ", "  + error : error;
+    }
+    
+    popErrors(){
+      let poppedErrors = this.errors;
+      this.errors = "";
+      return poppedErrors;
     }
     
     attached() {
@@ -28,7 +43,7 @@ export class HtmlViewer {
         this.addCss();
       });
       
-      ea.subscribe('onJsEditorChanged', payload => {
+      ea.subscribe('jsEditorChange', payload => {
         let editorText = payload.js;
         let instrumentationPayload = this.traceService.getInstrumentation(editorText);
         
@@ -51,7 +66,7 @@ export class HtmlViewer {
       let script = doc.createElement('script');
       script.textContent = this.js;
         
-      let result = undefined;
+      let result = {error: ""};
       
       try {
         ea.publish(traceService.executionEvents.running.event);
@@ -60,23 +75,26 @@ export class HtmlViewer {
         
         result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
         
+        result.error = this.popErrors();
+        
         ea.publish(
           traceService.executionEvents.finished.event, { 
             data: result 
         });
       } catch(e) {
-        let error = e.toString();
+        this.pushError(e);
         
         try {
           result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
         } catch (jsonError) {
-          error += " " + jsonError.toString();
+          if(e.toString() !== jsonError.toString()){
+            this.pushError(jsonError);
+          }
         }
-        
+        result.error = this.popErrors();
         ea.publish(
-          traceService.executionEvents.failed.event, { 
-            data: result, 
-            error: error 
+          traceService.executionEvents.finished.event, { 
+            data: result 
           });
       }
     }
@@ -105,10 +123,12 @@ export class HtmlViewer {
     }
     
     addErrorLogging(eventAggregator) {
+      let self = this;
       let ea = eventAggregator;
       let window = this.getContentWindow();
                         
       window.onerror = function publishErrors(err) {
+        self.pushError(err);
         ea.publish('iframeError', {
           err: err
         });

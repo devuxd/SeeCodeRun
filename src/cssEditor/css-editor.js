@@ -3,6 +3,7 @@
 
 export class CssEditor {
   cssEditorDiv = "cssEditorDiv";
+  cssEditorSelector = "#cssEditorDiv";
 
   constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
@@ -10,8 +11,7 @@ export class CssEditor {
     this.aceUtils = aceUtils;
   } 
 
-  attached($parentDiv) {
-    // $(`#${this.cssEditorDiv}`).css("height",`${$parentDiv.height()}px`);
+  attached() {
     let editor = ace.edit(this.cssEditorDiv);
     this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeCssEditorFirepad(editor);
@@ -22,6 +22,7 @@ export class CssEditor {
     
     this.editor = editor;
     this.session = session;
+    this.subscribe();
   }
   
   setupSessionEvents(editor, session) {
@@ -39,6 +40,15 @@ export class CssEditor {
       }
       
       this.editorChangedTimeout = editorChangedTimeout;
+  }
+  
+  subscribe(){
+    let ea = this.eventAggregator;
+    ea.subscribe("windowResize", layout =>{
+        $(this.cssEditorSelector).height(layout.editorHeight);
+        this.editor.resize();
+      }
+    );
   }
   
 }

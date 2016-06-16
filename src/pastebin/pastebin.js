@@ -32,6 +32,7 @@ import { resizable } from 'jquery-ui';
 @customElement('pastebin')
 @inject(EventAggregator, Router, TraceModel, AceUtils, FirebaseManager, DOM.Element)
 export class Pastebin {
+  heading = 'Pastebin';
 
   constructor(eventAggregator, router, traceModel, aceUtils, firebaseManager, domElement) {
     this.eventAggregator = eventAggregator;
@@ -40,7 +41,6 @@ export class Pastebin {
     this.aceUtils = aceUtils;
     this.firebaseManager = firebaseManager;
     this.domElement = domElement;
-    this.heading = 'Pastebin';
     this.navigationBar = new NavigationBar(firebaseManager);
 
     this.consoleWindow = new ConsoleWindow(eventAggregator);
@@ -72,68 +72,72 @@ export class Pastebin {
   bind(){
     
   }
-
-  attached() {
-    let ea = this.eventAggregator;
+  
+  activate(){
     
-    $(window).on('resize', function () {
-      let dimensions = {height: window.innerHeight, with: window.innerWidth};
-        ea.publish("windowResize", dimensions);
-    });
+  }
+  
+  update(){
+    let editorHeight = $("#main-splitter-left").height() - $("#codeTabs").height();
+    let layout = {editorHeight: editorHeight};
+    this.eventAggregator.publish("windowResize", layout);
+  }
+  
+  attached() {
+    let self = this;
+    $(window).on('resize', windowResize => { self.update(); });
+    
+    this.eventAggregator.subscribe("jsGutterContentUpdate", payload =>{ setTimeout(self.update(), 500); });
     
     this.navigationBar.attached();
     
-    Split(['#main-splitter-left', '#main-splitter-right'], {
-          sizes: [50, 50],
-          gutterSize: 3,
-          cursor: 'col-resize',
-          minSize: 250
-    });
-    
     this.consoleWindow.attached();
     
-    let $codeSection = $("#js-editor-code");
+    this.jsEditor.attached();
+    this.jsGutter.attached();
+
+    this.htmlEditor.attached();
+    this.cssEditor.attached();
     
-    this.jsEditor.attached($codeSection);
-    this.jsGutter.attached($codeSection);
-    let gutterSplit = function (){
-      $codeSection.resizable(
-        {
-            // maxWidth: $("#main-splitter-left").width() - 100,
-            // alsoResize: "#js-editor-trace-gutter",
-            containment: "parent",
-            autoHide: false,
-            handles: 'e, w'
-        }
-      );
-    };
-    gutterSplit();
-    // this.eventAggregator.subscribe("jsGutterUpdated", payload =>{
-    //   gutterSplit();
-    // });
-    
-    this.htmlEditor.attached($codeSection);
-    this.cssEditor.attached($codeSection);
-    
-    this.htmlEditorHistoryViewer.attached($codeSection);
+    this.htmlEditorHistoryViewer.attached();
     
     this.htmlViewer.attached();
     this.visViewer.attached();
-    
-    Split(['#right-splitter-top', '#right-splitter-bottom'], {
-          direction: 'vertical',
-          sizes: [90, 10],
-          gutterSize: 3,
-          cursor: 'row-resize',
-          minSize: 50
-    });
     
     this.traceViewController.attached();
     this.tracePlay.attached();
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
     
+    this.mainSplitterOptions = {
+          sizes: [50, 50],
+          gutterSize: 3,
+          cursor: 'col-resize',
+          minSize: 250
+    };
+    Split(['#main-splitter-left', '#main-splitter-right'], this.mainSplitterOptions);
+    
+    this.rightSplitterOptions = {
+          direction: 'vertical',
+          sizes: [90, 10],
+          gutterSize: 3,
+          cursor: 'row-resize',
+          minSize: 50
+    };
+    Split(['#right-splitter-top', '#right-splitter-bottom'], this.rightSplitterOptions);
+    
+    this.$jsEditorCodeOptions = {
+            containment: "parent",
+            autoHide: false,
+            handles: 'e, w'
+    };
+    
+    let $jsEditorCode = $("#js-editor-code");
+
+    $jsEditorCode.resizable(this.$jsEditorCodeOptions);
+
     $('.panel-heading').click();
+    self.update();
   }
 
 }

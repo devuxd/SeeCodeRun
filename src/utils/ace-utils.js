@@ -72,7 +72,7 @@ export class AceUtils{
     }
     
     subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
-     	editor.on("guttermousemove", function(e){ 
+     	editor.on("guttermousedown", function(e){ 
     	   // updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
     		let target = e.domEvent.target;
     		
@@ -95,13 +95,22 @@ export class AceUtils{
     		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){ 
     			return; 
     		}
+    		let direction = -1;
+    		
+    	    if (e.clientX > target.parentElement.getBoundingClientRect().right -33){ 
+    			direction = 1;
+    		}
+    		
     		let row = e.getDocumentPosition().row;
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
-    		        content = dataModel.rows[row].text; 
+    		        content = dataModel.rows[row].text;
+    		        dataModel.rows[row].branch = dataModel.rows[row].branch ? (dataModel.rows[row].branch + direction) % (dataModel.rows[row].count + 1): dataModel.rows[row].count;
+    		        console.log(direction + " --> "+dataModel.rows[row].branch);
     				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
     				pixelPosition.pageY += editor.renderer.lineHeight;
-    				updateTooltip(tooltip, pixelPosition, content);
+    				editor.resize();
+    				// updateTooltip(tooltip, pixelPosition, content);
     		}
     		e.stop(); 
     		 
@@ -236,15 +245,17 @@ export class AceUtils{
             getWidth: function(session, lastLineNumber, config) {
                 let format = "";
                 if(traceGutterData.maxCount > 0){
-                    format = "[] ";
+                    format = "</> ";
                 }
                 
                 return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
             },
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row].count; 
-                    return "["+ count +"] "+ (row + 1);
+                    let count = traceGutterData.rows[row].count;
+                    let branch =traceGutterData.rows[row].branch;
+                    branch = branch? branch: count;
+                    return "<"+branch+"/"+ count +"> "+ (row + 1);
                 }else{
                     return row + 1;
                 }
@@ -255,7 +266,7 @@ export class AceUtils{
     
     
     
-    getGutterLayout(editor){
+    getLayout(editor){
         let session = editor.getSession();
         let config = editor.renderer.layerConfig;
         let lineHeight = editor.renderer.lineHeight + "px";
@@ -271,7 +282,11 @@ export class AceUtils{
             lastRow: lastRow,
             getRowHeight: function(row){
                 return session.getRowLength(row) * config.lineHeight + "px";
-            }
+            },
+            layerConfig: config,
+            scrollMargin: editor.renderer.scrollMargin,
+            $size: editor.renderer.$size
+            
         };
         return gutterLayout;
     }

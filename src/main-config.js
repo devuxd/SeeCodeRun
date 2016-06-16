@@ -1,3 +1,3 @@
 export class MainConfig{
-    debug = !true;
+    debug = true;
 }

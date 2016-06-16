@@ -10,7 +10,7 @@ gulp.task('serve', ['build'], function(done) {
     open: false,
     injectChanges: true,
     ghostMode: false,
-    reloadOnRestart: true,
+    // reloadOnRestart: true,
     port: 8082,
     ui: false,
     server: {

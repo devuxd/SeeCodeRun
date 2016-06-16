@@ -16,7 +16,7 @@ export class ExpressionSelection {
             this.setMarker();
         });
 
-        this.ea.subscribe("onEditorClick", () => {
+        this.ea.subscribe("jsEditorClick", () => {
             this.click = this.currentTarget != undefined;
         });
 
@@ -29,7 +29,7 @@ export class ExpressionSelection {
             this.editor.focus();
         });
 
-        this.ea.subscribe("onEditorReady", editor => {
+        this.ea.subscribe("jsEditorReady", editor => {
 
             this.editor = editor;
         });

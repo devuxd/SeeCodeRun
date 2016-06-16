@@ -46,6 +46,6 @@ export class Visualization {
   
   getSelectionRange() {
     let ea = this.eventAggregator;
-    ea.publish('selectionRangeRequested');
+    ea.publish('visualizationSelectionRangeRequest');
   }
 }

@@ -50,7 +50,7 @@ export class VisViewer {
       ea.publish('onVisRequest', payload );
     });
     
-    ea.subscribe('selectionRangeResponse', expression => {
+    ea.subscribe('visualizationSelectionRangeResponse', expression => {
       if(!self.traceHelper){
         return;
       }

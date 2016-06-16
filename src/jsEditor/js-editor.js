@@ -3,67 +3,26 @@
 
 export class JsEditor {
   aceJsEditorDiv = "aceJsEditorDiv";
+  jsEditorSelector = "#aceJsEditorDiv";
   isFirstLoad = true;
   editorCompactedText = "";
   editorChangedTimeout = null;
   hasErrors = false;
   height = 700;
+  editorChangeDelay= 1500;
   
   constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
     this.aceUtils = aceUtils;
   }
-  
-  onWindowResize(){
-    let editor = this.editor;
-    let gutterLayout = this.aceUtils.getGutterLayout(editor);
-    let $editorDiv =$(`#${this.aceJsEditorDiv}`);
-    $editorDiv
-    .css(
-        "height",
-        `${
-          $("#codeContent").height()
-        }px`
-    );
-    $('#gutter').css(
-        "height",
-        `${
-          $(".ace_content").height()
-        }px`
-    );
-    //todo: run on ace gutter render
-    $('.line_height').css("font-size", $editorDiv.css("font-size"));
-    $('.line_height').css("font-family", $editorDiv.css("font-family"));
+  update(){
     
-    $('.highlight_gutter').css("font-size", $editorDiv.css("font-size"));
-    $('.highlight_gutter').css("font-family", $editorDiv.css("font-family"));
-    
-    for(let line = gutterLayout.firstLineNumber; line < gutterLayout.lastRow; line++){
-      $('#line'+ line).css("height", gutterLayout.getRowHeight(line -1));
-    }
   }
-  
   attached() {
     let editor = ace.edit(this.aceJsEditorDiv);
-    let $editorDiv =$(`#${this.aceJsEditorDiv}`);
     this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
-    let getVisible = function getVisible() {    
-        var $el = $editorDiv,
-            scrollTop = $(this).scrollTop(),
-            scrollBot = scrollTop + $(this).height(),
-            elTop = $el.offset().top,
-            elBottom = elTop + $el.outerHeight(),
-            visibleTop = elTop < scrollTop ? scrollTop : elTop,
-            visibleBottom = elBottom > scrollBot ? scrollBot : elBottom;
-            let visibleHeight = visibleBottom - visibleTop;
-            $("#codeContent").height(`${visibleHeight -50}px`);
-        // $('#notification').text(visibleBottom - visibleTop);
-    };
-
-    $(window).on('scroll resize', getVisible);
-
     let session = editor.getSession();
     this.aceUtils.configureSession(session);
 
@@ -74,10 +33,7 @@ export class JsEditor {
     
     this.session = session;
     this.editor = editor;
-    this.onWindowResize();
   }
-
-
   
   setupSessionEvents(editor, session) {
     let self = this;
@@ -91,7 +47,7 @@ export class JsEditor {
           
           if (self.editorChangedText !== editorCompactedText ) {
             self.editorChangedText = editorCompactedText; 
-            ea.publish('onJsEditorChanged', {
+            ea.publish('jsEditorChange', {
               js: jsCode,
               length: session.getLength(),
               cursor: curs
@@ -101,19 +57,25 @@ export class JsEditor {
     };
 
     let onEditorChanged = function onEditorChanged(e) {
+      ea.publish('jsEditorPreChange', {
+              js: editor.getValue(),
+              length: session.getLength(),
+              cursor: editor.getCursorPosition().row + 1
+      });
+      
       if(self.isFirstLoad){
         self.isFirstLoad = false;
         publishEditorChanged();
-        ea.publish("onEditorReady", editor);
+        ea.publish("jsEditorReady", editor);
       }else{
         clearTimeout(self.editorChangedTimeout);
-        self.editorChangedTimeout = setTimeout(publishEditorChanged, 2500);
+        self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
       }
     };
     
     session.on('change',
       onEditorChanged);
-
+      
     let onAnnotationChanged = function onAnnotationChanged() {
       let annotations = session.getAnnotations();
       for (let key in annotations) {
@@ -131,8 +93,7 @@ export class JsEditor {
     };
     session.on('changeAnnotation',
       onAnnotationChanged);
-
-    //For gutter
+      
     session.selection.on('changeCursor', () => {
       let cursorPosition =this.editor.getCursorPosition();
       
@@ -148,34 +109,32 @@ export class JsEditor {
       ea.publish('onCursorMoved', info);
     });
     
-    //For expressions selection
-    editor.on("click", ()=>{
-        ea.publish("onEditorClick");
+    editor.on("click", function jsEditorClick(event){
+        ea.publish("jsEditorClick", event);
     });
     
-    editor.getSession().on('changeScrollTop', function(scrollTop) {
-        let info = {
-            top: scrollTop
+    editor.renderer.on('resize', function jsEditorResize() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorResize', editorLayout);
+    });
+    
+    editor.renderer.on('beforeRender', function jsEditorBeforeRender() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorBeforeRender', editorLayout);
+    });
+    
+    editor.renderer.on('afterRender', function jsEditorAfterRender() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorAfterRender', editorLayout);
+    });
+    
+    editor.getSession().on('changeScrollTop', function jsEditorchangeScrollTop(scrollTop) {
+      let scrollerHeight = editor.renderer.$size.scrollerHeight;
+        let scrollData = {
+            scrollTop: scrollTop,
+            scrollerHeight: scrollerHeight
         };
-
-        ea.publish('jsEditorchangeScrollTop', info);
-    });
-    
-    editor.renderer.on('resize', function() {
-      self.onWindowResize();
-      let config = editor.renderer.layerConfig;
-      ea.publish('jsEditorResize', config);
-    });
-    
-    editor.renderer.on('beforeRender', function() {
-      let config = editor.renderer.layerConfig;
-      ea.publish('jsEditorBeforeRender', config);
-    });
-    
-    editor.renderer.on('afterRender', function() {
-      self.onWindowResize();
-      let config = editor.renderer.layerConfig;
-      ea.publish('jsEditorAfterRender', config);
+        ea.publish('jsEditorChangeScrollTop', scrollData);
     });
   }
 
@@ -183,10 +142,15 @@ export class JsEditor {
     let ea = this.eventAggregator;
     let self = this;
     
-    ea.subscribe("windowResize", dimensions =>{
-        self.onWindowResize();
+    ea.subscribe("windowResize", layout =>{
+        $(self.jsEditorSelector).height(layout.editorHeight);
+        self.editor.resize();
       }
     );
+    
+    ea.subscribe('jsGutterScroll', scrollData => {
+      session.setScrollTop(scrollData.scrollTop);
+    });
       
     ea.subscribe('onAnnotationChanged', payload => {
       self.hasErrors = payload.hasErrors;
@@ -198,22 +162,16 @@ export class JsEditor {
         console.log('no errors');
       }
     });
-
-
-    // This  event is published by js-gutter.js to scroll the JS editor. 
-    ea.subscribe('onScrolled', info => {
-      session.setScrollTop(info.top);
-    });
     
     ea.subscribe('jsGutterLineClick', lineNumber => {
       this.editor.gotoLine(lineNumber);
     });
     
-    ea.subscribe('selectionRangeRequested', () => {
+    ea.subscribe('visualizationSelectionRangeRequest', () => {
       let selection = {
         range: session.selection.getRange()
       };
-      ea.publish('selectionRangeResponse', selection);
+      ea.publish('visualizationSelectionRangeResponse', selection);
     });
 
   }

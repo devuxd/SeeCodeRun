@@ -15,9 +15,9 @@
   <require from = "tracePlay/play.html"></require>
   <require from = "traceSearch/trace-search.html"></require>
 
-  <div id = "mainContainer">
+  <div id = "mainContainer" class = "box-shadow-bottom">
     <div id = "main-splitter-left"  class = "split split-horizontal container-fluid">
-      <ul id = "codeTabs" class = "nav nav-tabs" role = "tablist">
+      <ul id = "codeTabs" class = "nav nav-tabs box-shadow-left" role = "tablist">
         <li id =  "jsTab" class = "active" role = "tab" aria-controls = "js-container">
           <a href = "#js-container" data-toggle = "tab">JS</a></li>
         <li id =  "htmlTab" role = "tab" aria-controls = "html-container">
@@ -25,7 +25,7 @@
         <li id =  "cssTab" role = "tab" aria-controls = "css-container">
           <a href = "#css-container" data-toggle = "tab">CSS</a></li>
       </ul>
-      <div id = "codeContent" class = "tab-content"> 
+      <div id = "codeContent" class = "tab-content box-shadow-left"> 
         <div id = "js-container" class = "tab-pane fade in active" >
           <div id = "code-section" class = "w3-row"  role = "tabpanel" aria-labelledby="jsTab">
             <div id = "js-editor-code" class = "w3-container w3-threequarter" style = "padding: 0px 1px 0px 0px;">
@@ -49,7 +49,7 @@
       
     <div id = "main-splitter-right" class = "split split-horizontal container-fluid" >
       <div id = "right-splitter">
-        <div id = "right-splitter-top" class = "split split-vertical">
+        <div id = "right-splitter-top" class = "split split-vertical box-shadow-right">
           <ul id = "reviewTabs" class = "nav nav-tabs" role = "tablist">
             <li id = "previewTab" class = "active" role = "tab" aria-controls = "preview">
               <a href = "#preview" data-toggle = "tab"><span class = 'glyphicon glyphicon-globe'></span>Output</a></li>
@@ -70,7 +70,7 @@
           </div>
         </div>
         
-        <div id = "right-splitter-bottom" class = "split split-vertical container-fluid">
+        <div id = "right-splitter-bottom" class = "split split-vertical container-fluid box-shadow-right">
           <console-window console.bind = 'consoleWindow'></console-window>
         </div>
       </div>
