@@ -54,7 +54,7 @@ System.config({
     "jslinq": "npm:jslinq@1.0.15",
     "json": "github:systemjs/plugin-json@0.1.2",
     "tarball": "npm:tarball@0.0.5",
-    "text": "github:systemjs/plugin-text@0.0.3",
+    "text": "github:systemjs/plugin-text@0.0.7",
     "github:components/jqueryui@1.11.4": {
       "jquery": "npm:jquery@2.2.4"
     },
