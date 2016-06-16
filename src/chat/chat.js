@@ -1,57 +1,45 @@
 import {customElement} from 'aurelia-framework';
-import {BindingLanguage} from 'aurelia-framework';
 
 import $ from 'jquery';
 import { draggable, resizable } from 'jquery-ui';
 
-//there is a simple way:
-//http://stackoverflow.com/questions/221294/how-do-you-get-a-timestamp-in-javascript
-// export function configure(aurelia)
-// {
-//   aurelia.use;
-//     .standardConfiguration()
-//     .developmentLogging();
-//   aurelia.use.plugin('aurelia-date-observer');
-  
-// }
 @customElement('chat')
 export class Chat {
-  currentUsername = ""; //defining variables
+  currentUsername = "";
   currentUsercolor = "";
   isFirstToggle = true;
+  colors = [];
+  userToColorMap = {};
+  
   constructor(firebaseManager) {
     this.firebaseManager = firebaseManager;
   }
   
   attached() {
-    let chatFirebaseRef = this.firebaseManager.makeChatFirebase(); //declaring chatFirebaseRef variable and self
+    let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
     let self = this;
     
     let $chat = $('#chatDiv');
-    $chat.hide();                                 //hides the chat box
+    $chat.hide();
 
-    let $chatToolbar= $('#chatToolbar');    //is this calling from html file?
+    let $chatToolbar= $('#chatToolbar');
     let $chatUserNameInput = $('#chatUserNameInput');
     let $chatMessages = $('#chatMessages');
     let $chatMessageInput = $('#chatMessageInput');
     
-    let userToColorMap = {};  //??
-    let colors = [];        //making array for colors
-    
     chatFirebaseRef.on("value", function(snapshot) {
-        let data = snapshot.val(); //is this taking value from firebase?
+        let data = snapshot.val();
         if(!data){
           return;
         }
-        let username = data.name; //data  from firebase
+        let username = data.name;
         let color = data.color;
         
         if(color){
-          userToColorMap[username] = color; //??
-          colors.push(color);   //adding to the array of colors
+          self.updateUserToColorMapping(color, username);
         }
     }, function (errorObject) {
-      console.log("Chat read failed: " + errorObject.code); //raising error
+      console.log("Chat read failed: " + errorObject.code);
     });
     
     $chatUserNameInput.keyup(function(e) {
@@ -63,11 +51,12 @@ export class Chat {
           username = "anonymous";
         }
         
-        let color = userToColorMap[username];
+        self.currentUsercolor = self.userToColorMap[username];
         
-        if(color){
-          self.currentUsercolor = color;
-          $chatToolbar.css("border-color", `#${color}`);
+        if(self.currentUsercolor){
+          $chatToolbar.css("border-color", `#${self.currentUsercolor}`);
+        }else{
+          $chatToolbar.css("border-color", "initial");
         }
         
         if(!username){
@@ -92,28 +81,26 @@ export class Chat {
           username = "anonymous";
         }
         self.currentUsername = username;
-        let color = self.currentUsercolor;
         
-        if(!color){
-          do{
-            color = "000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-          }while(colors.indexOf(color)> -1);
+        if(!self.currentUsercolor){
+          self.currentUsercolor =self.getRandomColor(self.currentUsercolor);
+          self.updateUserToColorMapping(self.currentUsercolor, username);
         }
-        self.currentUsercolor = color;
         
         chatFirebaseRef.push({
           name: username,
           text: message,
-          color: color
+          color: self.currentUsercolor
         });
         $chatMessageInput.val('');
         $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
-          
-        $(`#${username} .seecoderun-chat-username`).each( function() {
-          if($(this).html() === username){
-            $(this).html('You');
-          }
-        });
+        
+        // todo: if user changes names or a match happens while it type, it corrupts naming. needs shadow ids
+        // $(`#${username} .seecoderun-chat-username`).each( function() {
+        //   if($(this).html() === username){
+        //     $(this).html('You');
+        //   }
+        // });
       }
     });
     
@@ -129,8 +116,7 @@ export class Chat {
         let color = data.color;
         
         if(color){
-          userToColorMap[username] = color;
-          colors.push(color);
+          self.updateUserToColorMapping(color, username);
         }
   
         let $messageElement = $(`<li id =${username}>`);
@@ -144,6 +130,7 @@ export class Chat {
         $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
         
         if(self.currentUsername === username){
+          $chatToolbar.css("border-color", `#${color}`);
           $chatMessages.stop().animate({
             scrollTop: $chatMessages[0].scrollHeight
           }, 1000);
@@ -167,4 +154,17 @@ export class Chat {
       handles: "n, e, s, w"
     });
   }
+  
+  getRandomColor(color, colors = this.colors){
+    do{
+        color = "000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+      }while(colors.indexOf(color)> -1);
+    return color;
+  }
+  
+  updateUserToColorMapping(color, username, self = this){
+    self.userToColorMap[username] = color;
+    self.colors.push(color);
+  }
+    
 }
