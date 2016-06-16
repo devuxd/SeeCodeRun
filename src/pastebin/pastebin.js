@@ -69,14 +69,6 @@ export class Pastebin {
     }
   }
   
-  bind(){
-    
-  }
-  
-  activate(){
-    
-  }
-  
   update(){
     let editorHeight = $("#main-splitter-left").height() - $("#codeTabs").height();
     let layout = {editorHeight: editorHeight};
