@@ -1,0 +1,26 @@
+.page-host {
+   position: absolute;
+   left: 0;
+   right: 0;
+   top: 30px;
+   bottom: 0;
+   overflow: auto;
+ }
+ 
+ .page-host {
+   padding-top: 0px;
+ }
+ 
+ 
+ @media print {
+   .page-host {
+     position: absolute;
+     left: 10px;
+     right: 0;
+     top: 30px;
+     bottom: 0;
+     overflow-y: inherit;
+     overflow-x: inherit;
+     z-index: 10;
+   }
+ }

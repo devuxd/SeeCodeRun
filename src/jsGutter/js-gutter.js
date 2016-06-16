@@ -1,131 +1,197 @@
 /* global $ */
+import {scroll} from "jquery";
 
 export class JsGutter {
-    constructor(eventAggregator) {
+    aceJsEditorDiv = "";
+    jsGutterDiv = "jsGutter";
+    jsGutterBlurClass = "js-gutter-blur";
+    jsGutterInvalidClass = "js-gutter-invalid";
+    jsGutterLineIdPrefix = "jsGutterLine";
+    jsGutterLineSelectorPrefix = "#jsGutterLine";
+    jsGutterLineClass = "js-gutter-line";
+    jsGutterLineClassSelector = ".js-gutter-line";
+    jsGutterLineHighlightClass = "js-gutter-line-highlight";
+    jsGutterLineHighlightClassSelector = ".js-gutter-line-highlight";
+    editorLayout = null;
+    selectedLine = '';
+    $gutter = null;
+    length = 0;
+    isTraceServiceProccesing =false;
+    isTraceChange = false;
+    traceHelper = null;
+    scrollTop = 0;
+    
+    constructor(eventAggregator, aceJsEditorDiv = "aceJsEditorDiv") {
         this.eventAggregator = eventAggregator;
-        this.selectedLine = '';
+        this.aceJsEditorDiv = aceJsEditorDiv;
+    }
+    
+    update(editorLayout = this.editorLayout, aceJsEditorDiv = this.aceJsEditorDiv){
+        let self = this;
+        let $jsGutterLineClass =$(self.jsGutterLineClassSelector);
+        let $jsGutterLineHighlightClass = $(self.jsGutterLineHighlightClassSelector);
+        let $editorDiv =$(`#${aceJsEditorDiv}`);
+      
+    
+        $jsGutterLineClass.css("font-size", $editorDiv.css("font-size"));
+        $jsGutterLineClass.css("font-family", $editorDiv.css("font-family"));
+        
+        $jsGutterLineHighlightClass.css("font-size", $editorDiv.css("font-size"));
+        $jsGutterLineHighlightClass.css("font-family", $editorDiv.css("font-family"));
+        
+        if(!editorLayout){
+            return;
+        }
+        
+        let firstLineNumber = editorLayout.firstLineNumber;
+        for(let line = editorLayout.firstRow; line <= editorLayout.lastRow; line++){
+            let currentLine = firstLineNumber +line;
+            let newLineId = self.jsGutterLineIdPrefix + currentLine;
+            let newLineSelector =  self.jsGutterLineSelectorPrefix + currentLine;
+            let $newLine = $(newLineSelector);
+            if(!$newLine.length){
+                self.$gutter.append("<div id = '" + newLineId + "'></div>");
+                $newLine = $(newLineSelector); 
+                $newLine.addClass(self.jsGutterLineClass);
+                $newLine.click( function(event){
+                    let lineNumber = event.target.id.replace(self.jsGutterLineIdPrefix, "");
+                    self.eventAggregator.publish("jsGutterLineClick", lineNumber);
+                });
+            }
+          $newLine.css("height", editorLayout.getRowHeight(line));
+        }
+        self.length = editorLayout.lastRow;
+        
+        if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
+            self.isTraceChange = false;
+            if(self.traceHelper.isValid()){
+                let values = self.traceHelper.getValues();
+                for (let value of values) {
+                    self.setGutterLineContent(value.range.start.row + 1, value.id + " = " + value.value);
+                }
+                self.eventAggregator.publish("jsGutterContentUpdate", {data:values});
+            }
+            // self.$gutter.scrollTop(self.scrollTop);
+            self.isTraceServiceProccesing = false;
+        }
+        
+        if(self.isTraceServiceProccesing){
+            self.$gutter.addClass(self.jsGutterBlurClass);
+        }else{
+            self.$gutter.removeClass(self.jsGutterBlurClass);
+            if(self.traceHelper && self.traceHelper.isValid()){
+                self.$gutter.removeClass(self.jsGutterInvalidClass);
+            }else{
+                if(editorLayout.lastRow){
+                    self.$gutter.addClass(self.jsGutterInvalidClass);
+                }
+            }
+        }
+        self.$gutter.scrollTop(self.scrollTop);
     }
 
     attached() {
-        this.iframeBody = $('#gutter');
-        $('#gutter').css("height",`${$("#js-editor-code").height()}px`);
+        let ea = this.eventAggregator;
         
+        this.$gutter = $(`#${this.jsGutterDiv}`);
+        
+        let $editorDiv =$(`#${this.aceJsEditorDiv}`);
+        
+        // this.$gutter.scroll(
+        //     function jsGutterScroll() {
+        //         $editorDiv.scrollTop($(this).scrollTop());
+        //     }
+        // );
+        // let gutter = this.$gutter;
+        
+        // $editorDiv.scroll(
+        //     function jsGutterScroll() {
+                
+        //         gutter.scrollTop($(this).scrollTop());
+        //     }
+        // );
+        
+        this.$gutter.scroll(
+            function jsGutterScroll(event) {
+                // console.log("jsGutterScroll: " + JSON.stringify(event));
+                let scrollData = {
+                    scrollTop: event.target.scrollTop
+                };
+                ea.publish('jsGutterScroll', scrollData);
+            }
+        );
         this.subscribe();
     }
 
     subscribe() {
+        let self = this;
+        let $gutter= this.$gutter;
         let ea = this.eventAggregator;
-
-        $('#gutter').scroll(function scroll(e) {
-                let info = {
-                    top: e.target.scrollTop
-                };
         
-                ea.publish('onScrolled', info);
-            }
+        ea.subscribe("windowResize", layout =>{
+            $gutter.height(layout.editorHeight);
+            self.update();
+          }
         );
+        
+        ea.subscribe("jsEditorPreChange", editorLayout => {
+            this.isTraceServiceProccesing = true;
+            // this.clearGutter(); // too distracting
+            this.update();
+        });
+        
+        ea.subscribe("jsEditorAfterRender", editorLayout => {
+            this.editorLayout = editorLayout;
+            this.update();
+        });
+        
+        ea.subscribe("jsEditorResize", editorLayout => {
+            this.editorLayout = editorLayout;
+            this.update();
+        });
         ea.subscribe('onCursorMoved', info => {
-
-            let lastDiv = this.getLastDiv();
-            let line = info.cursor;
-            let lastline = info.lastVisibleRow;
-
-            if (this.iframeBody.find('#line' + lastline).length == 0) {
-                this.createLine(lastline);
-            }
-            if (lastline < lastDiv) {
-                this.removeLine(lastline, lastDiv);
-            }
-
-            this.iframeBody.find("#line" + this.selectedLine).removeClass("highlight_gutter");
-            this.iframeBody.find("#line" + line).addClass("highlight_gutter");
-            this.selectedLine = line;
-
-
-            this.LastVisibleRow = info.lastVisibleRow;
-
-            this.highlightLine(line, lastline);
-
-
+            this.selectedLine = info.cursor ||1;
+            this.highlightLine(this.selectedLine);
         });
 
         ea.subscribe("traceChanged", payload => {
-            let traceHelper = payload.data;
-            this.updateGutter(traceHelper.getValues());
+            this.isTraceChange = true;
+            this.traceHelper = payload.data;
+            this.clearGutter();
+            this.update();
         });
         
-        ea.subscribe("jsEditorchangeScrollTop", payload => {
-            let scrollTop = payload.top;
-            this.iframeBody.scrollTop(scrollTop);
+        ea.subscribe("jsEditorChangeScrollTop", scrollData => {
+                this.scrollTop = scrollData.scrollTop;
+                this.scrollerHeight = scrollData.scrollerHeight;
+                // $gutter.scrollerHeight(this.scrollerHeight);
+                $gutter.scrollTop(this.scrollTop);
         });
-
-
     }
 
-    updateGutter(values) {
-        this.clearGutter();
-        for (let value of values) {
-            this.setContentGutter(value.range.start.row + 1, value.id + " = " + value.value);
-        }
-        this.eventAggregator.publish("jsGutterUpdated", {data:values});
-    }
-
-    setContentGutter(line, contents) {
-        let lastDiv = this.getLastDiv();
-        if (line > lastDiv) {
-            throw ("Line " + line + " does not exist" + "last visible line is  " + lastDiv);
-        }
-        this.iframeBody.find("#line" + line).append(" [ " + contents + " ] ");
-    }
-
-    createLine(line) {
-        let indexOfDiv = this.getLastDiv();
-        for (indexOfDiv; indexOfDiv <= line; indexOfDiv++) {
-            this.iframeBody.append("<div id=line" + indexOfDiv + "></div>");
-            this.iframeBody.find("#line" + indexOfDiv).addClass("line_height");
+    setGutterLineContent(line, contents) {
+        let $line = $(this.jsGutterLineSelectorPrefix + line);
+        if ($line.length) {
+            $line.append(" [ " + contents + " ] ");
         }
     }
-    
-    getLastDiv() {
-        let indexOfDiv = 1;
-        while (this.iframeBody.find('#line' + indexOfDiv).length != 0) {
-            indexOfDiv++;
+
+    highlightLine(line) {
+        this.$gutter.find(this.jsGutterLineClassSelector).removeClass(this.jsGutterLineHighlightClass);
+        let $lineToHighLight = $(this.jsGutterLineSelectorPrefix + line);
+        if($lineToHighLight.length){
+            $lineToHighLight.addClass(this.jsGutterLineHighlightClass);
+            this.selectedLine = line;
+        }else{
+            this.selectedLine = -1;
         }
-        return indexOfDiv;
-    }
-    
-    removeLine(lastline, lastDiv) {
-        while (lastline < lastDiv) {
-            this.iframeBody.find('#line' + lastDiv).remove();
-            lastDiv--;
-        }
-    }
-    
-    highlightLine(line, lastline) {
-
-        let lastDiv = this.getLastDiv();
-        let selectedLine = this.selectedLine;
-        if (this.iframeBody.find('#line' + lastline).length == 0) {
-            this.createLine(lastline);
-        }
-        if (lastline < lastDiv) {
-            this.removeLine(lastline, lastDiv);
-        }
-
-        this.iframeBody.find("#line" + selectedLine).removeClass("highlight_gutter");
-        this.iframeBody.find("#line" + line).addClass("highlight_gutter");
-        this.selectedLine = line;
-
-
-
     }
 
     clearGutter() {
-        let lines = this.getLastDiv();
-        while (lines > 0) {
-            this.iframeBody.find("#line" + lines).html('');
-            lines--;
-        }
+        this.$gutter.find(this.jsGutterLineClassSelector).html("");
     }
     
+    cleanGutter() {
+        this.$gutter.find(this.jsGutterLineClassSelector).remove();
+    }
 }

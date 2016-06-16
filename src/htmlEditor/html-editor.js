@@ -1,44 +1,32 @@
 /* global ace */
-
-import '../mode-html';
-import '../theme-chrome';
+/* global $ */
 
 export class HtmlEditor {
   aceHtmlEditorDiv = "aceHtmlEditorDiv";
+  aceHtmlEditorSelector = "#aceHtmlEditorDiv";
 
-  constructor(eventAggregator, firebaseManager) {
+  constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
+    this.aceUtils =aceUtils;
   }
     
   attached() {
-    $('#aceHtmlEditorDiv').css("height",`${$("#js-editor-code").height()}px`);
     let editor = ace.edit(this.aceHtmlEditorDiv);
-    this.configureEditor(editor);
+    this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeHtmlEditorFirepad(editor);
 
     let session = editor.getSession();
-    this.configureSession(session);
+    this.aceUtils.configureSession(session, 'ace/mode/html');
 
     this.selection = editor.getSelection();       
     this.setupSessionEvents(editor, session);
     
     this.session = session;
     this.editor = editor;
+    this.subscribe();
   }
 
-  configureEditor(editor) {
-    editor.setTheme('ace/theme/chrome');
-    editor.setShowFoldWidgets(false);
-    editor.$blockScrolling = Infinity;
-  }
-
-  configureSession(session) {
-    session.setUseWrapMode(true);
-    session.setUseWorker(false);
-    session.setMode('ace/mode/html');
-  }
-  
   setupSessionEvents(editor, session) {
       let ea = this.eventAggregator;
       
@@ -54,6 +42,15 @@ export class HtmlEditor {
       }
       
       this.editorChangedTimeout = editorChangedTimeout;
+  }
+  
+  subscribe(){
+    let ea = this.eventAggregator;
+    ea.subscribe("windowResize", layout =>{
+        $(this.aceHtmlEditorSelector).height(layout.editorHeight);
+        this.editor.resize();
+      }
+    );
   }
   
 }

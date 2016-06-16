@@ -44,7 +44,7 @@ export class TraceSearch {
     subscribe() {
         let searchBox = this.searchBox;
 
-        this.eventAggregator.subscribe("onEditorReady", editor => {
+        this.eventAggregator.subscribe("jsEditorReady", editor => {
             this.searchBox.aceMarkerManager = this.aceUtils.makeAceMarkerManager(editor);
         });
 

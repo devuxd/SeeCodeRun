@@ -51,8 +51,40 @@ export class TraceViewModel {
 			}, toolTipDelay);
 	    };
 
+        this.update$Tooltip = function update$Tooltip(position, content){
+            if(!div){
+			        return;
+			}
+		            
+		    if(position){
+		        div.css({
+		            position: "absolute",
+		            marginLeft: 0,
+		            marginTop: 0,
+		            top: `${position.pageY}px`,
+		            left: `${position.pageX}px`
+		        });
+		    }
+		    
+			if(content){
+			    div.popover({
+        		    title: "Y: " +position.pageY,
+        		    html: true,
+        		  //  selector: '[rel="popover"]',
+                    content: function $editorTooltipPopoverContent() {
+                        // return $('#branchNavigator').html();
+                        return content;
+                    },
+        		    padding: 4
+        		});
+			 //   div.attr("data-content", content);
+			    div.popover("show");
+			}else{
+			    div.popover("hide");
+	        }
+        };
+        
     }
-    
     
     isDataModelRepOK(){
 	    if(!this.traceValuesData.ranges){
@@ -74,9 +106,9 @@ export class TraceViewModel {
     
     onExpressionHovered(match, pixelPosition){
         if(match){
-            this.tooltipUpdateWithDelay(pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
+            this.update$Tooltip(pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
         }else{
-            this.tooltipUpdateWithDelay();
+            this.update$Tooltip();
         }
     }
     

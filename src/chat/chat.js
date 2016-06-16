@@ -90,7 +90,9 @@ export class Chat {
         chatFirebaseRef.push({
           name: username,
           text: message,
-          color: self.currentUsercolor
+          color: self.currentUsercolor,
+          timestamp: Firebase.ServerValue.TIMESTAMP
+          
         });
         $chatMessageInput.val('');
         $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
@@ -114,6 +116,7 @@ export class Chat {
         let username = data.name;
         let message = data.text;
         let color = data.color;
+        let timestamp = data.timestamp;
         
         if(color){
           self.updateUserToColorMapping(color, username);
@@ -123,7 +126,10 @@ export class Chat {
         $messageElement.css("border-color", `#${color}`);
         let $nameElement = $(`<strong class='seecoderun-chat-username'></strong>`);
         $nameElement.text(username);
-        $messageElement.text(message).prepend('<br />').prepend($nameElement);
+        let $timestampElement = $(`<strong class='seecoderun-chat-timestamp'></strong>`);
+        $timestampElement.text(timestamp);
+        
+        $messageElement.text(message).prepend('<br />').prepend($timestampElement).prepend($nameElement);
   
         $chatMessages.append($messageElement);
         

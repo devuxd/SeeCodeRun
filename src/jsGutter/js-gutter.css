@@ -1,17 +1,51 @@
 .js-gutter {
-   overflow-y: scroll;
-   padding-left: 4px;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    border: 0px;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    padding-left: 4px;
+    height: 800px;
+    min-height: 100%;
 }
 
-.line_height {
+.js-gutter-blur{
+    -webkit-filter: blur(5px);
+    -moz-filter: blur(5px);
+    -o-filter: blur(5px);
+    -ms-filter: blur(5px);
+    filter: blur(5px);
+    height: 100%;
+    width: 100%;
+}
+
+.js-gutter-invalid {
+    background-color: #ffe6e6;
+}
+
+.js-gutter-line {
     white-space: nowrap;
     color: #999487;
     font-size: 11px;
     height: 14px;
 }
 
-.highlight_gutter {
+.js-gutter-line-highlight {
     color: black;
     background: #eeeeee;
-    display: table-row;
 }
+
+ @-moz-document url-prefix() {
+.js-gutter-line {
+     white-space: nowrap;
+     color: #999487;
+     font-size: 11px;
+     height: 14px;
+}
+
+.js-gutter-line-highlight {
+     color: black;
+     background: #eeeeee;
+   }
+ }

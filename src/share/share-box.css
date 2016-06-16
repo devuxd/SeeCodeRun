@@ -1,15 +1,26 @@
-.share-box {
-    width: 700px;
-    /*position: relative;*/
-  /*display: none;*/
-  /*top: 200;*/
-  border-color: blue;
+#shareBox {
+    margin-top: -4px; 
+    width: 355px;
+    height: 40px;
 }
 
-.share-box {
-  float: right;
+#shareDiv {
+    margin-top: -5px;
 }
 
-.share-box input {
-  width: 300px;
-} 
+#shareTitle{
+  background-color: #0066ff;
+  color: white;
+  text-align: center;
+  font-size: 18px;
+}
+
+#copyButton {
+    position: absolute;
+    right: 6px;
+    bottom: -17px;
+}
+
+#copyButton:hover {
+    cursor: pointer;
+}

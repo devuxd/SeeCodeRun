@@ -10,7 +10,7 @@ export class AutoLogTracer{
             try{
                 ${code}
             }catch(e){
-                console.log(e);
+                window.TRACE.error = e.toString();
                 throw e;
             }
         `;
@@ -42,7 +42,7 @@ export class AutoLogTracer{
         var traceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
-            hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            error: "", hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             autoLog: function autoLog(info) {
             
                 if(this.hits.length < 1){
@@ -129,6 +129,7 @@ export class AutoLogTracer{
             },
             getTraceData: function getTraceData() {
                 return {
+                    error       : this.error,
                     hits        : this.hits,
                     data        : this.data,
                     stack       : this.stack,

@@ -12,7 +12,7 @@ To run the app, follow these steps:
   ```
 3. Ensure that [Gulp](http://gulpjs.com/) is installed globally. If you need to install it, use the following command:
 
-  ```shell
+  ```sh
   npm install -g gulp
   ```
   > **Note:** Gulp must be installed globally, but a local version will also be installed to ensure a compatible version is used for the project.

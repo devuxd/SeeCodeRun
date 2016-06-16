@@ -32,6 +32,7 @@ import { resizable } from 'jquery-ui';
 @customElement('pastebin')
 @inject(EventAggregator, Router, TraceModel, AceUtils, FirebaseManager, DOM.Element)
 export class Pastebin {
+  heading = 'Pastebin';
 
   constructor(eventAggregator, router, traceModel, aceUtils, firebaseManager, domElement) {
     this.eventAggregator = eventAggregator;
@@ -40,15 +41,14 @@ export class Pastebin {
     this.aceUtils = aceUtils;
     this.firebaseManager = firebaseManager;
     this.domElement = domElement;
-    this.heading = 'Pastebin';
     this.navigationBar = new NavigationBar(firebaseManager);
 
     this.consoleWindow = new ConsoleWindow(eventAggregator);
     
-    this.jsEditor = new JsEditor(eventAggregator, firebaseManager);
+    this.jsEditor = new JsEditor(eventAggregator, firebaseManager, aceUtils);
     this.jsGutter = new JsGutter(eventAggregator);
-    this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager);
-    this.cssEditor  = new CssEditor(eventAggregator, firebaseManager);
+    this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
+    this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
     
     this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
@@ -69,23 +69,25 @@ export class Pastebin {
     }
   }
   
-  bind(){
-    
+  update(){
+    let editorHeight = $("#main-splitter-left").height() - $("#codeTabs").height();
+    let layout = {editorHeight: editorHeight};
+    this.eventAggregator.publish("windowResize", layout);
   }
-
+  
   attached() {
+    let self = this;
+    $(window).on('resize', windowResize => { self.update(); });
     
-    Split(['#main-splitter-left', '#main-splitter-right'], {
-          sizes: [50, 50],
-          gutterSize: 3,
-          cursor: 'col-resize',
-          minSize: 250
-    });
+    this.eventAggregator.subscribe("jsGutterContentUpdate", payload =>{ setTimeout(self.update(), 500); });
+    
+    this.navigationBar.attached();
     
     this.consoleWindow.attached();
     
     this.jsEditor.attached();
     this.jsGutter.attached();
+
     this.htmlEditor.attached();
     this.cssEditor.attached();
     
@@ -94,35 +96,40 @@ export class Pastebin {
     this.htmlViewer.attached();
     this.visViewer.attached();
     
-    Split(['#right-splitter-top', '#right-splitter-bottom'], {
-          direction: 'vertical',
-          sizes: [90, 10],
-          gutterSize: 3,
-          cursor: 'row-resize',
-          minSize: 100
-    });
-    
     this.traceViewController.attached();
     this.tracePlay.attached();
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
     
-    
-    this.navigationBar.attached();
-    
-    let gutterSplit = function (){
-      $("#js-editor-code").resizable(
-    {
-        maxWidth: $("#main-splitter-left").width() - 100,
-        autoHide: false,
-        handles: 'e, w'
-    });
-    
+    this.mainSplitterOptions = {
+          sizes: [50, 50],
+          gutterSize: 3,
+          cursor: 'col-resize',
+          minSize: 250
     };
-    gutterSplit();
-    // this.eventAggregator.subscribe("jsGutterUpdated", payload =>{
-    //   gutterSplit();
-    // });
+    Split(['#main-splitter-left', '#main-splitter-right'], this.mainSplitterOptions);
+    
+    this.rightSplitterOptions = {
+          direction: 'vertical',
+          sizes: [90, 10],
+          gutterSize: 3,
+          cursor: 'row-resize',
+          minSize: 50
+    };
+    Split(['#right-splitter-top', '#right-splitter-bottom'], this.rightSplitterOptions);
+    
+    this.$jsEditorCodeOptions = {
+            containment: "parent",
+            autoHide: false,
+            handles: 'e, w'
+    };
+    
+    let $jsEditorCode = $("#js-editor-code");
+
+    $jsEditorCode.resizable(this.$jsEditorCodeOptions);
+
+    $('.panel-heading').click();
+    self.update();
   }
 
 }

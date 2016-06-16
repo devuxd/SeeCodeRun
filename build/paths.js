@@ -12,7 +12,7 @@ module.exports = {
   style: 'styles/**/*.css',
   output: outputRoot,
   exportSrv: exportSrvRoot,
-  doc: './doc',
+  doc: './docs',
   e2eSpecsSrc: 'test/e2e/src/**/*.js',
   e2eSpecsDist: 'test/e2e/dist/'
 };

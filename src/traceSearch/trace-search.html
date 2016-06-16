@@ -17,7 +17,7 @@
         </div>
         <div class="w3-rest">
           <label class="w3-label w3-text-blue">Search Term</label>
-          <input id="searchTerm" w3-text-blue type="text" class="w3-input  w3-hover-light-grey" name="searchTerm"  placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue" list = "filteredOptions"> 
+          <input id="searchTerm"  type="text" class="w3-input  w3-hover-light-grey" name="searchTerm"  placeholder="" input.delegate="search.keyPressed()" value.bind="search.searchedValue" list = "filteredOptions"> 
           <label class="w3-label w3-text-grey" if.bind="!search.noResult && !search.noSearchYet">Matches: <span class="w3-badge w3-green">${search.numberOfResult}</span></label>
             <datalist id="filteredOptions" >
                <option repeat.for="row of search.filteredOptions" innerHTML.bind="row"></option> 

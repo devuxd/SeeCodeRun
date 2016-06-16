@@ -1,52 +1,62 @@
-#shareBox {
-    width: 800px;
-    float: right;
-    position: absolute;
-    display: none;
+#navigation-bar,
+#navigation-bar .navbar{
+    min-height:28px;
+    height: 28px;
+    margin-bottom: 0px;
+    /*border-style: solid;*/
+    /*border-width: 2px;*/
+    /*border-left: none;*/
+    /*border-top: none;*/
+    /*border-right: none;*/
+    /*border-bottom-color: #0066ff;*/
 }
-#vis-navbar {
-    padding-bottom: 5px;
+
+.navbar-xs .navbar-header{
+     min-height:28px;
+    height: 28px;
 }
- 
+.navbar-xs .navbar-brand{
+    padding: 0px 4px;
+    font-size: 16px;
+    line-height: 20px;
+}
+
+.navbar-xs .navbar-brand .material-icons { 
+    color: #0066ff;
+}
+.navbar-xs .navbar-nav > li > a {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    line-height: 20px;
+}
 .navbar-nav .loader {
-    margin: 10px 10px 10px 10px;
+    margin: 0px 0px 0px 0px;
 }
 
 .navbar .navbar-brand img {
-    height: 110%;
+    max-height: 40%;
+}
+.navbar .navbar-brand i{
+    padding-top: 4px;
+    padding-left: -6px;
+    padding-right: -6px;
+    margin-left: -6px;
+    margin-right: -6px;
+    display: inline;
 }
 
-.navbar-item {
-    margin-top: 4px;
+ul > li label, ul > li span {
     color: #888888;
-    font-size: 14px;
-}
-
-ul.nav li a,
-ul.nav li a:visited {
-    color: #888888;
-    font-size: 14px;
-    font-style: italic;
-}
-
-.glyphicon {
-    padding-right: 4px;
+    font-weight: 100;
     font-size: 12px;
 }
 
-
-ul.nav li a:hover,
-ul.nav li a:active {
-    background-color: #f8f8f8;
-    border-style: solid;
-    border-width: 2px;
-    border-left: none;
-    border-top: none;
-    border-right: none;
-    border-bottom-color: #0066ff;
+div .navbar-item {
+     padding-top: 2px;
+}
+ul > li div:hover label, ul > li div:hover span {
+    color: 	#0066ff;
+    font-weight: 200;
+    cursor: pointer;
 }
 
-ul.nav .active a {
-    color: #888888;
-    font-weight: bold;
-}

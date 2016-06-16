@@ -196,6 +196,11 @@
   margin-right: 10px
 }
 
+.seecoderun-chat ul .seecoderun-chat-timestamp {
+  right: 0;
+  margin-left: 10px
+}
+
 .seecoderun-chat footer {
   background-color: rgba(255, 255, 255, .7);
   box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);

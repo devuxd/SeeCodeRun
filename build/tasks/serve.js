@@ -8,7 +8,11 @@ gulp.task('serve', ['build'], function(done) {
   browserSync({
     online: false,
     open: false,
+    injectChanges: true,
+    ghostMode: false,
+    // reloadOnRestart: true,
     port: 8082,
+    ui: false,
     server: {
       baseDir: ['.'],
       middleware: function(req, res, next) {

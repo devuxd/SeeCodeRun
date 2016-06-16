@@ -1,8 +1,9 @@
 import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
-    constructor(trace, error, traceModel){
+    constructor(trace, traceModel){
         this.traceModel = traceModel;
-        this.error = error;
+        this.description = trace.description;
+        this.error = trace.error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
     }
@@ -189,11 +190,11 @@ export class TraceHelper {
     }
     
     getExpressions() {
-         return {identifiers : this.trace.identifiers, timeline: this.trace.timeline};
+         return {variables : this.trace.identifiers, timeline: this.trace.timeline};
     }
     
     getVariables(){
-        return this.trace.variables;
+        return {variables : this.trace.identifiers};
     }
     getValues(){
         return this.trace.values;
@@ -226,4 +227,78 @@ export class TraceHelper {
         }
         return executionTrace;
     }
+    
+    getTraceForExpression(expression, traceHelper =this){
+        
+      let trace = {
+        timeline: [],
+        variables: [],
+        values: []
+      };
+      
+      if(!traceHelper){
+        return trace;
+      }
+      
+      let expressions = traceHelper.getExpressions();
+      let variables = traceHelper.getVariables();
+      
+      for(let i = 0; i < expressions.variables.length; i++) {
+        if(traceHelper.isRangeInRange(expressions.variables[i].range, expression.range)) {
+          trace.variables.push(expressions.variables[i]);
+          
+          for(let j = 0; j < expressions.timeline.length; j++) {
+            if(traceHelper.isRangeInRange(expressions.timeline[j].range, expression.range)) {
+              trace.timeline.push(expressions.timeline[j]);    
+            }
+          }
+        }
+      }
+      
+      for(let k = 0; k < variables.variables.length; k++) {
+          if(traceHelper.isRangeInRange(variables.variables[k].range, expression.range)) {
+            trace.values.push(variables.variables[k]);
+          }
+      }
+      return trace;
+    }
+    
+    getBranchingForExpression(expression, traceHelper =this){
+        
+      let branching = {
+        branch : expression,
+        branchIndexes: []
+      };
+      
+      if(!traceHelper){
+        return branching;
+      }
+
+        let execution = this.trace.execution;
+        for (let i in execution) {
+            if (execution.hasOwnProperty(i)) {
+                let entry = execution[i];
+                if(traceHelper.isRangeInRange(entry.range, expression.range)){
+                    branching.branchIndexes.push(i);
+                }
+             }
+        }
+      return branching;
+    }
+    
+    getTraceTillIndex(index, collection = this.trace){
+        let result = [];
+        for (let i in collection) {
+            if (collection.hasOwnProperty(i)) {
+                let entry = collection[i];
+                result.push(entry);
+                if(i === index){
+                    return result;
+                }
+             }
+        }
+        return result;
+    }
+    
+    
 }

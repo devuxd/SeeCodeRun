@@ -10,5 +10,5 @@ if (validBumpTypes.indexOf(bump) === -1) {
 
 module.exports = {
   bump: bump,
-  depth: parseInt(argv.depth || '0')
+  depth: parseInt(argv.depth || '0', 10)
 };

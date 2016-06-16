@@ -11,7 +11,6 @@ export class TracePlay{
     }
 
     attached(){
-
         let tooltip = document.getElementById('tooltip_1');
         
         let editor = ace.edit('aceJsEditorDiv');

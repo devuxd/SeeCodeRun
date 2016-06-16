@@ -1,31 +1,30 @@
 /* global $ */
 /* global ace */
 
-import '../mode-javascript';
-import '../theme-chrome';
-import md5 from 'md5';
-
 export class JsEditor {
   aceJsEditorDiv = "aceJsEditorDiv";
+  jsEditorSelector = "#aceJsEditorDiv";
+  isFirstLoad = true;
+  editorCompactedText = "";
+  editorChangedTimeout = null;
+  hasErrors = false;
+  height = 700;
+  editorChangeDelay= 1500;
   
-  constructor(eventAggregator, firebaseManager) {
+  constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
-    this.hasErrors = false;
-    this.editorHashedText = '1';
-    this.md5 = md5;
-    this.height = 700;
+    this.aceUtils = aceUtils;
   }
-
-  
+  update(){
+    
+  }
   attached() {
-    $(`#${this.aceJsEditorDiv}`).css("height",`${$("#mainContainer").height() + $("#mainContainer").offset()['top'] - $("#js-container").offset()['top']}px`);
     let editor = ace.edit(this.aceJsEditorDiv);
-    this.configureEditor(editor);
+    this.aceUtils.configureEditor(editor);
     this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
-
     let session = editor.getSession();
-    this.configureSession(session);
+    this.aceUtils.configureSession(session);
 
     let selection = editor.getSelection();
     this.selection = selection;
@@ -34,66 +33,50 @@ export class JsEditor {
     
     this.session = session;
     this.editor = editor;
-}
-
-  configureEditor(editor){
-    editor.setTheme('ace/theme/chrome');
-    editor.setShowFoldWidgets(false);
-    editor.$blockScrolling = Infinity;
   }
-
-  configureSession(session) {
-    session.setUseWrapMode(true);
-    session.setUseWorker(false);
-    session.setMode('ace/mode/javascript');
-  }
-
+  
   setupSessionEvents(editor, session) {
+    let self = this;
     let ea = this.eventAggregator;
-    let editorHashedText = this.editorHashedText;
 
-     ea.publish("onEditorReady", editor);
+    let publishEditorChanged = function publishEditorChanged() {
+        let jsCode = editor.getValue();
+        let curs = editor.getCursorPosition().row + 1;
+        if(jsCode){
+          let editorCompactedText = jsCode;
+          
+          if (self.editorChangedText !== editorCompactedText ) {
+            self.editorChangedText = editorCompactedText; 
+            ea.publish('jsEditorChange', {
+              js: jsCode,
+              length: session.getLength(),
+              cursor: curs
+            });
+          }
+        }
+    };
 
+    let onEditorChanged = function onEditorChanged(e) {
+      ea.publish('jsEditorPreChange', {
+              js: editor.getValue(),
+              length: session.getLength(),
+              cursor: editor.getCursorPosition().row + 1
+      });
+      
+      if(self.isFirstLoad){
+        self.isFirstLoad = false;
+        publishEditorChanged();
+        ea.publish("jsEditorReady", editor);
+      }else{
+        clearTimeout(self.editorChangedTimeout);
+        self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
+      }
+    };
+    
     session.on('change',
       onEditorChanged);
-
-    let editorChangedTimeout;
-
-    function onEditorChanged(e) {
-
-      clearTimeout(editorChangedTimeout);
-
-      editorChangedTimeout = setTimeout(function pub() {
-        let js = editor.getValue();
-        let curs = editor.getCursorPosition().row + 1;
-
-        // This line strip out the spaces at the end of the documents.
-        let newStr = js.replace(/(\s+$)/g, '');
-        // then, hash it and store it in localHash variable.
-        let localHash = md5(newStr);
-        if (editorHashedText !== localHash ) {
-          
-          editorHashedText = localHash; 
-          // subscribe to this event to be notified with the following data when the JS-editor changed.   
-          ea.publish('onJsEditorChanged', {
-            js: js,
-            length: session.getLength(),
-            cursor: curs
-          });
-        }
-
-      }, 2500);
-    }
-
-
-
-    this.editorHashedText = editorHashedText;
-    this.editorChangedTimeout = editorChangedTimeout;
-
-    session.on('changeAnnotation',
-      onAnnotationChanged);
-
-    function onAnnotationChanged() {
+      
+    let onAnnotationChanged = function onAnnotationChanged() {
       let annotations = session.getAnnotations();
       for (let key in annotations) {
         if (annotations.hasOwnProperty(key) && annotations[key].type === 'error') {
@@ -107,41 +90,70 @@ export class JsEditor {
         hasErrors: false,
         annotation: null
       });
-    }
-
-    //For gutter
+    };
+    session.on('changeAnnotation',
+      onAnnotationChanged);
+      
     session.selection.on('changeCursor', () => {
-
+      let cursorPosition =this.editor.getCursorPosition();
+      
+      if(!cursorPosition){
+        return;
+      }
+      
       let info = {
-        cursor: this.editor.getCursorPosition().row + 1,
+        cursor: cursorPosition.row + 1,
         lastVisibleRow: session.getLength(),
-        position: this.editor.getCursorPosition()
+        position: cursorPosition
       };
       ea.publish('onCursorMoved', info);
     });
     
-    //For exprssions selection
-    editor.on("click", ()=>{
-        ea.publish("onEditorClick");
+    editor.on("click", function jsEditorClick(event){
+        ea.publish("jsEditorClick", event);
     });
     
-    editor.getSession().on('changeScrollTop', function(scrollTop) {
-        let info = {
-            top: scrollTop
+    editor.renderer.on('resize', function jsEditorResize() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorResize', editorLayout);
+    });
+    
+    editor.renderer.on('beforeRender', function jsEditorBeforeRender() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorBeforeRender', editorLayout);
+    });
+    
+    editor.renderer.on('afterRender', function jsEditorAfterRender() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorAfterRender', editorLayout);
+    });
+    
+    editor.getSession().on('changeScrollTop', function jsEditorchangeScrollTop(scrollTop) {
+      let scrollerHeight = editor.renderer.$size.scrollerHeight;
+        let scrollData = {
+            scrollTop: scrollTop,
+            scrollerHeight: scrollerHeight
         };
-
-        ea.publish('jsEditorchangeScrollTop', info);
+        ea.publish('jsEditorChangeScrollTop', scrollData);
     });
   }
 
   subscribe(session) {
     let ea = this.eventAggregator;
-    let hasErrors = this.hasErrors;
-    let editor = this.editor;
-
-
+    let self = this;
+    
+    ea.subscribe("windowResize", layout =>{
+        $(self.jsEditorSelector).height(layout.editorHeight);
+        self.editor.resize();
+      }
+    );
+    
+    ea.subscribe('jsGutterScroll', scrollData => {
+      session.setScrollTop(scrollData.scrollTop);
+    });
+      
     ea.subscribe('onAnnotationChanged', payload => {
-      hasErrors = payload.hasErrors;
+      self.hasErrors = payload.hasErrors;
 
       if (payload.hasErrors) {
         console.log('has errors at: ' + payload.annotation);
@@ -150,11 +162,16 @@ export class JsEditor {
         console.log('no errors');
       }
     });
-
-
-    // This  event is published by js-gutter.js to scroll the JS editor. 
-    ea.subscribe('onScrolled', info => {
-      session.setScrollTop(info.top);
+    
+    ea.subscribe('jsGutterLineClick', lineNumber => {
+      this.editor.gotoLine(lineNumber);
+    });
+    
+    ea.subscribe('visualizationSelectionRangeRequest', () => {
+      let selection = {
+        range: session.selection.getRange()
+      };
+      ea.publish('visualizationSelectionRangeResponse', selection);
     });
 
   }

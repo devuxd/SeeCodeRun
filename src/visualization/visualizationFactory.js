@@ -6,6 +6,23 @@ export class VisualizationFactory {
   constructor() {
   }
   
+  getVisualizationTypes() {
+    return [
+      {
+        value: "",
+        name: "Select Visualization Type"
+      },
+      {
+        value: "DataTable",
+        name: "Data Table"
+      },
+      {
+        value: "ScatterPlot",
+        name: "Scatterplot"
+      }
+    ];
+  }
+  
   getVisualizationByType(type) {
     switch (type) {
       case "DataTable":

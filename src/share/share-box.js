@@ -1,10 +1,7 @@
-import {customElement} from 'aurelia-framework';
-
 import $ from 'jquery';
-import { draggable, resizable } from 'jquery-ui';
 
-@customElement('share-box')
 export class ShareBox {
+    selectedEffect = "fold";
 
     constructor(firebaseManager) {
         this.firebaseManager = firebaseManager;
@@ -12,17 +9,12 @@ export class ShareBox {
 
     attached() {
         let self = this;
+        let options = {};
         $('#shareBox').hide();
 
         $('#shareButton').click(function hideShareBox() {
-            $('#shareBox').toggle();
+            $('#shareBox').toggle( this.selectedEffect, options, 500 );
         });
-        
-        // $('#shareDiv').draggable();
-        
-        // $('#shareDiv').resizable({
-        //   handles: "n, e, s, w"
-        // });
         
         let firebaseManager = this.firebaseManager;
         this.pastebinIdshare = firebaseManager.makeNewPastebinFirebaseReferenceId();
