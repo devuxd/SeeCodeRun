@@ -51,9 +51,11 @@ export class TraceSearch {
 
         this.eventAggregator.subscribe("traceChanged", payload => {
             searchBox.traceHelper = payload.data;
-            let variableValues = searchBox.traceHelper.getValues();
-            let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
-            this.updateTable(query);
+            if(searchBox.traceHelper.isValid()){
+                let variableValues = searchBox.traceHelper.getValues();
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
+                this.updateTable(query);
+            }
         });
 
         this.eventAggregator.subscribe("searchBoxChanged", payload => {
@@ -94,11 +96,11 @@ export class TraceSearch {
             }
             return row.value !== undefined;
         }).items;
-        
+
         this.filteredOptions =new Set(dataList);
-        
+
         this.numberOfResult = this.rows.length;
-        this.suggestionMessage = this.numberOfResult == 0 ? 
+        this.suggestionMessage = this.numberOfResult == 0 ?
                                 'There is no javascript code.Try to write some and then comeback here :)':
                                 `Type any expression to see its value. Try ${this.rows[0].id} or ${this.rows[0].value}`;
 
@@ -130,7 +132,7 @@ export class TraceSearch {
         }
         this.publishAceMarkersChanged(this.selectedExpressions);
     }
-    
+
     keyPressed() {
         this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
     }
@@ -138,7 +140,7 @@ export class TraceSearch {
     doOnClickJumpToCode(row) {
         let editor = ace.edit('aceJsEditorDiv');
         editor.gotoLine(this.rows[row.$index].range.start.row+1);
-        
+
     }
     // highlights current line in the ditor
     doOnClickHighlight(row){

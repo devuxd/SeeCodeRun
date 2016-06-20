@@ -1,9 +1,9 @@
 /* global $ */
-import {scroll} from "jquery";
+import {bindable} from 'aurelia-framework';
 
 export class JsGutter {
     aceJsEditorDiv = "";
-    jsGutterDiv = "jsGutter";
+    @bindable jsGutterDiv = "jsGutterDiv";
     jsGutterBlurClass = "js-gutter-blur";
     jsGutterInvalidClass = "js-gutter-invalid";
     jsGutterLineIdPrefix = "jsGutterLine";
@@ -44,13 +44,24 @@ export class JsGutter {
         }
         
         let firstLineNumber = editorLayout.firstLineNumber;
+        
+        self.length = currentLine + editorLayout.lastRow;
+        
+        self.cleanGutter();
+        
+        let currentLine = 0;
+        let $previousLine = undefined;
         for(let line = editorLayout.firstRow; line <= editorLayout.lastRow; line++){
-            let currentLine = firstLineNumber +line;
+            currentLine = firstLineNumber + line;
             let newLineId = self.jsGutterLineIdPrefix + currentLine;
             let newLineSelector =  self.jsGutterLineSelectorPrefix + currentLine;
             let $newLine = $(newLineSelector);
             if(!$newLine.length){
-                self.$gutter.append("<div id = '" + newLineId + "'></div>");
+                if($previousLine){
+                    $("<li id = '" + newLineId + "'></li>").insertAfter($previousLine);
+                }else{
+                    self.$gutter.append("<li id = '" + newLineId + "'></li>");
+                }
                 $newLine = $(newLineSelector); 
                 $newLine.addClass(self.jsGutterLineClass);
                 $newLine.click( function(event){
@@ -59,8 +70,8 @@ export class JsGutter {
                 });
             }
           $newLine.css("height", editorLayout.getRowHeight(line));
+          $previousLine = $newLine;
         }
-        self.length = editorLayout.lastRow;
         
         if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
             self.isTraceChange = false;
@@ -71,7 +82,6 @@ export class JsGutter {
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data:values});
             }
-            // self.$gutter.scrollTop(self.scrollTop);
             self.isTraceServiceProccesing = false;
         }
         
@@ -91,36 +101,20 @@ export class JsGutter {
     }
 
     attached() {
-        let ea = this.eventAggregator;
-        
         this.$gutter = $(`#${this.jsGutterDiv}`);
-        
-        let $editorDiv =$(`#${this.aceJsEditorDiv}`);
-        
-        // this.$gutter.scroll(
-        //     function jsGutterScroll() {
-        //         $editorDiv.scrollTop($(this).scrollTop());
-        //     }
-        // );
-        // let gutter = this.$gutter;
-        
-        // $editorDiv.scroll(
-        //     function jsGutterScroll() {
-                
-        //         gutter.scrollTop($(this).scrollTop());
-        //     }
-        // );
-        
-        this.$gutter.scroll(
-            function jsGutterScroll(event) {
-                // console.log("jsGutterScroll: " + JSON.stringify(event));
-                let scrollData = {
-                    scrollTop: event.target.scrollTop
-                };
-                ea.publish('jsGutterScroll', scrollData);
-            }
-        );
         this.subscribe();
+    }
+    
+    scrollHandler(event) {
+        if (event && event.target){
+            let scrollData = {
+               scrollTop: event.target.scrollTop
+            };
+            
+            if(this.eventAggregator){
+                this.eventAggregator.publish('jsGutterScroll', scrollData);
+            }
+        }
     }
 
     subscribe() {
@@ -134,7 +128,7 @@ export class JsGutter {
           }
         );
         
-        ea.subscribe("jsEditorPreChange", editorLayout => {
+        ea.subscribe("jsEditorPreChange", layout => {
             this.isTraceServiceProccesing = true;
             // this.clearGutter(); // too distracting
             this.update();
@@ -192,6 +186,15 @@ export class JsGutter {
     }
     
     cleanGutter() {
+        let lineNumberToRemove = this.length;
+        let $lineToRemove = "";
+        do{
+           $lineToRemove = $(this.jsGutterLineSelectorPrefix + (++lineNumberToRemove));
+        }while($lineToRemove.length && !$lineToRemove.remove());
+    }
+    
+    removeGutterContent() {
         this.$gutter.find(this.jsGutterLineClassSelector).remove();
     }
+    
 }

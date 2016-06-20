@@ -19,12 +19,48 @@ export class TraceViewController{
         this.aceUtils = aceUtils;
     }
     
+    attachGutterTooltip(){
+        let $gutterTooltip = $(this.gutterTooltipSelector);
+        if(!$gutterTooltip.length){
+			$gutterTooltip = $(`<div id='${this.gutterTooltipSelector}' />`);
+// 			$("body").append($gutterTooltip);
+			$("#aceJsEditorDiv").append($gutterTooltip);
+// 			$gutterTooltip.addClassName("");
+        }
+        this.$gutterTooltip = $gutterTooltip;
+    }
+    
+    update$GutterTooltip($gutterTooltip, position, content){
+            if(!$gutterTooltip){
+			        return;
+			}
+		            
+		    if(position){
+		        $gutterTooltip.css({
+		            position: "absolute",
+		          //  marginLeft: 0,
+		          //  marginTop: 0,
+		            top: `${position.pageY}px`,
+		            left: `${position.pageX}px`
+		        });
+		    }
+		    
+			if(content){
+			    $gutterTooltip.html(content);
+			    $gutterTooltip.show("slide", { direction: "left" }, 1000);
+			}else{
+			    $gutterTooltip.hide("slide", { direction: "left" }, 1000);
+	        }
+    }
+        
+    
     attached(){
         let eventAggregator = this.eventAggregator;
         let aceUtils = this.aceUtils;
         let editor = ace.edit(this.aceEditorDivId);
         let gutterDecorationClassName = this.gutterDecorationClassName;
         
+        this.attachGutterTooltip();
         let $editorTooltip = $(this.editorTooltipSelector);
         
         if(!$editorTooltip.length){
@@ -57,7 +93,7 @@ export class TraceViewController{
         traceViewModel.attached();
         
         aceUtils.setTraceGutterRenderer(editor, traceViewModel.traceGutterData);
-    	aceUtils.subscribeToGutterEvents(editor, $editorTooltip, gutterDecorationClassName, traceViewModel.traceGutterData, traceViewModel.update$Tooltip);
+    	aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip, gutterDecorationClassName, traceViewModel.traceGutterData, this.update$GutterTooltip);
     	
     	this.editor = editor;
         this.gutterDecorationClassName = gutterDecorationClassName;

@@ -44,12 +44,12 @@ export class Pastebin {
     this.navigationBar = new NavigationBar(firebaseManager);
 
     this.consoleWindow = new ConsoleWindow(eventAggregator);
-    
+
     this.jsEditor = new JsEditor(eventAggregator, firebaseManager, aceUtils);
     this.jsGutter = new JsGutter(eventAggregator);
     this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
     this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
-    
+
     this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
     this.visViewer  =new VisViewer(eventAggregator);
@@ -57,7 +57,7 @@ export class Pastebin {
     this.traceViewController = new TraceViewController(eventAggregator, aceUtils);
     this.expressionSelection = new ExpressionSelection(eventAggregator);
     this.tracePlay = new TracePlay(eventAggregator, traceModel, aceUtils);
-    
+
     this.traceSearch = new TraceSearch(eventAggregator, traceModel, aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(eventAggregator, firebaseManager);
   }
@@ -68,39 +68,39 @@ export class Pastebin {
       window.history.replaceState({}, null, window.location + "#"+ this.firebaseManager.pastebinId);
     }
   }
-  
+
   update(){
     let editorHeight = $("#main-splitter-left").height() - $("#codeTabs").height();
     let layout = {editorHeight: editorHeight};
     this.eventAggregator.publish("windowResize", layout);
   }
-  
+
   attached() {
     let self = this;
     $(window).on('resize', windowResize => { self.update(); });
-    
+
     this.eventAggregator.subscribe("jsGutterContentUpdate", payload =>{ setTimeout(self.update(), 500); });
-    
+
     this.navigationBar.attached();
-    
+
     this.consoleWindow.attached();
-    
+
     this.jsEditor.attached();
     this.jsGutter.attached();
 
     this.htmlEditor.attached();
     this.cssEditor.attached();
-    
+
     this.htmlEditorHistoryViewer.attached();
-    
+
     this.htmlViewer.attached();
     this.visViewer.attached();
-    
+
     this.traceViewController.attached();
     this.tracePlay.attached();
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
-    
+
     this.mainSplitterOptions = {
           sizes: [50, 50],
           gutterSize: 3,
@@ -108,7 +108,7 @@ export class Pastebin {
           minSize: 250
     };
     Split(['#main-splitter-left', '#main-splitter-right'], this.mainSplitterOptions);
-    
+
     this.rightSplitterOptions = {
           direction: 'vertical',
           sizes: [90, 10],
@@ -117,13 +117,13 @@ export class Pastebin {
           minSize: 50
     };
     Split(['#right-splitter-top', '#right-splitter-bottom'], this.rightSplitterOptions);
-    
+
     this.$jsEditorCodeOptions = {
             containment: "parent",
             autoHide: false,
             handles: 'e, w'
     };
-    
+
     let $jsEditorCode = $("#js-editor-code");
 
     $jsEditorCode.resizable(this.$jsEditorCodeOptions);

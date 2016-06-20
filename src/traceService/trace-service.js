@@ -2,6 +2,8 @@ import {EsTracer} from './es-tracer';
 
 export class TraceService {
 
+    timeLimitInMs = 4000;
+
     constructor(eventAggregator, traceModel) {
       this.eventAggregator = eventAggregator;
       this.traceModel = traceModel;
@@ -9,18 +11,18 @@ export class TraceService {
       this.esTracer = new EsTracer(this.traceModel, eventAggregator);
       this.subscribe();
     }
-    
+
     isValid(tracePayload){
         return tracePayload.status === this.traceModel.traceEvents.instrumented.event;
     }
 
     getInstrumentation(code) {
-        if(!code){ 
+        if(!code){
           return this.traceModel.makeEmptyPayload();
         }
-        return this.esTracer.getInstrumentation(code,  this.eventAggregator);
+        return this.esTracer.getInstrumentation(code, this.timeLimitInMs);
     }
-    
+
     subscribe() {
          let ea = this.eventAggregator;
          if(ea){
@@ -29,11 +31,11 @@ export class TraceService {
             });
             ea.subscribe(this.executionEvents.finished.event, payload =>{
                 this.esTracer.onCodeFinished(payload);
-            }); 
+            });
          }else{
              throw "An EventAggregator is required to listen for code execution events";
          }
-     
+
     }
 
 }

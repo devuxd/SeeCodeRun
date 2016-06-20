@@ -12,15 +12,24 @@ export class UserList{
   }
   
   attached(){
-      let $userList = $('#userlist');
-      $userList.hide();
       let userList = document.getElementById('userlist');
+      let $userList = $(userList);
+      $userList.hide();
+      
       let pastebinFirebaseReference = this.firebaseManager.makePastebinFirebaseReference();
+      
       this.userId = Math.floor(Math.random() * 9999999999).toString();
       this.firepadUserList = FirepadUserList.fromDiv(pastebinFirebaseReference.child('users'),
           userList, this.userId);
           
-      $('#userlistButton').click(function hideUserList() {
+       $('#userlistButton').click(function hideUserList() {
+         if($userList.is(":visible")){
+            $("#userlistButton span").removeClass("navigation-bar-active-item");
+            $("#userlistButton label").removeClass("navigation-bar-active-item");
+        }else{
+            $("#userlistButton span").addClass("navigation-bar-active-item");
+            $("#userlistButton label").addClass("navigation-bar-active-item");
+        }
         $userList.toggle();
        });
       
@@ -28,6 +37,7 @@ export class UserList{
       $userList.resizable({
             handles: "n, e, s, w"
       });
+      
   }
     
 }

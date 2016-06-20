@@ -48,12 +48,16 @@
     overflow-y: hidden;
 }
 
+#js-editor-trace-gutter{
+    overflow: hidden;
+}
+
 #right-splitter{
     bottom: 0px;
     margin-bottom: 0;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
-    box-sizing: border-box; 
+    box-sizing: border-box;
     height: 100%;
 }
 
@@ -110,27 +114,36 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
     border-top: none;
     border-right: none;
     border-bottom-color: #0066ff;
+    /*box-shadow: 2px 2px 1px -1px #888888;*/
 }
 
-.resizable {
-    width: 50%;
+#code-section .resizable {
+    width: 40%;
     display: inline-block;
 }
 
-.ui-resizable-e { 
-    cursor: e-resize; 
-    width: 2px; 
-    right: -1px; 
-    top: 0; 
-    bottom: 0; 
-    background-color: #888888;
+
+#code-section .ui-resizable-e {
+    padding: 0px;
+    margin: 0px;
+    cursor: e-resize;
+    width: 2px;
+    right: -1px;
+    top: 0;
+    bottom: 0;
+    background-color: #eee;
+    border-left: 2px;
+    border-right: 2px;
+    border-color: transparent;
 }
 
-.ui-resizable-w { 
-    cursor: w-resize; 
-    width: 2px; 
-    right: -1px; 
-    top: 0; 
-    bottom: 0; 
-    background-color: #888888;
+#code-section .ui-resizable-w {
+    padding: 0px;
+    margin: 0px;
+    cursor: w-resize;
+    width: 2px;
+    right: -1px;
+    top: 0;
+    bottom: 0;
+    background-color: #eee;
 }

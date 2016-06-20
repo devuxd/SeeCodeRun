@@ -57,10 +57,9 @@ export class JsEditor {
     };
 
     let onEditorChanged = function onEditorChanged(e) {
+      let editorLayout = self.aceUtils.getLayout(editor);
       ea.publish('jsEditorPreChange', {
-              js: editor.getValue(),
-              length: session.getLength(),
-              cursor: editor.getCursorPosition().row + 1
+              editorLayout
       });
       
       if(self.isFirstLoad){

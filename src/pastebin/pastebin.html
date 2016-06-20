@@ -3,7 +3,7 @@
   <require from = "ace/ace-editor.css"></require>
   <require from = "pastebin/pastebin.css"></require>
   <require from = "traceView/trace-view.css"></require>
-  
+
   <require from = "jsEditor/js-editor.html"></require>
   <require from = "jsGutter/js-gutter.html"></require>
   <require from = "htmlEditor/html-editor.html"></require>
@@ -25,36 +25,44 @@
         <li id =  "cssTab" role = "tab" aria-controls = "css-container">
           <a href = "#css-container" data-toggle = "tab">CSS</a></li>
       </ul>
-      <div id = "codeContent" class = "tab-content box-shadow-left"> 
+      <div id = "codeContent" class = "tab-content box-shadow-left">
         <div id = "js-container" class = "tab-pane fade in active" >
           <div id = "code-section" class = "w3-row"  role = "tabpanel" aria-labelledby="jsTab">
             <div id = "js-editor-code" class = "w3-container w3-threequarter" style = "padding: 0px 1px 0px 0px;">
-              <js-editor jsEditor.bind = "jsEditor"></js-editor>
+              <js-editor js-editor.bind = "jsEditor"></js-editor>
             </div>
             <!--<span class = 'glyphicon glyphicon-edit'></span>-->
             <div id = "js-editor-trace-gutter" class = "w3-container w3-rest" style = "padding: 0px 1px 0px 0px;">
-              <js-gutter jsGutter.bind = "jsGutter"></js-gutter>
+              <js-gutter js-gutter.bind = "jsGutter"></js-gutter>
             </div>
           </div>
         </div>
         <div id = "html-container" class = "tab-pane fade"  role = "tabpanel" aria-labelledby="htmlTab">
           <history-viewer historyViewer.bind = "historyViewer"></history-viewer>
-          <html-editor htmlEditor.bind = "htmlEditor"></html-editor>
+          <html-editor html-editor.bind = "htmlEditor"></html-editor>
         </div>
         <div id = "css-container"  class = "tab-pane fade" role = "tabpanel" aria-labelledby="cssTab">
-          <css-editor cssEditor.bind = "cssEditor"></css-editor>
+          <css-editor css-editor.bind = "cssEditor"></css-editor>
         </div>
       </div>
     </div>
-      
+
     <div id = "main-splitter-right" class = "split split-horizontal container-fluid" >
       <div id = "right-splitter">
         <div id = "right-splitter-top" class = "split split-vertical box-shadow-right">
           <ul id = "reviewTabs" class = "nav nav-tabs" role = "tablist">
             <li id = "previewTab" class = "active" role = "tab" aria-controls = "preview">
-              <a href = "#preview" data-toggle = "tab"><span class = 'glyphicon glyphicon-globe'></span>Output</a></li>
+              <a href = "#preview" data-toggle = "tab">
+                <!--<span class = 'glyphicon glyphicon-globe'></span>-->
+                Result
+              </a>
+            </li>
             <li id = "visualizationTab" role = "tab" aria-controls = "visualization-container">
-              <a href = "#visualization-container"  data-toggle = "tab"><span class = 'glyphicon glyphicon-tasks'></span>See</a></li>
+              <a href = "#visualization-container"  data-toggle = "tab">
+                <!--<span class = 'glyphicon glyphicon-tasks'></span>-->
+                Inspect
+              </a>
+            </li>
           </ul>
           <div  class = "tab-content">
           <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
@@ -62,15 +70,15 @@
           </div>
           <div id = "visualization-container" class = "tab-pane fade container-fluid"  role = "tabpanel" aria-labelledby="visualizationTab">
             <play tracePlay.bind = "tracePlay"></play>
-            <trace-search search.bind = "traceSearch"></trace-search>
+            <trace-search trace-search.bind = "traceSearch"></trace-search>
             <div>
-              <vis-viewer vis.bind = "visViewer"></vis-viewer>
+              <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
             </div>
           </div>
           </div>
         </div>
-        
-        <div id = "right-splitter-bottom" class = "split split-vertical container-fluid box-shadow-right">
+
+        <div id = "right-splitter-bottom" class = "split split-vertical box-shadow-right">
           <console-window console.bind = 'consoleWindow'></console-window>
         </div>
       </div>

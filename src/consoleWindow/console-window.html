@@ -1,9 +1,14 @@
 <template bindable = "console" >
 <require from = "./console-window.css" ></require>
     <div id = "console-window">
-        <span class = 'glyphicon glyphicon-console'></span><label>${console.title}</label>
-        <div repeat.for = "output of console.log" >
-            ${output}
+        <ul if.bind = "console.log" class = "console-window-list">
+            <li repeat.for = "output of console.log"  class= "${output.styleClass}" innerhtml.bind="output.content">
+            </li>
+        </ul>
+        <div class= "console-window-footer">
+            <label>${console.title}</label>
+            <span class = 'glyphicon glyphicon-console'></span>
+            <span id = "consoleLogFeedback" class = 'glyphicon glyphicon-triangle-right'></span>
         </div>
     </div>
 </template>

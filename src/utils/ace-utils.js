@@ -13,15 +13,15 @@ export class AceUtils{
         // editor.setAutoScrollEditorIntoView(true);
         editor.$blockScrolling = Infinity;
     }
-    
+
     configureSession(session, mode = 'ace/mode/javascript') {
         session.setUseWrapMode(true);
         session.setUseWorker(false);
         session.setMode(mode);
     }
-    
+
     makeAceMarkerManager(aceEditor){
-        return {    
+        return {
                 aceEditor: aceEditor,
                 markers: [],
                 markerRenderer: "expression-range",
@@ -29,16 +29,16 @@ export class AceUtils{
                 inFront: false
                 };
     }
-    
+
     updateAceMarkers(aceMarkerManager, elementsWithRangeProperty){
         var Range = ace.require("ace/range").Range;
-        let ranges = [];    
+        let ranges = [];
         for(let key in elementsWithRangeProperty){
-            
+
             if(elementsWithRangeProperty.hasOwnProperty(key)){
-                
+
                 let element = elementsWithRangeProperty[key];
-                 
+
                 if (element.hasOwnProperty("range")){
                             let elementRange = element.range;
                             let range = new Range(  elementRange.start.row,
@@ -50,9 +50,9 @@ export class AceUtils{
                 }
             }
         }
-        
+
         let editSession = aceMarkerManager.aceEditor.getSession();
-        
+
         if(aceMarkerManager.markers){
             let oldmarkers = aceMarkerManager.markers;
             for(let i in oldmarkers){
@@ -60,7 +60,7 @@ export class AceUtils{
                 editSession.removeMarker(marker);
             }
         }
-        
+
         let newMarkers = [];
         let markerRenderer = aceMarkerManager.markerRenderer, markerType = aceMarkerManager.markerType, inFront = aceMarkerManager.inFront;
         for(let i in ranges){
@@ -70,37 +70,37 @@ export class AceUtils{
         }
         aceMarkerManager.markers = newMarkers;
     }
-    
+
     subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
-     	editor.on("guttermousedown", function(e){ 
+     	editor.on("guttermousedown", function(e){
     	   // updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
     		let target = e.domEvent.target;
-    		
+
     		if(!dataModel){
 			    return;
 			}
-			
+
 			if(!dataModel.rows){
 			    return;
 			}
-    		
-    		if (target.className.indexOf(gutterDecorationClassName) == -1){ 
+
+    		if (target.className.indexOf(gutterDecorationClassName) == -1){
     			return;
     		}
 
-    		if (!editor.isFocused()){ 
+    		if (!editor.isFocused()){
     			return;
     		}
 
-    		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){ 
-    			return; 
+    		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){
+    			return;
     		}
     		let direction = -1;
-    		
-    	    if (e.clientX > target.parentElement.getBoundingClientRect().right -33){ 
+
+    	    if (e.clientX > target.parentElement.getBoundingClientRect().right -33){
     			direction = 1;
     		}
-    		
+
     		let row = e.getDocumentPosition().row;
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
@@ -109,39 +109,39 @@ export class AceUtils{
     		        console.log(direction + " --> "+dataModel.rows[row].branch);
     				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
     				pixelPosition.pageY += editor.renderer.lineHeight;
-    				editor.resize();
-    				// updateTooltip(tooltip, pixelPosition, content);
+    				// editor.resize();
+    				updateTooltip(tooltip, pixelPosition, content);
     		}
-    		e.stop(); 
-    		 
+    		e.stop();
+
     	});
-        
+
     }
-    
+
     publishExpressionHoverEvents(editor, eventAggregator, mousePositionHandler){
-        
+
         if(!editor){
 			    throw "An Ace editor is required";
 		}
-		
+
 		if(!eventAggregator){
 			    throw "An event aggregator (or an object with a publish('Event_Name', data_structure ) method) is required";
 		}
-		
+
 		if(!mousePositionHandler){
 			    throw "A mouse position handler object  with a getExpressionAtPosition(position) method (e.g. a Trace Helper) is required";
 		}
-		
+
      	editor.on("mousemove", function (e){
-     	    
-            
+
+
     		let position = e.getDocumentPosition();
     		let isTextMatch = undefined;
-    		
+
     		if(position){
-    		    isTextMatch = editor.getSession().getWordRange(position); 
+    		    isTextMatch = editor.getSession().getWordRange(position);
     		}
-    		
+
 
     		if(isTextMatch && editor.isFocused()){
     			let match = mousePositionHandler.getExpressionAtPosition(position);
@@ -149,53 +149,53 @@ export class AceUtils{
     		}else{
     		     eventAggregator.publish("expressionHovered", undefined);
     		}
-		
+
 		});
-        
+
     }
-    
+
     subscribeToExpressionHoverEvents(editor, eventAggregator, renderer, isToRenderAboveExpression){
         if(!editor){
 			    throw "An Ace editor is required";
 		}
-		
+
 		if(!eventAggregator){
 			    throw "An event aggregator (or an object with a subscribe('Event_Name', callback_function ) method) is required";
 		}
-		
+
 		if(!renderer){
 			    throw "A renderer (or an object with an onExpressionHovered(match, pixelPosition ) method) is required";
 		}
-        
+
         eventAggregator.subscribe("expressionHovered", match =>{
-            
+
     		if(match){
     			let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
-    			
+
     			if(isToRenderAboveExpression){
     			    pixelPosition.pageY -= editor.renderer.lineHeight;
     			}else{
     			    pixelPosition.pageY += editor.renderer.lineHeight;
     			}
-    			
+
     			renderer.onExpressionHovered(match, pixelPosition);
     		}else{
     		    renderer.onExpressionHovered();
     		}
         });
-        
+
     }
-    
+
     updateTooltip(div, position, content){
             if(!div){
                 return;
             }
-			
+
 			if(position){
 		        div.style.left = position.pageX + 'px';
 			    div.style.top = position.pageY + 'px';
 			}
-		
+
 			if(content){
 				div.style.display = "block";
 				div.innerHTML = content;
@@ -204,12 +204,12 @@ export class AceUtils{
 				div.innerHTML = "";
 			}
 	}
-    
+
     updateGutterDecorations(editor, previousRows, rows, gutterDecorationClassName){
         this.removeGutterDecorations(editor, previousRows, gutterDecorationClassName);
         this.addGutterDecorations(editor, rows, gutterDecorationClassName);
 	}
-	
+
 	addGutterDecorations(editor, rows, gutterDecorationClassName){
         for (let row in rows) {
             if(rows.hasOwnProperty(row)){
@@ -217,16 +217,16 @@ export class AceUtils{
             }
         }
 	}
-		
+
 	removeGutterDecorations(editor, rows, gutterDecorationClassName){
-        for(let row in rows){ 
+        for(let row in rows){
             if(rows.hasOwnProperty(row)){
              editor.getSession().removeGutterDecoration(row, gutterDecorationClassName);
             }
         }
 	}
-	
-    
+
+
     getDefaultGutterRenderer(){
         return {
             getWidth: function(session, lastLineNumber, config) {
@@ -236,18 +236,18 @@ export class AceUtils{
                 return row + 1;
             }
         };
-    }  
-    
+    }
+
     setTraceGutterRenderer(editor, traceGutterData){
-        
-        let session = editor.getSession(); 
+
+        let session = editor.getSession();
         let traceGutterRenderer =  {
             getWidth: function(session, lastLineNumber, config) {
                 let format = "";
                 if(traceGutterData.maxCount > 0){
                     format = "</> ";
                 }
-                
+
                 return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
             },
             getText: function(session, row) {
@@ -263,9 +263,9 @@ export class AceUtils{
         };
         session.gutterRenderer = traceGutterRenderer;
     }
-    
-    
-    
+
+
+
     getLayout(editor){
         let session = editor.getSession();
         let config = editor.renderer.layerConfig;
@@ -274,7 +274,7 @@ export class AceUtils{
         let firstRow = config.firstRow;
         let lastRow = Math.min(config.lastRow + config.gutterOffset,  // needed to compensate for hor scollbar
             session.getLength() - 1);
-            
+
         let gutterLayout = {
             lineHeight: lineHeight,
             firstLineNumber: firstLineNumber,
@@ -286,21 +286,21 @@ export class AceUtils{
             layerConfig: config,
             scrollMargin: editor.renderer.scrollMargin,
             $size: editor.renderer.$size
-            
+
         };
         return gutterLayout;
     }
-    
+
     customUpdateGutter(editor, traceGutterRenderer) {
         let dom = document;
         let gutter = editor.renderer.$gutterLayer;
         let config = editor.renderer.layerConfig;
         let session = editor.getSession();
-        
+
         if(traceGutterRenderer){
          session.gutterRenderer = traceGutterRenderer;
         }
-        
+
         let firstRow = config.firstRow;
         var lastRow = Math.min(config.lastRow + config.gutterOffset,  // needed to compensate for hor scollbar
             session.getLength() - 1);
@@ -311,7 +311,7 @@ export class AceUtils{
         var decorations = session.$decorations;
         var firstLineNumber = session.$firstLineNumber;
         var lastLineNumber = 0;
-        
+
         var gutterRenderer = session.gutterRenderer || gutter.$renderer;
 
         var cell = null;
@@ -384,7 +384,7 @@ export class AceUtils{
                     cell.foldWidget = null;
                 }
             }
-            
+
             var text = lastLineNumber = gutterRenderer
                 ? gutterRenderer.getText(session, row)
                 : row + firstLineNumber;
@@ -398,10 +398,10 @@ export class AceUtils{
         if (gutter.$fixedWidth || session.$useWrapMode)
             lastLineNumber = session.getLength() + firstLineNumber;
 
-        var gutterWidth = gutterRenderer 
+        var gutterWidth = gutterRenderer
             ? gutterRenderer.getWidth(session, lastLineNumber, config)
             : lastLineNumber.toString().length * config.characterWidth;
-        
+
         var padding = gutter.$padding || gutter.$computePadding();
         gutterWidth += padding.left + padding.right;
         if (gutterWidth !== gutter.gutterWidth && !isNaN(gutterWidth)) {
@@ -410,7 +410,7 @@ export class AceUtils{
             gutter._emit("changeGutterWidth", gutterWidth);
         }
     }
-    
+
     getTraceAnnotations(trace){
         var i, stackTrace, entry, text, row;
 		var annotations = [];
@@ -418,24 +418,24 @@ export class AceUtils{
             entry = stackTrace[i];
             text = entry.text;
 			row = entry.range.start.row;
-			
+
 			annotations.push({ type : "info", row: row, column: 0, raw: "y is called x times", text: `${text}  is called  ${this.count(entry.count, 'time', 'times')}`});
-            
+
         }
         return annotations;
     }
-    
+
     getCompactJsCode(jsCode){
         let codeWithoutComments = jsCode.replace(/\/\*.*\*\/|\/\/.*[\n\r]/g, "");
         let codeTrimmed = codeWithoutComments.replace(/^[\s\xA0]+|[\s\xA0]+$/, "");
         let editorCompactedText = codeTrimmed.replace(/(["'`]([^"'`]*)["'`])?[\s\xA0]+/g, "$1 ");
         return editorCompactedText;
     }
-  
+
     count(value, singular, plural) {
         return (value === 1) ? (`${value} ${singular}`) : (`${value} ${plural}`);
     }
-    
+
     bindAceEvents(editorDivId, editor, ea){
         let aceEvents = this.aceEvents;
         for(let component in aceEvents.components){
@@ -445,14 +445,14 @@ export class AceUtils{
                 editor[component].on(event, data =>{
                     ea.publish(event, data);
                 });
-                
+
             }
         }
     }
     // Events as Ace 2.3.1
     aceEvents = {
         editor: [
-            
+
         ],
         components: {
             session: [],

@@ -25,6 +25,7 @@
 }
  
 #gutterTooltip {
+   position: absolute;
    background-color: #FFF;
    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
    background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
@@ -35,7 +36,7 @@
    /*max-width: 100%;*/
    padding: 3px 4px;
    position: absolute;
-   z-index: 10;
+   z-index: 1000;
    -moz-box-sizing: border-box;
    -webkit-box-sizing: border-box;
    box-sizing: border-box;

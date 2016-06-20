@@ -91,7 +91,7 @@ export class Chat {
           name: username,
           text: message,
           color: self.currentUsercolor,
-          timestamp: Firebase.ServerValue.TIMESTAMP
+          timestamp: self.firebaseManager.SERVER_TIMESTAMP
           
         });
         $chatMessageInput.val('');
@@ -117,6 +117,7 @@ export class Chat {
         let message = data.text;
         let color = data.color;
         let timestamp = data.timestamp;
+        let formattedTime = self.getFormattedTime(timestamp);
         
         if(color){
           self.updateUserToColorMapping(color, username);
@@ -126,8 +127,8 @@ export class Chat {
         $messageElement.css("border-color", `#${color}`);
         let $nameElement = $(`<strong class='seecoderun-chat-username'></strong>`);
         $nameElement.text(username);
-        let $timestampElement = $(`<strong class='seecoderun-chat-timestamp'></strong>`);
-        $timestampElement.text(timestamp);
+        let $timestampElement = $(`<span class='seecoderun-chat-timestamp'></span>`);
+        $timestampElement.text(formattedTime);
         
         $messageElement.text(message).prepend('<br />').prepend($timestampElement).prepend($nameElement);
   
@@ -145,6 +146,14 @@ export class Chat {
     
     
     $('#chatButton').click(function hideChatBox() {
+        if($chat.is(":visible")){
+            $("#chatButton span").removeClass("navigation-bar-active-item");
+            $("#chatButton label").removeClass("navigation-bar-active-item");
+        }else{
+            $("#chatButton span").addClass("navigation-bar-active-item");
+            $("#chatButton label").addClass("navigation-bar-active-item");
+        }
+      
       $chat.toggle();
       if(self.isFirstToggle){
         $chatMessages.scrollTop($chatMessages[0].scrollHeight);
@@ -171,6 +180,20 @@ export class Chat {
   updateUserToColorMapping(color, username, self = this){
     self.userToColorMap[username] = color;
     self.colors.push(color);
+  }
+  
+  getFormattedTime(timestamp){
+    let date = new Date(timestamp);
+    let currentTime = new Date();
+    let elapsedTime = new Date(currentTime - date);
+    let elapsedTimeSeconds = elapsedTime.getSeconds(); // the same for minutes, hours, days, months, and even years.
+    // let hours = date.getHours();
+    // let minutes = "0" + date.getMinutes();
+    // let seconds = "0" + date.getSeconds();
+    // let formattedTime = `${hours} : ${minutes.substr(-2)} : ${seconds.substr(-2)} [ elapsed: ${elapsedTimeInSeconds} seconds]` ;
+    let formattedTime = `${elapsedTimeSeconds} seconds ago` ;
+    //todo: format time as C9 does
+    return formattedTime;
   }
     
 }

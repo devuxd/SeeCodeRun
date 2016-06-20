@@ -1,3 +1,21 @@
+.seecoderun-user-list {
+  font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  box-shadow: 0px 5px 50px rgba(0, 0, 0, .4);
+  background-color: rgba(255, 255, 255, 1);
+  font-size: 16px;
+  line-height: 22px;
+  color: #666;
+  overflow: visible;
+  position: fixed;
+  z-index: 100;
+  padding: 0;
+  width: 300px;
+  bottom: 450px;
+  right: 0;
+  -webkit-animation: fadeInUp 1s;
+  animation: fadeInUp 1s
+}
+
 .firepad-userlist {
   /* default height */
   height: 400px;
@@ -13,7 +31,6 @@
   color: #404040;
   
   overflow: visible;
-  position: fixed;
   bottom: 0;
   right: 0;
   z-index: 100;

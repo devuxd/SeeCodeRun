@@ -1,4 +1,4 @@
-<template bindable="vis">
+<template bindable="visViewer">
     <require from="visualization/visualization.html"></require>
     <div class="panel panel-default">
         <div class="panel-heading" data-toggle="collapse" href="#seePanelBody">
@@ -8,23 +8,23 @@
             <div class="container-fluid">
                 <div class="row">
                         <div class="col-md-12">
-                            <input type="checkbox" id="checkbox2" checked.bind="vis.isChecked" ui-checkbox>
+                            <input type="checkbox" id="checkbox2" checked.bind="visViewer.isChecked" ui-checkbox>
                             <label for="checkbox2">Activate Visualization</label>
-                            <!--<button click.trigger="vis.showVis()" disabled.bind="!vis.showVisButton" class="btn btn-info active">show visualization</button>-->
-                            <!--<button click.trigger="vis.clearSelection()" if.bind="vis.showClearButton" class="btn btn-danger">clear selections</button>-->
+                            <!--<button click.trigger="visViewer.showVis()" disabled.bind="!visViewer.showVisButton" class="btn btn-info active">show visualization</button>-->
+                            <!--<button click.trigger="visViewer.clearSelection()" if.bind="visViewer.showClearButton" class="btn btn-danger">clear selections</button>-->
                         </div>
                 </div class="row">
-                <div show.bind="vis.isChecked" class="add-vis">
-                    <select id="visSelect${$index}" class="btn btn-default" change.trigger="vis.onSelectChange($event, $index)">
-                      <option repeat.for="type of vis.visualizationTypes" value.bind="type.value">${type.name}</option>
+                <div show.bind="visViewer.isChecked" class="add-vis">
+                    <select id="visSelect${$index}" class="btn btn-default" change.trigger="visViewer.onSelectChange($event, $index)">
+                      <option repeat.for="type of visViewer.visualizationTypes" value.bind="type.value">${type.name}</option>
                     </select>
-                    <button type="button" class="btn btn-default" click.trigger="vis.addVisualization()">Add Visualization</button>
+                    <button type="button" class="btn btn-default" click.trigger="visViewer.addVisualization()">Add Visualization</button>
                  </div>
             </div>
             
             <div class="container-fluid">
-                <div class="vis-container" repeat.for="visualization of vis.visualizations">
-                    <visualization vis.bind="visualization"></visualization>
+                <div class="vis-container" repeat.for="visualization of visViewer.visualizations">
+                    <visualization visualization.bind="visualization"></visualization>
                 </div>
             </div>
         </div>
