@@ -73,7 +73,19 @@
      cursor: pointer;
 }
 
+#visualization-container select,
+#visualization-container input,
+#visualization-container button{
+    font-size: 14px;
+    line-height: 16px;
+    height: 36px;
+}
 
+#visualization-container select,
+#visualization-container input{
+    border-color: #0066ff;
+    border-width: 0px 0px 1px 0px;
+}
 
 ul.nav .glyphicon {
     padding-right: 2px;
@@ -123,27 +135,17 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
 }
 
 
-#code-section .ui-resizable-e {
+#code-section .ui-resizable-ew {
     padding: 0px;
     margin: 0px;
-    cursor: e-resize;
-    width: 2px;
-    right: -1px;
+    cursor: ew-resize;
+    width: 8px;
+    right: 0px;
+    margin-right: -6px;
     top: 0;
     bottom: 0;
-    background-color: #eee;
-    border-left: 2px;
-    border-right: 2px;
-    border-color: transparent;
-}
-
-#code-section .ui-resizable-w {
-    padding: 0px;
-    margin: 0px;
-    cursor: w-resize;
-    width: 2px;
-    right: -1px;
-    top: 0;
-    bottom: 0;
-    background-color: #eee;
+    background-color: transparent;
+    border-color: #eee;
+    border-style: solid;
+    border-width:  0px 0px 0px 1px;
 }

@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
- 
+
 export class DataTable {
 
   constructor() {
@@ -16,16 +16,16 @@ export class DataTable {
   formatTraceFx(trace) {
     if(!trace)
       return;
-    
+
     let columns = [];
     let values = [];
     let transformation = [];
-    
+
     for (let variable of trace.variables) {
       columns.push(variable.id);
       transformation.push({ name: variable.id, values: [] });
     }
-    
+
     for (let variable of trace.timeline) {
      /* if (variable.type !== 'VariableDeclarator' && variable.type !== 'AssignmentExpression')
         continue;*/
@@ -33,32 +33,32 @@ export class DataTable {
       for (let t of transformation) {
         if (t.name !== variable.id) {
           if (t.values.length > 0) {
-            
+
             // set the current time periods value to the previous value
             t.values.push(t.values[t.values.length - 1]);
           } else {
-            
+
             // the variable does not exist so insert a blank value
             t.values.push('');
           }
         } else {
-          
+
           // the variable changed so add the new value
-          t.values.push(variable.value); 
+          t.values.push(variable.value);
         }
       }
     }
-    
+
     for (let i = 0; i < trace.values.length; i++) {
       let toAdd = {};
-      
+
       for (let t of transformation) {
         toAdd[t.name] = t.values[i];
       }
-      
+
       values.push(toAdd);
     }
-    
+
     return {
       columns: columns,
       values: values
@@ -68,16 +68,16 @@ export class DataTable {
   renderFx(trace, divElement) {
     if (!trace)
       return;
-      
-    // clear the div element  
+
+    // clear the div element
     d3.select(divElement).html("");
-    
+
     let data = trace;
     let columns = data.columns;
     let values = data.values;
     let table = d3.select(divElement).append("table")
-      .style("border-collapse", "collapse") // <= Add this line in
-      .style("border", "2px black solid"),
+      .attr("class", "table table-striped table-bordered")
+      .style("border-collapse", "collapse"),
       thead = table.append("thead"),
       tbody = table.append("tbody");
 
@@ -109,7 +109,7 @@ export class DataTable {
       })
       .enter()
       .append("td")
-      .attr("style", "font-family: Courier") // sets the font style
+      // .attr("style", "font-family: Courier") // sets the font style
       .html(function(d) {
         return d.value;
       });

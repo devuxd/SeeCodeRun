@@ -121,7 +121,7 @@ export class Pastebin {
     this.$jsEditorCodeOptions = {
             containment: "parent",
             autoHide: false,
-            handles: 'e, w'
+            handles: 'ew'
     };
 
     let $jsEditorCode = $("#js-editor-code");

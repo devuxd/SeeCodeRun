@@ -1,8 +1,12 @@
-#traceSearchPanelBody select, #traceSearchPanelBody input{
-    font-size: 14px;
-    line-height: 16px;
+#traceSearchPanelBody > div{
+    padding-bottom: 4px;
 }
 
-/*#searchTerm {*/
-/*    font-size: 21.5px;*/
-/*}*/
+#searchFilterW3NoPaddingLeft{
+    padding-left: 0px;
+}
+
+#searchTermHitCount {
+    margin-bottom: 0px;
+    padding: 2px;
+}

@@ -1,37 +1,38 @@
  .flow {
    overflow: auto;
  }
- 
+
  .iframeCssPreview {
    border: none;
    overflow: auto;
  }
- 
+
  td,
  th {
    padding: 1px 4px;
    border: 1px black solid;
  }
- 
+
  #visualizations {
    padding-top: 5px;
  }
- 
- 
- .vis-container {
-   border: 1px solid black;
- }
- 
+
+
+.vis-container {
+    padding-top: 4px;
+    box-shadow: 1px 1px 1px 1px #eee;
+}
+
  .vis-container .visualization-title {
    font-size: 16px !important;
    font-weight: bold;
  }
- 
- .w3-table, .w3-table tr, .w3-table td {
-   border-collapse: collapse; 
-   border: 2px solid black;
- }
- 
+
+ /*.w3-table, .w3-table tr, .w3-table td {*/
+ /*  border-collapse: collapse; */
+ /*  border: 2px solid black;*/
+ /*}*/
+
 .table tbody tr:hover td, .table tbody tr:hover th {
     background-color: #f6f6bd;
     border-bottom-color: black;

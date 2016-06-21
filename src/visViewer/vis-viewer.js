@@ -15,10 +15,10 @@ export class VisViewer {
 
     this.factory = new VisualizationFactory();
     this.visualizationTypes = this.factory.getVisualizationTypes();
-    this.isChecked = false;
+    this.isChecked = true;
     this.subscribe();
   }
-  
+
   attached() {
     for (let visualization of this.visualizations) {
       visualization.attached();
@@ -32,7 +32,7 @@ export class VisViewer {
         self.selectedExpressions = payload.items;
         self.showClearButton = self.showVisButton = self.selectedExpressions.length >= 2 ;
     });
-        
+
     ea.subscribe("traceChanged", payload => {
       self.traceHelper = payload.data;
       self.trace = payload.data.trace;
@@ -40,16 +40,16 @@ export class VisViewer {
         visualization.traceHelper = self.traceHelper;
         visualization.trace = self.trace;
         if(visualization.type !== 'DataTable') {
-          visualization.renderVisualization(); 
+          visualization.renderVisualization();
         }
       }
     });
-    
+
     ea.subscribe("instrumentationFailed", payload => {
       self.hasError = true;
       ea.publish('onVisRequest', payload );
     });
-    
+
     ea.subscribe('visualizationSelectionRangeResponse', expression => {
       if(!self.traceHelper){
         return;
@@ -66,7 +66,7 @@ export class VisViewer {
   // }
 
   // clearSelection() {
-  //     // notify expressionSelection service to clear the selected expressions 
+  //     // notify expressionSelection service to clear the selected expressions
   //     this.eventAggregator.publish("onClearSelectionRequest");
   // }
 
@@ -74,14 +74,13 @@ export class VisViewer {
     let ea = this.eventAggregator;
     ea.publish('onVisRequest', payload);
   }
-  
+
   addVisualization() {
-    let self =this;
     let tempVis = this.tempVis;
     if(tempVis) {
       if(!this.checkVisExists(tempVis.type)) {
-        tempVis.traceHelper = self.traceHelper;
-        tempVis.trace = self.trace;
+        tempVis.traceHelper = this.traceHelper;
+        tempVis.trace = this.trace;
         this.visualizations.push(tempVis);
         let vis = this.visualizations[this.visualizations.length-1];
         setTimeout(function() {
@@ -91,14 +90,14 @@ export class VisViewer {
       }
     }
   }
-  
+
   onSelectChange(event) {
     let type = $(event.target).val();
     if (type !== '' && type !== null) {
-      this.tempVis = new Visualization(d3, this.eventAggregator, this.factory.getVisualizationByType(type));
+      this.tempVis = new Visualization(this.visualizations.length, d3, this.eventAggregator, this.factory.getVisualizationByType(type));
     }
   }
-  
+
   checkVisExists(type) {
     let exists = false;
     for (let i = 0; i < this.visualizations.length; i++) {
@@ -109,7 +108,7 @@ export class VisViewer {
     }
     return exists;
   }
-  
+
   removeVisType(type) {
     let index = -1;
     for (let i = 0; i < this.visualizationTypes.length; i++) {
@@ -118,7 +117,7 @@ export class VisViewer {
         break;
       }
     }
-    
+
     if(index >= 0) {
       this.visualizationTypes.splice(index, 1);
     }

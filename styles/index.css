@@ -3,7 +3,7 @@ body {
    min-height: 100%;
    margin: 0;
  }
- 
+
  @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 1) {
    body {
      padding: 0px;
@@ -15,7 +15,7 @@ body {
    }
  }
  /* ----------- Retina Screens ----------- */
- 
+
  @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 2) and (min-resolution: 192dpi) {
    body {
      padding: 0px;
@@ -26,13 +26,13 @@ body {
      width: 100%;
    }
  }
- 
+
  .splash {
    text-align: center;
    margin: 10% 0 0 0;
    box-sizing: border-box;
  }
- 
+
  .splash .logo i{
     padding-left: -30px;
     padding-right: -30px;
@@ -48,11 +48,11 @@ body {
 .seecoderun-blue{
     background-color: #0066ff;
 }
- 
- .material-icons.md-giant { 
-     font-size: 200px; 
+
+ .material-icons.md-giant {
+     font-size: 200px;
  }
- 
+
  .splash .title {
    font-size: 64px;
    /*text-shadow: rgba(0, 0, 0, 0.5) 0 0 15px;*/
@@ -66,32 +66,32 @@ body {
    display: inline-block;
    font-size: 100px;
  }
- 
+
  .pictureDetail {
    max-width: 425px;
  }
  /* animate page transitions */
- 
+
  section.au-enter-active {
    -webkit-animation: fadeInRight 1s;
    animation: fadeInRight 1s;
  }
- 
- div.au-stagger {
+
+ /*div.au-stagger {*/
    /* 50ms will be applied between each successive enter operation */
-   -webkit-animation-delay: 50ms;
-   animation-delay: 50ms;
- }
- 
+ /*  -webkit-animation-delay: 50ms;*/
+ /*  animation-delay: 50ms;*/
+ /*}*/
+
  .card-container.au-enter {
    opacity: 0;
  }
- 
+
  .card-container.au-enter-active {
    -webkit-animation: fadeIn 2s;
    animation: fadeIn 2s;
  }
- 
+
  .card {
    overflow: hidden;
    position: relative;
@@ -104,17 +104,17 @@ body {
    margin-bottom: 32px;
    box-shadow: 0 0 5px rgba(0, 0, 0, .5);
  }
- 
+
  .card .content {
    margin-top: 10px;
  }
- 
+
  .card .content .name {
    color: white;
    text-shadow: 0 0 6px rgba(0, 0, 0, .5);
    font-size: 18px;
  }
- 
+
  .card .header-bg {
    /* This stretches the canvas across the entire hero unit */
    position: absolute;
@@ -125,13 +125,13 @@ body {
    border-bottom: 1px #FFF solid;
    border-radius: 6px 6px 0 0;
  }
- 
+
  .card .avatar {
    position: relative;
    margin-top: 15px;
    z-index: 100;
  }
- 
+
  .card .avatar img {
    width: 100px;
    height: 100px;
@@ -141,7 +141,7 @@ body {
    border: 2px #FFF solid;
  }
  /* animation definitions */
- 
+
  @-webkit-keyframes fadeInRight {
    0% {
      opacity: 0;
@@ -154,7 +154,7 @@ body {
      transform: none
    }
  }
- 
+
  @keyframes fadeInRight {
    0% {
      opacity: 0;
@@ -169,7 +169,7 @@ body {
      transform: none
    }
  }
- 
+
  @-webkit-keyframes fadeInLeft {
    0% {
      opacity: 0;
@@ -182,7 +182,7 @@ body {
      transform: none
    }
  }
- 
+
  @keyframes fadeInLeft {
    0% {
      opacity: 0;
@@ -197,7 +197,7 @@ body {
      transform: none
    }
  }
- 
+
  @-webkit-keyframes fadeIn {
    0% {
      opacity: 0;
@@ -206,7 +206,7 @@ body {
      opacity: 1;
    }
  }
- 
+
  @keyframes fadeIn {
    0% {
      opacity: 0;

@@ -5,8 +5,11 @@ export class Visualization {
   static inject() {
     return [d3];
   }
- 
-  constructor(d3, eventAggregator, config) {
+
+  constructor(index, d3, eventAggregator, config) {
+    this.id = "seecoderun-visualization-"+ index;
+    this.buttonId = "seecoderun-visualization-"+ index+"-button";
+    this.contentId = "seecoderun-visualization-"+ index+"-content";
     this.d3 = d3;
     this.eventAggregator = eventAggregator;
     this.title = config.config.title;
@@ -24,15 +27,15 @@ export class Visualization {
     this.renderVisualization();
     this.subscribe();
   }
-  
+
   renderVisualization() {
     if(!this.trace){
-      console.log(`No trace found when rendering visualization #${this.type}`);
+      console.log(`No trace found when rendering visualization #${this.id}`);
     }
     let formattedTrace = this.formatTrace(this.trace);
-    this.render(formattedTrace, `#${this.type}`);
+    this.render(formattedTrace, `#${this.contentId}`);
   }
-  
+
   subscribe() {
     let ea = this.eventAggregator;
     let self = this;
@@ -43,9 +46,9 @@ export class Visualization {
         self.renderVisualization();
     });
   }
-  
+
   getSelectionRange() {
     let ea = this.eventAggregator;
-    ea.publish('visualizationSelectionRangeRequest');
+    ea.publish('visualizationSelectionRangeRequest', {id: this.id});
   }
 }

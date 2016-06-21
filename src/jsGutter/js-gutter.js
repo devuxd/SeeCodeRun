@@ -15,42 +15,41 @@ export class JsGutter {
     editorLayout = null;
     selectedLine = '';
     $gutter = null;
-    length = 0;
+    lastLine = 0;
     isTraceServiceProccesing =false;
     isTraceChange = false;
     traceHelper = null;
     scrollTop = 0;
-    
+
     constructor(eventAggregator, aceJsEditorDiv = "aceJsEditorDiv") {
         this.eventAggregator = eventAggregator;
         this.aceJsEditorDiv = aceJsEditorDiv;
     }
-    
+
     update(editorLayout = this.editorLayout, aceJsEditorDiv = this.aceJsEditorDiv){
         let self = this;
         let $jsGutterLineClass =$(self.jsGutterLineClassSelector);
         let $jsGutterLineHighlightClass = $(self.jsGutterLineHighlightClassSelector);
         let $editorDiv =$(`#${aceJsEditorDiv}`);
-      
-    
+
+
         $jsGutterLineClass.css("font-size", $editorDiv.css("font-size"));
         $jsGutterLineClass.css("font-family", $editorDiv.css("font-family"));
-        
+
         $jsGutterLineHighlightClass.css("font-size", $editorDiv.css("font-size"));
         $jsGutterLineHighlightClass.css("font-family", $editorDiv.css("font-family"));
-        
+
         if(!editorLayout){
             return;
         }
-        
+
         let firstLineNumber = editorLayout.firstLineNumber;
-        
-        self.length = currentLine + editorLayout.lastRow;
-        
+
+        self.lastLine = firstLineNumber + editorLayout.lastRow;
         self.cleanGutter();
-        
-        let currentLine = 0;
+
         let $previousLine = undefined;
+        let currentLine = 0;
         for(let line = editorLayout.firstRow; line <= editorLayout.lastRow; line++){
             currentLine = firstLineNumber + line;
             let newLineId = self.jsGutterLineIdPrefix + currentLine;
@@ -62,7 +61,7 @@ export class JsGutter {
                 }else{
                     self.$gutter.append("<li id = '" + newLineId + "'></li>");
                 }
-                $newLine = $(newLineSelector); 
+                $newLine = $(newLineSelector);
                 $newLine.addClass(self.jsGutterLineClass);
                 $newLine.click( function(event){
                     let lineNumber = event.target.id.replace(self.jsGutterLineIdPrefix, "");
@@ -72,7 +71,7 @@ export class JsGutter {
           $newLine.css("height", editorLayout.getRowHeight(line));
           $previousLine = $newLine;
         }
-        
+
         if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
             self.isTraceChange = false;
             if(self.traceHelper.isValid()){
@@ -84,7 +83,7 @@ export class JsGutter {
             }
             self.isTraceServiceProccesing = false;
         }
-        
+
         if(self.isTraceServiceProccesing){
             self.$gutter.addClass(self.jsGutterBlurClass);
         }else{
@@ -104,13 +103,13 @@ export class JsGutter {
         this.$gutter = $(`#${this.jsGutterDiv}`);
         this.subscribe();
     }
-    
+
     scrollHandler(event) {
         if (event && event.target){
             let scrollData = {
                scrollTop: event.target.scrollTop
             };
-            
+
             if(this.eventAggregator){
                 this.eventAggregator.publish('jsGutterScroll', scrollData);
             }
@@ -121,24 +120,24 @@ export class JsGutter {
         let self = this;
         let $gutter= this.$gutter;
         let ea = this.eventAggregator;
-        
+
         ea.subscribe("windowResize", layout =>{
             $gutter.height(layout.editorHeight);
             self.update();
           }
         );
-        
+
         ea.subscribe("jsEditorPreChange", layout => {
             this.isTraceServiceProccesing = true;
             // this.clearGutter(); // too distracting
             this.update();
         });
-        
+
         ea.subscribe("jsEditorAfterRender", editorLayout => {
             this.editorLayout = editorLayout;
             this.update();
         });
-        
+
         ea.subscribe("jsEditorResize", editorLayout => {
             this.editorLayout = editorLayout;
             this.update();
@@ -154,7 +153,7 @@ export class JsGutter {
             this.clearGutter();
             this.update();
         });
-        
+
         ea.subscribe("jsEditorChangeScrollTop", scrollData => {
                 this.scrollTop = scrollData.scrollTop;
                 this.scrollerHeight = scrollData.scrollerHeight;
@@ -184,17 +183,17 @@ export class JsGutter {
     clearGutter() {
         this.$gutter.find(this.jsGutterLineClassSelector).html("");
     }
-    
+
     cleanGutter() {
-        let lineNumberToRemove = this.length;
+        let lineNumberToRemove = this.lastLine;
         let $lineToRemove = "";
         do{
            $lineToRemove = $(this.jsGutterLineSelectorPrefix + (++lineNumberToRemove));
         }while($lineToRemove.length && !$lineToRemove.remove());
     }
-    
+
     removeGutterContent() {
         this.$gutter.find(this.jsGutterLineClassSelector).remove();
     }
-    
+
 }

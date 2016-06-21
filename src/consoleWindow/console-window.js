@@ -25,7 +25,7 @@ export class ConsoleWindow {
       let self = this;
       self.$scroller.scrollTop(self.$scroller[0].scrollHeight);
       self.$consoleLogFeedback.css("display", "inline").fadeOut(1000);
-      $(`.${self.styleConsoleWindowTextCompactOverflow}`).click();
+      // $(`.${self.styleConsoleWindowTextCompactOverflow}`).click();
      }
 
     subscribe() {

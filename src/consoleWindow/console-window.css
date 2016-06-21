@@ -14,6 +14,7 @@
 
 .console-window-footer {
     min-width: 100%;
+    min-height: 100%;
     border-color: #eee;
     border-width: 0px 0px 0px 2px;
 }
@@ -21,10 +22,6 @@
 
 .console-window-footer >span{
     float: right;
-    /*position: relative;*/
-    /*bottom: 0;*/
-    /*right: 0;*/
-    /*position:fixed; bottom:2%; right:2%;*/
 }
 
 .console-window-footer >span{
@@ -41,8 +38,8 @@
     display: none;
 }
 
-#consoleLogFeedback{
-    visibility: hidden;
+#consoleLogFeedback {
+    display: none;
 }
 
 .console-window-list{
