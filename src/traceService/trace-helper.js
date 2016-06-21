@@ -6,24 +6,53 @@ export class TraceHelper {
         this.error = trace.error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
+        this.originalTrace = this.trace;
+        this.navigationTrace = this.trace;
+        this.isNavigationMode = false;
     }
-    
+
+    startNavigation(){
+        this.isNavigationMode = true;
+        this.trace = this.navigationTrace;
+    }
+
+    stopNavigation(){
+        this.isNavigationMode = false;
+        this.trace = this.originalTrace;
+    }
+
+    navigateToBranch(branchIndex, branchExpression){
+        let timeline = this.trace.timeline;
+        let branchTimeline = [];
+        let branchHits = 0;
+        for(let j = 0; j < timeline.length; j++) {
+            if(this.isRangeInRange(timeline[j].range, branchExpression.range)) {
+              branchTimeline.timeline.push(timeline[j]);
+              branchHits++;
+            }
+            if(branchHits === branchIndex){
+                break;
+            }
+         }
+        this.trace.timeline = branchTimeline;
+    }
+
     isValid(){
         return (this.error === "" && this.trace);
     }
-    
+
     setTrace(trace){
         this.trace = this.traceModel.makeTrace(trace);
     }
-    
+
     getExpressionAtPosition(dataModel, position){
         return this.getValuesAtPosition(dataModel, position);
     }
-    
+
     getValuesAtPosition(traceData, acePosition){
         let isPositionInRange = this.isPositionInRange;
-        let isRangeInRangeStrict = this.isRangeInRangeStrict; 
-        
+        let isRangeInRangeStrict = this.isRangeInRangeStrict;
+
         if(!acePosition || !traceData){
             return undefined;
         }
@@ -39,14 +68,14 @@ export class TraceHelper {
     			     }else{
     			        match = entry;
     			     }
-    			 
+
     			 }
             }
         }
         return match;
-	    
+
 	}
-    
+
     /*
      * getTraceDataInRange(traceData, aceRange)
      * @ param traceData - an array based on the available properties of a Trace, that is, arrays with each entry having a range.
@@ -54,7 +83,7 @@ export class TraceHelper {
      * @ example {"start":{"row":18,"column":8},"end":{"row":18,"column":9}}.
      * @ post   if aceRange is not defined or there are no values in the trace data, returns an empty array
      *             otherwise, returns an array with all the entries within the aceRange.
-     */    
+     */
     getTraceDataInRange(traceData, aceRange){
         if(!aceRange || !traceData){
             return [];
@@ -70,7 +99,7 @@ export class TraceHelper {
         }
         return allValues;
     }
-    
+
     /*
      * getTraceDataInLine(traceData, lineNumber)
      * @ param traceData - an array based on the available properties of a Trace, that is, arrays with each entry having a range.
@@ -106,19 +135,19 @@ export class TraceHelper {
         let values = this.getValues();
         return this.getTraceDataInLine(values, lineNumber);
     }
-    
+
     /*
      * getValuesInRange(aceRange)
      * @ param aceRange - a range in Ace's format, that is, with start row and column and end row and column.
      * @ example {"start":{"row":18,"column":8},"end":{"row":18,"column":9}}.
      * @ post   if aceRange is not defined or there are no values in the trace, returns an empty array
      *             otherwise, returns an array with all the values within  the aceRange.
-     */    
+     */
     getValuesInRange(aceRange){
         let values = this.getValues();
         return this.getTraceDataInRange(values, aceRange);
     }
-    
+
     isRangeInRange(isRange, inRange){
         return (
                 (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
@@ -126,7 +155,7 @@ export class TraceHelper {
     			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
     			);
     }
-    
+
     isRangeInRangeStrict(isRange, inRange){
         return (
                 (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
@@ -134,7 +163,7 @@ export class TraceHelper {
     			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
     			);
     }
-    
+
     isRangeInLine(isRange, inLine){
         return(
             (isRange.start.row === (inLine - 1))
@@ -142,30 +171,30 @@ export class TraceHelper {
             (isRange.end.row === (inLine - 1))
         );
     }
-    
+
     isPositionInRange(position, inRange){
-        
+
         let matchesInOneLine = (
-                position.row == inRange.start.row 
+                position.row == inRange.start.row
                 && inRange.start.row  == inRange.end.row
                 && position.column >= inRange.start.column
                 && position.column <= inRange.end.column
             );
-            
+
         if(matchesInOneLine){
             return true;
         }
-            
+
         let matchesStart = (
-                position.row == inRange.start.row 
+                position.row == inRange.start.row
                 && inRange.start.row  < inRange.end.row
                 && position.column >= inRange.start.column
             );
-           
+
         if(matchesStart){
             return true;
         }
-        
+
         let matchesEnd = (
                 position.row == inRange.end.row
                 && inRange.start.row  < inRange.end.row
@@ -175,7 +204,7 @@ export class TraceHelper {
         return matchesEnd;
 
     }
-    
+
     getStackBlockCounts() {
         let stack = this.trace.stack, data = this.trace.data, hits = this.trace.hits;
         let entry,
@@ -188,22 +217,22 @@ export class TraceHelper {
         }
         return stackData;
     }
-    
+
     getExpressions() {
          return {variables : this.trace.identifiers, timeline: this.trace.timeline};
     }
-    
+
     getVariables(){
         return {variables : this.trace.identifiers};
     }
     getValues(){
         return this.trace.values;
     }
-            
+
     getExecutionTraceAll() {
         let result = [];
         let execution = this.trace.execution, data = this.trace.data;
-        
+
         for (let i in execution) {
             let entry = execution[i];
             if (data.hasOwnProperty(entry)) {
@@ -212,7 +241,7 @@ export class TraceHelper {
         }
         return result;
     }
-    
+
     getExecutionTrace() {
         let executionTrace = [];
         let execution = this.trace.execution, data = this.trace.data, traceTypes = this.traceModel.traceTypes;
@@ -227,34 +256,34 @@ export class TraceHelper {
         }
         return executionTrace;
     }
-    
+
     getTraceForExpression(expression, traceHelper =this){
-        
+
       let trace = {
         timeline: [],
         variables: [],
         values: []
       };
-      
+
       if(!traceHelper){
         return trace;
       }
-      
+
       let expressions = traceHelper.getExpressions();
       let variables = traceHelper.getVariables();
-      
+
       for(let i = 0; i < expressions.variables.length; i++) {
         if(traceHelper.isRangeInRange(expressions.variables[i].range, expression.range)) {
           trace.variables.push(expressions.variables[i]);
-          
+
           for(let j = 0; j < expressions.timeline.length; j++) {
             if(traceHelper.isRangeInRange(expressions.timeline[j].range, expression.range)) {
-              trace.timeline.push(expressions.timeline[j]);    
+              trace.timeline.push(expressions.timeline[j]);
             }
           }
         }
       }
-      
+
       for(let k = 0; k < variables.variables.length; k++) {
           if(traceHelper.isRangeInRange(variables.variables[k].range, expression.range)) {
             trace.values.push(variables.variables[k]);
@@ -262,14 +291,14 @@ export class TraceHelper {
       }
       return trace;
     }
-    
+
     getBranchingForExpression(expression, traceHelper =this){
-        
+
       let branching = {
         branch : expression,
         branchIndexes: []
       };
-      
+
       if(!traceHelper){
         return branching;
       }
@@ -285,7 +314,7 @@ export class TraceHelper {
         }
       return branching;
     }
-    
+
     getTraceTillIndex(index, collection = this.trace){
         let result = [];
         for (let i in collection) {
@@ -299,6 +328,6 @@ export class TraceHelper {
         }
         return result;
     }
-    
-    
+
+
 }

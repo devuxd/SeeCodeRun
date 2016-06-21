@@ -106,11 +106,11 @@ export class AceUtils{
     		if(dataModel.rows.hasOwnProperty(row)){
     		        content = dataModel.rows[row].text;
     		        dataModel.rows[row].branch = dataModel.rows[row].branch ? (dataModel.rows[row].branch + direction) % (dataModel.rows[row].count + 1): dataModel.rows[row].count;
-    		        console.log(direction + " --> "+dataModel.rows[row].branch);
+    		      //  console.log(direction + " --> "+dataModel.rows[row].branch);
     				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
-    				pixelPosition.pageY += editor.renderer.lineHeight;
+    				// pixelPosition.pageY += editor.renderer.lineHeight;
     				// editor.resize();
-    				updateTooltip(tooltip, pixelPosition, content);
+    				updateTooltip(tooltip, pixelPosition, content, editor.renderer.lineHeight);
     		}
     		e.stop();
 

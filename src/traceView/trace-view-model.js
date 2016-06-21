@@ -143,16 +143,9 @@ export class TraceViewModel {
 			let row = entry.range.start.row;
 
 			if(!result.rows.hasOwnProperty(row)){
-			    let navigator = `
-			    <div class = "w3-container">
-			        <div class = "w3-row">This block has been called ${entry.count} time(s)</div>
-			        <div class = "w3-row">
-			            <div class = "w3-container w3-half">Previous</div>
-			            <div class = "w3-container w3-half">Next</div>
-			        </div>
-			     </div>`;
 
-                result.rows[row] = {count: entry.count, text: navigator};
+
+                result.rows[row] = {count: entry.count, entryText: `Block executed ${entry.count} time(s)`, text: entry};
 			}
 
             if(result.maxCount< entry.count){

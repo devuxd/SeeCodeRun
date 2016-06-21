@@ -10,11 +10,13 @@ export class VisualizationFactory {
     return [
       {
         value: "DataTable",
-        name: "Data Table"
+        name: "Data Table",
+        default: false
       },
       {
         value: "ScatterPlot",
-        name: "Scatterplot"
+        name: "Scatterplot",
+        default: true
       }
     ];
   }

@@ -53,6 +53,10 @@ body {
      font-size: 200px;
  }
 
+ .material-icons.md-tiny {
+     font-size: 10px;
+ }
+
  .splash .title {
    font-size: 64px;
    /*text-shadow: rgba(0, 0, 0, 0.5) 0 0 15px;*/

@@ -28,11 +28,11 @@
       <div id = "codeContent" class = "tab-content box-shadow-left">
         <div id = "js-container" class = "tab-pane fade in active" >
           <div id = "code-section" class = "w3-row"  role = "tabpanel" aria-labelledby="jsTab">
-            <div id = "js-editor-code" class = "w3-container w3-threequarter" style = "padding: 0px 1px 0px 0px;">
+            <div id = "js-editor-code" class = "w3-col" style = "width:700px">
               <js-editor js-editor.bind = "jsEditor"></js-editor>
             </div>
             <!--<span class = 'glyphicon glyphicon-edit'></span>-->
-            <div id = "js-editor-trace-gutter" class = "w3-container w3-rest" style = "padding: 0px 1px 0px 0px;">
+            <div id = "js-editor-trace-gutter" class = "w3-rest">
               <js-gutter js-gutter.bind = "jsGutter"></js-gutter>
             </div>
           </div>
@@ -54,13 +54,13 @@
             <li id = "previewTab" class = "active" role = "tab" aria-controls = "preview">
               <a href = "#preview" data-toggle = "tab">
                 <!--<span class = 'glyphicon glyphicon-globe'></span>-->
-                Result
+                Output
               </a>
             </li>
             <li id = "visualizationTab" role = "tab" aria-controls = "visualization-container">
               <a href = "#visualization-container"  data-toggle = "tab">
                 <!--<span class = 'glyphicon glyphicon-tasks'></span>-->
-                Inspect
+                Debug
               </a>
             </li>
           </ul>

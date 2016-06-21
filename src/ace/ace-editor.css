@@ -16,7 +16,7 @@
 .ace_scrollbar {
     display: none !important;
 }
- 
+
 .ace_gutter-cell.seecoderun-gutter-decoration {
     background-color: #FFF;
     border-radius: 10px 0px 0px 10px;
@@ -24,7 +24,15 @@
     background-repeat: no-repeat;
     background-position: 2px center;
 }
- 
+
+.ace_gutter-cell.seecoderun-gutter-decoration:hover {
+    background-color: #eee;
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration:active {
+    background-color: #0066ff;
+}
+
 .ace-chrome .ace_marker-layer .expression-range {
     position: absolute;
     background: rgb(250, 250, 155);

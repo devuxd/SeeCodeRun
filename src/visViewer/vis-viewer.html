@@ -9,11 +9,11 @@
             <div class="w3-row-padding" show.bind="visViewer.isChecked" class="add-vis">
                 <div class="w3-col" style="width:200px">
                     <select id="visSelect${$index}" class="w3-select w3-hover-light-grey" change.trigger="visViewer.onSelectChange($event, $index)">
-                     <option disabled class="w3-text-blue" >Select a visualization type</option>
+                     <option disabled="true" selected="true" class="w3-text-blue" >Select a visualization type</option>
                      <option repeat.for="type of visViewer.visualizationTypes" value.bind="type.value">${type.name}</option>
                     </select>
                 </div>
-                <div class="w3-rest">
+                <div class="w3-col" style="width:100px">
                     <button type="button" class="w3-btn seecoderun-blue" click.trigger="visViewer.addVisualization()">Add Visualization</button>
                 </div>
             </div>

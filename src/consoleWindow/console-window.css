@@ -1,6 +1,6 @@
-#console-window{
-    min-height: 100%;
-}
+/*#console-window{*/
+/*    min-height: 100%;*/
+/*}*/
 
 #console-window:hover .console-window-footer >span{
     color: #0066ff;
@@ -8,21 +8,25 @@
 
 #console-window > ul{
     vertical-align: bottom;
-    bottom: 0px;
-    min-height: 100%;
+    /*bottom: 0px;*/
+    /*min-height: 100%;*/
 }
 
 .console-window-footer {
-    min-width: 100%;
-    min-height: 100%;
-    border-color: #eee;
+    /*min-width: 100%;*/
+    /*min-height: 100%;*/
+    /*border-color: #eee;*/
     border-width: 0px 0px 0px 2px;
+    clear: both;
+    position:fixed;
+    bottom: 2px;
+    width: inherit;
 }
 
 
-.console-window-footer >span{
-    float: right;
-}
+/*.console-window-footer >span{*/
+/*    float: right;*/
+/*}*/
 
 .console-window-footer >span{
     font-size: 12px;
@@ -30,9 +34,9 @@
     color: rgb(136, 136, 136);
 }
 
-.console-window-footer >label{
-     float:right;
-}
+/*.console-window-footer >label{*/
+/*     float:right;*/
+/*}*/
 
 .console-window-footer >label{
     display: none;

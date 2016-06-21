@@ -3,15 +3,15 @@
    left: 0;
    right: 0;
    top: 30px;
-   bottom: 0;
-   overflow: auto;
+   bottom: 10px;
+   overflow: hidden;
  }
- 
+
  .page-host {
    padding: 0px;
  }
- 
- 
+
+
  @media print {
    .page-host {
      position: absolute;
