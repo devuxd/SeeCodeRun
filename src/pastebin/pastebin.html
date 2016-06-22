@@ -17,7 +17,7 @@
 
   <div id = "mainContainer" class = "box-shadow-bottom">
     <div id = "main-splitter-left"  class = "split split-horizontal container-fluid">
-      <ul id = "codeTabs" class = "nav nav-tabs box-shadow-left" role = "tablist">
+      <ul id = "codeTabs" class = "nav nav-tabs" role = "tablist">
         <li id =  "jsTab" class = "active" role = "tab" aria-controls = "js-container">
           <a href = "#js-container" data-toggle = "tab">JS</a></li>
         <li id =  "htmlTab" role = "tab" aria-controls = "html-container">
@@ -28,11 +28,11 @@
       <div id = "codeContent" class = "tab-content box-shadow-left">
         <div id = "js-container" class = "tab-pane fade in active" >
           <div id = "code-section" class = "w3-row"  role = "tabpanel" aria-labelledby="jsTab">
-            <div id = "js-editor-code" class = "w3-container w3-threequarter" style = "padding: 0px 1px 0px 0px;">
+            <div id = "js-editor-code" class = "w3-half">
               <js-editor js-editor.bind = "jsEditor"></js-editor>
             </div>
             <!--<span class = 'glyphicon glyphicon-edit'></span>-->
-            <div id = "js-editor-trace-gutter" class = "w3-container w3-rest" style = "padding: 0px 1px 0px 0px;">
+            <div id = "js-editor-trace-gutter" class = "w3-rest">
               <js-gutter js-gutter.bind = "jsGutter"></js-gutter>
             </div>
           </div>
@@ -54,27 +54,25 @@
             <li id = "previewTab" class = "active" role = "tab" aria-controls = "preview">
               <a href = "#preview" data-toggle = "tab">
                 <!--<span class = 'glyphicon glyphicon-globe'></span>-->
-                Result
+                Output
               </a>
             </li>
             <li id = "visualizationTab" role = "tab" aria-controls = "visualization-container">
               <a href = "#visualization-container"  data-toggle = "tab">
                 <!--<span class = 'glyphicon glyphicon-tasks'></span>-->
-                Inspect
+                Debug
               </a>
             </li>
           </ul>
           <div  class = "tab-content">
-          <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
-            <html-viewer></html-viewer>
-          </div>
-          <div id = "visualization-container" class = "tab-pane fade container-fluid"  role = "tabpanel" aria-labelledby="visualizationTab">
-            <play tracePlay.bind = "tracePlay"></play>
-            <trace-search trace-search.bind = "traceSearch"></trace-search>
-            <div>
+            <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
+              <html-viewer></html-viewer>
+            </div>
+            <div id = "visualization-container" class = "tab-pane fade container-fluid"  role = "tabpanel" aria-labelledby="visualizationTab">
+              <play tracePlay.bind = "tracePlay"></play>
+              <trace-search trace-search.bind = "traceSearch"></trace-search>
               <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
             </div>
-          </div>
           </div>
         </div>
 

@@ -13,6 +13,7 @@ System.config({
     "res": "./res/",
     "styles": "./styles/",
     "include": "./include/",
+    "images": "./images/",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },

@@ -24,8 +24,8 @@ export class Visualization {
   }
 
   attached() {
-    this.renderVisualization();
     this.subscribe();
+    this.renderVisualization();
   }
 
   renderVisualization() {

@@ -2,11 +2,6 @@
    overflow: auto;
  }
 
- .iframeCssPreview {
-   border: none;
-   overflow: auto;
- }
-
  td,
  th {
    padding: 1px 4px;
@@ -16,7 +11,6 @@
  #visualizations {
    padding-top: 5px;
  }
-
 
 .vis-container {
     padding-top: 4px;
@@ -28,12 +22,11 @@
    font-weight: bold;
  }
 
- /*.w3-table, .w3-table tr, .w3-table td {*/
- /*  border-collapse: collapse; */
- /*  border: 2px solid black;*/
- /*}*/
+.table {
+    padding-top: 4px;
+}
 
 .table tbody tr:hover td, .table tbody tr:hover th {
     background-color: #f6f6bd;
-    border-bottom-color: black;
+    border-bottom-color: #eee;
 }

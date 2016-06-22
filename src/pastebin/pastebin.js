@@ -102,7 +102,7 @@ export class Pastebin {
     this.traceSearchHistory.attached();
 
     this.mainSplitterOptions = {
-          sizes: [50, 50],
+          sizes: [60, 40],
           gutterSize: 3,
           cursor: 'col-resize',
           minSize: 250
@@ -111,7 +111,7 @@ export class Pastebin {
 
     this.rightSplitterOptions = {
           direction: 'vertical',
-          sizes: [90, 10],
+          sizes: [85, 15],
           gutterSize: 3,
           cursor: 'row-resize',
           minSize: 50

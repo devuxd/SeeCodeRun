@@ -1,5 +1,5 @@
 #console-window{
-    min-height: 100%;
+    vertical-align: bottom;
 }
 
 #console-window:hover .console-window-footer >span{
@@ -8,15 +8,21 @@
 
 #console-window > ul{
     vertical-align: bottom;
-    bottom: 0px;
-    min-height: 100%;
+}
+
+#console-window-footer-fill{
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    width: 100%;
 }
 
 .console-window-footer {
-    min-width: 100%;
-    min-height: 100%;
-    border-color: #eee;
-    border-width: 0px 0px 0px 2px;
+    clear: both;
+    position:fixed;
+    bottom: 14px;
+    right: 32px;
+    width: inherit;
 }
 
 
@@ -59,9 +65,6 @@
     -moz-animation: fadeIn 1s;
     animation: fadeIn 1s;
     border-style:solid;
-    /*box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);*/
-    /*padding-left: 5px;*/
-    /*word-wrap: break-word;*/
 }
 
 /*.console-window-list > li:last-child {*/

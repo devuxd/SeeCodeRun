@@ -9,7 +9,7 @@
         <div id="searchFilterW3NoPaddingLeft" class="w3-col" style="width:100px">
           <label  for = "searchFilter" class="w3-label seecoderun-text-blue">Filter By</label>
           <select class="w3-select w3-hover-light-grey"  name="searchFilter" id="searchFilter" value.bind="traceSearch.selectedFilter" change.trigger="traceSearch.filterChanged()">
-            <option disabled class="w3-text-blue" >select a filter</option>
+            <option disabled="true" selected="true" >Select a filter</option>
             <option>${traceSearch.options.none}</option>
             <option>${traceSearch.options.any}</option>
             <option>${traceSearch.options.id}</option>

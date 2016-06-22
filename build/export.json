@@ -1,8 +1,10 @@
 {
   "list": [
-    "res/**/*", 
+    "res/**/*",
     "include/**/*.js",
     "styles/**/*.css",
+    "styles/images/*.gif",
+    "styles/images/*.png",
     "dist/*-build*.js",
     "index.html",
     "config.js",

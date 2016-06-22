@@ -160,6 +160,20 @@ export class JsGutter {
                 // $gutter.scrollerHeight(this.scrollerHeight);
                 $gutter.scrollTop(this.scrollTop);
         });
+
+        ea.subscribe("traceNavigationChange", navigationData => {
+                this.branchIndex = navigationData.branchIndex;
+                this.branchRange = navigationData.entry.range;
+                this.branchEntry = navigationData.entry;
+                // if(this.traceHelper){
+                //     if(!this.traceHelper.isNavigationMode){
+                //         this.traceHelper.startNavigation();
+                //     }
+                //     this.traceHelper.navigateToBranch(this.branchIndex, this.branchRange);
+                // }
+                // this.update();
+                console.log(JSON.stringify(navigationData.entry));
+        });
     }
 
     setGutterLineContent(line, contents) {

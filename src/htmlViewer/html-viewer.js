@@ -71,6 +71,11 @@ export class HtmlViewer {
       try {
         ea.publish(traceService.executionEvents.running.event);
 
+        // $('#htmlView').contents().find('body').find("script").remove();
+
+        // $('#htmlView').contents().find('head').find("script").remove();
+        // $('#htmlView').contents().find('head').append(`<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>`);
+
         doc.body.appendChild(script);
 
         result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
@@ -108,7 +113,6 @@ export class HtmlViewer {
       }
 
       this.style.textContent = this.css;
-
       doc.head.appendChild(this.style);
     }
 

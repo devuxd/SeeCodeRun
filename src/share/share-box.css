@@ -25,5 +25,10 @@
 
 #copyButton:hover {
     cursor: pointer;
+    color: #3C8AFC;
+}
+
+#copyButton:active {
+    cursor: pointer;
     color: #0066ff;
 }

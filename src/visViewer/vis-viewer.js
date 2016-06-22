@@ -76,23 +76,30 @@ export class VisViewer {
   }
 
   addVisualization() {
+    let type = $("#visViewerSelect").val();
+    this.prepareVisualization(type);
     let tempVis = this.tempVis;
     if(tempVis) {
       if(!this.checkVisExists(tempVis.type)) {
-        tempVis.traceHelper = this.traceHelper;
-        tempVis.trace = this.trace;
-        this.visualizations.push(tempVis);
-        let vis = this.visualizations[this.visualizations.length-1];
-        setTimeout(function() {
-          vis.attached();
-        }, 50);
-        this.removeVisType(tempVis.type);
+          tempVis.traceHelper = this.traceHelper;
+          tempVis.trace = this.trace;
+          this.visualizations.push(tempVis);
+          let vis = this.visualizations[this.visualizations.length-1];
+          this.removeVisType(tempVis.type);
+          setTimeout(function() {
+            vis.attached();
+          }, 50);
       }
     }
+
   }
 
   onSelectChange(event) {
-    let type = $(event.target).val();
+    // let type = $(event.target).val();
+    // this.prepareVisualization(type);
+  }
+
+  prepareVisualization(type){
     if (type !== '' && type !== null) {
       this.tempVis = new Visualization(this.visualizations.length, d3, this.eventAggregator, this.factory.getVisualizationByType(type));
     }
