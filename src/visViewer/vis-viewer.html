@@ -8,7 +8,7 @@
         <div id="seePanelBody" class="panel-body container-fluid">
             <div class="w3-row-padding" show.bind="visViewer.isChecked" class="add-vis">
                 <div class="w3-col" style="width:200px">
-                    <select id="visSelect${$index}" class="w3-select w3-hover-light-grey" change.trigger="visViewer.onSelectChange($event, $index)">
+                    <select id="visViewerSelect" class="w3-select w3-hover-light-grey" change.trigger="visViewer.onSelectChange($event, $index)">
                      <option disabled="true" selected="true" class="w3-text-blue" >Select a visualization type</option>
                      <option repeat.for="type of visViewer.visualizationTypes" value.bind="type.value">${type.name}</option>
                     </select>

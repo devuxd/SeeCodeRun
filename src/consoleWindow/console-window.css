@@ -1,6 +1,6 @@
-/*#console-window{*/
-/*    min-height: 100%;*/
-/*}*/
+#console-window{
+    vertical-align: bottom;
+}
 
 #console-window:hover .console-window-footer >span{
     color: #0066ff;
@@ -8,25 +8,27 @@
 
 #console-window > ul{
     vertical-align: bottom;
-    /*bottom: 0px;*/
-    /*min-height: 100%;*/
+}
+
+#console-window-footer-fill{
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    width: 100%;
 }
 
 .console-window-footer {
-    /*min-width: 100%;*/
-    /*min-height: 100%;*/
-    /*border-color: #eee;*/
-    border-width: 0px 0px 0px 2px;
     clear: both;
     position:fixed;
-    bottom: 2px;
+    bottom: 14px;
+    right: 32px;
     width: inherit;
 }
 
 
-/*.console-window-footer >span{*/
-/*    float: right;*/
-/*}*/
+.console-window-footer >span{
+    float: right;
+}
 
 .console-window-footer >span{
     font-size: 12px;
@@ -34,9 +36,9 @@
     color: rgb(136, 136, 136);
 }
 
-/*.console-window-footer >label{*/
-/*     float:right;*/
-/*}*/
+.console-window-footer >label{
+     float:right;
+}
 
 .console-window-footer >label{
     display: none;
@@ -63,9 +65,6 @@
     -moz-animation: fadeIn 1s;
     animation: fadeIn 1s;
     border-style:solid;
-    /*box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);*/
-    /*padding-left: 5px;*/
-    /*word-wrap: break-word;*/
 }
 
 /*.console-window-list > li:last-child {*/

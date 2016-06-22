@@ -6,11 +6,14 @@
         "text",
         "jquery",
         "jquery-ui",
+        "styles/**/*.gif",
+        "styles/**/*.png",
+        "jquery-ui/themes/smoothness/*.css!text",
         "bootstrap",
         "bootstrap/css/bootstrap.css!text",
         "**/*.js",
         "**/*.html!text",
-        "**/*.css!text" 
+        "**/*.css!text"
       ],
       "options": {
         "inject": true,

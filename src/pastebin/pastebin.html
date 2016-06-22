@@ -17,7 +17,7 @@
 
   <div id = "mainContainer" class = "box-shadow-bottom">
     <div id = "main-splitter-left"  class = "split split-horizontal container-fluid">
-      <ul id = "codeTabs" class = "nav nav-tabs box-shadow-left" role = "tablist">
+      <ul id = "codeTabs" class = "nav nav-tabs" role = "tablist">
         <li id =  "jsTab" class = "active" role = "tab" aria-controls = "js-container">
           <a href = "#js-container" data-toggle = "tab">JS</a></li>
         <li id =  "htmlTab" role = "tab" aria-controls = "html-container">
@@ -28,7 +28,7 @@
       <div id = "codeContent" class = "tab-content box-shadow-left">
         <div id = "js-container" class = "tab-pane fade in active" >
           <div id = "code-section" class = "w3-row"  role = "tabpanel" aria-labelledby="jsTab">
-            <div id = "js-editor-code" class = "w3-col" style = "width:700px">
+            <div id = "js-editor-code" class = "w3-half">
               <js-editor js-editor.bind = "jsEditor"></js-editor>
             </div>
             <!--<span class = 'glyphicon glyphicon-edit'></span>-->
@@ -65,16 +65,14 @@
             </li>
           </ul>
           <div  class = "tab-content">
-          <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
-            <html-viewer></html-viewer>
-          </div>
-          <div id = "visualization-container" class = "tab-pane fade container-fluid"  role = "tabpanel" aria-labelledby="visualizationTab">
-            <play tracePlay.bind = "tracePlay"></play>
-            <trace-search trace-search.bind = "traceSearch"></trace-search>
-            <div>
+            <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
+              <html-viewer></html-viewer>
+            </div>
+            <div id = "visualization-container" class = "tab-pane fade container-fluid"  role = "tabpanel" aria-labelledby="visualizationTab">
+              <play tracePlay.bind = "tracePlay"></play>
+              <trace-search trace-search.bind = "traceSearch"></trace-search>
               <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
             </div>
-          </div>
           </div>
         </div>
 

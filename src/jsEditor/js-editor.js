@@ -10,14 +10,14 @@ export class JsEditor {
   hasErrors = false;
   height = 700;
   editorChangeDelay= 1500;
-  
+
   constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
     this.aceUtils = aceUtils;
   }
   update(){
-    
+
   }
   attached() {
     let editor = ace.edit(this.aceJsEditorDiv);
@@ -30,11 +30,11 @@ export class JsEditor {
     this.selection = selection;
     this.setupSessionEvents(editor, session);
     this.subscribe(session);
-    
+
     this.session = session;
     this.editor = editor;
   }
-  
+
   setupSessionEvents(editor, session) {
     let self = this;
     let ea = this.eventAggregator;
@@ -44,9 +44,9 @@ export class JsEditor {
         let curs = editor.getCursorPosition().row + 1;
         if(jsCode){
           let editorCompactedText = jsCode;
-          
+
           if (self.editorChangedText !== editorCompactedText ) {
-            self.editorChangedText = editorCompactedText; 
+            self.editorChangedText = editorCompactedText;
             ea.publish('jsEditorChange', {
               js: jsCode,
               length: session.getLength(),
@@ -61,7 +61,7 @@ export class JsEditor {
       ea.publish('jsEditorPreChange', {
               editorLayout
       });
-      
+
       if(self.isFirstLoad){
         self.isFirstLoad = false;
         publishEditorChanged();
@@ -71,10 +71,10 @@ export class JsEditor {
         self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
       }
     };
-    
+
     session.on('change',
       onEditorChanged);
-      
+
     let onAnnotationChanged = function onAnnotationChanged() {
       let annotations = session.getAnnotations();
       for (let key in annotations) {
@@ -92,14 +92,14 @@ export class JsEditor {
     };
     session.on('changeAnnotation',
       onAnnotationChanged);
-      
+
     session.selection.on('changeCursor', () => {
       let cursorPosition =this.editor.getCursorPosition();
-      
+
       if(!cursorPosition){
         return;
       }
-      
+
       let info = {
         cursor: cursorPosition.row + 1,
         lastVisibleRow: session.getLength(),
@@ -107,28 +107,29 @@ export class JsEditor {
       };
       ea.publish('onCursorMoved', info);
     });
-    
+
     editor.on("click", function jsEditorClick(event){
         ea.publish("jsEditorClick", event);
     });
-    
+
     editor.renderer.on('resize', function jsEditorResize() {
       let editorLayout = self.aceUtils.getLayout(editor);
       ea.publish('jsEditorResize', editorLayout);
     });
-    
+
     editor.renderer.on('beforeRender', function jsEditorBeforeRender() {
       let editorLayout = self.aceUtils.getLayout(editor);
       ea.publish('jsEditorBeforeRender', editorLayout);
     });
-    
+
     editor.renderer.on('afterRender', function jsEditorAfterRender() {
       let editorLayout = self.aceUtils.getLayout(editor);
       ea.publish('jsEditorAfterRender', editorLayout);
     });
-    
+
     editor.getSession().on('changeScrollTop', function jsEditorchangeScrollTop(scrollTop) {
       let scrollerHeight = editor.renderer.$size.scrollerHeight;
+      // let scrollerHeight =$(`${this.jsEditorSelector} .ace_scrollbar-inner`).prop('scrollHeight');
         let scrollData = {
             scrollTop: scrollTop,
             scrollerHeight: scrollerHeight
@@ -140,17 +141,17 @@ export class JsEditor {
   subscribe(session) {
     let ea = this.eventAggregator;
     let self = this;
-    
+
     ea.subscribe("windowResize", layout =>{
         $(self.jsEditorSelector).height(layout.editorHeight);
         self.editor.resize();
       }
     );
-    
+
     ea.subscribe('jsGutterScroll', scrollData => {
       session.setScrollTop(scrollData.scrollTop);
     });
-      
+
     ea.subscribe('onAnnotationChanged', payload => {
       self.hasErrors = payload.hasErrors;
 
@@ -161,11 +162,11 @@ export class JsEditor {
         console.log('no errors');
       }
     });
-    
+
     ea.subscribe('jsGutterLineClick', lineNumber => {
       this.editor.gotoLine(lineNumber);
     });
-    
+
     ea.subscribe('visualizationSelectionRangeRequest', () => {
       let selection = {
         range: session.selection.getRange()
