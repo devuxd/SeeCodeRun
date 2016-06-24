@@ -5,12 +5,12 @@ export class TraceViewModel {
         this.hideToolTipDelay = hideToolTipDelay;
         this.resetData();
     }
-    
+
     resetData(){
         this.resetTraceGutterData();
         this.resetTraceValuesData();
     }
-    
+
     attached(){
         this.attachTooltipUpdateWithDelay();
     }
@@ -22,25 +22,25 @@ export class TraceViewModel {
     	let tooltipSetTimeout = window.setTimeout;
     	let tooltipClearTimeout = window.clearTimeout;
     	let tooltipTimeout;
-    	
+
     	this.tooltipUpdateWithDelay = function tooltipUpdateWithDelay(position, content){
     	    let toolTipDelay = showToolTipDelay;
     	    if(!content){
     	        toolTipDelay = hideToolTipDelay;
     	    }
-    	    
+
     	    tooltipClearTimeout(tooltipTimeout);
 			tooltipTimeout = tooltipSetTimeout(
 			function delayedToolTip(){
 			    if(!div){
 			        return;
 			    }
-			    
+
 			    if(position){
     			    div.style.left = position.pageX + 'px';
         			div.style.top = position.pageY + 'px';
 			    }
-			    
+
     			if(content){
     				div.style.display = "block";
     				div.innerHTML = content;
@@ -55,7 +55,7 @@ export class TraceViewModel {
             if(!div){
 			        return;
 			}
-		            
+
 		    if(position){
 		        div.css({
 		            position: "absolute",
@@ -65,7 +65,7 @@ export class TraceViewModel {
 		            left: `${position.pageX}px`
 		        });
 		    }
-		    
+
 			if(content){
 			    div.popover({
         		    title: "Y: " +position.pageY,
@@ -83,27 +83,27 @@ export class TraceViewModel {
 			    div.popover("hide");
 	        }
         };
-        
+
     }
-    
+
     isDataModelRepOK(){
 	    if(!this.traceValuesData.ranges){
 		    return false;
 		}
-		
+
 		if(!this.traceHelper){
 		    return false;
 		}
 		return true;
 	}
-	
+
     getExpressionAtPosition(mousePosition){
         if(this.isDataModelRepOK()){
             return this.traceHelper.getExpressionAtPosition(this.traceHelper.getExecutionTrace(), mousePosition);
         }
         return undefined;
     }
-    
+
     onExpressionHovered(match, pixelPosition){
         if(match){
             this.update$Tooltip(pixelPosition, match.text +",  values"+ JSON.stringify(match.values));
@@ -111,13 +111,13 @@ export class TraceViewModel {
             this.update$Tooltip();
         }
     }
-    
+
     updateTraceGutterData(stackTrace){
         let localTraceGutterData = this.extractTraceGutterData(stackTrace);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
         this.traceGutterData.rows = localTraceGutterData.rows;
     }
-    
+
     resetTraceGutterData(){
         if(!this.traceGutterData){
             this.traceGutterData = {  maxCount : 0, rows : []  };
@@ -126,7 +126,7 @@ export class TraceViewModel {
         this.traceGutterData.maxCount = 0;
         this.traceGutterData.rows = [];
     }
-    
+
     resetTraceValuesData(){
         if(!this.traceValuesData){
             this.traceValuesData = { ranges: [] };
@@ -135,7 +135,7 @@ export class TraceViewModel {
 
         this.traceValuesData.ranges = [];
     }
-    
+
     extractTraceGutterData(trace){
 	    let result = {  maxCount : 0, rows : []  };
         for (let i = 0; i < trace.length; i ++) {
@@ -143,23 +143,16 @@ export class TraceViewModel {
 			let row = entry.range.start.row;
 
 			if(!result.rows.hasOwnProperty(row)){
-			    let navigator = `
-			    <div class = "w3-container">
-			        <div class = "w3-row">This block has been called ${entry.count} time(s)</div>
-			        <div class = "w3-row">
-			            <div class = "w3-container w3-half">Previous</div>
-			            <div class = "w3-container w3-half">Next</div>
-			        </div>
-			     </div>`;
 
-                result.rows[row] = {count: entry.count, text: navigator};
+
+                result.rows[row] = {count: entry.count, entryText: `Block executed ${entry.count} time(s)`, text: entry};
 			}
-            
+
             if(result.maxCount< entry.count){
                 result.maxCount = entry.count;
             }
         }
         return result;
 	}
-    
+
 }

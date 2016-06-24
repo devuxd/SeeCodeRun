@@ -1,30 +1,25 @@
-<template bindable="vis">
+<template bindable="visViewer">
+  <require from = "./vis-viewer.css"></require>
     <require from="visualization/visualization.html"></require>
     <div class="panel panel-default">
         <div class="panel-heading" data-toggle="collapse" href="#seePanelBody">
                 <span class='glyphicon glyphicon-dashboard'></span>Visualizations
         </div>
-        <div id="seePanelBody" class="panel-body">
-            <div class="container-fluid">
-                <div class="row">
-                        <div class="col-md-12">
-                            <input type="checkbox" id="checkbox2" checked.bind="vis.isChecked" ui-checkbox>
-                            <label for="checkbox2">Activate Visualization</label>
-                            <!--<button click.trigger="vis.showVis()" disabled.bind="!vis.showVisButton" class="btn btn-info active">show visualization</button>-->
-                            <!--<button click.trigger="vis.clearSelection()" if.bind="vis.showClearButton" class="btn btn-danger">clear selections</button>-->
-                        </div>
-                </div class="row">
-                <div show.bind="vis.isChecked" class="add-vis">
-                    <select id="visSelect${$index}" class="btn btn-default" change.trigger="vis.onSelectChange($event, $index)">
-                      <option repeat.for="type of vis.visualizationTypes" value.bind="type.value">${type.name}</option>
+        <div id="seePanelBody" class="panel-body container-fluid">
+            <div class="w3-row-padding" show.bind="visViewer.isChecked" class="add-vis">
+                <div class="w3-col" style="width:200px">
+                    <select id="visViewerSelect" class="w3-select w3-hover-light-grey" change.trigger="visViewer.onSelectChange($event, $index)">
+                     <option disabled="true" selected="true" class="w3-text-blue" >Select a visualization type</option>
+                     <option repeat.for="type of visViewer.visualizationTypes" value.bind="type.value">${type.name}</option>
                     </select>
-                    <button type="button" class="btn btn-default" click.trigger="vis.addVisualization()">Add Visualization</button>
-                 </div>
+                </div>
+                <div class="w3-col" style="width:100px">
+                    <button type="button" class="w3-btn seecoderun-blue" click.trigger="visViewer.addVisualization()">Add Visualization</button>
+                </div>
             </div>
-            
-            <div class="container-fluid">
-                <div class="vis-container" repeat.for="visualization of vis.visualizations">
-                    <visualization vis.bind="visualization"></visualization>
+            <div class="w3-row-padding">
+                <div class="vis-container" repeat.for="visualization of visViewer.visualizations">
+                    <visualization visualization.bind="visualization"></visualization>
                 </div>
             </div>
         </div>

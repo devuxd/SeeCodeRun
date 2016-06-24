@@ -1,13 +1,14 @@
 .js-gutter {
-    overflow-y: hidden;
+    overflow-y: auto;
     overflow-x: hidden;
     border: 0px;
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;
     border-radius: 0px;
-    padding-left: 4px;
+    padding-left: 7px;
     height: 800px;
     min-height: 100%;
+    margin-left: -7px;
 }
 
 .js-gutter-blur{

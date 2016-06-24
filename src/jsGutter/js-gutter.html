@@ -1,4 +1,4 @@
 <template bindable="jsGutter">
 <require from="./js-gutter.css"></require>
-	 <div id="jsGutter" class= "js-gutter" ></div>
+	 <ul id.bind="jsGutter.jsGutterDiv" scroll.trigger="jsGutter.scrollHandler($event)" class= "js-gutter" ></ul>
 </template>

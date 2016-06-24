@@ -177,13 +177,13 @@
 }
 
 .seecoderun-chat ul li {
-  margin-bottom: 1px;
+  /*margin-bottom: 1px;*/
   line-height: 24px;
   -webkit-animation: fadeIn 1s;
   animation: fadeIn 1s;
   border-style:solid;
   border-width: 0px 0px 0px 3px;
-  box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);
+  /*box-shadow: 1px 1px 2px rgba(0, 0, 0, .4);*/
   padding-left: 5px;
   word-wrap: break-word;
 }
@@ -194,11 +194,12 @@
 
 .seecoderun-chat ul .seecoderun-chat-username {
   margin-right: 10px
+  float: left;
 }
 
 .seecoderun-chat ul .seecoderun-chat-timestamp {
-  right: 0;
-  margin-left: 10px
+  float: right;
+  padding-right: 4px;
 }
 
 .seecoderun-chat footer {
@@ -214,7 +215,8 @@
 
 #chatMessageFeedbackSent, #chatMessageFeedbackNotSent {
   position: absolute;
-  right: 0;
+  top: 2px;
+  right: 2px;
   display: none;
   z-index: 2;
 }

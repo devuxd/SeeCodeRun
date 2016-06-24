@@ -3,16 +3,19 @@
     min-height:28px;
     height: 28px;
     margin-bottom: 0px;
-    /*border-style: solid;*/
-    /*border-width: 2px;*/
-    /*border-left: none;*/
-    /*border-top: none;*/
-    /*border-right: none;*/
-    /*border-bottom-color: #0066ff;*/
+}
+
+#navbar-collapse-1 li > div {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+#shareButton {
+    padding-left: 4px;
 }
 
 .navbar-xs .navbar-header{
-     min-height:28px;
+    min-height:28px;
     height: 28px;
 }
 .navbar-xs .navbar-brand{
@@ -21,7 +24,7 @@
     line-height: 20px;
 }
 
-.navbar-xs .navbar-brand .material-icons { 
+.navbar-xs .navbar-brand .material-icons {
     color: #0066ff;
 }
 .navbar-xs .navbar-nav > li > a {
@@ -34,7 +37,13 @@
 }
 
 .navbar .navbar-brand img {
-    max-height: 40%;
+    max-height: 100%;
+}
+
+.navbar .navbar-brand > label {
+    float: right;
+    top: 0;
+    color: #0066ff;
 }
 .navbar .navbar-brand i{
     padding-top: 4px;
@@ -54,9 +63,20 @@ ul > li label, ul > li span {
 div .navbar-item {
      padding-top: 2px;
 }
-ul > li div:hover label, ul > li div:hover span {
-    color: 	#0066ff;
-    font-weight: 200;
+/*ul > li div:hover label, ul > li div:hover span {*/
+    /*color: 	#0066ff;*/
+/*    font-weight: 200;*/
+/*    cursor: pointer;*/
+/*}*/
+
+ul > li div:hover{
+    /*box-shadow: 2px 2px 1px -1px #888888;*/
+    text-decoration: none;
+    background-color: #eee;
     cursor: pointer;
 }
 
+.navigation-bar-active-item {
+    color: 	#0066ff;
+    font-weight: 200;
+}

@@ -1,23 +1,114 @@
-#console-window > span{
-  float:right;
+#console-window{
+    vertical-align: bottom;
 }
 
-#console-window > span{
- visibility: visible;
+#console-window:hover .console-window-footer >span{
+    color: #0066ff;
 }
 
-#console-window:hover > span{
-  visibility: hidden;
+#console-window > ul{
+    vertical-align: bottom;
 }
 
-#console-window > label{
-  float:right;
+#console-window-footer-fill{
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    width: 100%;
 }
 
-#console-window > label{
- visibility: hidden;
+.console-window-footer {
+    clear: both;
+    position:fixed;
+    bottom: 14px;
+    right: 32px;
+    width: inherit;
 }
 
-#console-window:hover > label{
-  visibility: hidden;
+
+.console-window-footer >span{
+    float: right;
 }
+
+.console-window-footer >span{
+    font-size: 12px;
+    visibility: visible;
+    color: rgb(136, 136, 136);
+}
+
+.console-window-footer >label{
+     float:right;
+}
+
+.console-window-footer >label{
+    display: none;
+}
+
+#consoleLogFeedback {
+    display: none;
+}
+
+.console-window-list{
+    border: none;
+    margin: inherit;
+    padding: inherit;
+    list-style: none;
+    min-height: 100%;
+    min-width: 100%;
+}
+
+.console-window-list > li {
+    padding: 0;
+    list-style-type: none;
+    line-height: 24px;
+    -webkit-animation: fadeIn 1s;
+    -moz-animation: fadeIn 1s;
+    animation: fadeIn 1s;
+    border-style:solid;
+}
+
+/*.console-window-list > li:last-child {*/
+/*     box-shadow: 1px 0px 1px rgba(0, 0, 0, .4);*/
+/*}*/
+
+.console-window-error-message{
+    border-color: red;
+    border-width: 0px 0px 0px 1px;
+}
+
+.console-window-log-message{
+    border-color: blue;
+    border-width: 0px 0px 0px 1px;
+}
+
+.console-window-trace-message{
+    border-color: green;
+    border-width: 0px 0px 0px 1px;
+}
+
+.text-compact-overflow {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: zoom-in;
+}
+
+.text-loose-overflow {
+    text-overflow: unset;
+    white-space: normal;
+    word-wrap: break-word;
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -epub-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    cursor: zoom-out;
+}
+
+pre.prettyprint{
+    border: none;
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+

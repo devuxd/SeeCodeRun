@@ -11,34 +11,25 @@
 }
 
 #mainContainer{
+    position: relative;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
     height: 99.5%;
+    overflow: hidden;
 }
 
 #main-splitter-left{
-    min-height: 100%;
-    height: 100%;
+    margin-top: 22px;
     bottom: 0px;
-    overflow-y: hidden;
     padding-right: 0px;
 }
 
 #main-splitter-right{
-    min-height: 100%;
-    height: 100%;
+    margin-top: 22px;
     bottom: 0px;
-    overflow-y: hidden;
     padding-left: 0px;
-}
-
-.tab-content .fade {
-   -webkit-transition: opacity 0.07s linear;
-      -moz-transition: opacity 0.07s linear;
-       -ms-transition: opacity 0.07s linear;
-        -o-transition: opacity 0.07s linear;
-           transition: opacity 0.07s linear;
+    overflow-y: hidden;
 }
 
 #js-container{
@@ -48,13 +39,34 @@
     overflow-y: hidden;
 }
 
+#js-editor-trace-gutter{
+    overflow: hidden;
+}
+
 #right-splitter{
     bottom: 0px;
-    margin-bottom: 0;
+    height: 100%;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
-    box-sizing: border-box; 
+    box-sizing: border-box;
+}
+
+#right-splitter-top{
+   border-top: 1px solid #eee;
+}
+#right-splitter-bottom{
+    bottom: 0px;
+}
+
+#preview {
+    width: 100%;
     height: 100%;
+}
+
+#htmlView {
+    border: none;
+    width: 100%;
+    height: 99%;
 }
 
 #visualization-container{
@@ -69,11 +81,29 @@
      cursor: pointer;
 }
 
+#visualization-container select,
+#visualization-container input,
+#visualization-container button{
+    font-size: 14px;
+    line-height: 16px;
+    height: 36px;
+}
 
+#visualization-container select,
+#visualization-container input{
+    border-color: #0066ff;
+    border-width: 0px 0px 1px 0px;
+}
 
 ul.nav .glyphicon {
     padding-right: 2px;
     font-size: 13px;
+}
+
+.nav-tabs {
+    clear: both;
+    position:fixed;
+    top: 30px;
 }
 
 .nav-tabs > li > a {
@@ -82,7 +112,7 @@ ul.nav .glyphicon {
 
 .nav-tabs > li > a {
     padding-top: 0px;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
 }
 
 ul.nav li a,
@@ -91,10 +121,11 @@ ul.nav li a:visited {
     font-size: 13px;
     font-style: italic;
     border-style: solid;
-    border-width: 2px;
-    border-left: none;
-    border-top: none;
-    border-right: none;
+    /*border-width: 2px;*/
+    /*border-left: none;*/
+    /*border-top: none;*/
+    /*border-right: none;*/
+    border: none;
     margin-left: 1px;
 }
 
@@ -112,25 +143,42 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
     border-bottom-color: #0066ff;
 }
 
-.resizable {
-    width: 50%;
+.tab-content .fade {
+   -webkit-transition: opacity 0.07s linear;
+      -moz-transition: opacity 0.07s linear;
+       -ms-transition: opacity 0.07s linear;
+        -o-transition: opacity 0.07s linear;
+           transition: opacity 0.07s linear;
+}
+
+#main-splitter-left .tab-content {
+    border-top: 1px solid #eee;
+}
+
+.tab-content {
+    top: 0px;
+    bottom: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#code-section .resizable {
+    width: 40%;
     display: inline-block;
 }
 
-.ui-resizable-e { 
-    cursor: e-resize; 
-    width: 2px; 
-    right: -1px; 
-    top: 0; 
-    bottom: 0; 
-    background-color: #888888;
-}
 
-.ui-resizable-w { 
-    cursor: w-resize; 
-    width: 2px; 
-    right: -1px; 
-    top: 0; 
-    bottom: 0; 
-    background-color: #888888;
+#code-section .ui-resizable-ew {
+    padding: 0px;
+    margin: 0px;
+    cursor: ew-resize;
+    width: 8px;
+    right: 0px;
+    margin-right: -6px;
+    top: 0;
+    bottom: 0;
+    background-color: transparent;
+    border-color: #eee;
+    border-style: solid;
+    border-width:  0px 0px 0px 1px;
 }

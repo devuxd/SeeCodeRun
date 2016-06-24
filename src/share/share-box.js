@@ -9,11 +9,16 @@ export class ShareBox {
 
     attached() {
         let self = this;
-        let options = {};
         $('#shareBox').hide();
-
         $('#shareButton').click(function hideShareBox() {
-            $('#shareBox').toggle( this.selectedEffect, options, 500 );
+            if($("#shareBox").is(":visible")){
+                $("#shareButton span").removeClass("navigation-bar-active-item");
+                $("#shareButton label").removeClass("navigation-bar-active-item");
+            }else{
+                $("#shareButton span").addClass("navigation-bar-active-item");
+                $("#shareButton label").addClass("navigation-bar-active-item");
+            }
+            $("#shareBox").toggle("slide", { direction: "right" }, 1000);
         });
         
         let firebaseManager = this.firebaseManager;
