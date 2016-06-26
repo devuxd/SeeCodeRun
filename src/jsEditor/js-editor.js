@@ -58,14 +58,19 @@ export class JsEditor {
 
     let onEditorChanged = function onEditorChanged(e) {
       let editorLayout = self.aceUtils.getLayout(editor);
-      ea.publish('jsEditorPreChange', {
+      ea.publish('jsEditorPreChange',
               editorLayout
-      });
+      );
 
       if(self.isFirstLoad){
         self.isFirstLoad = false;
         publishEditorChanged();
         ea.publish("jsEditorReady", editor);
+        editor.resize(true);
+        let editorLayout = self.aceUtils.getLayout(editor);
+        editor.scrollToLine(editorLayout.firstLineNumber + editorLayout.lastRow, false, false, trueafterScrollAnimationFinish =>{});
+        editor.scrollToLine(editorLayout.firstLineNumber, false, false, afterScrollAnimationFinish =>{});
+        editor.gotoLine(editorLayout.firstLineNumber);
       }else{
         clearTimeout(self.editorChangedTimeout);
         self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
@@ -148,7 +153,7 @@ export class JsEditor {
       }
     );
 
-    ea.subscribe('jsGutterScroll', scrollData => {
+    ea.subscribe('jsGutterChangeScrollTop', scrollData => {
       session.setScrollTop(scrollData.scrollTop);
     });
 
@@ -164,6 +169,7 @@ export class JsEditor {
     });
 
     ea.subscribe('jsGutterLineClick', lineNumber => {
+      this.editor.scrollToLine(lineNumber, true, true, afterScrollAnimationFinish =>{});
       this.editor.gotoLine(lineNumber);
     });
 
@@ -174,6 +180,10 @@ export class JsEditor {
       ea.publish('visualizationSelectionRangeResponse', selection);
     });
 
+    ea.subscribe("traceSearchGotoLine", lineData =>{
+      this.editor.scrollToLine(lineData.lineNumber, true, true, afterScrollAnimationFinish =>{});
+      this.editor.gotoLine(lineData.lineNumber);
+    });
   }
 
   setEditorText(hash) {

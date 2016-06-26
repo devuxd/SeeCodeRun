@@ -7,14 +7,16 @@
 
 /* As hex codes */
 
-.color-primary-0 { color: #0067FF }	/* Main Primary color */
-.color-primary-1 { color: #3C8AFC }
-.color-primary-2 { color: #1372FF }
-.color-primary-3 { color: #004AB8 }
-.color-primary-4 { color: #00398D }
+.seecoderun-primary-blue { color: #0067FF }	/* Main Primary color */
+.seecoderun-primary-blue-lightest { color: #3C8AFC }
+.seecoderun-primary-blue-lighter { color: #1372FF }
+.seecoderun-primary-blue-darker { color: #004AB8 }
+.seecoderun-primary-blue-darkest { color: #00398D }
 
-.color-complement-0 { color: #FFA100 }	/* Main Complement color */
-.color-complement-1 { color: #FFB02A }
-.color-complement-2 { color: #FFA100 }
-.color-complement-3 { color: #FFA100 }
-.color-complement-4 { color: #D58600 }
+.seecoderun-complement-orange { color: #FFA100 }	/* Main Complement color */
+.seecoderun-complement-orange-lightest { color: #FFB02A }
+.seecoderun-complement-orange-lighter { color: #FFA100 }
+.seecoderun-complement-orange-darker { color: #FFA100 }
+.seecoderun-complement-orange-darkest { color: #D58600 }
+
+.seecoderun-auxiliary-grey{ color: #eee;}

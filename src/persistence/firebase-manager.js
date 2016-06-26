@@ -1,7 +1,9 @@
 /* global Firebase */
 /* global Firepad */
+import {AppConfiguration} from "../app-configuration";
+
 export class FirebaseManager{
-    baseURL = "https://seecoderun.firebaseio.com";
+    baseURL = new AppConfiguration().getConfiguration().firebaseURL;
     pastebinId = undefined;
     SERVER_TIMESTAMP = Firebase.ServerValue.TIMESTAMP;
 

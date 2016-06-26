@@ -75,11 +75,17 @@ export class JsGutter {
         if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
             self.isTraceChange = false;
             if(self.traceHelper.isValid()){
-                let values = self.traceHelper.getValues();
-                for (let value of values) {
-                    self.setGutterLineContent(value.range.start.row + 1, value.id + " = " + value.value);
+                // let values = self.traceHelper.getValues();
+                let entries = self.traceHelper.trace.timeline;
+                let isAppendToContent = true;
+                if(self.traceHelper.isNavigationMode){
+                    entries = self.traceHelper.getNavigationTrace().timeline;
+                    isAppendToContent = false;
                 }
-                self.eventAggregator.publish("jsGutterContentUpdate", {data:values});
+                for (let entry of entries) {
+                    self.setGutterLineContent(entry.range.start.row + 1, entry, isAppendToContent);
+                }
+                self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
             }
             self.isTraceServiceProccesing = false;
         }
@@ -111,7 +117,7 @@ export class JsGutter {
             };
 
             if(this.eventAggregator){
-                this.eventAggregator.publish('jsGutterScroll', scrollData);
+                this.eventAggregator.publish('jsGutterChangeScrollTop', scrollData);
             }
         }
     }
@@ -127,8 +133,9 @@ export class JsGutter {
           }
         );
 
-        ea.subscribe("jsEditorPreChange", layout => {
+        ea.subscribe("jsEditorPreChange", editorLayout => {
             this.isTraceServiceProccesing = true;
+            this.editorLayout = editorLayout;
             // this.clearGutter(); // too distracting
             this.update();
         });
@@ -162,24 +169,39 @@ export class JsGutter {
         });
 
         ea.subscribe("traceNavigationChange", navigationData => {
-                this.branchIndex = navigationData.branchIndex;
                 this.branchRange = navigationData.entry.range;
+                this.branchIndex = navigationData.branchIndex;
+                this.branchMax = navigationData.branchMax;
                 this.branchEntry = navigationData.entry;
-                // if(this.traceHelper){
-                //     if(!this.traceHelper.isNavigationMode){
-                //         this.traceHelper.startNavigation();
-                //     }
-                //     this.traceHelper.navigateToBranch(this.branchIndex, this.branchRange);
-                // }
-                // this.update();
-                console.log(JSON.stringify(navigationData.entry));
+                if(this.traceHelper){
+                    this.clearGutter();
+
+                    this.traceHelper.startNavigation();
+                    this.traceHelper.navigateToBranch(this.branchRange, this.branchIndex, this.branchMax);
+                    this.isTraceChange=true;
+                    this.update();
+                    this.traceHelper.stopNavigation();
+                }
+
         });
     }
 
-    setGutterLineContent(line, contents) {
+    setGutterLineContent(line, entry, isAppendToContent) {
+        let content = entry.id + " = " + entry.value;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
+
         if ($line.length) {
-            $line.append(" [ " + contents + " ] ");
+
+            if(["FunctionDeclaration", "FunctionExpression", "BlockStatement", "Program"].indexOf(entry.type) > 0){
+                $line.text("");
+                return;
+            }
+
+            if(isAppendToContent){
+                $line.append(" [ " + content + " ] ");
+            }else{
+                $line.text(" [ " + content + " ] ");
+            }
         }
     }
 

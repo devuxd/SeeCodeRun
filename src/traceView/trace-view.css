@@ -23,15 +23,26 @@
    display: none;
 }
 
-#gutterTooltip {
-   position: absolute;
-   background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
-   background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
-   border: 1px solid gray;
+.ace_gutter-cell.seecoderun-gutter-decoration {
+   background-color: #FFF;
    border-radius: 0px;
    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-   color: black;
+}
 
+.ace_gutter-cell.seecoderun-gutter-decoration:hover {
+    color: #FFF;
+    background-color: #0066ff;
+}
+
+.seecoderun-gutter-decoration-active {
+    color: #0066ff;
+}
+
+#gutterTooltip {
+   position: absolute;
+   background-color: #FFF;
+   border-radius: 0px;
+   box-shadow: 0px 1px 2px 1px rgba(0, 0, 0, 0.3);
    -moz-box-sizing: border-box;
    -webkit-box-sizing: border-box;
    box-sizing: border-box;
@@ -40,16 +51,30 @@
    font-style: normal;
    font-weight: normal;
    display: none;
-   background-color: white;
    z-index: 999999;
  }
 
-#gutterTooltip > i {
+#gutterTooltip > div > div {
    display:inline-block;
+   cursor: pointer;
+}
+
+#gutterTooltip > div >:first-child {
+    padding-right: 4px;
+}
+
+#gutterTooltip > div >:last-child {
+    padding-left: 4px;
+}
+
+#gutterTooltip > div > div:hover {
+    background-color: #eee;
+}
+
+#gutterTooltip > div > div:active {
+    background-color: #0066ff;
 }
 
 #gutterNavigatorSlider {
-   padding: 2px;
-   min-width: 50px;
-   display:inline-block;
+   min-width: 40px;
 }

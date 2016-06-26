@@ -1,8 +1,8 @@
 <template bindable="router">
 <require from="./navigation-bar.css"></require>
-<require from="../../share/share-box.html"></require>
-<require from="../../userList/user-list.html"></require>
-<require from="../../chat/chat.html"></require>
+<require from="../share/share-box.html"></require>
+<require from="../userList/user-list.html"></require>
+<require from="../chat/chat.html"></require>
 
 	<div id="navigation-bar" class="container-fluid">
 		<nav class="navbar-xs navbar " role="navigation">
@@ -37,7 +37,7 @@
 						<label>Users</label>
 					</div>
 				</li>
-				
+
 				<li>
 					<div id="chatButton">
 						<span class='glyphicon glyphicon-comment'></span>
@@ -67,6 +67,6 @@
   		<user-list user-list.bind="userList"></user-list>
    		<chat chat.bind="chatBox"></chat>
 	</div>
-	
-		
+
+
 </template>

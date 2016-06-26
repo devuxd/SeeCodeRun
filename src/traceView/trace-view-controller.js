@@ -12,12 +12,15 @@ export class TraceViewController{
     editorTooltipShowDelay = 500;
     editorTooltipHideDelay = 500;
 
-    aceEditorDivId = "aceJsEditorDiv";
+    jsEditorId = "aceJsEditorDiv";
+    jsEditorSelector = "#aceJsEditorDiv";
+
     gutterDecorationClassName = "seecoderun-gutter-decoration";
 
-    constructor(eventAggregator, aceUtils){
+    constructor(eventAggregator, aceUtils, jsEditor){
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
+        this.jsEditor = jsEditor;
     }
 
     attachGutterTooltip(){
@@ -30,80 +33,141 @@ export class TraceViewController{
         }
         self.$gutterTooltip = $(tooltip);
 
-        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, content, lineHeight){
-                if(!$gutterTooltip){
-    			        return;
-    			}
+        self.gutterMouseMoveTimeout = null;
 
-    		    if(position){
+        let gutterMouseMoveUpdateTooltipTimeout = function gutterMouseMoveUpdateTooltipTimeout(){
+	        self.$gutterTooltip.hide("slide", { direction: "down" }, self.tooltipSlideDelay);
+	    };
+
+        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, content, row, lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay){
+            if(!$gutterTooltip){
+			        return;
+			}
+            self.tooltipSlideDelay = tooltipSlideDelay;
+	        self.currentRow = row;
+		    if(content){
+	            self.currentContent = content;
+			    let $gutterNavigatorSlider = $("#gutterNavigatorSlider");
+
+			    if(!$gutterNavigatorSlider.length){
+			        let navigator = `
+			        <div class = "w3-row">
+    			        <div id="gutterNavigatorSliderLeft">
+    			            <i class="material-icons seecoderun-text-blue">&#xE5CB;</i>
+    			        </div>
+    			        <div id="gutterNavigatorSlider"></div>
+    			        <div id="gutterNavigatorSliderRight">
+    			         <i class="material-icons seecoderun-text-blue">&#xE5CC;</i>
+                        </div>
+                    </div>
+    			    `;
+    			    $gutterTooltip.html(navigator);
+    			    $gutterNavigatorSlider = $("#gutterNavigatorSlider");
+
+    			    self.gutterNavigatorSliderValue = 0;
+    			    $gutterNavigatorSlider.slider({
+                      slide: function gutterNavigatorSliderChange(event, ui) {
+                          if(self.gutterNavigatorSliderValue !== ui.value){
+                            self.eventAggregator.publish("traceNavigationChange", {branchIndex: ui.value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            self.gutterNavigatorSliderValue = ui.value;
+                          }
+                      }
+                    });
+    			    $gutterNavigatorSlider.show();
+
+    			    $("#gutterNavigatorSliderLeft").click( function gutterNavigatorSliderLeftClick( event) {
+    			        let value = $gutterNavigatorSlider.slider('value') - 1;
+    			        $gutterNavigatorSlider.slider('value',  value);
+    			        if($gutterNavigatorSlider.slider('value') === value){
+        			        self.eventAggregator.publish("traceNavigationChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            self.gutterNavigatorSliderValue = value;
+    			        }
+    			     });
+                    $("#gutterNavigatorSliderLeft").show();
+
+                    $("#gutterNavigatorSliderRight").click(function gutterNavigatorSliderRightClick( event) {
+                        let value = $gutterNavigatorSlider.slider('value') + 1;
+    			        $gutterNavigatorSlider.slider('value',  value);
+    			        if($gutterNavigatorSlider.slider('value') === value){
+        			        self.eventAggregator.publish("traceNavigationChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            self.gutterNavigatorSliderValue = value;
+    			        }
+                    });
+                    $("#gutterNavigatorSliderRight").show();
+                    $gutterTooltip.hide();
+                    $gutterTooltip.mouseenter( function gutterTooltipMouseEnter(){
+                        clearTimeout(self.gutterMouseMoveTimeout);
+                        if(!$gutterTooltip.is( ":visible" )){
+                        if(self.previousRow){
+                            self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
+                        }
+                        self.jsEditor.editor.getSession().addGutterDecoration(self.currentRow, "seecoderun-gutter-decoration-active");
+                        $gutterTooltip.hide().show("slide", { direction: "down" }, tooltipSlideDelay);
+                    }
+                    })
+                    .mouseleave( function gutterTooltipMouseLeave(){
+                        clearTimeout(self.gutterMouseMoveTimeout);
+                        self.gutterMouseMoveTimeout =
+        			        setTimeout( gutterMouseMoveUpdateTooltipTimeout, tooltipHideDelay);
+                    });
+			    }
+
+		        $( "#gutterTooltip > div" ).css({
+		            height: `${lineHeight}px`,
+		        });
+
+		        $( "#gutterTooltip > div > div" ).css({
+		            height: `${lineHeight}px`
+		        });
+		        $( "#gutterTooltip > div > div > i" ).css({
+		            "line-height": `${lineHeight -2}px`
+		        });
+
+		        $gutterNavigatorSlider.css({
+		            height: `${lineHeight - 4}px`,
+		            top: "-7px"
+		        });
+
+		        $gutterNavigatorSlider.slider('option', {min: 1, max: content.count, value: content.count});
+		        self.branchMax = content.count;
+		        if(position){
     		        $gutterTooltip.css({
-    		          //  position: "absolute",
-    		          //  marginLeft: 0,
-    		          //  marginTop: 0,
     		            height: `${lineHeight}px`,
-    		          //  "font-size": "10px",
-    		          //  "float": "left",
     		            top: `${position.pageY}px`,
     		            left: `${position.pageX}px`
     		        });
     		    }
-
-
-    			if(content){
-
-    			    let navigator = `
-    			        <div class = "w3-row-padding">
-    			        <i class="material-icons seecoderun-text-blue" style= "font-size: ${lineHeight-1}px">&#xE5CB;</i>
-    			           <div id="gutterNavigatorSlider"></div>
-    			         <i class="material-icons seecoderun-text-blue" style= "font-size: ${lineHeight-1}px">&#xE5CC;</i>
-                        </div>
-    			        `;
-    // <input id="gutterNavigatorSlider" type="range" min="1" max="${content.count}" value="1" step="1" />
-
-    			 //    			    let navigator = `
-    			 //   <div class = "w3-row">
-    			 //       <div class = "w3-col" style ="width:${lineHeight}">
-    			 //        <i class="material-icons seecoderun-text-blue">&#xE5CB;</i>
-    			 //       </div>
-    			 //       <div class = "w3-rest">
-    			 //           ${content.count}
-    			 //       </div>
-    			 //       <div class = "w3-col" style ="width:${lineHeight}">
-    			 //        <i class="material-icons seecoderun-text-blue">&#xE5CC;</i>
-    			 //       </div>
-    			 //    </div>`;
-    			    $gutterTooltip.html(navigator);
-    			    $( "#gutterNavigatorSlider" ).css({
-    		            height: `${lineHeight-2}px`,
-    		          //  "font-size": "10px",
-    		          //  "float": "left",
-    		        });
-
-    			    $( "#gutterNavigatorSlider" ).slider({
-                    //   range: true,
-                      min: 1,
-                      max: content.count,
-                    //   values: [ 75, 300 ],
-                      slide: function( event, ui ) {
-                        //   console.log(ui.value);
-                          self.eventAggregator.publish("traceNavigationChange", {branchIndex: ui.value, entry: content });
-                        // $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
-                      }
-                    });
-
-    			    $gutterTooltip.toggle("slide", { direction: "left" }, 500);
-    			}else{
-    			    $gutterTooltip.hide("slide", { direction: "right" }, 500);
-    	        }
+                if(!$gutterTooltip.is( ":visible" )){
+                    if(self.previousRow){
+                        self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
+                    }
+                    $gutterTooltip.hide().show("slide", { direction: "down" }, tooltipSlideDelay);
+                    $gutterTooltip.mouseenter();
+                }
+			}else{
+		        let isGutterTooltipHovered = !!$($gutterTooltip).
+                    filter(function() { return $(this).is(":hover"); }).length;
+			    if(!isGutterTooltipHovered){
+			     self.gutterMouseMoveTimeout =
+    			    setTimeout( gutterMouseMoveUpdateTooltipTimeout, tooltipHideDelay);
+			    }
+	        }
+	        self.previousRow = row;
         };
+    }
 
-
+    removeAllGutterDecorations(editorSession, className){
+        let lastRow = editorSession.getLength();
+        for(let row = 0; row < lastRow; row++){
+            editorSession.addGutterDecoration(row, className);
+            editorSession.removeGutterDecoration(row, className);
+        }
     }
 
     attached(){
         let eventAggregator = this.eventAggregator;
         let aceUtils = this.aceUtils;
-        let editor = ace.edit(this.aceEditorDivId);
+        let editor = ace.edit(this.jsEditorId);
         let gutterDecorationClassName = this.gutterDecorationClassName;
 
         this.attachGutterTooltip();
@@ -111,7 +175,6 @@ export class TraceViewController{
 
         if(!$editorTooltip.length){
 			$editorTooltip = $(`<div id='${this.editorTooltipSelector}' />`);
-// 			$editorTooltip.addClassName("");
         }
 
         $editorTooltip.attr({
@@ -157,6 +220,47 @@ export class TraceViewController{
         eventAggregator.subscribe(
             "traceChanged", payload =>{
                         self.onTraceChanged(payload.data);
+                    }
+        );
+        self.jsGutterScrollTopDelta = 0;
+        self.jsGutterPreviousScrollTop = null;
+        eventAggregator.subscribe(
+            "jsGutterChangeScrollTop", scrollData =>{
+                if(self.jsGutterPreviousScrollTop === null){
+                    self.jsGutterPreviousScrollTop = scrollData.scrollTop;
+                }
+                self.jsGutterScrollTopDelta = self.jsGutterPreviousScrollTop - scrollData.scrollTop;
+                self.jsGutterPreviousScrollTop= scrollData.scrollTop;
+
+                if(self.$gutterTooltip.is( ":visible" )){
+                    let currentTop = self.$gutterTooltip.css("top");
+                    currentTop = currentTop.replace("px", "");
+                    self.$gutterTooltip.css({
+		            top: `${parseInt(currentTop, 10) + self.jsGutterScrollTopDelta}px`
+		        });
+                }
+            }
+        );
+
+        eventAggregator.subscribe(
+            "jsEditorPreChange", payload =>{
+                if(self.$gutterTooltip && self.$gutterTooltip.is( ":visible" )){
+                    self.$gutterTooltip.hide("slide", { direction: "down" }, 200);
+                }
+                if(self.jsEditor){
+                     $(`${self.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
+                 }
+            }
+        );
+
+        eventAggregator.subscribe(
+            "traceNavigationChange", navigationData =>{
+                        if(traceViewModel.traceGutterData && traceViewModel.traceGutterData.rows){
+                            if(navigationData.branchIndex && navigationData.row && traceViewModel.traceGutterData.rows[navigationData.row]){
+                                traceViewModel.traceGutterData.rows[navigationData.row].branch = navigationData.branchIndex;
+                                self.jsEditor.editor.getSession().addGutterDecoration(navigationData.row, "");
+                            }
+                        }
                     }
         );
 

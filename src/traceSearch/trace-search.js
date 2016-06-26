@@ -138,9 +138,8 @@ export class TraceSearch {
     }
     // jumps to current line in the editor
     doOnClickJumpToCode(row) {
-        let editor = ace.edit('aceJsEditorDiv');
-        editor.gotoLine(this.rows[row.$index].range.start.row+1);
-
+        let lineData = {lineNumber: this.rows[row.$index].range.start.row+1};
+        this.eventAggregator.publish("traceSearchGotoLine", lineData);
     }
     // highlights current line in the ditor
     doOnClickHighlight(row){

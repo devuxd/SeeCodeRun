@@ -1,4 +1,5 @@
 /* global ace */
+/* global $ */
 import '../ace/theme/theme-chrome';
 import '../ace/mode/mode-javascript';
 import '../ace/mode/mode-html';
@@ -71,10 +72,30 @@ export class AceUtils{
         aceMarkerManager.markers = newMarkers;
     }
 
-    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip){
-     	editor.on("guttermousedown", function(e){
-    	   // updateTooltip(tooltip, editor.renderer.textToScreenCoordinates(e.getDocumentPosition()));
-    		let target = e.domEvent.target;
+    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip, tooltipSlideDelay = 100, tooltipShowDelay = 100, tooltipHideDelay =2000){
+     	let self = this;
+     	self.gutterTooltipHideTimeout = null;
+     	self.previousRow = null;
+     	self.firstLoad = true;
+
+        let setTooltipMouseMove =	function setTooltipMouseMove(target, row, pixelPosition, content){
+            $(target).mouseenter( function onMouseEnterGutterCell(){
+		            clearTimeout(self.gutterTooltipHideTimeout);
+		               self.previousRow = row;
+            	  	   updateTooltip(tooltip, pixelPosition, content, row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
+		        } ).mouseleave( function onMouseLeaveGutterCell(){
+                    clearTimeout(self.gutterTooltipHideTimeout);
+    			    self.gutterTooltipHideTimeout =
+    			    setTimeout( function gutterTooltipHideTimeout(){
+    			        self.previousRow = null;
+    			        updateTooltip(tooltip, pixelPosition, "", row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
+    			    }, tooltipHideDelay);
+    			    $(target).off("mouseenter mouseleave");
+            } );
+            $(target).mouseenter();
+        };
+     	editor.on("guttermousemove", function(e){
+    	  	let target = e.domEvent.target;
 
     		if(!dataModel){
 			    return;
@@ -88,34 +109,35 @@ export class AceUtils{
     			return;
     		}
 
-    		if (!editor.isFocused()){
-    			return;
-    		}
+    // 		if (!editor.isFocused()){
+    // 			return;
+    // 		}
 
     		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){
     			return;
-    		}
-    		let direction = -1;
-
-    	    if (e.clientX > target.parentElement.getBoundingClientRect().right -33){
-    			direction = 1;
     		}
 
     		let row = e.getDocumentPosition().row;
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
     		        content = dataModel.rows[row].text;
-    		        dataModel.rows[row].branch = dataModel.rows[row].branch ? (dataModel.rows[row].branch + direction) % (dataModel.rows[row].count + 1): dataModel.rows[row].count;
-    		      //  console.log(direction + " --> "+dataModel.rows[row].branch);
-    				let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
-    				// pixelPosition.pageY += editor.renderer.lineHeight;
-    				// editor.resize();
-    				updateTooltip(tooltip, pixelPosition, content, editor.renderer.lineHeight);
+                    let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
+
+    			    pixelPosition.pageY -= target.getBoundingClientRect().height;
+    			    //subtract the gutter width and editor text layer padding
+    				pixelPosition.pageX -= target.getBoundingClientRect().width + 4;
+
+                    if(row !== self.previousRow){
+                        setTooltipMouseMove(target, row,  pixelPosition, content);
+                    }
+                    // if(self.firstLoad){
+                    //     self.firstLoad = false;
+
+                    //     $(target).mouseenter();
+                    // }
     		}
     		e.stop();
-
     	});
-
     }
 
     publishExpressionHoverEvents(editor, eventAggregator, mousePositionHandler){
@@ -245,7 +267,7 @@ export class AceUtils{
             getWidth: function(session, lastLineNumber, config) {
                 let format = "";
                 if(traceGutterData.maxCount > 0){
-                    format = "</> ";
+                    format = "[/]  ";
                 }
 
                 return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
@@ -255,7 +277,7 @@ export class AceUtils{
                     let count = traceGutterData.rows[row].count;
                     let branch =traceGutterData.rows[row].branch;
                     branch = branch? branch: count;
-                    return "<"+branch+"/"+ count +"> "+ (row + 1);
+                    return "["+branch+"/"+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;
                 }

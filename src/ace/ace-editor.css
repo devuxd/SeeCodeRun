@@ -39,21 +39,13 @@
     overflow-x: auto;
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration {
-    background-color: #FFF;
-    border-radius: 0px 0px 0px 0px;
-    box-shadow: 0px 0px 0px 1px #0066ff inset;
-    background-repeat: no-repeat;
-    background-position: 2px center;
-}
-
-.ace_gutter-cell.seecoderun-gutter-decoration:hover {
-    background-color: #3C8AFC;
-}
-
-.ace_gutter-cell.seecoderun-gutter-decoration:active {
-    background-color: #0066ff;
-}
+/*traceView/trace-view.css governs the gutter style:
+.ace_gutter-cell.seecoderun-gutter-decoration
+*/
+/*Cahnged in ace/theme*/
+/*.ace-chrome .ace_gutter {*/
+/*    background-color: #E5F1FB;*/
+/*}*/
 
 .ace-chrome .ace_marker-layer .expression-range {
     position: absolute;

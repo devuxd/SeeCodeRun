@@ -1,5 +1,6 @@
 #console-window{
     vertical-align: bottom;
+    min-height: 100%;
 }
 
 #console-window:hover .console-window-footer >span{

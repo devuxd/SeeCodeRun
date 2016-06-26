@@ -78,9 +78,9 @@ export class TraceViewModel {
         		    padding: 4
         		});
 			 //   div.attr("data-content", content);
-			    div.popover("show");
+			 //   div.popover("show");
 			}else{
-			    div.popover("hide");
+			 //   div.popover("hide");
 	        }
         };
 
@@ -137,6 +137,25 @@ export class TraceViewModel {
     }
 
     extractTraceGutterData(trace){
+	    let result = {  maxCount : 0, rows : []  };
+        for (let i = 0; i < trace.length; i ++) {
+            let entry = trace[i];
+			let row = entry.range.start.row;
+
+			if(!result.rows.hasOwnProperty(row)){
+
+
+                result.rows[row] = {count: entry.count, entryText: `Block executed ${entry.count} time(s)`, text: entry};
+			}
+
+            if(result.maxCount< entry.count){
+                result.maxCount = entry.count;
+            }
+        }
+        return result;
+	}
+
+	extractStackTraceGutterData(trace){
 	    let result = {  maxCount : 0, rows : []  };
         for (let i = 0; i < trace.length; i ++) {
             let entry = trace[i];

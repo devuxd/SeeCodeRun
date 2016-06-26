@@ -6,35 +6,53 @@ export class TraceHelper {
         this.error = trace.error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
-        this.originalTrace = this.trace;
-        this.navigationTrace = this.trace;
         this.isNavigationMode = false;
+        this.resetNavigation();
     }
 
     startNavigation(){
         this.isNavigationMode = true;
-        this.trace = this.navigationTrace;
+    }
+
+    toggleNavigation(){
+        this.isNavigationMode = !this.isNavigationMode;
     }
 
     stopNavigation(){
         this.isNavigationMode = false;
-        this.trace = this.originalTrace;
+        this.resetNavigation();
     }
 
-    navigateToBranch(branchIndex, branchExpression){
-        let timeline = this.trace.timeline;
+    resetNavigation(){
+        this.navigationTrace = {timeline: this.trace.timeline};
+    }
+
+    navigateToBranch(branchExpressionRange, branchIndex, branchMax){
+        let timelineHits = branchIndex*2 + 1; // call appears at entrance and exit of block
+        let timelineMaxHits = branchMax*2;
+        let timeline = this.navigationTrace.timeline;
         let branchTimeline = [];
         let branchHits = 0;
         for(let j = 0; j < timeline.length; j++) {
-            if(this.isRangeInRange(timeline[j].range, branchExpression.range)) {
-              branchTimeline.timeline.push(timeline[j]);
-              branchHits++;
-            }
-            if(branchHits === branchIndex){
+
+            if(branchHits === timelineMaxHits){
+                branchTimeline.push(timeline[j]);
                 break;
             }
+
+            if(branchHits === timelineHits){
+                break;
+            }
+            if(this.rangeEquals(timeline[j].range, branchExpressionRange)) {
+              branchHits++;
+            }
+            branchTimeline.push(timeline[j]);
          }
-        this.trace.timeline = branchTimeline;
+        this.navigationTrace.timeline = branchTimeline;
+    }
+
+    getNavigationTrace(){
+        return this.navigationTrace;
     }
 
     isValid(){
@@ -161,6 +179,14 @@ export class TraceHelper {
                 (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
     			 &&
     			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
+    			);
+    }
+
+    rangeEquals(isRange, inRange){
+        return (isRange && inRange && isRange.start && inRange.start && isRange.end && inRange.end &&
+                (isRange.start.row === inRange.start.row && isRange.start.column === inRange.start.column)
+    			 &&
+    			(isRange.end.row === inRange.end.row && isRange.end.column === inRange.end.column)
     			);
     }
 
