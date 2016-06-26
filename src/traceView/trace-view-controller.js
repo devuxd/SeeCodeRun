@@ -250,6 +250,10 @@ export class TraceViewController{
                 if(self.jsEditor){
                      $(`${self.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
                  }
+
+                let previousRows = traceViewModel.traceGutterData.rows;
+                aceUtils.removeGutterDecorations(self.editor, previousRows, self.gutterDecorationClassName);
+                traceViewModel.traceGutterData.rows = [];
             }
         );
 
@@ -279,10 +283,9 @@ export class TraceViewController{
 
             let stackTrace = traceHelper.getStackBlockCounts();
 
-            let previousRows = traceViewModel.traceGutterData.rows;
             traceViewModel.updateTraceGutterData(stackTrace);
 
-            this.aceUtils.updateGutterDecorations(this.editor, previousRows, traceViewModel.traceGutterData.rows, this.gutterDecorationClassName);
+            this.aceUtils.updateGutterDecorations(this.editor, [], traceViewModel.traceGutterData.rows, this.gutterDecorationClassName);
 
             traceViewModel.traceValuesData.ranges = traceHelper.getExecutionTrace();
     }
