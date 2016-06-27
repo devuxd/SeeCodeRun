@@ -174,4 +174,32 @@ export class TraceViewModel {
         return result;
 	}
 
+	getTraceGutterDataRows(){
+        return this.traceGutterData.rows;
+    }
+
+    setTraceGutterDataRows(rows){
+        this.traceGutterData.rows = rows;
+    }
+
+    resetTraceGutterDataRows(){
+        this.traceGutterData.rows = [];
+    }
+
+    setTraceGutterDataRowBranchIndex(row, branchIndex){
+        this.traceGutterData.rows[row].branch = branchIndex;
+    }
+
+    isTraceGutterDataRowValid(row){
+        return row && this.traceGutterData.rows[row];
+    }
+
+    isTraceGutterDataValid(){
+        return this.traceGutterData && this.traceGutterData.rows;
+    }
+
+    setTraceValuesDataRanges(rangesCollection){
+        this.traceValuesData.ranges = rangesCollection;
+    }
+
 }

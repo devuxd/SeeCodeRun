@@ -46,7 +46,7 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(eventAggregator);
 
     this.jsEditor = new JsEditor(eventAggregator, firebaseManager, aceUtils);
-    this.jsGutter = new JsGutter(eventAggregator);
+    this.jsGutter = new JsGutter(eventAggregator, this.aceUtils);
     this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
     this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
 

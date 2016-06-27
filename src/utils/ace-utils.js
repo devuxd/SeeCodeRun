@@ -7,6 +7,14 @@ import '../ace/mode/mode-css';
 
 export class AceUtils{
 
+    parseRangeString(range){
+        try{
+            return `${range.start.row}-${range.start.column}-${range.end.row}-${range.end.column}`;
+        }catch(e){
+            return "parse-range-string-error";
+        }
+    }
+
     configureEditor(editor, theme = 'ace/theme/chrome'){
         editor.setTheme(theme);
         editor.setShowFoldWidgets(false);
@@ -270,7 +278,7 @@ export class AceUtils{
                     format = "[/]  ";
                 }
 
-                return (format.length + traceGutterData.maxCount.toString().length + lastLineNumber.toString().length )* config.characterWidth;
+                return (format.length + traceGutterData.maxCount.toString().length*2 + lastLineNumber.toString().length )* config.characterWidth;
             },
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){

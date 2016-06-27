@@ -21,8 +21,9 @@ export class JsGutter {
     traceHelper = null;
     scrollTop = 0;
 
-    constructor(eventAggregator, aceJsEditorDiv = "aceJsEditorDiv") {
+    constructor(eventAggregator, aceUtils, aceJsEditorDiv = "aceJsEditorDiv") {
         this.eventAggregator = eventAggregator;
+        this.aceUtils = aceUtils;
         this.aceJsEditorDiv = aceJsEditorDiv;
     }
 
@@ -63,8 +64,8 @@ export class JsGutter {
                 }
                 $newLine = $(newLineSelector);
                 $newLine.addClass(self.jsGutterLineClass);
+                let lineNumber = currentLine;
                 $newLine.click( function(event){
-                    let lineNumber = event.target.id.replace(self.jsGutterLineIdPrefix, "");
                     self.eventAggregator.publish("jsGutterLineClick", lineNumber);
                 });
             }
@@ -75,15 +76,14 @@ export class JsGutter {
         if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
             self.isTraceChange = false;
             if(self.traceHelper.isValid()){
-                // let values = self.traceHelper.getValues();
-                let entries = self.traceHelper.trace.timeline;
+                let entries = self.traceHelper.getTimeline();
                 let isAppendToContent = true;
                 if(self.traceHelper.isNavigationMode){
-                    entries = self.traceHelper.getNavigationTrace().timeline;
+                    entries = self.traceHelper.getNavigationTimeline();
                     isAppendToContent = false;
                 }
                 for (let entry of entries) {
-                    self.setGutterLineContent(entry.range.start.row + 1, entry, isAppendToContent);
+                    self.setGutterLineContent(entry, isAppendToContent);
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
             }
@@ -186,7 +186,9 @@ export class JsGutter {
         });
     }
 
-    setGutterLineContent(line, entry, isAppendToContent) {
+    setGutterLineContent(entry, isAppendToContent) {
+        let firstLineNumber = this.editorLayout? this.editorLayout.firstLineNumber: 1;
+        let line = entry.range.start.row + firstLineNumber;
         let content = entry.id + " = " + entry.value;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
 
@@ -194,13 +196,24 @@ export class JsGutter {
 
             if(["FunctionDeclaration", "FunctionExpression", "BlockStatement", "Program"].indexOf(entry.type) > 0){
                 $line.text("");
+                //todo: add params to autolog-tracer
                 return;
             }
 
             if(isAppendToContent){
-                $line.append(" [ " + content + " ] ");
+                $line.append("[" + content + "] ");
             }else{
-                $line.text(" [ " + content + " ] ");
+                let entryId = this.aceUtils.parseRangeString(entry.range);
+                let lineEntrySelector = this.jsGutterLineSelectorPrefix + line + "-"+ entryId;
+                let $lineEntry = $(lineEntrySelector);
+                if($lineEntry.length){
+                    $lineEntry.text("[" + content + "]");
+                }else{
+                    let lineEntryId = this.jsGutterLineIdPrefix + line + "-"+ entryId;
+                    $line.append("<strong id = '"+lineEntryId+"'></strong>");
+                    $lineEntry = $(lineEntrySelector);
+                }
+                $lineEntry.text("[" + content + "]");
             }
         }
     }

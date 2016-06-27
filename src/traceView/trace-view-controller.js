@@ -251,17 +251,17 @@ export class TraceViewController{
                      $(`${self.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
                  }
 
-                let previousRows = traceViewModel.traceGutterData.rows;
+                let previousRows = traceViewModel.getTraceGutterDataRows();
                 aceUtils.removeGutterDecorations(self.editor, previousRows, self.gutterDecorationClassName);
-                traceViewModel.traceGutterData.rows = [];
+                traceViewModel.resetTraceGutterDataRows();
             }
         );
 
         eventAggregator.subscribe(
             "traceNavigationChange", navigationData =>{
-                        if(traceViewModel.traceGutterData && traceViewModel.traceGutterData.rows){
-                            if(navigationData.branchIndex && navigationData.row && traceViewModel.traceGutterData.rows[navigationData.row]){
-                                traceViewModel.traceGutterData.rows[navigationData.row].branch = navigationData.branchIndex;
+                        if(traceViewModel.isTraceGutterDataValid()){
+                            if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
+                                traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
                                 self.jsEditor.editor.getSession().addGutterDecoration(navigationData.row, "");
                             }
                         }
@@ -287,7 +287,6 @@ export class TraceViewController{
 
             this.aceUtils.updateGutterDecorations(this.editor, [], traceViewModel.traceGutterData.rows, this.gutterDecorationClassName);
 
-            traceViewModel.traceValuesData.ranges = traceHelper.getExecutionTrace();
+            traceViewModel.setTraceValuesDataRanges(traceHelper.getExecutionTrace());
     }
-
 }

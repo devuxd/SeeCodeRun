@@ -6,8 +6,8 @@ export class TraceHelper {
         this.error = trace.error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
-        this.isNavigationMode = false;
         this.resetNavigation();
+        this.startNavigation();
     }
 
     startNavigation(){
@@ -24,10 +24,23 @@ export class TraceHelper {
     }
 
     resetNavigation(){
-        this.navigationTrace = {timeline: this.trace.timeline};
+        this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: []};
+    }
+
+    recalculateBranchIndexes(){
+
+    }
+
+    getTimeline(){
+        return this.trace.timeline;
+    }
+
+    getNavigationTimeline(){
+        return this.navigationTrace.timeline;
     }
 
     navigateToBranch(branchExpressionRange, branchIndex, branchMax){
+        let traceGutterData = [];
         let timelineHits = branchIndex*2 + 1; // call appears at entrance and exit of block
         let timelineMaxHits = branchMax*2;
         let timeline = this.navigationTrace.timeline;
@@ -49,6 +62,7 @@ export class TraceHelper {
             branchTimeline.push(timeline[j]);
          }
         this.navigationTrace.timeline = branchTimeline;
+        this.navigationTrace.traceGutterData = traceGutterData;
     }
 
     getNavigationTrace(){
