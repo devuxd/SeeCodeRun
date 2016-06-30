@@ -1,11 +1,17 @@
 import {TraceService} from '../traceService/trace-service';
+import {ExternalResourceLoader}  from '../utils/external-resource-loader';
+import {HtmlParser} from '../utils/html-parser';
 
 export class HtmlViewer {
     errors = "";
-
+    html = "";
+    css = "";
+    js = "";
     constructor(eventAggregator, traceModel) {
         this.eventAggregator = eventAggregator;
         this.traceService = new TraceService(eventAggregator, traceModel);
+        this.htmlParser = new HtmlParser();
+        this.externalResourceLoader = new ExternalResourceLoader();
         this.div = 'htmlView';
         this.subscribe();
     }
@@ -29,22 +35,28 @@ export class HtmlViewer {
       this.addErrorLogging(this.eventAggregator);
     }
 
+    buildOutput(){
+      if(this.js && this.css && this.html){
+        this.addCss();
+      }
+    }
+
     subscribe() {
       let ea = this.eventAggregator;
       let traceService = this.traceService;
 
-      ea.subscribe('onHtmlEditorChanged', payload => {
-        this.html = payload;
-        this.addHtml();
+      ea.subscribe('onHtmlEditorChanged', htmlContent => {
+        this.html = htmlContent;
+        this.buildOutput();
       });
 
-      ea.subscribe('onCssEditorChanged', payload => {
-        this.css = payload;
-        this.addCss();
+      ea.subscribe('onCssEditorChanged', cssContent => {
+        this.css = cssContent;
+        this.buildOutput();
       });
 
-      ea.subscribe('jsEditorChange', payload => {
-        let editorText = payload.js;
+      ea.subscribe('jsEditorChange', jsEditorData => {
+        let editorText = jsEditorData.js;
         let instrumentationPayload = this.traceService.getInstrumentation(editorText);
 
         if (traceService.isValid(instrumentationPayload)) {
@@ -53,8 +65,44 @@ export class HtmlViewer {
           this.js = editorText;
         }
 
-        this.addJs();
+        this.buildOutput();
       });
+
+      ea.subscribe("headJsScriptsLoaded", scriptsData => {
+        let scriptTexts = scriptsData.scripts;
+        this.addCssScripts(scriptTexts);
+      });
+
+      ea.subscribe("bodyJsScriptsLoaded", scriptsData => {
+        let scriptTexts = scriptsData.scripts;
+        this.addHtmlScripts(scriptTexts);
+      });
+    }
+
+    addCssScripts(scriptTexts){
+      let doc = this.getContentDocument();
+
+      for(let scriptIndex in scriptTexts){
+        let scriptText = scriptTexts[scriptIndex];
+        let script = doc.createElement('script');
+        script.type="text/javascript";
+        script.innerHTML=scriptText;
+        doc.head.appendChild(script);
+      }
+      this.addHtml();
+    }
+
+    addHtmlScripts(scriptTexts){
+      let doc = this.getContentDocument();
+
+      for(let scriptIndex in scriptTexts){
+        let scriptText = scriptTexts[scriptIndex];
+        let script = doc.createElement('script');
+        script.type="text/javascript";
+        script.innerHTML=scriptText;
+        doc.body.appendChild(script);
+      }
+      this.addJs();
     }
 
     addJs() {
@@ -63,19 +111,15 @@ export class HtmlViewer {
       let traceDataContainer = traceService.traceModel.traceDataContainer;
 
       let doc = this.getContentDocument();
+
       let script = doc.createElement('script');
+      script.type="text/javascript";
       script.textContent = this.js;
 
       let result = {error: ""};
 
       try {
         ea.publish(traceService.executionEvents.running.event);
-
-        // $('#htmlView').contents().find('body').find("script").remove();
-
-        // $('#htmlView').contents().find('head').find("script").remove();
-        // $('#htmlView').contents().find('head').append(`<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>`);
-
         doc.body.appendChild(script);
 
         result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
@@ -106,19 +150,33 @@ export class HtmlViewer {
 
     addCss() {
       let doc = this.getContentDocument();
+      let styleElement = doc.createElement('style');
+      styleElement.type = 'text/css';
+      styleElement.textContent = this.css;
 
-      if (!this.style) {
-        this.style = doc.createElement('style');
-        this.style.type = 'text/css';
+      let newHead = this.htmlParser.parseHtml(this.html).head;
+      doc.head.innerHTML = newHead;
+      doc.head.appendChild(styleElement);
+      let urls = this.htmlParser.parseJsScripts(newHead);
+      if(urls && urls.length){
+        this.externalResourceLoader.loadJsScripts(urls, this.eventAggregator, "headJsScriptsLoaded");
+      }else{
+        this.eventAggregator.publish("headJsScriptsLoaded", {scripts:[]});
       }
-
-      this.style.textContent = this.css;
-      doc.head.appendChild(this.style);
     }
 
     addHtml() {
       let doc = this.getContentDocument();
-      doc.body.innerHTML = this.html;
+
+      let newBody = this.htmlParser.parseHtml(this.html).body;
+      this.htmlParser.parseJsScripts(newBody);
+      doc.body.innerHTML = newBody;
+      let urls = this.htmlParser.parseJsScripts(newBody);
+      if(urls && urls.length){
+       this.externalResourceLoader.loadJsScripts(urls, this.eventAggregator, "bodyJsScriptsLoaded");
+      }else{
+        this.eventAggregator.publish("bodyJsScriptsLoaded", {scripts:[]});
+      }
     }
 
     getContentDocument() {
@@ -139,16 +197,7 @@ export class HtmlViewer {
         });
       };
     }
-  // window.onerror = function hmtlViewerWindowOnerror(message, source, lineno, colno, error) {
-  //       self.pushError(message);
-  //       ea.publish('htmlViewerWindowError', {
-  //         message: message,
-  //         source: source,
-  //         lineno: lineno,
-  //         colno: colno,
-  //         error:error
-  //       });
-  //     };
+
     addConsoleLogging(eventAggregator) {
       let ea = eventAggregator;
       let contentWindow = this.getContentWindow();
