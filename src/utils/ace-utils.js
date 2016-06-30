@@ -15,6 +15,15 @@ export class AceUtils{
         }
     }
 
+    removeAllGutterDecorations(editor, className){
+        let editorSession = editor.getSession();
+        let lastRow = editorSession.getLength();
+        for(let row = 0; row < lastRow; row++){
+            editorSession.addGutterDecoration(row, className);
+            editorSession.removeGutterDecoration(row, className);
+        }
+    }
+
     configureEditor(editor, theme = 'ace/theme/chrome'){
         editor.setTheme(theme);
         editor.setShowFoldWidgets(false);
