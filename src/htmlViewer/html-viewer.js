@@ -1,3 +1,4 @@
+/* global $ */
 import {TraceService} from '../traceService/trace-service';
 import {ExternalResourceLoader}  from '../utils/external-resource-loader';
 import {HtmlParser} from '../utils/html-parser';
@@ -79,31 +80,19 @@ export class HtmlViewer {
       });
     }
 
-    addCssScripts(scriptTexts){
-      let doc = this.getContentDocument();
 
-      for(let scriptIndex in scriptTexts){
-        let scriptText = scriptTexts[scriptIndex];
-        let script = doc.createElement('script');
-        script.type="text/javascript";
-        script.innerHTML=scriptText;
-        doc.head.appendChild(script);
-      }
-      this.addHtml();
-    }
 
-    addHtmlScripts(scriptTexts){
-      let doc = this.getContentDocument();
+  addCssScripts(scriptTexts){
+    let doc = this.getContentDocument();
+    this.externalResourceLoader.replaceScriptsInElement(scriptTexts, doc.head, doc);
+    this.addHtml();
+  }
 
-      for(let scriptIndex in scriptTexts){
-        let scriptText = scriptTexts[scriptIndex];
-        let script = doc.createElement('script');
-        script.type="text/javascript";
-        script.innerHTML=scriptText;
-        doc.body.appendChild(script);
-      }
-      this.addJs();
-    }
+  addHtmlScripts(scriptTexts){
+    let doc = this.getContentDocument();
+    this.externalResourceLoader.replaceScriptsInElement(scriptTexts, doc.body, doc);
+    this.addJs();
+  }
 
     addJs() {
       let ea = this.eventAggregator;
@@ -111,16 +100,14 @@ export class HtmlViewer {
       let traceDataContainer = traceService.traceModel.traceDataContainer;
 
       let doc = this.getContentDocument();
-
-      let script = doc.createElement('script');
-      script.type="text/javascript";
-      script.textContent = this.js;
+      let scriptElement = this.externalResourceLoader.createScriptElement(this.js, doc);
 
       let result = {error: ""};
 
       try {
         ea.publish(traceService.executionEvents.running.event);
-        doc.body.appendChild(script);
+
+        doc.body.appendChild(scriptElement);
 
         result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
 
@@ -150,12 +137,13 @@ export class HtmlViewer {
 
     addCss() {
       let doc = this.getContentDocument();
-      let styleElement = doc.createElement('style');
-      styleElement.type = 'text/css';
-      styleElement.textContent = this.css;
+      let styleElement = this.externalResourceLoader.createStyleElement(this.css, doc);
 
-      let newHead = this.htmlParser.parseHtml(this.html).head;
+      let parsedHtml = this.htmlParser.parseHtmlRemoveTags(this.html);
+      let newHead = parsedHtml.head;
+      let newHeadAttributes = parsedHtml.headAttributes;
       doc.head.innerHTML = newHead;
+      this.htmlParser.setAttributes($(doc.head), newHeadAttributes);
       doc.head.appendChild(styleElement);
       let urls = this.htmlParser.parseJsScripts(newHead);
       if(urls && urls.length){
@@ -167,10 +155,11 @@ export class HtmlViewer {
 
     addHtml() {
       let doc = this.getContentDocument();
-
-      let newBody = this.htmlParser.parseHtml(this.html).body;
-      this.htmlParser.parseJsScripts(newBody);
+      let parsedHtml = this.htmlParser.parseHtmlRemoveTags(this.html);
+      let newBody = parsedHtml.body;
+      let newBodyAttributes = parsedHtml.bodyAttributes;
       doc.body.innerHTML = newBody;
+      this.htmlParser.setAttributes($(doc.body), newBodyAttributes);
       let urls = this.htmlParser.parseJsScripts(newBody);
       if(urls && urls.length){
        this.externalResourceLoader.loadJsScripts(urls, this.eventAggregator, "bodyJsScriptsLoaded");

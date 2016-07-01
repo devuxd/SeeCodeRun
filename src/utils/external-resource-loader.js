@@ -19,10 +19,10 @@ export class ExternalResourceLoader{
 
         for(let urlIndex in urls){
             let url = urls[urlIndex];
-            let $script = $.cachedScript( url ).done(
+            $.cachedScript( url ).done(
                 function loadScriptDone( text, textStatus ) {
                     clearTimeout(self.doneTimeout);
-                    self.scripts.push(text);
+                    self.scripts[url] = text;
                     self.doneTimeout = setTimeout(publisher.publish(eventName, { status: textStatus, scripts: self.scripts }),
                     timeout);
                 }
@@ -34,6 +34,58 @@ export class ExternalResourceLoader{
             );
         }
 
+    }
+
+    insertScriptsInElement(scriptTexts, element){
+        $(element).find("script").each( function eachScriptDo() {
+                let scriptURL = $(this).attr("src");
+                if(scriptURL){
+                    let scriptText = scriptTexts[scriptURL];
+                    if(scriptText){
+                        $(this).text(scriptText);
+                    }
+                }
+            }
+        );
+    }
+
+    replaceScriptsInElement(scriptTexts, element, containerDocument){
+        let self = this;
+        $(element).find("script").each( function eachScriptDo() {
+                let scriptURL = $(this).attr("src");
+                if(scriptURL){
+                    let scriptText = scriptTexts[scriptURL];
+                    scriptText = `/*Script source: ${scriptURL} */\n${scriptText}`;
+                    if(scriptText){
+                        $(this).remove();
+                        let scriptElement =self.createScriptElement(scriptText, containerDocument);
+                        element.appendChild(scriptElement);
+                    }
+                }
+            }
+        );
+    }
+
+    appendScriptsToElement(scriptTexts, element, containerDocument){
+        for(let scriptIndex in scriptTexts){
+            let scriptText = scriptTexts[scriptIndex];
+            let script = this.createScriptElement(scriptText, containerDocument);
+            element.appendChild(script);
+        }
+    }
+
+    createScriptElement(scriptText, containerDocument){
+      let script = containerDocument.createElement('script');
+      script.type = "text/javascript";
+      script.textContent = scriptText;
+      return script;
+    }
+
+    createStyleElement(scriptText, containerDocument){
+      let script = containerDocument.createElement('style');
+      script.type = "text/css";
+      script.textContent = scriptText;
+      return script;
     }
 
     loadCSSScripts(){
