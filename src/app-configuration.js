@@ -1,5 +1,5 @@
 export class AppConfiguration{
-    isDebug = true;
+    isDebug = !true;
     debugConfiguration = {
         isDebug: true,
         mainConfigure: function debugMainConfigure(aurelia){

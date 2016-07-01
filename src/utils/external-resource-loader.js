@@ -16,15 +16,22 @@ export class ExternalResourceLoader{
             // Return the jqXHR object so we can chain callbacks
             return jQuery.ajax( options );
         };
-
+        self.pendingUrlCount = urls.length;
         for(let urlIndex in urls){
             let url = urls[urlIndex];
             $.cachedScript( url ).done(
                 function loadScriptDone( text, textStatus ) {
+                    self.pendingUrlCount--;
                     clearTimeout(self.doneTimeout);
                     self.scripts[url] = text;
-                    self.doneTimeout = setTimeout(publisher.publish(eventName, { status: textStatus, scripts: self.scripts }),
+                    if(self.pendingUrlCount){
+                    self.doneTimeout = setTimeout( function loadScriptDoneTimeout(){
+                        publisher.publish(eventName, { status: textStatus, scripts: self.scripts });
+                    },
                     timeout);
+                    }else{
+                        publisher.publish(eventName, { status: textStatus, scripts: self.scripts });
+                    }
                 }
             )
             .fail(
@@ -86,9 +93,5 @@ export class ExternalResourceLoader{
       script.type = "text/css";
       script.textContent = scriptText;
       return script;
-    }
-
-    loadCSSScripts(){
-
     }
 }

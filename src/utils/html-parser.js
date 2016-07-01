@@ -47,6 +47,11 @@ export class HtmlParser{
         return htmlString.match(tagRegExp);
     }
 
+    parseScriptTag(htmlString, flags = "gi"){
+        let tagRegExp = new RegExp(`\\s*<\\s*script[^>]*>[^<]*<\\s*\\/\\s*script\\s*>\\s*`, flags);
+        return htmlString.match(tagRegExp);
+    }
+
     removeTags(elementString, tag, flags = "gi"){
         let startTagRegExp = new RegExp(`\\s*<\\s*${tag}[^>]*>`, flags);
         let endTagRegExp = new RegExp(`<\\s*\\/\\s*${tag}\\s*>\\s*`, flags);
@@ -57,7 +62,7 @@ export class HtmlParser{
 
     parseJsScripts(elementString){
         let sources = [];
-         let elements = this.parseElementByTag(elementString, "script");
+         let elements = this.parseScriptTag(elementString);
          for(let elementIndex in elements){
              let srcRegExp = /\s*src\s*=\s*\"([^\"]+)\"\s*/gi;
              let match = srcRegExp.exec(elements[elementIndex]);
@@ -115,9 +120,5 @@ export class HtmlParser{
         $.each(attributes, function settingAttributes() {
             $to.attr(this.name, this.value);
         });
-    }
-
-    parseCSSScripts(){
-// todo: <LINK href="special.css" rel="stylesheet" type="text/css">
     }
 }
