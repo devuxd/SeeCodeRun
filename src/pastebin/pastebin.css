@@ -119,12 +119,8 @@ ul.nav li a,
 ul.nav li a:visited {
     color: #888888;
     font-size: 13px;
-    font-style: italic;
     border-style: solid;
-    /*border-width: 2px;*/
-    /*border-left: none;*/
-    /*border-top: none;*/
-    /*border-right: none;*/
+    font-family: Lato,"Helvetica Neue",Arial,Verdana,Tahoma,"Lucida Sans",FreeSans,"Lucida Sans Unicode","Luxi Sans",sans-serif;
     border: none;
     margin-left: 1px;
 }

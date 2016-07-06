@@ -5,45 +5,107 @@
 		<link rel="stylesheet" href="styles/smoothness.jquery-ui.css">
 		<link rel="stylesheet" href="styles/googleapis.material.icons.css">
 		<link rel="stylesheet" href="styles/w3.css" />
+		<link rel="stylesheet" href="styles/css/bootstrap.css" />
+		<link rel="stylesheet" href="styles/css/bootstrap-theme.css" />
 		<link rel="stylesheet" href="styles/split.js.css" />
 		<link rel="stylesheet" href="styles/firepad-user-list.css" />
 		<link rel="stylesheet" href="styles/styles.css">
 
 		<link rel="stylesheet" href="styles/index.css" />
+		<link rel="stylesheet" href="styles/navigation-bar.css" />
 
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	</head>
 
 	<body aurelia-app="main">
-		<div class="w3-card-4">
-			<header class="w3-container w3-text-white seecoderun-blue">
-			  	<h1>Let's have some fun =]</h1>
-			</header>
-			<div class = "w3-container">
-				<div class="splash">
-					<div class="logo">
-						<!--chevron_left-->
-				       <i class="material-icons md-giant seecoderun-text-blue">&#xE5CB;</i>
-				       <!--cloud-->
-				       <i class="material-icons md-giant seecoderun-text-blue">&#xE2BD;</i>
-				       <!--play_circle_outline-->
-				       <i class="material-icons md-giant seecoderun-text-blue">&#xE039;</i>
-				       <!--chevron_right-->
-				       <i class="material-icons md-giant seecoderun-text-blue">&#xE5CC;</i>
-				       <!--find_replace &#xE881;-->
-			    	</div>
-			    	<div class="spinner-box seecoderun-text-blue">
-			    		<i class="fa fa-spinner fa-spin"></i>
-			    	</div>
-					<div class="title seecoderun-text-blue">
-						SeeCode.Run
-					</div>
-				</div>
-			</div>
-			<footer class="w3-container  w3-text-white seecoderun-blue">
-				  <h5>&copy; George Mason University, 2016</h5>
-			</footer>
+		<div id="navigation-bar" class="container-fluid">
+			<nav class="navbar-xs navbar " role="navigation">
+				<div class="navbar-header">
+			      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+			        <span class='glyphicon glyphicon-menu-hamburger'></span>
+			      </button>
+			      <a class="navbar-brand">
+			      	<div class="logo seecoderun-text-blue">
+					       <!--youtube_searched-->
+					       <i class="material-icons">&#xE8FA;</i>
+					       <!--chevron_left-->
+					       <i class="material-icons">&#xE5CB;</i>
+					       <i class="material-icons seecoderun-font-title">js</i>
+					       <!--chevron_right-->
+					       <i class="material-icons">&#xE5CC;</i>
+					       <i class="material-icons seecoderun-font-title">.</i>
+					       <!--play_circle_outline-->
+					       <i class="material-icons">&#xE039;</i>
+				    </div>
+			      </a>
+			    </div>
+				<ul id="navbar-collapse-1" class="nav navbar-nav navbar-right" >
+			        <li>
+			          <div>
+			          	<span id="shareButton">
+			          		<span class='glyphicon glyphicon-share'></span>
+							<label>Share</label>
+						</span>
+					  </div>
+			        </li>
+					<li>
+						<div id="userlistButton">
+							<span class='glyphicon glyphicon-user'></span>
+							<label>Users</label>
+						</div>
+					</li>
+
+					<li>
+						<div id="chatButton">
+							<span class='glyphicon glyphicon-comment'></span>
+							<label>Chat</label>
+						</div>
+					</li>
+					<li>
+						<div onclick="window.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');">
+							<span class='glyphicon glyphicon-question-sign'></span>
+							<label>Help</label>
+						</div>
+					</li>
+					<li>
+						<div  onclick="window.open('mailto:contact@seecode.run', '_blank');">
+							<span class='glyphicon glyphicon-envelope'></span>
+							<label>Contact Us</label>
+						</div>
+					</li>
+					<li>
+						<div onclick="window.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');">
+							<span class='glyphicon glyphicon-info-sign'></span>
+							<label>About	&nbsp;</label>
+							</div>
+					</li>
+				</ul>
+			</nav>
 		</div>
+		<div id = "progressbar"></div>
+		<footer class="w3-container  w3-text-white seecoderun-blue">
+			  <h5>&copy; George Mason University, 2016</h5>
+		</footer>
+
+		<script src="include/progressbar.min.js"></script>
+		<script>
+				var bar = new ProgressBar.Line('#progressbar', {
+				  strokeWidth: 1,
+				  easing: 'easeInOut',
+				  duration: 3000,
+				  color: '#0067FF',
+				  trailColor: '#eee',
+				  trailWidth: 1,
+				  svgStyle: {width: '100%', height: '100%'},
+				  from: {color: '#3C8AFC'},
+				  to: {color: '#00398D'},
+				  step: (state, bar) => {
+				    bar.path.setAttribute('stroke', state.color);
+				  }
+				});
+				bar.animate(1);
+		</script>
+
 
 		<script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
 		<script src="https://ajaxorg.github.io/ace-builds/src-min-noconflict/ace.js"></script>
@@ -55,9 +117,10 @@
 
 		<script src="jspm_packages/system.js"></script>
 		<script src="config.js"></script>
-
 		<script>
 			System.import('aurelia-bootstrapper');
 		</script>
+
+
 	</body>
 </html>
