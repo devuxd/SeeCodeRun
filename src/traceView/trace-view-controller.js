@@ -10,44 +10,32 @@ export class TraceViewController{
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.jsEditor = jsEditor;
-        this.traceNavigator = new BranchNavigator(eventAggregator, aceUtils, jsEditor);
-        this.expressionDataExplorer = new ExpressionDataExplorer(eventAggregator, aceUtils, jsEditor);
+    	this.traceViewModel = new TraceViewModel();
+        this.traceNavigator = new BranchNavigator(eventAggregator, aceUtils, jsEditor, this.traceViewModel);
+        this.expressionDataExplorer = new ExpressionDataExplorer(eventAggregator, aceUtils, jsEditor, this.traceViewModel);
     }
 
     attached(){
-        let eventAggregator = this.eventAggregator;
-        let aceUtils = this.aceUtils;
+        // needs a ace editor to be attached previously
         this.editor = this.jsEditor.editor;
-    	let editor = this.editor;
-        let expressionDataExplorer = this.expressionDataExplorer;
-        expressionDataExplorer.attached();
-
-        let $tooltipView = expressionDataExplorer.get$TooltipView();
-        let traceViewModel = new TraceViewModel($tooltipView);
-        traceViewModel.attached();
-    	this.traceViewModel = traceViewModel;
-
-    	aceUtils.publishExpressionHoverEvents(editor, eventAggregator, traceViewModel);
-
-        this.traceNavigator.attached(traceViewModel);
-        this.subscribe();
-    }
-
-    subscribe(){
-        let self = this, eventAggregator = this.eventAggregator, aceUtils = this.aceUtils, editor =  this.editor, traceViewModel = this.traceViewModel;
+        let eventAggregator = this.eventAggregator, aceUtils = this.aceUtils, editor =  this.editor, traceViewModel = this.traceViewModel;
 
         eventAggregator.subscribe(
             "traceChanged", payload =>{
-                        self.onTraceChanged(payload.data);
+                        this.onTraceChanged(payload.data);
                     }
         );
 
-        aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+        aceUtils.publishExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+
+        this.expressionDataExplorer.attached();
+        this.traceNavigator.attached();
+
     }
 
     onTraceChanged(traceHelper){
             if(!traceHelper){
-                throw "onTraceChanged() called without a Trace Helper.";
+                throw "onTraceChanged() triggered without a Trace Helper.";
             }
 
             let traceViewModel = this.traceViewModel;

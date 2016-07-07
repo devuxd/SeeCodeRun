@@ -8,17 +8,19 @@ export class BranchNavigator{
     gutterTooltipHideDelay = 1500;
     gutterDecorationClassName = "seecoderun-gutter-decoration";
 
-    constructor(eventAggregator, aceUtils, jsEditor){
+    constructor(eventAggregator, aceUtils, jsEditor, traceViewModel){
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.jsEditor = jsEditor;
-    }
-    attached(traceViewModel){
         this.traceViewModel = traceViewModel;
+    }
+
+    attached(){
+        let traceViewModel = this.traceViewModel;
         let aceUtils = this.aceUtils;
+        let gutterDecorationClassName = this.gutterDecorationClassName;
         let editor = this.jsEditor.editor;
         this.editor = editor;
-        let gutterDecorationClassName = this.gutterDecorationClassName;
 
         this.attachGutterTooltip();
 
@@ -28,17 +30,20 @@ export class BranchNavigator{
     }
 
     subscribe(){
-        let self = this, eventAggregator = this.eventAggregator, aceUtils = this.aceUtils, editor =  this.editor, traceViewModel = this.traceViewModel;
+        let eventAggregator = this.eventAggregator,
+            aceUtils = this.aceUtils, editor =  this.editor,
+            traceViewModel = this.traceViewModel,
+            gutterDecorationClassName = this.gutterDecorationClassName;
 
         eventAggregator.subscribe(
             "jsEditorPreChange", payload =>{
-                self.cleanGutterUI();
+                this.cleanGutterUI();
             }
         );
 
         eventAggregator.subscribe(
             "traceChanged", payload =>{
-                 self.aceUtils.updateGutterDecorations(self.editor, [], traceViewModel.traceGutterData.rows, this.gutterDecorationClassName);
+                 aceUtils.updateGutterDecorations(editor, [], traceViewModel.traceGutterData.rows, gutterDecorationClassName);
 
             }
         );
@@ -48,27 +53,27 @@ export class BranchNavigator{
                         if(traceViewModel.isTraceGutterDataValid()){
                             if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
                                 traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
-                                self.jsEditor.editor.getSession().addGutterDecoration(navigationData.row, "");
+                                editor.getSession().addGutterDecoration(navigationData.row, "");
                             }
                         }
                     }
         );
 
-        self.jsGutterScrollTopDelta = 0;
-        self.jsGutterPreviousScrollTop = null;
+        this.jsGutterScrollTopDelta = 0;
+        this.jsGutterPreviousScrollTop = null;
         eventAggregator.subscribe(
             "jsGutterChangeScrollTop", scrollData =>{
-                if(self.jsGutterPreviousScrollTop === null){
-                    self.jsGutterPreviousScrollTop = scrollData.scrollTop;
+                if(this.jsGutterPreviousScrollTop === null){
+                    this.jsGutterPreviousScrollTop = scrollData.scrollTop;
                 }
-                self.jsGutterScrollTopDelta = self.jsGutterPreviousScrollTop - scrollData.scrollTop;
-                self.jsGutterPreviousScrollTop= scrollData.scrollTop;
+                this.jsGutterScrollTopDelta = this.jsGutterPreviousScrollTop - scrollData.scrollTop;
+                this.jsGutterPreviousScrollTop= scrollData.scrollTop;
 
-                if(self.$gutterTooltip.is( ":visible" )){
-                    let currentTop = self.$gutterTooltip.css("top");
+                if(this.$gutterTooltip.is( ":visible" )){
+                    let currentTop = this.$gutterTooltip.css("top");
                     currentTop = currentTop.replace("px", "");
-                    self.$gutterTooltip.css({
-		            top: `${parseInt(currentTop, 10) + self.jsGutterScrollTopDelta}px`
+                    this.$gutterTooltip.css({
+		            top: `${parseInt(currentTop, 10) + this.jsGutterScrollTopDelta}px`
 		        });
                 }
             }

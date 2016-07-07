@@ -5,17 +5,19 @@ export class ExpressionDataExplorer{
     editorTooltipShowDelay = 500;
     editorTooltipHideDelay = 500;
 
-    constructor(eventAggregator, aceUtils, jsEditor){
+    constructor(eventAggregator, aceUtils, jsEditor, traceViewModel){
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.jsEditor = jsEditor;
+        this.traceViewModel = traceViewModel;
     }
 
     attached(){
         let eventAggregator = this.eventAggregator;
         let aceUtils = this.aceUtils;
         let editor = this.jsEditor.editor;
-
+        this.expressionMarkerManager = aceUtils.makeAceMarkerManager(editor);
+        this.expressionMarkerManager.markerRenderer = aceUtils.getAvailableMarkers().expressionMarker;
         let $editorTooltip = $(this.editorTooltipSelector);
 
         if(!$editorTooltip.length){
@@ -44,9 +46,90 @@ export class ExpressionDataExplorer{
         $editorTooltip.appendTo('body');
 
         this.$editorTooltip = $editorTooltip;
+        aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, this);
+        this.attachTooltipUpdateWithDelay();
     }
 
-    get$TooltipView(){
-        return this.$editorTooltip;
+    attachTooltipUpdateWithDelay(){
+        let div =   this.$editorTooltip;
+        let aceUtils = this.aceUtils;
+        let expressionMarkerManager = this.expressionMarkerManager;
+    	let showToolTipDelay = this.showToolTipDelay;
+    	let hideToolTipDelay = this.hideToolTipDelay;
+    	let tooltipSetTimeout = window.setTimeout;
+    	let tooltipClearTimeout = window.clearTimeout;
+    	let tooltipTimeout = null;
+
+    	this.tooltipUpdateWithDelay = function tooltipUpdateWithDelay(position, content){
+    	    let toolTipDelay = showToolTipDelay;
+    	    if(!content){
+    	        toolTipDelay = hideToolTipDelay;
+    	    }
+
+    	    tooltipClearTimeout(tooltipTimeout);
+			tooltipTimeout = tooltipSetTimeout(
+			function delayedToolTip(){
+			    if(!div){
+			        return;
+			    }
+
+			    if(position){
+    			    div.style.left = position.pageX + 'px';
+        			div.style.top = position.pageY + 'px';
+			    }
+
+    			if(content){
+    				div.style.display = "block";
+    				div.innerHTML = content;
+    			}else{
+            	    div.style.display = "none";
+            		div.innerHTML = "";
+    	        }
+			}, toolTipDelay);
+	    };
+
+        this.update$Tooltip = function update$Tooltip(position, match){
+            if(!div){
+			        return;
+			}
+
+		    if(position){
+		        div.css({
+		            position: "absolute",
+		            marginLeft: 0,
+		            marginTop: 0,
+		            top: `${position.pageY}px`,
+		            left: `${position.pageX}px`
+		        });
+		    }
+
+			if(match){
+			    let content = match.text +",  values"+ JSON.stringify(match.values);
+			    div.popover({
+        		    title: "Y: " + position.pageY,
+        		    html: true,
+                    content: function $editorTooltipPopoverContent() {
+                        return content;
+                    },
+        		    padding: 4
+        		});
+			    div.attr("data-content", content);
+			    div.popover("show");
+			    aceUtils.updateAceMarkers(expressionMarkerManager, match);
+			}else{
+			    div.popover("hide");
+			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
+	        }
+        };
+
     }
+
+    onExpressionHovered(match, pixelPosition){
+        if(match){
+            this.update$Tooltip(pixelPosition, match);
+        }else{
+            this.update$Tooltip();
+        }
+    }
+
 }
