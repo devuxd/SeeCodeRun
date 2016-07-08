@@ -129,6 +129,8 @@ ul.nav li a:hover {
     border-left: none;
     border-top: none;
     border-right: none;
+    background-color: inherit;
+    color: #004AB8;
 }
 
 ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
@@ -177,4 +179,8 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
     border-color: #eee;
     border-style: solid;
     border-width:  0px 0px 0px 1px;
+}
+
+.panel-heading:hover{
+    color: #004AB8;
 }

@@ -81,16 +81,10 @@ ul > li label, ul > li span {
 div .navbar-item {
      padding-top: 2px;
 }
-/*ul > li div:hover label, ul > li div:hover span {*/
-    /*color: 	#0066ff;*/
-/*    font-weight: 200;*/
-/*    cursor: pointer;*/
-/*}*/
 
-ul > li div:hover{
-    /*box-shadow: 2px 2px 1px -1px #888888;*/
+ul > li div:hover label, ul > li div:hover span{
     text-decoration: none;
-    background-color: #eee;
+    color: #004AB8;
     cursor: pointer;
 }
 
