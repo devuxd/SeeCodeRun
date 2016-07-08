@@ -45,6 +45,8 @@ export class TraceViewController{
             let stackTrace = traceHelper.getStackBlockCounts();
 
             traceViewModel.updateTraceGutterData(stackTrace);
+            this.eventAggregator.publish("traceGutterDataChanged");
             traceViewModel.setTraceValuesDataRanges(traceHelper.getExecutionTrace());
+            this.eventAggregator.publish("traceValuesDataRangesChanged");
     }
 }

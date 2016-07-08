@@ -31,7 +31,8 @@ export class BranchNavigator{
 
     subscribe(){
         let eventAggregator = this.eventAggregator,
-            aceUtils = this.aceUtils, editor =  this.editor,
+            aceUtils = this.aceUtils,
+            editor =  this.editor,
             traceViewModel = this.traceViewModel,
             gutterDecorationClassName = this.gutterDecorationClassName;
 
@@ -42,7 +43,7 @@ export class BranchNavigator{
         );
 
         eventAggregator.subscribe(
-            "traceChanged", payload =>{
+            "traceGutterDataChanged", payload =>{
                  aceUtils.updateGutterDecorations(editor, [], traceViewModel.traceGutterData.rows, gutterDecorationClassName);
 
             }
