@@ -128,8 +128,8 @@ export class Pastebin {
 
     $jsEditorCode.resizable(this.$jsEditorCodeOptions);
 
-    let $panelHeadings = $('.panel-heading');
-    $panelHeadings.click();
+    let $panelHeadingTitles = $('.panel-heading-title');
+    $panelHeadingTitles.click();
     self.update();
   }
 

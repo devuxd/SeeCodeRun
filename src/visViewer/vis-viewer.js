@@ -88,6 +88,9 @@ export class VisViewer {
           this.removeVisType(tempVis.type);
           setTimeout(function() {
             vis.attached();
+            if(!$("#seePanelBody").is(":visible")){
+              $("#seePanelHeading").click();
+            }
           }, 50);
       }
     }

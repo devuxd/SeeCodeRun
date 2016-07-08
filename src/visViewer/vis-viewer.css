@@ -1,3 +1,17 @@
 #seePanelBody > div{
     padding-bottom: 4px;
 }
+
+.vis-container {
+    padding-top: 4px;
+    box-shadow: 1px 1px 1px 1px #eee;
+}
+
+ .vis-container .visualization-title {
+   font-size: 16px !important;
+   font-weight: bold;
+ }
+
+ #visualizations {
+   padding-top: 5px;
+ }

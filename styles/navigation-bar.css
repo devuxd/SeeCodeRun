@@ -88,7 +88,12 @@ ul > li div:hover label, ul > li div:hover span{
     cursor: pointer;
 }
 
+ul > li div:active label, ul > li div:active span{
+    text-decoration: none;
+    color: 	#0066ff;
+    cursor: pointer;
+}
+
 .navigation-bar-active-item {
     color: 	#0066ff;
-    font-weight: 200;
 }

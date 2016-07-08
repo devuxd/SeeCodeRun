@@ -1,11 +1,11 @@
 /* global $ */
-/* global ace */
 
 export class BranchNavigator{
     gutterTooltipId = "gutterTooltip";
     gutterTooltipSelector = "#gutterTooltip";
-    gutterTooltipShowDelay = 250;
-    gutterTooltipHideDelay = 1500;
+    gutterTooltipSlideTime = 50;
+    gutterTooltipShowDelay = 50;
+    gutterTooltipHideDelay = 350;
     gutterDecorationClassName = "seecoderun-gutter-decoration";
 
     constructor(eventAggregator, aceUtils, jsEditor, traceViewModel){
@@ -25,7 +25,10 @@ export class BranchNavigator{
         this.attachGutterTooltip();
 
         aceUtils.setTraceGutterRenderer(editor, traceViewModel.traceGutterData);
-    	aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip, gutterDecorationClassName, traceViewModel.traceGutterData, this.update$GutterTooltip);
+    	aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip,
+    	    gutterDecorationClassName, traceViewModel.traceGutterData, this.update$GutterTooltip,
+    	    this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
+    	    );
         this.subscribe();
     }
 
@@ -95,14 +98,13 @@ export class BranchNavigator{
         self.gutterMouseMoveTimeout = null;
 
         let gutterMouseMoveUpdateTooltipTimeout = function gutterMouseMoveUpdateTooltipTimeout(){
-	        self.$gutterTooltip.hide("slide", { direction: "down" }, self.tooltipSlideDelay);
+	        self.$gutterTooltip.hide("slide", { direction: "down" }, self.gutterTooltipSlideTime);
 	    };
 
-        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, content, row, lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay){
+        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, content, row, lineHeight){
             if(!$gutterTooltip){
 			        return;
 			}
-            self.tooltipSlideDelay = tooltipSlideDelay;
 	        self.currentRow = row;
 		    if(content){
 	            self.currentContent = content;
@@ -161,13 +163,13 @@ export class BranchNavigator{
                             self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
                         }
                         self.jsEditor.editor.getSession().addGutterDecoration(self.currentRow, "seecoderun-gutter-decoration-active");
-                        $gutterTooltip.hide().show("slide", { direction: "down" }, tooltipSlideDelay);
+                        $gutterTooltip.hide().show("slide", { direction: "down" }, self.gutterTooltipSlideTime);
                     }
                     })
                     .mouseleave( function gutterTooltipMouseLeave(){
                         clearTimeout(self.gutterMouseMoveTimeout);
                         self.gutterMouseMoveTimeout =
-        			        setTimeout( gutterMouseMoveUpdateTooltipTimeout, tooltipHideDelay);
+        			        setTimeout( gutterMouseMoveUpdateTooltipTimeout, self.gutterTooltipHideDelay);
                     });
 			    }
 
@@ -200,15 +202,16 @@ export class BranchNavigator{
                     if(self.previousRow){
                         self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
                     }
-                    $gutterTooltip.hide().show("slide", { direction: "down" }, tooltipSlideDelay);
+                    $gutterTooltip.hide().show("slide", { direction: "down" }, self.gutterTooltipSlideTime);
                     $gutterTooltip.mouseenter();
                 }
 			}else{
 		        let isGutterTooltipHovered = !!$($gutterTooltip).
                     filter(function() { return $(this).is(":hover"); }).length;
 			    if(!isGutterTooltipHovered){
-			     self.gutterMouseMoveTimeout =
-    			    setTimeout( gutterMouseMoveUpdateTooltipTimeout, tooltipHideDelay);
+			         clearTimeout(self.gutterMouseMoveTimeout);
+        		     self.gutterMouseMoveTimeout =
+        			    setTimeout( gutterMouseMoveUpdateTooltipTimeout, self.gutterTooltipHideDelay);
 			    }
 	        }
 	        self.previousRow = row;

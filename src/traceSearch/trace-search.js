@@ -1,4 +1,4 @@
-
+/* global $*/
 export class TraceSearch {
     constructor(eventAggregator, traceModel ,aceUtils) {
         this.eventAggregator = eventAggregator;
@@ -88,6 +88,9 @@ export class TraceSearch {
     }
 
     updateTable(query) {
+        if(!$("#traceSearchPanelBody").is(":visible")){
+              $("#traceSearchPanelHeading").click();
+        }
         let selectedFilter = this.selectedFilter;
         let dataList = [];
         this.rows = query.where( function whereFilter(row) {
