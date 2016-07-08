@@ -38,11 +38,19 @@ export class AceUtils{
         session.setMode(mode);
     }
 
+    getAvailableMarkers(){
+        return {
+            defaultMarker: "default-marker",
+            expressionMarker: "expression-marker",
+            yellowMarker: "yellow-marker",
+            seecoderunBlueMarker: "seecoderun-blue-marker"
+        };
+    }
     makeAceMarkerManager(aceEditor){
         return {
                 aceEditor: aceEditor,
                 markers: [],
-                markerRenderer: "expression-range",
+                markerRenderer: this.getAvailableMarkers().defaultMarker,
                 markerType: "text",
                 inFront: false
                 };
@@ -137,7 +145,7 @@ export class AceUtils{
     		let row = e.getDocumentPosition().row;
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
-    		        content = dataModel.rows[row].text;
+    		        content = dataModel.rows[row].entry;
                     let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
 
     			    pixelPosition.pageY -= target.getBoundingClientRect().height;

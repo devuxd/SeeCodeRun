@@ -48,8 +48,6 @@ export class ConsoleWindow {
         this.log.push({styleClass: this.styleConsoleWindowLogMessage,content: this.prettifyConsoleLine(htmlViewerConsoleLog.arguments)});
         this.update();
         console.log.apply(htmlViewerConsoleLog.this, htmlViewerConsoleLog.arguments);
-        // console.log(JSON.stringify(htmlViewerConsoleLog.arguments));
-        // console.log(["message", "d"]);
       });
 
       ea.subscribe('traceChanged', payload => {
@@ -60,9 +58,8 @@ export class ConsoleWindow {
     }
 
     prettifyConsoleLine(jsObject){
-      let onClick = `$('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
+      let onClick = `PR.prettyPrint(); $('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
       	$(this).toggleClass('${this.styleConsoleWindowTextLooseOverflow}');
-      	PR.prettyPrint();
       })`;
       return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
         ${JSON.stringify(jsObject)}

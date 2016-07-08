@@ -40,39 +40,51 @@
     max-height: 100%;
 }
 
-.navbar .navbar-brand > label {
-    float: right;
-    top: 0;
-    color: #0066ff;
+.navbar .navbar-brand .logo > i{
+    margin-left: -4%;
+    margin-right: -3%;
+    font-size: 25px;
+    float: left;
 }
-.navbar .navbar-brand i{
-    padding-top: 4px;
-    padding-left: -6px;
-    padding-right: -6px;
-    margin-left: -6px;
-    margin-right: -6px;
-    display: inline;
+
+
+.navbar .navbar-brand .logo > :first-child{
+    margin-top: -1%;
+    margin-left: 0%;
+    margin-right: -6%;
+    font-size: 24px;
+    float: left;
 }
+
+.navbar .navbar-brand .logo > :last-child{
+    margin-left: -1%;
+    margin-right: 0%;
+    font-size: 21px;
+}
+
+.navbar .navbar-brand .logo .seecoderun-font-title {
+    font-size: 20px;
+    height: 22px;
+    line-height: 22px;
+    font-weight: 100;
+    float: left;
+}
+
 
 ul > li label, ul > li span {
     color: #888888;
-    font-weight: 100;
+    font-weight: normal;
     font-size: 12px;
+    font-family: Lato,"Helvetica Neue",Arial,Verdana,Tahoma,"Lucida Sans",FreeSans,"Lucida Sans Unicode","Luxi Sans",sans-serif;
 }
 
 div .navbar-item {
      padding-top: 2px;
 }
-/*ul > li div:hover label, ul > li div:hover span {*/
-    /*color: 	#0066ff;*/
-/*    font-weight: 200;*/
-/*    cursor: pointer;*/
-/*}*/
 
-ul > li div:hover{
-    /*box-shadow: 2px 2px 1px -1px #888888;*/
+ul > li div:hover label, ul > li div:hover span{
     text-decoration: none;
-    background-color: #eee;
+    color: #004AB8;
     cursor: pointer;
 }
 

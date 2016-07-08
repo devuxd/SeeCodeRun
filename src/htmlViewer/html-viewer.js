@@ -69,30 +69,28 @@ export class HtmlViewer {
         this.buildOutput();
       });
 
-      ea.subscribe("headJsScriptsLoaded", scriptsData => {
-        let scriptTexts = scriptsData.scripts;
-        this.addCssScripts(scriptTexts);
+      ea.subscribe("headJsScriptsLoaded", scriptsLoadedData => {
+        this.handleResponse("head", scriptsLoadedData.response);
+        this.addHtml();
       });
 
-      ea.subscribe("bodyJsScriptsLoaded", scriptsData => {
-        let scriptTexts = scriptsData.scripts;
-        this.addHtmlScripts(scriptTexts);
+      ea.subscribe("bodyJsScriptsLoaded", scriptsLoadedData => {
+        this.handleResponse("body", scriptsLoadedData.response);
+        this.addJs();
       });
     }
 
-
-
-  addCssScripts(scriptTexts){
-    let doc = this.getContentDocument();
-    this.externalResourceLoader.replaceScriptsInElement(scriptTexts, doc.head, doc);
-    this.addHtml();
-  }
-
-  addHtmlScripts(scriptTexts){
-    let doc = this.getContentDocument();
-    this.externalResourceLoader.replaceScriptsInElement(scriptTexts, doc.body, doc);
-    this.addJs();
-  }
+    handleResponse(elementName, response){
+      let status = {done: "done", fail: "fail"};
+      if(response.status === status.fail){
+        for(let responseIndex in response.responses){
+          let details = response.responses[responseIndex];
+          if(details.status === status.fail){
+             this.eventAggregator.publish("htmlViewerWindowError", {arguments: { error: elementName + ": download script failed", details: details}});
+          }
+        }
+      }
+    }
 
     addJs() {
       let ea = this.eventAggregator;
@@ -145,12 +143,8 @@ export class HtmlViewer {
       doc.head.innerHTML = newHead;
       this.htmlParser.setAttributes($(doc.head), newHeadAttributes);
       doc.head.appendChild(styleElement);
-      let urls = this.htmlParser.parseJsScripts(newHead);
-      if(urls && urls.length){
-        this.externalResourceLoader.loadJsScripts(urls, this.eventAggregator, "headJsScriptsLoaded");
-      }else{
-        this.eventAggregator.publish("headJsScriptsLoaded", {scripts:[]});
-      }
+      this.externalResourceLoader.loadAndAttachJsScripts(doc.head, doc, this.eventAggregator, "headJsScriptsLoaded");
+
     }
 
     addHtml() {
@@ -160,12 +154,7 @@ export class HtmlViewer {
       let newBodyAttributes = parsedHtml.bodyAttributes;
       doc.body.innerHTML = newBody;
       this.htmlParser.setAttributes($(doc.body), newBodyAttributes);
-      let urls = this.htmlParser.parseJsScripts(newBody);
-      if(urls && urls.length){
-       this.externalResourceLoader.loadJsScripts(urls, this.eventAggregator, "bodyJsScriptsLoaded");
-      }else{
-        this.eventAggregator.publish("bodyJsScriptsLoaded", {scripts:[]});
-      }
+      this.externalResourceLoader.loadAndAttachJsScripts(doc.body, doc, this.eventAggregator, "bodyJsScriptsLoaded");
     }
 
     getContentDocument() {

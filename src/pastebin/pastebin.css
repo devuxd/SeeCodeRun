@@ -119,12 +119,8 @@ ul.nav li a,
 ul.nav li a:visited {
     color: #888888;
     font-size: 13px;
-    font-style: italic;
     border-style: solid;
-    /*border-width: 2px;*/
-    /*border-left: none;*/
-    /*border-top: none;*/
-    /*border-right: none;*/
+    font-family: Lato,"Helvetica Neue",Arial,Verdana,Tahoma,"Lucida Sans",FreeSans,"Lucida Sans Unicode","Luxi Sans",sans-serif;
     border: none;
     margin-left: 1px;
 }
@@ -133,6 +129,8 @@ ul.nav li a:hover {
     border-left: none;
     border-top: none;
     border-right: none;
+    background-color: inherit;
+    color: #004AB8;
 }
 
 ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
@@ -181,4 +179,36 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
     border-color: #eee;
     border-style: solid;
     border-width:  0px 0px 0px 1px;
+}
+
+.panel-debug > .panel-heading {
+  background-image: -webkit-linear-gradient(top, #f5f5f5 0%, #e8e8e8 100%);
+  background-image:      -o-linear-gradient(top, #f5f5f5 0%, #e8e8e8 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#f5f5f5), to(#e8e8e8));
+  background-image:         linear-gradient(to bottom, #f5f5f5 0%, #e8e8e8 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fff5f5f5', endColorstr='#ffe8e8e8', GradientType=0);
+  background-repeat: repeat-x;
+}
+
+.panel-debug {
+  border-color: #ddd;
+  -webkit-border-radius: 0;
+     -moz-border-radius: 0;
+          border-radius: 0;
+}
+.panel-debug > .panel-heading {
+  color: #333;
+  background-color: #f5f5f5;
+  border-color: #ddd;
+}
+.panel-debug > .panel-heading + .panel-collapse > .panel-body {
+  border-top-color: #ddd;
+}
+.panel-debug > .panel-heading .badge {
+  color: #f5f5f5;
+  background-color: #333;
+}
+
+.panel-debug > .panel-heading:hover{
+    color: #004AB8;
 }

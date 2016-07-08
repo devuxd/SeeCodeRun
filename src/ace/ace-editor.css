@@ -42,21 +42,34 @@
 /*traceView/trace-view.css governs the gutter style:
 .ace_gutter-cell.seecoderun-gutter-decoration
 */
-/*Cahnged in ace/theme*/
+/*Changed in ace/theme*/
 /*.ace-chrome .ace_gutter {*/
 /*    background-color: #E5F1FB;*/
 /*}*/
 
-.ace-chrome .ace_marker-layer .expression-range {
+.ace-chrome .ace_marker-layer .default-marker {
     position: absolute;
     background: rgb(250, 250, 155);
     border: 1px solid rgb(200, 200, 150);
 }
 
-.ace-chrome .ace_marker-layer .expression-highlight {
+.ace-chrome .ace_marker-layer .expression-marker {
+    position: absolute;
+    background: #E5F1FB;
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .yellow-marker {
     position: absolute;
     background: rgb(250, 250, 155);
-    border: 1px solid rgb(200, 200, 150);
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .seecoderun-blue-marker {
+    position: absolute;
+    background: #00398D;
+    color: #3C8AFC;
+    border: 1px solid #00398D;
 }
 
 .powered-by-firepad {
