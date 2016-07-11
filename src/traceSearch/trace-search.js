@@ -1,5 +1,7 @@
-
+/* global $*/
 export class TraceSearch {
+    traceSearchPanelBodySelector = "#traceSearchPanelBody";
+    traceSearchPanelHeadingSelector = "#traceSearchPanelHeading";
     constructor(eventAggregator, traceModel ,aceUtils) {
         this.eventAggregator = eventAggregator;
         this.traceModel = traceModel;
@@ -88,6 +90,9 @@ export class TraceSearch {
     }
 
     updateTable(query) {
+        if(!$(this.traceSearchPanelBodySelector).is(":visible") && this.searchedValue){
+              $(this.traceSearchPanelHeadingSelector).click();
+        }
         let selectedFilter = this.selectedFilter;
         let dataList = [];
         this.rows = query.where( function whereFilter(row) {

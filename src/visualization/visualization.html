@@ -3,10 +3,10 @@
     <div class="visualization-title">${visualization.title}</div>
     <div if.bind="visualization.hasError" class="alert alert-danger" role="alert">${visualization.errorMessage}</div>
     <div if.bind="visualization.type === 'DataTable'">
-      <label for = "${visualization.buttonId}" class="w3-label seecoderun-text-blue">
+      <label for = "${visualization.buttonId}">
         Select expressions in the editor and tap 'Add Column'.
       </label>
-      <button id="${visualization.buttonId}" type="button" class="w3-btn seecoderun-blue" click.trigger="visualization.requestSelectionRange()">Add Column</button>
+      <button id="${visualization.buttonId}" type="button" class="btn btn-default" click.trigger="visualization.requestSelectionRange()">Add Column</button>
     </div>
     <div id="${visualization.contentId}"></div>
   </div>

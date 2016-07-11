@@ -2,6 +2,9 @@
 import {bindable} from 'aurelia-framework';
 
 export class JsGutter {
+    aceEditorFontSize = null;
+    gutterFontFamily = null;
+    aceEditorToGutterFontSizeScale = 0.85;
     aceJsEditorDiv = "";
     @bindable jsGutterDiv = "jsGutterDiv";
     jsGutterBlurClass = "js-gutter-blur";
@@ -27,21 +30,39 @@ export class JsGutter {
         this.aceJsEditorDiv = aceJsEditorDiv;
     }
 
-    update(editorLayout = this.editorLayout, aceJsEditorDiv = this.aceJsEditorDiv){
-        let self = this;
-        let $jsGutterLineClass =$(self.jsGutterLineClassSelector);
-        let $jsGutterLineHighlightClass = $(self.jsGutterLineHighlightClassSelector);
+    adjustFontStyle(aceJsEditorDiv = this.aceJsEditorDiv){
         let $editorDiv =$(`#${aceJsEditorDiv}`);
+        let aceEditorFontSize = $editorDiv.css("font-size");
+        if(this.aceEditorFontSize  !== aceEditorFontSize){
+            this.aceEditorFontSize  = aceEditorFontSize;
+            this.gutterFontSize = aceEditorFontSize;
+            this.gutterFontFamily = $editorDiv.css("font-family");
+            try{
+                let fontNumber = parseFloat(this.gutterFontSize.replace(/px/i, ""));
+                this.gutterFontSize = String(Math.round(fontNumber * this.aceEditorToGutterFontSizeScale * 10) / 10) + "px";
+            }catch(e){
+                //ignore font size adjustment
+            }
+        }
+    }
 
-
-        $jsGutterLineClass.css("font-size", $editorDiv.css("font-size"));
-        $jsGutterLineClass.css("font-family", $editorDiv.css("font-family"));
-
-        $jsGutterLineHighlightClass.css("font-size", $editorDiv.css("font-size"));
-        $jsGutterLineHighlightClass.css("font-family", $editorDiv.css("font-family"));
-
+    update(editorLayout = this.editorLayout){
+        let self = this;
         if(!editorLayout){
             return;
+        }
+
+        this.adjustFontStyle();
+        let $jsGutterLineClass =$(this.jsGutterLineClassSelector);
+        if($jsGutterLineClass.length){
+            let $jsGutterLineHighlightClass = $(this.jsGutterLineHighlightClassSelector);
+
+            $jsGutterLineClass.css("font-size", this.gutterFontSize);
+            $jsGutterLineClass.css("font-family", this.gutterFontFamily);
+
+            $jsGutterLineHighlightClass.css("font-size", this.gutterFontSize);
+            $jsGutterLineHighlightClass.css("font-family", this.gutterFontFamily);
+
         }
 
         let firstLineNumber = editorLayout.firstLineNumber;

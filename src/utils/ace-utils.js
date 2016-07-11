@@ -134,10 +134,6 @@ export class AceUtils{
     			return;
     		}
 
-    // 		if (!editor.isFocused()){
-    // 			return;
-    // 		}
-
     		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){
     			return;
     		}
@@ -155,11 +151,6 @@ export class AceUtils{
                     if(row !== self.previousRow){
                         setTooltipMouseMove(target, row,  pixelPosition, content);
                     }
-                    // if(self.firstLoad){
-                    //     self.firstLoad = false;
-
-                    //     $(target).mouseenter();
-                    // }
     		}
     		e.stop();
     	});
@@ -189,8 +180,8 @@ export class AceUtils{
     		    isTextMatch = editor.getSession().getWordRange(position);
     		}
 
-
-    		if(isTextMatch && editor.isFocused()){
+            //editor.isFocused()
+    		if(isTextMatch){
     			let match = mousePositionHandler.getExpressionAtPosition(position);
                 eventAggregator.publish("expressionHovered", match);
     		}else{

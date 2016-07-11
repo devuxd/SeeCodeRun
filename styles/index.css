@@ -194,3 +194,12 @@
     height: 220px;
     line-height: 220px;
 }
+
+label {
+    font-weight: normal;
+    color: #888888;
+}
+
+label:hover {
+    color: #004AB8;
+}
