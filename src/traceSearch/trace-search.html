@@ -22,7 +22,7 @@
           </datalist>
       </div>
     </div>
-    <div id="traceSearchPanelBody" class="panel-body  container-fluid">
+    <div id="traceSearchPanelBody" class="panel-body  container-fluid collapse in">
       <div class="w3-row-padding" if.bind="!traceSearch.noResult && !traceSearch.noSearchYet">
         <label id="searchTermHitCount" for = "searchResults" class="w3-label w3-text-grey" if.bind="!traceSearch.noResult && !traceSearch.noSearchYet">Matches: <span class="w3-badge w3-green">${traceSearch.numberOfResult}</span></label>
         <a id="link" mouseover.delegate="traceSearch.doMouseOver({$index})" mouseout.delegate="traceSearch.doMouseOut()" ></a>

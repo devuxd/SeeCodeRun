@@ -247,9 +247,21 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
 .panel-debug > .panel-heading + .panel-collapse > .panel-body {
   border-top-color: #ddd;
 }
+
 .panel-debug > .panel-heading .badge {
   color: #f5f5f5;
   background-color: #333;
+}
+
+#visualization-container .btn,
+    #visualization-container .alert {
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    -o-border-radius: 0;
+    border-radius: 0;
 }
 
 #play-toolbar >.w3-row >div{
@@ -260,9 +272,7 @@ ul.nav .active a, ul.nav .active a:focus, ul.nav .active a:hover{
     color: #333;
     cursor: default;
 }
+
 #play-toolbar button{
-    height: inherit;
-    padding-top: 2px;
-    font-size: 16px;
-    line-height: 8px;
+    padding-top: 3px;
 }

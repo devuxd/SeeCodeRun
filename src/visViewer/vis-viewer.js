@@ -6,7 +6,10 @@ import {Visualization} from '../visualization/visualization';
 
 
 export class VisViewer {
-
+  seePanelHeadingSelector = "#seePanelHeading";
+  seePanelBodySelector = "#seePanelBody";
+  visViewerSelectSelector = "#visViewerSelect";
+  noSelectionMessage = "Please select a visualization type first."
   constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
 
@@ -76,7 +79,8 @@ export class VisViewer {
   }
 
   addVisualization() {
-    let type = $("#visViewerSelect").val();
+    let self = this;
+    let type = $(this.visViewerSelectSelector).val();
     this.prepareVisualization(type);
     let tempVis = this.tempVis;
     if(tempVis) {
@@ -88,8 +92,8 @@ export class VisViewer {
           this.removeVisType(tempVis.type);
           setTimeout(function() {
             vis.attached();
-            if(!$("#seePanelBody").is(":visible")){
-              $("#seePanelHeading").click();
+            if(!$(self.seePanelBodySelector).is(":visible")){
+              $(self.seePanelHeadingSelector).click();
             }
           }, 50);
       }

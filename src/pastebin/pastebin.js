@@ -130,6 +130,8 @@ export class Pastebin {
 
     let $panelHeadingTitles = $('.panel-heading-title');
     $panelHeadingTitles.click();
+    // let $panelBodies = $('.panel-body');
+    // $panelBodies.css('display', 'none');
     self.update();
   }
 
