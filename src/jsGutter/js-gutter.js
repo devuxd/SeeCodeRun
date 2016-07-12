@@ -215,9 +215,8 @@ export class JsGutter {
 
         if ($line.length) {
 
-            if(["FunctionDeclaration", "FunctionExpression", "BlockStatement", "Program"].indexOf(entry.type) > 0){
+            if(["BlockStatement", "Program"].indexOf(entry.type) > -1){
                 $line.text("");
-                //todo: add params to autolog-tracer
                 return;
             }
 

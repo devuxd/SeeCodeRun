@@ -58,8 +58,6 @@ export class TraceViewModel {
 			let row = entry.range.start.row;
 
 			if(!result.rows.hasOwnProperty(row)){
-
-
                 result.rows[row] = {entry: entry, count: entry.count, entryText: `Block executed ${entry.count} time(s)`};
 			}
 
