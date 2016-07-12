@@ -2,6 +2,8 @@ import $ from 'jquery';
 
 export class ShareBox {
     selectedEffect = "fold";
+    hideTimeout = 5000;
+    slideAnimationDuration = 500;
 
     constructor(firebaseManager) {
         this.firebaseManager = firebaseManager;
@@ -9,35 +11,52 @@ export class ShareBox {
 
     attached() {
         let self = this;
+        let firebaseManager = self.firebaseManager;
+
+        self.pastebinIdshare = firebaseManager.makeNewPastebinFirebaseReferenceId();
+        let oldRef = firebaseManager.makePastebinFirebaseReference();
+        let newRef = firebaseManager.makePastebinFirebaseReference(self.pastebinIdshare);
+
+        let toggleShareBoxTimeoutCallback = function toggleShareBoxTimeoutCallback(){
+            $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
+            $("#shareButton span").removeClass("navigation-bar-active-item");
+            $("#shareButton label").removeClass("navigation-bar-active-item");
+        };
+
         $('#shareBox').hide();
-        $('#shareButton').click(function hideShareBox() {
+        $('#shareButton').click( function toggleShareBox() {
             if($("#shareBox").is(":visible")){
                 $("#shareButton span").removeClass("navigation-bar-active-item");
                 $("#shareButton label").removeClass("navigation-bar-active-item");
             }else{
+                firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
+                let shareFirebaseRef2 = 'https://seecode.run/#' + self.pastebinIdshare;
+                let copyTarget = document.getElementById("copyTarget");
+                copyTarget.value = shareFirebaseRef2;
+
                 $("#shareButton span").addClass("navigation-bar-active-item");
                 $("#shareButton label").addClass("navigation-bar-active-item");
             }
-            $("#shareBox").toggle("slide", { direction: "right" }, 1000);
+
+            $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
         });
-        
-        let firebaseManager = this.firebaseManager;
-        this.pastebinIdshare = firebaseManager.makeNewPastebinFirebaseReferenceId();
-        
-        let oldRef = firebaseManager.makePastebinFirebaseReference();
-        let newRef = firebaseManager.makePastebinFirebaseReference(this.pastebinIdshare);
 
-        let shareFirebaseRef2 = 'https://seecode.run/#' + this.pastebinIdshare;
-        let copyButton = document.getElementById("copyButton");
-        let copyTarget = document.getElementById("copyTarget");
-        copyTarget.value = shareFirebaseRef2;
+        $('#shareListItem').mouseenter(function shareListItemMouseEnter(){
+            clearTimeout(self.toggleShareBoxTimeout);
+        }).mouseleave(function shareListItemMouseLeave(){
+            if($("#shareBox").is(":visible")){
+                self.toggleShareBoxTimeout = setTimeout(toggleShareBoxTimeoutCallback, self.hideTimeout);
+            }
+        });
 
-        copyButton.addEventListener("click", function() {
-            firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
+        let $copyButton = $("#copyButton");
+
+        $copyButton.click( function copyButtonClick() {
+            let copyTarget = document.getElementById("copyTarget");
             self.copyToClipboard(copyTarget);
         });
     }
-    
+
     copyToClipboard(elem) {
         let target = undefined;
         let targetId = "_hiddenCopyText_";
