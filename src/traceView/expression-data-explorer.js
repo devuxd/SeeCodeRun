@@ -1,7 +1,9 @@
 /* global $ */
+import {TreeViewExplorer} from "./tree-view-explorer";
 
 export class ExpressionDataExplorer{
     editorTooltipSelector = "#editorTooltip";
+    editorTooltipId = "editorTooltip";
     editorTooltipShowDelay = 500;
     editorTooltipHideDelay = 500;
 
@@ -23,6 +25,9 @@ export class ExpressionDataExplorer{
         if(!$editorTooltip.length){
 			$editorTooltip = $(`<div id='${this.editorTooltipSelector}' />`);
         }
+
+        let editorTooltipElement = document.getElementById(this.editorTooltipId);
+        this.treeViewExplorer = new TreeViewExplorer(editorTooltipElement);
 
         $editorTooltip.attr({
             "data-toggle": "popover",
@@ -114,7 +119,8 @@ export class ExpressionDataExplorer{
         		    padding: 4
         		});
 			    div.attr("data-content", content);
-			    div.popover("show");
+          this.treeViewExplorer.display();
+          div.popover("show");
 			    aceUtils.updateAceMarkers(expressionMarkerManager, match);
 			}else{
 			    div.popover("hide");
