@@ -1,7 +1,9 @@
 export class TreeViewExplorer {
   constructor(element) {
-    this.element = element;
-    this.type = element.nodeName ? "dom" : "json";
+    if(element) {
+      this.element = element;
+      this.type = element.nodeName ? "dom" : "json";
+    }
   }
   //removes all child nodes that are not also elements or text
   getElements(childNodes) {
@@ -29,7 +31,7 @@ export class TreeViewExplorer {
 
   // convert DOM tree into HTML collapsible list
    generateDOMTree(parent, flag=true) {
-    var children = getElements(parent.childNodes);
+    var children = this.getElements(parent.childNodes);
     var html = "";
     if(children.length !== 0) {
       if(flag) {
@@ -65,7 +67,7 @@ export class TreeViewExplorer {
             // + "</span><span class=sign>&gt;</span>";
         }
 
-        html += generateDOMTree(children[i], false) + "</li>";
+        html += this.generateDOMTree(children[i], false) + "</li>";
       }
       return html + "</ul>";
     }
@@ -121,7 +123,7 @@ export class TreeViewExplorer {
         }
 
         html += key + ": " + value;
-        html += generateObjectTree(object[keys[i]], false) + "</li>";
+        html += this.generateObjectTree(object[keys[i]], false) + "</li>";
       }
       return html + "</ul>";
     }
@@ -130,35 +132,34 @@ export class TreeViewExplorer {
     }
   }
 
-  display() {
+  appendContent(container) {
+    let content;
     if(this.type === "dom") {
-      dispDOMNode();
+      content = this.dispDOMNode();
     }
     else if(this.type === "json") {
-      dispObject();
+      content = this.dispObject();
     }
+    this.appendHtml(container, content);
+    CollapsibleLists.apply();
   }
 
    dispDOMNode() {
-    var a = "<ul class=treeView><li>" + "<span class=sign>&lt;</span>"
-      + "<span class=elementNode>" + node.nodeName.toLowerCase() + "</span><span class=sign>&gt;</span>";
-    a += this.generateDOMTree(this.element);
-    a += "</li></ul>";
-    printh(a);
-    CollapsibleLists.apply();
+    var tree = "<ul class=treeView><li>" + "<span class=sign>&lt;</span>"
+      + "<span class=elementNode>" + this.element.nodeName.toLowerCase() + "</span><span class=sign>&gt;</span>";
+    tree += this.generateDOMTree(this.element);
+    tree += "</li></ul>";
+    return tree;
   }
 
    dispObject() {
-    var a = "<ul class=treeView><li>" + object.constructor.name;
-    a += this.generateObjectTree(this.element);
-    a += "</li></ul>";
-    printh(a);
-    CollapsibleLists.apply();
+    var tree = "<ul class=treeView><li>" + this.element.constructor.name;
+    tree += this.generateObjectTree(this.element);
+    tree += "</li></ul>";
+    return tree;
   }
 
-   printh(tree) {
-    var element = document.createElement("div");
-    element.innerHTML = tree;
-    document.body.appendChild(element);
+   appendHtml(container, tree) {
+    container.innerHTML = tree;
   }
 }

@@ -23,30 +23,28 @@ export class ExpressionDataExplorer{
         let $editorTooltip = $(this.editorTooltipSelector);
 
         if(!$editorTooltip.length){
-			$editorTooltip = $(`<div id='${this.editorTooltipSelector}' />`);
+          $editorTooltip = $(`<div id='${this.editorTooltipId}' />`);
+          $editorTooltip.addClass("seecoderun-tooltip");
         }
 
-        let editorTooltipElement = document.getElementById(this.editorTooltipId);
-        this.treeViewExplorer = new TreeViewExplorer(editorTooltipElement);
-
-        $editorTooltip.attr({
-            "data-toggle": "popover",
-            "data-placement": "bottom",
-            "data-content": "",
-            "delay": {
-                show: this.editorTooltipShowDelay,
-                hide: this.editorTooltipHideDelay
-            }
-        });
-		$editorTooltip.popover({
-		    title: "Current Values",
-		    html: true,
-		  //  selector: '[rel="popover"]',
-            content: function $editorTooltipPopoverContent() {
-                // return $('#branchNavigator').html();
-            },
-		    padding: 4
-		});
+        // $editorTooltip.attr({
+        //     "data-toggle": "popover",
+        //     "data-placement": "bottom",
+        //     "data-content": "",
+        //     "delay": {
+        //         show: this.editorTooltipShowDelay,
+        //         hide: this.editorTooltipHideDelay
+        //     }
+        // });
+		// $editorTooltip.popover({
+		//     title: "Current Values",
+		//     html: true,
+		//   //  selector: '[rel="popover"]',
+    //         content: function $editorTooltipPopoverContent() {
+    //             // return $('#branchNavigator').html();
+    //         },
+		//     padding: 4
+		// });
 
         $editorTooltip.appendTo('body');
 
@@ -56,6 +54,7 @@ export class ExpressionDataExplorer{
     }
 
     attachTooltipUpdateWithDelay(){
+      let self = this;
         let div =   this.$editorTooltip;
         let aceUtils = this.aceUtils;
         let expressionMarkerManager = this.expressionMarkerManager;
@@ -84,10 +83,10 @@ export class ExpressionDataExplorer{
 			    }
 
     			if(content){
-    				div.style.display = "block";
+    				div.show();
     				div.innerHTML = content;
     			}else{
-            	    div.style.display = "none";
+            	  div.hide();
             		div.innerHTML = "";
     	        }
 			}, toolTipDelay);
@@ -110,20 +109,24 @@ export class ExpressionDataExplorer{
 
 			if(match){
 			    let content = match.text +",  values"+ JSON.stringify(match.values);
-			    div.popover({
-        		    title: "Y: " + position.pageY,
-        		    html: true,
-                    content: function $editorTooltipPopoverContent() {
-                        return content;
-                    },
-        		    padding: 4
-        		});
-			    div.attr("data-content", content);
-          this.treeViewExplorer.display();
-          div.popover("show");
+			    // div.popover({
+        	// 	    title: "Y: " + position.pageY,
+        	// 	    html: true,
+          //           content: function $editorTooltipPopoverContent() {
+          //               return content;
+          //           },
+        	// 	    padding: 4
+        	// 	});
+			    // div.attr("data-content", content);
+          let editorTooltipElement = document.getElementById(self.editorTooltipId);
+          self.treeViewExplorer = new TreeViewExplorer(match.values);
+          self.treeViewExplorer.appendContent(editorTooltipElement);
+          // div.popover("show");
+          div.show();
 			    aceUtils.updateAceMarkers(expressionMarkerManager, match);
 			}else{
-			    div.popover("hide");
+			    // div.popover("hide");
+          div.hide();
 			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
 	        }
         };
