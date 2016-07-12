@@ -17,6 +17,10 @@ export class ShareBox {
         let oldRef = firebaseManager.makePastebinFirebaseReference();
         let newRef = firebaseManager.makePastebinFirebaseReference(self.pastebinIdshare);
 
+        let shareFirebaseRef2 = 'https://seecode.run/#' + self.pastebinIdshare;
+        let copyTarget = document.getElementById("copyTarget");
+        copyTarget.value = shareFirebaseRef2;
+
         let toggleShareBoxTimeoutCallback = function toggleShareBoxTimeoutCallback(){
             $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
             $("#shareButton span").removeClass("navigation-bar-active-item");
@@ -30,15 +34,13 @@ export class ShareBox {
                 $("#shareButton label").removeClass("navigation-bar-active-item");
             }else{
                 firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
-                let shareFirebaseRef2 = 'https://seecode.run/#' + self.pastebinIdshare;
-                let copyTarget = document.getElementById("copyTarget");
-                copyTarget.value = shareFirebaseRef2;
 
                 $("#shareButton span").addClass("navigation-bar-active-item");
                 $("#shareButton label").addClass("navigation-bar-active-item");
             }
-
-            $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
+            if(!$("#shareBox").is(":animated")){
+                $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
+            }
         });
 
         $('#shareListItem').mouseenter(function shareListItemMouseEnter(){
