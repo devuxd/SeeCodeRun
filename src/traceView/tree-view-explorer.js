@@ -1,8 +1,10 @@
+/* global CollapsibleLists */
 export class TreeViewExplorer {
+  viewType = {HTML: "HTML", JSON: "JSON" }
   constructor(element) {
     if(element) {
       this.element = element;
-      this.type = element.nodeName ? "dom" : "json";
+      this.type = element.nodeName ? this.viewType.HTML : this.viewType.JSON;
     }
   }
   //removes all child nodes that are not also elements or text
@@ -46,7 +48,7 @@ export class TreeViewExplorer {
         html += "<li";
 
         if(i === children.length - 1) {
-          html += " class=lastChild"
+          html += " class=lastChild";
         }
 
         html += ">"
@@ -60,20 +62,13 @@ export class TreeViewExplorer {
           html += "<span class=sign>&lt;</span>"
             + "<span class=elementNode>"
             + children[i].nodeName.toLowerCase()
-            + "</span><span class=sign>" + attr + "&gt;</span>"
-            // + "..."
-            // + "<span class=sign>&lt;/</span><span class=elementNode>"
-            // + children[i].nodeName.toLowerCase()
-            // + "</span><span class=sign>&gt;</span>";
+            + "</span><span class=sign>" + attr + "&gt;</span>";
         }
 
         html += this.generateDOMTree(children[i], false) + "</li>";
       }
       return html + "</ul>";
     }
-    // else if(parent.innerHTML !== undefined){
-    //   return html + "<ul><li class=lastChild>" + "\"" + parent.innerHTML + "\"" + "</li></ul>";
-    // }
     else {
       return "";
     }
@@ -85,15 +80,15 @@ export class TreeViewExplorer {
     var html = "";
     if(typeof object === "object" && keys.length !== 0) {
       if(flag) {
-        html += "<ul class=collapsibleList>"
+        html += "<ul class=collapsibleList>";
         flag = false;
       }
       else {
-        html += "<ul>"
+        html += "<ul>";
       }
       for(var i = 0; i < keys.length; i++) {
         if(i === keys.length - 1) {
-          html += "<li class=lastChild>"
+          html += "<li class=lastChild>";
         }
         else {
           html += "<li>";
@@ -108,7 +103,7 @@ export class TreeViewExplorer {
           key += keys[i];
         }
 
-        key += "</span>"
+        key += "</span>";
 
         if(typeof object[keys[i]] === "object") {
           value = object[keys[i]].constructor.name;
@@ -130,6 +125,20 @@ export class TreeViewExplorer {
     else {
       return "";
     }
+  }
+
+  appendTo$PopoverElement($popover) {
+    let content;
+    if(this.type === this.viewType.HTML) {
+      content = this.dispDOMNode();
+    }
+    else if(this.type === this.viewType.JSON) {
+      content = this.dispObject();
+    }
+
+		// $popover.attr("title", "Exploring "+this.type);
+		$popover.attr("data-content", '<div class="custom-popover-title">Exploring '+this.type+' Element</div>'+content);
+    CollapsibleLists.apply();
   }
 
   appendContent(container) {

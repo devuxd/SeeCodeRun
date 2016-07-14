@@ -4,47 +4,44 @@ import {TreeViewExplorer} from "./tree-view-explorer";
 export class ExpressionDataExplorer{
     editorTooltipSelector = "#editorTooltip";
     editorTooltipId = "editorTooltip";
-    editorTooltipShowDelay = 500;
-    editorTooltipHideDelay = 500;
+    editorTooltipShowDelay = 1000;
+    editorTooltipHideDelay = 2000;
+    currentMatchRange = null;
 
-    constructor(eventAggregator, aceUtils, jsEditor, traceViewModel){
+    constructor(eventAggregator, aceUtils, aureliaEditor, traceViewModel){
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
-        this.jsEditor = jsEditor;
+        this.aureliaEditor = aureliaEditor;
         this.traceViewModel = traceViewModel;
     }
 
     attached(){
         let eventAggregator = this.eventAggregator;
         let aceUtils = this.aceUtils;
-        let editor = this.jsEditor.editor;
+        let editor = this.aureliaEditor.editor;
         this.expressionMarkerManager = aceUtils.makeAceMarkerManager(editor);
         this.expressionMarkerManager.markerRenderer = aceUtils.getAvailableMarkers().expressionMarker;
         let $editorTooltip = $(this.editorTooltipSelector);
 
         if(!$editorTooltip.length){
           $editorTooltip = $(`<div id='${this.editorTooltipId}' />`);
-          $editorTooltip.addClass("seecoderun-tooltip");
+          $editorTooltip.attr({
+            "data-toggle": "popover",
+            "data-placement": "bottom",
+            "data-content": "No value found."
+        });
+		$editorTooltip.popover({
+		    viewport:"#codeContent .ace_scroller",
+		    html: true,
+		    padding: 0,
+		    trigger: 'manual',
+            delay: {
+                show: this.editorTooltipShowDelay,
+                hide: this.editorTooltipHideDelay
+            },
+            template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "editorTooltipContentId"><div class="popover-content"></div></div></div>'
+		});
         }
-
-        // $editorTooltip.attr({
-        //     "data-toggle": "popover",
-        //     "data-placement": "bottom",
-        //     "data-content": "",
-        //     "delay": {
-        //         show: this.editorTooltipShowDelay,
-        //         hide: this.editorTooltipHideDelay
-        //     }
-        // });
-		// $editorTooltip.popover({
-		//     title: "Current Values",
-		//     html: true,
-		//   //  selector: '[rel="popover"]',
-    //         content: function $editorTooltipPopoverContent() {
-    //             // return $('#branchNavigator').html();
-    //         },
-		//     padding: 4
-		// });
 
         $editorTooltip.appendTo('body');
 
@@ -108,36 +105,53 @@ export class ExpressionDataExplorer{
 		    }
 
 			if(match){
-			    let content = match.text +",  values"+ JSON.stringify(match.values);
-			    // div.popover({
-        	// 	    title: "Y: " + position.pageY,
-        	// 	    html: true,
-          //           content: function $editorTooltipPopoverContent() {
-          //               return content;
-          //           },
-        	// 	    padding: 4
-        	// 	});
-			    // div.attr("data-content", content);
-          let editorTooltipElement = document.getElementById(self.editorTooltipId);
-          self.treeViewExplorer = new TreeViewExplorer(match.values);
-          self.treeViewExplorer.appendContent(editorTooltipElement);
-          // div.popover("show");
-          div.show();
-			    aceUtils.updateAceMarkers(expressionMarkerManager, match);
+			    self.treeViewExplorer = new TreeViewExplorer(match.values);
+                self.treeViewExplorer.appendTo$PopoverElement(div);
+                div.popover("show");
+                aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
 			}else{
-			    // div.popover("hide");
-          div.hide();
+			    div.popover("hide");
+			    self.currentMatchRange = null;
 			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
 	        }
+
+	        $("#editorTooltipContentId").mouseenter(
+                function editorTooltipMouseenter(){
+                    clearTimeout(self.onExpressionHoveredTimeout);
+                    clearTimeout(self.editorTooltiptimeout);
+                }
+            ).mouseleave(
+                function editorTooltipMouseleave(){
+                    self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
+                        div.popover("hide");
+                        self.currentMatchRange = null;
+			            aceUtils.updateAceMarkers(expressionMarkerManager, []);
+                    }, self.editorTooltipHideDelay);
+                }
+            );
         };
 
     }
 
     onExpressionHovered(match, pixelPosition){
+        let self = this;
         if(match){
-            this.update$Tooltip(pixelPosition, match);
+            if(match.range){
+                let newMatchRange = this.aceUtils.parseRangeString(match.range);
+                if(match.range && this.currentMatchRange !== newMatchRange){
+                    this.currentMatchRange = newMatchRange;
+                    clearTimeout(this.onExpressionHoveredTimeout);
+                    this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
+                        self.update$Tooltip(pixelPosition, match);
+                    }, this.editorTooltipShowDelay);
+
+                }
+            }
         }else{
-            this.update$Tooltip();
+            clearTimeout(this.onExpressionHoveredTimeout);
+            this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
+                self.update$Tooltip();
+            }, this.editorTooltipHideDelay);
         }
     }
 
