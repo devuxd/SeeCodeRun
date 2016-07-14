@@ -215,9 +215,8 @@ export class JsGutter {
 
         if ($line.length) {
 
-            if(["FunctionDeclaration", "FunctionExpression", "BlockStatement", "Program"].indexOf(entry.type) > 0){
-                $line.text("");
-                //todo: add params to autolog-tracer
+            if(["Literal", "BlockStatement", "Program"].indexOf(entry.type) > -1){
+                // $line.text("");
                 return;
             }
 
@@ -231,7 +230,7 @@ export class JsGutter {
                     $lineEntry.text("[" + content + "]");
                 }else{
                     let lineEntryId = this.jsGutterLineIdPrefix + line + "-"+ entryId;
-                    $line.append("<strong id = '"+lineEntryId+"'></strong>");
+                    $line.prepend("<strong id = '"+lineEntryId+"'></strong>");
                     $lineEntry = $(lineEntrySelector);
                 }
                 $lineEntry.text("[" + content + "]");

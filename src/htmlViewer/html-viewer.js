@@ -18,10 +18,14 @@ export class HtmlViewer {
     }
 
     pushError(errorRef){
-      let error = "";
+      let error = "{";
       if(errorRef){
-        error = errorRef.toString();
+        error += "details: '"+ errorRef.toString() + "'";
+        if(this.aceErrorRange){
+          error += ", range: '" + JSON.stringify(this.aceErrorRange) + "'";
+        }
       }
+      error += "}";
       this.errors = this.errors? this.errors + ", "  + error : error;
     }
 
@@ -38,6 +42,7 @@ export class HtmlViewer {
 
     buildOutput(){
       if(this.js && this.css && this.html){
+        this.eventAggregator.publish("beforeOutputBuild");
         this.addCss();
       }
     }
@@ -93,6 +98,7 @@ export class HtmlViewer {
     }
 
     addJs() {
+      let self = this;
       let ea = this.eventAggregator;
       let traceService = this.traceService;
       let traceDataContainer = traceService.traceModel.traceDataContainer;
@@ -100,35 +106,44 @@ export class HtmlViewer {
       let doc = this.getContentDocument();
       let scriptElement = this.externalResourceLoader.createScriptElement(this.js, doc);
 
-      let result = {error: ""};
+      self.result = {error: ""};
 
       try {
         ea.publish(traceService.executionEvents.running.event);
 
         doc.body.appendChild(scriptElement);
+        let traceDataContainerElement = doc.getElementById(traceDataContainer);
+        self.result = JSON.parse(traceDataContainerElement.textContent);
 
-        result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+        traceDataContainerElement.addEventListener("click", function getTraceDataClick(){
+            self.result = JSON.parse(traceDataContainerElement.textContent);
+            self.result.error = self.popErrors();
+            ea.publish(
+              traceService.executionEvents.finished.event, {
+                data: self.result
+            });
+        });
 
-        result.error = this.popErrors();
+        self.result.error = this.popErrors();
 
         ea.publish(
           traceService.executionEvents.finished.event, {
-            data: result
+            data: self.result
         });
       } catch(e) {
         this.pushError(e);
 
         try {
-          result = JSON.parse(doc.getElementById(traceDataContainer).innerHTML);
+          self.result = JSON.parse(doc.getElementById(traceDataContainer).textContent);
         } catch (jsonError) {
           if(e.toString() !== jsonError.toString()){
             this.pushError(jsonError);
           }
         }
-        result.error = this.popErrors();
+        self.result.error = this.popErrors();
         ea.publish(
           traceService.executionEvents.finished.event, {
-            data: result
+            data: self.result
           });
       }
     }
@@ -168,23 +183,34 @@ export class HtmlViewer {
       let contentWindow = this.getContentWindow();
 
       contentWindow.onerror = function hmtlViewerWindowOnerror(message) {
+        self.aceErrorRange = null;
+        if(self.result && self.result.lastExpressionRange){
+            self.aceErrorRange = self.result.lastExpressionRange;
+        }
         self.pushError(message);
         ea.publish('htmlViewerWindowError', {
           this: this,
-          arguments: arguments
+          arguments: arguments,
+          aceErrorRange: self.aceErrorRange
         });
       };
     }
 
     addConsoleLogging(eventAggregator) {
+      let self = this;
       let ea = eventAggregator;
       let contentWindow = this.getContentWindow();
 
       contentWindow.console.log = function hmtlViewerConsoleLog() {
+        self.aceLogRange = null;
+        if(self.result && self.result.lastExpressionRange){
+            self.aceLogRange = self.result.lastExpressionRange;
+        }
         ea.publish('htmlViewerConsoleLog', {
           contentWindow: contentWindow,
           this: this,
-          arguments: arguments
+          arguments: arguments,
+          aceLogRange: self.aceLogRange
         });
 	    };
     }
