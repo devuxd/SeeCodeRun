@@ -69,7 +69,8 @@ export class ExpressionDataExplorer{
 		    }
 
 			if(match){
-			    self.treeViewExplorer = new TreeViewExplorer(match.values);
+        console.log(match.values[0].value)
+			    self.treeViewExplorer = new TreeViewExplorer(JSON.parse(match.values[0].value));
                 self.treeViewExplorer.appendTo$PopoverElement(div);
                 div.popover("show");
                 aceUtils.updateAceMarkers(expressionMarkerManager, [match]);

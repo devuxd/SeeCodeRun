@@ -1,10 +1,18 @@
 /* global CollapsibleLists */
 export class TreeViewExplorer {
-  viewType = {HTML: "HTML", JSON: "JSON" }
+  viewType = {HTML: "HTML", JSON: "JSON", NUMBER: "NUMBER", STRING: "STRING"}
   constructor(element) {
     if(element) {
       this.element = element;
-      this.type = element.nodeName ? this.viewType.HTML : this.viewType.JSON;
+      if(element instanceof Object) {
+        this.type = element.nodeName ? this.viewType.HTML : this.viewType.JSON;
+      }
+      else if(typeof element === "number"){
+        this.type = this.viewType.NUMBER;
+      }
+      else if(typeof element === "string") {
+        this.type = this.viewType.STRING;
+      }
     }
   }
   //removes all child nodes that are not also elements or text
@@ -136,6 +144,14 @@ export class TreeViewExplorer {
       content = this.dispObject();
     }
 
+    else if(this.type === this.viewType.NUMBER) {
+      content = "<ul class=treeView>" + this.element.constructor.name + ": " + this.element + "</ul>";
+    }
+
+    else if(this.type === this.viewType.STRING) {
+      content = "<ul class=treeView>" + this.element.constructor.name + ": \"" + this.element + "\"</ul>";
+    }
+
 		// $popover.attr("title", "Exploring "+this.type);
 		$popover.attr("data-content", '<div class="custom-popover-title">Exploring '+this.type+' Element</div>'+content);
     CollapsibleLists.apply();
@@ -149,6 +165,15 @@ export class TreeViewExplorer {
     else if(this.type === "json") {
       content = this.dispObject();
     }
+
+    else if(this.type === this.viewType.NUMBER) {
+      content = "<ul class=treeView>" + this.element.constructor.name + ": " + this.element + "</ul>";
+    }
+
+    else if(this.type === this.viewType.STRING) {
+      content = "<ul class=treeView>" + this.element.constructor.name + ": \"" + this.element + "\"</ul>";
+    }
+    
     this.appendHtml(container, content);
     CollapsibleLists.apply();
   }
