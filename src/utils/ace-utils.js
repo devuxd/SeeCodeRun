@@ -17,10 +17,10 @@ export class AceUtils{
 
     removeAllGutterDecorations(editor, className){
         let editorSession = editor.getSession();
-        let lastRow = editorSession.getLength();
+        let lastRow = this.getLayout(editor).lastRow;
         for(let row = 0; row < lastRow; row++){
-            editorSession.addGutterDecoration(row, className);
             editorSession.removeGutterDecoration(row, className);
+            editorSession.addGutterDecoration(row, "");
         }
     }
 

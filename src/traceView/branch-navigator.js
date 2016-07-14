@@ -225,9 +225,7 @@ export class BranchNavigator{
         if(this.jsEditor){
              $(`${this.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
          }
-
-        let previousRows = this.traceViewModel.getTraceGutterDataRows();
-        this.aceUtils.removeGutterDecorations(this.editor, previousRows, this.gutterDecorationClassName);
+        this.aceUtils.removeAllGutterDecorations(this.editor, this.gutterDecorationClassName);
         this.traceViewModel.resetTraceGutterDataRows();
     }
 }
