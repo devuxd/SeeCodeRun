@@ -4,6 +4,8 @@ import {TreeViewExplorer} from "./tree-view-explorer";
 export class ExpressionDataExplorer{
     editorTooltipSelector = "#editorTooltip";
     editorTooltipId = "editorTooltip";
+    editorTooltipContentId = "editorTooltipContentId";
+    viewportSelector = "#codeContent .ace_scroller";
     editorTooltipShowDelay = 1000;
     editorTooltipHideDelay = 2000;
     currentMatchRange = null;
@@ -31,15 +33,10 @@ export class ExpressionDataExplorer{
             "data-content": "No value found."
         });
 		$editorTooltip.popover({
-		    viewport:"#codeContent .ace_scroller",
+		    viewport: this.viewportSelector,
 		    html: true,
-		    padding: 0,
 		    trigger: 'manual',
-            delay: {
-                show: this.editorTooltipShowDelay,
-                hide: this.editorTooltipHideDelay
-            },
-            template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "editorTooltipContentId"><div class="popover-content"></div></div></div>'
+            template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
 		});
         }
 
@@ -47,47 +44,14 @@ export class ExpressionDataExplorer{
 
         this.$editorTooltip = $editorTooltip;
         aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, this);
-        this.attachTooltipUpdateWithDelay();
+        this.attachTooltipUpdate();
     }
 
-    attachTooltipUpdateWithDelay(){
-      let self = this;
+    attachTooltipUpdate(){
+        let self = this;
         let div =   this.$editorTooltip;
         let aceUtils = this.aceUtils;
         let expressionMarkerManager = this.expressionMarkerManager;
-    	let showToolTipDelay = this.showToolTipDelay;
-    	let hideToolTipDelay = this.hideToolTipDelay;
-    	let tooltipSetTimeout = window.setTimeout;
-    	let tooltipClearTimeout = window.clearTimeout;
-    	let tooltipTimeout = null;
-
-    	this.tooltipUpdateWithDelay = function tooltipUpdateWithDelay(position, content){
-    	    let toolTipDelay = showToolTipDelay;
-    	    if(!content){
-    	        toolTipDelay = hideToolTipDelay;
-    	    }
-
-    	    tooltipClearTimeout(tooltipTimeout);
-			tooltipTimeout = tooltipSetTimeout(
-			function delayedToolTip(){
-			    if(!div){
-			        return;
-			    }
-
-			    if(position){
-    			    div.style.left = position.pageX + 'px';
-        			div.style.top = position.pageY + 'px';
-			    }
-
-    			if(content){
-    				div.show();
-    				div.innerHTML = content;
-    			}else{
-            	  div.hide();
-            		div.innerHTML = "";
-    	        }
-			}, toolTipDelay);
-	    };
 
         this.update$Tooltip = function update$Tooltip(position, match){
             if(!div){
@@ -115,7 +79,7 @@ export class ExpressionDataExplorer{
 			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
 	        }
 
-	        $("#editorTooltipContentId").mouseenter(
+	        $("#"+self.editorTooltipContentId).mouseenter(
                 function editorTooltipMouseenter(){
                     clearTimeout(self.onExpressionHoveredTimeout);
                     clearTimeout(self.editorTooltiptimeout);
