@@ -1,10 +1,8 @@
 import {TraceModel} from '../trace-model';
-import {CircularJSONInjector} from './circular-json-injector';
 export class AutoLogTracer{
     constructor(traceDataContainer){
         this.traceDataContainer = traceDataContainer;
         this.traceModel = new TraceModel();
-        this.circularJSONInjector = new CircularJSONInjector();
     }
 
     wrapCodeInTryCatch(code){
@@ -32,12 +30,13 @@ export class AutoLogTracer{
         document.body.appendChild(traceDataContainerElement);
         `;
     }
+
     getTraceDataCodeBoilerPlate(){
         return `
         traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
         `;
     }
-    // var CircularJSON = ${this.circularJSONInjector.inject()};
+
     getAutologCodeBoilerPlate(timeLimit){
         return `
         /*AutoLogTracer*/
