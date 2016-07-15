@@ -1,6 +1,6 @@
 .js-gutter {
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     border: 0px;
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;

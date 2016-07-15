@@ -1,23 +1,23 @@
 <template bindable="tracePlay">
-    <div class="panel panel-default">
-        <div class="panel-heading" data-toggle="collapse" href="#tracePlayerPanelBody">
-            <span class='glyphicon glyphicon-play-circle'></span>Trace Player
-        </div>
-        <div id="tracePlayerPanelBody" class="panel-body">
-            <div class="btn-toolbar" role="toolbar" aria-label="play menu">
+    <div id = "play-toolbar" class="panel panel-debug">
+        <div class="panel-heading w3-row-padding" role="toolbar" aria-label="play menu">
+            <div class="w3-col panel-heading-title" style="width:115px">
+                <span class="glyphicon glyphicon-play-circle"></span>&#160;Trace Player
+            </div>
+            <div class="btn-toolbar w3-col" style="width:170px">
                 <div class="btn-group" role="group" aria-label="play buttons">
-                    <button class="w3-btn btn-default btn-primary" id="prev" title="Previous">
+                    <button class="btn btn-default btn-primary" id="prev" title="Previous">
                         <span class='glyphicon glyphicon-backward'></span>
                     </button>
-                    <button class="w3-btn btn-success" id="play" title="Auto-Play or pause the collected trace">
+                    <button class="btn btn-success" id="play" title="Auto-Play or pause the collected trace">
                         <span class='glyphicon glyphicon-play'></span>
                     </button>
-                    <button class="w3-btn btn-primary" id="next" title="Next">
+                    <button class="btn btn-primary" id="next" title="Next">
                         <span class='glyphicon glyphicon-forward'></span>
                     </button>
                 </div>
                 <div class="btn-group" role="group" aria-label="hide or show info">
-                    <button class="w3-btn btn-warning" id="remove" data-toggle="tooltip" data-placement="top" title="Hide Info">
+                    <button class="btn btn-warning" id="remove" data-toggle="tooltip" data-placement="top" title="Hide Info">
                         <span class='glyphicon glyphicon-eye-open'></span>
                     </button>
                 </div>

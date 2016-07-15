@@ -1,11 +1,11 @@
-/* */  
+/* global ace*/
 "format global";
 ace.define("ace/theme/chrome",["require","exports","module","ace/lib/dom"], function(require, exports, module) {
-
+//.ace-chrome .ace_gutter {background: #ebebeb;}
 exports.isDark = false;
 exports.cssClass = "ace-chrome";
 exports.cssText = ".ace-chrome .ace_gutter {\
-background: #ebebeb;\
+background: #E7EFF5;\
 color: #333;\
 overflow : hidden;\
 }\

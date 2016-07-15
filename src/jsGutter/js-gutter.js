@@ -2,6 +2,9 @@
 import {bindable} from 'aurelia-framework';
 
 export class JsGutter {
+    aceEditorFontSize = null;
+    gutterFontFamily = null;
+    aceEditorToGutterFontSizeScale = 0.85;
     aceJsEditorDiv = "";
     @bindable jsGutterDiv = "jsGutterDiv";
     jsGutterBlurClass = "js-gutter-blur";
@@ -21,26 +24,45 @@ export class JsGutter {
     traceHelper = null;
     scrollTop = 0;
 
-    constructor(eventAggregator, aceJsEditorDiv = "aceJsEditorDiv") {
+    constructor(eventAggregator, aceUtils, aceJsEditorDiv = "aceJsEditorDiv") {
         this.eventAggregator = eventAggregator;
+        this.aceUtils = aceUtils;
         this.aceJsEditorDiv = aceJsEditorDiv;
     }
 
-    update(editorLayout = this.editorLayout, aceJsEditorDiv = this.aceJsEditorDiv){
-        let self = this;
-        let $jsGutterLineClass =$(self.jsGutterLineClassSelector);
-        let $jsGutterLineHighlightClass = $(self.jsGutterLineHighlightClassSelector);
+    adjustFontStyle(aceJsEditorDiv = this.aceJsEditorDiv){
         let $editorDiv =$(`#${aceJsEditorDiv}`);
+        let aceEditorFontSize = $editorDiv.css("font-size");
+        if(this.aceEditorFontSize  !== aceEditorFontSize){
+            this.aceEditorFontSize  = aceEditorFontSize;
+            this.gutterFontSize = aceEditorFontSize;
+            this.gutterFontFamily = $editorDiv.css("font-family");
+            try{
+                let fontNumber = parseFloat(this.gutterFontSize.replace(/px/i, ""));
+                this.gutterFontSize = String(Math.round(fontNumber * this.aceEditorToGutterFontSizeScale * 10) / 10) + "px";
+            }catch(e){
+                //ignore font size adjustment
+            }
+        }
+    }
 
-
-        $jsGutterLineClass.css("font-size", $editorDiv.css("font-size"));
-        $jsGutterLineClass.css("font-family", $editorDiv.css("font-family"));
-
-        $jsGutterLineHighlightClass.css("font-size", $editorDiv.css("font-size"));
-        $jsGutterLineHighlightClass.css("font-family", $editorDiv.css("font-family"));
-
+    update(editorLayout = this.editorLayout){
+        let self = this;
         if(!editorLayout){
             return;
+        }
+
+        this.adjustFontStyle();
+        let $jsGutterLineClass =$(this.jsGutterLineClassSelector);
+        if($jsGutterLineClass.length){
+            let $jsGutterLineHighlightClass = $(this.jsGutterLineHighlightClassSelector);
+
+            $jsGutterLineClass.css("font-size", this.gutterFontSize);
+            $jsGutterLineClass.css("font-family", this.gutterFontFamily);
+
+            $jsGutterLineHighlightClass.css("font-size", this.gutterFontSize);
+            $jsGutterLineHighlightClass.css("font-family", this.gutterFontFamily);
+
         }
 
         let firstLineNumber = editorLayout.firstLineNumber;
@@ -63,8 +85,8 @@ export class JsGutter {
                 }
                 $newLine = $(newLineSelector);
                 $newLine.addClass(self.jsGutterLineClass);
+                let lineNumber = currentLine;
                 $newLine.click( function(event){
-                    let lineNumber = event.target.id.replace(self.jsGutterLineIdPrefix, "");
                     self.eventAggregator.publish("jsGutterLineClick", lineNumber);
                 });
             }
@@ -75,11 +97,16 @@ export class JsGutter {
         if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
             self.isTraceChange = false;
             if(self.traceHelper.isValid()){
-                let values = self.traceHelper.getValues();
-                for (let value of values) {
-                    self.setGutterLineContent(value.range.start.row + 1, value.id + " = " + value.value);
+                let entries = self.traceHelper.getTimeline();
+                let isAppendToContent = true;
+                if(self.traceHelper.isNavigationMode){
+                    entries = self.traceHelper.getNavigationTimeline();
+                    isAppendToContent = false;
                 }
-                self.eventAggregator.publish("jsGutterContentUpdate", {data:values});
+                for (let entry of entries) {
+                    self.setGutterLineContent(entry, isAppendToContent);
+                }
+                self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
             }
             self.isTraceServiceProccesing = false;
         }
@@ -111,7 +138,7 @@ export class JsGutter {
             };
 
             if(this.eventAggregator){
-                this.eventAggregator.publish('jsGutterScroll', scrollData);
+                this.eventAggregator.publish('jsGutterChangeScrollTop', scrollData);
             }
         }
     }
@@ -127,8 +154,9 @@ export class JsGutter {
           }
         );
 
-        ea.subscribe("jsEditorPreChange", layout => {
+        ea.subscribe("jsEditorPreChange", editorLayout => {
             this.isTraceServiceProccesing = true;
+            this.editorLayout = editorLayout;
             // this.clearGutter(); // too distracting
             this.update();
         });
@@ -162,24 +190,51 @@ export class JsGutter {
         });
 
         ea.subscribe("traceNavigationChange", navigationData => {
-                this.branchIndex = navigationData.branchIndex;
                 this.branchRange = navigationData.entry.range;
+                this.branchIndex = navigationData.branchIndex;
+                this.branchMax = navigationData.branchMax;
                 this.branchEntry = navigationData.entry;
-                // if(this.traceHelper){
-                //     if(!this.traceHelper.isNavigationMode){
-                //         this.traceHelper.startNavigation();
-                //     }
-                //     this.traceHelper.navigateToBranch(this.branchIndex, this.branchRange);
-                // }
-                // this.update();
-                console.log(JSON.stringify(navigationData.entry));
+                if(this.traceHelper){
+                    this.clearGutter();
+
+                    this.traceHelper.startNavigation();
+                    this.traceHelper.navigateToBranch(this.branchRange, this.branchIndex, this.branchMax);
+                    this.isTraceChange=true;
+                    this.update();
+                    this.traceHelper.stopNavigation();
+                }
+
         });
     }
 
-    setGutterLineContent(line, contents) {
+    setGutterLineContent(entry, isAppendToContent) {
+        let firstLineNumber = this.editorLayout? this.editorLayout.firstLineNumber: 1;
+        let line = entry.range.start.row + firstLineNumber;
+        let content = entry.id + " = " + entry.value;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
+
         if ($line.length) {
-            $line.append(" [ " + contents + " ] ");
+
+            if(["Literal", "BlockStatement", "Program"].indexOf(entry.type) > -1){
+                // $line.text("");
+                return;
+            }
+
+            if(isAppendToContent){
+                $line.append("[" + content + "] ");
+            }else{
+                let entryId = this.aceUtils.parseRangeString(entry.range);
+                let lineEntrySelector = this.jsGutterLineSelectorPrefix + line + "-"+ entryId;
+                let $lineEntry = $(lineEntrySelector);
+                if($lineEntry.length){
+                    $lineEntry.text("[" + content + "]");
+                }else{
+                    let lineEntryId = this.jsGutterLineIdPrefix + line + "-"+ entryId;
+                    $line.prepend("<strong id = '"+lineEntryId+"'></strong>");
+                    $lineEntry = $(lineEntrySelector);
+                }
+                $lineEntry.text("[" + content + "]");
+            }
         }
     }
 

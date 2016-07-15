@@ -1,5 +1,6 @@
-import {DataTable} from '../visualization/dataTable';
-import {ScatterPlot} from '../visualization/scatterPlot';
+import {DataTable} from '../visualization/data-table';
+import {ScatterPlot} from '../visualization/scatter-plot';
+import {CallGraph} from '../visualization/call-graph';
 
 export class VisualizationFactory {
 
@@ -15,7 +16,12 @@ export class VisualizationFactory {
       },
       {
         value: "ScatterPlot",
-        name: "Scatterplot",
+        name: "Scatter Plot",
+        default: false
+      },
+      {
+        value: "CallGraph",
+        name: "Call Graph",
         default: true
       }
     ];
@@ -27,20 +33,28 @@ export class VisualizationFactory {
         return this.getFormattedDataTable();
       case "ScatterPlot":
         return this.getFormattedScatterPlot();
+      case "CallGraph":
+        return this.getFormattedCallGraph();
       default:
         break;
     }
   }
 
   getFormattedDataTable() {
-    var dataTable = new DataTable();
+    let dataTable = new DataTable();
     dataTable.config.trace = dataTable.config.formatTraceFx();
     return dataTable;
   }
 
   getFormattedScatterPlot() {
-    var scatterPlot = new ScatterPlot();
+    let scatterPlot = new ScatterPlot();
     scatterPlot.config.trace = scatterPlot.config.formatTraceFx();
     return scatterPlot;
+  }
+
+  getFormattedCallGraph() {
+    let callGraph = new CallGraph();
+    callGraph.config.trace = callGraph.config.formatTraceFx();
+    return callGraph;
   }
 }

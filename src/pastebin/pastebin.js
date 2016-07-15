@@ -7,7 +7,7 @@ import {TraceModel} from '../traceService/trace-model';
 import {AceUtils} from '../utils/ace-utils';
 import {FirebaseManager} from "../persistence/firebase-manager";
 
-import {NavigationBar} from '../layout/navigationBar/navigation-bar';
+import {NavigationBar} from '../navigationBar/navigation-bar';
 
 import {HtmlEditor} from '../htmlEditor/html-editor';
 import {CssEditor} from '../cssEditor/css-editor';
@@ -46,7 +46,7 @@ export class Pastebin {
     this.consoleWindow = new ConsoleWindow(eventAggregator);
 
     this.jsEditor = new JsEditor(eventAggregator, firebaseManager, aceUtils);
-    this.jsGutter = new JsGutter(eventAggregator);
+    this.jsGutter = new JsGutter(eventAggregator, this.aceUtils);
     this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
     this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
 
@@ -54,7 +54,7 @@ export class Pastebin {
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
     this.visViewer  =new VisViewer(eventAggregator);
 
-    this.traceViewController = new TraceViewController(eventAggregator, aceUtils);
+    this.traceViewController = new TraceViewController(eventAggregator, aceUtils, this.jsEditor);
     this.expressionSelection = new ExpressionSelection(eventAggregator);
     this.tracePlay = new TracePlay(eventAggregator, traceModel, aceUtils);
 
@@ -128,7 +128,8 @@ export class Pastebin {
 
     $jsEditorCode.resizable(this.$jsEditorCodeOptions);
 
-    $('.panel-heading').click();
+    let $panelHeadingTitles = $('.panel-heading-title');
+    $panelHeadingTitles.click();
     self.update();
   }
 

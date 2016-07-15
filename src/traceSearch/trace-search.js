@@ -1,5 +1,7 @@
-
+/* global $*/
 export class TraceSearch {
+    traceSearchPanelBodySelector = "#traceSearchPanelBody";
+    traceSearchPanelHeadingSelector = "#traceSearchPanelHeading";
     constructor(eventAggregator, traceModel ,aceUtils) {
         this.eventAggregator = eventAggregator;
         this.traceModel = traceModel;
@@ -88,6 +90,9 @@ export class TraceSearch {
     }
 
     updateTable(query) {
+        if(!$(this.traceSearchPanelBodySelector).is(":visible") && this.searchedValue){
+              $(this.traceSearchPanelHeadingSelector).click();
+        }
         let selectedFilter = this.selectedFilter;
         let dataList = [];
         this.rows = query.where( function whereFilter(row) {
@@ -138,9 +143,8 @@ export class TraceSearch {
     }
     // jumps to current line in the editor
     doOnClickJumpToCode(row) {
-        let editor = ace.edit('aceJsEditorDiv');
-        editor.gotoLine(this.rows[row.$index].range.start.row+1);
-
+        let lineData = {lineNumber: this.rows[row.$index].range.start.row+1};
+        this.eventAggregator.publish("traceSearchGotoLine", lineData);
     }
     // highlights current line in the ditor
     doOnClickHighlight(row){

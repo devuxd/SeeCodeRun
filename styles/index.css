@@ -1,91 +1,53 @@
-body {
-   padding: 0px;
-   min-height: 100%;
-   margin: 0;
- }
+    body {
+       padding: 0px;
+       min-height: 100%;
+       margin: 0;
+    }
 
- @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 1) {
-   body {
-     padding: 0px;
-     min-height: 100%;
-     margin: 0;
-   }
-   div.fullWidth {
-     width: 100%;
-   }
- }
- /* ----------- Retina Screens ----------- */
+    @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 1) {
+        body {
+         padding: 0px;
+         min-height: 100%;
+         margin: 0;
+       }
+       div.fullWidth {
+         width: 100%;
+       }
+    }
+     /* ----------- Retina Screens ----------- */
 
- @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 2) and (min-resolution: 192dpi) {
-   body {
-     padding: 0px;
-     min-height: 100%;
-     margin: 0;
-   }
-   div.fullWidth {
-     width: 100%;
-   }
- }
+    @media screen and (min-device-width: 1200px) and (max-device-width: 1600px) and (-webkit-min-device-pixel-ratio: 2) and (min-resolution: 192dpi) {
+       body {
+         padding: 0px;
+         min-height: 100%;
+         margin: 0;
+       }
+       div.fullWidth {
+         width: 100%;
+       }
+    }
 
- .splash {
-   text-align: center;
-   margin: 10% 0 0 0;
-   box-sizing: border-box;
- }
+    .seecoderun-text-blue{
+        color: #0066ff;
+    }
 
- .splash .logo i{
-    padding-left: -30px;
-    padding-right: -30px;
-    margin-left: -30px;
-    margin-right: -30px;
-    display: inline;
-}
+    .seecoderun-blue{
+        background-color: #0066ff;
+    }
 
-.seecoderun-text-blue{
-    color: #0066ff;
-}
-
-.seecoderun-blue{
-    background-color: #0066ff;
-}
-
- .material-icons.md-giant {
-     font-size: 200px;
- }
-
- .material-icons.md-tiny {
-     font-size: 10px;
- }
-
- .splash .title {
-   font-size: 64px;
-   /*text-shadow: rgba(0, 0, 0, 0.5) 0 0 15px;*/
-   text-transform: uppercase;
- }
- .splash .spinner-box {
-   height: 100px;
- }
- .splash .fa-spinner {
-   text-align: center;
-   display: inline-block;
-   font-size: 100px;
- }
-
- .pictureDetail {
-   max-width: 425px;
- }
- /* animate page transitions */
-
+/* animate page transitions */
  section.au-enter-active {
-   -webkit-animation: fadeInRight 1s;
-   animation: fadeInRight 1s;
+   -webkit-animation: fadeInRight 0.5s;
+   -moz-animation: fadeInRight 0.5s;
+   animation: fadeInRight 0.5s;
  }
 
- /*div.au-stagger {*/
-   /* 50ms will be applied between each successive enter operation */
- /*  -webkit-animation-delay: 50ms;*/
- /*  animation-delay: 50ms;*/
- /*}*/
+/*50ms will be applied between each successive enter operation */
+ div.au-stagger {
+   -webkit-animation-delay: 50ms;
+   -moz-animation-delay: 50ms;
+   animation-delay: 50ms;
+ }
 
  .card-container.au-enter {
    opacity: 0;
@@ -93,6 +55,7 @@ body {
 
  .card-container.au-enter-active {
    -webkit-animation: fadeIn 2s;
+   -moz-animation: fadeIn 2s;
    animation: fadeIn 2s;
  }
 
@@ -119,8 +82,8 @@ body {
    font-size: 18px;
  }
 
+  /* This stretches the canvas across the entire hero unit */
  .card .header-bg {
-   /* This stretches the canvas across the entire hero unit */
    position: absolute;
    top: 0;
    left: 0;
@@ -144,6 +107,7 @@ body {
    border-radius: 50%;
    border: 2px #FFF solid;
  }
+
  /* animation definitions */
 
  @-webkit-keyframes fadeInRight {
@@ -219,3 +183,23 @@ body {
      opacity: 1;
    }
  }
+
+.seecoderun-font-title {
+    font-size: 200px;
+    float: left;
+    font-family: "Arial";
+    /*font-style: italic;*/
+    font-weight: 800;
+    font-variant: small-caps;
+    height: 220px;
+    line-height: 220px;
+}
+
+label {
+    font-weight: normal;
+    color: #888888;
+}
+
+label:hover {
+    color: #004AB8;
+}

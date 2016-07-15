@@ -15,9 +15,22 @@ export class Chat {
     this.firebaseManager = firebaseManager;
   }
   
+  updateMessagesTimes(){
+    this.$chatMessages;
+    // if()
+  }
+  
   attached() {
-    let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
     let self = this;
+    // this.updateMessagesTimes();
+    // window.setTimeout(function updateMessagesTimes{alert("hi")} , 3000);
+    window.setTimeout(
+      function updateMessagesTimesTimeout() 
+      {
+        self.updateMessagesTimes();
+      }, 3000);
+    let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
+
     
     let $chat = $('#chatDiv');
     $chat.hide();
@@ -25,6 +38,7 @@ export class Chat {
     let $chatToolbar= $('#chatToolbar');
     let $chatUserNameInput = $('#chatUserNameInput');
     let $chatMessages = $('#chatMessages');
+    // this.$chatMessages = $chatMessages;
     let $chatMessageInput = $('#chatMessageInput');
     
     chatFirebaseRef.on("value", function(snapshot) {
@@ -185,13 +199,25 @@ export class Chat {
   getFormattedTime(timestamp){
     let date = new Date(timestamp);
     let currentTime = new Date();
-    let elapsedTime = new Date(currentTime - date);
-    let elapsedTimeSeconds = elapsedTime.getSeconds(); // the same for minutes, hours, days, months, and even years.
+    let formattedTime = "";
+    let elapsedTimeMs = currentTime.getTime() - date.getTime();
+    let elapsedTimeSeconds = elapsedTimeMs/1000;
+    let elapsedTimeMinutes = elapsedTimeMs/(60*1000);
+    // let elapsedTimeHours = elapsedTime.getHours();
+    if ( elapsedTimeSeconds <=60)
+    {
+      formattedTime = `a minute ago`;
+    }
+    else if(elapsedTimeMinutes <=60)
+    {
+      formattedTime = `an hour ago`;
+    }
+    // the same for minutes, hours, days, months, and even years.
     // let hours = date.getHours();
     // let minutes = "0" + date.getMinutes();
     // let seconds = "0" + date.getSeconds();
     // let formattedTime = `${hours} : ${minutes.substr(-2)} : ${seconds.substr(-2)} [ elapsed: ${elapsedTimeInSeconds} seconds]` ;
-    let formattedTime = `${elapsedTimeSeconds} seconds ago` ;
+    //let formattedTime = `${elapsedTimeSeconds} seconds ago` ;
     //todo: format time as C9 does
     return formattedTime;
   }
