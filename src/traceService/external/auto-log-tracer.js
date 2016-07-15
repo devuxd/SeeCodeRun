@@ -1,8 +1,10 @@
 import {TraceModel} from '../trace-model';
+import {CircularJSONInjector} from './circular-json-injector';
 export class AutoLogTracer{
     constructor(traceDataContainer){
         this.traceDataContainer = traceDataContainer;
         this.traceModel = new TraceModel();
+        this.circularJSONInjector = new CircularJSONInjector();
     }
 
     wrapCodeInTryCatch(code){
@@ -35,8 +37,10 @@ export class AutoLogTracer{
         traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
         `;
     }
+    // var CircularJSON = ${this.circularJSONInjector.inject()};
     getAutologCodeBoilerPlate(timeLimit){
         return `
+        /*AutoLogTracer*/
         window.START_TIME = +new Date();
         window.TIME_LIMIT = ${timeLimit};
 
@@ -97,16 +101,22 @@ export class AutoLogTracer{
                     }
 
                 }
+                var infoValueString = null;
+                try{
+                    infoValueString = JSON.stringify(info.value);
+                }catch(e){
+                    infoValueString = info.value? info.value.toString(): "[Stringify-Circular-Error]";
+                }
 
                 if(traceTypes.Expression.indexOf(info.type) > -1){
                     if(info.id){
-                        this.values.push({id: info.id , value: JSON.stringify(info.value), range: info.range});
+                        this.values.push({id: info.id , value: infoValueString, range: info.range});
                     }else{
-                        this.values.push({id: info.text , value: JSON.stringify(info.value), range: info.range});
+                        this.values.push({id: info.text , value: infoValueString, range: info.range});
                     }
                 }
 
-                this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});
+                this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text});
 
 
                 var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;
@@ -114,7 +124,7 @@ export class AutoLogTracer{
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].hits[stackTop] = this.data[key].hits[stackTop] + 1;
-                    this.data[key].values.push({ stackIndex : stackTop + ":" + this.data[key].hits[stackTop]  , value :JSON.stringify(info.value)});
+                    this.data[key].values.push({ stackIndex : stackTop + ":" + this.data[key].hits[stackTop]  , infoValueString});
                 } else {
 
                     if(info.type === Syntax.VariableDeclarator){
@@ -130,7 +140,7 @@ export class AutoLogTracer{
                         type : info.type,
                         id : info.id,
                         text : info.text,
-                        values: [{stackIndex: stackTop + ":1", value :JSON.stringify(info.value)}],
+                        values: [{stackIndex: stackTop + ":1", value : infoValueString}],
                         range: info.range,
                         hits : [],
                         extra : info.extra
@@ -143,6 +153,18 @@ export class AutoLogTracer{
                 }
 
                 return info.value;
+            },
+            stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
+                try{
+                    var val = JSON.stringify(value);
+                    return value;
+                }catch(e){
+                        if(value){
+                            return value.toString();
+                        }
+                        // return "[Circular]";
+                }
+                return null;
             },
             getTraceData: function getTraceData() {
                 return {
