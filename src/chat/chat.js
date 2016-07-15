@@ -5,6 +5,8 @@ import { draggable, resizable } from 'jquery-ui';
 
 @customElement('chat')
 export class Chat {
+  seecoderunChatTimestampSelector = ".seecoderun-chat-timestamp";
+  updateMessagesIntervalTime =  30000;
   currentUsername = "";
   currentUsercolor = "";
   isFirstToggle = true;
@@ -16,21 +18,41 @@ export class Chat {
   }
   
   updateMessagesTimes(){
-    this.$chatMessages;
-    // if()
+    let self = this;
+    $(self.seecoderunChatTimestampSelector).each( function updateMessageTimeText(){
+        let timestamp = $(this).data("timestamp");
+        if(timestamp){
+          $(this).text(self.getFormattedTime(timestamp));
+        }
+      });
   }
   
+  updateMessageUsername(username){
+    $(".seecoderun-chat-username").each( function() {
+          let messageUsername = $(this).data("username");
+          if(username === messageUsername){
+            $(this).text("You");
+          }else if(messageUsername && messageUsername !== $(this).text()){
+            $(this).text(messageUsername);
+          }
+    });
+  }
+  
+  updateMessagesColors(){
+      $(".seecoderun-chat ul li").each( function() {
+          let messageColor = $(this).data("color");
+          if(!messageColor){
+            return;
+          }
+          messageColor = `#${messageColor}`;
+          if($(this).css("border-color") === messageColor){
+            $(this).css("border-color", messageColor);
+          }
+      });
+  }
   attached() {
     let self = this;
-    // this.updateMessagesTimes();
-    // window.setTimeout(function updateMessagesTimes{alert("hi")} , 3000);
-    window.setTimeout(
-      function updateMessagesTimesTimeout() 
-      {
-        self.updateMessagesTimes();
-      }, 3000);
     let chatFirebaseRef = this.firebaseManager.makeChatFirebase();
-
     
     let $chat = $('#chatDiv');
     $chat.hide();
@@ -38,7 +60,6 @@ export class Chat {
     let $chatToolbar= $('#chatToolbar');
     let $chatUserNameInput = $('#chatUserNameInput');
     let $chatMessages = $('#chatMessages');
-    // this.$chatMessages = $chatMessages;
     let $chatMessageInput = $('#chatMessageInput');
     
     chatFirebaseRef.on("value", function(snapshot) {
@@ -110,13 +131,7 @@ export class Chat {
         });
         $chatMessageInput.val('');
         $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
-        
-        // todo: if user changes names or a match happens while it type, it corrupts naming. needs shadow ids
-        // $(`#${username} .seecoderun-chat-username`).each( function() {
-        //   if($(this).html() === username){
-        //     $(this).html('You');
-        //   }
-        // });
+        self.updateMessageUsername(username);
       }
     });
     
@@ -137,14 +152,14 @@ export class Chat {
           self.updateUserToColorMapping(color, username);
         }
   
-        let $messageElement = $(`<li id =${username}>`);
+        let $messageElement = $(`<li data-color ='${color}'>`);
         $messageElement.css("border-color", `#${color}`);
-        let $nameElement = $(`<strong class='seecoderun-chat-username'></strong>`);
+        let $nameElement = $(`<strong class='seecoderun-chat-username' data-username ='${username}'></strong>`);
         $nameElement.text(username);
-        let $timestampElement = $(`<span class='seecoderun-chat-timestamp'></span>`);
+        let $timestampElement = $(`<span class='seecoderun-chat-timestamp'data-timestamp ='${timestamp}'></span>`);
         $timestampElement.text(formattedTime);
         
-        $messageElement.text(message).prepend('<br />').prepend($timestampElement).prepend($nameElement);
+        $messageElement.text(message).prepend('<br/>').prepend($timestampElement).prepend($nameElement);
   
         $chatMessages.append($messageElement);
         
@@ -163,9 +178,17 @@ export class Chat {
         if($chat.is(":visible")){
             $("#chatButton span").removeClass("navigation-bar-active-item");
             $("#chatButton label").removeClass("navigation-bar-active-item");
+            clearInterval(self.updateMessagesInterval);
         }else{
             $("#chatButton span").addClass("navigation-bar-active-item");
             $("#chatButton label").addClass("navigation-bar-active-item");
+            self.updateMessagesTimes();
+            self.updateMessagesInterval = window.setInterval(
+              function updateMessagesInterval() 
+              {
+                self.updateMessagesTimes();
+              },
+            self.updateMessagesIntervalTime);
         }
       
       $chat.toggle();
@@ -203,7 +226,7 @@ export class Chat {
     let elapsedTimeMs = currentTime.getTime() - date.getTime();
     let elapsedTimeSeconds = elapsedTimeMs/1000;
     let elapsedTimeMinutes = elapsedTimeMs/(60*1000);
-    // let elapsedTimeHours = elapsedTime.getHours();
+    //let elapsedTimeHours = elapsedTime.getHours();
     if ( elapsedTimeSeconds <=60)
     {
       formattedTime = `a minute ago`;
