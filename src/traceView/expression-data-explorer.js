@@ -69,10 +69,10 @@ export class ExpressionDataExplorer{
 		    }
 
 			if(match){
-			    self.treeViewExplorer = new TreeViewExplorer(match.values);
-                self.treeViewExplorer.appendTo$PopoverElement(div);
-                div.popover("show");
-                aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
+		    self.treeViewExplorer = new TreeViewExplorer(match.values[0].value !== undefined ? JSON.parse(match.values[0].value) : undefined);
+              self.treeViewExplorer.appendTo$PopoverElement(div);
+              div.popover("show");
+              aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
 			}else{
 			    div.popover("hide");
 			    self.currentMatchRange = null;
