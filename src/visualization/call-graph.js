@@ -1,5 +1,5 @@
-import * as d3 from 'd3';
-import {event} from 'd3'
+/*global d3*/
+// import * as d3 from 'd3';
 import {Vertex} from './vertex.js' ;
 
 export function getD3Event() {
@@ -11,12 +11,16 @@ export class CallGraph {
     constructor() {
         this.config = {
             type: 'CallGraph',
+            styleClass: 'call-graph',
             title: 'Call Graph',
             trace: null,
             formatTraceFx: this.formatTraceFx,
             renderFx: this.renderFx,
             errorMessage: null
         };
+    }
+    zoom(){
+        console.log("Sup zoom");
     }
 
     formatTraceFx(trace) //returns the root Vertex
@@ -97,19 +101,19 @@ export class CallGraph {
         let rectWidth = 100,
             rectHeight = 40;
 
-        let tree = d3.layout.tree()
+        let tree = d3.tree()
             .nodeSize([160, 200]);
 
-        let diagonal = d3.svg.diagonal()
-            .projection(function(d) { return [d.x, d.y+rectHeight/2]; });
+        let diagonal = d3.line()
+            .x(function(d) { return d.x; })
+            .y(function(d) { return d.y+rectHeight/2; })
+            .curve(d3.curveLinear);
 
         let svg = d3.select(divElement).append("svg")
             .attr("width", width)
             .attr("height", height)
             .attr("position","relative")
-            .attr("id","dfsfsd")
-            .attr("onclick","console.log(d3.event)")
-            .call(d3.behavior.zoom()
+            .call(d3.zoom()
           .on("zoom", function () {
             console.log(getD3Event());
             svg.attr("transform", function() {
