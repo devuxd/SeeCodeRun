@@ -10,6 +10,10 @@ export class CallGraph {
             if(!trace){
                 return root;
             }
+            if(!trace.timeline){
+                return root;
+            }
+            root.range = trace.timeline[0];
             let validEntryData = null;
             for( let index = 1 ; index < trace.timeline.length ; index++ ) {
                 let entry = trace.timeline[ index ] ;
@@ -73,6 +77,10 @@ export class CallGraph {
             return;
         }
 
+        // if(!(validEntryData && validEntryData.range)){
+        //     return;
+        // }
+
         let newChild = { type: entry.type, name: "entryName" , range: entry.range, children : null} ;
 
         let nextNode = currentNode; // root is default
@@ -93,6 +101,7 @@ export class CallGraph {
             newChild.type = validEntryData.type;
             newChild.name = validEntryData.name;
             newChild.range = validEntryData.range;
+            // validEntryData.range = null;
         }
 
         if(currentNode.children){
@@ -165,7 +174,7 @@ export class CallGraph {
           .enter().append("g")
             .attr("class", "node")
             .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+            .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
             .style("font","10px sans-serif");
 
         node.append("rect")
