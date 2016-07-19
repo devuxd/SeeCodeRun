@@ -23,5 +23,5 @@
       overflow: scroll;
  }
  .call-graph{
-      overflow: scroll;
+      overflow: visible;
  }

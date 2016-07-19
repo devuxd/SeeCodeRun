@@ -1,11 +1,5 @@
-// import {inject} from 'aurelia-framework';
-// import * as d3 from 'd3';
 
 export class Visualization {
-  // static inject() {
-  //   return [d3];
-  // }
-
   constructor(index, eventAggregator, config) {
     this.id = "seecoderun-visualization-"+ index;
     this.buttonId = "seecoderun-visualization-"+ index+"-button";
