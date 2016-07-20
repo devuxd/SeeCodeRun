@@ -108,6 +108,12 @@ export class TraceModel{
             WithStatement: "WithStatement"
         };
 
+        this.traceSyntax = {
+            PreCallExpression: "PreCallExpression",
+            FunctionArguments: "FunctionArguments",
+            FunctionParameters: "FunctionParameters"
+        };
+
         this.traceTypes = {
             Stack: [
                 Syntax.FunctionDeclaration,

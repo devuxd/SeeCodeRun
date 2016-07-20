@@ -41,15 +41,16 @@ export class AutoLogTracer{
         window.TIME_LIMIT = ${timeLimit};
 
         var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
+        var TraceSyntax =  ${JSON.stringify(this.traceModel.traceSyntax)};
         var traceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
             updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             preautolog: function preAutolog(range, type, id){
                 this.currentExpressionRange = range;
-                if(type === Syntax.CallExpression){
-                    this.timeline.push({ pre: true, id: id , value: null, range: range, type: type, text: ""});
-                }
+                // if(type === Syntax.CallExpression){
+                //     this.timeline.push({ id: id , value: null, range: range, type: TraceSyntax.PreCallExpression, text: ""});
+                // }
                 return window.TRACE;
             },
             autoLog: function autoLog(info) {

@@ -40,13 +40,13 @@ export class CallGraph {
 
     programCalls = [
         "CallProgram",
-        "CallExpression"
+        "PreCallExpression"
     ];
 
     programExecutors = [
         "Program",
         "FunctionDeclaration",
-        "FunctionExpression",
+        // "FunctionExpression",
         "FunctionData"
     ];
     constructor() {
@@ -90,7 +90,7 @@ export class CallGraph {
     }
 
     decorateTree(root, validEntryData){
-
+        //pending decorations
     }
 
     isRangeInRange(isRange, inRange){
@@ -152,14 +152,13 @@ export class CallGraph {
                 return root;
             }
             root.range = trace.timeline[0];
-            let traceDecorationData = null;
+            let traceDecorationData = self.collectTraceDecorationData(traceDecorationData, trace.timeline[0]);
             for( let index = 1 ; index < trace.timeline.length ; index++ ) {
                 let entry = trace.timeline[ index ] ;
                 traceDecorationData = self.collectTraceDecorationData(traceDecorationData, entry);
-                self.addEntryToTree(root, entry);
+                self.addEntryToTree(root, entry, traceDecorationData[traceDecorationData.length-1]);
             }
             self.decorateTree(root, traceDecorationData);
-            console.log(trace.timeline);
             return root;
         };
 
