@@ -205,9 +205,12 @@ export class CallGraph {
             tree(root);
             svg.selectAll(".link")
                 .data(links)
-              .enter().append("path")
+              .enter().append("line")
                 .attr("class", "link")
-                .attr("d", diagonal)
+                .attr("x1", function(d) { return d.parent.x; })
+                .attr("y1", function(d) { return d.parent.y + rectHeight; })
+                .attr("x2", function(d) { return d.x; })
+                .attr("y2", function(d) { return d.y; })
                 .style("fill","none")
                 .style("stroke","#ccc")
                 .style("stroke-width","1.5px");
@@ -229,7 +232,6 @@ export class CallGraph {
                 .style("stroke-width","1.5px");
 
             node.append("text")
-                .attr("dx", function(d) { return d.children ? -8 : 8; })
                 .attr("dy", 22.5)
                 .attr("text-anchor", "middle")
                 .text(function(d) { return d.data.name; });
