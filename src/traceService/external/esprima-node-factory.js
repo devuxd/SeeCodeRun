@@ -1,26 +1,40 @@
 export class EsprimaNodeFactory{
     constructor(){
-        
+
     }
 
     getDefaultAutoLogNode(){
         return {
             "type": "CallExpression",
             "callee": {
-                "type": "MemberExpression",
-                "computed": false,
-                "object": {
                     "type": "MemberExpression",
                     "computed": false,
                     "object": {
-                        "type": "Identifier",
-                        "name": "window"
+                        "type": "CallExpression",
+                        "callee": {
+                            "type": "MemberExpression",
+                            "computed": false,
+                            "object": {
+                                "type": "MemberExpression",
+                                "computed": false,
+                                "object": {
+                                    "type": "Identifier",
+                                    "name": "window"
+                                },
+                                "property": {
+                                    "type": "Identifier",
+                                    "name": "TRACE"
+                                }
+                            },
+                            "property": {
+                                "type": "Identifier",
+                                "name": "preautolog"
+                            }
+                        },
+                        "arguments": [
+
+                        ]
                     },
-                    "property": {
-                        "type": "Identifier",
-                        "name": "TRACE"
-                    }
-                },
                 "property": {
                     "type": "Identifier",
                     "name": "autoLog"
@@ -265,26 +279,26 @@ export class EsprimaNodeFactory{
             ]
         };
     }
-    
+
 /**
 * @desc validates if location and range from esprima nodes have values
 * post:  if location and range are undefined, returns undefined  otherwise
-*        returns an AST nodes (Esprima format) in properties location and range, any undefined properties in inputs loc and range value are zeros 
+*        returns an AST nodes (Esprima format) in properties location and range, any undefined properties in inputs loc and range value are zeros
 **/
     getLocationDataNode(loc, range){
            let aceRange, indexRange;
-    
+
            if(loc && range){
                 aceRange = {
                     'start'     : {'row' : ((loc.start && loc.start.line>0)? loc.start.line-1: 0), 'column' : (loc.start? loc.start.column: 0) } ,
                     'end'       : {'row' : ((loc.end && loc.end.line>0)? loc.end.line-1: 0), 'column' : (loc.end? loc.end.column: 0) }
                 };
-                
+
                 indexRange = [
                     (range.length>0? range[0]: 0),
-                    (range.length>1? range[1]: 0) 
+                    (range.length>1? range[1]: 0)
                 ];
-                
+
                let data = {
                   'location' : {
                                             "type": "ObjectExpression",
@@ -413,7 +427,7 @@ export class EsprimaNodeFactory{
            } else {
                return undefined;
            }
-           
+
     }
-    
+
 }

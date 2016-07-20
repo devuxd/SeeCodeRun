@@ -45,6 +45,13 @@ export class AutoLogTracer{
         window.ISCANCELLED = false;
         window.TRACE = {
             updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            preautolog: function preAutolog(range, type, id){
+                this.currentExpressionRange = range;
+                if(type === Syntax.CallExpression){
+                    this.timeline.push({ pre: true, id: id , value: null, range: range, type: type, text: ""});
+                }
+                return window.TRACE;
+            },
             autoLog: function autoLog(info) {
                 this.currentExpressionRange = info.range;
                 if(this.hits.length < 1){

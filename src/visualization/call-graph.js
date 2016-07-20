@@ -37,11 +37,17 @@ export class CallGraph {
         "TryStatement",
         "CatchClause"
     ];
+
     programCalls = [
+        "CallProgram",
+        "CallExpression"
+    ];
+
+    programExecutors = [
         "Program",
         "FunctionDeclaration",
         "FunctionExpression",
-        "CallExpression"
+        "FunctionData"
     ];
     constructor() {
         this.prepareFx();
@@ -56,24 +62,35 @@ export class CallGraph {
         };
     }
 
-    getValidEntryData(entry){
+    collectTraceDecorationData(traceDecorationData, entry){
+        if(!traceDecorationData){
+           traceDecorationData = [];
+        }
+
         if(!(entry && entry.type)){
-            return null;
+            return traceDecorationData;
         }
 
         if(this.programCalls.indexOf(entry.type) > -1){
-            return {type: entry.type, name: entry.id, range: entry.range};
+            traceDecorationData.push({type: entry.type, name: entry.id, range: entry.range, isReady: false});
+            return traceDecorationData;
         }
 
         if(this.controlFlowBlocks.indexOf(entry.type) > -1){
-            return {type: entry.type, name: entry.type.replace("Statement", "").replace("Clause", ""), range: entry.range};
+            traceDecorationData.push( {type: entry.type, name: entry.type.replace("Statement", "").replace("Clause", ""), range: entry.range});
+             return traceDecorationData;
         }
 
         if(entry.type === "SwitchCase"){
-            return {type: entry.type, name: "Switch", range: entry.range};
+            traceDecorationData.push( {type: entry.type, name: "Switch", range: entry.range});
+            return traceDecorationData;
         }
 
-        return null;
+        return traceDecorationData;
+    }
+
+    decorateTree(root, validEntryData){
+
     }
 
     isRangeInRange(isRange, inRange){
@@ -135,13 +152,14 @@ export class CallGraph {
                 return root;
             }
             root.range = trace.timeline[0];
-            let validEntryData = null;
+            let traceDecorationData = null;
             for( let index = 1 ; index < trace.timeline.length ; index++ ) {
                 let entry = trace.timeline[ index ] ;
-                let colletedEntryData = self.getValidEntryData(entry);
-                validEntryData = colletedEntryData? colletedEntryData: validEntryData;
-                self.addEntryToTree(root, entry, validEntryData);
+                traceDecorationData = self.collectTraceDecorationData(traceDecorationData, entry);
+                self.addEntryToTree(root, entry);
             }
+            self.decorateTree(root, traceDecorationData);
+            console.log(trace.timeline);
             return root;
         };
 

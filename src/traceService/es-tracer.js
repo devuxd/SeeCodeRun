@@ -51,6 +51,7 @@ export class EsTracer {
             payload.data = instrumentedCode;
 
         } catch (e) {
+            console.log(e);
             payload.status = this.traceModel.traceEvents.failed.event;
             payload.description = `${this.traceModel.traceEvents.failed.description}. Error: ${e.toString()}`;
 
