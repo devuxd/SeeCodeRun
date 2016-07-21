@@ -111,7 +111,8 @@ export class HtmlViewer {
       try {
         ea.publish(traceService.executionEvents.running.event);
 
-        doc.body.appendChild(scriptElement);
+        doc.head.appendChild(scriptElement);
+        // doc.body.textContent =this.js;
         let traceDataContainerElement = doc.getElementById(traceDataContainer);
         self.result = JSON.parse(traceDataContainerElement.textContent);
 

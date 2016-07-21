@@ -92,8 +92,12 @@ export class EsInstrumenter {
     }
 
     setNodeTextValue(ref){
+        let traceParametersText = 2;
         let traceParametersId = 1;
         let traceParametersType = 0;
+        // if(ref.propertyIndex === traceParametersText){
+        //     return;
+        // }
         ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = {
                         "type": "Literal",
                         "value": ref.value,
