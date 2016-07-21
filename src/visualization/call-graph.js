@@ -1,5 +1,5 @@
 /*global d3*/
-
+import {Vertex} from "./vertex.js"
 export class CallGraph {
     currentDirection = "down";// or "right"
     directionManager = {
@@ -127,22 +127,107 @@ export class CallGraph {
     prepareFx(){
         let self = this;
         this.formatTraceFx =  function formatTraceFxAsD3RootNode(trace = this.trace){
-            let root = {type: "Program", name: "Script", range: {start:{row: 0, column:0}, end:{row: 0, column:0}}, children : null} ;
-            if(!trace){
-                return root;
+          if(!trace)
+            return;
+          console.log( "Test" ) ;
+          console.log( trace ) ;
+          //
+          let root = new Vertex( trace.timeline[0].type , "Program()" , trace.timeline[0].range.start.row + 1 , trace.timeline[0].range.end.row + 1 , trace.timeline[0].text.replace( /"/g , "" ) , null ) ;
+          //the text starts at line 0 by default, plus one to match natural line numbers
+          let funcs = [] ;
+          let wasBlock = false ;
+          let lastBlock = "" ;
+          let lastFunc = null ;
+          let lastFuncAddress = null ;
+          //
+          for( let index = 1 ; index < trace.timeline.length ; index++ ) //finds all functions
+          {
+            let tempVals = trace.timeline[index] ;
+            if( tempVals.text!= null )
+            tempVals.text = tempVals.text.replace( /"/g , "" ) ; //scrubs for "
+            //
+            if( tempVals.type === "BlockStatement" )
+            {
+              wasBlock = true ;
+              lastBlock = tempVals.text ;
             }
-            if(!trace.timeline){
-                return root;
+            else if( tempVals.type === "CallExpression" )
+            {
+              if( lastFuncAddress === null ) //sanity check
+              console.log( "lastFunc was null\n" ) ;
+              //
+              let vertex = new Vertex( "CallExpression" , tempVals.id , tempVals.range.start.row , tempVals.range.end.row , tempVals.text, null ) ; //holds raw text rn, change to vals
+              console.log("adding children: ") ;
+              console.log(vertex.getAddress() );
+              console.log(lastFuncAddress ) ;
+              console.log( "children added" ) ;
+              vertex.addParent( lastFuncAddress ) ;
+              console.log( lastFunc + "\n" ) ;
+              lastFunc.addChild( vertex.getAddress() ) ;
+              //wasBlock = false ;
             }
-            root.range = trace.timeline[0];
-            let validEntryData = null;
-            for( let index = 1 ; index < trace.timeline.length ; index++ ) {
-                let entry = trace.timeline[ index ] ;
-                let colletedEntryData = self.getValidEntryData(entry);
-                validEntryData = colletedEntryData? colletedEntryData: validEntryData;
-                self.addEntryToTree(root, entry, validEntryData);
+            else
+            {
+              if( tempVals.type === "FunctionData" && wasBlock ) //FunctionData always follow BlockStatements
+              {
+                let isRepeat = false ;
+                for( let i = 0 ; i < funcs.length ; i++ )
+                if( tempVals.text.replace(/ /g , "")  === funcs[i].getName().replace(/ /g , "") )
+                isRepeat = true ;
+                console.log( "text: " + tempVals.text ) ;
+                //
+                if( !isRepeat )
+                {
+                  wasBlock = false ;
+                  //
+                  console.log( "tempVals.text: " + tempVals.text ) ;
+                  let vertex = new Vertex( "FunctionData" , tempVals.text , tempVals.range.start.row , tempVals.range.end.row , lastBlock , tempVals.value ) ;
+                  lastFuncAddress = vertex.getAddress() ;
+                  funcs.push( vertex ) ;
+                  lastFunc = vertex ;
+                }
+              }
             }
-            return root;
+          }
+          for( let i = 0 ; i < funcs.length ; i++ )
+          {
+            console.log( "funcs"  ) ;
+            console.log( funcs[i].getChildren()) ;
+          }
+          for( let i = 0 ; i < funcs.length ; i++ ) //adds all the functions to root
+          {
+            console.log( funcs[i].getName() ) ;
+            if( funcs[i].getName() === "alpha")
+              root.addChild( funcs[i] ) ;
+          }
+          //adds calls between functions
+          for( let index = 0 ; index < funcs.length ; index++ ) //won't work with recursion
+          {
+            let contents = funcs[index].getText().replace( / /g , "" ) ;
+            /*
+            if( funcs[index].getName().indexOf( "echo") )
+            {
+              console.log( "echo: " + funcs[index]) ;
+              console.log( contents ) ;
+            }
+            */
+            for( let k = 0 ; k < funcs.length ; k++ )
+            {
+              if( index !== k && !funcs[k].hasParent( funcs[index] ) && contents.indexOf( funcs[k].getName() + "(" ) > 0 )
+              {
+
+                funcs[k].addParent( funcs[index].getAddress() ) ;
+                //need to have only one reference per vertex
+                funcs[index].addChild( funcs[k].getAddress() ) ;
+              }
+            }
+          }
+          for( let index = 0 ; index < funcs.length ; index++ ) //reformats functions
+          funcs[index].setName( funcs[index].getName() + "()" ) ;
+          //
+          console.log( root ) ;
+          console.log( funcs ) ;
+          return root ;
         };
 
         this.renderFx  =  function renderFx(formattedTrace, divElement) {
@@ -155,11 +240,11 @@ export class CallGraph {
             width = 400 - margin.left - margin.right,
             height = 250 - margin.top - margin.bottom;
 
-            let rectWidth = 100,
-                rectHeight = 40;
+            let rectWidth = 60,
+                rectHeight = 20;
 
             let tree = d3.tree()
-                .nodeSize([160, 200]);
+                .nodeSize([80, 40]);
 
             let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
@@ -214,7 +299,7 @@ export class CallGraph {
                 .style("stroke-width","1.5px");
 
             node.append("text")
-                .attr("dy", 22.5)
+                .attr("dy", 12.5)
                 .attr("text-anchor", "middle")
                 .text(function(d) { return d.data.name; });
 
