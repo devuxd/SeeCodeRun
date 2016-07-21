@@ -189,16 +189,10 @@ export class JsGutter {
                 $gutter.scrollTop(this.scrollTop);
         });
 
-        ea.subscribe("traceNavigationChange", navigationData => {
-                this.branchRange = navigationData.entry.range;
-                this.branchIndex = navigationData.branchIndex;
-                this.branchMax = navigationData.branchMax;
-                this.branchEntry = navigationData.entry;
-                if(this.traceHelper){
+        ea.subscribe("traceNavigationChange", traceHelper => {
+                if(traceHelper){
+                    this.traceHelper = traceHelper;
                     this.clearGutter();
-
-                    this.traceHelper.startNavigation();
-                    this.traceHelper.navigateToBranch(this.branchRange, this.branchIndex, this.branchMax);
                     this.isTraceChange=true;
                     this.update();
                     this.traceHelper.stopNavigation();

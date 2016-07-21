@@ -24,7 +24,11 @@ export class TraceHelper {
     }
 
     resetNavigation(){
-        this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: []};
+        this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: [], navigationData: {}};
+    }
+
+    setNavigationData(navigationData){
+        this.navigationTrace.navigationData = navigationData;
     }
 
     recalculateBranchIndexes(){

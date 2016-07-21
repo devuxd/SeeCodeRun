@@ -53,7 +53,7 @@ export class BranchNavigator{
         );
 
         eventAggregator.subscribe(
-            "traceNavigationChange", navigationData =>{
+            "traceNavigationPrepareChange", navigationData =>{
                         if(traceViewModel.isTraceGutterDataValid()){
                             if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
                                 traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
@@ -129,7 +129,7 @@ export class BranchNavigator{
     			    $gutterNavigatorSlider.slider({
                       slide: function gutterNavigatorSliderChange(event, ui) {
                           if(self.gutterNavigatorSliderValue !== ui.value){
-                            self.eventAggregator.publish("traceNavigationChange", {branchIndex: ui.value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: ui.value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
                             self.gutterNavigatorSliderValue = ui.value;
                           }
                       }
@@ -140,7 +140,7 @@ export class BranchNavigator{
     			        let value = $gutterNavigatorSlider.slider('value') - 1;
     			        $gutterNavigatorSlider.slider('value',  value);
     			        if($gutterNavigatorSlider.slider('value') === value){
-        			        self.eventAggregator.publish("traceNavigationChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+        			        self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
                             self.gutterNavigatorSliderValue = value;
     			        }
     			     });
