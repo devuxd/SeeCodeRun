@@ -102,10 +102,11 @@ export class AutoLogTracer{
                 }
                 var infoValueString = null;
                 try{
-                    infoValueString = JSON.stringify(info.value);
+                    infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
                 }catch(e){
                     infoValueString = info.value? info.value.toString(): "[Stringify-Circular-Error]";
                 }
+                this.cache = [];
 
                 if(traceTypes.Expression.indexOf(info.type) > -1){
                     if(info.id){
@@ -154,16 +155,19 @@ export class AutoLogTracer{
                 return info.value;
             },
             stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
-                try{
-                    var val = JSON.stringify(value);
-                    return value;
-                }catch(e){
-                        if(value){
-                            return value.toString();
-                        }
-                        // return "[Circular]";
+                if(!this.cache){
+                    this.cache = [];
                 }
-                return null;
+
+                if(this.cache.indexOf(value) > -1){
+                    if(value != null && typeof value === "object"){
+                        value = value.toString();
+                    }
+                }else{
+                    this.cache.push(value);
+                }
+
+                return value;
             },
             getTraceData: function getTraceData() {
                 return {
