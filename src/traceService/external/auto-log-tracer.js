@@ -111,24 +111,14 @@ export class AutoLogTracer{
                 var infoValueString = null;
                 this.previousValueToException = null;
                 this.previousValuesToException = [];
-                var keepTrying = false;
-                var c = 100;
-                do{
-                    try{
-                        if(info.value && info.value.nodeName){
-                            infoValueString = this.elementToObject(info.value);
-                        }else{
+                try{
+                    if(info.value && info.value.nodeName){
+                        infoValueString = this.elementToObject(info.value);
+                    }else{
+                        this.circularReferences = [info.value];
                         infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
-                        }
-                        keepTrying = false;
-                    }catch(e){
-                    // console.log(this.previousValueToException);
-                        this.previousValuesToException.push(this.previousValueToException);
-                        keepTrying = true;
                     }
-
-                }while(keepTrying && c--);
-                if(infoValueString == null){
+                }catch(e){
                     infoValueString = info.value == null? null: info.value.toString();
                 }
 
@@ -182,10 +172,13 @@ export class AutoLogTracer{
                 return info.value;
             },
             stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
-                this.previousValueToException = value;
-                if(this.previousValuesToException.indexOf(value) > -1){
-                    return null;
+
+                if(this.circularReferences.indexOf(value) > -1){
+                    if(typeof value === "object"){
+                        return null;
+                    }
                 }
+                this.circularReferences.push(value);
                 return value;
             },
             elementToObject: function elementToObject(element, o) {

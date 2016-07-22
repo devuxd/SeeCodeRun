@@ -42,7 +42,7 @@ export class ExpressionDataExplorer{
         }
 
         $editorTooltip.appendTo('body');
-        $editorTooltip.on('show.bs.popover', function(){
+        $editorTooltip.on('shown.bs.popover', function(){
           CollapsibleLists.apply();
         });
 
@@ -78,7 +78,6 @@ export class ExpressionDataExplorer{
 
 		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
               div.popover("show");
-              CollapsibleLists.apply();
               aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
 			}else{
 			    div.popover("hide");
