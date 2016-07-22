@@ -93,9 +93,9 @@ export class TraceHelper {
         let isRangeInRangeStrict = this.isRangeInRangeStrict;
 
         if(!acePosition || !traceData){
-            return undefined;
+            return null;
         }
-        let match = undefined;
+        let match = null;
         for(let i = traceData.length; i; i--){
             let entry = traceData[i-1];
             if(entry.hasOwnProperty("range")){
@@ -110,6 +110,10 @@ export class TraceHelper {
 
     			 }
             }
+        }
+
+        if(match && match.type === "Program"){
+            return null;
         }
         return match;
 
