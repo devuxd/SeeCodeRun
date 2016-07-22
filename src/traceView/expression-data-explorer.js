@@ -78,6 +78,7 @@ export class ExpressionDataExplorer{
 
 		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
               div.popover("show");
+              CollapsibleLists.apply();
               aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
 			}else{
 			    div.popover("hide");
