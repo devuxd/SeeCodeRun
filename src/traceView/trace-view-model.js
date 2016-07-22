@@ -21,7 +21,7 @@ export class TraceViewModel {
 
     getExpressionAtPosition(mousePosition){
         if(this.isDataModelRepOK()){
-            return this.traceHelper.getExpressionAtPosition(this.traceHelper.getExecutionTrace(), mousePosition);
+            return this.traceHelper.getExpressionAtPosition(this.traceHelper.getTimeline(), mousePosition);
         }
         return undefined;
     }
