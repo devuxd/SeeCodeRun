@@ -24,7 +24,11 @@ export class TraceHelper {
     }
 
     resetNavigation(){
-        this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: []};
+        this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: [], navigationData: {}};
+    }
+
+    setNavigationData(navigationData){
+        this.navigationTrace.navigationData = navigationData;
     }
 
     recalculateBranchIndexes(){
@@ -32,6 +36,9 @@ export class TraceHelper {
     }
 
     getTimeline(){
+        if(this.isNavigationMode){
+            return this.getNavigationTimeline();
+        }
         return this.trace.timeline;
     }
 
@@ -86,11 +93,11 @@ export class TraceHelper {
         let isRangeInRangeStrict = this.isRangeInRangeStrict;
 
         if(!acePosition || !traceData){
-            return undefined;
+            return null;
         }
-        let match = undefined;
-        for(let i = 0; i < traceData.length; i++){
-            let entry = traceData[i];
+        let match = null;
+        for(let i = traceData.length; i; i--){
+            let entry = traceData[i-1];
             if(entry.hasOwnProperty("range")){
                 if( isPositionInRange(acePosition, entry.range)){
     			     if(match){
@@ -103,6 +110,10 @@ export class TraceHelper {
 
     			 }
             }
+        }
+
+        if(match && match.type === "Program"){
+            return null;
         }
         return match;
 
