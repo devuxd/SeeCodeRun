@@ -103,7 +103,7 @@ export class ExternalResourceLoader{
                                 if(instrumenter){
                                     instrumenter.instrument(scriptText, $scriptSelf, element, containerDocument);
                                 }else{
-                                    $scriptSelf.html(scriptText);
+                                    $scriptSelf.text(scriptText);
                                     $scriptSelf.removeAttr("src");
                                 }
                             }

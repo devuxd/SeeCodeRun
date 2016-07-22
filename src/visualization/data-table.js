@@ -1,10 +1,11 @@
-import * as d3 from 'd3';
+// import * as d3 from 'd3';
 
 export class DataTable {
 
   constructor() {
     this.config = {
       type: 'DataTable',
+      styleClass: 'data-table',
       title: 'Data Table',
       trace: null,
       formatTraceFx: this.formatTraceFx,

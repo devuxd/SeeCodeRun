@@ -42,7 +42,6 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.38",
     "bootstrap": "github:twbs/bootstrap@3.3.6",
     "core-js": "npm:core-js@1.2.6",
-    "d3": "npm:d3@3.5.17",
     "escodegen": "npm:escodegen@1.8.0",
     "esprima": "npm:esprima@2.7.2",
     "estraverse": "npm:estraverse@4.2.0",

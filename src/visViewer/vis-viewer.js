@@ -1,6 +1,6 @@
 /* global $ */
 
-import * as d3 from 'd3';
+// import * as d3 from 'd3';
 import {VisualizationFactory} from '../visualization/visualizationFactory';
 import {Visualization} from '../visualization/visualization';
 
@@ -108,7 +108,7 @@ export class VisViewer {
 
   prepareVisualization(type){
     if (type !== '' && type !== null) {
-      this.tempVis = new Visualization(this.visualizations.length, d3, this.eventAggregator, this.factory.getVisualizationByType(type));
+      this.tempVis = new Visualization(this.visualizations.length, this.eventAggregator, this.factory.getVisualizationByType(type));
     }
   }
 

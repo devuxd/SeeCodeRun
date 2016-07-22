@@ -15,3 +15,13 @@
  #visualizations {
    padding-top: 5px;
  }
+
+ .scatter-plot {
+     overflow: scroll;
+ }
+ .data-table {
+      overflow: scroll;
+ }
+ .call-graph{
+      overflow: visible;
+ }

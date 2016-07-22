@@ -14,7 +14,7 @@ export class TraceModel{
 // 			text: "Text",
 			value: "value"
 		};
-       	
+
 		let traceParameters = {
             type : 0,
             id : 1,
@@ -23,11 +23,11 @@ export class TraceModel{
             range : 4,
             indexRange : 5,
             extra : 6
-            
+
         };
-        
+
         this.traceParameters = traceParameters;
-        
+
         this.traceSearchFilterToParameter = {
 			any: [traceParameters.type],
 			id: [traceParameters.id],
@@ -35,17 +35,17 @@ export class TraceModel{
 			text: [traceParameters.text],
 			value: [traceParameters.value]
 		};
-		
+
         this.traceDataContainer = "SeeCodeRunTraceDataResults";
         this.traceSyntax = {
             AssignmentExpression: "AssignmentExpression",
-            BinaryExpression: "BinaryExpression", 
+            BinaryExpression: "BinaryExpression",
             BlockStatement: "BlockStatement",
             CallExpression: "CallExpression",
             DoWhileStatement: "DoWhileStatement",
-            ExpressionStatement: "ExpressionStatement", 
-            ForStatement: "ForStatement", 
-            ForInStatement: "ForInStatement", 
+            ExpressionStatement: "ExpressionStatement",
+            ForStatement: "ForStatement",
+            ForInStatement: "ForInStatement",
             FunctionDeclaration: "FunctionDeclaration",
             FunctionExpression: "FunctionExpression",
             Identifier: "Identifier",
@@ -59,12 +59,12 @@ export class TraceModel{
             SwitchStatement: "SwitchStatement",
             SwitchCase: "SwitchCase",
             UnaryExpression: "UnaryExpression",
-            UpdateExpression: "UpdateExpression", 
-            VariableDeclaration: "VariableDeclaration", 
+            UpdateExpression: "UpdateExpression",
+            VariableDeclaration: "VariableDeclaration",
             VariableDeclarator: "VariableDeclarator",
             WhileStatement: "WhileStatement"
         };
-        
+
         let Syntax = {
             AssignmentExpression: "AssignmentExpression",
             ArrayExpression: "ArrayExpression",
@@ -107,7 +107,13 @@ export class TraceModel{
             WhileStatement: "WhileStatement",
             WithStatement: "WithStatement"
         };
-        
+
+        this.traceSyntaxTypes = {
+            PreCallExpression: "PreCallExpression",
+            FunctionArguments: "FunctionArguments",
+            FunctionParameters: "FunctionParameters"
+        };
+
         this.traceTypes = {
             Stack: [
                 Syntax.FunctionDeclaration,
@@ -172,35 +178,35 @@ export class TraceModel{
                 Syntax.CatchClause
                 ]
         };
-        
+
         this.esSyntax = Syntax;
-        
+
         this.executionEvents = {
             running : {  event :"codeRunning"   , description : "Tracing Code..." },
             finished: {  event :"codeFinished"  , description : "Trace built successfully." },
             failed  : {  event :"codeFailed"    , description : "Code failed (Runtime error)." }
         };
-          
+
         this.traceEvents = {
             instrumented    : {  event :"traceInstrumented"   , description : "Code Instrumented successfully." },
             changed         : {  event :"traceChanged"   , description : "Trace results obtained succesfully." },
             failed          : {  event :"instrumentationFailed"    , description : "Code rewriting failed (Compilation error)." }
          };
-         
+
          this.traceViewEvents = {
              expressionHovered    : {  event :"expressionHovered"   , description : "An expression[code] from an editor with trace values was hovered." },
              gutterHovered    : {  event :"gutterHovered"   , description : "A block[code] from an editor that was executed was hovered." }
          };
-         
-      
-        this.timeLimit = 3000; 
-        
+
+
+        this.timeLimit = 3000;
+
     }
-    
+
     makeTrace(trace){
         return new Trace(trace);
     }
-    
+
     makeEmptyPayload(){
         return {status: "", description : "" , data : []};
     }
