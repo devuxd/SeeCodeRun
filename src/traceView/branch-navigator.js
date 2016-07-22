@@ -7,12 +7,25 @@ export class BranchNavigator{
     gutterTooltipShowDelay = 50;
     gutterTooltipHideDelay = 350;
     gutterDecorationClassName = "seecoderun-gutter-decoration";
+    branches = [];
 
     constructor(eventAggregator, aceUtils, jsEditor, traceViewModel){
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.jsEditor = jsEditor;
         this.traceViewModel = traceViewModel;
+    }
+
+    updateGutterBranches(traceGutterData){
+        for(let row in traceGutterData.rows){
+            let count = traceGutterData.rows[row].count;
+            let branch =traceGutterData.rows[row].branch;
+            branch = branch? branch: count;
+            let previousBranch = this.branches[row]?this.branches[row].branch: branch;
+            branch = previousBranch> count? branch: previousBranch;
+            traceGutterData.rows[row].branch = branch;
+        }
+        this.branches = traceGutterData.rows;
     }
 
     attached(){
@@ -47,20 +60,34 @@ export class BranchNavigator{
 
         eventAggregator.subscribe(
             "traceGutterDataChanged", payload =>{
-                 aceUtils.updateGutterDecorations(editor, [], traceViewModel.traceGutterData.rows, gutterDecorationClassName);
+                this.updateGutterBranches(traceViewModel.traceGutterData);
+                aceUtils.updateGutterDecorations(editor, [], traceViewModel.traceGutterData.rows, gutterDecorationClassName);
 
             }
         );
 
+        eventAggregator.subscribe("traceChanged", payload => {
+            this.traceHelper = payload.data;
+        });
+
         eventAggregator.subscribe(
             "traceNavigationPrepareChange", navigationData =>{
-                        if(traceViewModel.isTraceGutterDataValid()){
-                            if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
-                                traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
-                                editor.getSession().addGutterDecoration(navigationData.row, "");
-                            }
-                        }
+                if(this.traceHelper){
+                    this.traceHelper.setNavigationData(navigationData, this.branches);
+                    this.traceHelper.startNavigation();
+                    this.traceHelper.navigateToBranch();
+                    // traceViewModel.traceGutterData.rows = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
+                    // eventAggregator.publish("traceGutterDataChanged");
+                    eventAggregator.publish("traceNavigationChange", this.traceHelper);
+                }
+
+                if(traceViewModel.isTraceGutterDataValid()){
+                    if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
+                        traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
+                        editor.getSession().addGutterDecoration(navigationData.row, "");
                     }
+                }
+            }
         );
 
         this.jsGutterScrollTopDelta = 0;
@@ -101,11 +128,14 @@ export class BranchNavigator{
 	        self.$gutterTooltip.hide("slide", { direction: "down" }, self.gutterTooltipSlideTime);
 	    };
 
-        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, content, row, lineHeight){
+        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, context, row, lineHeight){
             if(!$gutterTooltip){
 			        return;
 			}
 	        self.currentRow = row;
+	        let content = context.entry;
+	        let count = context.count;
+	        let branch = context.branch;
 		    if(content){
 	            self.currentContent = content;
 			    let $gutterNavigatorSlider = $("#gutterNavigatorSlider");
@@ -150,7 +180,7 @@ export class BranchNavigator{
                         let value = $gutterNavigatorSlider.slider('value') + 1;
     			        $gutterNavigatorSlider.slider('value',  value);
     			        if($gutterNavigatorSlider.slider('value') === value){
-        			        self.eventAggregator.publish("traceNavigationChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+        			        self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
                             self.gutterNavigatorSliderValue = value;
     			        }
                     });
@@ -189,8 +219,9 @@ export class BranchNavigator{
 		            top: "-7px"
 		        });
 
-		        $gutterNavigatorSlider.slider('option', {min: 1, max: content.count, value: content.count});
-		        self.branchMax = content.count;
+		        $gutterNavigatorSlider.slider('option', {min: 1, max: count, value: branch});
+		        self.branchMax = count;
+		        self.branchIndex = branch;
 		        if(position){
     		        $gutterTooltip.css({
     		            height: `${lineHeight}px`,

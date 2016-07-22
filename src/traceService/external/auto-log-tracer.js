@@ -30,13 +30,16 @@ export class AutoLogTracer{
         document.body.appendChild(traceDataContainerElement);
         `;
     }
+
     getTraceDataCodeBoilerPlate(){
         return `
         traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
         `;
     }
+
     getAutologCodeBoilerPlate(timeLimit){
         return `
+        /*AutoLogTracer*/
         window.START_TIME = +new Date();
         window.TIME_LIMIT = ${timeLimit};
 
@@ -97,16 +100,42 @@ export class AutoLogTracer{
                     }
 
                 }
+                var infoValueString = null;
+                this.previousValueToException = null;
+                this.previousValuesToException = [];
+                var keepTrying = false;
+                var c = 100;
+                do{
+                    try{
+                        if(info.value && info.value.nodeName){
+                            infoValueString = this.elementToObject(info.value);
+                        }else{
+                        infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
+                        }
+                        keepTrying = false;
+                    }catch(e){
+                    // console.log(this.previousValueToException);
+                        this.previousValuesToException.push(this.previousValueToException);
+                        keepTrying = true;
+                    }
+
+                }while(keepTrying && c--);
+                if(infoValueString == null){
+                    infoValueString = info.value == null? null: info.value.toString();
+                }
+
+                this.previousValueToException = null;
+                this.previousValuesToException = [];
 
                 if(traceTypes.Expression.indexOf(info.type) > -1){
                     if(info.id){
-                        this.values.push({id: info.id , value: JSON.stringify(info.value), range: info.range});
+                        this.values.push({id: info.id , value: infoValueString, range: info.range});
                     }else{
-                        this.values.push({id: info.text , value: JSON.stringify(info.value), range: info.range});
+                        this.values.push({id: info.text , value: infoValueString, range: info.range});
                     }
                 }
 
-                this.timeline.push({ id: info.id , value: JSON.stringify(info.value), range: info.range, type: info.type, text: info.text});
+                this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key});
 
 
                 var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;
@@ -114,7 +143,7 @@ export class AutoLogTracer{
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].hits[stackTop] = this.data[key].hits[stackTop] + 1;
-                    this.data[key].values.push({ stackIndex : stackTop + ":" + this.data[key].hits[stackTop]  , value :JSON.stringify(info.value)});
+                    this.data[key].values.push({ stackIndex : stackTop + ":" + this.data[key].hits[stackTop]  , infoValueString});
                 } else {
 
                     if(info.type === Syntax.VariableDeclarator){
@@ -130,7 +159,7 @@ export class AutoLogTracer{
                         type : info.type,
                         id : info.id,
                         text : info.text,
-                        values: [{stackIndex: stackTop + ":1", value :JSON.stringify(info.value)}],
+                        values: [{stackIndex: stackTop + ":1", value : infoValueString}],
                         range: info.range,
                         hits : [],
                         extra : info.extra
@@ -143,6 +172,34 @@ export class AutoLogTracer{
                 }
 
                 return info.value;
+            },
+            stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
+                this.previousValueToException = value;
+                if(this.previousValuesToException.indexOf(value) > -1){
+                    return null;
+                }
+                return value;
+            },
+            elementToObject: function elementToObject(element, o) {
+                var el = $(element);
+                var o = {
+                   tagName: el.tagName
+                };
+                var i = 0;
+                for (i ; i < el.attributes.length; i++) {
+                    o[el.attributes[i].name] = el.attributes[i].value;
+                }
+
+                var children = el.childElements();
+                if (children.length) {
+                  o.children = [];
+                  i = 0;
+                  for (i ; i < children.length; i++) {
+                    child = $(children[i]);
+                    o.children[i] = elementToObject(child, o.children) ;
+                  }
+                }
+                return o;
             },
             getTraceData: function getTraceData() {
                 return {
