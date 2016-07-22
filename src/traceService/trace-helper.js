@@ -36,6 +36,9 @@ export class TraceHelper {
     }
 
     getTimeline(){
+        if(this.isNavigationMode){
+            return this.getNavigationTimeline();
+        }
         return this.trace.timeline;
     }
 
@@ -93,8 +96,8 @@ export class TraceHelper {
             return undefined;
         }
         let match = undefined;
-        for(let i = 0; i < traceData.length; i++){
-            let entry = traceData[i];
+        for(let i = traceData.length; i; i--){
+            let entry = traceData[i-1];
             if(entry.hasOwnProperty("range")){
                 if( isPositionInRange(acePosition, entry.range)){
     			     if(match){

@@ -1,4 +1,5 @@
 /* global $ */
+/* global CollapsibleLists */
 import {TreeViewExplorer} from "./tree-view-explorer";
 
 export class ExpressionDataExplorer{
@@ -6,8 +7,8 @@ export class ExpressionDataExplorer{
     editorTooltipId = "editorTooltip";
     editorTooltipContentId = "editorTooltipContentId";
     viewportSelector = "#codeContent .ace_scroller";
-    editorTooltipShowDelay = 1000;
-    editorTooltipHideDelay = 2000;
+    editorTooltipShowDelay = 750;
+    editorTooltipHideDelay = 1500;
     currentMatchRange = null;
 
     constructor(eventAggregator, aceUtils, aureliaEditor, traceViewModel){
@@ -41,6 +42,9 @@ export class ExpressionDataExplorer{
         }
 
         $editorTooltip.appendTo('body');
+        $editorTooltip.on('show.bs.popover', function(){
+          CollapsibleLists.apply();
+        });
 
         this.$editorTooltip = $editorTooltip;
         aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, this);
@@ -69,8 +73,10 @@ export class ExpressionDataExplorer{
 		    }
 
 			if(match){
-		    self.treeViewExplorer = new TreeViewExplorer(match.values[0].value !== undefined ? JSON.parse(match.values[0].value) : undefined);
-              self.treeViewExplorer.appendTo$PopoverElement(div);
+		      self.treeViewExplorer = new TreeViewExplorer(match.value);
+              let popoverData = self.treeViewExplorer.getPopoverElementContent(div);
+
+		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
               div.popover("show");
               aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
 			}else{

@@ -105,12 +105,13 @@
 }
 
 #editorTooltipContentId .popover-content{
-    padding: 0;
+    padding: 4px;
     margin: 0;
     -webkit-border-radius: 0;
     -moz-border-radius: 0;
     -o-border-radius: 0;
     border-radius: 0;
+    word-wrap: break-word;
 }
 
 .treeView {
@@ -201,5 +202,19 @@
 }
 
 .literal {
+  color: rgb(26, 26, 166);
+}
+
+.null {
+    font-weight: bold;
+    color: rgb(26, 26, 100);
+}
+
+.undefined {
+    font-style: italic;
+    color: rgb(26, 26, 66);
+}
+
+.function {
   color: rgb(26, 26, 166);
 }

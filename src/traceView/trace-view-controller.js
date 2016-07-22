@@ -46,7 +46,7 @@ export class TraceViewController{
 
             traceViewModel.updateTraceGutterData(stackTrace);
             this.eventAggregator.publish("traceGutterDataChanged");
-            traceViewModel.setTraceValuesDataRanges(traceHelper.getExecutionTrace());
+            traceViewModel.setTraceValuesDataRanges(traceHelper.getTimeline());
             this.eventAggregator.publish("traceValuesDataRangesChanged");
     }
 }
