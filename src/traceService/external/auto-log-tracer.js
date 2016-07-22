@@ -101,12 +101,31 @@ export class AutoLogTracer{
 
                 }
                 var infoValueString = null;
-                try{
-                    infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
-                }catch(e){
-                    infoValueString = info.value? info.value.toString(): "[Stringify-Circular-Error]";
+                this.previousValueToException = null;
+                this.previousValuesToException = [];
+                var keepTrying = false;
+                var c = 100;
+                do{
+                    try{
+                        if(info.value && info.value.nodeName){
+                            infoValueString = this.elementToObject(info.value);
+                        }else{
+                        infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
+                        }
+                        keepTrying = false;
+                    }catch(e){
+                    // console.log(this.previousValueToException);
+                        this.previousValuesToException.push(this.previousValueToException);
+                        keepTrying = true;
+                    }
+
+                }while(keepTrying && c--);
+                if(infoValueString == null){
+                    infoValueString = info.value == null? null: info.value.toString();
                 }
-                this.cache = [];
+
+                this.previousValueToException = null;
+                this.previousValuesToException = [];
 
                 if(traceTypes.Expression.indexOf(info.type) > -1){
                     if(info.id){
@@ -116,7 +135,7 @@ export class AutoLogTracer{
                     }
                 }
 
-                this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text});
+                this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key});
 
 
                 var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;
@@ -155,19 +174,32 @@ export class AutoLogTracer{
                 return info.value;
             },
             stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
-                if(!this.cache){
-                    this.cache = [];
+                this.previousValueToException = value;
+                if(this.previousValuesToException.indexOf(value) > -1){
+                    return null;
                 }
-
-                if(this.cache.indexOf(value) > -1){
-                    if(value != null && typeof value === "object"){
-                        value = value.toString();
-                    }
-                }else{
-                    this.cache.push(value);
-                }
-
                 return value;
+            },
+            elementToObject: function elementToObject(element, o) {
+                var el = $(element);
+                var o = {
+                   tagName: el.tagName
+                };
+                var i = 0;
+                for (i ; i < el.attributes.length; i++) {
+                    o[el.attributes[i].name] = el.attributes[i].value;
+                }
+
+                var children = el.childElements();
+                if (children.length) {
+                  o.children = [];
+                  i = 0;
+                  for (i ; i < children.length; i++) {
+                    child = $(children[i]);
+                    o.children[i] = elementToObject(child, o.children) ;
+                  }
+                }
+                return o;
             },
             getTraceData: function getTraceData() {
                 return {

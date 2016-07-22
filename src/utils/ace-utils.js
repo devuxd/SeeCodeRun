@@ -141,7 +141,7 @@ export class AceUtils{
     		let row = e.getDocumentPosition().row;
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
-    		        content = dataModel.rows[row].entry;
+    		        content = dataModel.rows[row];
                     let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
 
     			    pixelPosition.pageY -= target.getBoundingClientRect().height;
@@ -292,7 +292,6 @@ export class AceUtils{
                 if(traceGutterData.rows.hasOwnProperty(row)){
                     let count = traceGutterData.rows[row].count;
                     let branch =traceGutterData.rows[row].branch;
-                    branch = branch? branch: count;
                     return "["+branch+"/"+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;

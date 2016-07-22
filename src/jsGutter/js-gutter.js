@@ -195,7 +195,7 @@ export class JsGutter {
                     this.clearGutter();
                     this.isTraceChange=true;
                     this.update();
-                    this.traceHelper.stopNavigation();
+                    // this.traceHelper.stopNavigation();
                 }
 
         });

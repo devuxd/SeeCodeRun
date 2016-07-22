@@ -8,6 +8,7 @@ export class TraceHelper {
         this.setTrace(trace);
         this.resetNavigation();
         this.startNavigation();
+        this.branches =[];
     }
 
     startNavigation(){
@@ -27,8 +28,14 @@ export class TraceHelper {
         this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: [], navigationData: {}};
     }
 
-    setNavigationData(navigationData){
-        this.navigationTrace.navigationData = navigationData;
+    setNavigationData(navigationData, branches){
+        this.navigationData = navigationData;
+        if(navigationData){
+            if(branches[navigationData.row]){
+               branches[navigationData.row].branch = navigationData.branchIndex;
+            }
+        }
+        this.branches = branches;
     }
 
     recalculateBranchIndexes(){
@@ -46,11 +53,14 @@ export class TraceHelper {
         return this.navigationTrace.timeline;
     }
 
-    navigateToBranch(branchExpressionRange, branchIndex, branchMax){
+    navigateToBranch(){
+        let branchExpressionRange = this.navigationData.entry.range,
+            branchIndex = this.navigationData.branchIndex,
+            branchMax = this.navigationData.branchMax;
         let traceGutterData = [];
         let timelineHits = branchIndex*2 + 1; // call appears at entrance and exit of block
         let timelineMaxHits = branchMax*2;
-        let timeline = this.navigationTrace.timeline;
+        let timeline = this.trace.timeline;
         let branchTimeline = [];
         let branchHits = 0;
         for(let j = 0; j < timeline.length; j++) {
@@ -263,6 +273,25 @@ export class TraceHelper {
         for (let i in stack) {
             if (stack.hasOwnProperty(i)) {
                 entry = stack[i];
+                stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+            }
+        }
+        return stackData;
+    }
+
+    getNavigationStackBlockCounts() {
+        let stack = this.trace.stack, data = this.trace.data, hits = [];
+        let timeline = this.navigationTrace.timeline;
+        let entry,
+            stackData = [];
+        for (let i in stack) {
+            if (stack.hasOwnProperty(i)) {
+                entry = stack[i];
+                for(let j in timeline){
+                    if(timeline[j].key === entry){
+                        hits[entry] = hits[entry]? hits[entry]++: 1;
+                    }
+                }
                 stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
             }
         }

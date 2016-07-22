@@ -9,7 +9,6 @@ export class EsTracer {
       this.esInstrumenter = new EsInstrumenter(traceModel);
       this.traceModel = traceModel;
       this.publisher = publisher;
-      this.subscribe();
     }
 
     onCodeRunning(){
@@ -61,19 +60,5 @@ export class EsTracer {
             this.publisher.publish(payload.status, payload);
         }
         return payload;
-    }
-
-    subscribe(){
-        if(this.publisher){
-            return;
-        }
-        this.publisher.subscribe("traceNavigationPrepareChange", navigationData => {
-                if(this.traceHelper){
-                    this.traceHelper.setNavigationData(navigationData);
-                    this.traceHelper.startNavigation();
-                    this.traceHelper.navigateToBranch(this.branchRange, this.branchIndex, this.branchMax);
-                    this.publisher.publish("traceNavigationChange", this.traceHelper);
-                }
-        });
     }
 }
