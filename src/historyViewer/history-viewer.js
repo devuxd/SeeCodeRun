@@ -4,18 +4,69 @@
 /*global Firepad $*/
 
 export class HistoryViewer {
- constructor(seeCodeRunEditor, eventAggregator) {
+ selectedEffect = "fold";
+ hideTimeout = 100000;
+ slideAnimationDuration = 500;
+
+ constructor(seeCodeRunEditor, eventAggregator, firebaseManager) {
   this.seeCodeRunEditor = seeCodeRunEditor;
   this.eventAggregator = eventAggregator;
+  this.firebaseManager = firebaseManager;
   this.sliderValue = 0;
-
  }
  attached() {
+  let self = this;
+  let toggleHistoryBoxTimeoutCallback = function toggleHistoryBoxTimeoutCallback(){
+   $("#historyBox").toggle("slide", { direction: "left" }, self.slideAnimationDuration);
+   $("#historyButton span").removeClass("navigation-bar-active-item");
+   $("#historyButton label").removeClass("navigation-bar-active-item");
+  };
+
+  $('#historyBox').hide();
+  $('#historyButton').click( function toggleHistoryBox() {
+      if($("#historyBox").is(":visible")){
+          $("#historyButton span").removeClass("navigation-bar-active-item");
+          $("#historyButton label").removeClass("navigation-bar-active-item");
+      }else{
+
+          $("#historyButton span").addClass("navigation-bar-active-item");
+          $("#historyButton label").addClass("navigation-bar-active-item");
+      }
+      if(!$("#historyBox").is(":animated")){
+          $("#historyBox").toggle("slide", { direction: "left" }, self.slideAnimationDuration);
+      }
+  });
+
+  // $('#historyListItem').mouseenter(function historyListItemMouseEnter(){
+  //     clearTimeout(self.toggleHistoryBoxTimeout);
+  // }).mouseleave(function historyListItemMouseLeave(){
+  //     if($("#historyBox").is(":visible")){
+  //         self.toggleHistoryBoxTimeout = setTimeout(toggleHistoryBoxTimeoutCallback, self.hideTimeout);
+  //     }
+  // });
+
+  this.subscribe();
+
+if(true){
+  return;
+ }
   let seeCodeRunEditor = this.seeCodeRunEditor;
   let parentEditor = seeCodeRunEditor.editor;
   let pastebinId = seeCodeRunEditor.pastebinId;
 
+    let editor = ace.edit(this.aceJsEditorDiv);
+    this.aceUtils.configureEditor(editor);
+    this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
+    let session = editor.getSession();
+    this.aceUtils.configureSession(session);
 
+    let selection = editor.getSelection();
+    this.selection = selection;
+    this.setupSessionEvents(editor, session);
+    this.subscribe(session);
+
+    this.session = session;
+    this.editor = editor;
 
 
   // Define history firepad
@@ -35,7 +86,7 @@ export class HistoryViewer {
 
 
   let setSliderValue = this.setSliderValue;
-  let self = this;
+  // let self = this;
   self.historyfirepad = historyfirepad;
 
 
@@ -57,8 +108,8 @@ export class HistoryViewer {
 
 
   // update the history slider as more children are added to the history of the firebase
-  firebase.child('history').on("child_added", function(snap) {
-   firebase.child('history').once("value", function(sna) {
+  firebase.child('history').on("child_added", function (snap) {
+   firebase.child('history').once("value", function (sna) {
 
     let num = sna.numChildren();
 
@@ -70,7 +121,7 @@ export class HistoryViewer {
 
 
   var historyDivision = $('#aceHtmlHistoryEditorDiv');
-  historyDivision.keypress(function(e) {
+  historyDivision.keypress(function (e) {
 
    // Switch from the History div to the HTML div
    $('#aceHtmlHistoryEditorDiv').css("display", "none");
@@ -107,7 +158,7 @@ export class HistoryViewer {
 
 
 
-  self.firebase.on("value", function(c) {
+  self.firebase.on("value", function (c) {
 
   });
 
@@ -119,7 +170,7 @@ export class HistoryViewer {
   // Clear the Editor
   self.historyEditor.setValue('');
 
-  // Get the values from the history firebase and display it to the history editor 
+  // Get the values from the history firebase and display it to the history editor
   self.historyfirepad = Firepad.fromACE(tref, self.historyEditor);
 
 
@@ -144,8 +195,8 @@ export class HistoryViewer {
   firebase.child('temp').remove();
 
 
-  // Copy the entire firebase to the temporary firebase 
-  firebase.once("value", function(snap) {
+  // Copy the entire firebase to the temporary firebase
+  firebase.once("value", function (snap) {
    firebase.child('temp').set(snap.val());
   });
 
@@ -157,13 +208,24 @@ export class HistoryViewer {
 
 
   // Copy history from the firebase to the temorary firebase to display values till a specific point in history.
-  firebase.child('history').limitToFirst(numberOnSlider).once("value", function(snap) {
+  firebase.child('history').limitToFirst(numberOnSlider).once("value", function (snap) {
    firebase.child('temp/history').set(snap.val());
   });
 
 
   // return the temporary firebase address
   return firebase.child('temp');
+
+ }
+
+ subscribe(){
+  this.eventAggregator.subscribe("activeEditorChange", activeEditorData =>{
+   this.seeCodeRunEditor = activeEditorData.activeEditor;
+   this.updateHistorySlider();
+  });
+ }
+
+ updateHistorySlider(){
 
  }
 

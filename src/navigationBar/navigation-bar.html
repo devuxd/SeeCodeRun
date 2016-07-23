@@ -2,14 +2,14 @@
 <require from="../share/share-box.html"></require>
 <require from="../userList/user-list.html"></require>
 <require from="../chat/chat.html"></require>
-
+<require from = "../historyViewer/history-viewer.html"></require>
 	<div id="navigation-bar" class="container-fluid">
 		<nav class="navbar-xs navbar " role="navigation">
 			<div class="navbar-header">
-		      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+		      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-right">
 		        <span class='glyphicon glyphicon-menu-hamburger'></span>
 		      </button>
-		      <a class="navbar-brand">
+		      <a class="navbar-brand" onclick="window.open('https://seecode.run/', '_blank');">
 		      	<div class="logo seecoderun-text-blue">
 				       <!--youtube_searched-->
 				       <i class="material-icons">&#xE8FA;</i>
@@ -24,7 +24,20 @@
 			    </div>
 		      </a>
 		    </div>
-			<ul id="navbar-collapse-1" class="nav navbar-nav navbar-right" >
+		    <ul id="navbar-collapse-left" class="nav navbar-nav navbar-left" >
+		      	<li id = "historyListItem">
+			      <div>
+		          	<div id="historyBox">
+		            	<history-viewer historyViewer.bind = "historyViewer"></history-viewer>
+		          	</div>
+		          	<span id="historyButton">
+		          		<span class='glyphicon glyphicon-edit'></span>
+						<label>History</label>
+					</span>
+				  </div>
+			  	</li>
+			</ul>
+			<ul id="navbar-collapse-right" class="nav navbar-nav navbar-right" >
 		        <li id = "shareListItem">
 		          <div>
 		          	<div id="shareBox">

@@ -23,6 +23,10 @@ export class FirebaseManager{
         return new Firebase(`${this.baseURL}/${pastebinId}/`);
     }
 
+    makeEditHistoryFirebase(){
+        return new Firebase(`${this.baseURL}/${this.pastebinId}/content/editHistory`);
+    }
+
     makeTraceSearchHistoryFirebase(){
         return new Firebase(`${this.baseURL}/${this.pastebinId}/content/search`);
     }

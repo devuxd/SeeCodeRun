@@ -2,17 +2,19 @@
 export class TreeViewExplorer {
   viewType = {HTML: "HTML", JSON: "JSON", PRIMITIVE: "PRIMITIVE"};
   constructor(element) {
-    try{
-     element = JSON.parse(element);
-    }catch(e){
-      element = element;
-    }
     if(element == null){
       this.type = this.viewType.PRIMITIVE;
     }else{
       let elementType = typeof element;
-      if(elementType === "object"){
-        this.type = element.nodeName ? this.viewType.HTML : this.viewType.JSON;
+      if(elementType === "string"){
+        try{
+         element = JSON.parse(element);
+        }catch(e){
+          element = element.toString();
+        }
+      }
+      if(elementType === "object" ||  Object.prototype.toString.call( element ) === '[object Array]'){
+        this.type = element.nodeType === 1 ? this.viewType.HTML : this.viewType.JSON;
       }else{
         this.type = this.viewType.PRIMITIVE;
       }
@@ -23,7 +25,7 @@ export class TreeViewExplorer {
   getElements(childNodes) {
     let array = [];
     for(let i = 0; i < childNodes.length; i++) {
-      if(childNodes[i].nodeType === 1 || childNodes[i].data.trim() !== "") {
+      if(childNodes[i] && (childNodes[i].nodeType === 1 || (childNodes[i].data && childNodes[i].data.trim()))) {
         array.push(childNodes[i]);
       }
     }
@@ -33,14 +35,15 @@ export class TreeViewExplorer {
    makeAttributes(attributes) {
     let str = "";
     for(let i = 0; i < attributes.length; i++) {
-      str += "<span class='treeObj attr'>" + attributes[i].nodeName + "</span>"
+      str += "<span class='treeObj attr'>" + attributes[i].tagName + "</span>"
         + "<span class='treeObj sign'>=\"</span><span class='treeObj attrValue'>" + attributes[i].nodeValue
         + "</span>" + "<span class='treeObj sign'>\"</span> ";
     }
-    if(str.length > 1)
+    if(str.length > 1){
       return " " + str;
-    else
+    }else{
       return str.trim();
+    }
   }
 
   // convert DOM tree into HTML collapsible list
@@ -73,7 +76,7 @@ export class TreeViewExplorer {
             attr = " " + attr;
           html += "<span class='treeObj sign'>&lt;</span>"
             + "<span class='treeObj elementNode'>"
-            + children[i].nodeName.toLowerCase()
+            + children[i].tagName.toLowerCase()
             + "</span><span class='treeObj sign'>" + attr + "&gt;</span>";
         }
 
@@ -104,7 +107,7 @@ export class TreeViewExplorer {
       return "<span class='treeObj null'>null</span>";
     }
 
-    if(typeofObject === "string"){
+    if(typeofObject === "string"  && Object.prototype.toString.call( object ) !== '[object Array]'){
       return `<span class='treeObj stringLiteral'>"${object}"</span>`;
     }
 
@@ -186,8 +189,8 @@ export class TreeViewExplorer {
       }else {
         content = this.dispObject();
       }
-  		return {type: this.type, content: content};
     }
+    return {type: this.type, content: content};
   }
 
   isObjectEmpty(obj) {
@@ -198,14 +201,14 @@ export class TreeViewExplorer {
     let tree;
     if(!this.isObjectEmpty(this.element)) {
       tree = "<ul class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
-        "<span class='treeObj elementNode'>" + this.element.nodeName.toLowerCase() +
+        "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" +
         this.generateDOMTree(this.element) +
         "</li></ul>";
     }
     else {
       tree = "<ul class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
-        "<span class='treeObj elementNode'>" + this.element.nodeName.toLowerCase() +
+        "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" + "</ul>";
     }
     return tree;

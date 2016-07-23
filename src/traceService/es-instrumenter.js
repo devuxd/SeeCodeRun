@@ -84,32 +84,15 @@ export class EsInstrumenter {
     }
 
     setNodeValue(ref){
-        let traceParametersRange = 4;
-        ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
-        if(ref.propertyIndex === traceParametersRange){
-            ref.autoLogNode.callee.object.arguments[0] = ref.value;
-        }
+     ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
     }
 
     setNodeTextValue(ref){
-        let traceParametersText = 2;
-        let traceParametersId = 1;
-        let traceParametersType = 0;
-        // if(ref.propertyIndex === traceParametersText){
-        //     return;
-        // }
         ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = {
                         "type": "Literal",
                         "value": ref.value,
                         "raw": ref.value
-        };
-        if(ref.propertyIndex === traceParametersType || ref.propertyIndex === traceParametersId){
-            ref.autoLogNode.callee.object.arguments[ref.propertyIndex + 1] = {
-                        "type": "Literal",
-                        "value": ref.value,
-                        "raw": ref.value
-            };
-        }
+                    };
     }
 
     instrumentVariableDeclarator(node, code, self = this){

@@ -14,7 +14,6 @@ import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
-import {HistoryViewer} from '../historyViewer/history-viewer';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 
@@ -41,7 +40,7 @@ export class Pastebin {
     this.aceUtils = aceUtils;
     this.firebaseManager = firebaseManager;
     this.domElement = domElement;
-    this.navigationBar = new NavigationBar(firebaseManager);
+    this.navigationBar = new NavigationBar(firebaseManager, eventAggregator);
 
     this.consoleWindow = new ConsoleWindow(eventAggregator);
 
@@ -50,7 +49,6 @@ export class Pastebin {
     this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
     this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
 
-    this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
     this.visViewer  =new VisViewer(eventAggregator);
 
@@ -91,7 +89,11 @@ export class Pastebin {
     this.htmlEditor.attached();
     this.cssEditor.attached();
 
-    this.htmlEditorHistoryViewer.attached();
+    this.editors = {
+      "#js-container": this.jsEditor.editor,
+      "#html-container": this.htmlEditor.editor,
+      "#css-container": this.cssEditor.editor
+    };
 
     this.htmlViewer.attached();
     this.visViewer.attached();
@@ -130,6 +132,17 @@ export class Pastebin {
 
     let $panelHeadingTitles = $('.panel-heading-title');
     $panelHeadingTitles.click();
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      self.eventAggregator.publish("activeTabChange", {tabContainerSelector: e.target.href.substring(e.target.href.lastIndexOf("#"))});
+    });
+
+    self.eventAggregator.subscribe("activeTabChange", tabEvent=>{
+      let activeEditor = this.editors[tabEvent.tabContainerSelector];
+      if(activeEditor){
+        self.eventAggregator.publish("activeEditorChange", {activeEditor: activeEditor});
+      }
+    });
+    self.eventAggregator.publish("activeEditorChange", {activeEditor: this.jsEditor.editor});
     self.update();
   }
 

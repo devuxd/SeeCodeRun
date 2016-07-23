@@ -112,8 +112,8 @@ export class AutoLogTracer{
                 this.previousValueToException = null;
                 this.previousValuesToException = [];
                 try{
-                    if(info.value && info.value.nodeName){
-                        infoValueString = this.elementToObject(info.value);
+                    if(info.value && info.value.nodeType === 1){
+                        infoValueString = this.toJSON(info.value);
                     }else{
                         this.circularReferences = [info.value];
                         infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
@@ -173,34 +173,47 @@ export class AutoLogTracer{
             },
             stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
 
-                if(this.circularReferences.indexOf(value) > -1){
-                    if(typeof value === "object"){
-                        return null;
-                    }
-                }
-                this.circularReferences.push(value);
+                // if(this.circularReferences.indexOf(value) > -1){
+                //     if(typeof value === "object"){
+                //         return null;
+                //     }
+                // }
+                // this.circularReferences.push(value);
                 return value;
             },
-            elementToObject: function elementToObject(element, o) {
-                var el = $(element);
-                var o = {
-                   tagName: el.tagName
-                };
-                var i = 0;
-                for (i ; i < el.attributes.length; i++) {
-                    o[el.attributes[i].name] = el.attributes[i].value;
+            toJSON: function toJSON(node) {
+            //https://gist.github.com/sstur/7379870
+              node = node || this;
+              var obj = {
+                nodeType: node.nodeType
+              };
+              if (node.tagName) {
+                obj.tagName = node.tagName.toLowerCase();
+              } else
+              if (node.nodeName) {
+                obj.nodeName = node.nodeName;
+              }
+              if (node.nodeValue) {
+                obj.nodeValue = node.nodeValue;
+              }
+              var attrs = node.attributes;
+              if (attrs) {
+                var length = attrs.length;
+                var arr = obj.attributes = new Array(length);
+                for (var i = 0; i < length; i++) {
+                  var attr = attrs[i];
+                  arr[i] = [attr.nodeName, attr.nodeValue];
                 }
-
-                var children = el.childElements();
-                if (children.length) {
-                  o.children = [];
-                  i = 0;
-                  for (i ; i < children.length; i++) {
-                    child = $(children[i]);
-                    o.children[i] = elementToObject(child, o.children) ;
-                  }
+              }
+              var childNodes = node.childNodes;
+              if (childNodes) {
+                length = childNodes.length;
+                arr = obj.childNodes = new Array(length);
+                for (i = 0; i < length; i++) {
+                  arr[i] = this.toJSON(childNodes[i]);
                 }
-                return o;
+              }
+              return obj;
             },
             getTraceData: function getTraceData() {
                 return {
