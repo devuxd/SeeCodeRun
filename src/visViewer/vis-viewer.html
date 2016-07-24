@@ -12,9 +12,6 @@
                      <option repeat.for="type of visViewer.visualizationTypes" value.bind="type.value">${type.name}</option>
                 </select>
             </div>
-            <div class="w3-col" style="width:100px">
-                <button type="button" class="btn btn-primary" click.trigger="visViewer.addVisualization()">Add Visualization</button>
-            </div>
         </div>
         <div id="seePanelBody" class="panel-body container-fluid collapse in">
             <div class="w3-row-padding" if.bind="visViewer.visualizations.length">
