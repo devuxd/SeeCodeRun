@@ -28,7 +28,7 @@ export class HistoryViewer {
           $("#historyButton span").removeClass("navigation-bar-active-item");
           $("#historyButton label").removeClass("navigation-bar-active-item");
       }else{
-
+           // this.eventAggregator.publish history shown so share hides after it
           $("#historyButton span").addClass("navigation-bar-active-item");
           $("#historyButton label").addClass("navigation-bar-active-item");
       }

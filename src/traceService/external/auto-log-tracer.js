@@ -115,8 +115,7 @@ export class AutoLogTracer{
                     if(info.value && info.value.nodeType === 1){
                         infoValueString = this.toJSON(info.value);
                     }else{
-                        this.circularReferences = [info.value];
-                        infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
+                        infoValueString = this.stringify(info.value);
                     }
                 }catch(e){
                     infoValueString = info.value == null? null: info.value.toString();
@@ -171,15 +170,30 @@ export class AutoLogTracer{
 
                 return info.value;
             },
-            stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
+            stringify: function stringify(obj, replacer, spaces, cycleReplacer) {
+              return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+            },
+            serializer: function serializer(replacer, cycleReplacer) {
+              var stack = [], keys = [];
 
-                // if(this.circularReferences.indexOf(value) > -1){
-                //     if(typeof value === "object"){
-                //         return null;
-                //     }
-                // }
-                // this.circularReferences.push(value);
-                return value;
+              if (cycleReplacer == null){
+                  cycleReplacer = function(key, value) {
+                    if (stack[0] === value) return "[Circular ~]";
+                    return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
+                  };
+              }
+
+              return function(key, value) {
+                if(stack.length > 0){
+                  var thisPos = stack.indexOf(this);
+                  ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+                  ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+                  if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+                }else{
+                    stack.push(value);
+                }
+                return replacer == null ? value : replacer.call(this, key, value);
+              };
             },
             toJSON: function toJSON(node) {
             //https://gist.github.com/sstur/7379870

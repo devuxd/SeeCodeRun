@@ -36,17 +36,17 @@ export class FirebaseManager{
     }
 
     makeJsEditorFirepad(jsEditor){
-        let defaultText = '\ngo(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}';
+        let defaultText = '\nhelloWorld();\n\nfunction helloWorld() {\n\t  var message = "<h1>Hello, world!</h1>";\n\t$("body").html(message);\n\tvar noClass= $("body").attr("class");\n}';
         return this.makeFirepad("js", jsEditor, defaultText);
     }
 
     makeHtmlEditorFirepad(htmlEditor){
-        let defaultText = '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n<body>\n\n</body>\n</html>';
+        let defaultText = '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>SeeCodeRun Pastebin</title>\n\t<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js">\n\t</script>\n</head>\n<body>\n\n</body>\n</html>';
         return this.makeFirepad("html", htmlEditor, defaultText);
     }
 
     makeCssEditorFirepad(cssEditor){
-        let defaultText = 'h1 { font-weight: bold; }';
+        let defaultText = 'h1 {\n\t font-weight: bold;\n}';
         return this.makeFirepad("css", cssEditor, defaultText);
     }
 
