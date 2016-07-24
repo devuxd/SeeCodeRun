@@ -15,7 +15,7 @@ export class NavigationBar {
       this.shareBox = new ShareBox(firebaseManager);
       this.userList = new UserList(firebaseManager);
       this.chatBox = new Chat(firebaseManager);
-      this.historyViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
+      this.historyViewer = new HistoryViewer(firebaseManager, eventAggregator);
   }
 
   attached(){

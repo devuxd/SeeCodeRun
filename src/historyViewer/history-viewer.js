@@ -7,9 +7,9 @@ export class HistoryViewer {
  selectedEffect = "fold";
  hideTimeout = 100000;
  slideAnimationDuration = 500;
+ seeCodeRunEditor = null;
 
- constructor(seeCodeRunEditor, eventAggregator, firebaseManager) {
-  this.seeCodeRunEditor = seeCodeRunEditor;
+ constructor(firebaseManager, eventAggregator) {
   this.eventAggregator = eventAggregator;
   this.firebaseManager = firebaseManager;
   this.sliderValue = 0;

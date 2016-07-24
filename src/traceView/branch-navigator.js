@@ -3,6 +3,7 @@
 export class BranchNavigator{
     gutterTooltipId = "gutterTooltip";
     gutterTooltipSelector = "#gutterTooltip";
+    resetNavigationBoxSelector ="#resetNavigationBox";
     gutterTooltipSlideTime = 50;
     gutterTooltipShowDelay = 50;
     gutterTooltipHideDelay = 350;
@@ -29,6 +30,7 @@ export class BranchNavigator{
     }
 
     attached(){
+        let self = this;
         let traceViewModel = this.traceViewModel;
         let aceUtils = this.aceUtils;
         let gutterDecorationClassName = this.gutterDecorationClassName;
@@ -42,6 +44,10 @@ export class BranchNavigator{
     	    gutterDecorationClassName, traceViewModel.traceGutterData, this.update$GutterTooltip,
     	    this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
     	    );
+    	$(this.resetNavigationBoxSelector).click(function resetNavigationBoxClick(){
+    	    self.traceHelper.stopNavigation();
+    	    self.eventAggregator.publish("traceChanged", {status: self.traceHelper.event, description : self.traceHelper.description , data: self.traceHelper});
+    	});
         this.subscribe();
     }
 
