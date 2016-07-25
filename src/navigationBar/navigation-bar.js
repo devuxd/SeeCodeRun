@@ -12,9 +12,9 @@ export class NavigationBar {
 
   constructor(firebaseManager, eventAggregator){
       this.firebaseManager = firebaseManager;
-      this.shareBox = new ShareBox(firebaseManager);
-      this.userList = new UserList(firebaseManager);
-      this.chatBox = new Chat(firebaseManager);
+      this.shareBox = new ShareBox(firebaseManager, eventAggregator);
+      this.userList = new UserList(firebaseManager, eventAggregator);
+      this.chatBox = new Chat(firebaseManager, eventAggregator);
       this.historyViewer = new HistoryViewer(firebaseManager, eventAggregator);
   }
 

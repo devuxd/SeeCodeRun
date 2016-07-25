@@ -2,6 +2,7 @@
 /* global ace */
 
 export class JsEditor {
+  firebaseTag = "js";
   aceJsEditorDiv = "aceJsEditorDiv";
   jsEditorSelector = "#aceJsEditorDiv";
   isFirstLoad = true;
@@ -16,9 +17,7 @@ export class JsEditor {
     this.firebaseManager = firebaseManager;
     this.aceUtils = aceUtils;
   }
-  update(){
 
-  }
   attached() {
     let editor = ace.edit(this.aceJsEditorDiv);
     this.aceUtils.configureEditor(editor);
@@ -184,10 +183,6 @@ export class JsEditor {
       this.editor.scrollToLine(lineData.lineNumber, true, true, afterScrollAnimationFinish =>{});
       this.editor.gotoLine(lineData.lineNumber);
     });
-  }
-
-  setEditorText(hash) {
-    this.editorText = hash;
   }
 
 }

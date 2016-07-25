@@ -5,8 +5,9 @@ export class ShareBox {
     hideTimeout = 5000;
     slideAnimationDuration = 500;
 
-    constructor(firebaseManager) {
+    constructor(firebaseManager, eventAggregator) {
         this.firebaseManager = firebaseManager;
+        this.eventAggregator = eventAggregator;
     }
 
     attached() {
@@ -33,14 +34,25 @@ export class ShareBox {
                 $("#shareButton span").removeClass("navigation-bar-active-item");
                 $("#shareButton label").removeClass("navigation-bar-active-item");
             }else{
-                firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
-
+                self.eventAggregator.publish("shareBoxShown");
                 $("#shareButton span").addClass("navigation-bar-active-item");
                 $("#shareButton label").addClass("navigation-bar-active-item");
             }
             if(!$("#shareBox").is(":animated")){
-                $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
+                $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration,
+                function makePastebinFirebaseReferenceCopy(){
+                     firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
+                }
+                );
             }
+        });
+
+        self.eventAggregator.subscribe("historyBoxShown", ()=>{
+            if($("#shareBox").is(":visible")){
+                  $("#shareButton span").removeClass("navigation-bar-active-item");
+                  $("#shareButton label").removeClass("navigation-bar-active-item");
+                  $("#shareBox").toggle();
+             }
         });
 
         $('#shareListItem').mouseenter(function shareListItemMouseEnter(){

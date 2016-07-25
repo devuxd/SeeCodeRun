@@ -90,9 +90,9 @@ export class Pastebin {
     this.cssEditor.attached();
 
     this.editors = {
-      "#js-container": this.jsEditor.editor,
-      "#html-container": this.htmlEditor.editor,
-      "#css-container": this.cssEditor.editor
+      "#js-container": this.jsEditor,
+      "#html-container": this.htmlEditor,
+      "#css-container": this.cssEditor
     };
 
     this.htmlViewer.attached();
@@ -142,7 +142,7 @@ export class Pastebin {
         self.eventAggregator.publish("activeEditorChange", {activeEditor: activeEditor});
       }
     });
-    self.eventAggregator.publish("activeEditorChange", {activeEditor: this.jsEditor.editor});
+    self.eventAggregator.publish("activeEditorChange", {activeEditor: this.jsEditor});
     self.update();
   }
 
