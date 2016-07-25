@@ -86,7 +86,7 @@ export class TraceHelper {
 
          }
         this.navigationTrace.timeline = branchTimeline;
-        this.navigationTrace.traceGutterData = traceGutterData;
+        // this.navigationTrace.traceGutterData = traceGutterData;
     }
 
     getNavigationTrace(){

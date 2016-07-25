@@ -21,11 +21,21 @@ export class BranchNavigator{
         for(let row in traceGutterData.rows){
             if(traceGutterData.rows.hasOwnProperty(row)){
             let count = traceGutterData.rows[row].count;
-            let branch =traceGutterData.rows[row].branch;
-            branch = branch? branch: count;
+            // let branch =traceGutterData.rows[row].branch;
+            // branch = branch? branch: count;
+            // branch = branch> count? count: branch;
             // let previousBranch = this.branches[row]?this.branches[row].branch: branch;
             // branch = previousBranch> count? branch: previousBranch;
-            traceGutterData.rows[row].branch = branch;
+            // traceGutterData.rows[row].branch = branch;
+            traceGutterData.rows[row].branch = count;
+            }
+        }
+
+        if(this.traceHelper && this.traceHelper.navigationData){
+            let navigationData = this.traceHelper.navigationData;
+            if(traceGutterData.rows.hasOwnProperty(navigationData.row)){
+                traceGutterData.rows[navigationData.row].count = navigationData.branchMax;
+                traceGutterData.rows[navigationData.row].branch = navigationData.brancIndex;
             }
         }
         this.branches = traceGutterData.rows;
