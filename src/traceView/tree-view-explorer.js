@@ -115,6 +115,10 @@ export class TreeViewExplorer {
       return `<span class='treeObj literal'>${object}</span>`;
     }
 
+    if(typeofObject === "boolean"){
+      return `<span class='treeObj boolean'>${object}</span>`;
+    }
+
     if(typeofObject === "function"){
       return `<span class='treeObj function'>${object}</span>`;
     }

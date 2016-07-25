@@ -115,7 +115,7 @@ export class TraceHelper {
         let match = null;
         for(let i = traceData.length; i; i--){
             let entry = traceData[i-1];
-            if(entry.hasOwnProperty("range")){
+            if(entry.hasOwnProperty("range") && entry.type !== "Program"){
                 if( isPositionInRange(acePosition, entry.range)){
     			     if(match){
     			         if(isRangeInRangeStrict(entry.range, match.range)){
@@ -129,9 +129,6 @@ export class TraceHelper {
             }
         }
 
-        if(match && match.type === "Program"){
-            return null;
-        }
         return match;
 
 	}
