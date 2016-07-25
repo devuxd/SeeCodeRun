@@ -27,16 +27,23 @@ export class BranchNavigator{
             // let previousBranch = this.branches[row]?this.branches[row].branch: branch;
             // branch = previousBranch> count? branch: previousBranch;
             // traceGutterData.rows[row].branch = branch;
-            traceGutterData.rows[row].branch = count;
+            if(count != null){
+                traceGutterData.rows[row].branch = count;
+            }
+
             }
         }
 
-        if(this.traceHelper && this.traceHelper.navigationData){
-            let navigationData = this.traceHelper.navigationData;
-            if(traceGutterData.rows.hasOwnProperty(navigationData.row)){
-                traceGutterData.rows[navigationData.row].count = navigationData.branchMax;
-                traceGutterData.rows[navigationData.row].branch = navigationData.brancIndex;
+        if(this.traceHelper && this.traceHelper.navigationTrace){
+            let navigationData = this.traceHelper.navigationTrace.navigationData;
+            for(let row in navigationData){
+                let navigationDatum = navigationData[row];
+                if(navigationDatum.row !=  null && traceGutterData.rows.hasOwnProperty(navigationDatum.row)){
+                    traceGutterData.rows[navigationDatum.row].count = navigationDatum.branchMax;
+                    traceGutterData.rows[navigationDatum.row].branch = navigationDatum.brancIndex;
+                }
             }
+
         }
         this.branches = traceGutterData.rows;
     }
@@ -91,7 +98,7 @@ export class BranchNavigator{
         eventAggregator.subscribe(
             "traceNavigationPrepareChange", navigationData =>{
                 if(this.traceHelper){
-                    this.traceHelper.setNavigationData(navigationData, this.branches);
+                    this.traceHelper.pushNavigationData(navigationData, this.branches);
                     this.traceHelper.startNavigation();
                     this.traceHelper.navigateToBranch();
                     let localTraceGutterData = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());

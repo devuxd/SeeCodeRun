@@ -29,11 +29,14 @@ export class TraceHelper {
         this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: [], navigationData: {}};
     }
 
-    setNavigationData(navigationData, branches){
-        this.navigationData = navigationData;
-        if(navigationData){
-            if(branches[navigationData.row]){
-               branches[navigationData.row].branch = navigationData.branchIndex;
+    pushNavigationData(navigationDatum, branches){
+        if(navigationDatum){
+            this.currentNavigationDatum = navigationDatum;
+            if(navigationDatum.row != null){
+                this.navigationTrace.navigationData[navigationDatum.row] = navigationDatum;
+                if(branches[navigationDatum.row]){
+                   branches[navigationDatum.row].branch = navigationDatum.branchIndex;
+                }
             }
         }
         this.branches = branches;
@@ -55,9 +58,9 @@ export class TraceHelper {
     }
 
     navigateToBranch(){
-        let branchExpressionRange = this.navigationData.entry.range,
-            branchIndex = this.navigationData.branchIndex,
-            branchMax = this.navigationData.branchMax;
+        let branchExpressionRange = this.currentNavigationDatum.entry.range,
+            branchIndex = this.currentNavigationDatum.branchIndex,
+            branchMax = this.currentNavigationDatum.branchMax;
         let traceGutterData = [];
         let timelineHitsLowerbound = (branchIndex - 1)*2 + 1;
         let timelineHitsHigherBound = branchIndex*2 + 1; // call appears at entrance and exit of block

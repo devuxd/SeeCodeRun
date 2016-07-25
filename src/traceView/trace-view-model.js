@@ -31,6 +31,7 @@ export class TraceViewModel {
             let rowCount = localTraceGutterData.rows[rowIndex].count;
             if(rowCount && this.traceGutterData.rows[rowIndex]){
                 this.traceGutterData.rows[rowIndex].count = rowCount;
+                this.traceGutterData.rows[rowIndex].branch = rowCount;
             }
         }
     }
