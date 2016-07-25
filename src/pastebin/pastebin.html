@@ -11,7 +11,7 @@
   <require from = "visViewer/vis-viewer.html"></require>
   <require from = "htmlViewer/html-viewer.html"></require>
   <require from = "consoleWindow/console-window.html"></require>
-  <require from = "tracePlay/play.html"></require>
+  <require from = "tracePlayer/trace-player.html"></require>
   <require from = "traceSearch/trace-search.html"></require>
 
   <div id = "mainContainer" class = "box-shadow-bottom">
@@ -64,7 +64,7 @@
               <html-viewer></html-viewer>
             </div>
             <div id = "visualization-container" class = "tab-pane fade"  role = "tabpanel" aria-labelledby="visualizationTab">
-              <play tracePlay.bind = "tracePlay"></play>
+              <trace-player tracePlayer.bind = "traceViewController.tracePlayer"></trace-player>
               <trace-search trace-search.bind = "traceSearch"></trace-search>
               <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
             </div>

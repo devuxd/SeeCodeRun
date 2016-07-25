@@ -1,4 +1,5 @@
 /* global $ */
+import {TracePlayer} from '../tracePlayer/trace-player';
 
 export class BranchNavigator{
     gutterTooltipId = "gutterTooltip";
@@ -15,6 +16,7 @@ export class BranchNavigator{
         this.aceUtils = aceUtils;
         this.jsEditor = jsEditor;
         this.traceViewModel = traceViewModel;
+        this.tracePlayer = new TracePlayer(eventAggregator, aceUtils);
     }
 
     updateGutterBranches(traceGutterData){
@@ -67,6 +69,8 @@ export class BranchNavigator{
     	    self.traceHelper.stopNavigation();
     	    self.eventAggregator.publish("traceChanged", {status: self.traceHelper.event, description : self.traceHelper.description , data: self.traceHelper});
     	});
+
+        this.tracePlayer.attached();
         this.subscribe();
     }
 

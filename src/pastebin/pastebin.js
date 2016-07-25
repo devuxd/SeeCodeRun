@@ -21,7 +21,6 @@ import {TraceViewController} from '../traceView/trace-view-controller';
 import {ExpressionSelection} from '../expressionSelection/expression-selection';
 import {TraceSearch} from '../traceSearch/trace-search';
 import {TraceSearchHistory} from '../traceSearch/trace-search-history';
-import {TracePlay} from '../tracePlay/play';
 
 import {customElement} from 'aurelia-framework';
 
@@ -54,7 +53,6 @@ export class Pastebin {
 
     this.traceViewController = new TraceViewController(eventAggregator, aceUtils, this.jsEditor);
     this.expressionSelection = new ExpressionSelection(eventAggregator);
-    this.tracePlay = new TracePlay(eventAggregator, traceModel, aceUtils);
 
     this.traceSearch = new TraceSearch(eventAggregator, traceModel, aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(eventAggregator, firebaseManager);
@@ -99,7 +97,6 @@ export class Pastebin {
     this.visViewer.attached();
 
     this.traceViewController.attached();
-    this.tracePlay.attached();
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
 
