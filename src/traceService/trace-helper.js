@@ -59,7 +59,8 @@ export class TraceHelper {
             branchIndex = this.navigationData.branchIndex,
             branchMax = this.navigationData.branchMax;
         let traceGutterData = [];
-        let timelineHits = branchIndex*2 + 1; // call appears at entrance and exit of block
+        let timelineHitsLowerbound = (branchIndex - 1)*2 + 1;
+        let timelineHitsHigherBound = branchIndex*2 + 1; // call appears at entrance and exit of block
         let timelineMaxHits = branchMax*2;
         let timeline = this.trace.timeline;
         let branchTimeline = [];
@@ -71,13 +72,18 @@ export class TraceHelper {
                 break;
             }
 
-            if(branchHits === timelineHits){
+            if(branchHits === timelineHitsHigherBound){
                 break;
             }
+
+            if(branchHits >= timelineHitsLowerbound){
+                branchTimeline.push(timeline[j]);
+            }
+
             if(this.rangeEquals(timeline[j].range, branchExpressionRange)) {
               branchHits++;
             }
-            branchTimeline.push(timeline[j]);
+
          }
         this.navigationTrace.timeline = branchTimeline;
         this.navigationTrace.traceGutterData = traceGutterData;
@@ -290,10 +296,13 @@ export class TraceHelper {
                 entry = stack[i];
                 for(let j in timeline){
                     if(timeline[j].key === entry){
-                        hits[entry] = hits[entry]? hits[entry]++: 1;
+                        hits[entry] = hits[entry]? hits[entry] + 1 : 1;
                     }
                 }
-                stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+                if(hits[entry]){
+                    stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+                }
+
             }
         }
         return stackData;

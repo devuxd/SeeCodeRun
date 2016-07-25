@@ -19,12 +19,14 @@ export class BranchNavigator{
 
     updateGutterBranches(traceGutterData){
         for(let row in traceGutterData.rows){
+            if(traceGutterData.rows.hasOwnProperty(row)){
             let count = traceGutterData.rows[row].count;
             let branch =traceGutterData.rows[row].branch;
             branch = branch? branch: count;
-            let previousBranch = this.branches[row]?this.branches[row].branch: branch;
-            branch = previousBranch> count? branch: previousBranch;
+            // let previousBranch = this.branches[row]?this.branches[row].branch: branch;
+            // branch = previousBranch> count? branch: previousBranch;
             traceGutterData.rows[row].branch = branch;
+            }
         }
         this.branches = traceGutterData.rows;
     }
@@ -82,8 +84,11 @@ export class BranchNavigator{
                     this.traceHelper.setNavigationData(navigationData, this.branches);
                     this.traceHelper.startNavigation();
                     this.traceHelper.navigateToBranch();
-                    // traceViewModel.traceGutterData.rows = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
-                    // eventAggregator.publish("traceGutterDataChanged");
+                    let localTraceGutterData = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
+                    // traceViewModel.traceGutterData.maxCount = localTraceGutterData.maxCount;
+                    // traceViewModel.traceGutterData.rows = localTraceGutterData.rows;
+                    traceViewModel.updateTraceGutterRowCount(localTraceGutterData);
+                    eventAggregator.publish("traceGutterDataChanged");
                     eventAggregator.publish("traceNavigationChange", this.traceHelper);
                 }
 
