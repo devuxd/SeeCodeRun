@@ -215,6 +215,10 @@
     color: rgb(26, 26, 66);
 }
 
+.boolean {
+  color: rgb(26, 166, 166);
+}
+
 .function {
   color: rgb(26, 26, 166);
 }

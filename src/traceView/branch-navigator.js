@@ -1,8 +1,10 @@
 /* global $ */
+import {TracePlayer} from '../tracePlayer/trace-player';
 
 export class BranchNavigator{
     gutterTooltipId = "gutterTooltip";
     gutterTooltipSelector = "#gutterTooltip";
+    resetNavigationBoxSelector ="#resetNavigationBox";
     gutterTooltipSlideTime = 50;
     gutterTooltipShowDelay = 50;
     gutterTooltipHideDelay = 350;
@@ -14,21 +16,42 @@ export class BranchNavigator{
         this.aceUtils = aceUtils;
         this.jsEditor = jsEditor;
         this.traceViewModel = traceViewModel;
+        this.tracePlayer = new TracePlayer(eventAggregator, aceUtils);
     }
 
     updateGutterBranches(traceGutterData){
         for(let row in traceGutterData.rows){
+            if(traceGutterData.rows.hasOwnProperty(row)){
             let count = traceGutterData.rows[row].count;
-            let branch =traceGutterData.rows[row].branch;
-            branch = branch? branch: count;
-            let previousBranch = this.branches[row]?this.branches[row].branch: branch;
-            branch = previousBranch> count? branch: previousBranch;
-            traceGutterData.rows[row].branch = branch;
+            // let branch =traceGutterData.rows[row].branch;
+            // branch = branch? branch: count;
+            // branch = branch> count? count: branch;
+            // let previousBranch = this.branches[row]?this.branches[row].branch: branch;
+            // branch = previousBranch> count? branch: previousBranch;
+            // traceGutterData.rows[row].branch = branch;
+            if(count != null){
+                traceGutterData.rows[row].branch = count;
+            }
+
+            }
+        }
+
+        if(this.traceHelper && this.traceHelper.navigationTrace){
+            let navigationData = this.traceHelper.navigationTrace.navigationData;
+            for(let row in navigationData){
+                let navigationDatum = navigationData[row];
+                if(navigationDatum.row !=  null && traceGutterData.rows.hasOwnProperty(navigationDatum.row)){
+                    traceGutterData.rows[navigationDatum.row].count = navigationDatum.branchMax;
+                    traceGutterData.rows[navigationDatum.row].branch = navigationDatum.brancIndex;
+                }
+            }
+
         }
         this.branches = traceGutterData.rows;
     }
 
     attached(){
+        let self = this;
         let traceViewModel = this.traceViewModel;
         let aceUtils = this.aceUtils;
         let gutterDecorationClassName = this.gutterDecorationClassName;
@@ -42,6 +65,12 @@ export class BranchNavigator{
     	    gutterDecorationClassName, traceViewModel.traceGutterData, this.update$GutterTooltip,
     	    this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
     	    );
+    	$(this.resetNavigationBoxSelector).click(function resetNavigationBoxClick(){
+    	    self.traceHelper.stopNavigation();
+    	    self.eventAggregator.publish("traceChanged", {status: self.traceHelper.event, description : self.traceHelper.description , data: self.traceHelper});
+    	});
+
+        this.tracePlayer.attached();
         this.subscribe();
     }
 
@@ -73,11 +102,14 @@ export class BranchNavigator{
         eventAggregator.subscribe(
             "traceNavigationPrepareChange", navigationData =>{
                 if(this.traceHelper){
-                    this.traceHelper.setNavigationData(navigationData, this.branches);
+                    this.traceHelper.pushNavigationData(navigationData, this.branches);
                     this.traceHelper.startNavigation();
                     this.traceHelper.navigateToBranch();
-                    // traceViewModel.traceGutterData.rows = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
-                    // eventAggregator.publish("traceGutterDataChanged");
+                    let localTraceGutterData = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
+                    // traceViewModel.traceGutterData.maxCount = localTraceGutterData.maxCount;
+                    // traceViewModel.traceGutterData.rows = localTraceGutterData.rows;
+                    traceViewModel.updateTraceGutterRowCount(localTraceGutterData);
+                    eventAggregator.publish("traceGutterDataChanged");
                     eventAggregator.publish("traceNavigationChange", this.traceHelper);
                 }
 

@@ -24,7 +24,7 @@ export class EsTracer {
         let duration = (+new Date()) - this.startTimestamp ;
         results.description = `${event.description} Trace completed in ${1 + duration} ms.`;
 
-        this.traceHelper = new TraceHelper(results, this.traceModel);
+        this.traceHelper = new TraceHelper(results, this.traceModel, event.event);
 
         let details = results.description;
         if(results.error){

@@ -111,24 +111,13 @@ export class AutoLogTracer{
                 var infoValueString = null;
                 this.previousValueToException = null;
                 this.previousValuesToException = [];
-                var keepTrying = false;
-                var c = 100;
-                do{
-                    try{
-                        if(info.value && info.value.nodeName){
-                            infoValueString = this.elementToObject(info.value);
-                        }else{
-                        infoValueString = JSON.stringify(info.value, this.stringifyCicleBreaker);
-                        }
-                        keepTrying = false;
-                    }catch(e){
-                    // console.log(this.previousValueToException);
-                        this.previousValuesToException.push(this.previousValueToException);
-                        keepTrying = true;
+                try{
+                    if(info.value && info.value.nodeType === 1){
+                        infoValueString = this.toJSON(info.value);
+                    }else{
+                        infoValueString = this.stringify(info.value);
                     }
-
-                }while(keepTrying && c--);
-                if(infoValueString == null){
+                }catch(e){
                     infoValueString = info.value == null? null: info.value.toString();
                 }
 
@@ -181,33 +170,64 @@ export class AutoLogTracer{
 
                 return info.value;
             },
-            stringifyCicleBreaker: function stringifyCicleBreaker( key, value){
-                this.previousValueToException = value;
-                if(this.previousValuesToException.indexOf(value) > -1){
-                    return null;
-                }
-                return value;
+            stringify: function stringify(obj, replacer, spaces, cycleReplacer) {
+              return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
             },
-            elementToObject: function elementToObject(element, o) {
-                var el = $(element);
-                var o = {
-                   tagName: el.tagName
-                };
-                var i = 0;
-                for (i ; i < el.attributes.length; i++) {
-                    o[el.attributes[i].name] = el.attributes[i].value;
-                }
+            serializer: function serializer(replacer, cycleReplacer) {
+              var stack = [], keys = [];
 
-                var children = el.childElements();
-                if (children.length) {
-                  o.children = [];
-                  i = 0;
-                  for (i ; i < children.length; i++) {
-                    child = $(children[i]);
-                    o.children[i] = elementToObject(child, o.children) ;
-                  }
+              if (cycleReplacer == null){
+                  cycleReplacer = function(key, value) {
+                    if (stack[0] === value) return "[Circular ~]";
+                    return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
+                  };
+              }
+
+              return function(key, value) {
+                if(stack.length > 0){
+                  var thisPos = stack.indexOf(this);
+                  ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+                  ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+                  if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+                }else{
+                    stack.push(value);
                 }
-                return o;
+                return replacer == null ? value : replacer.call(this, key, value);
+              };
+            },
+            toJSON: function toJSON(node) {
+            //https://gist.github.com/sstur/7379870
+              node = node || this;
+              var obj = {
+                nodeType: node.nodeType
+              };
+              if (node.tagName) {
+                obj.tagName = node.tagName.toLowerCase();
+              } else
+              if (node.nodeName) {
+                obj.nodeName = node.nodeName;
+              }
+              if (node.nodeValue) {
+                obj.nodeValue = node.nodeValue;
+              }
+              var attrs = node.attributes;
+              if (attrs) {
+                var length = attrs.length;
+                var arr = obj.attributes = new Array(length);
+                for (var i = 0; i < length; i++) {
+                  var attr = attrs[i];
+                  arr[i] = [attr.nodeName, attr.nodeValue];
+                }
+              }
+              var childNodes = node.childNodes;
+              if (childNodes) {
+                length = childNodes.length;
+                arr = obj.childNodes = new Array(length);
+                for (i = 0; i < length; i++) {
+                  arr[i] = this.toJSON(childNodes[i]);
+                }
+              }
+              return obj;
             },
             getTraceData: function getTraceData() {
                 return {

@@ -1,8 +1,12 @@
 <template bindable="historyViewer">
-    <div class = "row" style = "width:700px;"><div class = "col-md-offset-1">
-    	<input name="slider" id="historySlider" type="range" min="1" max="50" value="1" step="1" /> 
-        <span id="range">1</span></div>
-    	
-	</div>
-	<div id="aceHtmlHistoryEditorDiv" style="height: 700px; display:none"></div>
+    <require from = "./history-viewer.css"></require>
+    <div class = "w3-row-padding">
+        <div class ="w3-col" style="width:150px; padding-top: 5px; padding-bottom: 5px;">
+            <div id="historySlider"></div>
+        </div>
+        <div class="w3-rest">
+            <!--file_download-->
+            <i id = "historyChangeButton" class="material-icons">&#xE2C4;</i>
+        </div>
+    </div>
 </template>

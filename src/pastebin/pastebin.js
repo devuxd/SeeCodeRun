@@ -14,7 +14,6 @@ import {CssEditor} from '../cssEditor/css-editor';
 import {JsEditor} from '../jsEditor/js-editor';
 import {JsGutter} from '../jsGutter/js-gutter';
 import {HtmlViewer} from '../htmlViewer/html-viewer';
-import {HistoryViewer} from '../historyViewer/history-viewer';
 import {VisViewer} from '../visViewer/vis-viewer';
 import {ConsoleWindow} from '../consoleWindow/console-window';
 
@@ -22,7 +21,6 @@ import {TraceViewController} from '../traceView/trace-view-controller';
 import {ExpressionSelection} from '../expressionSelection/expression-selection';
 import {TraceSearch} from '../traceSearch/trace-search';
 import {TraceSearchHistory} from '../traceSearch/trace-search-history';
-import {TracePlay} from '../tracePlay/play';
 
 import {customElement} from 'aurelia-framework';
 
@@ -41,7 +39,7 @@ export class Pastebin {
     this.aceUtils = aceUtils;
     this.firebaseManager = firebaseManager;
     this.domElement = domElement;
-    this.navigationBar = new NavigationBar(firebaseManager);
+    this.navigationBar = new NavigationBar(firebaseManager, eventAggregator);
 
     this.consoleWindow = new ConsoleWindow(eventAggregator);
 
@@ -50,13 +48,11 @@ export class Pastebin {
     this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
     this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
 
-    this.htmlEditorHistoryViewer = new HistoryViewer(this.htmlEditor, eventAggregator);
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
     this.visViewer  =new VisViewer(eventAggregator);
 
     this.traceViewController = new TraceViewController(eventAggregator, aceUtils, this.jsEditor);
     this.expressionSelection = new ExpressionSelection(eventAggregator);
-    this.tracePlay = new TracePlay(eventAggregator, traceModel, aceUtils);
 
     this.traceSearch = new TraceSearch(eventAggregator, traceModel, aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(eventAggregator, firebaseManager);
@@ -91,13 +87,16 @@ export class Pastebin {
     this.htmlEditor.attached();
     this.cssEditor.attached();
 
-    this.htmlEditorHistoryViewer.attached();
+    this.editors = {
+      "#js-container": this.jsEditor,
+      "#html-container": this.htmlEditor,
+      "#css-container": this.cssEditor
+    };
 
     this.htmlViewer.attached();
     this.visViewer.attached();
 
     this.traceViewController.attached();
-    this.tracePlay.attached();
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
 
@@ -130,6 +129,17 @@ export class Pastebin {
 
     let $panelHeadingTitles = $('.panel-heading-title');
     $panelHeadingTitles.click();
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      self.eventAggregator.publish("activeTabChange", {tabContainerSelector: e.target.href.substring(e.target.href.lastIndexOf("#"))});
+    });
+
+    self.eventAggregator.subscribe("activeTabChange", tabEvent=>{
+      let activeEditor = this.editors[tabEvent.tabContainerSelector];
+      if(activeEditor){
+        self.eventAggregator.publish("activeEditorChange", {activeEditor: activeEditor});
+      }
+    });
+    self.eventAggregator.publish("activeEditorChange", {activeEditor: this.jsEditor});
     self.update();
   }
 

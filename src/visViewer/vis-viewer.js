@@ -39,6 +39,14 @@ export class VisViewer {
     ea.subscribe("traceChanged", payload => {
       self.traceHelper = payload.data;
       self.trace = payload.data.trace;
+
+      let currentVisualizationType= $(this.visViewerSelectSelector).val();
+      if(!currentVisualizationType){
+        currentVisualizationType = "CallGraph";
+        $(this.visViewerSelectSelector).val(currentVisualizationType);
+        this.addVisualization();
+      }
+
       for (let visualization of this.visualizations) {
         visualization.traceHelper = self.traceHelper;
         visualization.trace = self.trace;
@@ -87,9 +95,10 @@ export class VisViewer {
       if(!this.checkVisExists(tempVis.type)) {
           tempVis.traceHelper = this.traceHelper;
           tempVis.trace = this.trace;
+          this.visualizations = [];
           this.visualizations.push(tempVis);
           let vis = this.visualizations[this.visualizations.length-1];
-          this.removeVisType(tempVis.type);
+          // this.removeVisType(tempVis.type);
           setTimeout(function() {
             vis.attached();
             if(!$(self.seePanelBodySelector).is(":visible")){
@@ -101,9 +110,8 @@ export class VisViewer {
 
   }
 
-  onSelectChange(event) {
-    // let type = $(event.target).val();
-    // this.prepareVisualization(type);
+  onSelectChange(event, index) {
+    this.addVisualization();
   }
 
   prepareVisualization(type){

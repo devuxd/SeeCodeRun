@@ -1,8 +1,9 @@
 import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
-    constructor(trace, traceModel){
+    constructor(trace, traceModel, event){
         this.traceModel = traceModel;
         this.description = trace.description;
+        this.event = event;
         this.error = trace.error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
@@ -28,11 +29,14 @@ export class TraceHelper {
         this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: [], navigationData: {}};
     }
 
-    setNavigationData(navigationData, branches){
-        this.navigationData = navigationData;
-        if(navigationData){
-            if(branches[navigationData.row]){
-               branches[navigationData.row].branch = navigationData.branchIndex;
+    pushNavigationData(navigationDatum, branches){
+        if(navigationDatum){
+            this.currentNavigationDatum = navigationDatum;
+            if(navigationDatum.row != null){
+                this.navigationTrace.navigationData[navigationDatum.row] = navigationDatum;
+                if(branches[navigationDatum.row]){
+                   branches[navigationDatum.row].branch = navigationDatum.branchIndex;
+                }
             }
         }
         this.branches = branches;
@@ -54,11 +58,12 @@ export class TraceHelper {
     }
 
     navigateToBranch(){
-        let branchExpressionRange = this.navigationData.entry.range,
-            branchIndex = this.navigationData.branchIndex,
-            branchMax = this.navigationData.branchMax;
+        let branchExpressionRange = this.currentNavigationDatum.entry.range,
+            branchIndex = this.currentNavigationDatum.branchIndex,
+            branchMax = this.currentNavigationDatum.branchMax;
         let traceGutterData = [];
-        let timelineHits = branchIndex*2 + 1; // call appears at entrance and exit of block
+        let timelineHitsLowerbound = (branchIndex - 1)*2 + 1;
+        let timelineHitsHigherBound = branchIndex*2 + 1; // call appears at entrance and exit of block
         let timelineMaxHits = branchMax*2;
         let timeline = this.trace.timeline;
         let branchTimeline = [];
@@ -70,16 +75,21 @@ export class TraceHelper {
                 break;
             }
 
-            if(branchHits === timelineHits){
+            if(branchHits === timelineHitsHigherBound){
                 break;
             }
+
+            if(branchHits >= timelineHitsLowerbound){
+                branchTimeline.push(timeline[j]);
+            }
+
             if(this.rangeEquals(timeline[j].range, branchExpressionRange)) {
               branchHits++;
             }
-            branchTimeline.push(timeline[j]);
+
          }
         this.navigationTrace.timeline = branchTimeline;
-        this.navigationTrace.traceGutterData = traceGutterData;
+        // this.navigationTrace.traceGutterData = traceGutterData;
     }
 
     getNavigationTrace(){
@@ -108,7 +118,7 @@ export class TraceHelper {
         let match = null;
         for(let i = traceData.length; i; i--){
             let entry = traceData[i-1];
-            if(entry.hasOwnProperty("range")){
+            if(entry.hasOwnProperty("range") && entry.type !== "Program"){
                 if( isPositionInRange(acePosition, entry.range)){
     			     if(match){
     			         if(isRangeInRangeStrict(entry.range, match.range)){
@@ -122,9 +132,6 @@ export class TraceHelper {
             }
         }
 
-        if(match && match.type === "Program"){
-            return null;
-        }
         return match;
 
 	}
@@ -289,10 +296,13 @@ export class TraceHelper {
                 entry = stack[i];
                 for(let j in timeline){
                     if(timeline[j].key === entry){
-                        hits[entry] = hits[entry]? hits[entry]++: 1;
+                        hits[entry] = hits[entry]? hits[entry] + 1 : 1;
                     }
                 }
-                stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+                if(hits[entry]){
+                    stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+                }
+
             }
         }
         return stackData;

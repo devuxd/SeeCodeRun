@@ -8,11 +8,10 @@
   <require from = "jsGutter/js-gutter.html"></require>
   <require from = "htmlEditor/html-editor.html"></require>
   <require from = "cssEditor/css-editor.html"></require>
-  <require from = "historyViewer/history-viewer.html"></require>
   <require from = "visViewer/vis-viewer.html"></require>
   <require from = "htmlViewer/html-viewer.html"></require>
   <require from = "consoleWindow/console-window.html"></require>
-  <require from = "tracePlay/play.html"></require>
+  <require from = "tracePlayer/trace-player.html"></require>
   <require from = "traceSearch/trace-search.html"></require>
 
   <div id = "mainContainer" class = "box-shadow-bottom">
@@ -37,7 +36,6 @@
           </div>
         </div>
         <div id = "html-container" class = "tab-pane fade"  role = "tabpanel" aria-labelledby="htmlTab">
-          <history-viewer historyViewer.bind = "historyViewer"></history-viewer>
           <html-editor html-editor.bind = "htmlEditor"></html-editor>
         </div>
         <div id = "css-container"  class = "tab-pane fade" role = "tabpanel" aria-labelledby="cssTab">
@@ -66,7 +64,7 @@
               <html-viewer></html-viewer>
             </div>
             <div id = "visualization-container" class = "tab-pane fade"  role = "tabpanel" aria-labelledby="visualizationTab">
-              <play tracePlay.bind = "tracePlay"></play>
+              <trace-player tracePlayer.bind = "traceViewController.tracePlayer"></trace-player>
               <trace-search trace-search.bind = "traceSearch"></trace-search>
               <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
             </div>

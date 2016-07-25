@@ -7,8 +7,9 @@ export class ExpressionDataExplorer{
     editorTooltipId = "editorTooltip";
     editorTooltipContentId = "editorTooltipContentId";
     viewportSelector = "#codeContent .ace_scroller";
-    editorTooltipShowDelay = 750;
-    editorTooltipHideDelay = 1500;
+    viewportPadding = -6;
+    editorTooltipShowDelay = 1000;
+    editorTooltipHideDelay = 750;
     currentMatchRange = null;
 
     constructor(eventAggregator, aceUtils, aureliaEditor, traceViewModel){
@@ -34,7 +35,7 @@ export class ExpressionDataExplorer{
             "data-content": "No value found."
         });
 		$editorTooltip.popover({
-		    viewport: this.viewportSelector,
+		    viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
 		    html: true,
 		    trigger: 'manual',
             template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
@@ -42,7 +43,7 @@ export class ExpressionDataExplorer{
         }
 
         $editorTooltip.appendTo('body');
-        $editorTooltip.on('show.bs.popover', function(){
+        $editorTooltip.on('shown.bs.popover', function(){
           CollapsibleLists.apply();
         });
 
@@ -78,7 +79,7 @@ export class ExpressionDataExplorer{
 
 		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
               div.popover("show");
-              CollapsibleLists.apply();
+
               aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
 			}else{
 			    div.popover("hide");
@@ -126,4 +127,106 @@ export class ExpressionDataExplorer{
         }
     }
 
+    toJSON(node) {
+    //https://gist.github.com/sstur/7379870
+      var obj = {
+        nodeType: node.nodeType
+      };
+      if (node.tagName) {
+        obj.tagName = node.tagName.toLowerCase();
+      } else
+      if (node.nodeName) {
+        obj.nodeName = node.nodeName;
+      }
+      if (node.nodeValue) {
+        obj.nodeValue = node.nodeValue;
+      }
+      var attrs = node.attributes;
+      if (attrs) {
+        var length = attrs.length;
+        var arr = obj.attributes = new Array(length);
+        for (var i = 0; i < length; i++) {
+          var attr = attrs[i];
+          arr[i] = [attr.nodeName, attr.nodeValue];
+        }
+      }
+      var childNodes = node.childNodes;
+      if (childNodes) {
+        length = childNodes.length;
+        arr = obj.childNodes = new Array(length);
+        for (i = 0; i < length; i++) {
+          arr[i] = this.toJSON(childNodes[i]);
+        }
+      }
+      return obj;
+    }
+
+    toDOM(obj) {
+        // https://gist.github.com/sstur/7379870
+      if (typeof obj == 'string') {
+        obj = JSON.parse(obj);
+      }
+      var node, nodeType = obj.nodeType;
+      switch (nodeType) {
+        case 1: //ELEMENT_NODE
+          node = document.createElement(obj.tagName);
+          var attributes = obj.attributes || [];
+          for (var i = 0, len = attributes.length; i < len; i++) {
+            var attr = attributes[i];
+            node.setAttribute(attr[0], attr[1]);
+          }
+          break;
+        case 3: //TEXT_NODE
+          node = document.createTextNode(obj.nodeValue);
+          break;
+        case 8: //COMMENT_NODE
+          node = document.createComment(obj.nodeValue);
+          break;
+        case 9: //DOCUMENT_NODE
+          node = document.implementation.createDocument();
+          break;
+        case 10: //DOCUMENT_TYPE_NODE
+          node = document.implementation.createDocumentType(obj.nodeName);
+          break;
+        case 11: //DOCUMENT_FRAGMENT_NODE
+          node = document.createDocumentFragment();
+          break;
+        default:
+          return node;
+      }
+      if (nodeType == 1 || nodeType == 11) {
+        var childNodes = obj.childNodes || [];
+        for (i = 0, len = childNodes.length; i < len; i++) {
+          node.appendChild(this.toDOM(childNodes[i]));
+        }
+      }
+      return node;
+    }
+
+    stringify(obj, replacer, spaces, cycleReplacer) {
+      return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+    }
+
+    serializer(replacer, cycleReplacer) {
+      var stack = [], keys = [];
+
+      if (cycleReplacer == null){
+          cycleReplacer = function(key, value) {
+            if (stack[0] === value) return "[Circular ~]";
+            return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
+          };
+      }
+
+      return function(key, value) {
+        if(stack.length > 0){
+          var thisPos = stack.indexOf(this);
+          ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+          ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+          if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+        }else{
+            stack.push(value);
+        }
+        return replacer == null ? value : replacer.call(this, key, value);
+      };
+    }
 }

@@ -26,9 +26,19 @@ export class TraceViewModel {
         return undefined;
     }
 
+    updateTraceGutterRowCount(localTraceGutterData){
+        for (let rowIndex in localTraceGutterData.rows){
+            let rowCount = localTraceGutterData.rows[rowIndex].count;
+            if(rowCount && this.traceGutterData.rows[rowIndex]){
+                this.traceGutterData.rows[rowIndex].count = rowCount;
+                this.traceGutterData.rows[rowIndex].branch = rowCount;
+            }
+        }
+    }
 
-    updateTraceGutterData(stackTrace){
-        let localTraceGutterData = this.extractTraceGutterData(stackTrace);
+
+    updateTraceGutterData(traceCollection){
+        let localTraceGutterData = this.extractTraceGutterData(traceCollection);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
         this.traceGutterData.rows = localTraceGutterData.rows;
     }

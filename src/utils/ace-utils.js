@@ -291,7 +291,13 @@ export class AceUtils{
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){
                     let count = traceGutterData.rows[row].count;
-                    let branch =traceGutterData.rows[row].branch;
+                    if(count == null){
+                        count = "n.a.";
+                    }
+                    let branch = traceGutterData.rows[row].branch;
+                    if(branch == null){
+                        branch = count;
+                    }
                     return "["+branch+"/"+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;

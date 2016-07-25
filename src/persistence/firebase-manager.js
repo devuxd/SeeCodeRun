@@ -32,17 +32,18 @@ export class FirebaseManager{
     }
 
     makeJsEditorFirepad(jsEditor){
-        let defaultText = '\ngo(); \n\nfunction go() {\n  var message = "Hello, world.";\n  console.log(message);\n}';
+        // let defaultText = '\nhelloWorld();\n\nfunction helloWorld() {\n\t  var message = "<h1>Hello, world!</h1>";\n\t$("body").html(message);\n\tvar noClass= $("body").attr("class");\n}';
+        let defaultText = '\nhelloWorld();\n\nfunction helloWorld() {\n\t  var message = "<h1>Hello, world!</h1>";\n\t$("body").html();\n}';
         return this.makeFirepad("js", jsEditor, defaultText);
     }
 
     makeHtmlEditorFirepad(htmlEditor){
-        let defaultText = '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>Coode</title>\n</head>\n<body>\n\n</body>\n</html>';
+        let defaultText = '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>SeeCodeRun Pastebin</title>\n\t<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js">\n\t</script>\n</head>\n<body>\n\n</body>\n</html>';
         return this.makeFirepad("html", htmlEditor, defaultText);
     }
 
     makeCssEditorFirepad(cssEditor){
-        let defaultText = 'h1 { font-weight: bold; }';
+        let defaultText = 'h1 {\n\t font-weight: bold;\n}';
         return this.makeFirepad("css", cssEditor, defaultText);
     }
 
@@ -55,6 +56,43 @@ export class FirebaseManager{
           editor, {
             defaultText: defaultText
           });
+    }
+
+    makeHistoryViewerFirepad(subject, editor){
+        let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
+        let subjectFirebase = new Firebase(subjectURL);
+
+        let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/content/${subject}/historyViewer`;
+        let historyFirebase = new Firebase(subjectHistoryURL);
+
+        // Remove the folder from the firebase
+        historyFirebase.remove();
+        editor.setValue("");
+        // Copy the entire firebase to the history firebase
+        subjectFirebase.once("value", function (snap) {
+           historyFirebase.set(snap.val());
+        });
+        let sliderMaxValue = 0;
+        subjectFirebase.child('history').once("value", function (sna) {
+            sliderMaxValue = sna.numChildren();
+        });
+
+        editor.setValue("");
+        return {
+            sliderMaxValue: sliderMaxValue,
+            subjectFirebase: subjectFirebase,
+            historyFirebase: historyFirebase,
+            historyFirepad: Firepad.fromACE(historyFirebase, editor,{defaultText: ""})
+        };
+    }
+
+    slideHistoryViewerFirepad(subjectFirebase,  historyFirebase, editor, sliderValue){
+        // Remove the history from the history firebase
+        historyFirebase.child('history').remove();
+        // Copy history from the firebase to the history firebase to display values till a specific point in history.
+        subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snap) {
+            historyFirebase.child('history').set(snap.val());
+        });
     }
 
     makePastebinFirebaseReferenceCopy(source, destination) {
