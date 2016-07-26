@@ -81,6 +81,12 @@ export class BranchNavigator{
             traceViewModel = this.traceViewModel,
             gutterDecorationClassName = this.gutterDecorationClassName;
 
+        eventAggregator.subscribe("jsEditorCursorMoved", info => {
+            this.selectedLine = info.cursor ||1;
+            this.hideTooltip();
+
+        });
+
         eventAggregator.subscribe(
             "jsEditorPreChange", payload =>{
                 this.cleanGutterUI();
@@ -290,5 +296,9 @@ export class BranchNavigator{
          }
         this.aceUtils.removeAllGutterDecorations(this.editor, this.gutterDecorationClassName);
         this.traceViewModel.resetTraceGutterDataRows();
+    }
+
+    hideTooltip(){
+
     }
 }

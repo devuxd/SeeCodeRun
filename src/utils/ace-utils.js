@@ -142,11 +142,10 @@ export class AceUtils{
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
     		        content = dataModel.rows[row];
-                    let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
-
-    			    pixelPosition.pageY -= target.getBoundingClientRect().height;
-    			    //subtract the gutter width and editor text layer padding
-    				pixelPosition.pageX -= target.getBoundingClientRect().width + 4;
+                    let pixelPosition = {};
+                    let boundingRect = target.getBoundingClientRect();
+    			    pixelPosition.pageY = boundingRect.top - editor.renderer.lineHeight;
+    				pixelPosition.pageX = boundingRect.left;
 
                     if(row !== self.previousRow){
                         setTooltipMouseMove(target, row,  pixelPosition, content);

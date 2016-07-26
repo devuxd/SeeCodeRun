@@ -109,7 +109,7 @@ export class JsEditor {
         lastVisibleRow: session.getLength(),
         position: cursorPosition
       };
-      ea.publish('onCursorMoved', info);
+      ea.publish("jsEditorCursorMoved", info);
     });
 
     editor.on("click", function jsEditorClick(event){

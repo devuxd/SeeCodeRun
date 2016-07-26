@@ -707,7 +707,7 @@ export class EsInstrumenter {
             identifier =  parent.id ? parent.id.name : '[Anonymous]';
 
         } else if (typeof parent.length === 'number') {
-            identifier =  parent.id ? parent.id.name : '[Anonymous]';
+            identifier =  parent[0].id ? parent[0].id.name : '[Anonymous]';
 
         } else if (typeof parent.key !== 'undefined') {
             if (parent.key.type === 'Identifier') {
