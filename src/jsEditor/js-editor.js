@@ -55,7 +55,7 @@ export class JsEditor {
         }
     };
 
-    let onEditorChanged = function onEditorChanged(e) {
+    this.onEditorCheckedChanged = function onEditorChanged() {
       let editorLayout = self.aceUtils.getLayout(editor);
       ea.publish('jsEditorPreChange',
               editorLayout
@@ -77,7 +77,12 @@ export class JsEditor {
     };
 
     session.on('change',
-      onEditorChanged);
+      function onEditorChanged() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorPreChange',
+              editorLayout
+      );
+    });
 
     let onAnnotationChanged = function onAnnotationChanged() {
       let annotations = session.getAnnotations();
@@ -87,6 +92,7 @@ export class JsEditor {
             hasErrors: true,
             annotation: annotations[key]
           });
+          return;
         }
       }
       ea.publish('onAnnotationChanged', {
@@ -160,10 +166,11 @@ export class JsEditor {
       self.hasErrors = payload.hasErrors;
 
       if (payload.hasErrors) {
-        console.log('has errors at: ' + payload.annotation);
+        // console.log('has errors at: ' + payload.annotation);
       }
       else {
-        console.log('no errors');
+        // console.log('no errors');
+        this.onEditorCheckedChanged();
       }
     });
 

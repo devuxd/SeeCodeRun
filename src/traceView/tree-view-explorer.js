@@ -9,11 +9,12 @@ export class TreeViewExplorer {
       if(elementType === "string"){
         try{
          element = JSON.parse(element);
+         elementType = typeof element;
         }catch(e){
           element = element.toString();
         }
       }
-      if(elementType === "object" ||  Object.prototype.toString.call( element ) === '[object Array]'){
+      if(elementType === "object"){
         this.type = element.nodeType === 1 ? this.viewType.HTML : this.viewType.JSON;
       }else{
         this.type = this.viewType.PRIMITIVE;

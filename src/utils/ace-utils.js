@@ -28,14 +28,29 @@ export class AceUtils{
         editor.setTheme(theme);
         editor.setShowFoldWidgets(false);
         editor.setShowPrintMargin(false);
-        // editor.setAutoScrollEditorIntoView(true);
+        editor.setAutoScrollEditorIntoView(true);
         editor.$blockScrolling = Infinity;
+
+        editor.setDisplayIndentGuides(true);
+
+        ace.require("ace/ext/language_tools");
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true
+        });
+
+        ace.require("ace/ext/spellcheck");
+        editor.setOption("spellcheck", true);
     }
 
     configureSession(session, mode = 'ace/mode/javascript') {
         session.setUseWrapMode(true);
-        session.setUseWorker(false);
+        session.setFoldStyle("manual");
+        session.setOption("useWorker", true);
         session.setMode(mode);
+        let whitespace = ace.require("ace/ext/whitespace");
+        whitespace.detectIndentation(session);
     }
 
     getAvailableMarkers(){
