@@ -55,8 +55,15 @@ export class JsEditor {
         }
     };
 
-    this.onEditorCheckedChanged = function onEditorChanged() {
+    this.onEditorChangeChecked = function onEditorChangeChecked(hasErrors) {
       let editorLayout = self.aceUtils.getLayout(editor);
+      if(hasErrors){
+        ea.publish('jsEditorChangeError',
+              editorLayout
+        );
+        return;
+      }
+
       ea.publish('jsEditorPreChange',
               editorLayout
       );
@@ -88,14 +95,14 @@ export class JsEditor {
       let annotations = session.getAnnotations();
       for (let key in annotations) {
         if (annotations.hasOwnProperty(key) && annotations[key].type === 'error') {
-          ea.publish('onAnnotationChanged', {
+          ea.publish('jsEditorAnnotationChange', {
             hasErrors: true,
             annotation: annotations[key]
           });
           return;
         }
       }
-      ea.publish('onAnnotationChanged', {
+      ea.publish('jsEditorAnnotationChange', {
         hasErrors: false,
         annotation: null
       });
@@ -162,16 +169,9 @@ export class JsEditor {
       session.setScrollTop(scrollData.scrollTop);
     });
 
-    ea.subscribe('onAnnotationChanged', payload => {
-      self.hasErrors = payload.hasErrors;
-
-      if (payload.hasErrors) {
-        // console.log('has errors at: ' + payload.annotation);
-      }
-      else {
-        // console.log('no errors');
-        this.onEditorCheckedChanged();
-      }
+    ea.subscribe('jsEditorAnnotationChange', payload => {
+      this.hasErrors = payload.hasErrors;
+      this.onEditorChangeChecked(this.hasErrors);
     });
 
     ea.subscribe('jsGutterLineClick', lineNumber => {
@@ -190,6 +190,7 @@ export class JsEditor {
       this.editor.scrollToLine(lineData.lineNumber, true, true, afterScrollAnimationFinish =>{});
       this.editor.gotoLine(lineData.lineNumber);
     });
+
   }
 
 }

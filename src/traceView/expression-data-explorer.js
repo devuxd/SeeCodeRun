@@ -50,6 +50,7 @@ export class ExpressionDataExplorer{
         this.$editorTooltip = $editorTooltip;
         aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, this);
         this.attachTooltipUpdate();
+        this.subscribe();
     }
 
     attachTooltipUpdate(){
@@ -59,50 +60,58 @@ export class ExpressionDataExplorer{
         let expressionMarkerManager = this.expressionMarkerManager;
 
         this.update$Tooltip = function update$Tooltip(position, match){
-            if(!div){
+          if(!div){
 			        return;
-			}
+			    }
+			    self.currentEditorTooltip = div;
 
-		    if(position){
-		        div.css({
-		            position: "absolute",
-		            marginLeft: 0,
-		            marginTop: 0,
-		            top: `${position.pageY}px`,
-		            left: `${position.pageX}px`
-		        });
-		    }
+  		    if(position){
+  		        div.css({
+  		            position: "absolute",
+  		            marginLeft: 0,
+  		            marginTop: 0,
+  		            top: `${position.pageY}px`,
+  		            left: `${position.pageX}px`
+  		        });
+  		    }
 
-			if(match){
-		      self.treeViewExplorer = new TreeViewExplorer(match.value);
-              let popoverData = self.treeViewExplorer.getPopoverElementContent(div);
+  			  if(match && !self.isBranchNavigatorVisible){
+  		      self.treeViewExplorer = new TreeViewExplorer(match.value);
+                let popoverData = self.treeViewExplorer.getPopoverElementContent(div);
 
-		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
-              div.popover("show");
+  		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
+            div.popover("show");
+            aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
+  			}else{
+  			    div.popover("hide");
+  			    self.currentMatchRange = null;
+  			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
+  	    }
 
-              aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
-			}else{
-			    div.popover("hide");
-			    self.currentMatchRange = null;
-			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
-	        }
+        $("#"+self.editorTooltipContentId).mouseenter(
+              function editorTooltipMouseenter(){
+                  clearTimeout(self.onExpressionHoveredTimeout);
+                  clearTimeout(self.editorTooltiptimeout);
+              }
+          ).mouseleave(
+              function editorTooltipMouseleave(){
+                  self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
+                      div.popover("hide");
+                      self.currentMatchRange = null;
+		            aceUtils.updateAceMarkers(expressionMarkerManager, []);
+                  }, self.editorTooltipHideDelay);
+              }
+        );
+      };
+    }
 
-	        $("#"+self.editorTooltipContentId).mouseenter(
-                function editorTooltipMouseenter(){
-                    clearTimeout(self.onExpressionHoveredTimeout);
-                    clearTimeout(self.editorTooltiptimeout);
-                }
-            ).mouseleave(
-                function editorTooltipMouseleave(){
-                    self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
-                        div.popover("hide");
-                        self.currentMatchRange = null;
-			            aceUtils.updateAceMarkers(expressionMarkerManager, []);
-                    }, self.editorTooltipHideDelay);
-                }
-            );
-        };
-
+    subscribe(){
+      this.eventAggregator.subscribe('branchNavigatorChange', branchNavigatorData => {
+        this.isBranchNavigatorVisible = branchNavigatorData.isVisible;
+        if(this.isBranchNavigatorVisible && this.currentEditorTooltip){
+          this.currentEditorTooltip.popover("hide");
+        }
+      });
     }
 
     onExpressionHovered(match, pixelPosition){

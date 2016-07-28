@@ -25,16 +25,10 @@ export class BranchNavigator{
     updateGutterBranches(traceGutterData){
         for(let row in traceGutterData.rows){
             if(traceGutterData.rows.hasOwnProperty(row)){
-            let count = traceGutterData.rows[row].count;
-            // let branch =traceGutterData.rows[row].branch;
-            // branch = branch? branch: count;
-            // branch = branch> count? count: branch;
-            // let previousBranch = this.branches[row]?this.branches[row].branch: branch;
-            // branch = previousBranch> count? branch: previousBranch;
-            // traceGutterData.rows[row].branch = branch;
-            if(count != null){
-                traceGutterData.rows[row].branch = count;
-            }
+                let count = traceGutterData.rows[row].count;
+                if(count != null){
+                    traceGutterData.rows[row].branch = count;
+                }
 
             }
         }
@@ -86,13 +80,25 @@ export class BranchNavigator{
 
         eventAggregator.subscribe("jsEditorCursorMoved", info => {
             this.selectedLine = info.cursor ||1;
-            this.hideTooltip();
+            this.$hideTooltip();
 
         });
 
         eventAggregator.subscribe(
             "jsEditorPreChange", payload =>{
                 this.cleanGutterUI();
+            }
+        );
+
+        eventAggregator.subscribe(
+            "jsEditorChangeError", payload =>{
+                this.$hideTooltip();
+            }
+        );
+
+        eventAggregator.subscribe(
+            "jsGutterChangeScrollTop", payload =>{
+                this.$hideTooltip();
             }
         );
 
@@ -166,7 +172,7 @@ export class BranchNavigator{
         self.gutterMouseMoveTimeout = null;
 
         let gutterMouseMoveUpdateTooltipTimeout = function gutterMouseMoveUpdateTooltipTimeout(){
-	        self.$gutterTooltip.hide("slide", { direction: "down" }, self.gutterTooltipSlideTime);
+	        self.$hideTooltip();
 	    };
 
         self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, context, row, lineHeight){
@@ -243,7 +249,7 @@ export class BranchNavigator{
                             self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
                         }
                         self.jsEditor.editor.getSession().addGutterDecoration(self.currentRow, "seecoderun-gutter-decoration-active");
-                        $gutterTooltip.hide().show("slide", { direction: "down" }, self.gutterTooltipSlideTime);
+                       self.$showTooltip();
                     }
                     })
                     .mouseleave( function gutterTooltipMouseLeave(){
@@ -286,7 +292,7 @@ export class BranchNavigator{
                     if(self.previousRow){
                         self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
                     }
-                    $gutterTooltip.hide().show("slide", { direction: "down" }, self.gutterTooltipSlideTime);
+                    self.$showTooltip();
                     $gutterTooltip.mouseenter();
                 }
 			}else{
@@ -303,9 +309,7 @@ export class BranchNavigator{
     }
 
     cleanGutterUI(){
-        if(this.$gutterTooltip && this.$gutterTooltip.is( ":visible" )){
-            this.$gutterTooltip.hide("slide", { direction: "down" }, 200);
-        }
+        this.$hideTooltip();
         if(this.jsEditor){
              $(`${this.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
          }
@@ -313,7 +317,17 @@ export class BranchNavigator{
         this.traceViewModel.resetTraceGutterDataRows();
     }
 
-    hideTooltip(){
+    $hideTooltip(){
+        if(this.$gutterTooltip && this.$gutterTooltip.is( ":visible" )){
+            this.$gutterTooltip.hide("slide", { direction: "down" }, this.gutterTooltipSlideTime);
+            this.eventAggregator.publish("branchNavigatorChange", {isVisible: false});
+        }
+    }
 
+    $showTooltip(isForceShow){
+        if(this.$gutterTooltip && (!this.$gutterTooltip.is( ":visible" || isForceShow))){
+            this.$gutterTooltip.show("slide", { direction: "down" }, this.gutterTooltipSlideTime);
+            this.eventAggregator.publish("branchNavigatorChange", {isVisible: true});
+        }
     }
 }

@@ -104,21 +104,18 @@ export class TraceHelper {
         this.trace = this.traceModel.makeTrace(trace);
     }
 
-    getExpressionAtPosition(dataModel, position){
-        return this.getValuesAtPosition(dataModel, position);
-    }
-
-    getValuesAtPosition(traceData, acePosition){
+    getExpressionAtPosition(traceData, acePosition){
         let isPositionInRange = this.isPositionInRange;
         let isRangeInRangeStrict = this.isRangeInRangeStrict;
 
         if(!acePosition || !traceData){
             return null;
         }
+        let ignoreTypeList = this.traceModel.expressionMatcherIgnoreTypeList;
         let match = null;
         for(let i = traceData.length; i; i--){
             let entry = traceData[i-1];
-            if(entry.hasOwnProperty("range") && entry.type !== "Program"){
+            if(entry.hasOwnProperty("range") && ignoreTypeList.indexOf(entry.type) === -1){
                 if( isPositionInRange(acePosition, entry.range)){
     			     if(match){
     			         if(isRangeInRangeStrict(entry.range, match.range)){

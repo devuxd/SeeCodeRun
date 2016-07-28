@@ -14,10 +14,15 @@ export class TreeViewExplorer {
           element = element.toString();
         }
       }
-      if(elementType === "object"){
-        this.type = element.nodeType === 1 ? this.viewType.HTML : this.viewType.JSON;
+
+      if(element == null){
+      this.type = this.viewType.PRIMITIVE;
       }else{
-        this.type = this.viewType.PRIMITIVE;
+        if(elementType === "object"){
+          this.type = element.nodeType === 1 ? this.viewType.HTML : this.viewType.JSON;
+        }else{
+          this.type = this.viewType.PRIMITIVE;
+        }
       }
     }
     this.element = element;
