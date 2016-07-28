@@ -15,6 +15,7 @@ export class Visualization {
     this.hasError = false;
     this.requestSelectionRange = this.getSelectionRange;
     this.traceHelper = null;
+    this.query = null;
   }
 
   attached() {
@@ -27,7 +28,7 @@ export class Visualization {
       console.log(`No trace found when rendering visualization #${this.id}`);
     }
     let formattedTrace = this.formatTrace(this.trace);
-    this.render(formattedTrace, `#${this.contentId}`);
+    this.render(formattedTrace, `#${this.contentId}`, this.query);
   }
 
   subscribe() {
@@ -38,6 +39,11 @@ export class Visualization {
         self.traceHelper = payload.traceHelper;
         self.trace = payload.trace;
         self.renderVisualization();
+    });
+
+    ea.subscribe('searchBoxChanged', payload => {
+      this.query = payload.searchTermText;
+      this.renderVisualization();
     });
   }
 
