@@ -26,29 +26,6 @@ export class CallGraph {
             }
         }
     };
-    controlFlowBlocks = [
-        "IfStatement",
-        "WhileStatement",
-        "DoWhileStatement",
-        "ForStatement",
-        "ForInStatement",
-        "SwitchStatement",
-        "SwitchCase",
-        "TryStatement",
-        "CatchClause"
-    ];
-
-    programCalls = [
-        "CallProgram",
-        "PreCallExpression"
-    ];
-
-    programExecutors = [
-        "Program",
-        "FunctionDeclaration",
-        // "FunctionExpression",
-        "FunctionData"
-    ];
     constructor() {
         this.prepareFx();
         this.config = {
@@ -60,85 +37,6 @@ export class CallGraph {
             renderFx: this.renderFx,
             errorMessage: null
         };
-    }
-
-    collectTraceDecorationData(traceDecorationData, entry){
-        if(!traceDecorationData){
-           traceDecorationData = [];
-        }
-
-        if(!(entry && entry.type)){
-            return traceDecorationData;
-        }
-
-        if(this.programCalls.indexOf(entry.type) > -1){
-            traceDecorationData.push({type: entry.type, name: entry.id, range: entry.range, isReady: false});
-            return traceDecorationData;
-        }
-
-        if(this.controlFlowBlocks.indexOf(entry.type) > -1){
-            traceDecorationData.push( {type: entry.type, name: entry.type.replace("Statement", "").replace("Clause", ""), range: entry.range});
-             return traceDecorationData;
-        }
-
-        if(entry.type === "SwitchCase"){
-            traceDecorationData.push( {type: entry.type, name: "Switch", range: entry.range});
-            return traceDecorationData;
-        }
-
-        return traceDecorationData;
-    }
-
-    decorateTree(root, validEntryData){
-        //pending decorations
-    }
-
-    isRangeInRange(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
-    			);
-    }
-
-    addEntryToTree(root, entry, validEntryData) {
-        let currentNode = root;
-
-        if(!entry){
-            return;
-        }
-
-        if(!(entry.type === "BlockStatement" && entry.range)){
-            return;
-        }
-
-        let newChild = { type: entry.type, name: "entryName" , range: entry.range, children : null} ;
-
-        let nextNode = currentNode; // root is default
-
-        do{
-            currentNode = nextNode;
-            nextNode = null;
-            for(let childIndex in currentNode.children){
-                let child = currentNode.children[childIndex];
-                if(this.isRangeInRange(newChild.range, child.range)){
-                    nextNode = child;
-                    break;
-                }
-            }
-        }while(nextNode);
-
-        if(validEntryData){
-            newChild.type = validEntryData.type;
-            newChild.name = validEntryData.name;
-            newChild.range = validEntryData.range;
-        }
-
-        if(currentNode.children){
-            currentNode.children.push(newChild);
-        }else{
-            currentNode.children = [newChild];
-        }
     }
 
     prepareFx(){
@@ -509,5 +407,4 @@ makeMatrix( funcs , callsMatrix )
 
     return false ;
   }
-
 }
