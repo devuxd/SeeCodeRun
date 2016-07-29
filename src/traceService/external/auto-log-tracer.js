@@ -44,17 +44,61 @@ export class AutoLogTracer{
         window.TIME_LIMIT = ${timeLimit};
 
         var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
-        var TraceSyntaxTypes =  ${JSON.stringify(this.traceModel.traceSyntaxTypes)};
+        var TraceRuntimeTypes =  ${JSON.stringify(this.traceModel.traceRuntimeTypes)};
         var traceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
-            updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
-            preautolog: function preAutolog(range, type, id){
+            functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            preautolog: function preAutolog(range, type, id, text){
+                var info = { id: id , value: null, range: range, type: type, text: text};
                 this.currentExpressionRange = range;
-                // if(type === Syntax.CallExpression){
-                //     this.timeline.push({ id: id , value: null, range: range, type: TraceSyntaxTypes.PreCallExpression, text: ""});
-                // }
+                if(type === Syntax.CallExpression){
+                    this.timeline.push(info);
+                    this.enterFunctionScope(info);
+                }
                 return window.TRACE;
+            },
+            enterFunctionScope: function enterFunctionScope(info){
+                    this.functionScopes.push({id: info.id, parametersString: "[]", callerRange: info.range, range: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
+            },
+            populateFunctionScope: function populateFunctionScope(info){
+                if(!this.functionScopes.length || !info){
+                    return;
+                }
+
+                let topScope = this.functionScopes[this.functionScopes.length - 1];
+                topScope.range = info.range;
+                var calleeInfo = this.timeline[topScope.timelineStartIndex];
+                var callArguments = info.value;
+
+                var callExpressionParameters= [];
+
+                if(calleeInfo.text){
+                    try{
+                        callExpressionParameters = JSON.parse(calleeInfo.text).parameters;
+                    }catch(e){}
+                }
+
+                if(callArguments){
+                   for(var i = 0; i < callArguments.length; i++){
+                        if(callExpressionParameters[i]){
+                            callExpressionParameters[i].value = callArguments[i];
+                        }
+                   }
+                }
+
+                calleeInfo.text = this.stringify(callExpressionParameters);
+                topScope.parametersString = calleeInfo.text;
+            },
+            exitFunctionScope: function exitFunctionScope(info){
+                if(!this.functionScopes.length || !info){
+                    return;
+                }
+                let topScope = this.functionScopes[this.functionScopes.length -1];
+                this.timeline[topScope.timelineStartIndex].value= info.value;
+                topScope.timelineEndIndex = this.timeline.length;
+                this.timeline[topScope.timelineStartIndex].path = this.stringify(this.functionScopes);
+                this.functionScopes.pop();
             },
             autoLog: function autoLog(info) {
                 this.currentExpressionRange = info.range;
@@ -109,8 +153,6 @@ export class AutoLogTracer{
 
                 }
                 var infoValueString = null;
-                this.previousValueToException = null;
-                this.previousValuesToException = [];
                 try{
                     if(info.value && info.value.nodeType === 1){
                         infoValueString = this.toJSON(info.value);
@@ -121,9 +163,6 @@ export class AutoLogTracer{
                     infoValueString = info.value == null? null: info.value.toString();
                 }
 
-                this.previousValueToException = null;
-                this.previousValuesToException = [];
-
                 if(traceTypes.Expression.indexOf(info.type) > -1){
                     if(info.id){
                         this.values.push({id: info.id , value: infoValueString, range: info.range});
@@ -132,8 +171,15 @@ export class AutoLogTracer{
                     }
                 }
 
-                this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key});
+                if(info.type === TraceRuntimeTypes.FunctionData){
+                    this.populateFunctionScope(info);
+                }
 
+                if(info.type === Syntax.CallExpression){
+                    this.exitFunctionScope(info);
+                }else{
+                    this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key});
+                }
 
                 var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;
 

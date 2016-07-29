@@ -192,6 +192,11 @@ export class TraceModel{
              gutterHovered    : {  event :"gutterHovered"   , description : "A block[code] from an editor that was executed was hovered." }
          };
 
+        this.traceRuntimeTypes = {
+          PreCallExpression: "PreCallExpression",
+          FunctionData: "FunctionData"
+        };
+
         this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement"];
         this.timeLimit = 3000;
 

@@ -105,13 +105,46 @@ export class ExpressionDataExplorer{
       };
     }
 
-    subscribe(){
-      this.eventAggregator.subscribe('branchNavigatorChange', branchNavigatorData => {
-        this.isBranchNavigatorVisible = branchNavigatorData.isVisible;
-        if(this.isBranchNavigatorVisible && this.currentEditorTooltip){
+    $hideTooltip(){
+      if(this.currentEditorTooltip){
           this.currentEditorTooltip.popover("hide");
-        }
+      }
+    }
+
+    subscribe(){
+      let eventAggregator = this.eventAggregator;
+
+      eventAggregator.subscribe(
+        "branchNavigatorChange'", branchNavigatorData => {
+          this.isBranchNavigatorVisible = branchNavigatorData.isVisible;
+          if(this.isBranchNavigatorVisible){
+            this.$hideTooltip();
+          }
       });
+
+      eventAggregator.subscribe(
+        "jsEditorCursorMoved", info => {
+          this.selectedLine = info.cursor ||1;
+          this.$hideTooltip();
+      });
+
+      eventAggregator.subscribe(
+        "jsEditorPreChange", payload =>{
+          this.$hideTooltip();
+        }
+      );
+
+      eventAggregator.subscribe(
+        "jsEditorChangeError", payload =>{
+          this.$hideTooltip();
+        }
+      );
+
+      eventAggregator.subscribe(
+        "jsGutterChangeScrollTop", payload =>{
+          this.$hideTooltip();
+        }
+      );
     }
 
     onExpressionHovered(match, pixelPosition){

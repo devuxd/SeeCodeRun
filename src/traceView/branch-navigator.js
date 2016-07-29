@@ -97,12 +97,6 @@ export class BranchNavigator{
         );
 
         eventAggregator.subscribe(
-            "jsGutterChangeScrollTop", payload =>{
-                this.$hideTooltip();
-            }
-        );
-
-        eventAggregator.subscribe(
             "traceGutterDataChanged", payload =>{
                 this.updateGutterBranches(traceViewModel.traceGutterData);
                 aceUtils.updateGutterDecorations(editor, [], traceViewModel.traceGutterData.rows, gutterDecorationClassName);
