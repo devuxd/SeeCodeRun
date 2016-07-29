@@ -29,13 +29,27 @@
    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+.ace_gutter-cell.seecoderun-gutter-decoration::before {
+    display: block;
+    float: left;
+    width: 0;
+    height: 100%;
+    border-left: 1px solid #0066ff;
+    content: '';
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration:hover::before {
+    display: block;
+    float: left;
+    width: 0;
+    height: 100%;
+    border-left: 1px solid #FFF;
+    content: '';
+}
+
 .ace_gutter-cell.seecoderun-gutter-decoration:hover {
     color: #FFF;
     background-color: #0066ff;
-}
-
-.seecoderun-gutter-decoration-active {
-    color: #0066ff;
 }
 
 #gutterTooltip {

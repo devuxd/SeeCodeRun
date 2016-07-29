@@ -8,9 +8,8 @@ export class ExpressionDataExplorer{
     editorTooltipContentId = "editorTooltipContentId";
     viewportSelector = "#codeContent .ace_scroller";
     viewportPadding = -6;
-    editorTooltipShowDelay = 1000;
+    editorTooltipShowDelay = 750;
     editorTooltipHideDelay = 750;
-    currentMatchRange = null;
 
     constructor(eventAggregator, aceUtils, aureliaEditor, traceViewModel){
         this.eventAggregator = eventAggregator;
@@ -84,7 +83,6 @@ export class ExpressionDataExplorer{
             aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
   			}else{
   			    div.popover("hide");
-  			    self.currentMatchRange = null;
   			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
   	    }
 
@@ -97,7 +95,6 @@ export class ExpressionDataExplorer{
               function editorTooltipMouseleave(){
                   self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
                       div.popover("hide");
-                      self.currentMatchRange = null;
 		            aceUtils.updateAceMarkers(expressionMarkerManager, []);
                   }, self.editorTooltipHideDelay);
               }
@@ -115,7 +112,7 @@ export class ExpressionDataExplorer{
       let eventAggregator = this.eventAggregator;
 
       eventAggregator.subscribe(
-        "branchNavigatorChange'", branchNavigatorData => {
+        "branchNavigatorChange", branchNavigatorData => {
           this.isBranchNavigatorVisible = branchNavigatorData.isVisible;
           if(this.isBranchNavigatorVisible){
             this.$hideTooltip();
@@ -141,6 +138,12 @@ export class ExpressionDataExplorer{
       );
 
       eventAggregator.subscribe(
+        "activeEditorChange", payload =>{
+          this.$hideTooltip();
+        }
+      );
+
+      eventAggregator.subscribe(
         "jsGutterChangeScrollTop", payload =>{
           this.$hideTooltip();
         }
@@ -148,25 +151,31 @@ export class ExpressionDataExplorer{
     }
 
     onExpressionHovered(match, pixelPosition){
-        let self = this;
-        if(match){
-            if(match.range){
-                let newMatchRange = this.aceUtils.parseRangeString(match.range);
-                if(match.range && this.currentMatchRange !== newMatchRange){
-                    this.currentMatchRange = newMatchRange;
-                    clearTimeout(this.onExpressionHoveredTimeout);
-                    this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
-                        self.update$Tooltip(pixelPosition, match);
-                    }, this.editorTooltipShowDelay);
+      let isEditorTooltipContentVisible = $("#"+this.editorTooltipContentId).is(":visible");
 
-                }
-            }
-        }else{
-            clearTimeout(this.onExpressionHoveredTimeout);
-            this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
-                self.update$Tooltip();
-            }, this.editorTooltipHideDelay);
-        }
+      if(isEditorTooltipContentVisible && this.currentMatch === match){
+        return;
+      }
+
+      this.currentMatch = match;
+
+      let self = this;
+      if(match){
+          if(match.range){
+             if(match.range){
+                  clearTimeout(this.onExpressionHoveredTimeout);
+                  this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
+                      self.update$Tooltip(pixelPosition, match);
+                     }, this.editorTooltipShowDelay);
+
+              }
+          }
+      }else{
+          clearTimeout(this.onExpressionHoveredTimeout);
+          this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
+              self.update$Tooltip();
+          }, this.editorTooltipHideDelay);
+      }
     }
 
     toJSON(node) {
