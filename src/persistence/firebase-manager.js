@@ -1,11 +1,17 @@
-/* global Firebase */
+/* global firebase */
 /* global Firepad */
 import {AppConfiguration} from "../app-configuration";
 
 export class FirebaseManager{
-    baseURL = new AppConfiguration().getConfiguration().firebaseURL;
     pastebinId = undefined;
-    SERVER_TIMESTAMP = Firebase.ServerValue.TIMESTAMP;
+    SERVER_TIMESTAMP = firebase.database.ServerValue.TIMESTAMP;
+
+    constructor(){
+        let appConfiguration = new AppConfiguration();
+        this.baseURL = appConfiguration.firebaseURL;
+        this.isDebug = appConfiguration.isDebug;
+        this.appRoot = appConfiguration.appRoot;
+    }
 
     activate(pastebinId){
         if(pastebinId){
@@ -13,22 +19,65 @@ export class FirebaseManager{
         }else{
             this.pastebinId = this.makeNewPastebinFirebaseReferenceId();
         }
+        this.initialize();
+    }
+
+    getCustomToken(pastebinId = this.pastebinId ){
+        return {
+            "provider": "anonymous",
+            "uid": pastebinId
+        };
+    }
+
+    initialize(pastebinId = this.pastebinId){
+        // apiKey: "AIzaSyDwxE9Pm6wMMD4nmOqa5OUnrLr-ty6LxXY"
+        let config = {
+          apiKey: "AIzaSyC5ovOrvFtW7BKE3PP4TwQKGz3eVnQ7FR8",
+          authDomain: "seecoderun.firebaseapp.com",
+          databaseURL: this.baseURL
+        };
+
+        firebase.initializeApp(config);
+
+        if(this.isDebug){
+                    firebase.auth().signInAnonymously().catch(function(error) {
+          // Handle Errors here.
+          var errorCode = error.code;
+          var errorMessage = error.message;
+          // [START_EXCLUDE]
+          if (errorCode === 'auth/operation-not-allowed') {
+            alert('You must enable Anonymous auth in the Firebase Console.');
+          } else {
+            console.error(error);
+          }
+          // [END_EXCLUDE]
+        });
+
+        }else{
+            firebase.auth().signInWithCustomToken(this.getCustomToken()).catch(function(error) {
+              // Handle Errors here.
+              var errorCode = error.code;
+              var errorMessage = error.message;
+              // ...
+            });
+        }
+
     }
 
     makeNewPastebinFirebaseReferenceId(){
-        return new Firebase(this.baseURL).push().key();
+        // return new Firebase(this.baseURL).push().key();
     }
 
     makePastebinFirebaseReference(pastebinId = this.pastebinId ){
-        return new Firebase(`${this.baseURL}/${pastebinId}/`);
+        return firebase.database().ref();
     }
 
     makeTraceSearchHistoryFirebase(){
-        return new Firebase(`${this.baseURL}/${this.pastebinId}/content/search`);
+        return firebase.database().ref(`${this.appRoot}/${this.pastebinId}/content/search`);
     }
 
     makeChatFirebase(){
-        return new Firebase(`${this.baseURL}/${this.pastebinId}/content/chat`);
+        return firebase.database().ref(`${this.appRoot}/${this.pastebinId}/content/chat`);
     }
 
     makeJsEditorFirepad(jsEditor){
@@ -48,8 +97,8 @@ export class FirebaseManager{
     }
 
     makeFirepad(subject, editor, defaultText){
-        let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
-        let firebase = new Firebase(subjectURL);
+        let subjectPath = `${this.appRoot}/${this.pastebinId}/content/${subject}`;
+        let firebase = firebase.database().ref(subjectPath);
 
         return Firepad.fromACE(
           firebase,
@@ -58,42 +107,42 @@ export class FirebaseManager{
           });
     }
 
-    makeHistoryViewerFirepad(subject, editor){
-        let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
-        let subjectFirebase = new Firebase(subjectURL);
+    // makeHistoryViewerFirepad(subject, editor){
+    //     let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
+    //     let subjectFirebase = new Firebase(subjectURL);
 
-        let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/content/${subject}/historyViewer`;
-        let historyFirebase = new Firebase(subjectHistoryURL);
+    //     let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/content/${subject}/historyViewer`;
+    //     let historyFirebase = new Firebase(subjectHistoryURL);
 
-        // Remove the folder from the firebase
-        historyFirebase.remove();
-        editor.setValue("");
-        // Copy the entire firebase to the history firebase
-        subjectFirebase.once("value", function (snap) {
-           historyFirebase.set(snap.val());
-        });
-        let sliderMaxValue = 0;
-        subjectFirebase.child('history').once("value", function (sna) {
-            sliderMaxValue = sna.numChildren();
-        });
+    //     // Remove the folder from the firebase
+    //     historyFirebase.remove();
+    //     editor.setValue("");
+    //     // Copy the entire firebase to the history firebase
+    //     subjectFirebase.once("value", function (snap) {
+    //       historyFirebase.set(snap.val());
+    //     });
+    //     let sliderMaxValue = 0;
+    //     subjectFirebase.child('history').once("value", function (sna) {
+    //         sliderMaxValue = sna.numChildren();
+    //     });
 
-        editor.setValue("");
-        return {
-            sliderMaxValue: sliderMaxValue,
-            subjectFirebase: subjectFirebase,
-            historyFirebase: historyFirebase,
-            historyFirepad: Firepad.fromACE(historyFirebase, editor,{defaultText: ""})
-        };
-    }
+    //     editor.setValue("");
+    //     return {
+    //         sliderMaxValue: sliderMaxValue,
+    //         subjectFirebase: subjectFirebase,
+    //         historyFirebase: historyFirebase,
+    //         historyFirepad: Firepad.fromACE(historyFirebase, editor,{defaultText: ""})
+    //     };
+    // }
 
-    slideHistoryViewerFirepad(subjectFirebase,  historyFirebase, editor, sliderValue){
-        // Remove the history from the history firebase
-        historyFirebase.child('history').remove();
-        // Copy history from the firebase to the history firebase to display values till a specific point in history.
-        subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snap) {
-            historyFirebase.child('history').set(snap.val());
-        });
-    }
+    // slideHistoryViewerFirepad(subjectFirebase,  historyFirebase, editor, sliderValue){
+    //     // Remove the history from the history firebase
+    //     historyFirebase.child('history').remove();
+    //     // Copy history from the firebase to the history firebase to display values till a specific point in history.
+    //     subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snap) {
+    //         historyFirebase.child('history').set(snap.val());
+    //     });
+    // }
 
     makePastebinFirebaseReferenceCopy(source, destination) {
         source.once("value", function(snapshot) {
