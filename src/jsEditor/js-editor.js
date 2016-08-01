@@ -55,8 +55,15 @@ export class JsEditor {
         }
     };
 
-    let onEditorChanged = function onEditorChanged(e) {
+    this.onEditorChangeChecked = function onEditorChangeChecked(hasErrors) {
       let editorLayout = self.aceUtils.getLayout(editor);
+      if(hasErrors){
+        ea.publish('jsEditorChangeError',
+              editorLayout
+        );
+        return;
+      }
+
       ea.publish('jsEditorPreChange',
               editorLayout
       );
@@ -77,19 +84,25 @@ export class JsEditor {
     };
 
     session.on('change',
-      onEditorChanged);
+      function onEditorChanged() {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      ea.publish('jsEditorPreChange',
+              editorLayout
+      );
+    });
 
     let onAnnotationChanged = function onAnnotationChanged() {
       let annotations = session.getAnnotations();
       for (let key in annotations) {
         if (annotations.hasOwnProperty(key) && annotations[key].type === 'error') {
-          ea.publish('onAnnotationChanged', {
+          ea.publish('jsEditorAnnotationChange', {
             hasErrors: true,
             annotation: annotations[key]
           });
+          return;
         }
       }
-      ea.publish('onAnnotationChanged', {
+      ea.publish('jsEditorAnnotationChange', {
         hasErrors: false,
         annotation: null
       });
@@ -109,7 +122,7 @@ export class JsEditor {
         lastVisibleRow: session.getLength(),
         position: cursorPosition
       };
-      ea.publish('onCursorMoved', info);
+      ea.publish("jsEditorCursorMoved", info);
     });
 
     editor.on("click", function jsEditorClick(event){
@@ -156,15 +169,9 @@ export class JsEditor {
       session.setScrollTop(scrollData.scrollTop);
     });
 
-    ea.subscribe('onAnnotationChanged', payload => {
-      self.hasErrors = payload.hasErrors;
-
-      if (payload.hasErrors) {
-        console.log('has errors at: ' + payload.annotation);
-      }
-      else {
-        console.log('no errors');
-      }
+    ea.subscribe('jsEditorAnnotationChange', payload => {
+      this.hasErrors = payload.hasErrors;
+      this.onEditorChangeChecked(this.hasErrors);
     });
 
     ea.subscribe('jsGutterLineClick', lineNumber => {
@@ -183,6 +190,7 @@ export class JsEditor {
       this.editor.scrollToLine(lineData.lineNumber, true, true, afterScrollAnimationFinish =>{});
       this.editor.gotoLine(lineData.lineNumber);
     });
+
   }
 
 }

@@ -1,5 +1,3 @@
-/* */  
-"format global";
 ace.define("ace/mode/doc_comment_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
 "use strict";
 
@@ -11,7 +9,7 @@ var DocCommentHighlightRules = function() {
         "start" : [ {
             token : "comment.doc.tag",
             regex : "@[\\w\\d_]+" // TODO: fix email addresses
-        }, 
+        },
         DocCommentHighlightRules.getTagRule(),
         {
             defaultToken : "comment.doc",
@@ -56,7 +54,7 @@ ace.define("ace/mode/javascript_highlight_rules",["require","exports","module","
 var oop = require("../lib/oop");
 var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocCommentHighlightRules;
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
-var identifierRe = "[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*\\b";
+var identifierRe = "[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*";
 
 var JavaScriptHighlightRules = function(options) {
     var keywordMapper = this.createKeywordMapper({
@@ -72,7 +70,7 @@ var JavaScriptHighlightRules = function(options) {
             "JSON|Math|"                                                               + // Other
             "this|arguments|prototype|window|document"                                 , // Pseudo
         "keyword":
-            "const|yield|import|get|set|" +
+            "const|yield|import|get|set|async|await|" +
             "break|case|catch|continue|default|delete|do|else|finally|for|function|" +
             "if|in|instanceof|new|return|switch|throw|try|typeof|let|var|while|with|debugger|" +
             "__parent__|__count__|escape|unescape|with|__proto__|" +
@@ -180,7 +178,7 @@ var JavaScriptHighlightRules = function(options) {
                 next  : "property"
             }, {
                 token : "keyword.operator",
-                regex : /--|\+\+|\.{3}|===|==|=|!=|!==|<+=?|>+=?|!|&&|\|\||\?\:|[!$%&*+\-~\/^]=?/,
+                regex : /--|\+\+|\.{3}|===|==|=|!=|!==|<+=?|>+=?|!|&&|\|\||\?:|[!$%&*+\-~\/^]=?/,
                 next  : "start"
             }, {
                 token : "punctuation.operator",
@@ -344,8 +342,8 @@ var JavaScriptHighlightRules = function(options) {
             }
         ]
     };
-    
-    
+
+
     if (!options || !options.noES6) {
         this.$rules.no_regex.unshift({
             regex: "[{}]", onMatch: function(val, state, stack) {
@@ -380,14 +378,14 @@ var JavaScriptHighlightRules = function(options) {
                 defaultToken: "string.quasi"
             }]
         });
-        
-        if (!options || !options.noJSX)
+
+        if (!options || options.jsx != false)
             JSX.call(this);
     }
-    
+
     this.embedRules(DocCommentHighlightRules, "doc-",
         [ DocCommentHighlightRules.getEndRule("no_regex") ]);
-    
+
     this.normalizeRules();
 };
 
@@ -438,8 +436,8 @@ function JSX() {
         {defaultToken: "string"}
     ];
     this.$rules.jsxAttributes = [{
-        token : "meta.tag.punctuation.tag-close.xml", 
-        regex : "/?>", 
+        token : "meta.tag.punctuation.tag-close.xml",
+        regex : "/?>",
         onMatch : function(value, currentState, stack) {
             if (currentState == stack[0])
                 stack.shift();
@@ -454,7 +452,7 @@ function JSX() {
             return [{type: this.token, value: value}];
         },
         nextState: "jsx"
-    }, 
+    },
     jsxJsRule,
     comments("jsxAttributes"),
     {
@@ -557,363 +555,6 @@ var MatchingBraceOutdent = function() {};
 exports.MatchingBraceOutdent = MatchingBraceOutdent;
 });
 
-ace.define("ace/mode/behaviour/cstyle",["require","exports","module","ace/lib/oop","ace/mode/behaviour","ace/token_iterator","ace/lib/lang"], function(require, exports, module) {
-"use strict";
-
-var oop = require("../../lib/oop");
-var Behaviour = require("../behaviour").Behaviour;
-var TokenIterator = require("../../token_iterator").TokenIterator;
-var lang = require("../../lib/lang");
-
-var SAFE_INSERT_IN_TOKENS =
-    ["text", "paren.rparen", "punctuation.operator"];
-var SAFE_INSERT_BEFORE_TOKENS =
-    ["text", "paren.rparen", "punctuation.operator", "comment"];
-
-var context;
-var contextCache = {};
-var initContext = function(editor) {
-    var id = -1;
-    if (editor.multiSelect) {
-        id = editor.selection.index;
-        if (contextCache.rangeCount != editor.multiSelect.rangeCount)
-            contextCache = {rangeCount: editor.multiSelect.rangeCount};
-    }
-    if (contextCache[id])
-        return context = contextCache[id];
-    context = contextCache[id] = {
-        autoInsertedBrackets: 0,
-        autoInsertedRow: -1,
-        autoInsertedLineEnd: "",
-        maybeInsertedBrackets: 0,
-        maybeInsertedRow: -1,
-        maybeInsertedLineStart: "",
-        maybeInsertedLineEnd: ""
-    };
-};
-
-var getWrapped = function(selection, selected, opening, closing) {
-    var rowDiff = selection.end.row - selection.start.row;
-    return {
-        text: opening + selected + closing,
-        selection: [
-                0,
-                selection.start.column + 1,
-                rowDiff,
-                selection.end.column + (rowDiff ? 0 : 1)
-            ]
-    };
-};
-
-var CstyleBehaviour = function() {
-    this.add("braces", "insertion", function(state, action, editor, session, text) {
-        var cursor = editor.getCursorPosition();
-        var line = session.doc.getLine(cursor.row);
-        if (text == '{') {
-            initContext(editor);
-            var selection = editor.getSelectionRange();
-            var selected = session.doc.getTextRange(selection);
-            if (selected !== "" && selected !== "{" && editor.getWrapBehavioursEnabled()) {
-                return getWrapped(selection, selected, '{', '}');
-            } else if (CstyleBehaviour.isSaneInsertion(editor, session)) {
-                if (/[\]\}\)]/.test(line[cursor.column]) || editor.inMultiSelectMode) {
-                    CstyleBehaviour.recordAutoInsert(editor, session, "}");
-                    return {
-                        text: '{}',
-                        selection: [1, 1]
-                    };
-                } else {
-                    CstyleBehaviour.recordMaybeInsert(editor, session, "{");
-                    return {
-                        text: '{',
-                        selection: [1, 1]
-                    };
-                }
-            }
-        } else if (text == '}') {
-            initContext(editor);
-            var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar == '}') {
-                var matching = session.$findOpeningBracket('}', {column: cursor.column + 1, row: cursor.row});
-                if (matching !== null && CstyleBehaviour.isAutoInsertedClosing(cursor, line, text)) {
-                    CstyleBehaviour.popAutoInsertedClosing();
-                    return {
-                        text: '',
-                        selection: [1, 1]
-                    };
-                }
-            }
-        } else if (text == "\n" || text == "\r\n") {
-            initContext(editor);
-            var closing = "";
-            if (CstyleBehaviour.isMaybeInsertedClosing(cursor, line)) {
-                closing = lang.stringRepeat("}", context.maybeInsertedBrackets);
-                CstyleBehaviour.clearMaybeInsertedClosing();
-            }
-            var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar === '}') {
-                var openBracePos = session.findMatchingBracket({row: cursor.row, column: cursor.column+1}, '}');
-                if (!openBracePos)
-                     return null;
-                var next_indent = this.$getIndent(session.getLine(openBracePos.row));
-            } else if (closing) {
-                var next_indent = this.$getIndent(line);
-            } else {
-                CstyleBehaviour.clearMaybeInsertedClosing();
-                return;
-            }
-            var indent = next_indent + session.getTabString();
-
-            return {
-                text: '\n' + indent + '\n' + next_indent + closing,
-                selection: [1, indent.length, 1, indent.length]
-            };
-        } else {
-            CstyleBehaviour.clearMaybeInsertedClosing();
-        }
-    });
-
-    this.add("braces", "deletion", function(state, action, editor, session, range) {
-        var selected = session.doc.getTextRange(range);
-        if (!range.isMultiLine() && selected == '{') {
-            initContext(editor);
-            var line = session.doc.getLine(range.start.row);
-            var rightChar = line.substring(range.end.column, range.end.column + 1);
-            if (rightChar == '}') {
-                range.end.column++;
-                return range;
-            } else {
-                context.maybeInsertedBrackets--;
-            }
-        }
-    });
-
-    this.add("parens", "insertion", function(state, action, editor, session, text) {
-        if (text == '(') {
-            initContext(editor);
-            var selection = editor.getSelectionRange();
-            var selected = session.doc.getTextRange(selection);
-            if (selected !== "" && editor.getWrapBehavioursEnabled()) {
-                return getWrapped(selection, selected, '(', ')');
-            } else if (CstyleBehaviour.isSaneInsertion(editor, session)) {
-                CstyleBehaviour.recordAutoInsert(editor, session, ")");
-                return {
-                    text: '()',
-                    selection: [1, 1]
-                };
-            }
-        } else if (text == ')') {
-            initContext(editor);
-            var cursor = editor.getCursorPosition();
-            var line = session.doc.getLine(cursor.row);
-            var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar == ')') {
-                var matching = session.$findOpeningBracket(')', {column: cursor.column + 1, row: cursor.row});
-                if (matching !== null && CstyleBehaviour.isAutoInsertedClosing(cursor, line, text)) {
-                    CstyleBehaviour.popAutoInsertedClosing();
-                    return {
-                        text: '',
-                        selection: [1, 1]
-                    };
-                }
-            }
-        }
-    });
-
-    this.add("parens", "deletion", function(state, action, editor, session, range) {
-        var selected = session.doc.getTextRange(range);
-        if (!range.isMultiLine() && selected == '(') {
-            initContext(editor);
-            var line = session.doc.getLine(range.start.row);
-            var rightChar = line.substring(range.start.column + 1, range.start.column + 2);
-            if (rightChar == ')') {
-                range.end.column++;
-                return range;
-            }
-        }
-    });
-
-    this.add("brackets", "insertion", function(state, action, editor, session, text) {
-        if (text == '[') {
-            initContext(editor);
-            var selection = editor.getSelectionRange();
-            var selected = session.doc.getTextRange(selection);
-            if (selected !== "" && editor.getWrapBehavioursEnabled()) {
-                return getWrapped(selection, selected, '[', ']');
-            } else if (CstyleBehaviour.isSaneInsertion(editor, session)) {
-                CstyleBehaviour.recordAutoInsert(editor, session, "]");
-                return {
-                    text: '[]',
-                    selection: [1, 1]
-                };
-            }
-        } else if (text == ']') {
-            initContext(editor);
-            var cursor = editor.getCursorPosition();
-            var line = session.doc.getLine(cursor.row);
-            var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar == ']') {
-                var matching = session.$findOpeningBracket(']', {column: cursor.column + 1, row: cursor.row});
-                if (matching !== null && CstyleBehaviour.isAutoInsertedClosing(cursor, line, text)) {
-                    CstyleBehaviour.popAutoInsertedClosing();
-                    return {
-                        text: '',
-                        selection: [1, 1]
-                    };
-                }
-            }
-        }
-    });
-
-    this.add("brackets", "deletion", function(state, action, editor, session, range) {
-        var selected = session.doc.getTextRange(range);
-        if (!range.isMultiLine() && selected == '[') {
-            initContext(editor);
-            var line = session.doc.getLine(range.start.row);
-            var rightChar = line.substring(range.start.column + 1, range.start.column + 2);
-            if (rightChar == ']') {
-                range.end.column++;
-                return range;
-            }
-        }
-    });
-
-    this.add("string_dquotes", "insertion", function(state, action, editor, session, text) {
-        if (text == '"' || text == "'") {
-            initContext(editor);
-            var quote = text;
-            var selection = editor.getSelectionRange();
-            var selected = session.doc.getTextRange(selection);
-            if (selected !== "" && selected !== "'" && selected != '"' && editor.getWrapBehavioursEnabled()) {
-                return getWrapped(selection, selected, quote, quote);
-            } else if (!selected) {
-                var cursor = editor.getCursorPosition();
-                var line = session.doc.getLine(cursor.row);
-                var leftChar = line.substring(cursor.column-1, cursor.column);
-                var rightChar = line.substring(cursor.column, cursor.column + 1);
-                
-                var token = session.getTokenAt(cursor.row, cursor.column);
-                var rightToken = session.getTokenAt(cursor.row, cursor.column + 1);
-                if (leftChar == "\\" && token && /escape/.test(token.type))
-                    return null;
-                
-                var stringBefore = token && /string|escape/.test(token.type);
-                var stringAfter = !rightToken || /string|escape/.test(rightToken.type);
-                
-                var pair;
-                if (rightChar == quote) {
-                    pair = stringBefore !== stringAfter;
-                } else {
-                    if (stringBefore && !stringAfter)
-                        return null; // wrap string with different quote
-                    if (stringBefore && stringAfter)
-                        return null; // do not pair quotes inside strings
-                    var wordRe = session.$mode.tokenRe;
-                    wordRe.lastIndex = 0;
-                    var isWordBefore = wordRe.test(leftChar);
-                    wordRe.lastIndex = 0;
-                    var isWordAfter = wordRe.test(leftChar);
-                    if (isWordBefore || isWordAfter)
-                        return null; // before or after alphanumeric
-                    if (rightChar && !/[\s;,.})\]\\]/.test(rightChar))
-                        return null; // there is rightChar and it isn't closing
-                    pair = true;
-                }
-                return {
-                    text: pair ? quote + quote : "",
-                    selection: [1,1]
-                };
-            }
-        }
-    });
-
-    this.add("string_dquotes", "deletion", function(state, action, editor, session, range) {
-        var selected = session.doc.getTextRange(range);
-        if (!range.isMultiLine() && (selected == '"' || selected == "'")) {
-            initContext(editor);
-            var line = session.doc.getLine(range.start.row);
-            var rightChar = line.substring(range.start.column + 1, range.start.column + 2);
-            if (rightChar == selected) {
-                range.end.column++;
-                return range;
-            }
-        }
-    });
-
-};
-
-    
-CstyleBehaviour.isSaneInsertion = function(editor, session) {
-    var cursor = editor.getCursorPosition();
-    var iterator = new TokenIterator(session, cursor.row, cursor.column);
-    if (!this.$matchTokenType(iterator.getCurrentToken() || "text", SAFE_INSERT_IN_TOKENS)) {
-        var iterator2 = new TokenIterator(session, cursor.row, cursor.column + 1);
-        if (!this.$matchTokenType(iterator2.getCurrentToken() || "text", SAFE_INSERT_IN_TOKENS))
-            return false;
-    }
-    iterator.stepForward();
-    return iterator.getCurrentTokenRow() !== cursor.row ||
-        this.$matchTokenType(iterator.getCurrentToken() || "text", SAFE_INSERT_BEFORE_TOKENS);
-};
-
-CstyleBehaviour.$matchTokenType = function(token, types) {
-    return types.indexOf(token.type || token) > -1;
-};
-
-CstyleBehaviour.recordAutoInsert = function(editor, session, bracket) {
-    var cursor = editor.getCursorPosition();
-    var line = session.doc.getLine(cursor.row);
-    if (!this.isAutoInsertedClosing(cursor, line, context.autoInsertedLineEnd[0]))
-        context.autoInsertedBrackets = 0;
-    context.autoInsertedRow = cursor.row;
-    context.autoInsertedLineEnd = bracket + line.substr(cursor.column);
-    context.autoInsertedBrackets++;
-};
-
-CstyleBehaviour.recordMaybeInsert = function(editor, session, bracket) {
-    var cursor = editor.getCursorPosition();
-    var line = session.doc.getLine(cursor.row);
-    if (!this.isMaybeInsertedClosing(cursor, line))
-        context.maybeInsertedBrackets = 0;
-    context.maybeInsertedRow = cursor.row;
-    context.maybeInsertedLineStart = line.substr(0, cursor.column) + bracket;
-    context.maybeInsertedLineEnd = line.substr(cursor.column);
-    context.maybeInsertedBrackets++;
-};
-
-CstyleBehaviour.isAutoInsertedClosing = function(cursor, line, bracket) {
-    return context.autoInsertedBrackets > 0 &&
-        cursor.row === context.autoInsertedRow &&
-        bracket === context.autoInsertedLineEnd[0] &&
-        line.substr(cursor.column) === context.autoInsertedLineEnd;
-};
-
-CstyleBehaviour.isMaybeInsertedClosing = function(cursor, line) {
-    return context.maybeInsertedBrackets > 0 &&
-        cursor.row === context.maybeInsertedRow &&
-        line.substr(cursor.column) === context.maybeInsertedLineEnd &&
-        line.substr(0, cursor.column) == context.maybeInsertedLineStart;
-};
-
-CstyleBehaviour.popAutoInsertedClosing = function() {
-    context.autoInsertedLineEnd = context.autoInsertedLineEnd.substr(1);
-    context.autoInsertedBrackets--;
-};
-
-CstyleBehaviour.clearMaybeInsertedClosing = function() {
-    if (context) {
-        context.maybeInsertedBrackets = 0;
-        context.maybeInsertedRow = -1;
-    }
-};
-
-
-
-oop.inherits(CstyleBehaviour, Behaviour);
-
-exports.CstyleBehaviour = CstyleBehaviour;
-});
-
 ace.define("ace/mode/folding/cstyle",["require","exports","module","ace/lib/oop","ace/range","ace/mode/folding/fold_mode"], function(require, exports, module) {
 "use strict";
 
@@ -934,7 +575,7 @@ var FoldMode = exports.FoldMode = function(commentRegex) {
 oop.inherits(FoldMode, BaseFoldMode);
 
 (function() {
-    
+
     this.foldingStartMarker = /(\{|\[)[^\}\]]*$|^\s*(\/\*)/;
     this.foldingStopMarker = /^[^\[\{]*(\}|\])|^[\s\*]*(\*\/)/;
     this.singleLineBlockCommentRe= /^\s*(\/\*).*\*\/\s*$/;
@@ -943,42 +584,42 @@ oop.inherits(FoldMode, BaseFoldMode);
     this._getFoldWidgetBase = this.getFoldWidget;
     this.getFoldWidget = function(session, foldStyle, row) {
         var line = session.getLine(row);
-    
+
         if (this.singleLineBlockCommentRe.test(line)) {
             if (!this.startRegionRe.test(line) && !this.tripleStarBlockCommentRe.test(line))
                 return "";
         }
-    
+
         var fw = this._getFoldWidgetBase(session, foldStyle, row);
-    
+
         if (!fw && this.startRegionRe.test(line))
             return "start"; // lineCommentRegionStart
-    
+
         return fw;
     };
 
     this.getFoldWidgetRange = function(session, foldStyle, row, forceMultiline) {
         var line = session.getLine(row);
-        
+
         if (this.startRegionRe.test(line))
             return this.getCommentRegionBlock(session, line, row);
-        
+
         var match = line.match(this.foldingStartMarker);
         if (match) {
             var i = match.index;
 
             if (match[1])
                 return this.openingBracketBlock(session, match[1], row, i);
-                
+
             var range = session.getCommentFoldRange(row, i + match[0].length, 1);
-            
+
             if (range && !range.isMultiLine()) {
                 if (forceMultiline) {
                     range = this.getSectionRange(session, row);
                 } else if (foldStyle != "all")
                     range = null;
             }
-            
+
             return range;
         }
 
@@ -995,7 +636,7 @@ oop.inherits(FoldMode, BaseFoldMode);
             return session.getCommentFoldRange(row, i, -1);
         }
     };
-    
+
     this.getSectionRange = function(session, row) {
         var line = session.getLine(row);
         var startIndent = line.search(/\S/);
@@ -1012,7 +653,7 @@ oop.inherits(FoldMode, BaseFoldMode);
             if  (startIndent > indent)
                 break;
             var subRange = this.getFoldWidgetRange(session, "all", row);
-            
+
             if (subRange) {
                 if (subRange.start.row <= startRow) {
                     break;
@@ -1024,14 +665,14 @@ oop.inherits(FoldMode, BaseFoldMode);
             }
             endRow = row;
         }
-        
+
         return new Range(startRow, startColumn, endRow, session.getLine(endRow).length);
     };
     this.getCommentRegionBlock = function(session, line, row) {
         var startColumn = line.search(/\s*$/);
         var maxRow = session.getLength();
         var startRow = row;
-        
+
         var re = /^\s*(?:\/\*|\/\/|--)#?(end)?region\b/;
         var depth = 1;
         while (++row < maxRow) {
@@ -1068,7 +709,7 @@ var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 
 var Mode = function() {
     this.HighlightRules = JavaScriptHighlightRules;
-    
+
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
@@ -1092,7 +733,7 @@ oop.inherits(Mode, TextMode);
         }
 
         if (state == "start" || state == "no_regex") {
-            var match = line.match(/^.*(?:\bcase\b.*\:|[\{\(\[])\s*$/);
+            var match = line.match(/^.*(?:\bcase\b.*:|[\{\(\[])\s*$/);
             if (match) {
                 indent += tab;
             }
@@ -1896,7 +1537,7 @@ var HtmlHighlightRules = function() {
     });
 
     this.embedTagRules(CssHighlightRules, "css-", "style");
-    this.embedTagRules(new JavaScriptHighlightRules({noJSX: true}).getRules(), "js-", "script");
+    this.embedTagRules(new JavaScriptHighlightRules({jsx: false}).getRules(), "js-", "script");
 
     if (this.constructor === HtmlHighlightRules)
         this.normalizeRules();
@@ -1978,7 +1619,7 @@ var XmlBehaviour = function () {
 
     this.add("autoclosing", "insertion", function (state, action, editor, session, text) {
         if (text == '>') {
-            var position = editor.getCursorPosition();
+            var position = editor.getSelectionRange().start;
             var iterator = new TokenIterator(session, position.row, position.column);
             var token = iterator.getCurrentToken() || iterator.stepBackward();
             if (!token || !(is(token, "tag-name") || is(token, "tag-whitespace") || is(token, "attribute-name") || is(token, "attribute-equals") || is(token, "attribute-value")))
@@ -1996,6 +1637,10 @@ var XmlBehaviour = function () {
             }
             while (!is(token, "tag-name")) {
                 token = iterator.stepBackward();
+                if (token.value == "<") {
+                    token = iterator.stepForward();
+                    break;
+                }
             }
 
             var tokenRow = iterator.getCurrentTokenRow();
@@ -2086,7 +1731,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
 
     this.$getMode = function(state) {
-        if (typeof state != "string") 
+        if (typeof state != "string")
             state = state[0];
         for (var key in this.subModes) {
             if (state.indexOf(key) === 0)
@@ -2094,7 +1739,7 @@ oop.inherits(FoldMode, BaseFoldMode);
         }
         return null;
     };
-    
+
     this.$tryMode = function(state, session, foldStyle, row) {
         var mode = this.$getMode(state);
         return (mode ? mode.getFoldWidget(session, foldStyle, row) : "");
@@ -2110,13 +1755,13 @@ oop.inherits(FoldMode, BaseFoldMode);
 
     this.getFoldWidgetRange = function(session, foldStyle, row) {
         var mode = this.$getMode(session.getState(row-1));
-        
+
         if (!mode || !mode.getFoldWidget(session, foldStyle, row))
             mode = this.$getMode(session.getState(row));
-        
+
         if (!mode || !mode.getFoldWidget(session, foldStyle, row))
             mode = this.defaultMode;
-        
+
         return mode.getFoldWidgetRange(session, foldStyle, row);
     };
 
@@ -2139,7 +1784,7 @@ var FoldMode = exports.FoldMode = function(voidElements, optionalEndTags) {
     this.optionalEndTags = oop.mixin({}, this.voidElements);
     if (optionalEndTags)
         oop.mixin(this.optionalEndTags, optionalEndTags);
-    
+
 };
 oop.inherits(FoldMode, BaseFoldMode);
 
@@ -2247,7 +1892,7 @@ function is(token, type) {
 
         return null;
     };
-    
+
     this._readTagBackward = function(iterator) {
         var token = iterator.getCurrentToken();
         if (!token)
@@ -2272,10 +1917,10 @@ function is(token, type) {
 
         return null;
     };
-    
+
     this._pop = function(stack, tag) {
         while (stack.length) {
-            
+
             var top = stack[stack.length-1];
             if (!tag || top.tagName == tag.tagName) {
                 return stack.pop();
@@ -2288,17 +1933,17 @@ function is(token, type) {
             }
         }
     };
-    
+
     this.getFoldWidgetRange = function(session, foldStyle, row) {
         var firstTag = this._getFirstTagInLine(session, row);
-        
+
         if (!firstTag)
             return null;
-        
+
         var isBackward = firstTag.closing || firstTag.selfClosing;
         var stack = [];
         var tag;
-        
+
         if (!isBackward) {
             var iterator = new TokenIterator(session, row, firstTag.start.column);
             var start = {
@@ -2316,7 +1961,7 @@ function is(token, type) {
                     } else
                         continue;
                 }
-                
+
                 if (tag.closing) {
                     this._pop(stack, tag);
                     if (stack.length == 0)
@@ -2333,7 +1978,7 @@ function is(token, type) {
                 row: row,
                 column: firstTag.start.column
             };
-            
+
             while (tag = this._readTagBackward(iterator)) {
                 if (tag.selfClosing) {
                     if (!stack.length) {
@@ -2343,7 +1988,7 @@ function is(token, type) {
                     } else
                         continue;
                 }
-                
+
                 if (!tag.closing) {
                     this._pop(stack, tag);
                     if (stack.length == 0) {
@@ -2358,7 +2003,7 @@ function is(token, type) {
                 }
             }
         }
-        
+
     };
 
 }).call(FoldMode.prototype);
@@ -2572,7 +2217,7 @@ var attributeMap = {
     "label": {"form": 1, "for": 1},
     "input": {
         "type": {"text": 1, "password": 1, "hidden": 1, "checkbox": 1, "submit": 1, "radio": 1, "file": 1, "button": 1, "reset": 1, "image": 31, "color": 1, "date": 1, "datetime": 1, "datetime-local": 1, "email": 1, "month": 1, "number": 1, "range": 1, "search": 1, "tel": 1, "time": 1, "url": 1, "week": 1},
-        "accept": 1, "alt": 1, "autocomplete": {"on": 1, "off": 1}, "autofocus": {"autofocus": 1}, "checked": {"checked": 1}, "disabled": {"disabled": 1}, "form": 1, "formaction": 1, "formenctype": {"application/x-www-form-urlencoded": 1, "multipart/form-data": 1, "text/plain": 1}, "formmethod": {"get": 1, "post": 1}, "formnovalidate": {"formnovalidate": 1}, "formtarget": {"_blank": 1, "_self": 1, "_parent": 1, "_top": 1}, "height": 1, "list": 1, "max": 1, "maxlength": 1, "min": 1, "multiple": {"multiple": 1}, "pattern": 1, "placeholder": 1, "readonly": {"readonly": 1}, "required": {"required": 1}, "size": 1, "src": 1, "step": 1, "width": 1, "files": 1, "value": 1},
+        "accept": 1, "alt": 1, "autocomplete": {"on": 1, "off": 1}, "autofocus": {"autofocus": 1}, "checked": {"checked": 1}, "disabled": {"disabled": 1}, "form": 1, "formaction": 1, "formenctype": {"application/x-www-form-urlencoded": 1, "multipart/form-data": 1, "text/plain": 1}, "formmethod": {"get": 1, "post": 1}, "formnovalidate": {"formnovalidate": 1}, "formtarget": {"_blank": 1, "_self": 1, "_parent": 1, "_top": 1}, "height": 1, "list": 1, "max": 1, "maxlength": 1, "min": 1, "multiple": {"multiple": 1}, "name": 1, "pattern": 1, "placeholder": 1, "readonly": {"readonly": 1}, "required": {"required": 1}, "size": 1, "src": 1, "step": 1, "width": 1, "files": 1, "value": 1},
     "button": {"autofocus": 1, "disabled": {"disabled": 1}, "form": 1, "formaction": 1, "formenctype": 1, "formmethod": 1, "formnovalidate": 1, "formtarget": 1, "name": 1, "value": 1, "type": {"button": 1, "submit": 1}},
     "select": {"autofocus": 1, "disabled": 1, "form": 1, "multiple": {"multiple": 1}, "name": 1, "size": 1, "readonly":{"readonly": 1}},
     "datalist": {},
@@ -2671,7 +2316,7 @@ var HtmlCompletions = function() {
     this.getAttributeValueCompletions = function(state, session, pos, prefix) {
         var tagName = findTagName(session, pos);
         var attributeName = findAttributeName(session, pos);
-        
+
         if (!tagName)
             return [];
         var values = [];
@@ -2727,12 +2372,12 @@ var Mode = function(options) {
     this.HighlightRules = HtmlHighlightRules;
     this.$behaviour = new XmlBehaviour();
     this.$completer = new HtmlCompletions();
-    
+
     this.createModeDelegates({
         "js-": JavaScriptMode,
         "css-": CssMode
     });
-    
+
     this.foldingRules = new HtmlFoldMode(this.voidElements, lang.arrayToMap(optionalEndTags));
 };
 oop.inherits(Mode, TextMode);

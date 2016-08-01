@@ -170,7 +170,7 @@ export class JsGutter {
             this.editorLayout = editorLayout;
             this.update();
         });
-        ea.subscribe('onCursorMoved', info => {
+        ea.subscribe("jsEditorCursorMoved", info => {
             this.selectedLine = info.cursor ||1;
             this.highlightLine(this.selectedLine);
         });

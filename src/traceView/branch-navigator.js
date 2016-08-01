@@ -5,9 +5,12 @@ export class BranchNavigator{
     gutterTooltipId = "gutterTooltip";
     gutterTooltipSelector = "#gutterTooltip";
     resetNavigationBoxSelector ="#resetNavigationBox";
+    gutterNavigatorSliderLeftSelector = ".gutterNavigatorSliderLeft";
+    gutterNavigatorSliderRightSelector = ".gutterNavigatorSliderRight";
+    gutterNavigatorSliderSelector = ".gutterNavigatorSlider";
     gutterTooltipSlideTime = 50;
     gutterTooltipShowDelay = 50;
-    gutterTooltipHideDelay = 350;
+    gutterTooltipHideDelay = 500;
     gutterDecorationClassName = "seecoderun-gutter-decoration";
     branches = [];
 
@@ -22,16 +25,10 @@ export class BranchNavigator{
     updateGutterBranches(traceGutterData){
         for(let row in traceGutterData.rows){
             if(traceGutterData.rows.hasOwnProperty(row)){
-            let count = traceGutterData.rows[row].count;
-            // let branch =traceGutterData.rows[row].branch;
-            // branch = branch? branch: count;
-            // branch = branch> count? count: branch;
-            // let previousBranch = this.branches[row]?this.branches[row].branch: branch;
-            // branch = previousBranch> count? branch: previousBranch;
-            // traceGutterData.rows[row].branch = branch;
-            if(count != null){
-                traceGutterData.rows[row].branch = count;
-            }
+                let count = traceGutterData.rows[row].count;
+                if(count != null){
+                    traceGutterData.rows[row].branch = count;
+                }
 
             }
         }
@@ -81,9 +78,21 @@ export class BranchNavigator{
             traceViewModel = this.traceViewModel,
             gutterDecorationClassName = this.gutterDecorationClassName;
 
+        eventAggregator.subscribe("jsEditorCursorMoved", info => {
+            this.selectedLine = info.cursor ||1;
+            this.$hideTooltip();
+
+        });
+
         eventAggregator.subscribe(
             "jsEditorPreChange", payload =>{
                 this.cleanGutterUI();
+            }
+        );
+
+        eventAggregator.subscribe(
+            "jsEditorChangeError", payload =>{
+                this.$hideTooltip();
             }
         );
 
@@ -157,7 +166,7 @@ export class BranchNavigator{
         self.gutterMouseMoveTimeout = null;
 
         let gutterMouseMoveUpdateTooltipTimeout = function gutterMouseMoveUpdateTooltipTimeout(){
-	        self.$gutterTooltip.hide("slide", { direction: "down" }, self.gutterTooltipSlideTime);
+	        self.$hideTooltip();
 	    };
 
         self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, context, row, lineHeight){
@@ -170,22 +179,31 @@ export class BranchNavigator{
 	        let branch = context.branch;
 		    if(content){
 	            self.currentContent = content;
-			    let $gutterNavigatorSlider = $("#gutterNavigatorSlider");
+			    let $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
 
 			    if(!$gutterNavigatorSlider.length){
 			        let navigator = `
 			        <div class = "w3-row">
-    			        <div id="gutterNavigatorSliderLeft">
+    			        <div class="gutterNavigatorSliderLeft">
     			            <i class="material-icons seecoderun-text-blue">&#xE5CB;</i>
     			        </div>
-    			        <div id="gutterNavigatorSlider"></div>
-    			        <div id="gutterNavigatorSliderRight">
+    			        <div class="gutterNavigatorSliderRight">
     			         <i class="material-icons seecoderun-text-blue">&#xE5CC;</i>
                         </div>
+
+    			        <div class="gutterNavigatorSlider"></div>
+
+    			        <div class="gutterNavigatorSliderLeft">
+    			            <i class="material-icons seecoderun-text-blue">&#xE5CB;</i>
+    			        </div>
+    			        <div class="gutterNavigatorSliderRight">
+    			         <i class="material-icons seecoderun-text-blue">&#xE5CC;</i>
+                        </div>
+
                     </div>
     			    `;
     			    $gutterTooltip.html(navigator);
-    			    $gutterNavigatorSlider = $("#gutterNavigatorSlider");
+    			    $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
 
     			    self.gutterNavigatorSliderValue = 0;
     			    $gutterNavigatorSlider.slider({
@@ -198,7 +216,7 @@ export class BranchNavigator{
                     });
     			    $gutterNavigatorSlider.show();
 
-    			    $("#gutterNavigatorSliderLeft").click( function gutterNavigatorSliderLeftClick( event) {
+    			    $(self.gutterNavigatorSliderLeftSelector).click( function gutterNavigatorSliderLeftClick( event) {
     			        let value = $gutterNavigatorSlider.slider('value') - 1;
     			        $gutterNavigatorSlider.slider('value',  value);
     			        if($gutterNavigatorSlider.slider('value') === value){
@@ -206,9 +224,9 @@ export class BranchNavigator{
                             self.gutterNavigatorSliderValue = value;
     			        }
     			     });
-                    $("#gutterNavigatorSliderLeft").show();
+                    $(self.gutterNavigatorSliderLeftSelector).show();
 
-                    $("#gutterNavigatorSliderRight").click(function gutterNavigatorSliderRightClick( event) {
+                    $(self.gutterNavigatorSliderRightSelector).click(function gutterNavigatorSliderRightClick( event) {
                         let value = $gutterNavigatorSlider.slider('value') + 1;
     			        $gutterNavigatorSlider.slider('value',  value);
     			        if($gutterNavigatorSlider.slider('value') === value){
@@ -216,17 +234,13 @@ export class BranchNavigator{
                             self.gutterNavigatorSliderValue = value;
     			        }
                     });
-                    $("#gutterNavigatorSliderRight").show();
+                    $(self.gutterNavigatorSliderRightSelector).show();
                     $gutterTooltip.hide();
                     $gutterTooltip.mouseenter( function gutterTooltipMouseEnter(){
                         clearTimeout(self.gutterMouseMoveTimeout);
                         if(!$gutterTooltip.is( ":visible" )){
-                        if(self.previousRow){
-                            self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
+                            self.$showTooltip();
                         }
-                        self.jsEditor.editor.getSession().addGutterDecoration(self.currentRow, "seecoderun-gutter-decoration-active");
-                        $gutterTooltip.hide().show("slide", { direction: "down" }, self.gutterTooltipSlideTime);
-                    }
                     })
                     .mouseleave( function gutterTooltipMouseLeave(){
                         clearTimeout(self.gutterMouseMoveTimeout);
@@ -234,22 +248,25 @@ export class BranchNavigator{
         			        setTimeout( gutterMouseMoveUpdateTooltipTimeout, self.gutterTooltipHideDelay);
                     });
 			    }
+                let $aceEditor$Width = $("#aceJsEditorDiv").width();
 
-		        $( "#gutterTooltip > div" ).css({
-		            height: `${lineHeight}px`,
-		        });
+                $( "#gutterTooltip" ).width($aceEditor$Width);
 
-		        $( "#gutterTooltip > div > div" ).css({
-		            height: `${lineHeight}px`
-		        });
-		        $( "#gutterTooltip > div > div > i" ).css({
-		            "line-height": `${lineHeight -2}px`
+		        $( "#gutterTooltip > div" ).height(lineHeight);
+
+		        $( "#gutterTooltip > div > div" ).height(lineHeight);
+
+                $( "#gutterTooltip > div > div > i" ).css({
+		            "line-height": `${lineHeight -2}px`,
+		            "padding-top": `1px`
 		        });
 
 		        $gutterNavigatorSlider.css({
 		            height: `${lineHeight - 4}px`,
-		            top: "-7px"
+		            top: `-${lineHeight/2}px`
 		        });
+                let $button$Width = 31;// todo get the actual value
+		        $gutterNavigatorSlider.width($aceEditor$Width - $button$Width*4);
 
 		        $gutterNavigatorSlider.slider('option', {min: 1, max: count, value: branch});
 		        self.branchMax = count;
@@ -265,7 +282,7 @@ export class BranchNavigator{
                     if(self.previousRow){
                         self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
                     }
-                    $gutterTooltip.hide().show("slide", { direction: "down" }, self.gutterTooltipSlideTime);
+                    self.$showTooltip();
                     $gutterTooltip.mouseenter();
                 }
 			}else{
@@ -282,13 +299,28 @@ export class BranchNavigator{
     }
 
     cleanGutterUI(){
-        if(this.$gutterTooltip && this.$gutterTooltip.is( ":visible" )){
-            this.$gutterTooltip.hide("slide", { direction: "down" }, 200);
+        if(!this.jsEditor){
+            return;
         }
-        if(this.jsEditor){
-             $(`${this.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
-         }
+        this.$hideTooltip();
+        $(`${this.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
         this.aceUtils.removeAllGutterDecorations(this.editor, this.gutterDecorationClassName);
+        $(`${this.jsEditorSelector}.ace_gutter-cell`).removeClass(this.gutterDecorationClassName);
         this.traceViewModel.resetTraceGutterDataRows();
+    }
+
+    $hideTooltip(){
+        if(this.$gutterTooltip && this.$gutterTooltip.is( ":visible" )){
+            this.currentRow = null;
+            this.$gutterTooltip.hide("slide", { direction: "down" }, this.gutterTooltipSlideTime);
+            this.eventAggregator.publish("branchNavigatorChange", {isVisible: false});
+        }
+    }
+
+    $showTooltip(isForceShow = false){
+        if(this.$gutterTooltip && (!this.$gutterTooltip.is( ":visible" || isForceShow))){
+            this.$gutterTooltip.show("slide", { direction: "down" }, this.gutterTooltipSlideTime);
+            this.eventAggregator.publish("branchNavigatorChange", {isVisible: true});
+        }
     }
 }

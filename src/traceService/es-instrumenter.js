@@ -84,15 +84,29 @@ export class EsInstrumenter {
     }
 
     setNodeValue(ref){
-     ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
+        let traceParametersRange = 4;
+        ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = ref.value;
+        if(ref.propertyIndex === traceParametersRange){
+           ref.autoLogNode.callee.object.arguments[0] = ref.value;
+        }
     }
 
     setNodeTextValue(ref){
         ref.autoLogNode.arguments[0].properties[ref.propertyIndex].value = {
-                        "type": "Literal",
-                        "value": ref.value,
-                        "raw": ref.value
-                    };
+            "type": "Literal",
+            "value": ref.value,
+            "raw": ref.value
+        };
+        let traceParametersType = 0;
+        let traceParametersId = 1;
+        let traceParametersText = 2;
+        if(ref.propertyIndex === traceParametersType || ref.propertyIndex === traceParametersId|| ref.propertyIndex === traceParametersText){
+             ref.autoLogNode.callee.object.arguments[ref.propertyIndex + 1] = {
+                "type": "Literal",
+                "value": ref.value,
+                "raw": ref.value
+            };
+         }
     }
 
     instrumentVariableDeclarator(node, code, self = this){
@@ -127,14 +141,14 @@ export class EsInstrumenter {
     }
 
     getParametersRanges(parameters){
-        let ranges = [];
+        let parametersRanges = [];
         for(let parameterIndex in parameters){
             let parameter = parameters[parameterIndex];
             if(parameter.loc){
-                ranges.push(this.toAceRange(parameter.loc));
+                parametersRanges[parameterIndex] = {value: null, range: this.toAceRange(parameter.loc)};
             }
         }
-        return ranges;
+        return parametersRanges;
     }
 
     instrumentCallExpression(node, code, self = this){
@@ -155,7 +169,7 @@ export class EsInstrumenter {
             return undefined;
         }
 
-        let callExpressionText = "{ text: '" + getTextRange(code, node.range) + "', parameters: " + JSON.stringify(self.getParametersRanges(node.arguments)) + "}";
+        let callExpressionText = JSON.stringify({ text: getTextRange(code, node.range), parameters: self.getParametersRanges(node.arguments)});
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.callee.range)} );
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : callExpressionText} );
@@ -707,7 +721,7 @@ export class EsInstrumenter {
             identifier =  parent.id ? parent.id.name : '[Anonymous]';
 
         } else if (typeof parent.length === 'number') {
-            identifier =  parent.id ? parent.id.name : '[Anonymous]';
+            identifier =  parent[0].id ? parent[0].id.name : '[Anonymous]';
 
         } else if (typeof parent.key !== 'undefined') {
             if (parent.key.type === 'Identifier') {

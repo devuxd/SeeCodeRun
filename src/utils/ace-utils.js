@@ -28,14 +28,29 @@ export class AceUtils{
         editor.setTheme(theme);
         editor.setShowFoldWidgets(false);
         editor.setShowPrintMargin(false);
-        // editor.setAutoScrollEditorIntoView(true);
+        editor.setAutoScrollEditorIntoView(true);
         editor.$blockScrolling = Infinity;
+
+        editor.setDisplayIndentGuides(true);
+
+        ace.require("ace/ext/language_tools");
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true
+        });
+
+        ace.require("ace/ext/spellcheck");
+        editor.setOption("spellcheck", true);
     }
 
     configureSession(session, mode = 'ace/mode/javascript') {
         session.setUseWrapMode(true);
-        session.setUseWorker(false);
+        session.setFoldStyle("manual");
+        session.setOption("useWorker", true);
         session.setMode(mode);
+        let whitespace = ace.require("ace/ext/whitespace");
+        whitespace.detectIndentation(session);
     }
 
     getAvailableMarkers(){
@@ -48,12 +63,12 @@ export class AceUtils{
     }
     makeAceMarkerManager(aceEditor){
         return {
-                aceEditor: aceEditor,
-                markers: [],
-                markerRenderer: this.getAvailableMarkers().defaultMarker,
-                markerType: "text",
-                inFront: false
-                };
+            aceEditor: aceEditor,
+            markers: [],
+            markerRenderer: this.getAvailableMarkers().defaultMarker,
+            markerType: "text",
+            inFront: false
+        };
     }
 
     updateAceMarkers(aceMarkerManager, elementsWithRangeProperty){
@@ -97,11 +112,17 @@ export class AceUtils{
         aceMarkerManager.markers = newMarkers;
     }
 
-    subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel, updateTooltip = this.updateTooltip, tooltipSlideDelay = 100, tooltipShowDelay = 100, tooltipHideDelay =2000){
+    subscribeToGutterEvents(
+        editor, tooltip, gutterDecorationClassName, dataModel,
+        updateTooltip = this.updateTooltip, tooltipSlideDelay = 100, tooltipShowDelay = 100, tooltipHideDelay =2000,
+        aceGutterCellSelector = ".ace_gutter-cell"
+    ){
      	let self = this;
      	self.gutterTooltipHideTimeout = null;
      	self.previousRow = null;
      	self.firstLoad = true;
+     	self.gutterCellLeftPadding = parseFloat($(aceGutterCellSelector).css("padding-left"), 10);
+     	self.gutterCellRightPadding = parseFloat($(aceGutterCellSelector).css("padding-right"), 10);
 
         let setTooltipMouseMove =	function setTooltipMouseMove(target, row, pixelPosition, content){
             $(target).mouseenter( function onMouseEnterGutterCell(){
@@ -134,7 +155,11 @@ export class AceUtils{
     			return;
     		}
 
-    		if (e.clientX > target.parentElement.getBoundingClientRect().right - 13){
+    		if (e.clientX > target.parentElement.getBoundingClientRect().right - self.gutterCellRightPadding){
+    			return;
+    		}
+
+    		if (e.clientX < target.parentElement.getBoundingClientRect().left + self.gutterCellLeftPadding){
     			return;
     		}
 
@@ -142,11 +167,10 @@ export class AceUtils{
     		let content = "";
     		if(dataModel.rows.hasOwnProperty(row)){
     		        content = dataModel.rows[row];
-                    let pixelPosition = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
-
-    			    pixelPosition.pageY -= target.getBoundingClientRect().height;
-    			    //subtract the gutter width and editor text layer padding
-    				pixelPosition.pageX -= target.getBoundingClientRect().width + 4;
+                    let pixelPosition = {};
+                    let boundingRect = target.getBoundingClientRect();
+    			    pixelPosition.pageY = boundingRect.top - editor.renderer.lineHeight;
+    				pixelPosition.pageX = boundingRect.left;
 
                     if(row !== self.previousRow){
                         setTooltipMouseMove(target, row,  pixelPosition, content);
@@ -171,8 +195,6 @@ export class AceUtils{
 		}
 
      	editor.on("mousemove", function (e){
-
-
     		let position = e.getDocumentPosition();
     		let isTextMatch = undefined;
 
@@ -215,7 +237,6 @@ export class AceUtils{
     			}else{
     			    pixelPosition.pageY += editor.renderer.lineHeight;
     			}
-
     			renderer.onExpressionHovered(match, pixelPosition);
     		}else{
     		    renderer.onExpressionHovered();
