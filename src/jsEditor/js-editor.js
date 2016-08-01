@@ -21,7 +21,9 @@ export class JsEditor {
   attached() {
     let editor = ace.edit(this.aceJsEditorDiv);
     this.aceUtils.configureEditor(editor);
-    this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
+    this.eventAggregator.subscribe("pastebinReady", () => {
+      this.firepad = this.firebaseManager.makeJsEditorFirepad(editor);
+    });
     let session = editor.getSession();
     this.aceUtils.configureSession(session);
 

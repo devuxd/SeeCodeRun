@@ -125,7 +125,8 @@ export class BranchNavigator{
                 if(traceViewModel.isTraceGutterDataValid()){
                     if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
                         traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
-                        editor.getSession().addGutterDecoration(navigationData.row, "");
+                        editor.getSession().removeGutterDecoration(navigationData.row, this.gutterDecorationClassName);
+                        editor.getSession().addGutterDecoration(navigationData.row, this.gutterDecorationClassName);
                     }
                 }
             }

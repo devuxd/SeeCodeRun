@@ -3,10 +3,12 @@
 import {AppConfiguration} from "../app-configuration";
 
 export class FirebaseManager{
+    firebaseApp = null;
     pastebinId = undefined;
     SERVER_TIMESTAMP = firebase.database.ServerValue.TIMESTAMP;
 
-    constructor(){
+    constructor(eventAggregator){
+        this.eventAggregator = eventAggregator;
         let appConfiguration = new AppConfiguration();
         this.baseURL = appConfiguration.firebaseURL;
         this.isDebug = appConfiguration.isDebug;
@@ -14,15 +16,12 @@ export class FirebaseManager{
     }
 
     activate(pastebinId){
-        if(pastebinId){
-            this.pastebinId = pastebinId;
-        }else{
-            this.pastebinId = this.makeNewPastebinFirebaseReferenceId();
-        }
+        this.pastebinId = pastebinId;
         this.initialize();
     }
 
     getCustomToken(pastebinId = this.pastebinId ){
+        // return pastebinId;
         return {
             "provider": "anonymous",
             "uid": pastebinId
@@ -30,54 +29,66 @@ export class FirebaseManager{
     }
 
     initialize(pastebinId = this.pastebinId){
-        // apiKey: "AIzaSyDwxE9Pm6wMMD4nmOqa5OUnrLr-ty6LxXY"
+        let self = this;
+
         let config = {
-          apiKey: "AIzaSyC5ovOrvFtW7BKE3PP4TwQKGz3eVnQ7FR8",
+          apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
           authDomain: "seecoderun.firebaseapp.com",
           databaseURL: this.baseURL
         };
 
-        firebase.initializeApp(config);
-
-        if(this.isDebug){
-                    firebase.auth().signInAnonymously().catch(function(error) {
-          // Handle Errors here.
-          var errorCode = error.code;
-          var errorMessage = error.message;
-          // [START_EXCLUDE]
-          if (errorCode === 'auth/operation-not-allowed') {
-            alert('You must enable Anonymous auth in the Firebase Console.');
-          } else {
-            console.error(error);
-          }
-          // [END_EXCLUDE]
-        });
-
-        }else{
-            firebase.auth().signInWithCustomToken(this.getCustomToken()).catch(function(error) {
-              // Handle Errors here.
-              var errorCode = error.code;
-              var errorMessage = error.message;
-              // ...
-            });
+        if(pastebinId){
+            config = {
+                apiKey: "AIzaSyC5ovOrvFtW7BKE3PP4TwQKGz3eVnQ7FR8",
+                databaseURL: this.baseURL
+            };
         }
 
+        this.firebaseApp = firebase.initializeApp(config);
+        if (firebase.auth().currentUser) {
+            firebase.auth().signOut();
+        }
+
+        this.firebaseApp.auth().onAuthStateChanged(function(user) {
+            if (user) {
+              // User is signed in.
+              self.isAnonymous = user.isAnonymous;
+              self.pastebinId = user.uid;
+              self.eventAggregator.publish("pastebinReady");
+              console.log(JSON.stringify(user));
+            }else{
+              self.eventAggregator.publish("pastebinError", {error: "Authentication failed"});
+            }
+        });
+
+        let errorHandler = function(error) {
+              self.eventAggregator.publish("pastebinError", error);
+        };
+
+
+        if(pastebinId){
+            let customToken = firebase.auth.createCustomToken(String(pastebinId));
+            this.firebaseApp.auth().signInWithCustomToken(customToken).catch(errorHandler);
+        }else{
+
+            this.firebaseApp.auth().signInAnonymously().catch(errorHandler);
+        }
     }
 
     makeNewPastebinFirebaseReferenceId(){
-        // return new Firebase(this.baseURL).push().key();
+        return this.firebaseApp.database(`${this.appRoot}/`).ref().push().key;
     }
 
     makePastebinFirebaseReference(pastebinId = this.pastebinId ){
-        return firebase.database().ref();
+        return this.firebaseApp.database().ref(`${this.appRoot}/${this.pastebinId}/`);
     }
 
     makeTraceSearchHistoryFirebase(){
-        return firebase.database().ref(`${this.appRoot}/${this.pastebinId}/content/search`);
+        return this.firebaseApp.database().ref(`${this.appRoot}/${this.pastebinId}/content/search`);
     }
 
     makeChatFirebase(){
-        return firebase.database().ref(`${this.appRoot}/${this.pastebinId}/content/chat`);
+        return this.firebaseApp.database().ref(`${this.appRoot}/${this.pastebinId}/content/chat`);
     }
 
     makeJsEditorFirepad(jsEditor){
@@ -98,7 +109,7 @@ export class FirebaseManager{
 
     makeFirepad(subject, editor, defaultText){
         let subjectPath = `${this.appRoot}/${this.pastebinId}/content/${subject}`;
-        let firebase = firebase.database().ref(subjectPath);
+        let firebase = this.firebaseApp.database().ref(subjectPath);
 
         return Firepad.fromACE(
           firebase,
