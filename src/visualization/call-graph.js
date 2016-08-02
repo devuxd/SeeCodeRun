@@ -37,35 +37,54 @@ export class CallGraph {
             renderFx: this.renderFx,
             errorMessage: null
         };
+
     }
 
-    prepareFx(){
-      let self = this;
-      this.formatTraceFx =  function formatTraceFxAsD3RootNode(trace = this.trace){
-        if(!trace)
-          return ;
-        // console.log( trace ) ;
-        //the text starts at line 0 by default, plus one to match natural line numbers
-        let callsMatrix = {} ;
-        let funcs = [] ;
-        //
-        funcs = self.findFuncs( trace ) ;
-        //
+    prepareFx()
+  	{
+  		let self = this ;
+  		this.formatTraceFx =  function makeTree(trace = this.trace)
+  		{
+  			if(!trace)
+  				return ;
+  			//the text starts at line 0 by default, plus one to match natural line numbers
+  			let map = {} ;
+  			let funcs = [] ;
+  			//
+  			funcs = self.findFuncs( trace ) ;
 
-        for( let i = 0 ; i < funcs.length ; i++ )
-        callsMatrix[ funcs[i].name ] = funcs[ i ] ; //try with adjacency list
-        //callsMatrix[ funcs[i].name ] = {} ;
-        callsMatrix = self.makeMatrix( funcs , callsMatrix ) ;
-        //
-        // console.log( callsMatrix ) ;
-        //turns matrix into tree
-        //let roots = self.matrixToTree( callsMatrix , funcs ) ;
-        //console.log( roots ) ;
-        // console.log(funcs)
-        return callsMatrix[funcs[0].name] ;
-      };
+  			for( let i = 0 ; i < funcs.length ; i++ )
+  				map[ funcs[i].name ] = funcs[ i ] ; //try with adjacency list
 
-        this.renderFx  =  function renderFx(formattedTrace, divElement, query) {
+  			map = self.makeMatrixList( funcs , map ) ;
+  			//
+  			let rootsList = [] ; //list of functions that arent called
+  			for( let key in map )
+  			{
+  				//console.log( key ) ;
+  				if( map[ key ].parents.length === 0 )
+  					rootsList.push( map[ key ] ) ;
+  			}
+  			//
+  			// console.log( "funcs" ) ;
+  			// console.log( funcs ) ;
+  			// console.log( "map" ) ;
+  			// console.log( map ) ;
+
+  			// console.log( map[ "alpha()" ].children[ 1 ] === map[ "alpha()" ].children[ 2 ] ) ;
+  			//turns matrix into tree
+
+        let masterHead = new Vertex("Program", "Program");
+
+        // rootsList.map(function(e) {
+        //   masterHead.children.push(e);
+        // })
+
+  			// return rootsList[ 0 ] ;
+        return rootsList[0];
+  		};
+
+      this.renderFx  =  function renderFx(formattedTrace, divElement, query, aceUtils, aceMarkerManager) {
           if (!formattedTrace){
               return;
           }
@@ -105,9 +124,8 @@ export class CallGraph {
             makeQuery();
           }
 
-          console.log(query)
-
           console.log(formattedTrace)
+
           d3.select(divElement).html("");
 
           let margin = {top: 20, right: 20, bottom: 30, left: 40},
@@ -161,35 +179,45 @@ export class CallGraph {
                   .style("stroke","#ccc")
                   .style("stroke-width","1.5px");
 
-              link.append("text")
-                .attr("class","num_text")
-                .attr("x", function(d) {
-                  return (d.x + d.parent.x)/2;
-                })
-                .attr("y", function(d) {
-                  return (d.y + d.parent.y + rectHeight)/2;
-                })
-                .attr("text-anchor", "middle")
-                .text(function (d) {
-                  return 1;//Math.floor((Math.random() * 10) + 1);
-                })
-                .style("font","10px sans-serif");
+              // link.append("text")
+              //   .attr("class","num_text")
+              //   .attr("x", function(d) {
+              //     return (d.x + d.parent.x)/2;
+              //   })
+              //   .attr("y", function(d) {
+              //     return (d.y + d.parent.y + rectHeight)/2;
+              //   })
+              //   .attr("text-anchor", "middle")
+              //   .text(function (d) {
+              //     return d.data.childCalls;//Math.floor((Math.random() * 10) + 1);
+              //   })
+              //   .style("font","10px sans-serif");
 
-              function mouseover(d) {
+              function showHoverText(d) {
                 d3.select(this).append("text")
                   .attr("class", "hover")
                   .attr("transform", function(d) {
                     return "translate(5, -5)";
                   })
                   .text(d.data.name);
+                highlight(d);
               }
 
-              function mouseout(d) {
+              function hideHoverText(d) {
                 d3.select(this).select("text.hover").remove();
+                unhighlight(d);
               }
 
-              console.log('nodes')
-              console.log(node)
+              function highlight(d) {
+                aceUtils.updateAceMarkers(aceMarkerManager, d.data.ranges);
+              }
+
+              function unhighlight(d) {
+                aceUtils.updateAceMarkers(aceMarkerManager, []);
+              }
+
+              // console.log('nodes')
+              // console.log(node)
               let node = svg.selectAll(".node")
                   .data(nodes)
                 .enter().append("g");
@@ -203,7 +231,7 @@ export class CallGraph {
               multiParents.each(function(d) {
                 for(let i = 1; i < d.data.parents.length; i++) {
                   let p;
-                  node.filter(function (d2, i2) { console.log(d2); return d2.data.id === d.data.parents[i].id; }).each(function(pNode) {
+                  node.filter(function (d2, i2) { return d2.data.id === d.data.parents[i].id; }).each(function(pNode) {
                     p = pNode;
                   })
                   parentPairs.push({
@@ -247,10 +275,14 @@ export class CallGraph {
                 return query !== null && i !== 0 && !d.data.name.includes(query);
               });
 
-              regNodes.on("mouseover", mouseover).on("mouseout", mouseout)
+              regNodes.on("mouseover", showHoverText)
+                .on("mouseout", hideHoverText);
+
+              filteredNodes.on("mouseover",highlight)
+                .on("mouseout", unhighlight);
 
               regNodes.append("circle")
-                    .attr("r", 4.5)
+                    .attr("r", 6)
                     .attr("transform", "translate(0," + rectHeight/2 + ")");
 
               filteredNodes.append("text")
@@ -263,148 +295,163 @@ export class CallGraph {
               d3.select(self.frameElement).style("height", 200 + "px");
     }
 
-    findFuncs( trace )
-{
-  let self = this ;
-  let funcs = []
-    let doesFuncExist = {} ;
-  let lastBlockRange = null ;
-  //
-  for( let index = 1 ; index < trace.timeline.length - 1 ; index++ ) //precomputes all the funcs
-  {
-    let step = self.scrubStep( trace.timeline[ index ] ) ;
-    //
-    switch( step.type )
-    {
-      case "BlockStatement" :
-        lastBlockRange = step.range ;
-        break ;
-        //
-      case "FunctionData" :
-        if( !doesFuncExist[ step.id ] )
-        {
-          if( !lastBlockRange )
-            funcs.push( new Vertex( step.type , step.id , step.range , step.value ) ) ;
-          else
-          {
-            funcs.push( new Vertex( step.type , step.id , lastBlockRange , step.value ) ) ;
-            lastBlockRange = null ;
-          }
-          doesFuncExist[ step.id ] = true ;
-        }
-        break ;
-        //
-      case "CallExpression" :
-        funcs.push( new Vertex( step.type , step.id , step.range , null ) ) ;
-        break ;
 
-      default: {}
+    	findFuncs( trace )
+    	{
+    		let self = this ;
+    		let funcs = []
+    		let doesFuncExist = {} ;
+    		let doesCallExist = {} ;
+    		let lastBlockRange = null ;
+        let callfuncs = [];
+    		//
+    		for( let index = 1 ; index < trace.timeline.length - 1 ; index++ ) //precomputes all the funcs
+    		{
+    			let step = self.scrubStep( trace.timeline[ index ] ) ;
+    			//
+    			switch( step.type )
+    			{
+    				case "BlockStatement" :
+    					lastBlockRange = step.range ;
+    					break ;
+    					//
+    				case "FunctionData" :
+    					if( !doesFuncExist[ step.id ] )
+    					{
+    						if( !lastBlockRange )
+    							funcs.push( new Vertex( step.type , step.id , [{range:step.range}] , step.value , step.text ) ) ;
+    						else
+    						{
+    							funcs.push( new Vertex( step.type , step.id , [{range:lastBlockRange}] , step.value , step.text ) ) ;
+    							lastBlockRange = null ;
+    						}
+    						doesFuncExist[ step.id ] = true ;
+    					}
+              else
+              {
+
+              }
+    					break ;
+    					//
+    				case "CallExpression" :
+              let found = false;
+              for(let i = 0; i < callfuncs.length; i++) {
+                if(callfuncs[i] === step.id) {
+                  found = true;
+                }
+              }
+              if( !found || step.id.includes(".")) {
+                  let currentVertex = new Vertex( step.type , step.id , [{range:step.range}] , null , step.text );
+    					     funcs.push( currentVertex ) ;
+                   callfuncs.push(step.id)
+                 }
+              else {
+                for(let i = 0; i < funcs.length; i++) {
+                  if(funcs[i].name === step.id) {
+                    funcs[i].ranges.push({range:step.range})
+                  }
+                }
+              }
+
+    				default: {}
+
+    			}
+    		}
+    		return funcs ;
+    	}
+
+    	makeMatrixList( funcs , map )
+    	{
+        console.log(map)
+    		let self = this ;
+    		for( let index1 = 0 ; index1 < funcs.length ; index1++ )
+    		{
+    			for( let index2 = 0 ; index2 < funcs.length ; index2++ )
+    			{
+
+    				if( funcs[ index2 ].type === "FunctionData" )
+    				{
+
+    					if( index1 !== index2 && self.isRangeInRange( funcs[ index1 ].ranges[0].range , funcs[ index2 ].ranges[0].range ) )
+    					{
+                let mom = funcs[ index2 ].name ;
+      						let child = funcs[ index1 ].name ;
+
+      						if( !map[ mom ].childCalls[ child ] )
+      						{
+      							map[ mom ].children.push( map[ child ] ) ;
+      							if( funcs[ index1 ].type !== "CallExpression" )
+      								map[ child ].parents.push( map[ mom ] ) ;
+      							//
+      							map[ mom ].childCalls[ child ] = [ "testing" ] ;
+      						}
+      						else
+      						{
+      							map[ mom ].childCalls[ child ].push( "testing" ) ;
+      						}
+
+    					}
+    				//
+    				//	if( index1 !== index2 && funcs[index1].type === "CallExpression"
+    				//		&& funcs[index1].text.indexOf( funcs[index2].name.replace( /[()""]/g , "" ) ) )
+    				//	{
+    				//		let mom = funcs[ index2 ].name ;
+    				//		let child = funcs[ index1 ].name ;
+    				//
+    				//		console.log( "callback found" ) ;
+    				//		map[ mom ].children.push( map[ child ] ) ;
+    				//		map[ child ].parents.push( map[ mom ] ) ;
+    				//		map[ child ].isCallback = true ;
+    				//	}
+    				}
+    			}
+    		}
+    		return map ;
+    	}
+
+    	//
+    	//helpers
+    	//
+
+    	scrubStep( step )
+    	{
+    		if( step !== null )
+    		{
+    			if( step.text !== null )
+    			{
+    				step.text = step.text.replace( /"/g , "" ) ; //scrubs for "
+    			}
+    			if( step.id !== null )
+    			{
+    				step.id = step.id.replace( /[()""]/g , "" ) + "()" ;
+
+    			}
+    			if( step.type !== null )
+    			{
+    				step.type = step.type.replace( /"/g , "" ) ;
+    			}
+    		}
+    		return step ;
+    	}
+
+    	isRangeInRange(isRange, inRange) //be careful here!
+    	{
+    		if( isRange.start.row > inRange.start.row && isRange.end.row < inRange.end.row )
+    			return true ;
+
+    		if( isRange.start.row === inRange.start.row || isRange.end.row === inRange.end.row )
+    		{
+    			if( isRange.start.row === inRange.start.row )
+    				if( isRange.start.column < inRange.start.column )
+    					return false ;
+    			if( isRange.end.row === inRange.end.row )
+    				if( isRange.end.column > inRange.end.column )
+    					return false ;
+    			return true ;
+    		}
+
+    		return false ;
+    	}
+
 
     }
-  }
-  return funcs ;
-}
-
-makeMatrix( funcs , callsMatrix )
-{
-  let self = this ;
-  for( let index1 = 0 ; index1 < funcs.length ; index1++ )
-  {
-    for( let index2 = 0 ; index2 < funcs.length ; index2++ )
-    {
-
-      if( funcs[ index2 ].type === "FunctionData" )
-      {
-
-        if( index1 !== index2 && self.isRangeInRange( funcs[ index1 ].range , funcs[ index2 ].range ) )
-        {
-          // console.log( "sparta" ) ;
-          let x = funcs[ index2 ].name ;
-          let y = funcs[ index1 ].name ;
-
-          if( !callsMatrix[ x ].hasOwnProperty( callsMatrix[ y ] ) )
-          {
-            callsMatrix[ x ].children.push( callsMatrix[ y ] ) ;
-            callsMatrix[ y ].parents.push( callsMatrix[ x ] ) ;
-          }
-
-
-
-          /*
-          if( callsMatrix[ x ][ y ] ) //hold number of calls
-            callsMatrix[ x ][ y ] += 1 ;
-          else
-            callsMatrix[ x ][ y ] = 1 ; //TODO: there is a bug, if echo calls console 2x and echo
-          */								//itself is called 2x , it shows 4 calls of console
-        }
-      }
-    }
-  }
-  return callsMatrix ;
-}
-
-  matrixToTree( callsMatrix , funcs , roots )
-  {
-    let self = this ;
-    //
-    for( let i = 0 ; i < funcs.length ; funcs++ )
-
-
-    for( let index1 = 0 ; index1 < funcs.length ; index1++ )
-    {
-      for( let index2 = 0 ; index2 < funcs.length ; index2++ )
-      {
-        if( callsMatrix[ funcs[ index1 ].name ][ funcs[ index2].name ] )
-        {
-          funcs[ index1 ].children.push( funcs[ index2 ] ) ;
-          funcs[ index2 ].parents.push( funcs[ index2 ] ) ;
-        }
-      }
-    }
-    return funcs ; //temp check
-  }
-
-  //
-  //helpers
-  //
-
-  scrubStep( step )
-  {
-    if( step !== null )
-    {
-      if( step.text !== null )
-      {
-        step.text = step.text.replace( /"/g , "" ) ; //scrubs for "
-      }
-      if( step.id !== null )
-      {
-        step.id = step.id.replace( /[()""]/g , "" ) + "()" ;
-
-      }
-      if( step.type !== null )
-      {
-        step.type = step.type.replace( /"/g , "" ) ;
-      }
-    }
-    return step ;
-  }
-
-  isRangeInRange(isRange, inRange) //be careful here!
-  {
-    if( isRange.start.row > inRange.start.row && isRange.end.row < inRange.end.row )
-      return true ;
-
-    if( isRange.start.row === inRange.start.row || isRange.end.row === inRange.end.row )
-    {
-      if( isRange.start.row === inRange.start.row )
-        if( isRange.start.column < inRange.start.column )
-          return false ;
-      if( isRange.end.row === inRange.end.row )
-        if( isRange.end.column > inRange.end.column )
-          return false ;
-      return true ;
-    }
-
-    return false ;
-  }
-}
