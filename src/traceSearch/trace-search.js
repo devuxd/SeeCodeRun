@@ -63,14 +63,11 @@ export class TraceSearch {
         this.eventAggregator.subscribe("searchBoxChanged", payload => {
             this.searchTermText = payload.searchTermText;
             this.searchFilterId = payload.searchFilterId;
-            console.log("subscribe2")
-            console.log(payload)
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
                 let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.searchFilterId, this.searchTermText);
                 this.updateTable(query);
             }
-            console.log("sub3")
         });
 
         this.eventAggregator.subscribe("searchBoxStateRequest", () => {
