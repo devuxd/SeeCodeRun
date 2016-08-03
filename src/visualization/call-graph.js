@@ -84,12 +84,12 @@ export class CallGraph {
         return rootsList[0];
   		};
 
-      this.renderFx  =  function renderFx(formattedTrace, divElement, query, aceUtils, aceMarkerManager) {
+      this.renderFx  =  function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager) {
           if (!formattedTrace){
               return;
           }
 
-          if(query !== null && (query.trim() === "" || query == undefined)) {
+          if(query !== null && (query == undefined || query.trim() === "")) {
             query = null;
           }
 
@@ -120,11 +120,9 @@ export class CallGraph {
             scrubTree(formattedTrace);
           }
 
-          if(query !== null) {
+          if(query !== null && queryType === "functions") {
             makeQuery();
           }
-
-          console.log(formattedTrace)
 
           d3.select(divElement).html("");
 
@@ -260,7 +258,12 @@ export class CallGraph {
                   .style("font","10px sans-serif");
 
               let filteredNodes = node.filter(function(d, i) {
-                return query === null || d.data.name.includes(query) || i === 0;
+                if(queryType === "functions") {
+                  return query === null || d.data.name.includes(query) || i === 0;
+                }
+                else {
+                  return true; // TODO support other query types
+                }
               });
 
               filteredNodes.append("rect")
@@ -272,7 +275,12 @@ export class CallGraph {
                   .style("stroke-width","1.5px");
 
               let regNodes = node.filter(function(d, i) {
-                return query !== null && i !== 0 && !d.data.name.includes(query);
+                if(queryType === "functions") {
+                  return query !== null && i !== 0 && !d.data.name.includes(query);
+                }
+                else {
+                  return false; // TODO support other query types
+                }
               });
 
               regNodes.on("mouseover", showHoverText)
@@ -362,7 +370,7 @@ export class CallGraph {
 
     	makeMatrixList( funcs , map )
     	{
-        console.log(map)
+        // console.log(map)
     		let self = this ;
     		for( let index1 = 0 ; index1 < funcs.length ; index1++ )
     		{

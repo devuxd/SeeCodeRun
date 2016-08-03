@@ -7,8 +7,9 @@
 
       </div>
       <div class="w3-col" style="width:95px">
-        <select class="w3-select w3-hover-light-grey"  name="searchFilter" id="searchFilter" value.bind="traceSearch.selectedFilter" change.trigger="traceSearch.filterChanged()">
-          <option disabled="true" selected="true" >Filter by</option>
+        <select class="w3-select w3-hover-light-grey"  name="searchFilter" id="searchFilter" value.bind="traceSearch.searchFilterId" change.trigger="traceSearch.filterChanged()">
+          <option disabled="true">Filter by</option>
+          <option selected="true">${traceSearch.options.functions}</option>
           <option>${traceSearch.options.none}</option>
           <option>${traceSearch.options.any}</option>
           <option>${traceSearch.options.id}</option>
@@ -16,7 +17,7 @@
         </select>
       </div>
       <div class="w3-rest">
-        <input id="searchTerm"  type="text" class="w3-input  w3-hover-light-grey" name="searchTerm"  placeholder="Search Term" input.delegate="traceSearch.keyPressed()" value.bind="traceSearch.searchedValue" list = "filteredOptions">
+        <input id="searchTerm"  type="text" class="w3-input  w3-hover-light-grey" name="searchTerm"  placeholder="Search Term" input.delegate="traceSearch.keyPressed()" value.bind="traceSearch.searchTermText" list = "filteredOptions">
           <datalist id="filteredOptions" >
              <option repeat.for="row of traceSearch.filteredOptions" innerHTML.bind="row"></option>
           </datalist>

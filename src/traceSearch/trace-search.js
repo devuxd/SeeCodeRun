@@ -7,8 +7,8 @@ export class TraceSearch {
         this.traceModel = traceModel;
         this.aceUtils = aceUtils;
         this.options;
-        this.selectedFilter = "any";
-        this.searchedValue = "";
+        this.searchFilterId = "functions";
+        this.searchTermText = "";
         this.rows = [];
         this.filteredOptions = [];
         this.selectedExpressions = [];
@@ -55,20 +55,29 @@ export class TraceSearch {
             searchBox.traceHelper = payload.data;
             if(searchBox.traceHelper.isValid()){
                 let variableValues = searchBox.traceHelper.getValues();
-                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.searchFilterId, this.searchTermText);
                 this.updateTable(query);
             }
         });
 
         this.eventAggregator.subscribe("searchBoxChanged", payload => {
-            this.searchedValue = payload.searchTermText;
-            this.selectedFilter = payload.searchFilterId;
-
+            this.searchTermText = payload.searchTermText;
+            this.searchFilterId = payload.searchFilterId;
+            console.log("subscribe2")
+            console.log(payload)
             if (searchBox.traceHelper) {
                 let variableValues = searchBox.traceHelper.getValues();
-                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.selectedFilter, this.searchedValue);
+                let query = searchBox.traceHelper.traceQueryManager.getQuery(variableValues, this.searchFilterId, this.searchTermText);
                 this.updateTable(query);
             }
+            console.log("sub3")
+        });
+
+        this.eventAggregator.subscribe("searchBoxStateRequest", () => {
+          this.eventAggregator.publish("searchBoxStateResponse", {
+              searchTermText: this.searchTermText,
+              searchFilterId: this.searchFilterId
+          });
         });
 
         let updateAceMarkersTimeout;
@@ -90,14 +99,14 @@ export class TraceSearch {
     }
 
     updateTable(query) {
-        if(!$(this.traceSearchPanelBodySelector).is(":visible") && this.searchedValue){
+        if(!$(this.traceSearchPanelBodySelector).is(":visible") && this.searchTermText){
               $(this.traceSearchPanelHeadingSelector).click();
         }
-        let selectedFilter = this.selectedFilter;
+        let searchFilterId = this.searchFilterId;
         let dataList = [];
         this.rows = query.where( function whereFilter(row) {
-            if(row[selectedFilter]){
-                dataList.push(row[selectedFilter]);
+            if(row[searchFilterId]){
+                dataList.push(row[searchFilterId]);
             }
             return row.value !== undefined;
         }).items;
@@ -109,13 +118,13 @@ export class TraceSearch {
                                 'There is no javascript code.Try to write some and then comeback here :)':
                                 `Type any expression to see its value. Try ${this.rows[0].id} or ${this.rows[0].value}`;
 
-        this.noSearchYet = this.searchedValue.replace(/^\s+|\s+$/g, '') == "";
+        this.noSearchYet = this.searchTermText.replace(/^\s+|\s+$/g, '') == "";
         this.noResult = this.numberOfResult == 0 && !this.noSearchYet;
-        this.errorMessage = `Oops, no results found for "${this.searchedValue}" with "${this.selectedFilter}" filter. Remember, the search term is case sensitive.`;
+        this.errorMessage = `Oops, no results found for "${this.searchTermText}" with "${this.searchFilterId}" filter. Remember, the search term is case sensitive.`;
     }
 
     filterChanged() {
-        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+        this.publishTraceSearchChanged(this.searchTermText, this.searchFilterId);
 
     }
 
@@ -139,7 +148,7 @@ export class TraceSearch {
     }
 
     keyPressed() {
-        this.publishTraceSearchChanged(this.searchedValue, this.selectedFilter);
+        this.publishTraceSearchChanged(this.searchTermText, this.searchFilterId);
     }
     // jumps to current line in the editor
     doOnClickJumpToCode(row) {

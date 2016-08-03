@@ -7,6 +7,7 @@ export class TraceModel{
             aceMarkersChanged : {  event :"aceMarkersChanged"   , description : "Trace results updated. Update Ace markers" }
         };
         this.traceSearchfilters = {
+      functions: "functions",
 			none: "none",
 			any: "any",
 			id: "id",
