@@ -60,14 +60,14 @@ export class AutoLogTracer{
                 return window.TRACE;
             },
             isRangeInRange: function isRangeInRange(isRange, inRange){
-                let l1 = (isRange.start.row > inRange.start.row);
-                let l2 = (isRange.start.row == inRange.start.row && isRange.start.column >= inRange.start.column);
-                let r1 = (isRange.end.row < inRange.end.row);
-                let r2 = (isRange.end.row == inRange.end.row && isRange.end.column <= inRange.end.column);
+                var l1 = (isRange.start.row > inRange.start.row);
+                var l2 = (isRange.start.row == inRange.start.row && isRange.start.column >= inRange.start.column);
+                var r1 = (isRange.end.row < inRange.end.row);
+                var r2 = (isRange.end.row == inRange.end.row && isRange.end.column <= inRange.end.column);
                 return ((r1||r2))&&((l1||l2));
             },
             enterFunctionScope: function enterFunctionScope(info){
-                    this.functionScopes.push({id: info.id, isCallback: false, parametersString: "[]", range: info.range, functionRange: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
+                    this.functionScopes.push({id: info.id, isCallback: false, argumentsString: "[]", parametersString: "[]", range: info.range, functionRange: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
                     this.scopeCounter = this.functionScopes.length - 1;
                     this.currentScope = this.functionScopes[this.scopeCounter];
                     console.log("enter " +info.id);
@@ -82,24 +82,24 @@ export class AutoLogTracer{
                 var calleeInfo = this.timeline[topScope.timelineStartIndex];
                 var callArguments = info.value;
 
-                var callExpressionParameters= [];
+                var callExpressionArguments= [];
 
                 if(calleeInfo.text){
                     try{
-                        callExpressionParameters = JSON.parse(calleeInfo.text).parameters;
+                        callExpressionArguments = JSON.parse(calleeInfo.text).parameters;
                     }catch(e){}
                 }
 
                 if(callArguments){
                    for(var i = 0; i < callArguments.length; i++){
-                        if(callExpressionParameters[i]){
-                            callExpressionParameters[i].value = callArguments[i];
+                        if(callExpressionArguments[i]){
+                            callExpressionArguments[i].value = callArguments[i];
                         }
                    }
                 }
 
-                calleeInfo.text = this.stringify(callExpressionParameters);
-                topScope.parametersString = calleeInfo.text;
+                calleeInfo.text = this.stringify(callExpressionArguments);
+                topScope.argumentsString = calleeInfo.text;
             },
             exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock){
                 if(!this.functionScopes.length || !info){
@@ -154,6 +154,13 @@ export class AutoLogTracer{
             },
             autoLog: function autoLog(info) {
                 this.currentExpressionRange = info.range;
+
+                var parameterData = null;
+                if(info.type === "Parameter"){
+                    parameterData = JSON.parse(info.text);
+                    info.type = parameterData.parameterType;
+                }
+
                 if(this.hits.length < 1){
                     window.START_TIME = +new Date();
                 }
@@ -224,12 +231,20 @@ export class AutoLogTracer{
                 }
 
                 if(info.type === Syntax.CallExpression){
+                    if(parameterData){
+                        this.currentScope.isCallback = true;
+                    }
                     this.exitFunctionScope(info);
                 }else{
                     if(info.type === TraceRuntimeTypes.FunctionData){
                         this.populateFunctionScope(info);
                     }
-                    this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key});
+                    var entry = { id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key};
+                    if(parameterData){
+                        entry.isParameter = true;
+                        entry.callExpressionRange = parameterData.callExpressionRange;
+                    }
+                    this.timeline.push(entry);
                 }
 
                 var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;

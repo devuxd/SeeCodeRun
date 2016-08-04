@@ -140,16 +140,39 @@ export class EsInstrumenter {
         }
     }
 
-    getParametersRanges(parameters){
+    getParametersRanges(parameters, self = this){
         let parametersRanges = [];
         for(let parameterIndex in parameters){
             let parameter = parameters[parameterIndex];
             if(parameter.loc){
-                parametersRanges[parameterIndex] = {value: null, range: this.toAceRange(parameter.loc)};
+                parametersRanges[parameterIndex] = {value: null, range: self.toAceRange(parameter.loc)};
             }
         }
         return parametersRanges;
     }
+
+    autologParameters(callExpressionRange, parameters, code, self = this){
+        let autoLoggedParameters = [];
+        for(let parameterIndex in parameters){
+            let parameter = parameters[parameterIndex];
+            parameter.logged = true;
+            let autoLogNode = self.getDefaultAutoLogNode(self);
+            self.setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': self.TraceParameters.type, 'value' : "Parameter"} );
+             self.setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': self.TraceParameters.id, 'value' : self.getTextRange(code, parameter.range)} );
+             self.setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': self.TraceParameters.text, 'value' : JSON.stringify({parameterType: parameter.type, callExpressionRange: callExpressionRange})} );
+             self.setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': self.TraceParameters.value, 'value' : parameter
+             });
+             let locationData = self.getLocationDataNode(parameter.loc, parameter.range, self);
+             if(typeof locationData !== 'undefined'){
+                self.setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': self.TraceParameters.range, 'value' : locationData.location});
+                self.setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': self.TraceParameters.indexRange, 'value' : locationData.range});
+             }
+            autoLoggedParameters[parameterIndex] = autoLogNode;
+        }
+        return autoLoggedParameters;
+    }
+
+    // setAutologValues(){}
 
     instrumentCallExpression(node, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
@@ -158,16 +181,21 @@ export class EsInstrumenter {
             setNodeValue = self.setNodeValue,
             setNodeTextValue = self.setNodeTextValue,
             getLocationDataNode = self.getLocationDataNode,
-            getTextRange = self.getTextRange,
-            isAutoLogNode = self.isAutoLogNode;
+            getTextRange = self.getTextRange;
 
-        if(isAutoLogNode(node, self)){
-            return undefined;
+        if(node.logged){
+            return true;
         }
 
         if(!node.callee || !node.range){
             return undefined;
         }
+
+        locationData = getLocationDataNode(node.loc, node.range, self);
+         if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+         }
 
         let callExpressionText = JSON.stringify({ text: getTextRange(code, node.range), parameters: self.getParametersRanges(node.arguments)});
          setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
@@ -177,17 +205,15 @@ export class EsInstrumenter {
              {
                 "type": Syntax.CallExpression,
                 "callee": node.callee,
-                "arguments": node.arguments
+                "arguments": self.autologParameters(locationData.location, node.arguments, code, self),
+                "logged": true
              }
          });
-         locationData = getLocationDataNode(node.loc, node.range, self);
-         if(typeof locationData !== 'undefined'){
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-         }
+
 
         node.callee = autoLogNode.callee;
         node.arguments= autoLogNode.arguments;
+        node.logged = true;
     }
 
     instrumentAssignmentExpression(node, code, self = this){
