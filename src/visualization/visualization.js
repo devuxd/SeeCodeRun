@@ -1,4 +1,4 @@
-
+import {AceUtils} from '../utils/ace-utils';
 export class Visualization {
   constructor(index, eventAggregator, config) {
     this.id = "seecoderun-visualization-"+ index;
@@ -15,6 +15,12 @@ export class Visualization {
     this.hasError = false;
     this.requestSelectionRange = this.getSelectionRange;
     this.traceHelper = null;
+    this.query = null;
+    this.queryType = null;
+
+    this.aceUtils = new AceUtils();
+    this.aceEditor = ace.edit('aceJsEditorDiv');
+    this.aceMarkerManager = this.aceUtils.makeAceMarkerManager(this.aceEditor);
   }
 
   attached() {
@@ -27,7 +33,7 @@ export class Visualization {
       console.log(`No trace found when rendering visualization #${this.id}`);
     }
     let formattedTrace = this.formatTrace(this.trace);
-    this.render(formattedTrace, `#${this.contentId}`);
+    this.render(formattedTrace, `#${this.contentId}`, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
   }
 
   subscribe() {
@@ -39,6 +45,20 @@ export class Visualization {
         self.trace = payload.trace;
         self.renderVisualization();
     });
+
+    ea.subscribe('searchBoxChanged', payload => {
+      this.query = payload.searchTermText;
+      this.queryType = payload.searchFilterId;
+      this.renderVisualization();
+    });
+
+    ea.subscribe('searchBoxStateResponse', response => {
+      this.query = response.searchTermText;
+      this.queryType = response.searchFilterId;
+      this.renderVisualization();
+    });
+
+    ea.publish('searchBoxStateRequest');
   }
 
   getSelectionRange() {
