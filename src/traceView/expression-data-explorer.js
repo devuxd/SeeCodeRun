@@ -32,13 +32,13 @@ export class ExpressionDataExplorer{
             "data-toggle": "popover",
             "data-placement": "bottom",
             "data-content": "No value found."
-        });
-		$editorTooltip.popover({
-		    viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
-		    html: true,
-		    trigger: 'manual',
-            template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
-		});
+          });
+      		$editorTooltip.popover({
+      		    viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
+      		    html: true,
+      		    trigger: 'manual',
+                  template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
+      		});
         }
 
         $editorTooltip.appendTo('body');
@@ -52,20 +52,32 @@ export class ExpressionDataExplorer{
         this.subscribe();
     }
 
+    decoratePopoverContentElement($popoverContentElement){
+      if(!this.elementDecorator){
+        return;
+      }
+
+      if(this.this.isShowToolTipEvent){
+        this.elementDecorator.$decorate();
+      }else{
+        if(this.elementDecorator.$undecorate){
+          this.elementDecorator.$undecorate();
+        }
+      }
+    }
+
     attachTooltipUpdate(){
         let self = this;
-        let div =   this.$editorTooltip;
+        let $editorTooltip =   this.$editorTooltip;
         let aceUtils = this.aceUtils;
-        let expressionMarkerManager = this.expressionMarkerManager;
 
         this.update$Tooltip = function update$Tooltip(position, match){
-          if(!div){
+          if(!$editorTooltip){
 			        return;
 			    }
-			    self.currentEditorTooltip = div;
 
   		    if(position){
-  		        div.css({
+  		        $editorTooltip.css({
   		            position: "absolute",
   		            marginLeft: 0,
   		            marginTop: 0,
@@ -74,39 +86,56 @@ export class ExpressionDataExplorer{
   		        });
   		    }
 
-  			  if(match && !self.isBranchNavigatorVisible){
-  		      self.treeViewExplorer = new TreeViewExplorer(match.value);
-                let popoverData = self.treeViewExplorer.getPopoverElementContent(div);
+    			if(match && !self.isBranchNavigatorVisible){
+    		      self.treeViewExplorer = new TreeViewExplorer(match.value);
+              let popoverData = self.treeViewExplorer.getPopoverElementContent($editorTooltip);
+              let popoverTitle =`Exploring <strong>${match.id !== null ? match.id: ""} :</strong> <i>${popoverData.type}</i>`;
+    		      $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
 
-  		      div.attr("data-content", '<div class="custom-popover-title">Exploring '+popoverData.type+' Element</div>'+popoverData.content);
-            div.popover("show");
-            aceUtils.updateAceMarkers(expressionMarkerManager, [match]);
-  			}else{
-  			    div.popover("hide");
-  			    aceUtils.updateAceMarkers(expressionMarkerManager, []);
-  	    }
-
-        $("#"+self.editorTooltipContentId).mouseenter(
-              function editorTooltipMouseenter(){
-                  clearTimeout(self.onExpressionHoveredTimeout);
-                  clearTimeout(self.editorTooltiptimeout);
-              }
-          ).mouseleave(
-              function editorTooltipMouseleave(){
-                  self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
-                      div.popover("hide");
-		            aceUtils.updateAceMarkers(expressionMarkerManager, []);
-                  }, self.editorTooltipHideDelay);
-              }
-        );
+              $editorTooltip.popover("show");
+              aceUtils.updateAceMarkers(self.expressionMarkerManager, [match]);
+    			}else{
+    			    self.$hideTooltip();
+    	    }
+          let $popoverContentElement = $("#"+self.editorTooltipContentId);
+          $popoverContentElement.mouseenter(
+                function editorTooltipMouseenter(){
+                    clearTimeout(self.onExpressionHoveredTimeout);
+                    clearTimeout(self.editorTooltiptimeout);
+                }
+            ).mouseleave(
+                function editorTooltipMouseleave(){
+                    self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
+                        self.$hideTooltip();
+                    }, self.editorTooltipHideDelay);
+                }
+          );
+          self.decoratePopoverContentElement($popoverContentElement);
       };
     }
 
-    $hideTooltip(){
-      if(this.currentEditorTooltip){
-          this.currentEditorTooltip.popover("hide");
+    handleIndexInTimeline(indexInTimeline){
+      if( indexInTimeline === null){
+        return;
+      }
+      let timeline  = this.traceHelper.getTimeline();
+      let match =  timeline[indexInTimeline];
+      if(match){
+        this.eventAggregator.publish("expressionHovered", match);
       }
     }
+
+    $showTooltip(indexInTimeline){
+      this.handleIndexInTimeline(indexInTimeline);
+    }
+
+    $hideTooltip(indexInTimeline){
+      if(this.$editorTooltip){
+          this.$editorTooltip.popover("hide");
+          this.aceUtils.updateAceMarkers(this.expressionMarkerManager, []);
+      }
+    }
+
 
     subscribe(){
       let eventAggregator = this.eventAggregator;
@@ -146,6 +175,23 @@ export class ExpressionDataExplorer{
       eventAggregator.subscribe(
         "jsGutterChangeScrollTop", payload =>{
           this.$hideTooltip();
+        }
+      );
+
+      eventAggregator.subscribe(
+        "expressionDataExplorerHideTooltip", expressionDataExplorerData =>{
+          this.isShowToolTipEvent = false;
+          this.elementDecorator = expressionDataExplorerData.elementDecorator;
+          this.$hideTooltip(expressionDataExplorerData.indexInTimeline);
+          this.elementDecorator = null;
+        }
+      );
+
+      eventAggregator.subscribe(
+        "expressionDataExplorerShowTooltip", expressionDataExplorerData =>{
+          this.isShowToolTipEvent = true;
+          this.elementDecorator = expressionDataExplorerData.elementDecorator;
+          this.$showTooltip(expressionDataExplorerData.indexInTimeline);
         }
       );
     }

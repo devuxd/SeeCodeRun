@@ -48,26 +48,37 @@ export class AutoLogTracer{
         var traceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
-            functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            programCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             preautolog: function preAutolog(range, type, id, text){
                 var info = { id: id , value: null, range: range, type: type, text: text};
                 this.currentExpressionRange = range;
+                this.handleTryRescope(info);
                 if(type === Syntax.CallExpression){
                     this.timeline.push(info);
                     this.enterFunctionScope(info);
                 }
                 return window.TRACE;
             },
+            isRangeInRange: function isRangeInRange(isRange, inRange){
+                let l1 = (isRange.start.row > inRange.start.row);
+                let l2 = (isRange.start.row == inRange.start.row && isRange.start.column >= inRange.start.column);
+                let r1 = (isRange.end.row < inRange.end.row);
+                let r2 = (isRange.end.row == inRange.end.row && isRange.end.column <= inRange.end.column);
+                return ((r1||r2))&&((l1||l2));
+            },
             enterFunctionScope: function enterFunctionScope(info){
-                    this.functionScopes.push({id: info.id, parametersString: "[]", callerRange: info.range, range: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
+                    this.functionScopes.push({id: info.id, isCallback: false, parametersString: "[]", range: info.range, functionRange: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
+                    this.scopeCounter = this.functionScopes.length - 1;
+                    this.currentScope = this.functionScopes[this.scopeCounter];
+                    console.log("enter " +info.id);
             },
             populateFunctionScope: function populateFunctionScope(info){
                 if(!this.functionScopes.length || !info){
                     return;
                 }
 
-                let topScope = this.functionScopes[this.functionScopes.length - 1];
-                topScope.range = info.range;
+                let topScope = this.currentScope;
+                topScope.functionRange = info.range;
                 var calleeInfo = this.timeline[topScope.timelineStartIndex];
                 var callArguments = info.value;
 
@@ -90,15 +101,56 @@ export class AutoLogTracer{
                 calleeInfo.text = this.stringify(callExpressionParameters);
                 topScope.parametersString = calleeInfo.text;
             },
-            exitFunctionScope: function exitFunctionScope(info){
+            exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock){
                 if(!this.functionScopes.length || !info){
                     return;
                 }
-                let topScope = this.functionScopes[this.functionScopes.length -1];
-                this.timeline[topScope.timelineStartIndex].value= info.value;
+
+                let topScope = this.currentScope;
+
+                if(isScopeToCatchBlock){
+                    console.log("error -----> " + topScope.id);
+                    this.timeline[topScope.timelineStartIndex].value= "EXCEPTION/ERROR THROWN";
+                }else{
+                    if(info.type === Syntax.CallExpression){
+                        this.timeline[topScope.timelineStartIndex].value= info.value;
+                    }
+                }
+                console.log("exit " +topScope.id);
                 topScope.timelineEndIndex = this.timeline.length;
                 this.timeline[topScope.timelineStartIndex].path = this.stringify(this.functionScopes);
                 this.functionScopes.pop();
+                this.scopeCounter = this.functionScopes.length - 1;
+                this.currentScope = this.functionScopes[this.scopeCounter];
+                console.log("current " +(this.currentScope?this.currentScope.id: "none"));
+            },
+            handleTryRescope: function handleTryRescope(info){
+                if(!this.functionScopes.length || !info){
+                    return;
+                }
+
+                if(info.type ===  Syntax.BlockStatement || info.type === TraceRuntimeTypes.FunctionData){
+                    return;
+                }
+
+                let isBadScope = false;
+
+                do{
+                    let topScope = this.currentScope;
+                    if(topScope.functionRange === null){
+                        // ignore if not local or function Data has not been reached
+                        return;
+                    }
+
+                    if(!this.isRangeInRange(info.range, topScope.functionRange)){
+                        isBadScope = true;
+                        console.log("TS: " +this.stringify(topScope.functionRange));
+                        console.log("CE: " + this.stringify(info.range));
+                        this.exitFunctionScope(info, true);
+                    }else{
+                        isBadScope = false;
+                    }
+                }while(this.functionScopes.length && isBadScope);
             },
             autoLog: function autoLog(info) {
                 this.currentExpressionRange = info.range;
@@ -171,13 +223,12 @@ export class AutoLogTracer{
                     }
                 }
 
-                if(info.type === TraceRuntimeTypes.FunctionData){
-                    this.populateFunctionScope(info);
-                }
-
                 if(info.type === Syntax.CallExpression){
                     this.exitFunctionScope(info);
                 }else{
+                    if(info.type === TraceRuntimeTypes.FunctionData){
+                        this.populateFunctionScope(info);
+                    }
                     this.timeline.push({ id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key});
                 }
 

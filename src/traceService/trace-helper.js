@@ -206,68 +206,35 @@ export class TraceHelper {
     }
 
     isRangeInRange(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column >= inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column <= inRange.end.column)
-    			);
+        let l1 = (isRange.start.row > inRange.start.row);
+        let l2 = (isRange.start.row == inRange.start.row && isRange.start.column >= inRange.start.column);
+        let r1 = (isRange.end.row < inRange.end.row);
+        let r2 = (isRange.end.row == inRange.end.row && isRange.end.column <= inRange.end.column);
+        return ((r1||r2))&&((l1||l2));
     }
 
     isRangeInRangeStrict(isRange, inRange){
-        return (
-                (isRange.start.row >= inRange.start.row && isRange.start.column > inRange.start.column)
-    			 &&
-    			(isRange.end.row <= inRange.end.row && isRange.end.column < inRange.end.column)
-    			);
+        let l1 = (isRange.start.row > inRange.start.row);
+        let l2 = (isRange.start.row == inRange.start.row && isRange.start.column > inRange.start.column);
+        let r1 = (isRange.end.row < inRange.end.row);
+        let r2 = (isRange.end.row == inRange.end.row && isRange.end.column < inRange.end.column);
+        return ((r1||r2))&&((l1||l2));
     }
 
     rangeEquals(isRange, inRange){
-        return (isRange && inRange && isRange.start && inRange.start && isRange.end && inRange.end &&
-                (isRange.start.row === inRange.start.row && isRange.start.column === inRange.start.column)
-    			 &&
-    			(isRange.end.row === inRange.end.row && isRange.end.column === inRange.end.column)
-    			);
+        return (isRange && inRange && isRange.start && inRange.start && isRange.end && inRange.end && (isRange.start.row == inRange.start.row && isRange.start.column == inRange.start.column)&&(isRange.end.row == inRange.end.row && isRange.end.column == inRange.end.column));
     }
 
     isRangeInLine(isRange, inLine){
-        return(
-            (isRange.start.row === (inLine - 1))
-            ||
-            (isRange.end.row === (inLine - 1))
-        );
+        return((isRange.start.row == (inLine - 1))||(isRange.end.row == (inLine - 1)));
     }
 
     isPositionInRange(position, inRange){
-
-        let matchesInOneLine = (
-                position.row == inRange.start.row
-                && inRange.start.row  == inRange.end.row
-                && position.column >= inRange.start.column
-                && position.column <= inRange.end.column
-            );
-
-        if(matchesInOneLine){
-            return true;
-        }
-
-        let matchesStart = (
-                position.row == inRange.start.row
-                && inRange.start.row  < inRange.end.row
-                && position.column >= inRange.start.column
-            );
-
-        if(matchesStart){
-            return true;
-        }
-
-        let matchesEnd = (
-                position.row == inRange.end.row
-                && inRange.start.row  < inRange.end.row
-                && position.column <= inRange.end.column
-            );
-
-        return matchesEnd;
-
+        let l1 = (position.row > inRange.start.row);
+        let l2 = (position.row == inRange.start.row && position.column >= inRange.start.column);
+        let r1 = (position.row < inRange.end.row);
+        let r2 = (position.row == inRange.end.row && position.column <= inRange.end.column);
+        return ((r1||r2))&&((l1||l2));
     }
 
     getStackBlockCounts() {

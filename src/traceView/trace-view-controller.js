@@ -40,11 +40,9 @@ export class TraceViewController{
 
             let traceViewModel = this.traceViewModel;
 
-            traceViewModel.traceHelper = traceHelper;
+            traceViewModel.setTraceHelper(traceHelper);
 
-            let blockCounts = traceHelper.getStackBlockCounts();
-
-            traceViewModel.updateTraceGutterData(blockCounts);
+            traceViewModel.updateTraceGutterData();
             this.eventAggregator.publish("traceGutterDataChanged");
             traceViewModel.setTraceValuesDataRanges(traceHelper.getTimeline());
             this.eventAggregator.publish("traceValuesDataRangesChanged");
