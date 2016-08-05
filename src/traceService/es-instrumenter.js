@@ -150,7 +150,7 @@ export class EsInstrumenter {
                     name = parameter.name;
                 }else{
                     if(parameter.type === "RestElement"){
-                        name = parameter.arguments.name;
+                        name = parameter.argument.name;
                     }
                 }
                 parametersRanges[parameterIndex] = {name: name, value: null, range: self.toAceRange(parameter.loc)};

@@ -1,6 +1,5 @@
-import {AceUtils} from '../utils/ace-utils';
 export class Visualization {
-  constructor(index, eventAggregator, config) {
+  constructor(index, eventAggregator, aceUtils, aceEditor, config) {
     this.id = "seecoderun-visualization-"+ index;
     this.buttonId = "seecoderun-visualization-"+ index+"-button";
     this.contentId = "seecoderun-visualization-"+ index+"-content";
@@ -18,8 +17,8 @@ export class Visualization {
     this.query = null;
     this.queryType = null;
 
-    this.aceUtils = new AceUtils();
-    this.aceEditor = ace.edit('aceJsEditorDiv');
+    this.aceUtils = aceUtils;
+    this.aceEditor = aceEditor;
     this.aceMarkerManager = this.aceUtils.makeAceMarkerManager(this.aceEditor);
   }
 
@@ -32,7 +31,7 @@ export class Visualization {
     if(!this.trace){
       console.log(`No trace found when rendering visualization #${this.id}`);
     }
-    let formattedTrace = this.formatTrace(this.trace);
+    let formattedTrace = this.formatTrace(this.trace, this.traceHelper);
     this.render(formattedTrace, `#${this.contentId}`, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
   }
 

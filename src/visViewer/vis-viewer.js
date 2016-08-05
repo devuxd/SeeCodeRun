@@ -10,7 +10,7 @@ export class VisViewer {
   seePanelBodySelector = "#seePanelBody";
   visViewerSelectSelector = "#visViewerSelect";
   noSelectionMessage = "Please select a visualization type first."
-  constructor(eventAggregator) {
+  constructor(eventAggregator, aceUtils, aureliaEditor) {
     this.eventAggregator = eventAggregator;
 
     this.visualizations = [];
@@ -19,10 +19,14 @@ export class VisViewer {
     this.factory = new VisualizationFactory();
     this.visualizationTypes = this.factory.getVisualizationTypes();
     this.isChecked = true;
+    this.aceUtils = aceUtils;
+    this.aureliaEditor = aureliaEditor;
     this.subscribe();
   }
 
   attached() {
+    this.aceEditor = this.aureliaEditor.editor;
+
     for (let visualization of this.visualizations) {
       visualization.attached();
     }
@@ -58,7 +62,7 @@ export class VisViewer {
 
     ea.subscribe("instrumentationFailed", payload => {
       self.hasError = true;
-      ea.publish('onVisRequest', payload );
+      // ea.publish('onVisRequest', {trace: self.trace, traceHelper: self.traceHelper} );
     });
 
     ea.subscribe('visualizationSelectionRangeResponse', expression => {
@@ -116,7 +120,7 @@ export class VisViewer {
 
   prepareVisualization(type){
     if (type !== '' && type !== null) {
-      this.tempVis = new Visualization(this.visualizations.length, this.eventAggregator, this.factory.getVisualizationByType(type));
+      this.tempVis = new Visualization(this.visualizations.length, this.eventAggregator, this.aceUtils, this.aceEditor, this.factory.getVisualizationByType(type));
     }
   }
 

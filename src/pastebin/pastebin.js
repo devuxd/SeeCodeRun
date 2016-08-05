@@ -49,7 +49,7 @@ export class Pastebin {
     this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
 
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
-    this.visViewer  =new VisViewer(eventAggregator);
+    this.visViewer  =new VisViewer(eventAggregator, aceUtils, this.jsEditor);
 
     this.traceViewController = new TraceViewController(eventAggregator, aceUtils, this.jsEditor);
     this.expressionSelection = new ExpressionSelection(eventAggregator);

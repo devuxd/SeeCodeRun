@@ -66,7 +66,7 @@ export class AutoLogTracer{
                     this.enterFunctionScope(info);
                 }
                 return window.TRACE;
-            },
+            },  // From TraceHelper
             isRangeInRange: function isRangeInRange(isRange, inRange){
                 var l1 = (isRange.start.row > inRange.start.row);
                 var l2 = (isRange.start.row == inRange.start.row && isRange.start.column >= inRange.start.column);

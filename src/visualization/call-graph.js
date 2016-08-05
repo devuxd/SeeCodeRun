@@ -1,8 +1,6 @@
 /*global d3*/
-import {
-    Vertex
-}
-from "./vertex.js"
+import {Vertex} from "./vertex.js";
+
 export class CallGraph {
     currentDirection = "down"; // or "right"
     directionManager = {
@@ -45,9 +43,13 @@ export class CallGraph {
 
     prepareFx() {
         let self = this;
-        this.formatTraceFx = function makeTree(trace = this.trace) {
+        this.formatTraceFx = function makeTree(trace = this.trace, traceHelper) {
             if (!trace)
                 return;
+            if(traceHelper){
+                self.traceHelper = traceHelper;
+                self.isRangeInRange = traceHelper.isRangeInRange;
+            }
             //the text starts at line 0 by default, plus one to match natural line numbers
             let map = {};
             let funcs = [];
@@ -84,7 +86,7 @@ export class CallGraph {
             return rootsList[0];
         };
 
-        this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager) {
+        this.renderFx = function renderFx(formattedTrace,  divElement, query, queryType, aceUtils, aceMarkerManager) {
             if (!formattedTrace) {
                 return;
             }
@@ -339,8 +341,11 @@ export class CallGraph {
         let callfuncs = [];
         //
         for (let index = 1; index < trace.timeline.length - 1; index++) //precomputes all the funcs
-        {
-            let step = self.scrubStep(trace.timeline[index]);
+        {   // dangerous direct modification ot the trace
+            let entry = trace.timeline[index];
+            // shallow copy of values of interest, careful with value and range(they are the only properties that are "objects"), do not modify their properties, create a copy if needed
+            let step = { id: entry.id , value: entry.value, range: entry.range, type: entry.type, text: entry.text};
+            step = self.scrubStep(step);
             //
             switch (step.type) {
             case "BlockStatement":
@@ -460,24 +465,4 @@ export class CallGraph {
         }
         return step;
     }
-
-    isRangeInRange(isRange, inRange) //be careful here!
-        {
-            if (isRange.start.row > inRange.start.row && isRange.end.row < inRange.end.row)
-                return true;
-
-            if (isRange.start.row === inRange.start.row || isRange.end.row === inRange.end.row) {
-                if (isRange.start.row === inRange.start.row)
-                    if (isRange.start.column < inRange.start.column)
-                        return false;
-                if (isRange.end.row === inRange.end.row)
-                    if (isRange.end.column > inRange.end.column)
-                        return false;
-                return true;
-            }
-
-            return false;
-        }
-
-
 }
