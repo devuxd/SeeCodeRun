@@ -323,6 +323,10 @@ export class TraceHelper {
         return trace;
       }
 
+      if(!traceHelper.getTimeline()){
+        return trace;
+      }
+
       let expressions = traceHelper.getExpressions();
       let variables = traceHelper.getVariables();
 

@@ -43,18 +43,18 @@ export class EsTracer {
         let  instrumentedCode;
         let payload = this.traceModel.makeEmptyPayload();
 
-        try {
+        // try {
             instrumentedCode = this.esInstrumenter.instrumentTracer(sourceCode, this.esAnalyzer);
 
             payload.status = this.traceModel.traceEvents.instrumented.event;
             payload.description = this.traceModel.traceEvents.instrumented.description;
             payload.data = instrumentedCode;
 
-        } catch (e) {
-            payload.status = this.traceModel.traceEvents.failed.event;
-            payload.description = `${this.traceModel.traceEvents.failed.description}. Error: ${e.toString()}`;
+        // } catch (e) {
+        //     payload.status = this.traceModel.traceEvents.failed.event;
+        //     payload.description = `${this.traceModel.traceEvents.failed.description}. Error: ${e.toString()}`;
 
-        }
+        // }
 
         if(this.publisher){
             this.publisher.publish(payload.status, payload);
