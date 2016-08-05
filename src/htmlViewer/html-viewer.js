@@ -189,10 +189,18 @@ export class HtmlViewer {
             self.aceErrorRange = self.result.lastExpressionRange;
         }
         self.pushError(message);
+        // let data = {};
+        // try{
+        //   data = JSON.parse();
+        // }catch(e){}
+
+        // if(data.indexInTimeline == null){
+        //   return;
+        // }
         ea.publish('htmlViewerWindowError', {
           this: this,
-          arguments: arguments,
-          aceErrorRange: self.aceErrorRange
+          arguments: message,
+          aceErrorRange: message.replace("Uncaught ", "")
         });
       };
     }
@@ -203,9 +211,10 @@ export class HtmlViewer {
       let contentWindow = this.getContentWindow();
 
       contentWindow.console.log = function hmtlViewerConsoleLog() {
-        self.aceLogRange = null;
-        if(self.result && self.result.lastExpressionRange){
-            self.aceLogRange = self.result.lastExpressionRange;
+
+        if(arguments){
+          self.aceLogRange = arguments[0];
+          arguments[0] = undefined;
         }
         ea.publish('htmlViewerConsoleLog', {
           contentWindow: contentWindow,

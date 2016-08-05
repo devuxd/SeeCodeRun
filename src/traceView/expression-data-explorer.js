@@ -118,7 +118,7 @@ export class ExpressionDataExplorer{
       if( indexInTimeline === null){
         return;
       }
-      let timeline  = this.traceHelper.getTimeline();
+      let timeline  = this.traceViewModel.traceHelper.getTimeline();
       let match =  timeline[indexInTimeline];
       if(match){
         this.eventAggregator.publish("expressionHovered", match);

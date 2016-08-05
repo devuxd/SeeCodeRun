@@ -6,23 +6,23 @@ export class AutoLogTracer{
     }
 
     wrapCodeInTryCatch(code){
-        return `
-
-                ${code}
-                window.IS_AFTER_LOAD = true;
-                window.START_TIME = null;
-
-        `;
         // return `
-        //     try{
+
         //         ${code}
         //         window.IS_AFTER_LOAD = true;
         //         window.START_TIME = null;
-        //     }catch(e){
-        //         window.TRACE.error = e.toString();
-        //         throw "{exception:"+ JSON.stringify(window.TRACE.currentExpressionRange)+", details:" + window.TRACE.error + "}";
-        //     }
+
         // `;
+        return `
+            try{
+                ${code}
+                window.IS_AFTER_LOAD = true;
+                window.START_TIME = null;
+            }catch(e){
+                window.TRACE.error = JSON.stringify(e);
+                throw JSON.stringify({ causeRange: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
+            }
+        `;
 
     }
 
@@ -47,15 +47,29 @@ export class AutoLogTracer{
     getAutologCodeBoilerPlate(timeLimit){
         return `
         /*AutoLogTracer*/
+        var logChanged;
+        (function () {
+            if(logChanged){
+                return;
+            }
+            logChanged= true;
+
+            var log = console.log;
+            console.log = function () {
+                // log.call(this, );
+                log.apply(this, [JSON.stringify({ causeRange: window.TRACE.currentScope.range, indexInTimeline: window.TRACE.currentScope.timelineStartIndex})].concat( Array.prototype.slice.call(arguments)));
+            };
+        }());
+
         window.START_TIME = +new Date();
         window.TIME_LIMIT = ${timeLimit};
 
         var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
         var TraceRuntimeTypes =  ${JSON.stringify(this.traceModel.traceRuntimeTypes)};
-        var traceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
+        var TraceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
-            scriptCounter: 0, programCounter: 0, blockCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            scriptCounter: 0, programCounter: 0, branchCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             preautolog: function preAutolog(range, type, id, text){
             //todo: document.currentScript as context and handle a callstack per each one [Fixes timeout, Ajax callbacks and other external libraries interaction]
                 var info = { id: id , value: null, range: range, type: type, text: text};
@@ -73,6 +87,9 @@ export class AutoLogTracer{
                 var r1 = (isRange.end.row < inRange.end.row);
                 var r2 = (isRange.end.row == inRange.end.row && isRange.end.column <= inRange.end.column);
                 return ((r1||r2))&&((l1||l2));
+            }, // from "Jquery"
+            isFunction: function isFunction(obj){
+                return obj == null? false : toString.call( obj ) === "[object Function]";
             },
             enterFunctionScope: function enterFunctionScope(info){
                     var isRoot = this.functionScopes.length? false: true;
@@ -82,7 +99,8 @@ export class AutoLogTracer{
                     this.timeline[this.currentScope.timelineStartIndex].isRoot = isRoot;
                     // console.log("enter " +info.id);
             },
-            populateFunctionScope: function populateFunctionScope(info, infoValueString, key){
+            populateFunctionScope: function populateFunctionScope(info, infoValueString, key, isParameter){
+            //todo cllbacks
                 if(!this.functionScopes.length || !info){
                     return;
                 }
@@ -107,20 +125,19 @@ export class AutoLogTracer{
                 var isExternalCallExpression = false;
 
                 if(!callExpressionArguments){
+                console.log(info);
                     isExternalCallExpression = true;
                     try{
-                        var data = JSON.parse(calleeInfo.text);
+                        var data = JSON.parse(info.text);
                         callExpressionArguments = data.params;
                         callExpressionText = data.text;
                     }catch(e){}
                 }
 
                 if(!callExpressionArguments){
-                    var entry = { id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key};
+                    var entry = { isParameter: true, id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key};
                     this.timeline.push(entry);
                     return;
-                }else{
-
                 }
 
                 if(callArguments){
@@ -130,13 +147,14 @@ export class AutoLogTracer{
                         }
                    }
                 }
+
                 if(!isExternalCallExpression){
 
                 }
                 calleeInfo.text = this.stringify({text: callExpressionText, parameteres: callExpressionArguments});
                 topScope.argumentsString = this.stringify(callExpressionArguments);
             },
-            exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock){
+            exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock, isParameter){
                 if(!this.functionScopes.length || !info){
                     return;
                 }
@@ -180,6 +198,7 @@ export class AutoLogTracer{
 
                     if(!this.isRangeInRange(info.range, topScope.functionRange)){
                         isBadScope = true;
+                        topScope.tryExit = true;
                         // console.log("TS: " +this.stringify(topScope.functionRange));
                         // console.log("CE: " + this.stringify(info.range));
                         this.exitFunctionScope(info, true);
@@ -191,11 +210,13 @@ export class AutoLogTracer{
             autoLog: function autoLog(info) {
                 this.currentExpressionRange = info.range;
 
+                var isParameter = false;
                 var parameterData = null;
-                if(info.type === "Parameter"){
+                if(info.type === TraceRuntimeTypes.Parameter){
+                    isParameter = true;
                     parameterData = JSON.parse(info.extra);
                     info.type = parameterData.parameterType;
-                    if(typeof info.value  === "function"){
+                    if(this.isFunction(info.value)){
                          parameterData.isCallback = true;
                     }
                 }
@@ -227,7 +248,7 @@ export class AutoLogTracer{
                 var key = info.indexRange[0]+ ':' + info.indexRange[1];
                 var extra = info.extra;
 
-                if(traceTypes.Stack.indexOf(info.type) > -1){
+                if(TraceTypes.Stack.indexOf(info.type) > -1){
 
                     if(extra){
                         var extraValues = extra.split(":");
@@ -261,7 +282,7 @@ export class AutoLogTracer{
                     infoValueString = info.value == null? null: info.value.toString();
                 }
 
-                if(traceTypes.Expression.indexOf(info.type) > -1){
+                if(TraceTypes.Expression.indexOf(info.type) > -1){
                     if(info.id){
                         this.values.push({id: info.id , value: infoValueString, range: info.range});
                     }else{
@@ -269,19 +290,16 @@ export class AutoLogTracer{
                     }
                 }
 
-                if(info.type === Syntax.CallExpression){
-                    if(parameterData){
-                        this.currentScope.isCallback = true;
-                    }
+                if(info.type === Syntax.CallExpression && !isParameter){
                     this.exitFunctionScope(info);
                 }else{
+
                     if(info.type === TraceRuntimeTypes.FunctionData){
-                        if(!parameterData){
                             this.populateFunctionScope(info, infoValueString, key);
-                        }
                     }
+
                     var entry = { id: info.id , value: infoValueString, range: info.range, type: info.type, text: info.text, key: key};
-                    if(parameterData){
+                    if(isParameter){
                         entry.isParameter = true;
                         entry.callExpressionRange = parameterData.callExpressionRange;
                         entry.isCallback = parameterData.isCallback;

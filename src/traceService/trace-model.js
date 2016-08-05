@@ -195,7 +195,9 @@ export class TraceModel{
 
         this.traceRuntimeTypes = {
           PreCallExpression: "PreCallExpression",
-          FunctionData: "FunctionData"
+          FunctionData: "FunctionData",
+          Parameter: "Parameter",
+          Exception: "Exception"
         };
 
         this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement"];

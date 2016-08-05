@@ -2,7 +2,7 @@
 <require from = "./console-window.css" ></require>
     <div id = "console-window">
         <ul if.bind = "console.log" class = "console-window-list">
-            <li repeat.for = "output of console.log"  class= "${output.styleClass}" innerhtml.bind="output.content">
+            <li repeat.for = "output of console.log"  class= "${output.styleClass}" innerhtml.bind="output.content" mouseover.delegate = "console.mouseOver(output.range)" mouseout.delegate = "console.mouseOut(output.range)">
             </li>
         </ul>
         <div id="console-window-footer-fill"></div>

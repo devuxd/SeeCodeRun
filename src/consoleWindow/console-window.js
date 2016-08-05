@@ -27,6 +27,18 @@ export class ConsoleWindow {
       self.$consoleLogFeedback.css("display", "inline").fadeOut(1000);
      }
 
+     mouseOver(range){
+          let data  = JSON.parse(range);
+          if(data.indexInTimeline !== null)
+          this.eventAggregator.publish("expressionDataExplorerShowTooltip", data);
+     }
+
+     mouseOut(range){
+          let data  = JSON.parse(range);
+          if(data.indexInTimeline !== null)
+          this.eventAggregator.publish("expressionDataExplorerHideTooltip", data);
+     }
+
     subscribe() {
       // let logger = console.log;
       // self.log.push(Array.prototype.slice.call(arguments));
@@ -38,13 +50,13 @@ export class ConsoleWindow {
       });
 
       ea.subscribe('htmlViewerWindowError', htmlViewerWindowError => {
-        this.log.push({styleClass: this.styleConsoleWindowErrorMessage, content: this.prettifyConsoleLine(htmlViewerWindowError.arguments, htmlViewerWindowError.aceErrorRange)});
+        this.log.push({styleClass: this.styleConsoleWindowErrorMessage, content: this.prettifyConsoleLine(htmlViewerWindowError.arguments, true), range: htmlViewerWindowError.aceErrorRange});
         // console.log(JSON.stringify(htmlViewerWindowError.arguments));
         this.update();
       });
 
       ea.subscribe('htmlViewerConsoleLog', htmlViewerConsoleLog => {
-        this.log.push({styleClass: this.styleConsoleWindowLogMessage,content: this.prettifyConsoleLine(htmlViewerConsoleLog.arguments, htmlViewerConsoleLog.aceLogRange)});
+        this.log.push({styleClass: this.styleConsoleWindowLogMessage,content: this.prettifyConsoleLine(htmlViewerConsoleLog.arguments), range: htmlViewerConsoleLog.aceLogRange});
         this.update();
         console.log.apply(htmlViewerConsoleLog.this, htmlViewerConsoleLog.arguments);
       });
@@ -56,12 +68,19 @@ export class ConsoleWindow {
 
     }
 
-    prettifyConsoleLine(jsObject, aceRange){
-      let onClick = `PR.prettyPrint(); $('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
+    prettifyConsoleLine(jsObject, isError){
+      let onClick = `$('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
       	$(this).toggleClass('${this.styleConsoleWindowTextLooseOverflow}');
       })`;
       return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
-        ${JSON.stringify(jsObject)} , source: ${JSON.stringify(aceRange)}
+        ${isError? jsObject:this.makeArgumentsString(jsObject)}
       </pre>`;
+    }
+
+    makeArgumentsString(jsObject){
+      if(jsObject == null){
+        return "null";
+      }
+      return Array.prototype.slice.call(jsObject, 1);
     }
 }
