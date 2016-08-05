@@ -769,9 +769,10 @@ export class EsInstrumenter {
                 return undefined;
             }
 
+            let paramsRanges = self.getParametersRanges(node.params);
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : "FunctionData"} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : identifier} );
-             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : identifier} );
+             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : JSON.stringify({text: self.getTextRange(code, node.range), params:paramsRanges})} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value,
                 'value' : {
                     "type": "Identifier",
