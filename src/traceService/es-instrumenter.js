@@ -276,7 +276,7 @@ export class EsInstrumenter {
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.argument.range)} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.argument.range)} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.argument});
-             locationData = getLocationDataNode(node.argument.loc, node.argument.range, self);
+             locationData = getLocationDataNode(node.loc, node.range, self);
              if(typeof locationData !== 'undefined'){
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
                 setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
@@ -735,60 +735,51 @@ export class EsInstrumenter {
             getLocationDataNode = self.getLocationDataNode,
             wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
 
-        if(!parent){
-            return;
-        }
+        let identifier = '[Anonymous]';
+        if(parent){
+            if (parent.type === Syntax.AssignmentExpression) {
+                if (parent.left.range != null) {
+                    identifier = code.slice(parent.left.range[0], parent.left.range[1]).replace(/"/g, '\\"');
+                }
+            } else if (parent.type === Syntax.VariableDeclarator) {
+                identifier = parent.id.name;
 
+            } else if (parent.type === Syntax.CallExpression) {
+                identifier =  parent.id ? parent.id.name : '[Anonymous]';
 
-
-        let identifier;
-
-        if (parent.type === Syntax.AssignmentExpression) {
-            if (typeof parent.left.range !== 'undefined') {
-                identifier = code.slice(parent.left.range[0], parent.left.range[1]).replace(/"/g, '\\"');
-            }
-        } else if (parent.type === Syntax.VariableDeclarator) {
-            identifier = parent.id.name;
-
-        } else if (parent.type === Syntax.CallExpression) {
-            identifier =  parent.id ? parent.id.name : '[Anonymous]';
-
-        } else if (typeof parent.length === 'number') {
-            identifier =  parent[0].id ? parent[0].id.name : '[Anonymous]';
-
-        } else if (typeof parent.key !== 'undefined') {
-            if (parent.key.type === 'Identifier') {
-                if (parent.value === node && parent.key.name) {
-                        identifier =  parent.key.name;
+            } else if (typeof parent.length === "number" && parent.length > 0 && ( parent.length - 1 ) in parent) {
+                identifier =  parent[0].id ? parent[0].id.name : '[Anonymous]';
+            } else if (parent.key != null) {
+                if (parent.key.type === 'Identifier') {
+                    if (parent.value === node && parent.key.name) {
+                            identifier =  parent.key.name;
+                    }
                 }
             }
         }
 
-        if(identifier){
-            if(!(node.body && node.body.body)){
-                return undefined;
-            }
-
-            let paramsRanges = self.getParametersRanges(node.params);
-             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : "FunctionData"} );
-             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : identifier} );
-             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : JSON.stringify({text: self.getTextRange(code, node.range), params:paramsRanges})} );
-             setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value,
-                'value' : {
-                    "type": "Identifier",
-                    "name": "arguments"
-                }
-             });
-             locationData = getLocationDataNode(node.loc, node.range, self);
-             if(typeof locationData !== 'undefined'){
-                setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
-                setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
-             }
-
-             autoLogNode = wrapInExpressionStatementNode(autoLogNode);
-             node.body.body.unshift(autoLogNode);
-
+        if(!(node.body && node.body.body)){
+            return undefined;
         }
+
+        let paramsRanges = self.getParametersRanges(node.params);
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : "FunctionData"} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : identifier} );
+         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : JSON.stringify({text: self.getTextRange(code, node.range), params:paramsRanges})} );
+         setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value,
+            'value' : {
+                "type": "Identifier",
+                "name": "arguments"
+            }
+         });
+         locationData = getLocationDataNode(node.loc, node.range, self);
+         if(typeof locationData !== 'undefined'){
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.range, 'value' : locationData.location});
+            setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.indexRange, 'value' : locationData.range});
+         }
+
+         autoLogNode = wrapInExpressionStatementNode(autoLogNode);
+         node.body.body.unshift(autoLogNode);
     }
 
     instrumentTracer(sourceCode, esanalyzer) {
@@ -817,15 +808,12 @@ export class EsInstrumenter {
             let node = ref.node, code = ref.code, path = ref.path;
 
             if(!Syntax.hasOwnProperty(node.type)){
-                return undefined;
+                return;
             }
 
             if(!node.range){
-                // if(node.type !== Syntax.CallExpression){
-                    return undefined;
-                // }
+                return;
             }
-
 
             switch(node.type){
                 case Syntax.VariableDeclarator:
@@ -841,6 +829,10 @@ export class EsInstrumenter {
                     break;
 
                 case Syntax.ReturnStatement:
+                    instrumentReturnStatement(node, code, self);
+                    break;
+
+                case Syntax.ThrowStatement:
                     instrumentReturnStatement(node, code, self);
                     break;
 
@@ -898,7 +890,7 @@ export class EsInstrumenter {
 
 
             if(isForwardAnalysis){
-                return undefined;
+                return;
             }
 
             let parent = path[0];

@@ -59,6 +59,7 @@ export class TraceModel{
             ReturnStatement: "ReturnStatement",
             SwitchStatement: "SwitchStatement",
             SwitchCase: "SwitchCase",
+            ThrowStatement: "ThrowStatement",
             UnaryExpression: "UnaryExpression",
             UpdateExpression: "UpdateExpression",
             VariableDeclaration: "VariableDeclaration",

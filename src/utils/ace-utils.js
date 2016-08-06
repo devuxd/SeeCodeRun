@@ -58,7 +58,11 @@ export class AceUtils{
             defaultMarker: "default-marker",
             expressionMarker: "expression-marker",
             yellowMarker: "yellow-marker",
-            seecoderunBlueMarker: "seecoderun-blue-marker"
+            seecoderunBlueMarker: "seecoderun-blue-marker",
+            errorMarker: "error-marker",
+            logMarker: "log-marker",
+            functionMarker: "function-marker",
+            blockMarker: "block-marker"
         };
     }
     makeAceMarkerManager(aceEditor){

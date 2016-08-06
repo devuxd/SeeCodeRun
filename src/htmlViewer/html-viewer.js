@@ -5,6 +5,7 @@ import {HtmlParser} from '../utils/html-parser';
 
 export class HtmlViewer {
     errors = "";
+    errorObjs = [];
     html = "";
     css = "";
     js = "";
@@ -17,27 +18,22 @@ export class HtmlViewer {
         this.subscribe();
     }
 
-    pushError(errorRef){
-      let error = "{";
-      if(errorRef){
-        error += "details: '"+ errorRef.toString() + "'";
-        if(this.aceErrorRange){
-          error += ", range: '" + JSON.stringify(this.aceErrorRange) + "'";
-        }
-      }
-      error += "}";
-      this.errors = this.errors? this.errors + ", "  + error : error;
+    pushError(errorObj){
+      this.errorObjs.push(errorObj);
     }
 
     popErrors(){
-      let poppedErrors = this.errors;
+      let poppedErrors = "";
+      if(this.errorObjs.length){
+        poppedErrors = JSON.stringify(this.errorObjs);
+        this.errorObjs = [];
+      }
       this.errors = "";
       return poppedErrors;
     }
 
     attached() {
       this.addConsoleLogging(this.eventAggregator);
-      this.addErrorLogging(this.eventAggregator);
     }
 
     buildOutput(){
@@ -91,7 +87,7 @@ export class HtmlViewer {
         for(let responseIndex in response.responses){
           let details = response.responses[responseIndex];
           if(details.status === status.fail){
-             this.eventAggregator.publish("htmlViewerWindowError", {arguments: { error: elementName + ": download script failed", details: details}});
+             this.eventAggregator.publish("htmlViewerConsoleLog", {type: "error", arguments: [elementName + ": download script failed",  details]});
           }
         }
       }
@@ -178,49 +174,15 @@ export class HtmlViewer {
                      .contentDocument;
     }
 
-    addErrorLogging(eventAggregator) {
-      let self = this;
-      let ea = eventAggregator;
-      let contentWindow = this.getContentWindow();
-
-      contentWindow.onerror = function hmtlViewerWindowOnerror(message) {
-        self.aceErrorRange = null;
-        if(self.result && self.result.lastExpressionRange){
-            self.aceErrorRange = self.result.lastExpressionRange;
-        }
-        self.pushError(message);
-        // let data = {};
-        // try{
-        //   data = JSON.parse();
-        // }catch(e){}
-
-        // if(data.indexInTimeline == null){
-        //   return;
-        // }
-        ea.publish('htmlViewerWindowError', {
-          this: this,
-          arguments: message,
-          aceErrorRange: message.replace("Uncaught ", "")
-        });
-      };
-    }
-
     addConsoleLogging(eventAggregator) {
-      let self = this;
       let ea = eventAggregator;
       let contentWindow = this.getContentWindow();
 
-      contentWindow.console.log = function hmtlViewerConsoleLog() {
-
-        if(arguments){
-          self.aceLogRange = arguments[0];
-          arguments[0] = undefined;
-        }
+      contentWindow.console.log = function hmtlViewerConsoleLogAndError() {
         ea.publish('htmlViewerConsoleLog', {
           contentWindow: contentWindow,
           this: this,
-          arguments: arguments,
-          aceLogRange: self.aceLogRange
+          arguments: arguments
         });
 	    };
     }

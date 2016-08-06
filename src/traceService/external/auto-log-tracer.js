@@ -14,14 +14,14 @@ export class AutoLogTracer{
 
         // `;
         return `
-            try{
+            // try{
                 ${code}
                 window.IS_AFTER_LOAD = true;
                 window.START_TIME = null;
-            }catch(e){
-                window.TRACE.error = JSON.stringify(e);
-                throw JSON.stringify({ causeRange: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
-            }
+            // }catch(error){
+            //     window.TRACE.error = error;
+            //     throw JSON.stringify({ range: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
+            // }
         `;
 
     }
@@ -47,17 +47,25 @@ export class AutoLogTracer{
     getAutologCodeBoilerPlate(timeLimit){
         return `
         /*AutoLogTracer*/
-        var logChanged;
+
+        var isIntercepted;
         (function () {
-            if(logChanged){
+            if(isIntercepted){
                 return;
             }
-            logChanged= true;
+            isIntercepted= true;
 
             var log = console.log;
             console.log = function () {
-                // log.call(this, );
-                log.apply(this, [JSON.stringify({ causeRange: window.TRACE.currentScope.range, indexInTimeline: window.TRACE.currentScope.timelineStartIndex})].concat( Array.prototype.slice.call(arguments)));
+                if(window.TRACE.currentScope && window.TRACE.currentScope){
+                  log.apply(this, [JSON.stringify({ type: "log", range: window.TRACE.currentScope.range, indexInTimeline: window.TRACE.currentScope.timelineStartIndex})].concat(Array.prototype.slice.call(arguments)));
+                }else{
+                    log.apply(this, Array.prototype.slice.call(arguments));
+                }
+            };
+
+            window.onerror = function () {
+                log.apply(this, [JSON.stringify({ type: "error", range: window.TRACE? window.TRACE.currentExpressionRange : null, indexInTimeline: window.TRACE && window.TRACE.timeline && window.TRACE.timeline.length? window.TRACE.timeline.length - 1: 0})].concat(Array.prototype.slice.call(arguments)));
             };
         }());
 

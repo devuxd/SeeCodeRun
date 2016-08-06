@@ -77,9 +77,17 @@
     border-width: 0px 0px 0px 1px;
 }
 
+.console-window-error-message:hover {
+    background: rgb(250, 170, 170);
+}
+
 .console-window-log-message{
     border-color: blue;
     border-width: 0px 0px 0px 1px;
+}
+/*from ace-editor.css*/
+.console-window-log-message:hover {
+    background: #E5F1FB;
 }
 
 .console-window-trace-message{
@@ -91,7 +99,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    cursor: zoom-in;
+    /*cursor: zoom-in;*/
 }
 
 .text-loose-overflow {
@@ -103,7 +111,7 @@
     -epub-hyphens: auto;
     -webkit-hyphens: auto;
     hyphens: auto;
-    cursor: zoom-out;
+    /*cursor: zoom-out;*/
 }
 
 pre.prettyprint{

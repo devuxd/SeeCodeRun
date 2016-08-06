@@ -23,7 +23,11 @@ export class ExpressionDataExplorer{
         let aceUtils = this.aceUtils;
         let editor = this.aureliaEditor.editor;
         this.expressionMarkerManager = aceUtils.makeAceMarkerManager(editor);
+        this.errorMarkerManager = aceUtils.makeAceMarkerManager(editor);
+        this.logMarkerManager = aceUtils.makeAceMarkerManager(editor);
         this.expressionMarkerManager.markerRenderer = aceUtils.getAvailableMarkers().expressionMarker;
+        this.errorMarkerManager.markerRenderer = aceUtils.getAvailableMarkers().errorMarker;
+        this.logMarkerManager.markerRenderer = aceUtils.getAvailableMarkers().logMarker;
         let $editorTooltip = $(this.editorTooltipSelector);
 
         if(!$editorTooltip.length){
@@ -118,24 +122,47 @@ export class ExpressionDataExplorer{
       if( indexInTimeline === null){
         return;
       }
+
+      if(!this.traceViewModel.traceHelper){
+        return;
+      }
+
       let timeline  = this.traceViewModel.traceHelper.getTimeline();
+      if(!timeline){
+        return;
+      }
+
       let match =  timeline[indexInTimeline];
       if(match){
         this.eventAggregator.publish("expressionHovered", match);
       }
     }
 
-    $showTooltip(indexInTimeline){
-      this.handleIndexInTimeline(indexInTimeline);
+    // $showTooltip(indexInTimeline){
+    //   this.handleIndexInTimeline(indexInTimeline);
+    // }
+    $showTooltip(match){
+      match.id = "console.log";
+      this.eventAggregator.publish("expressionHovered", match);
     }
+
 
     $hideTooltip(indexInTimeline){
       if(this.$editorTooltip){
           this.$editorTooltip.popover("hide");
           this.aceUtils.updateAceMarkers(this.expressionMarkerManager, []);
+          clearTimeout(this.onExpressionHoveredTimeout);
+          clearTimeout(this.editorTooltiptimeout);
       }
     }
 
+    $showError(data){
+          this.aceUtils.updateAceMarkers(this.errorMarkerManager, [data]);
+    }
+
+    $hideError(causeRange){
+          this.aceUtils.updateAceMarkers(this.errorMarkerManager, []);
+    }
 
     subscribe(){
       let eventAggregator = this.eventAggregator;
@@ -179,19 +206,28 @@ export class ExpressionDataExplorer{
       );
 
       eventAggregator.subscribe(
-        "expressionDataExplorerHideTooltip", expressionDataExplorerData =>{
+        "expressionDataExplorerHideTooltip", data =>{
           this.isShowToolTipEvent = false;
-          this.elementDecorator = expressionDataExplorerData.elementDecorator;
-          this.$hideTooltip(expressionDataExplorerData.indexInTimeline);
+          this.elementDecorator = data.elementDecorator;
+          if(data.type === "error"){
+            this.$hideError(data);
+          }else{
+            // this.$hideTooltip(data);
+            this.onExpressionHovered();
+          }
           this.elementDecorator = null;
         }
       );
 
       eventAggregator.subscribe(
-        "expressionDataExplorerShowTooltip", expressionDataExplorerData =>{
+        "expressionDataExplorerShowTooltip", data =>{
           this.isShowToolTipEvent = true;
-          this.elementDecorator = expressionDataExplorerData.elementDecorator;
-          this.$showTooltip(expressionDataExplorerData.indexInTimeline);
+          this.elementDecorator = data.elementDecorator;
+          if(data.type === "error"){
+            this.$showError(data);
+          }else{
+            this.$showTooltip(data);
+          }
         }
       );
     }

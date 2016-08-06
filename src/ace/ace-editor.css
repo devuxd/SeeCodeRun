@@ -72,6 +72,32 @@
     border: 1px solid #00398D;
 }
 
+.ace-chrome .ace_marker-layer .error-marker {
+    position: absolute;
+    background: rgb(250, 170, 170);
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .log-marker {
+    position: absolute;
+    background: rgb(136, 204, 136);
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .function-marker {
+    position: absolute;
+    background: none;
+    border: none;
+    border-left: 2px solid #0066ff;
+}
+
+.ace-chrome .ace_marker-layer .block-marker {
+    position: absolute;
+    background: none;
+    border: none;
+    border-left: 1px solid green;
+}
+
 .powered-by-firepad {
     display: none;
 }
