@@ -66,6 +66,7 @@ export class AutoLogTracer{
 
             window.onerror = function () {
                 log.apply(this, [JSON.stringify({ type: "error", range: window.TRACE? window.TRACE.currentExpressionRange : null, indexInTimeline: window.TRACE && window.TRACE.timeline && window.TRACE.timeline.length? window.TRACE.timeline.length - 1: 0})].concat(Array.prototype.slice.call(arguments)));
+                return true;
             };
         }());
 

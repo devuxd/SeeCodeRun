@@ -78,7 +78,7 @@
 }
 
 .console-window-error-message:hover {
-    background: rgb(250, 170, 170);
+    background: #ffe6e6;
 }
 
 .console-window-log-message{
@@ -117,7 +117,7 @@
 pre.prettyprint{
     border: none;
     margin: 0;
-    padding: 0;
+    padding: 2px;
     background-color: transparent;
 }
 
