@@ -15,8 +15,11 @@ export class Visualization {
     this.hasError = false;
     this.requestSelectionRange = this.getSelectionRange;
     this.traceHelper = null;
+
     this.query = null;
     this.queryType = null;
+
+    this.branches = [];
 
     this.aceUtils = new AceUtils();
     this.aceEditor = ace.edit('aceJsEditorDiv');
@@ -33,7 +36,7 @@ export class Visualization {
       console.log(`No trace found when rendering visualization #${this.id}`);
     }
     let formattedTrace = this.formatTrace(this.trace);
-    this.render(formattedTrace, `#${this.contentId}`, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
+    this.render(formattedTrace, `#${this.contentId}`, this.branches, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
   }
 
   subscribe() {
@@ -56,6 +59,10 @@ export class Visualization {
       this.query = response.searchTermText;
       this.queryType = response.searchFilterId;
       this.renderVisualization();
+    });
+
+    ea.subscribe('navigationChanged', payload => {
+      this.branches = payload;
     });
 
     ea.publish('searchBoxStateRequest');
