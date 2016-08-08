@@ -110,9 +110,9 @@ export class CallGraph {
 
         d3.select(divElement).html("");
 
-        let margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 400 - margin.left - margin.right,
-        height = 250 - margin.top - margin.bottom;
+        let margin = {top: 20, right: 20, bottom: 30, left: 40};
+        let width = $("#right-splitter").width() - margin.left - margin.right;
+        let height = $(".tab-content").height() - 300 - margin.top - margin.bottom;
 
         let rectWidth = 100,
         rectHeight = 40;
@@ -139,11 +139,14 @@ export class CallGraph {
         }))
         .append("g");
 
-        svg.attr("transform","translate(150,0)");
+        $(window).resize(function() {
+          d3.select(divElement).select("svg").attr("width", $("#right-splitter").width() - margin.left - margin.right);
+          d3.select(divElement).select("svg").attr("height", $(".tab-content").height() - 300 - margin.top - margin.bottom);
+        });
 
-        let root = d3.hierarchy(branches),
-            nodes = root.descendants(),
-            links = root.descendants().slice(1);
+        let root = d3.hierarchy(branches);
+        let nodes = root.descendants();
+        let links = root.descendants().slice(1);
 
         tree(root);
         let link = svg.selectAll(".link")
@@ -263,9 +266,10 @@ export class CallGraph {
 
         updatePins();
 
+        svg.selectAll(".node").selectAll("*").attr("transform","translate(" + (width/2 - rectWidth/2) + ",5)");
+        svg.selectAll(".node").selectAll("text").attr("transform","translate(" + width/2 + ",5)");
+        svg.selectAll(".link").attr("transform","translate(" + width/2 + ",5)");
       }
-
-      d3.select(self.frameElement).style("height", 200 + "px");
 
     }
 
