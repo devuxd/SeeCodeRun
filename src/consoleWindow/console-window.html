@@ -2,12 +2,13 @@
 <require from = "./console-window.css" ></require>
     <div id = "console-window">
         <ul if.bind = "console.log" class = "console-window-list">
-            <li repeat.for = "output of console.log"  class= "${output.styleClass}" innerhtml.bind="output.content">
+            <li repeat.for = "output of console.log"  class= "${output.styleClass}" innerhtml.bind="output.content" mouseover.delegate = "console.mouseOver(output.data)" mouseout.delegate = "console.mouseOut(output.data)">
             </li>
         </ul>
         <div id="console-window-footer-fill"></div>
         <div class= "console-window-footer">
             <label>${console.title}</label>
+            <span id = "consoleClear" class = 'glyphicon glyphicon-ban-circle' click.delegate = "console.clearLog()"></span>
             <span class = 'glyphicon glyphicon-console'></span>
             <span id = "consoleLogFeedback" class = 'glyphicon glyphicon-triangle-right'></span>
         </div>

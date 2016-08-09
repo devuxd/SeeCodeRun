@@ -3,8 +3,12 @@
     min-height: 100%;
 }
 
-#console-window:hover .console-window-footer >span{
-    color: #0066ff;
+#console-window{
+    border-right: 1px solid transparent;
+}
+
+#console-window:hover{
+    border-right-color: #E5F1FB;
 }
 
 #console-window > ul{
@@ -49,6 +53,18 @@
     display: none;
 }
 
+#consoleClear{
+    padding-left: 4px;
+}
+
+#consoleClear:hover{
+    color: orange;
+}
+
+#consoleClear:active{
+    color: red;
+}
+
 .console-window-list{
     border: none;
     margin: inherit;
@@ -77,9 +93,17 @@
     border-width: 0px 0px 0px 1px;
 }
 
+.console-window-error-message:hover {
+    background: #ffe6e6;
+}
+
 .console-window-log-message{
     border-color: blue;
     border-width: 0px 0px 0px 1px;
+}
+/*from ace-editor.css*/
+.console-window-log-message:hover {
+    background: #E5F1FB;
 }
 
 .console-window-trace-message{
@@ -91,7 +115,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    cursor: zoom-in;
+    /*cursor: zoom-in;*/
 }
 
 .text-loose-overflow {
@@ -103,13 +127,12 @@
     -epub-hyphens: auto;
     -webkit-hyphens: auto;
     hyphens: auto;
-    cursor: zoom-out;
+    /*cursor: zoom-out;*/
 }
 
 pre.prettyprint{
     border: none;
     margin: 0;
-    padding: 0;
+    padding: 2px;
     background-color: transparent;
 }
-

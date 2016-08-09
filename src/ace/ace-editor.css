@@ -65,11 +65,47 @@
     border: none;
 }
 
+.ace-chrome .ace_marker-layer .red-marker {
+    position: absolute;
+    background: rgb(250, 170, 170);
+    border: none;
+}
+
 .ace-chrome .ace_marker-layer .seecoderun-blue-marker {
     position: absolute;
     background: #00398D;
     color: #3C8AFC;
     border: 1px solid #00398D;
+}
+
+.ace-chrome .ace_marker-layer .error-marker {
+    position: absolute;
+    background: #ffe6e6;
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .log-marker {
+    position: absolute;
+    background: rgb(136, 204, 136);
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .function-marker {
+    position: absolute;
+    background-color: transparent;
+    border: none;
+    margin-left: -5px;
+    border-left: 2px solid #0066ff;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+}
+
+.ace-chrome .ace_marker-layer .block-marker {
+    position: absolute;
+    background-color: transparent;
+    border: none;
+    border-left: 1px solid green;
 }
 
 .powered-by-firepad {

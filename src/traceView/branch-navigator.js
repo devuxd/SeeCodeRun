@@ -106,6 +106,7 @@ export class BranchNavigator{
 
         eventAggregator.subscribe("traceChanged", payload => {
             this.traceHelper = payload.data;
+            console.log(this.traceHelper.getTimeline());
         });
 
         eventAggregator.subscribe(

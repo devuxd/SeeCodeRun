@@ -1,68 +1,107 @@
-/* global $*/
+/* global $, PR*/
+import {JsUtils} from "../utils/js-utils";
+
 export class ConsoleWindow {
-    title = 'Console';
-    consoleLogFeedbackSelector = "#consoleLogFeedback";
-    scrollerSelector = "#right-splitter-bottom";
-    styleConsoleWindowErrorMessage = "console-window-error-message";
-    styleConsoleWindowLogMessage = "console-window-log-message";
-    styleConsoleWindowTraceMessage = "console-window-trace-message";
-    styleConsoleWindowJSONPrettyPrint = "prettyprint lang-js";
-    styleConsoleWindowTextCompactOverflow = "text-compact-overflow";
-    styleConsoleWindowTextLooseOverflow  = "text-loose-overflow";
-    constructor(eventAggregator) {
-        this.eventAggregator = eventAggregator;
+  title = 'Console';
+  consoleLogFeedbackSelector = "#consoleLogFeedback";
+  scrollerSelector = "#right-splitter-bottom";
+  styleConsoleWindowErrorMessage = "console-window-error-message";
+  styleConsoleWindowLogMessage = "console-window-log-message";
+  styleConsoleWindowTraceMessage = "console-window-trace-message";
+  styleConsoleWindowJSONPrettyPrint = "prettyprint lang-js";
+  styleConsoleWindowTextCompactOverflow = "text-compact-overflow";
+  styleConsoleWindowTextLooseOverflow = "text-loose-overflow";
+
+  constructor(eventAggregator) {
+    this.eventAggregator = eventAggregator;
+    this.jsUtils = new JsUtils();
+  }
+
+  attached() {
+    this.log = [];
+    this.$consoleLogFeedback = $(this.consoleLogFeedbackSelector);
+    this.$scroller = $(this.scrollerSelector);
+    this.subscribe();
+    this.scrollToBottom();
+  }
+
+  clearLog(){
+    this.log = [];
+  }
+
+  scrollToBottom() {
+    let self = this;
+    if (!self.$consoleLogFeedback.is(":animated")) {
+      self.$consoleLogFeedback.css("display", "inline").fadeIn(50, function (event) {
+        // PR.prettyPrint();
+      }).fadeOut(450, function () {
+        self.$scroller.scrollTop(self.$scroller[0].scrollHeight);
+        // PR.prettyPrint();
+      });
     }
+  }
 
-    attached() {
-        this.log = [];
-        this.$consoleLogFeedback = $(this.consoleLogFeedbackSelector);
-        this.$scroller = $(this.scrollerSelector);
-        this.subscribe();
-        this.update();
-    }
+  mouseOver(data) {
+    this.eventAggregator.publish("expressionDataExplorerShowTooltip", data);
+  }
 
-    update(){
-      let self = this;
-      self.$scroller.scrollTop(self.$scroller[0].scrollHeight);
-      self.$consoleLogFeedback.css("display", "inline").fadeOut(1000);
-      // $(`.${self.styleConsoleWindowTextCompactOverflow}`).click();
-     }
+  mouseOut(data) {
+    this.eventAggregator.publish("expressionDataExplorerHideTooltip", data);
+  }
 
-    subscribe() {
-      // let logger = console.log;
-      // self.log.push(Array.prototype.slice.call(arguments));
-      //     logger.apply(this, arguments);
-      let ea = this.eventAggregator;
+  subscribe() {
+    let ea = this.eventAggregator;
 
-      ea.subscribe('beforeOutputBuild', payload => {
-        this.log = [];
-      });
+    ea.subscribe('beforeOutputBuild', payload => {
+      this.log = [];
+    });
 
-      ea.subscribe('htmlViewerWindowError', htmlViewerWindowError => {
-        this.log.push({styleClass: this.styleConsoleWindowErrorMessage, content: this.prettifyConsoleLine(htmlViewerWindowError.arguments, htmlViewerWindowError.aceErrorRange)});
-        // console.log(JSON.stringify(htmlViewerWindowError.arguments));
-        this.update();
-      });
+    ea.subscribe('htmlViewerConsoleLog', htmlViewerConsoleLog => {
+      if (htmlViewerConsoleLog.arguments && htmlViewerConsoleLog.arguments.length) {
+        let logData = null;
+        try {
+          logData = JSON.parse(htmlViewerConsoleLog.arguments[0]);
+        }
+        catch (e) {}
 
-      ea.subscribe('htmlViewerConsoleLog', htmlViewerConsoleLog => {
-        this.log.push({styleClass: this.styleConsoleWindowLogMessage,content: this.prettifyConsoleLine(htmlViewerConsoleLog.arguments, htmlViewerConsoleLog.aceLogRange)});
-        this.update();
-        console.log.apply(htmlViewerConsoleLog.this, htmlViewerConsoleLog.arguments);
-      });
+        if (logData && logData.type && logData.range) {
+          let logstyle = this.styleConsoleWindowLogMessage;
+          Array.prototype.shift.apply(htmlViewerConsoleLog.arguments);
+          //todo handle dom elements
+          let logArguments = htmlViewerConsoleLog.arguments;
+          logData.value = logArguments;
 
-      ea.subscribe('traceChanged', payload => {
-        // this.log.push({styleClass: this.styleConsoleWindowTraceMessage, content: this.prettifyConsoleLine(payload.data.description)});
-        this.update();
-      });
+          if (logData.type === "error") {
+            logstyle = this.styleConsoleWindowErrorMessage;
+            // Error arguments: message, source, lineno, colno, error
+            logArguments = [logArguments[0], ` at line ${logData.range.start.row + 1}, column ${logData.range.start.column}`];
+            logData.value = "";
+          }
+          this.log.push({
+            styleClass: logstyle,
+            content: this.prettifyConsoleLine(logArguments),
+            data: logData
+          });
+          this.scrollToBottom();
+        }
 
-    }
+        if (logData == null || logData.type === "log") {
+          console.log.apply(htmlViewerConsoleLog.this, htmlViewerConsoleLog.arguments);
+        }
+      }
+    });
 
-    prettifyConsoleLine(jsObject, aceRange){
-      let onClick = `PR.prettyPrint(); $('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
+    ea.subscribe('traceChanged', payload => {
+      this.scrollToBottom();
+    });
+  }
+
+  prettifyConsoleLine(consoleArguments) {
+    let onClick = `$('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
       	$(this).toggleClass('${this.styleConsoleWindowTextLooseOverflow}');
       })`;
-      return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
-        ${JSON.stringify(jsObject)} , source: ${JSON.stringify(aceRange)}
+    return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
+        ${this.jsUtils.toReadableString(consoleArguments)}
       </pre>`;
-    }
+  }
 }

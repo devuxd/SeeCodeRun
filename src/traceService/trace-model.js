@@ -7,11 +7,11 @@ export class TraceModel{
             aceMarkersChanged : {  event :"aceMarkersChanged"   , description : "Trace results updated. Update Ace markers" }
         };
         this.traceSearchfilters = {
-      functions: "functions",
+            functions: "functions",
 			none: "none",
 			any: "any",
 			id: "id",
-//TODO 			dom: "DOM",
+//TODO 		dom: "DOM",
 // 			text: "Text",
 			value: "value"
 		};
@@ -59,6 +59,7 @@ export class TraceModel{
             ReturnStatement: "ReturnStatement",
             SwitchStatement: "SwitchStatement",
             SwitchCase: "SwitchCase",
+            ThrowStatement: "ThrowStatement",
             UnaryExpression: "UnaryExpression",
             UpdateExpression: "UpdateExpression",
             VariableDeclaration: "VariableDeclaration",
@@ -195,7 +196,9 @@ export class TraceModel{
 
         this.traceRuntimeTypes = {
           PreCallExpression: "PreCallExpression",
-          FunctionData: "FunctionData"
+          FunctionData: "FunctionData",
+          Parameter: "Parameter",
+          Exception: "Exception"
         };
 
         this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement"];

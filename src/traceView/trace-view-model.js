@@ -3,6 +3,10 @@ export class TraceViewModel {
         this.resetData();
     }
 
+    setTraceHelper(traceHelper){
+        this.traceHelper = traceHelper;
+    }
+
     resetData(){
         this.resetTraceGutterData();
         this.resetTraceValuesData();
@@ -37,7 +41,11 @@ export class TraceViewModel {
     }
 
 
-    updateTraceGutterData(traceCollection){
+    updateTraceGutterData(){
+        if(!this.traceHelper){
+            return;
+        }
+        let traceCollection = this.traceHelper.getStackBlockCounts();
         let localTraceGutterData = this.extractTraceGutterData(traceCollection);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
         this.traceGutterData.rows = localTraceGutterData.rows;
