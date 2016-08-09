@@ -3,8 +3,9 @@
 }
 
 .vis-container {
+    padding: none;
     padding-top: 4px;
-    box-shadow: 1px 1px 1px 1px #eee;
+    /*box-shadow: 1px 1px 1px 1px #eee;*/
 }
 
  .vis-container .visualization-title {

@@ -1,6 +1,6 @@
 <template bindable="visualization">
   <div id="${visualization.id}" class = "${visualization.styleClass}">
-    <div class="visualization-title">${visualization.title}</div>
+    <!-- <div class="visualization-title">${visualization.title}</div> -->
     <div if.bind="visualization.hasError" class="alert alert-danger" role="alert">${visualization.errorMessage}</div>
     <div if.bind="visualization.type === 'DataTable'">
       <label for = "${visualization.buttonId}">

@@ -47,6 +47,7 @@ export class Visualization {
     });
 
     ea.subscribe('searchBoxChanged', payload => {
+      // console.log($(`#${this.contentId}`).offset())
       this.query = payload.searchTermText;
       this.queryType = payload.searchFilterId;
       this.renderVisualization();

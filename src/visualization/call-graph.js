@@ -85,7 +85,7 @@ export class CallGraph {
   		};
 
       this.renderFx  =  function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager) {
-          if (!formattedTrace){
+          if (!formattedTrace ){
               return;
           }
 
@@ -126,36 +126,86 @@ export class CallGraph {
 
           d3.select(divElement).html("");
 
-          let margin = {top: 20, right: 20, bottom: 30, left: 40},
-          width = 400 - margin.left - margin.right,
-          height = 250 - margin.top - margin.bottom;
+          console.log($("#seePanelBody").offset())
+
+
+          let width = $("#right-splitter").width();//margin.left - margin.right;
+          let height = $(".tab-content").height() ;//- $(#seePanelBody).offset() - $("#console-window").height();
+
+          $("#seePanelBody.w3-row-padding.vis-container").height(height);
 
           let rectWidth = 100,
               rectHeight = 40;
 
           let tree = d3.tree()
-              .nodeSize([160, 200]);
+              .nodeSize([160, 80]);
 
           let diagonal = self.directionManager[self.currentDirection].linkRenderer;
-
           let nodeRenderer = self.directionManager[self.currentDirection].nodeRenderer;
 
           d3.select(divElement).select("svg").remove();
 
+          let prevX;
+          let prevY;
+
+          // $("#seePanelBody.w3-row-padding.vis-container").css("padding","none");//,"box-shadow":"none"});
+          // $(".vis-container").css("box-shadow","none");//,"box-shadow":"none"});
+
           let svg = d3.select(divElement).append("svg")
               .attr("width", width)
-              .attr("height", height)
+              .attr("height", "100%")
               .attr("position","relative")
               .call(d3.zoom()
-            .on("zoom", function () {
+              .scaleExtent([0.3,2])
+              // .translateExtent([[0,0],activeDimensions])
+            .on("zoom", function() {
               svg.attr("transform", function() {
-                  let devent = d3.event.transform;
+                let devent = d3.event.transform;
+
+                if(isNaN(devent.x)) {
+                  devent.x = prevX;
+                }
+                else {
+                  prevX = devent.x;
+                }
+
+                if(isNaN(devent.y)) {
+                  devent.y = prevY;
+                }
+                else {
+                  prevY = devent.y;
+                }
+
+                console.log("y")
+                console.log(devent.y)
+
+                console.log(prevY)
+
+                // console.log(devent)
                 return "translate(" + devent.x + ", " + devent.y + ") scale(" + devent.k +")";
               });
             }))
               .append("g");
 
-          svg.attr("transform","translate(100,0)");
+          console.log("sdfsdf")
+
+          // let zoom = d3.zoom()
+          //   .scaleExtent([0.3,2])
+          //   .on("zoom", function() {
+          //     let e = d3.event.transform;
+          //     zoom.translate([tx, ty]);
+          //     svg.attr("transform", "translate(" + e.x + ", " + e.y + ") scale(" + e.k +")");
+          //   })
+
+          $(window).resize(function() {
+            width = $("#right-splitter").width();
+            height = $("console-window").offset().top - $("#seePanelBody").offset().top +
+            ($("#traceSearchPanelBody").offset().top- $("trace-search .panel-heading").offset().top);//- $("#seePanelBody").offset().top - 52;
+            // console.log(());
+            d3.select(divElement).select("svg").attr("width", width);
+            d3.select(divElement).select("svg").attr("height", height);
+            trans();
+          });
 
           let root = d3.hierarchy(formattedTrace),
               nodes = root.descendants(),
@@ -268,7 +318,7 @@ export class CallGraph {
 
               filteredNodes.append("rect")
                   .attr("width", rectWidth)
-                  .attr("height", rectHeight)
+                  .attr("height", rectHeight-20)
                   .attr("transform", "translate(" + (-1 * rectWidth/2) + ",0)")
                   .style("fill","#fff")
                   .style("stroke","steelblue")
@@ -294,13 +344,32 @@ export class CallGraph {
                     .attr("transform", "translate(0," + rectHeight/2 + ")");
 
               filteredNodes.append("text")
-                  .attr("dy", 22.5)
+                  .attr("dy", 14)
                   .attr("text-anchor", "middle")
                   .text(function(d) { return d.data.name; });
+
+
+              function trans() {
+                svg.selectAll(".node").selectAll("rect").attr("transform","translate(" + (width/2 - rectWidth/2) + ",5)");
+                svg.selectAll(".node").selectAll("text").attr("transform","translate(" + width/2 + ",5)");
+                svg.selectAll(".link").attr("transform","translate(" + width/2 + ",5)");
+              }
+
+              function activeDimensions() {
+                var largestX = 0;
+                var largestY = 0;
+                node.forEach(function(d, i){
+                  if(d.x > largestX) largestX = d.x;
+                  if(d.y > largestY) largestY = d.y;
+                })
+                console.log([largestX,largestY])
+                return [largestX, largestY];
+              }
+              trans();
               }
 
               // update();
-              d3.select(self.frameElement).style("height", 200 + "px");
+              // d3.select(self.frameElement).style("height", 100 + "px");
     }
 
 
