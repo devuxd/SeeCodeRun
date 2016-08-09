@@ -1,7 +1,7 @@
 <template bindable="visViewer">
     <require from = "./vis-viewer.css"></require>
     <require from="visualization/visualization.html"></require>
-    <div class="panel panel-debug">
+    <div class="panel panel-debug" style=" min-height: 100% !important;height: 100% !important;">
         <div class="panel-heading w3-row-padding">
             <div id ="seePanelHeading" class="w3-col panel-heading-title" style="width:115px" data-toggle="collapse" href="#seePanelBody">
                <span class='glyphicon glyphicon-dashboard'></span>&#160;Visualizations
@@ -13,7 +13,7 @@
                 </select>
             </div>
         </div>
-        <div id="seePanelBody" class="panel-body container-fluid collapse in">
+        <div id="seePanelBody" class="panel-body collapse in" style=" min-height: 100% !important;height: 100% !important;">
             <div class="w3-row-padding" if.bind="visViewer.visualizations.length">
                 <div class="vis-container" repeat.for="visualization of visViewer.visualizations">
                     <visualization visualization.bind="visualization"></visualization>

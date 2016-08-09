@@ -130,9 +130,15 @@ export class CallGraph {
 
 
           let width = $("#right-splitter").width();//margin.left - margin.right;
-          let height = $(".tab-content").height() ;//- $(#seePanelBody).offset() - $("#console-window").height();
-
-          $("#seePanelBody.w3-row-padding.vis-container").height(height);
+          let height;
+          // let height = $("#seePanelBody .vis-container").height();//$(".tab-content").height() ;//- $(#seePanelBody).offset() - $("#console-window").height();
+          //
+          console.log("spb w3")
+          console.log($("#seePanelBody .vis-container").height())
+          //
+          // $("#seePanelBody .vis-container").css("min-height", 420);
+          // $("#seePanelBody .vis-container").css("height", window.innerHeight * 0.5);
+          // $("#seePanelBody.w3-row-padding.vis-container").height(height);
 
           let rectWidth = 100,
               rectHeight = 40;
@@ -153,7 +159,7 @@ export class CallGraph {
 
           let svg = d3.select(divElement).append("svg")
               .attr("width", width)
-              .attr("height", "100%")
+              .attr("height", height)
               .attr("position","relative")
               .call(d3.zoom()
               .scaleExtent([0.3,2])
@@ -199,8 +205,8 @@ export class CallGraph {
 
           $(window).resize(function() {
             width = $("#right-splitter").width();
-            height = $("console-window").offset().top - $("#seePanelBody").offset().top +
-            ($("#traceSearchPanelBody").offset().top- $("trace-search .panel-heading").offset().top);//- $("#seePanelBody").offset().top - 52;
+            // $("#seePanelBody .vis-container").css("height", window.innerHeight * 0.5);
+            // height = $("#console-window").offset().top - $("#seePanelBody").offset().top + ($("#traceSearchPanelBody").offset().top- $("trace-search .panel-heading").offset().top);//- $("#seePanelBody").offset().top - 52;
             // console.log(());
             d3.select(divElement).select("svg").attr("width", width);
             d3.select(divElement).select("svg").attr("height", height);

@@ -1,11 +1,22 @@
+vis-viewer{
+  position: relative;
+}
+vis-viewer >.panel{
+  bottom:0;
+  position: absolute;
+  height: 80%;
+  min-width: 100%;
+}
+
 #seePanelBody > div{
     padding-bottom: 4px;
+    bottom: 0;
 }
 
 .vis-container {
     padding: none;
     padding-top: 4px;
-    /*box-shadow: 1px 1px 1px 1px #eee;*/
+    box-shadow: 1px 1px 1px 1px #eee;
 }
 
  .vis-container .visualization-title {

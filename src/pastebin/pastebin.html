@@ -65,8 +65,10 @@
             </div>
             <div id = "visualization-container" class = "tab-pane fade"  role = "tabpanel" aria-labelledby="visualizationTab">
               <trace-player tracePlayer.bind = "traceViewController.tracePlayer"></trace-player>
-              <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
               <trace-search trace-search.bind = "traceSearch"></trace-search>
+              <div style=" min-height: 100% !important;height: 100% !important;">
+              <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
+            </div>
             </div>
           </div>
         </div>
