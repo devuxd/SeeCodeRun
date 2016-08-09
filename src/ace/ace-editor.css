@@ -1,3 +1,7 @@
+.powered-by-firepad {
+    display: none;
+}
+
 .ace_editor {
     border: 0px;
     -webkit-border-radius: 0px;
@@ -108,6 +112,26 @@
     border-left: 1px solid green;
 }
 
-.powered-by-firepad {
-    display: none;
+.ace-chrome .ace_marker-layer .git-line-added-marker {
+    position: absolute;
+    background-color: #eaffea;
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .git-text-added-marker {
+    position: absolute;
+    background-color: #a6f3a6;
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .git-line-removed-marker {
+    position: absolute;
+    background-color: #ffecec;
+    border: none;
+}
+
+.ace-chrome .ace_marker-layer .git-text-removed-marker {
+    position: absolute;
+    background-color: #f8cbcb;
+    border: none;
 }
