@@ -25,6 +25,10 @@ export class ConsoleWindow {
     this.scrollToBottom();
   }
 
+  clearLog(){
+    this.log = [];
+  }
+
   scrollToBottom() {
     let self = this;
     if (!self.$consoleLogFeedback.is(":animated")) {

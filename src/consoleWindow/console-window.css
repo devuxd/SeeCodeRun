@@ -3,8 +3,12 @@
     min-height: 100%;
 }
 
-#console-window:hover .console-window-footer >span{
-    color: #0066ff;
+#console-window{
+    border-right: 1px solid transparent;
+}
+
+#console-window:hover{
+    border-right-color: #E5F1FB;
 }
 
 #console-window > ul{
@@ -47,6 +51,18 @@
 
 #consoleLogFeedback {
     display: none;
+}
+
+#consoleClear{
+    padding-left: 4px;
+}
+
+#consoleClear:hover{
+    color: orange;
+}
+
+#consoleClear:active{
+    color: red;
 }
 
 .console-window-list{
