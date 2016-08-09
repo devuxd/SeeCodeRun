@@ -93,4 +93,141 @@ export class JsUtils{
 
 		return obj;
 	}
+
+	toJSON(node) {
+    //https://gist.github.com/sstur/7379870
+      var obj = {
+        nodeType: node.nodeType
+      };
+      if (node.tagName) {
+        obj.tagName = node.tagName.toLowerCase();
+      } else
+      if (node.nodeName) {
+        obj.nodeName = node.nodeName;
+      }
+      if (node.nodeValue) {
+        obj.nodeValue = node.nodeValue;
+      }
+      var attrs = node.attributes;
+      if (attrs) {
+        var length = attrs.length;
+        var arr = obj.attributes = new Array(length);
+        for (var i = 0; i < length; i++) {
+          var attr = attrs[i];
+          arr[i] = [attr.nodeName, attr.nodeValue];
+        }
+      }
+      var childNodes = node.childNodes;
+      if (childNodes) {
+        length = childNodes.length;
+        arr = obj.childNodes = new Array(length);
+        for (i = 0; i < length; i++) {
+          arr[i] = this.toJSON(childNodes[i]);
+        }
+      }
+      return obj;
+    }
+
+    toDOM(obj) {
+        // https://gist.github.com/sstur/7379870
+      if (typeof obj == 'string') {
+        obj = JSON.parse(obj);
+      }
+      var node, nodeType = obj.nodeType;
+      switch (nodeType) {
+        case 1: //ELEMENT_NODE
+          node = document.createElement(obj.tagName);
+          var attributes = obj.attributes || [];
+          for (var i = 0, len = attributes.length; i < len; i++) {
+            var attr = attributes[i];
+            node.setAttribute(attr[0], attr[1]);
+          }
+          break;
+        case 3: //TEXT_NODE
+          node = document.createTextNode(obj.nodeValue);
+          break;
+        case 8: //COMMENT_NODE
+          node = document.createComment(obj.nodeValue);
+          break;
+        case 9: //DOCUMENT_NODE
+          node = document.implementation.createDocument();
+          break;
+        case 10: //DOCUMENT_TYPE_NODE
+          node = document.implementation.createDocumentType(obj.nodeName);
+          break;
+        case 11: //DOCUMENT_FRAGMENT_NODE
+          node = document.createDocumentFragment();
+          break;
+        default:
+          return node;
+      }
+      if (nodeType == 1 || nodeType == 11) {
+        var childNodes = obj.childNodes || [];
+        for (i = 0, len = childNodes.length; i < len; i++) {
+          node.appendChild(this.toDOM(childNodes[i]));
+        }
+      }
+      return node;
+    }
+
+    stringify(obj, replacer, spaces, cycleReplacer) {
+      return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+    }
+
+    serializer(replacer, cycleReplacer) {
+      var stack = [], keys = [];
+
+      if (cycleReplacer == null){
+          cycleReplacer = function(key, value) {
+            if (stack[0] === value) return "[Circular ~]";
+            return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
+          };
+      }
+
+      return function(key, value) {
+        if(stack.length > 0){
+          var thisPos = stack.indexOf(this);
+          ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+          ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+          if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+        }else{
+            stack.push(value);
+        }
+        return replacer == null ? value : replacer.call(this, key, value);
+      };
+    }
+
+    toReadableString(referenceInput, maxDepth = 2, depth = 0, self = this) {
+	    let readableString = null;
+	    if (self.isNumeric(referenceInput)) {
+	      return referenceInput;
+	    }
+
+	    if (self.type(referenceInput) === "string") {
+	      return `"${referenceInput}"`;
+	    }
+	    let isArrayLike = self.isArrayLike(referenceInput);
+	    self.each(referenceInput, function (key, value) {
+	      let eachContent = "null";
+	      if (isArrayLike) {
+	        eachContent = depth === maxDepth ? self.type(value) : self.toReadableString(value, maxDepth, depth + 1);
+	      }
+	      else {
+	        eachContent = depth === maxDepth ? key + ": " + self.type(value) : key + ": " + self.toReadableString(value, maxDepth, depth + 1);
+	      }
+	      readableString = readableString == null ? eachContent : readableString + ", " + eachContent;
+	    });
+
+	    if (depth) {
+	      if (isArrayLike) {
+	        readableString = "[" + readableString + "]";
+	      }
+	      else {
+	        if (readableString !== "null") {
+	          readableString = "{" + readableString + "}";
+	        }
+	      }
+	    }
+	    return readableString;
+  }
 }

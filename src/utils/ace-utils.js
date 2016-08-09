@@ -219,7 +219,7 @@ export class AceUtils{
 
     }
 
-    subscribeToExpressionHoverEvents(editor, eventAggregator, renderer, isToRenderAboveExpression){
+    subscribeToExpressionHoverEvents(editor, eventAggregator, renderer){
         if(!editor){
 			    throw "An Ace editor is required";
 		}
@@ -233,21 +233,28 @@ export class AceUtils{
 		}
 
         eventAggregator.subscribe("expressionHovered", match =>{
-
     		if(match){
-    			let pixelPosition = editor.renderer.textToScreenCoordinates(match.range.start);
-
-    			if(isToRenderAboveExpression){
-    			    pixelPosition.pageY -= editor.renderer.lineHeight;
-    			}else{
-    			    pixelPosition.pageY += editor.renderer.lineHeight;
-    			}
+                let pixelPosition = this.calculateRangeCoordinates(editor, match.range);
     			renderer.onExpressionHovered(match, pixelPosition);
     		}else{
     		    renderer.onExpressionHovered();
     		}
         });
 
+    }
+
+    calculateRangeCoordinates(editor, range){
+        let midColumn = range.start.column;
+        if(range.start.row === range.end.row){
+                midColumn = Math.ceil(( midColumn + range.end.column)/2);
+        }
+        let midColumnPixelPosition = editor.renderer.textToScreenCoordinates({row: range.end.row, column: midColumn});
+
+        let bottomRightPosition  = {row: range.end.row, column: range.end.column};
+        let pixelPosition = editor.renderer.textToScreenCoordinates(bottomRightPosition);
+        pixelPosition.pageX = midColumnPixelPosition.pageX < pixelPosition.pageX? midColumnPixelPosition.pageX : pixelPosition.pageX;
+		pixelPosition.pageY += editor.renderer.lineHeight ;
+		return pixelPosition;
     }
 
     updateTooltip(div, position, content){

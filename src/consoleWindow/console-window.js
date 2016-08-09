@@ -29,10 +29,10 @@ export class ConsoleWindow {
     let self = this;
     if (!self.$consoleLogFeedback.is(":animated")) {
       self.$consoleLogFeedback.css("display", "inline").fadeIn(50, function (event) {
-        PR.prettyPrint();
+        // PR.prettyPrint();
       }).fadeOut(450, function () {
         self.$scroller.scrollTop(self.$scroller[0].scrollHeight);
-        PR.prettyPrint();
+        // PR.prettyPrint();
       });
     }
   }
@@ -97,42 +97,7 @@ export class ConsoleWindow {
       	$(this).toggleClass('${this.styleConsoleWindowTextLooseOverflow}');
       })`;
     return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
-        ${this.makeArgumentsString(consoleArguments)}
+        ${this.jsUtils.toReadableString(consoleArguments)}
       </pre>`;
-  }
-
-  makeArgumentsString(consoleArguments, maxDepth = 2, depth = 0) {
-    let self = this;
-    let argumentsString = null;
-    if (this.jsUtils.isNumeric(consoleArguments)) {
-      return consoleArguments;
-    }
-
-    if (this.jsUtils.type(consoleArguments) === "string") {
-      return `"${consoleArguments}"`;
-    }
-    let isArrayLike = this.jsUtils.isArrayLike(consoleArguments);
-    this.jsUtils.each(consoleArguments, function (key, value) {
-      let eachContent = "null";
-      if (isArrayLike) {
-        eachContent = depth === maxDepth ? self.jsUtils.type(value) : self.makeArgumentsString(value, maxDepth, depth + 1);
-      }
-      else {
-        eachContent = depth === maxDepth ? key + ": " + self.jsUtils.type(value) : key + ": " + self.makeArgumentsString(value, maxDepth, depth + 1);
-      }
-      argumentsString = argumentsString == null ? eachContent : argumentsString + ", " + eachContent;
-    });
-
-    if (depth) {
-      if (isArrayLike) {
-        argumentsString = "[" + argumentsString + "]";
-      }
-      else {
-        if (argumentsString !== "null") {
-          argumentsString = "{" + argumentsString + "}";
-        }
-      }
-    }
-    return argumentsString;
   }
 }
