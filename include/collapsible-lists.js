@@ -1,3 +1,16 @@
+/*
+source: http://code.stephenmorley.org/javascript/collapsible-lists/CollapsibleLists.compressed.js
+CollapsibleLists.js
+
+An object allowing lists to dynamically expand and collapse
+
+Created by Stephen Morley - http://code.stephenmorley.org/ - and released under
+the terms of the CC0 1.0 Universal legal code:
+
+http://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+*/
+
 var CollapsibleLists=new function(){
 this.apply=function(_1){
 var _2=document.getElementsByTagName("ul");

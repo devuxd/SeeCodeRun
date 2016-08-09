@@ -5,7 +5,8 @@ import {TreeViewExplorer} from "./tree-view-explorer";
 export class ExpressionDataExplorer{
     editorTooltipSelector = "#editorTooltip";
     editorTooltipId = "editorTooltip";
-    editorTooltipContentId = "editorTooltipContentId";
+    editorTooltipContentId = "editorTooltipContent";
+    treeViewId = "treeViewContent";
     viewportSelector = "#codeContent .ace_scroller";
     viewportPadding = -6;
     editorTooltipShowDelay = 750;
@@ -52,11 +53,10 @@ export class ExpressionDataExplorer{
         }
 
         $editorTooltip.appendTo('body');
-        let self = this;
+        // let self = this;
         $editorTooltip.on('shown.bs.popover', function(){
           CollapsibleLists.apply();
-          // CollapsibleLists.applyTo(document.getElementById(self.editorTooltipContentId));
-
+          // CollapsibleLists.applyTo(document.getElementById(self.treeViewId));
         });
 
         this.$editorTooltip = $editorTooltip;
@@ -100,7 +100,7 @@ export class ExpressionDataExplorer{
   		    }
 
     			if(match && !self.isBranchNavigatorVisible){
-    		      self.treeViewExplorer = new TreeViewExplorer(match.value);
+    		      self.treeViewExplorer = new TreeViewExplorer(match.value, self.treeViewId);
               let popoverData = self.treeViewExplorer.getPopoverElementContent($editorTooltip);
               let popoverTitle =`Exploring <strong>${match.id !== null ? match.id: ""} :</strong> <i>${popoverData.type}</i>`;
     		      $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
@@ -232,11 +232,16 @@ export class ExpressionDataExplorer{
         "expressionDataExplorerShowTooltip", data =>{
           this.isShowToolTipEvent = true;
           this.elementDecorator = data.elementDecorator;
-          if(data.type === "error"){
-            this.$showError(data);
+          if(data.type === "right-gutter"){
+            this.handleIndexInTimeline(data.indexInTimeline);
           }else{
-            this.$showTooltip(data);
+            if(data.type === "error"){
+              this.$showError(data);
+            }else{
+              this.$showTooltip(data);
+            }
           }
+
         }
       );
     }

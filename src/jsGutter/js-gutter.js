@@ -1,5 +1,7 @@
 /* global $ */
 import {bindable} from 'aurelia-framework';
+import {JsUtils} from '../utils/js-utils';
+import {TraceViewUtils} from '../utils/trace-view-utils';
 
 export class JsGutter {
     aceEditorFontSize = null;
@@ -15,6 +17,8 @@ export class JsGutter {
     jsGutterLineClassSelector = ".js-gutter-line";
     jsGutterLineHighlightClass = "js-gutter-line-highlight";
     jsGutterLineHighlightClassSelector = ".js-gutter-line-highlight";
+    jsGutterEntryClass = "js-gutter-entry";
+    jsGutteEntryClassSelector = ".js-gutter-entry";
     editorLayout = null;
     selectedLine = '';
     $gutter = null;
@@ -28,6 +32,7 @@ export class JsGutter {
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.aceJsEditorDiv = aceJsEditorDiv;
+        this.jsUtils = new JsUtils();
     }
 
     adjustFontStyle(aceJsEditorDiv = this.aceJsEditorDiv){
@@ -103,8 +108,9 @@ export class JsGutter {
                     entries = self.traceHelper.getNavigationTimeline();
                     isAppendToContent = false;
                 }
-                for (let entry of entries) {
-                    self.setGutterLineContent(entry, isAppendToContent);
+                for ( let indexInTimeline = 0; indexInTimeline < entries.length; indexInTimeline++) {
+                    let entry = entries[indexInTimeline];
+                    self.setGutterLineContent(indexInTimeline, entry, isAppendToContent);
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
             }
@@ -124,6 +130,7 @@ export class JsGutter {
             }
         }
         self.$gutter.scrollTop(self.scrollTop);
+        TraceViewUtils.attachExpressionDataExplorerOnHover("right-gutter", this.jsGutteEntryClassSelector,this.eventAggregator);
     }
 
     attached() {
@@ -201,10 +208,14 @@ export class JsGutter {
         });
     }
 
-    setGutterLineContent(entry, isAppendToContent) {
+    setGutterLineContent(indexInTimeline, entry, isAppendToContent) {
         let firstLineNumber = this.editorLayout? this.editorLayout.firstLineNumber: 1;
         let line = entry.range.start.row + firstLineNumber;
-        let content = entry.id + " = " + entry.value;
+        let readableString = entry.value;
+
+        readableString = this.jsUtils.toReadableString(readableString);
+
+        let content = entry.id + " = " + readableString;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
 
         if ($line.length) {
@@ -220,14 +231,17 @@ export class JsGutter {
                 let entryId = this.aceUtils.parseRangeString(entry.range);
                 let lineEntrySelector = this.jsGutterLineSelectorPrefix + line + "-"+ entryId;
                 let $lineEntry = $(lineEntrySelector);
-                if($lineEntry.length){
-                    $lineEntry.text("[" + content + "]");
-                }else{
+                if(!$lineEntry.length){
                     let lineEntryId = this.jsGutterLineIdPrefix + line + "-"+ entryId;
-                    $line.prepend("<strong id = '"+lineEntryId+"'></strong>");
+                    if(entry.type === "Parameter"){
+                        $line.append("<div id = '"+lineEntryId+"' class = '"+this.jsGutterEntryClass+"' ></div>");
+                    }else{
+                        $line.prepend("<div id = '"+lineEntryId+"' class = '"+this.jsGutterEntryClass+"' ></div>");
+                    }
                     $lineEntry = $(lineEntrySelector);
                 }
                 $lineEntry.text("[" + content + "]");
+                $lineEntry.data("itimeline", indexInTimeline);
             }
         }
     }

@@ -50,3 +50,11 @@
      background: #eeeeee;
    }
  }
+
+ .js-gutter-entry{
+      display: inline-block;
+ }
+
+ .js-gutter-entry:hover{
+      background: #E5F1FB;
+ }

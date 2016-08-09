@@ -204,6 +204,9 @@ export class JsUtils{
 	    }
 
 	    if (self.type(referenceInput) === "string") {
+	    	try{
+	           return this.toReadableString(JSON.parse(readableString), maxDepth, depth);
+	        }catch(e){}
 	      return `"${referenceInput}"`;
 	    }
 	    let isArrayLike = self.isArrayLike(referenceInput);

@@ -1,7 +1,8 @@
 
 export class TreeViewExplorer {
   viewType = {HTML: "HTML", JSON: "JSON", PRIMITIVE: "PRIMITIVE"};
-  constructor(element) {
+  constructor(element, treeViewId) {
+    this.treeViewId = treeViewId;
     if(element == null){
       this.type = this.viewType.PRIMITIVE;
     }else{
@@ -210,14 +211,14 @@ export class TreeViewExplorer {
   dispDOMNode() {
     let tree;
     if(!this.isObjectEmpty(this.element)) {
-      tree = "<ul class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
+      tree = "<ul id = '"+this.treeViewId+"' class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
         "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" +
         this.generateDOMTree(this.element) +
         "</li></ul>";
     }
     else {
-      tree = "<ul class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
+      tree = "<ul  id = '"+this.treeViewId+"' class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
         "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" + "</ul>";
     }
@@ -232,13 +233,13 @@ export class TreeViewExplorer {
     }
 
     if(!this.isObjectEmpty(this.element)) {
-      tree = "<ul class='treeObj treeView'><li>" + this.element.constructor.name +
+      tree = "<ul  id = '"+this.treeViewId+"' class='treeObj treeView'><li>" + this.element.constructor.name +
         (this.element instanceof Array ? "[" + this.element.length + "]" : "") +
         this.generateObjectTree(this.element) +
         "</li></ul>";
     }
     else {
-      tree = "<ul class='treeObj treeView'>" + this.element.constructor.name +
+      tree = "<ul  id = '"+this.treeViewId+"' class='treeObj treeView'>" + this.element.constructor.name +
         (this.element instanceof Array ? "[" + this.element.length + "]" : "{}") +
         "</ul>";
     }
