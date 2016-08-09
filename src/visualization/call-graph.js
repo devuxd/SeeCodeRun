@@ -1,5 +1,4 @@
 /*global d3*/
-import {Vertex} from "./vertex.js"
 export class CallGraph {
     currentDirection = "down";// or "right"
     directionManager = {
@@ -38,428 +37,305 @@ export class CallGraph {
             errorMessage: null
         };
 
+        this.rootNode = {
+            name: "Program",
+            id: -1,
+            parentId: null,
+            ranges: [],
+            children: [],
+            isCallback: false,
+            pinned: true
+        }
+
+        this.rootCopy = {
+            name: "Program",
+            id: -1,
+            parentId: null,
+            ranges: [],
+            children: [],
+            isCallback: false,
+            pinned: true
+        };
     }
 
-    prepareFx()
-  	{
+    prepareFx() {
   		let self = this ;
-  		this.formatTraceFx =  function makeTree(trace = this.trace)
-  		{
-  			if(!trace)
-  				return ;
-  			//the text starts at line 0 by default, plus one to match natural line numbers
-  			let map = {} ;
-  			let funcs = [] ;
-  			//
-  			funcs = self.findFuncs( trace ) ;
+  		this.formatTraceFx = function() { return null; }
 
-  			for( let i = 0 ; i < funcs.length ; i++ )
-  				map[ funcs[i].name ] = funcs[ i ] ; //try with adjacency list
+      this.renderFx = function renderFx(formattedTrace, divElement, branches, query, queryType, aceUtils, aceMarkerManager) {
+        if (!branches || branches.length === 0) {
+          return;
+        }
 
-  			map = self.makeMatrixList( funcs , map ) ;
-  			//
-  			let rootsList = [] ; //list of functions that arent called
-  			for( let key in map )
-  			{
-  				//console.log( key ) ;
-  				if( map[ key ].parents.length === 0 )
-  					rootsList.push( map[ key ] ) ;
-  			}
-  			//
-  			// console.log( "funcs" ) ;
-  			// console.log( funcs ) ;
-  			// console.log( "map" ) ;
-  			// console.log( map ) ;
+        self.rootNode = JSON.parse(JSON.stringify(self.rootCopy));
 
-  			// console.log( map[ "alpha()" ].children[ 1 ] === map[ "alpha()" ].children[ 2 ] ) ;
-  			//turns matrix into tree
+        self.removeUnpinned();
+        self.addToGraph(self.createBranchHierarchy(branches));
 
-        let masterHead = new Vertex("Program", "Program");
+        self.rootCopy = JSON.parse(JSON.stringify(self.root));
 
-        // rootsList.map(function(e) {
-        //   masterHead.children.push(e);
-        // })
+        if(query == undefined || query.trim() === "") {
+          query = null;
+        }
 
-  			// return rootsList[ 0 ] ;
-        return rootsList[0];
-  		};
-
-      this.renderFx  =  function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager) {
-          if (!formattedTrace){
-              return;
-          }
-
-          if(query !== null && (query == undefined || query.trim() === "")) {
-            query = null;
-          }
-
-          function scrubLeaves(root, hasLeaves=0) {
-            if(root === undefined || root.children === undefined) {
-              return hasLeaves;
-            }
-
-            let children = root.children;
-
-            for(let i = 0; i < children.length; i++) {
-              if(children[i].children.length === 0 && !children[i].name.includes(query)) {
-                hasLeaves++;
-                root.children.splice(i, 1);
-              }
-              hasLeaves += scrubLeaves(children[i], hasLeaves);
-            }
+        function scrubLeaves(root, hasLeaves=0) {
+          if(root === undefined || root.children === undefined) {
             return hasLeaves;
           }
 
-          function scrubTree(root) {
-            while(scrubLeaves(root)) {
+          let children = root.children;
 
-            };
+          for(let i = 0; i < children.length; i++) {
+            if(children[i].children.length === 0 && !children[i].name.includes(query)) {
+              hasLeaves++;
+              root.children.splice(i, 1);
+            }
+            hasLeaves += scrubLeaves(children[i], hasLeaves);
           }
+          return hasLeaves;
+        }
 
-          function makeQuery() {
-            scrubTree(formattedTrace);
-          }
+        function scrubTree(root) {
+          while(scrubLeaves(root));
+        }
 
-          if(query !== null && queryType === "functions") {
-            makeQuery();
-          }
+        function makeQuery() {
+          scrubTree(root);
+        }
 
-          d3.select(divElement).html("");
+        if(query !== null && queryType === "functions") {
+          makeQuery();
+        }
 
-          let margin = {top: 20, right: 20, bottom: 30, left: 40},
-          width = 400 - margin.left - margin.right,
-          height = 250 - margin.top - margin.bottom;
+        d3.select(divElement).html("");
 
-          let rectWidth = 100,
-              rectHeight = 40;
+        let width = $("#right-splitter").width();
+        let height = $(".tab-content").height();
 
-          let tree = d3.tree()
-              .nodeSize([160, 200]);
+        let rectWidth = 100;
+        let rectHeight = 40;
 
-          let diagonal = self.directionManager[self.currentDirection].linkRenderer;
+        let tree = d3.tree()
+          .nodeSize([160, 80]);
 
-          let nodeRenderer = self.directionManager[self.currentDirection].nodeRenderer;
+        let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
-          d3.select(divElement).select("svg").remove();
+        let nodeRenderer = self.directionManager[self.currentDirection].nodeRenderer;
 
-          let svg = d3.select(divElement).append("svg")
-              .attr("width", width)
-              .attr("height", height)
-              .attr("position","relative")
-              .call(d3.zoom()
+        d3.select(divElement).select("svg").remove();
+
+        let svg = d3.select(divElement).append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("position","relative")
+            .call(d3.zoom()
+            .scaleExtent([0.3, 2])
             .on("zoom", function () {
               svg.attr("transform", function() {
-                  let devent = d3.event.transform;
-                return "translate(" + devent.x + ", " + devent.y + ") scale(" + devent.k +")";
+                let d3event = d3.event.transform;
+                return "translate(" + d3event.x + ", " + d3event.y + ") scale(" + d3event.k +")";
               });
             }))
-              .append("g");
+            .append("g");
 
-          svg.attr("transform","translate(100,0)");
+        $(window).resize(function() {
+          width = $("#right-splitter").width();
+          height = $(".tab-content").height();
+          d3.select(divElement).select("svg").attr("width", width);
+          d3.select(divElement).select("svg").attr("height", height);
+          centerNodes();
+        });
 
-          let root = d3.hierarchy(formattedTrace),
-              nodes = root.descendants(),
-              links = root.descendants().slice(1);
+        let root = d3.hierarchy(branches);
+        let nodes = root.descendants();
+        let links = root.descendants().slice(1);
 
-              tree(root);
-              let link = svg.selectAll(".link")
-                  .data(links)
-                .enter()
-                  .append("g")
-                  .attr("class", "link");
+        tree(root);
+        let link = svg.selectAll(".link")
+            .data(links)
+          .enter()
+            .append("g")
+            .attr("class", "link");
 
-              link.append("line")
-                  .attr("x1", function(d) { return d.parent.x; })
-                  .attr("y1", function(d) { return !d.parent.data.name.includes(query) ? d.parent.y + rectHeight/2 : d.parent.y + rectHeight; })
-                  .attr("x2", function(d) { return d.x; })
-                  .attr("y2", function(d) { return !d.data.name.includes(query) ? d.y + rectHeight/2 : d.y; })
-                  .style("fill","none")
-                  .style("stroke","#ccc")
-                  .style("stroke-width","1.5px");
+        link.append("line")
+            .attr("x1", function(d) { return d.parent.x; })
+            .attr("y1", function(d) { return !d.parent.data.name.includes(query) ? d.parent.y + rectHeight/2 : d.parent.y + rectHeight; })
+            .attr("x2", function(d) { return d.x; })
+            .attr("y2", function(d) { return !d.data.name.includes(query) ? d.y + rectHeight/2 : d.y; })
+            .style("fill","none")
+            .style("stroke","#ccc")
+            .style("stroke-width","1.5px");
 
-              // link.append("text")
-              //   .attr("class","num_text")
-              //   .attr("x", function(d) {
-              //     return (d.x + d.parent.x)/2;
-              //   })
-              //   .attr("y", function(d) {
-              //     return (d.y + d.parent.y + rectHeight)/2;
-              //   })
-              //   .attr("text-anchor", "middle")
-              //   .text(function (d) {
-              //     return d.data.childCalls;//Math.floor((Math.random() * 10) + 1);
-              //   })
-              //   .style("font","10px sans-serif");
+        function showHoverText(d) {
+          d3.select(this).append("text")
+            .attr("class", "hover")
+            .attr("transform", function(d) {
+              return "translate(5, -5)";
+            })
+            .text(d.data.name);
+          highlight(d);
+        }
 
-              function showHoverText(d) {
-                d3.select(this).append("text")
-                  .attr("class", "hover")
-                  .attr("transform", function(d) {
-                    return "translate(5, -5)";
-                  })
-                  .text(d.data.name);
-                highlight(d);
-              }
+        function hideHoverText(d) {
+          d3.select(this).select("text.hover").remove();
+          unhighlight(d);
+        }
 
-              function hideHoverText(d) {
-                d3.select(this).select("text.hover").remove();
-                unhighlight(d);
-              }
+        function highlight(d) {
+          aceUtils.updateAceMarkers(aceMarkerManager, d.data.ranges);
+        }
 
-              function highlight(d) {
-                aceUtils.updateAceMarkers(aceMarkerManager, d.data.ranges);
-              }
+        function unhighlight(d) {
+          aceUtils.updateAceMarkers(aceMarkerManager, []);
+        }
 
-              function unhighlight(d) {
-                aceUtils.updateAceMarkers(aceMarkerManager, []);
-              }
+        let node = svg.selectAll(".node")
+            .data(nodes)
+          .enter().append("g");
 
-              // console.log('nodes')
-              // console.log(node)
-              let node = svg.selectAll(".node")
-                  .data(nodes)
-                .enter().append("g");
+        node.attr("class", "node")
+            .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+            .attr("transform", nodeRenderer)
+            .style("font","10px sans-serif");
 
-              let multiParents = node.filter(function (d, i) {
-                return d.data.parents.length > 1;
-              });
+        let matchedNodes = node.filter(function(d, i) {
+          if(queryType === "functions") {
+            return query === null || d.data.name.includes(query) || i === 0;
+          }
+          else {
+            return true; // TODO support other query types
+          }
+        });
 
-              let parentPairs = [];
+        matchedNodes.append("rect")
+            .attr("width", rectWidth)
+            .attr("height", rectHeight)
+            .attr("transform", "translate(" + (-1 * rectWidth/2) + ",0)")
+            .style("fill","#fff")
+            .style("stroke","steelblue")
+            .style("stroke-width","1.5px");
 
-              multiParents.each(function(d) {
-                for(let i = 1; i < d.data.parents.length; i++) {
-                  let p;
-                  node.filter(function (d2, i2) { return d2.data.id === d.data.parents[i].id; }).each(function(pNode) {
-                    p = pNode;
-                  })
-                  parentPairs.push({
-                    parent: p,
-                    child: d
-                  });
-                }
-              });
+        let regNodes = node.filter(function(d, i) {
+          if(queryType === "functions") {
+            return query !== null && i !== 0 && !d.data.name.includes(query);
+          }
+          else {
+            return false; // TODO support other query types
+          }
+        });
 
-              parentPairs.forEach(function(multiPair) {
-                link.append("line")
-                .attr("class", "additionalParentLink")
-                .attr("x1", multiPair.parent.x)
-                .attr("y1", !multiPair.parent.data.name.includes(query) ? multiPair.parent.y + rectHeight/2 : multiPair.parent.y + rectHeight )
-                .attr("x2", multiPair.child.x)
-                .attr("y2", !multiPair.child.data.name.includes(query) ? multiPair.child.y + rectHeight/2 : multiPair.child.y)
-                .style("fill","none")
-                .style("stroke","#ccc")
-                .style("shape-rendering", "geometricPrecision")
-                .style("stroke-width","1.5px")
-              })
+        regNodes.on("mouseover", showHoverText)
+          .on("mouseout", hideHoverText);
 
-              node.attr("class", "node")
-                  .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                  .attr("transform", nodeRenderer)
-                  .style("font","10px sans-serif");
+        matchedNodes.on("mouseover",highlight)
+          .on("mouseout", unhighlight);
 
-              let filteredNodes = node.filter(function(d, i) {
-                if(queryType === "functions") {
-                  return query === null || d.data.name.includes(query) || i === 0;
-                }
-                else {
-                  return true; // TODO support other query types
-                }
-              });
+        regNodes.append("circle")
+              .attr("r", 6)
+              .attr("transform", "translate(0," + rectHeight/2 + ")");
 
-              filteredNodes.append("rect")
-                  .attr("width", rectWidth)
-                  .attr("height", rectHeight)
-                  .attr("transform", "translate(" + (-1 * rectWidth/2) + ",0)")
-                  .style("fill","#fff")
-                  .style("stroke","steelblue")
-                  .style("stroke-width","1.5px");
+        matchedNodes.append("text")
+            .attr("dy", 14.5)
+            .attr("text-anchor", "middle")
+            .text(function(d) { return d.data.name; });
 
-              let regNodes = node.filter(function(d, i) {
-                if(queryType === "functions") {
-                  return query !== null && i !== 0 && !d.data.name.includes(query);
-                }
-                else {
-                  return false; // TODO support other query types
-                }
-              });
+        function updatePins() {
+          matchedNodes.selectAll("circle").remove();
+          matchedNodes.filter(function(d) {
+            return d.data.pinned === false;
+          })
+          .append("circle")
+            .attr("r", 3)
+            .on("click", function(d) {
+              self.togglePinOnBranch(d.data);
+              updatePins();
+            })
+            .style("stroke-width", 2)
+            .style("color", "white");
 
-              regNodes.on("mouseover", showHoverText)
-                .on("mouseout", hideHoverText);
+          matchedNodes.filter(function(d) {
+            return d.data.pinned === true;
+          })
+          .append("circle")
+            .attr("r", 3)
+            .on("click", function(d) {
+              self.togglePinOnBranch(d.data);
+              updatePins();
+            })
+            .style("stroke-width", 2)
+            .style("color", "blue");
+        }
 
-              filteredNodes.on("mouseover",highlight)
-                .on("mouseout", unhighlight);
+        updatePins();
 
-              regNodes.append("circle")
-                    .attr("r", 6)
-                    .attr("transform", "translate(0," + rectHeight/2 + ")");
-
-              filteredNodes.append("text")
-                  .attr("dy", 22.5)
-                  .attr("text-anchor", "middle")
-                  .text(function(d) { return d.data.name; });
-              }
-
-              // update();
-              d3.select(self.frameElement).style("height", 200 + "px");
-    }
-
-
-    	findFuncs( trace )
-    	{
-    		let self = this ;
-    		let funcs = []
-    		let doesFuncExist = {} ;
-    		let doesCallExist = {} ;
-    		let lastBlockRange = null ;
-        let callfuncs = [];
-    		//
-    		for( let index = 1 ; index < trace.timeline.length - 1 ; index++ ) //precomputes all the funcs
-    		{
-    			let step = self.scrubStep( trace.timeline[ index ] ) ;
-    			//
-    			switch( step.type )
-    			{
-    				case "BlockStatement" :
-    					lastBlockRange = step.range ;
-    					break ;
-    					//
-    				case "FunctionData" :
-    					if( !doesFuncExist[ step.id ] )
-    					{
-    						if( !lastBlockRange )
-    							funcs.push( new Vertex( step.type , step.id , [{range:step.range}] , step.value , step.text ) ) ;
-    						else
-    						{
-    							funcs.push( new Vertex( step.type , step.id , [{range:lastBlockRange}] , step.value , step.text ) ) ;
-    							lastBlockRange = null ;
-    						}
-    						doesFuncExist[ step.id ] = true ;
-    					}
-              else
-              {
-
-              }
-    					break ;
-    					//
-    				case "CallExpression" :
-              let found = false;
-              for(let i = 0; i < callfuncs.length; i++) {
-                if(callfuncs[i] === step.id) {
-                  found = true;
-                }
-              }
-              if( !found || step.id.includes(".")) {
-                  let currentVertex = new Vertex( step.type , step.id , [{range:step.range}] , null , step.text );
-    					     funcs.push( currentVertex ) ;
-                   callfuncs.push(step.id)
-                 }
-              else {
-                for(let i = 0; i < funcs.length; i++) {
-                  if(funcs[i].name === step.id) {
-                    funcs[i].ranges.push({range:step.range})
-                  }
-                }
-              }
-
-    				default: {}
-
-    			}
-    		}
-    		return funcs ;
-    	}
-
-    	makeMatrixList( funcs , map )
-    	{
-        // console.log(map)
-    		let self = this ;
-    		for( let index1 = 0 ; index1 < funcs.length ; index1++ )
-    		{
-    			for( let index2 = 0 ; index2 < funcs.length ; index2++ )
-    			{
-
-    				if( funcs[ index2 ].type === "FunctionData" )
-    				{
-
-    					if( index1 !== index2 && self.isRangeInRange( funcs[ index1 ].ranges[0].range , funcs[ index2 ].ranges[0].range ) )
-    					{
-                let mom = funcs[ index2 ].name ;
-      						let child = funcs[ index1 ].name ;
-
-      						if( !map[ mom ].childCalls[ child ] )
-      						{
-      							map[ mom ].children.push( map[ child ] ) ;
-      							if( funcs[ index1 ].type !== "CallExpression" )
-      								map[ child ].parents.push( map[ mom ] ) ;
-      							//
-      							map[ mom ].childCalls[ child ] = [ "testing" ] ;
-      						}
-      						else
-      						{
-      							map[ mom ].childCalls[ child ].push( "testing" ) ;
-      						}
-
-    					}
-    				//
-    				//	if( index1 !== index2 && funcs[index1].type === "CallExpression"
-    				//		&& funcs[index1].text.indexOf( funcs[index2].name.replace( /[()""]/g , "" ) ) )
-    				//	{
-    				//		let mom = funcs[ index2 ].name ;
-    				//		let child = funcs[ index1 ].name ;
-    				//
-    				//		console.log( "callback found" ) ;
-    				//		map[ mom ].children.push( map[ child ] ) ;
-    				//		map[ child ].parents.push( map[ mom ] ) ;
-    				//		map[ child ].isCallback = true ;
-    				//	}
-    				}
-    			}
-    		}
-    		return map ;
-    	}
-
-    	//
-    	//helpers
-    	//
-
-    	scrubStep( step )
-    	{
-    		if( step !== null )
-    		{
-    			if( step.text !== null )
-    			{
-    				step.text = step.text.replace( /"/g , "" ) ; //scrubs for "
-    			}
-    			if( step.id !== null )
-    			{
-    				step.id = step.id.replace( /[()""]/g , "" ) + "()" ;
-
-    			}
-    			if( step.type !== null )
-    			{
-    				step.type = step.type.replace( /"/g , "" ) ;
-    			}
-    		}
-    		return step ;
-    	}
-
-    	isRangeInRange(isRange, inRange) //be careful here!
-    	{
-    		if( isRange.start.row > inRange.start.row && isRange.end.row < inRange.end.row )
-    			return true ;
-
-    		if( isRange.start.row === inRange.start.row || isRange.end.row === inRange.end.row )
-    		{
-    			if( isRange.start.row === inRange.start.row )
-    				if( isRange.start.column < inRange.start.column )
-    					return false ;
-    			if( isRange.end.row === inRange.end.row )
-    				if( isRange.end.column > inRange.end.column )
-    					return false ;
-    			return true ;
-    		}
-
-    		return false ;
-    	}
-
+        function centerNodes() {
+          svg.selectAll(".node").selectAll("*").attr("transform","translate(" + (width/2 - rectWidth/2) + ",5)");
+          svg.selectAll(".node").selectAll("text").attr("transform","translate(" + width/2 + ",5)");
+          svg.selectAll(".link").attr("transform","translate(" + width/2 + ",5)");
+        }
+      }
 
     }
+
+    createBranchHierarchy(branches) {
+      branches[branches.length-1].parentId = branches[branches.length-2];
+      for(let i = 0; i < branches.length-1; i++) {
+        branches[i].children = [branches[i+1]];
+        if(i !== 0) {
+          branches[i].parentId = branches[i-1].id;
+        }
+      }
+      return branches[0];
+    }
+
+    addToGraph(branches, currentIndex=0, currentBranch=this.rootNode) {
+      for(let i = 0; i < currentBranch.children.length; i++) {
+        if(!areBranchesEqual(branch, currentBranch)) {
+          currentBranch.children.push(branch);
+        }
+        this.addToGraph(currentBranch.children[i]);
+      }
+    }
+
+    removeUnpinned(currentBranch=this.rootNode) {
+      for(let i = 0; i < currentBranch.children.length; i++) {
+        if(!currentBranch.children[i].pinned) {
+          currentBranch.children.splice(i, 1);
+        }
+        this.removeUnpinned(currentBranch.children[i]);
+      }
+    }
+
+    togglePinOnBranch(branch) {
+      let path = generatePath(branch);
+      for(let i in path) {
+        path[i].pinned = !path[i].pinned;
+      }
+    }
+
+    generatePath(branch) {
+      let currentBranch = this.rootNode;
+      let path = [currentBranch];
+      while(currentBranch.parentId !== null) {
+        let branchHolder = {branch:null};
+        getBranchById(currentBranch.parentId, branchHolder);
+        currentBranch = branchHolder.branch;
+        path.push(currentBranch);
+      }
+      return path;
+    }
+
+    getBranchById(id, branchHolder, currentBranch=this.root) {
+      if(id === currentBranch.id) {
+        branchHolder.branch = currentBranch;
+        return;
+      }
+      for(let i = 0; i < currentBranch.children.length; i++) {
+        getBranchById(currentBranch.children[i]);
+      }
+    }
+
+    areBranchesEqual(branch1, branch2) {
+      return branch1.id === branch2.id;
+    }
+}
