@@ -1,5 +1,4 @@
 /*global d3*/
-import {Vertex} from "./vertex.js"
 export class CallGraph {
     currentDirection = "down";// or "right"
     directionManager = {
@@ -114,11 +113,11 @@ export class CallGraph {
         let width = $("#right-splitter").width() - margin.left - margin.right;
         let height = $(".tab-content").height() - 300 - margin.top - margin.bottom;
 
-        let rectWidth = 100,
-        rectHeight = 40;
+        let rectWidth = 100;
+        let rectHeight = 40;
 
         let tree = d3.tree()
-        .nodeSize([160, 200]);
+          .nodeSize([160, 200]);
 
         let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
@@ -127,21 +126,25 @@ export class CallGraph {
         d3.select(divElement).select("svg").remove();
 
         let svg = d3.select(divElement).append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("position","relative")
-        .call(d3.zoom()
-        .on("zoom", function () {
-          svg.attr("transform", function() {
-            let d3event = d3.event.transform;
-            return "translate(" + d3event.x + ", " + d3event.y + ") scale(" + d3event.k +")";
-          });
-        }))
-        .append("g");
+            .attr("width", width)
+            .attr("height", height)
+            .attr("position","relative")
+            .call(d3.zoom()
+            .scaleExtent([0.3, 2])
+            .on("zoom", function () {
+              svg.attr("transform", function() {
+                let d3event = d3.event.transform;
+                return "translate(" + d3event.x + ", " + d3event.y + ") scale(" + d3event.k +")";
+              });
+            }))
+            .append("g");
 
         $(window).resize(function() {
-          d3.select(divElement).select("svg").attr("width", $("#right-splitter").width() - margin.left - margin.right);
-          d3.select(divElement).select("svg").attr("height", $(".tab-content").height() - 300 - margin.top - margin.bottom);
+          width = $("#right-splitter").width() - margin.left - margin.right;
+          height = $(".tab-content").height() - 300 - margin.top - margin.bottom;
+          d3.select(divElement).select("svg").attr("width", width);
+          d3.select(divElement).select("svg").attr("height", height);
+          centerNodes();
         });
 
         let root = d3.hierarchy(branches);
@@ -266,9 +269,11 @@ export class CallGraph {
 
         updatePins();
 
-        svg.selectAll(".node").selectAll("*").attr("transform","translate(" + (width/2 - rectWidth/2) + ",5)");
-        svg.selectAll(".node").selectAll("text").attr("transform","translate(" + width/2 + ",5)");
-        svg.selectAll(".link").attr("transform","translate(" + width/2 + ",5)");
+        function centerNodes() {
+          svg.selectAll(".node").selectAll("*").attr("transform","translate(" + (width/2 - rectWidth/2) + ",5)");
+          svg.selectAll(".node").selectAll("text").attr("transform","translate(" + width/2 + ",5)");
+          svg.selectAll(".link").attr("transform","translate(" + width/2 + ",5)");
+        }
       }
 
     }
