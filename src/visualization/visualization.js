@@ -3,7 +3,7 @@ export class Visualization {
   constructor(index, eventAggregator, config) {
     this.id = "seecoderun-visualization-"+ index;
     this.buttonId = "seecoderun-visualization-"+ index+"-button";
-    this.contentId = "seecoderun-visualization-"+ index+"-content";
+    this.contentId = "seePanelBody"; // "seecoderun-visualization-"+ index+"-content";
     this.eventAggregator = eventAggregator;
     this.styleClass = config.config.styleClass;
     this.title = config.config.title;

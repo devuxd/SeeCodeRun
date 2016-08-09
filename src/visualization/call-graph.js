@@ -109,15 +109,14 @@ export class CallGraph {
 
         d3.select(divElement).html("");
 
-        let margin = {top: 20, right: 20, bottom: 30, left: 40};
-        let width = $("#right-splitter").width() - margin.left - margin.right;
-        let height = $(".tab-content").height() - 300 - margin.top - margin.bottom;
+        let width = $("#right-splitter").width();
+        let height = $(".tab-content").height();
 
         let rectWidth = 100;
         let rectHeight = 40;
 
         let tree = d3.tree()
-          .nodeSize([160, 200]);
+          .nodeSize([160, 80]);
 
         let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
@@ -140,8 +139,8 @@ export class CallGraph {
             .append("g");
 
         $(window).resize(function() {
-          width = $("#right-splitter").width() - margin.left - margin.right;
-          height = $(".tab-content").height() - 300 - margin.top - margin.bottom;
+          width = $("#right-splitter").width();
+          height = $(".tab-content").height();
           d3.select(divElement).select("svg").attr("width", width);
           d3.select(divElement).select("svg").attr("height", height);
           centerNodes();
@@ -236,7 +235,7 @@ export class CallGraph {
               .attr("transform", "translate(0," + rectHeight/2 + ")");
 
         matchedNodes.append("text")
-            .attr("dy", 22.5)
+            .attr("dy", 14.5)
             .attr("text-anchor", "middle")
             .text(function(d) { return d.data.name; });
 
