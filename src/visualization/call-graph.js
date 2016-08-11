@@ -1,6 +1,7 @@
 /*global d3*/
 export class CallGraph {
-    currentDirection = "down";// or "right"
+    currentDirection = "down"; // or "right"
+    // defines direction that graph displays (top to bottom or left to right)
     directionManager = {
         right: {
             nodeRenderer: function translateRight(d) {
@@ -40,26 +41,18 @@ export class CallGraph {
         this.rootNode = {
             name: "Program",
             id: -1,
-            parentId: null,
+            parent = null,
             ranges: [],
             children: [],
             isCallback: false,
+            visible: true,
             pinned: true
         }
-
-        this.rootCopy = {
-            name: "Program",
-            id: -1,
-            parentId: null,
-            ranges: [],
-            children: [],
-            isCallback: false,
-            pinned: true
-        };
     }
 
     prepareFx() {
-  		let self = this ;
+  		let self = this;
+
   		this.formatTraceFx = function() { return null; }
 
       this.renderFx = function renderFx(formattedTrace, divElement, branches, query, queryType, aceUtils, aceMarkerManager) {
@@ -67,40 +60,30 @@ export class CallGraph {
           return;
         }
 
-        self.rootNode = JSON.parse(JSON.stringify(self.rootCopy));
-
         self.removeUnpinned();
         self.addToGraph(self.createBranchHierarchy(branches));
-
-        self.rootCopy = JSON.parse(JSON.stringify(self.root));
 
         if(query == undefined || query.trim() === "") {
           query = null;
         }
 
-        function scrubLeaves(root, hasLeaves=0) {
-          if(root === undefined || root.children === undefined) {
-            return hasLeaves;
-          }
-
+        // sets visibility of nodes that match or have a direct path to a match to true, false otherwise
+        function makeQuery(root=self.rootNode) {
           let children = root.children;
 
           for(let i = 0; i < children.length; i++) {
-            if(children[i].children.length === 0 && !children[i].name.includes(query)) {
-              hasLeaves++;
-              root.children.splice(i, 1);
+            if(children[i].name.includes(query)) {
+              let currentNode = children[i];
+              while(currentNode.parent) {
+                currentNode.visible = true;
+                currentNode = currentNode.parent;
+              }
             }
-            hasLeaves += scrubLeaves(children[i], hasLeaves);
+            else {
+              children[i].visible = false;
+            }
+            makeQuery(children[i]);
           }
-          return hasLeaves;
-        }
-
-        function scrubTree(root) {
-          while(scrubLeaves(root));
-        }
-
-        function makeQuery() {
-          scrubTree(root);
         }
 
         if(query !== null && queryType === "functions") {
@@ -138,6 +121,7 @@ export class CallGraph {
             }))
             .append("g");
 
+        // resize svg upon window resize
         $(window).resize(function() {
           width = $("#right-splitter").width();
           height = $(".tab-content").height();
@@ -166,6 +150,7 @@ export class CallGraph {
             .style("stroke","#ccc")
             .style("stroke-width","1.5px");
 
+        // displays name of node when hovered
         function showHoverText(d) {
           d3.select(this).append("text")
             .attr("class", "hover")
@@ -198,6 +183,19 @@ export class CallGraph {
             .attr("transform", nodeRenderer)
             .style("font","10px sans-serif");
 
+        // remove nodes of visibility false
+        if(query !== null) {
+          node = node.filter(function(d, i) {
+            if(queryType === "functions") {
+              return d.data.visible === true;
+            }
+            else {
+              return true; // TODO support other query types
+            }
+          });
+        }
+
+        // selection of nodes that match query
         let matchedNodes = node.filter(function(d, i) {
           if(queryType === "functions") {
             return query === null || d.data.name.includes(query) || i === 0;
@@ -215,6 +213,7 @@ export class CallGraph {
             .style("stroke","steelblue")
             .style("stroke-width","1.5px");
 
+        // selection of nodes that do not match query, but have a direct path to a match
         let regNodes = node.filter(function(d, i) {
           if(queryType === "functions") {
             return query !== null && i !== 0 && !d.data.name.includes(query);
@@ -239,6 +238,7 @@ export class CallGraph {
             .attr("text-anchor", "middle")
             .text(function(d) { return d.data.name; });
 
+        // for all nodes, sets fill of pin to blue if node is pinned, white otherwise
         function updatePins() {
           matchedNodes.selectAll("circle").remove();
           matchedNodes.filter(function(d) {
@@ -268,6 +268,7 @@ export class CallGraph {
 
         updatePins();
 
+        // centers all content within svg
         function centerNodes() {
           svg.selectAll(".node").selectAll("*").attr("transform","translate(" + (width/2 - rectWidth/2) + ",5)");
           svg.selectAll(".node").selectAll("text").attr("transform","translate(" + width/2 + ",5)");
@@ -277,17 +278,19 @@ export class CallGraph {
 
     }
 
+    // creates hierarchy from array, for any given node, the following node is its child
     createBranchHierarchy(branches) {
-      branches[branches.length-1].parentId = branches[branches.length-2];
+      branches[branches.length-1].parent = branches[branches.length-2];
       for(let i = 0; i < branches.length-1; i++) {
         branches[i].children = [branches[i+1]];
         if(i !== 0) {
-          branches[i].parentId = branches[i-1].id;
+          branches[i].parent = branches[i-1];
         }
       }
       return branches[0];
     }
 
+    // new branch is added to the graph
     addToGraph(branches, currentIndex=0, currentBranch=this.rootNode) {
       for(let i = 0; i < currentBranch.children.length; i++) {
         if(!areBranchesEqual(branch, currentBranch)) {
@@ -297,6 +300,7 @@ export class CallGraph {
       }
     }
 
+    // all nodes that are not pinned to the graph are removed
     removeUnpinned(currentBranch=this.rootNode) {
       for(let i = 0; i < currentBranch.children.length; i++) {
         if(!currentBranch.children[i].pinned) {
@@ -306,6 +310,7 @@ export class CallGraph {
       }
     }
 
+    // pins or unpins a node and all of its ancestors
     togglePinOnBranch(branch) {
       let path = generatePath(branch);
       for(let i in path) {
@@ -313,7 +318,8 @@ export class CallGraph {
       }
     }
 
-    generatePath(branch) {
+    // generates path from rootNode to given node
+    generatePath(node) {
       let currentBranch = this.rootNode;
       let path = [currentBranch];
       while(currentBranch.parentId !== null) {
@@ -325,6 +331,7 @@ export class CallGraph {
       return path;
     }
 
+    // sets branchHolder.branch to the branch of the requested id, branchHolder must be an object
     getBranchById(id, branchHolder, currentBranch=this.root) {
       if(id === currentBranch.id) {
         branchHolder.branch = currentBranch;
