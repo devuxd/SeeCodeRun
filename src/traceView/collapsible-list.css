@@ -18,6 +18,11 @@
     text-overflow: ellipsis;
 }
 
+.lineObj {
+    font-family: Monaco;
+    font-size: 12px;
+}
+
 /*.treeObj:hover{*/
 /*    overflow: auto;*/
 /*    text-overflow: unset;*/
@@ -100,7 +105,7 @@
 
 .string {
     color: rgb(196, 26, 22);
-    /*white-space: pre-wrap;*/
+    /*white-space: pre;*/
     /*unicode-bidi: -webkit-isolate;*/
 }
 

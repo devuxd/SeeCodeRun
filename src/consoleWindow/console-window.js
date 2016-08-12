@@ -1,6 +1,6 @@
 /* global $, PR*/
 import {JsUtils} from "../utils/js-utils";
-
+import {ObjectExplorer} from "../traceView/object-explorer";
 export class ConsoleWindow {
   title = 'Console';
   consoleLogFeedbackSelector = "#consoleLogFeedback";
@@ -97,11 +97,24 @@ export class ConsoleWindow {
   }
 
   prettifyConsoleLine(consoleArguments) {
+    let lineData = "", moreData = "", currentObjectExplorer;
+    if(consoleArguments.length){
+      currentObjectExplorer = new ObjectExplorer(this.jsUtils, consoleArguments[0], "argument-" + 0);
+      lineData = currentObjectExplorer.generatePopoverLineViewContent().content;
+    }
+    for(let i = 1; i < consoleArguments.length; i++){
+      currentObjectExplorer = new ObjectExplorer(this.jsUtils, consoleArguments[i], "argument-" + i);
+      moreData = ", " + currentObjectExplorer.generatePopoverLineViewContent().content;
+    }
+    if(moreData){
+      lineData = "[" + lineData + moreData + "]";
+    }
     let onClick = `$('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
       	$(this).toggleClass('${this.styleConsoleWindowTextLooseOverflow}');
       })`;
+      // this.jsUtils.toReadableString(consoleArguments)
     return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
-        ${this.jsUtils.toReadableString(consoleArguments)}
+        ${lineData}
       </pre>`;
   }
 }

@@ -134,6 +134,19 @@
     overflow: auto;
 }
 
-/*#editorTooltipContent .tooltip.top .tooltip-arrow {*/
-/*    left: 5px;*/
-/*}*/
+#editorTooltipContent .tooltip.bottom .tooltip-inner {
+    background-color: #0066ff;
+    word-wrap: break-word;
+}
+
+#editorTooltipContent .tooltip.bottom .tooltip-arrow {
+    border-bottom-color: #0066ff;
+}
+
+#editorTooltipContent .tooltip.in {
+  opacity: .97;
+  filter: alpha(opacity = 97);
+}
+
+/*#editorTooltipContent .red-tooltip + .tooltip > .tooltip-inner {background-color: #0066ff;}*/
+/*#editorTooltipContent .red-tooltip + .tooltip > .tooltip-arrow { border-bottom-color: #0066ff; }*/

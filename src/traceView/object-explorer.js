@@ -4,9 +4,9 @@ export class ObjectExplorer {
   objectType = null;
   classType = null;
   nodeType =null;
-  constructor(jsUtils, element, treeViewId, isParsable = true) {
+  constructor(jsUtils, element, objectViewId, isParsable = true) {
     this.jsUtils = jsUtils;
-    this.treeViewId = treeViewId;
+    this.objectViewId = objectViewId;
     this.classType = jsUtils.type(element);
     if(element == null){
       this.objectType = ObjectExplorer.ObjectType.JS;
@@ -120,9 +120,25 @@ export class ObjectExplorer {
     let objectType = this.jsUtils.type(object);
     if(objectType === "string"){
       let escapedHMTLString =  this.escapeHMTLString(object);
-      return `<span class='treeObj string' data-toggle="tooltip" data-placement="top" data-container = '#editorTooltipContent' title= '${escapedHMTLString}' >"${escapedHMTLString}"</span>`;
+      let escapedHMTLString1 =  escapedHMTLString.length > 62? escapedHMTLString.substring(0, 62) : escapedHMTLString;
+      let escapedHMTLString2 =  escapedHMTLString.length > 62? escapedHMTLString.substring(62) : "";
+
+      return `<span class='treeObj string' data-toggle="tooltip"  data-placement="bottom" title= '${escapedHMTLString}' >"${escapedHMTLString1}</span><span class='treeObj string'>${escapedHMTLString2}"</span>`;
+    // return `<span class='treeObj string' data-tooltip = '${escapedHMTLString === ""? " " : escapedHMTLString}' data-tooltip-position = 'top left'>"${escapedHMTLString}"</span>`;
+    // data-viewport = '#editorTooltipContent'
     }else{
       return `<span class='treeObj ${objectType}'>${object}</span>`;
+    }
+
+  }
+
+  generateLeaf(object){
+    let objectType = this.jsUtils.type(object);
+    if(objectType === "string"){
+      let escapedHMTLString =  this.escapeHMTLString(object);
+      return `<span class='lineObj string'>"${escapedHMTLString}"</span>`;
+    }else{
+      return `<span class='lineObj ${objectType}'>${object}</span>`;
     }
 
   }
@@ -172,13 +188,24 @@ export class ObjectExplorer {
     }
   }
 
-  generatePopoverTreeViewContent($popover) {
+  generatePopoverTreeViewContent() {
     let content;
     if(this.objectType === ObjectExplorer.ObjectType.DOM) {
       content = this.generateDOMTreeViewHTMLString();
     }
     else {
       content = this.generateJSONTreeViewHTMLString();
+    }
+    return {objectType: this.objectType, classType: this.classType, nodeType: this.nodeType, content: content};
+  }
+
+  generatePopoverLineViewContent( maxDepth = 1, depth = 0) {
+    let content;
+    if(this.objectType === ObjectExplorer.ObjectType.DOM) {
+      content = this.generateDOMLineViewHTMLString();
+    }
+    else {
+      content = this.generateJSONLineViewHTMLString();
     }
     return {objectType: this.objectType, classType: this.classType, nodeType: this.nodeType, content: content};
   }
@@ -190,14 +217,14 @@ export class ObjectExplorer {
   generateDOMTreeViewHTMLString() {
     let tree;
     if(!this.isObjectEmpty(this.element)) {
-      tree = "<ul id = '"+this.treeViewId+"' class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
+      tree = "<ul id = '"+this.objectViewId+"' class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
         "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" +
         this.generateDOMTree(this.element) +
         "</li></ul>";
     }
     else {
-      tree = "<ul  id = '"+this.treeViewId+"' class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
+      tree = "<ul  id = '"+this.objectViewId+"' class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
         "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" + "</ul>";
     }
@@ -206,20 +233,41 @@ export class ObjectExplorer {
 
   generateJSONTreeViewHTMLString() {
     if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
-      return `<div id = '${this.treeViewId}'> ${this.generateLeafNode(this.element)}</div>`;
+      return `<div id = '${this.objectViewId}'> ${this.generateLeafNode(this.element)}</div>`;
     }
     let tree;
     let classType = this.classType;
     if(!this.isObjectEmpty(this.element)) {
-      tree = `<ul  id = '${this.treeViewId}' class='treeObj treeView'>
+      tree = `<ul  id = '${this.objectViewId}' class='treeObj treeView'>
             <li>${this.element.constructor.name}${classType === "array" ? "[" + this.element.length + "]" : ""}
               ${this.generateObjectTree(this.element)}
             </li>
           </ul>`;
     }
     else {
-      tree = `<ul  id = '${this.treeViewId}' class = 'treeObj treeView' >${classType === "array" ? "[]" : "{}"}</ul>`;
+      tree = `<ul  id = '${this.objectViewId}' class = 'treeObj treeView' >${classType === "array" ? "[]" : "{}"}</ul>`;
     }
+    return tree;
+  }
+
+  generateJSONLineViewHTMLString() {
+    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
+      return `<span id = '${this.objectViewId}'> ${this.generateLeaf(this.element)}</span>`;
+    }
+    let line;
+    let classType = this.classType;
+    if(!this.isObjectEmpty(this.element)) {
+      line = `<span  id = '${this.objectViewId}' class='lineObj key'>${this.element.constructor.name}${classType === "array" ? "[" + this.element.length + "]" : ""}</span>`;
+    }
+    else {
+      line = `<span  id = '${this.objectViewId}' class = 'lineObj key' >${classType === "array" ? "[]" : "{}"}</span>`;
+    }
+    return line;
+  }
+
+  generateDOMLineViewHTMLString() {
+    let tree;
+    tree = "<span id = '"+this.objectViewId+"' class='elementNode'>" + this.element.tagName.toLowerCase() +"</span>";
     return tree;
   }
 
