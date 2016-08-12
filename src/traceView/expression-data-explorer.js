@@ -1,6 +1,7 @@
 /* global $ */
 /* global CollapsibleLists */
-import {TreeViewExplorer} from "./tree-view-explorer";
+import {JsUtils} from "../utils/js-utils";
+import {ObjectExplorer} from "./object-explorer";
 
 export class ExpressionDataExplorer{
     editorTooltipSelector = "#editorTooltip";
@@ -17,6 +18,7 @@ export class ExpressionDataExplorer{
         this.aceUtils = aceUtils;
         this.aureliaEditor = aureliaEditor;
         this.traceViewModel = traceViewModel;
+        this.jsUtils = new JsUtils();
     }
 
     attached(){
@@ -53,10 +55,9 @@ export class ExpressionDataExplorer{
         }
 
         $editorTooltip.appendTo('body');
-        // let self = this;
-        $editorTooltip.on('shown.bs.popover', function(){
+        $editorTooltip.on('inserted.bs.popover', function(){
           CollapsibleLists.apply();
-          // CollapsibleLists.applyTo(document.getElementById(self.treeViewId));
+          $('[data-toggle="tooltip"]').tooltip();
         });
 
         this.$editorTooltip = $editorTooltip;
@@ -100,9 +101,9 @@ export class ExpressionDataExplorer{
   		    }
 
     			if(match && !self.isBranchNavigatorVisible){
-    		      self.treeViewExplorer = new TreeViewExplorer(match.value, self.treeViewId);
-              let popoverData = self.treeViewExplorer.getPopoverElementContent($editorTooltip);
-              let popoverTitle =`Exploring <strong>${match.id !== null ? match.id: ""} :</strong> <i>${popoverData.type}</i>`;
+    		      self.currentObjectExplorer = new ObjectExplorer(self.jsUtils, match.value, self.treeViewId);
+              let popoverData = self.currentObjectExplorer.generatePopoverTreeViewContent($editorTooltip);
+              let popoverTitle =`<strong>${match.id !== null ? match.id: ""} :</strong> <i>${self.currentObjectExplorer.classType}</i>`;
     		      $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
 
               $editorTooltip.popover("show");

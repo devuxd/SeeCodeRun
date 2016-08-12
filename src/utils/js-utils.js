@@ -1,19 +1,29 @@
+
 export class JsUtils{
     //from JQuery: https://github.com/jquery/jquery/blob/master/src/core.js
-    constructor(){
-        let objectClasses = "Boolean Number String Function Array Date RegExp Object Error Symbol".split( " " );
-        let class2type = [];
-        for(let classIndex = 0; classIndex < objectClasses.length; classIndex++ ){
-            let name = objectClasses[classIndex];
-    	    class2type[ "[object " + name + "]" ] = name.toLowerCase();
-        }
-        this.class2type = class2type;
-        this.getProto = Object.getPrototypeOf;
-        this.isArray = Array.isArray;
-    }
+  constructor(){
+      this.primitiveTypes = ["undefined", "null", "boolean", "number", "string", "function", "symbol"];
+      let objectClasses = "Boolean Number String Function Array Date RegExp Object Error Symbol".split( " " );
+      let class2type = [];
+      for(let classIndex = 0; classIndex < objectClasses.length; classIndex++ ){
+          let name = objectClasses[classIndex];
+  	    class2type[ "[object " + name + "]" ] = name.toLowerCase();
+      }
+      this.class2type = class2type;
+      this.getProto = Object.getPrototypeOf;
+      this.isArray = Array.isArray;
+  }
 
-    isWindow( obj ) {
+  isWindow( obj ) {
 		return obj != null && obj === obj.window;
+	}
+
+	isPrimitiveType( obj ){
+	  return this.primitiveTypes.indexOf(this.type(obj)) > -1;
+	}
+
+	isTypeInPrimitiveTypes( objType ){
+	  return this.primitiveTypes.indexOf(objType) > -1;
 	}
 
 	isEmptyObject( obj ) {
@@ -28,7 +38,7 @@ export class JsUtils{
 		return true;
 	}
 
-    type( obj ) {
+  type( obj ) {
 		if ( obj == null ) {
 			return obj + "";
 		}
@@ -197,26 +207,29 @@ export class JsUtils{
       };
     }
 
-    toReadableString(referenceInput, maxDepth = 2, depth = 0, self = this) {
+    toReadableString(referenceInput, maxDepth = 2, depth = 0, isParsable = true, self = this) {
 	    let readableString = null;
-	    if (self.isNumeric(referenceInput)) {
-	      return referenceInput;
+	    if (self.isPrimitiveType(referenceInput) && self.type(referenceInput) !== "string") {
+	      return  `${referenceInput}`;
 	    }
 
 	    if (self.type(referenceInput) === "string") {
-	    	try{
-	           return this.toReadableString(JSON.parse(readableString), maxDepth, depth);
-	        }catch(e){}
-	      return `"${referenceInput}"`;
+	      if(isParsable){
+  	    	try{
+  	           return self.toReadableString(JSON.parse(referenceInput), maxDepth, depth, false);
+  	        }catch(e){}
+	      }else{
+	        return `"${referenceInput}"`;
+	      }
 	    }
 	    let isArrayLike = self.isArrayLike(referenceInput);
 	    self.each(referenceInput, function (key, value) {
-	      let eachContent = "null";
+	      let eachContent;
 	      if (isArrayLike) {
-	        eachContent = depth === maxDepth ? self.type(value) : self.toReadableString(value, maxDepth, depth + 1);
+	        eachContent = depth === maxDepth ? self.type(value) : self.toReadableString(value, maxDepth, depth + 1, false);
 	      }
 	      else {
-	        eachContent = depth === maxDepth ? key + ": " + self.type(value) : key + ": " + self.toReadableString(value, maxDepth, depth + 1);
+	        eachContent = depth === maxDepth ? key + ": " + self.type(value) : key + ": " + self.toReadableString(value, maxDepth, depth + 1, false);
 	      }
 	      readableString = readableString == null ? eachContent : readableString + ", " + eachContent;
 	    });

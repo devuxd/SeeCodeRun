@@ -45,7 +45,7 @@ export class TraceViewModel {
         if(!this.traceHelper){
             return;
         }
-        let traceCollection = this.traceHelper.getStackBlockCounts();
+        let traceCollection = this.traceHelper.getNavigationStackBlockCounts();
         let localTraceGutterData = this.extractTraceGutterData(traceCollection);
         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
         this.traceGutterData.rows = localTraceGutterData.rows;

@@ -252,20 +252,25 @@ export class TraceHelper {
     }
 
     getNavigationStackBlockCounts() {
-        let stack = this.trace.stack, data = this.trace.data, hits = [];
+        let stack = this.trace.stack, data = this.trace.data;
         let timeline = this.navigationTrace.timeline;
         let entry,
             stackData = [];
         for (let i in stack) {
             if (stack.hasOwnProperty(i)) {
                 entry = stack[i];
+                let branchIndexRanges = [];
+                let lowerBound = 0;
+                let upperBound = 0;
                 for(let j in timeline){
                     if(timeline[j].key === entry){
-                        hits[entry] = hits[entry]? hits[entry] + 1 : 1;
+                        upperBound = j;
+                        branchIndexRanges.push({lowerBound: lowerBound, upperBound: upperBound});
+                        lowerBound = j;
                     }
                 }
-                if(hits[entry]){
-                    stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+                if(branchIndexRanges.length){
+                    stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  branchIndexRanges: branchIndexRanges, count: branchIndexRanges.length});
                 }
 
             }

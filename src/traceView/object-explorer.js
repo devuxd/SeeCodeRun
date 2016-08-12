@@ -1,32 +1,44 @@
-
-export class TreeViewExplorer {
-  viewType = {HTML: "HTML", JSON: "JSON", PRIMITIVE: "PRIMITIVE"};
-  constructor(element, treeViewId) {
+/* global Node, $*/
+export class ObjectExplorer {
+  static ObjectType = {JS: "JS", DOM: "DOM"};
+  objectType = null;
+  classType = null;
+  nodeType =null;
+  constructor(jsUtils, element, treeViewId, isParsable = true) {
+    this.jsUtils = jsUtils;
     this.treeViewId = treeViewId;
+    this.classType = jsUtils.type(element);
     if(element == null){
-      this.type = this.viewType.PRIMITIVE;
+      this.objectType = ObjectExplorer.ObjectType.JS;
     }else{
-      let elementType = typeof element;
-      if(elementType === "string"){
+      if(this.classType === "string" && isParsable){
         try{
          element = JSON.parse(element);
-         elementType = typeof element;
+         this.classType = jsUtils.type(element);
         }catch(e){
           element = element.toString();
         }
       }
 
-      if(element == null){
-      this.type = this.viewType.PRIMITIVE;
+      if(jsUtils.isTypeInPrimitiveTypes(this.classType)){
+        this.objectType = ObjectExplorer.ObjectType.JS;
       }else{
-        if(elementType === "object"){
-          this.type = element.nodeType === 1 ? this.viewType.HTML : this.viewType.JSON;
+        if(element instanceof Node){
+          this.objectType = ObjectExplorer.ObjectType.DOM;
+          this.classType = element.toString();
+          this.nodeType = element.nodeType;
         }else{
-          this.type = this.viewType.PRIMITIVE;
+          this.objectType = ObjectExplorer.ObjectType.JS;
         }
       }
     }
     this.element = element;
+    this._$buffer = $(document.createElement('div'));
+
+  }
+
+  escapeHMTLString(aString){
+    return this._$buffer.text(aString).html();
   }
   //removes all child nodes that are not also elements or text
   getElements(childNodes) {
@@ -75,7 +87,7 @@ export class TreeViewExplorer {
 
         html += ">";
         if(children[i].nodeType !== 1) {
-          html += "<span class='treeObj textNode'>\"" +  children[i].data.trim() + "\"</span>";
+          html += `<span class='treeObj textNode'>"${children[i].data.trim()}"</span>`;
         }
         else {
           let attr = this.makeAttributes(children[i].attributes).trim();
@@ -105,76 +117,46 @@ export class TreeViewExplorer {
   }
 
   generateLeafNode(object){
-    let typeofObject = typeof object;
-    if(typeofObject === "undefined"){
-      return "<span class='treeObj undefined'>undefined</span>";
+    let objectType = this.jsUtils.type(object);
+    if(objectType === "string"){
+      let escapedHMTLString =  this.escapeHMTLString(object);
+      return `<span class='treeObj string' data-toggle="tooltip" data-placement="top" data-container = '#editorTooltipContent' title= '${escapedHMTLString}' >"${escapedHMTLString}"</span>`;
+    }else{
+      return `<span class='treeObj ${objectType}'>${object}</span>`;
     }
 
-    if(object == null){
-      return "<span class='treeObj null'>null</span>";
-    }
-
-    if(typeofObject === "string"  && Object.prototype.toString.call( object ) !== '[object Array]'){
-      return `<span class='treeObj stringLiteral'>"${object}"</span>`;
-    }
-
-    if(typeofObject === "number"){
-      return `<span class='treeObj literal'>${object}</span>`;
-    }
-
-    if(typeofObject === "boolean"){
-      return `<span class='treeObj boolean'>${object}</span>`;
-    }
-
-    if(typeofObject === "function"){
-      return `<span class='treeObj function'>${object}</span>`;
-    }
-
-    // if(typeofObject !== "object"){
-    //   return `<span class='treeObj undefined'>"${object}"</span>`;
-    // }
-    return null;
   }
   // convert object tree into HTML collapsible list
    generateObjectTree(object, isCollapsable = true) {
-    let leafNode = this.generateLeafNode(object);
-    if(leafNode){
+
+    if(this.jsUtils.isPrimitiveType(object)){
+      let leafNode = this.generateLeafNode(object);
       return this.wrapInULTag(this.wrapInLITag(leafNode));
     }
+
     let keys = Object.keys(object);
+
     let html = "";
-    // leafNode handled object == null && typeof object !== "object"
     if(keys.length) {
-      if(isCollapsable) {
-        html += "<ul class='treeObj collapsibleList'>";
-      }
-      else {
-        html += "<ul>";
-      }
       for(let i = 0; i < keys.length; i++) {
-        if(i === keys.length - 1) {
-          html += "<li class='treeObj lastChild'>";
-        }
-        else {
-          html += "<li>";
-        }
+        html += "<li>";
+
         let key = "<span class='treeObj key'>";
         let value;
 
         if(typeof keys[i] === "object") {
-          key += keys[i].constructor.name;// can this happen?
+          key += keys[i].constructor.name;
         }
         else {
           key += keys[i];
         }
 
         key += "</span>";
-        let leafNodeValue = this.generateLeafNode(object[keys[i]]);
-        if(leafNodeValue){
-         value = leafNodeValue;
+        if(this.jsUtils.isPrimitiveType(object[keys[i]])){
+         value = this.generateLeafNode(object[keys[i]]);
         }else{
           value = object[keys[i]].constructor.name;
-          if(object[keys[i]] instanceof Array){
+          if(this.jsUtils.type(object[keys[i]]) === "array"){
             value += "[" + object[keys[i]].length + "]";
           }
           value += this.generateObjectTree(object[keys[i]], false);
@@ -183,32 +165,29 @@ export class TreeViewExplorer {
         html += key + ": " + value;
         html +="</li>";
       }
-      return html + "</ul>";
+      return this.wrapInULTag(html, isCollapsable? "class='treeObj collapsibleList'" : "");
     }else{
-      return this.wrapInULTag(this.wrapInLITag("<span class='treeObj key'>{}</span>"));
+      let emptyObject = this.jsUtils.type(object) === "array"? "[]" : "{}";
+      return this.wrapInULTag(this.wrapInLITag(`<span class='treeObj key'>${emptyObject}</span>`));
     }
   }
 
-  getPopoverElementContent($popover) {
+  generatePopoverTreeViewContent($popover) {
     let content;
-    if(this.type === this.viewType.HTML) {
-      content = this.dispDOMNode();
+    if(this.objectType === ObjectExplorer.ObjectType.DOM) {
+      content = this.generateDOMTreeViewHTMLString();
     }
     else {
-      if(this.type === this.viewType.JSON) {
-        content = this.dispObject();
-      }else {
-        content = this.dispObject();
-      }
+      content = this.generateJSONTreeViewHTMLString();
     }
-    return {type: this.type, content: content};
+    return {objectType: this.objectType, classType: this.classType, nodeType: this.nodeType, content: content};
   }
 
   isObjectEmpty(obj) {
-    return Object.keys(obj).length === 0 && obj.constructor === Object || obj.constructor === Array && obj.length === 0;
+    return obj && Object.keys(obj).length === 0 && obj.constructor === Object || obj.constructor === Array && obj.length === 0;
   }
 
-  dispDOMNode() {
+  generateDOMTreeViewHTMLString() {
     let tree;
     if(!this.isObjectEmpty(this.element)) {
       tree = "<ul id = '"+this.treeViewId+"' class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
@@ -225,23 +204,21 @@ export class TreeViewExplorer {
     return tree;
   }
 
-  dispObject() {
-    let tree;
-    let leafNode = this.generateLeafNode(this.element);
-    if(leafNode){
-      return leafNode;
+  generateJSONTreeViewHTMLString() {
+    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
+      return `<div id = '${this.treeViewId}'> ${this.generateLeafNode(this.element)}</div>`;
     }
-
+    let tree;
+    let classType = this.classType;
     if(!this.isObjectEmpty(this.element)) {
-      tree = "<ul  id = '"+this.treeViewId+"' class='treeObj treeView'><li>" + this.element.constructor.name +
-        (this.element instanceof Array ? "[" + this.element.length + "]" : "") +
-        this.generateObjectTree(this.element) +
-        "</li></ul>";
+      tree = `<ul  id = '${this.treeViewId}' class='treeObj treeView'>
+            <li>${this.element.constructor.name}${classType === "array" ? "[" + this.element.length + "]" : ""}
+              ${this.generateObjectTree(this.element)}
+            </li>
+          </ul>`;
     }
     else {
-      tree = "<ul  id = '"+this.treeViewId+"' class='treeObj treeView'>" + this.element.constructor.name +
-        (this.element instanceof Array ? "[" + this.element.length + "]" : "{}") +
-        "</ul>";
+      tree = `<ul  id = '${this.treeViewId}' class = 'treeObj treeView' >${classType === "array" ? "[]" : "{}"}</ul>`;
     }
     return tree;
   }
