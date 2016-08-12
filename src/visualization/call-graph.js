@@ -40,11 +40,11 @@ export class CallGraph {
 
         this.rootNode = {
             name: "Program",
-            id: -1,
-            parent = null,
+            branch: 1,
+            count: 1,
+            parent: null,
             ranges: [],
             children: [],
-            isCallback: false,
             visible: true,
             pinned: true
         }
@@ -53,15 +53,50 @@ export class CallGraph {
     prepareFx() {
   		let self = this;
 
-  		this.formatTraceFx = function() { return null; }
+  		this.formatTraceFx = function(trace, traceHelper) {
+        if(!traceHelper || !traceHelper.branches) {
+          return null;
+        }
 
-      this.renderFx = function renderFx(formattedTrace, divElement, branches, query, queryType, aceUtils, aceMarkerManager) {
+        function createBranch(template, prev, branch) {
+          let newBranch = {};
+          newBranch.name = String(template.branch) + "/" + String(template.count);
+          newBranch.branch = branch;
+          newBranch.count = template.count;
+          if(prev.length === 0) {
+            newBranch.parent = null;
+          }
+
+          else {
+            newBranch.parent = prev[0];
+            prev[0].children.push(newBranch);
+          }
+
+          newBranch.ranges = [template.entry.range];
+          newBranch.children = [];
+          newBranch.visible = true;
+          newBranch.pinned = false;
+          return newBranch;
+        }
+
+        let branches = [];
+        for(let i = 0; i < traceHelper.branches.length; i++) {
+            if(traceHelper.branches[i] != undefined) {
+              branches.push(createBranch(traceHelper.branches[i], branches.slice(-1), traceHelper.branches[i].branch));
+            }
+        }
+        return branches;
+      }
+
+      this.renderFx = function renderFx(branches, divElement, query, queryType, aceUtils, aceMarkerManager) {
         if (!branches || branches.length === 0) {
           return;
         }
 
+        console.log(branches)
+
         self.removeUnpinned();
-        self.addToGraph(self.createBranchHierarchy(branches));
+        self.addToGraph(branches);//self.createBranchHierarchy(branches));
 
         if(query == undefined || query.trim() === "") {
           query = null;
@@ -130,7 +165,7 @@ export class CallGraph {
           centerNodes();
         });
 
-        let root = d3.hierarchy(branches);
+        let root = d3.hierarchy(self.rootNode);
         let nodes = root.descendants();
         let links = root.descendants().slice(1);
 
@@ -224,14 +259,14 @@ export class CallGraph {
         });
 
         regNodes.on("mouseover", showHoverText)
-          .on("mouseout", hideHoverText);
+            .on("mouseout", hideHoverText);
 
         matchedNodes.on("mouseover",highlight)
-          .on("mouseout", unhighlight);
+            .on("mouseout", unhighlight);
 
         regNodes.append("circle")
-              .attr("r", 6)
-              .attr("transform", "translate(0," + rectHeight/2 + ")");
+            .attr("r", 6)
+            .attr("transform", "translate(0," + rectHeight/2 + ")");
 
         matchedNodes.append("text")
             .attr("dy", 14.5)
@@ -245,25 +280,28 @@ export class CallGraph {
             return d.data.pinned === false;
           })
           .append("circle")
-            .attr("r", 3)
+            .attr("r", 4)
             .on("click", function(d) {
-              self.togglePinOnBranch(d.data);
+              self.togglePinOn(d.data);
               updatePins();
             })
+            .style("stroke", "steelblue")
             .style("stroke-width", 2)
-            .style("color", "white");
+            .style("fill", "white");
 
           matchedNodes.filter(function(d) {
             return d.data.pinned === true;
           })
           .append("circle")
-            .attr("r", 3)
+            .attr("r", 4)
             .on("click", function(d) {
-              self.togglePinOnBranch(d.data);
+              self.togglePinOff(d.data);
               updatePins();
             })
+            .style("stroke", "steelblue")
             .style("stroke-width", 2)
-            .style("color", "blue");
+            .style("fill", "steelblue");
+          centerNodes();
         }
 
         updatePins();
@@ -275,7 +313,6 @@ export class CallGraph {
           svg.selectAll(".link").attr("transform","translate(" + width/2 + ",5)");
         }
       }
-
     }
 
     // creates hierarchy from array, for any given node, the following node is its child
@@ -287,17 +324,42 @@ export class CallGraph {
           branches[i].parent = branches[i-1];
         }
       }
-      return branches[0];
+      return branches;
     }
 
-    // new branch is added to the graph
-    addToGraph(branches, currentIndex=0, currentBranch=this.rootNode) {
-      for(let i = 0; i < currentBranch.children.length; i++) {
-        if(!areBranchesEqual(branch, currentBranch)) {
-          currentBranch.children.push(branch);
+    // new branch is added to the graph TODO: slice off top if branches are equal
+    addToGraph(branches) {
+      console.log(this.rootNode.children)
+      let targetParent = this.rootNode;
+      let currentChildren;
+      for(let i = 0; i < branches.length; i++) {
+        currentChildren = branches.splice(i);
+        if(!this.branchExists(currentChildren[0])) {
+          let connectedParent = this.branchExists(targetParent);
+          currentChildren[0].parent = connectedParent;
+          connectedParent.children.push(currentChildren[0]);
+          return;
         }
-        this.addToGraph(currentBranch.children[i]);
+        targetParent = currentChildren[0];
       }
+    }
+
+    branchExists(branch) {
+      let found = null;
+      let self = this;
+      function search(currentBranch=self.rootNode) {
+        console.log(self.rootNode.children)
+        if(self.areBranchesEqual(branch, currentBranch)) {
+          found = currentBranch;
+          return;
+        }
+        for(let i = 0; i < currentBranch.children.length; i++) {
+          console.log("eyyy")
+          search(currentBranch.children[i]);
+        }
+      }
+      search();
+      return found;
     }
 
     // all nodes that are not pinned to the graph are removed
@@ -310,39 +372,34 @@ export class CallGraph {
       }
     }
 
-    // pins or unpins a node and all of its ancestors
-    togglePinOnBranch(branch) {
-      let path = generatePath(branch);
-      for(let i in path) {
-        path[i].pinned = !path[i].pinned;
+    // branchToArray(branch) {
+    //   let array = [];
+    //   let currentBranch = branch;
+    //   while(currentBranch.children.length) {
+    //     array.push(currentBranch.children[0]);
+    //     currentBranch = currentBranch.children[0];
+    //   }
+    //   return array;
+    // }
+
+    // pins a node and all of its direct ancestors
+    togglePinOn(branch) {
+      let currentBranch = branch;
+      while(currentBranch.parent) {
+        currentBranch.pinned = true;
+        currentBranch = currentBranch.parent;
       }
     }
 
-    // generates path from rootNode to given node
-    generatePath(node) {
-      let currentBranch = this.rootNode;
-      let path = [currentBranch];
-      while(currentBranch.parentId !== null) {
-        let branchHolder = {branch:null};
-        getBranchById(currentBranch.parentId, branchHolder);
-        currentBranch = branchHolder.branch;
-        path.push(currentBranch);
-      }
-      return path;
-    }
-
-    // sets branchHolder.branch to the branch of the requested id, branchHolder must be an object
-    getBranchById(id, branchHolder, currentBranch=this.root) {
-      if(id === currentBranch.id) {
-        branchHolder.branch = currentBranch;
-        return;
-      }
+    // unpins a node and all of its descendants
+    togglePinOff(currentBranch) {
+      currentBranch.pinned = false;
       for(let i = 0; i < currentBranch.children.length; i++) {
-        getBranchById(currentBranch.children[i]);
+        this.togglePinOff(currentBranch.children[i]);
       }
     }
 
     areBranchesEqual(branch1, branch2) {
-      return branch1.id === branch2.id;
+      return branch1.name === branch2.name;
     }
 }

@@ -19,8 +19,6 @@ export class Visualization {
     this.query = null;
     this.queryType = null;
 
-    this.branches = [];
-
     this.aceUtils = new AceUtils();
     this.aceEditor = ace.edit('aceJsEditorDiv');
     this.aceMarkerManager = this.aceUtils.makeAceMarkerManager(this.aceEditor);
@@ -35,8 +33,8 @@ export class Visualization {
     if(!this.trace){
       console.log(`No trace found when rendering visualization #${this.id}`);
     }
-    let formattedTrace = this.formatTrace(this.trace);
-    this.render(formattedTrace, `#${this.contentId}`, this.branches, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
+    let formattedTrace = this.formatTrace(this.trace, this.traceHelper);
+    this.render(formattedTrace, `#${this.contentId}`, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
   }
 
   subscribe() {
@@ -61,8 +59,14 @@ export class Visualization {
       this.renderVisualization();
     });
 
-    ea.subscribe('navigationChanged', payload => {
-      this.branches = payload;
+    ea.subscribe('traceNavigationChange', payload => {
+      let self = this;
+      console.log(payload)
+      //without timeout, at least one value of attribute "branch" in the payload is undefined
+      setTimeout( function(){
+        this.traceHelper = payload;
+        self.renderVisualization();
+      }, 1000)
     });
 
     ea.publish('searchBoxStateRequest');
