@@ -33,6 +33,7 @@ export class TracePlayer{
 			clearInterval(self.intervalId);
 			if(self.isPlaying){
                 self.disablePlayBack();
+                $("#next").click();
     			self.intervalId = setInterval(function incrementAndUpdatePlayer(){
     			        $("#next").click();
     			}, self.refreshRate);
