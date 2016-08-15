@@ -44,7 +44,7 @@ export class ObjectExplorer {
   getElements(childNodes) {
     let array = [];
     for(let i = 0; i < childNodes.length; i++) {
-      if(childNodes[i] && (childNodes[i].nodeType === 1 || (childNodes[i].data && childNodes[i].data.trim()))) {
+      if(childNodes[i] && (childNodes[i].nodeType === Node.ELEMENT_NODE || childNodes[i].data)) {
         array.push(childNodes[i]);
       }
     }
@@ -54,8 +54,8 @@ export class ObjectExplorer {
    makeAttributes(attributes) {
     let str = "";
     for(let i = 0; i < attributes.length; i++) {
-      str += "<span class='treeObj attr'>" + attributes[i].tagName + "</span>"
-        + "<span class='treeObj sign'>=\"</span><span class='treeObj attrValue'>" + attributes[i].nodeValue
+      str += "<span class='treeObj attr'>" + attributes[i].nodeName + "</span>"
+        + "<span class='treeObj sign'>=\"</span><span class='treeObj attrValue'>" + this.escapeHMTLString(attributes[i].nodeValue)
         + "</span>" + "<span class='treeObj sign'>\"</span> ";
     }
     if(str.length > 1){
@@ -95,7 +95,7 @@ export class ObjectExplorer {
             attr = " " + attr;
           html += "<span class='treeObj sign'>&lt;</span>"
             + "<span class='treeObj elementNode'>"
-            + children[i].tagName.toLowerCase()
+            + children[i].nodeName.toLowerCase()
             + "</span><span class='treeObj sign'>" + attr + "&gt;</span>";
         }
 
@@ -218,14 +218,14 @@ export class ObjectExplorer {
     let tree;
     if(!this.isObjectEmpty(this.element)) {
       tree = "<ul id = '"+this.objectViewId+"' class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
-        "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
+        "<span class='treeObj elementNode'>" + this.element.nodeName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" +
         this.generateDOMTree(this.element) +
         "</li></ul>";
     }
     else {
       tree = "<ul  id = '"+this.objectViewId+"' class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
-        "<span class='treeObj elementNode'>" + this.element.tagName.toLowerCase() +
+        "<span class='treeObj elementNode'>" + this.element.nodeName.toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" + "</ul>";
     }
     return tree;
@@ -267,7 +267,7 @@ export class ObjectExplorer {
 
   generateDOMLineViewHTMLString() {
     let tree;
-    tree = "<span id = '"+this.objectViewId+"' class='elementNode'>" + this.element.tagName.toLowerCase() +"</span>";
+    tree = "<span id = '"+this.objectViewId+"' class='elementNode'>" + this.element.nodeName.toLowerCase() +"</span>";
     return tree;
   }
 
