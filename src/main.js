@@ -5,7 +5,7 @@ import 'bootstrap';
 import {AppConfiguration} from "app-configuration";
 
 export function configure(aurelia) {
-  let appConfig = new AppConfiguration().getConfiguration();
+  let appConfig = new AppConfiguration();
   appConfig.mainConfigure(aurelia);
   //Uncomment the line below to enable animation.
   //aurelia.use.plugin('aurelia-animator-css');

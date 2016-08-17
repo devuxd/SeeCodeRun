@@ -10,7 +10,9 @@ export class AppConfiguration{
               enableLogging: true
             });
         },
-        firebaseURL: "https://seecoderun.firebaseio.com/test"
+        firebaseURL: "https://seecoderun.firebaseio.com",
+        appRoot: "test"
+
     };
     deployConfiguration = {
         isDebug: false,
@@ -19,10 +21,11 @@ export class AppConfiguration{
             .standardConfiguration()
             .plugin('aurelia-computed');
         },
-        firebaseURL: "https://seecoderun.firebaseio.com/production"
+        firebaseURL: "https://seecoderun.firebaseio.com",
+        appRoot: "production"
     };
 
-    getConfiguration(){
+    constructor(){
         return this.isDebug? this.debugConfiguration : this.deployConfiguration;
     }
 }

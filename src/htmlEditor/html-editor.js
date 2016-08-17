@@ -17,7 +17,9 @@ export class HtmlEditor {
   attached() {
     let editor = ace.edit(this.aceHtmlEditorDiv);
     this.aceUtils.configureEditor(editor);
-    this.firepad = this.firebaseManager.makeHtmlEditorFirepad(editor);
+    this.eventAggregator.subscribe("pastebinReady", () => {
+      this.firepad = this.firebaseManager.makeHtmlEditorFirepad(editor);
+    });
 
     let session = editor.getSession();
     this.aceUtils.configureSession(session, 'ace/mode/html');

@@ -17,8 +17,9 @@ export class CssEditor {
   attached() {
     let editor = ace.edit(this.cssEditorDiv);
     this.aceUtils.configureEditor(editor);
-    this.firepad = this.firebaseManager.makeCssEditorFirepad(editor);
-
+    this.eventAggregator.subscribe("pastebinReady", () => {
+     this.firepad = this.firebaseManager.makeCssEditorFirepad(editor);
+    });
     let session = editor.getSession();
     this.aceUtils.configureSession(session, 'ace/mode/css');
     this.setupSessionEvents(editor, session);

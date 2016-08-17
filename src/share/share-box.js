@@ -12,39 +12,41 @@ export class ShareBox {
 
     attached() {
         let self = this;
-        let firebaseManager = self.firebaseManager;
-
-        self.pastebinIdshare = firebaseManager.makeNewPastebinFirebaseReferenceId();
-        let oldRef = firebaseManager.makePastebinFirebaseReference();
-        let newRef = firebaseManager.makePastebinFirebaseReference(self.pastebinIdshare);
-
-        let shareFirebaseRef2 = 'https://seecode.run/#' + self.pastebinIdshare;
-        let copyTarget = document.getElementById("copyTarget");
-        copyTarget.value = shareFirebaseRef2;
-
+        $('#shareBox').hide();
         let toggleShareBoxTimeoutCallback = function toggleShareBoxTimeoutCallback(){
             $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration);
             $("#shareButton span").removeClass("navigation-bar-active-item");
             $("#shareButton label").removeClass("navigation-bar-active-item");
         };
 
-        $('#shareBox').hide();
-        $('#shareButton').click( function toggleShareBox() {
-            if($("#shareBox").is(":visible")){
-                $("#shareButton span").removeClass("navigation-bar-active-item");
-                $("#shareButton label").removeClass("navigation-bar-active-item");
-            }else{
-                self.eventAggregator.publish("shareBoxShown");
-                $("#shareButton span").addClass("navigation-bar-active-item");
-                $("#shareButton label").addClass("navigation-bar-active-item");
-            }
-            if(!$("#shareBox").is(":animated")){
-                $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration,
-                function makePastebinFirebaseReferenceCopy(){
-                     firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
+        let firebaseManager = self.firebaseManager;
+        this.eventAggregator.subscribe("pastebinReady", () => {
+            self.pastebinIdshare = firebaseManager.makeNewPastebinFirebaseReferenceId();
+            let oldRef = firebaseManager.makePastebinFirebaseReference();
+            let newRef = firebaseManager.makePastebinFirebaseReference(self.pastebinIdshare);
+
+            let shareFirebaseRef2 = 'https://seecode.run/#' + self.pastebinIdshare;
+            let copyTarget = document.getElementById("copyTarget");
+            copyTarget.value = shareFirebaseRef2;
+
+
+            $('#shareButton').click( function toggleShareBox() {
+                if($("#shareBox").is(":visible")){
+                    $("#shareButton span").removeClass("navigation-bar-active-item");
+                    $("#shareButton label").removeClass("navigation-bar-active-item");
+                }else{
+                    self.eventAggregator.publish("shareBoxShown");
+                    $("#shareButton span").addClass("navigation-bar-active-item");
+                    $("#shareButton label").addClass("navigation-bar-active-item");
                 }
-                );
-            }
+                if(!$("#shareBox").is(":animated")){
+                    $("#shareBox").toggle("slide", { direction: "right" }, self.slideAnimationDuration,
+                    function makePastebinFirebaseReferenceCopy(){
+                         firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef);
+                    }
+                    );
+                }
+            });
         });
 
         self.eventAggregator.subscribe("historyBoxShown", ()=>{

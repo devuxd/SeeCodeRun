@@ -38,6 +38,7 @@ export class Pastebin {
     this.traceModel = traceModel;
     this.aceUtils = aceUtils;
     this.firebaseManager = firebaseManager;
+    this.firebaseManager.eventAggregator = eventAggregator;
     this.domElement = domElement;
     this.navigationBar = new NavigationBar(firebaseManager, eventAggregator);
 
@@ -60,8 +61,8 @@ export class Pastebin {
 
   activate(params) {
     this.firebaseManager.activate(params.id);
-    if(!params.id){
-      window.history.replaceState({}, null, window.location + "#"+ this.firebaseManager.pastebinId);
+    if(params.id){
+      this.isPasteBinIdInURL = true;
     }
   }
 
@@ -76,6 +77,22 @@ export class Pastebin {
     $(window).on('resize', windowResize => { self.update(); });
 
     this.eventAggregator.subscribe("jsGutterContentUpdate", payload =>{ setTimeout(self.update(), 500); });
+    this.eventAggregator.subscribe("pastebinReady", () =>{
+      if(!this.isPasteBinIdInURL){
+        this.isPasteBinIdInURL = true;
+        window.history.replaceState({}, null, window.location + "#"+ this.firebaseManager.pastebinId);
+      }
+    });
+    this.eventAggregator.subscribe("pastebinError", error =>{
+      let errorCode = error.code;
+      let errorMessage = error.message;
+      if (errorCode === 'auth/operation-not-allowed') {
+        alert('You must enable Anonymous auth in the Firebase Console.');
+        console.log(errorCode+"\n" +errorMessage);
+      } else {
+        console.error(error);
+      }
+    });
 
     this.navigationBar.attached();
 
