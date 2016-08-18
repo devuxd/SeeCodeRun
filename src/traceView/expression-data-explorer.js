@@ -155,7 +155,8 @@ export class ExpressionDataExplorer{
 
 
   $hideTooltip(){
-    if(this.$editorTooltip){
+    let $popoverContentElement = $("#"+this.editorTooltipContentId);
+    if(this.$editorTooltip && $popoverContentElement.length  && !$popoverContentElement.is(":hover")){
         this.$editorTooltip.popover("hide");
         this.aceUtils.updateAceMarkers(this.expressionMarkerManager, []);
         clearTimeout(this.onExpressionHoveredTimeout);
