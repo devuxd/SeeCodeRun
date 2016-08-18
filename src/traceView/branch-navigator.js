@@ -65,6 +65,7 @@ export class BranchNavigator{
     	$(this.resetNavigationBoxSelector).click(function resetNavigationBoxClick(){
     	    self.traceHelper.stopNavigation();
     	    self.eventAggregator.publish("traceChanged", {status: self.traceHelper.event, description : self.traceHelper.description , data: self.traceHelper});
+    	    self.eventAggregator.publish("branchNavigatorReset",{indexInTimeline: 0});
     	});
 
         this.tracePlayer.attached();

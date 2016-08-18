@@ -44,9 +44,7 @@ export class TracePlayer{
 
     	$("#remove").click(function(){
     		if($("#remove").is(":disabled")){
-    			$("#remove").removeAttr('title');
-	    		$("#remove").removeAttr('disabled');
-	    		$("#remove").html("<span class='glyphicon glyphicon-eye-close'></span>");
+				self.enableTooltipHiding();
     			self.eventAggregator.publish("expressionDataExplorerShowTooltip", {type: "player", indexInTimeline: self.indexInTimeline});
     		}else{
     			$("#remove").prop('disabled', 'disabled');
@@ -55,10 +53,15 @@ export class TracePlayer{
 		    	self.eventAggregator.publish("expressionDataExplorerHideTooltip", {type: "player", indexInTimeline: self.indexInTimeline});
     		}
     	});
+
         this.subscribe();
     }
 
     subscribe(){
+        this.eventAggregator.subscribe( "branchNavigatorReset", payload =>{
+            this.indexInTimeline = payload.indexInTimeline || 0;
+        });
+
         this.eventAggregator.subscribe( "branchNavigatorChange", payload =>{
             this.indexInTimeline = payload.indexInTimeline || 0;
         });
@@ -85,14 +88,23 @@ export class TracePlayer{
 
 	updatePlayer(){
 		if(this.indexInTimeline > this.timeLineLength - 1 ){
-            this.resetPlayBack();
-		}
-		if(this.indexInTimeline < 0){
-		    this.indexInTimeline = this.timeLineLength - 1 ;
+			if(this.isPlaying){
+				this.resetPlayBack();
+				return;
+			}else{
+				this.indexInTimeline = 0;
+			}
+		}else{
+			if(this.indexInTimeline < 0){
+			    this.indexInTimeline = this.timeLineLength - 1 ;
+			}
 		}
 		this.eventAggregator.publish("expressionDataExplorerShowTooltip", {type: "player", indexInTimeline: this.indexInTimeline});
+		this.enableTooltipHiding();
+    }
 
-		$("#remove").removeAttr('title');
+    enableTooltipHiding(){
+    	$("#remove").removeAttr('title');
 		$("#remove").removeAttr('disabled');
 	    $("#remove").html("<span class='glyphicon glyphicon-eye-close'></span>");
     }

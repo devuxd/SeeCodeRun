@@ -23,7 +23,7 @@ export class ObjectExplorer {
       if(jsUtils.isTypeInPrimitiveTypes(this.classType)){
         this.objectType = ObjectExplorer.ObjectType.JS;
       }else{
-        if(element instanceof Node){
+        if(element instanceof Node  || jsUtils.type(element.nodeType) === "number"){
           this.objectType = ObjectExplorer.ObjectType.DOM;
           this.classType = element.toString();
           this.nodeType = element.nodeType;
@@ -39,6 +39,10 @@ export class ObjectExplorer {
 
   escapeHMTLString(aString){
     return this._$buffer.text(aString).html();
+  }
+
+  stringifyHMTLString(aHTMLString){
+    return this._$buffer.html(aHTMLString).text();
   }
   //removes all child nodes that are not also elements or text
   getElements(childNodes) {
@@ -199,7 +203,7 @@ export class ObjectExplorer {
     return {objectType: this.objectType, classType: this.classType, nodeType: this.nodeType, content: content};
   }
 
-  generatePopoverLineViewContent( maxDepth = 1, depth = 0) {
+  generateLineViewContent() {
     let content;
     if(this.objectType === ObjectExplorer.ObjectType.DOM) {
       content = this.generateDOMLineViewHTMLString();

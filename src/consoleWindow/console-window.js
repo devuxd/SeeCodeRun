@@ -100,11 +100,11 @@ export class ConsoleWindow {
     let lineData = "", moreData = "", currentObjectExplorer;
     if(consoleArguments.length){
       currentObjectExplorer = new ObjectExplorer(this.jsUtils, consoleArguments[0], "argument-" + 0);
-      lineData = currentObjectExplorer.generatePopoverLineViewContent().content;
+      lineData = currentObjectExplorer.generateLineViewContent().content;
     }
     for(let i = 1; i < consoleArguments.length; i++){
       currentObjectExplorer = new ObjectExplorer(this.jsUtils, consoleArguments[i], "argument-" + i);
-      moreData = ", " + currentObjectExplorer.generatePopoverLineViewContent().content;
+      moreData = ", " + currentObjectExplorer.generateLineViewContent().content;
     }
     if(moreData){
       lineData = "[" + lineData + moreData + "]";

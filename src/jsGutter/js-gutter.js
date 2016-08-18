@@ -1,6 +1,7 @@
 /* global $ */
 import {bindable} from 'aurelia-framework';
 import {JsUtils} from '../utils/js-utils';
+import {ObjectExplorer} from "../traceView/object-explorer";
 import {TraceViewUtils} from '../utils/trace-view-utils';
 
 export class JsGutter {
@@ -213,7 +214,9 @@ export class JsGutter {
         let line = entry.range.start.row + firstLineNumber;
         let readableString = entry.value;
 
-        readableString = this.jsUtils.toReadableString(readableString);
+        // let readableStringTitle = this.jsUtils.toReadableString(readableString);
+        let currentObjectExplorer = new ObjectExplorer(this.jsUtils, readableString);
+        readableString = currentObjectExplorer.stringifyHMTLString(currentObjectExplorer.generateLineViewContent().content);
 
         let content = entry.id + " = " + readableString;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
@@ -240,7 +243,9 @@ export class JsGutter {
                     }
                     $lineEntry = $(lineEntrySelector);
                 }
-                $lineEntry.text("[" + content + "]");
+                // $lineEntry.html("[" + content + "]");
+                // $lineEntry.prop('title', $lineEntry.text());
+                 $lineEntry.text("[" + content + "]");
                 $lineEntry.data("itimeline", indexInTimeline);
             }
         }

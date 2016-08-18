@@ -11,6 +11,7 @@ export class TraceHelper {
         this.resetNavigation();
         this.startNavigation();
         this.branches =[];
+        this.blockScopes = [];
     }
 
     startNavigation(){
@@ -236,6 +237,36 @@ export class TraceHelper {
         let r1 = (position.row < inRange.end.row);
         let r2 = (position.row == inRange.end.row && position.column <= inRange.end.column);
         return ((r1||r2))&&((l1||l2));
+    }
+
+    handleBlockRescope(entry){
+        if(!entry){
+            return;
+        }
+
+        if(entry.type ===  "BlockStatement"){
+            return;
+        }
+
+        let isBadScope = false;
+
+        do{
+            let topScope = this.blockScopes.length ? this.blockScopes[this.blockScopes.length -1] : entry;
+            if(topScope.range === entry.range){
+                // ignore if not local or function Data has not been reached
+                return;
+            }
+
+            if(this.isRangeInRange(entry.range, topScope.functionRange)){
+                isBadScope = true;
+                topScope.tryExit = true;
+                // console.log("TS: " +this.stringify(topScope.functionRange));
+                // console.log("CE: " + this.stringify(info.range));
+                this.exitFunctionScope(entry, true);
+            }else{
+                isBadScope = true;
+            }
+        }while(this.blockScopes.length && isBadScope);
     }
 
     getStackBlockCounts() {
