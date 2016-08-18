@@ -273,7 +273,7 @@ export class EsInstrumenter {
 
         }else{
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : getTextRange(code, node.argument.range)} );
+             setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : node.type.replace("Statement", "")} );
              setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.argument.range)} );
              setNodeValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : node.argument});
              locationData = getLocationDataNode(node.loc, node.range, self);
@@ -735,7 +735,7 @@ export class EsInstrumenter {
             getLocationDataNode = self.getLocationDataNode,
             wrapInExpressionStatementNode = self.wrapInExpressionStatementNode;
 
-        let identifier = '[Anonymous]';
+        let identifier = 'anonymous';
         if(parent){
             if (parent.type === Syntax.AssignmentExpression) {
                 if (parent.left.range != null) {
@@ -745,10 +745,10 @@ export class EsInstrumenter {
                 identifier = parent.id.name;
 
             } else if (parent.type === Syntax.CallExpression) {
-                identifier =  parent.id ? parent.id.name : '[Anonymous]';
+                identifier =  parent.id ? parent.id.name : 'anonymous';
 
             } else if (typeof parent.length === "number" && parent.length > 0 && ( parent.length - 1 ) in parent) {
-                identifier =  parent[0].id ? parent[0].id.name : '[Anonymous]';
+                identifier =  parent[0].id ? parent[0].id.name : 'anonymous';
             } else if (parent.key != null) {
                 if (parent.key.type === 'Identifier') {
                     if (parent.value === node && parent.key.name) {
