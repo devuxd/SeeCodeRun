@@ -18,6 +18,39 @@ export class EsInstrumenter {
         this.programCounter = 0;
     }
 
+    lookupForContainingNode(nodePath, typesArray){
+        while (nodePath != null){
+            if(nodePath.length){
+                if(typesArray.indexOf(nodePath[0].type) > -1){
+                    return nodePath[0];
+                }
+
+                if(nodePath.length>1){
+                    nodePath = nodePath[1];
+
+                }else{
+                    nodePath = null;
+                }
+            }else{
+                nodePath = null;
+            }
+        }
+        return null;
+    }
+
+    lookupForContainingBlock(nodePath){
+        let containingControlBlock = this.lookupForContainingControlBlock(nodePath);
+        return containingControlBlock? containingControlBlock: this.lookupForContainingFunction(nodePath);
+    }
+
+    lookupForContainingControlBlock(nodePath){
+        return this.lookupForContainingNode(nodePath, this.traceTypes.ControlFlow);
+    }
+
+    lookupForContainingFunction(nodePath){
+        return this.lookupForContainingNode(nodePath, this.traceTypes.Function);
+    }
+
     isAutoLogNode(node, self = this){
         let Syntax = self.Syntax;
         if(node.type === Syntax.CallExpression){
@@ -364,7 +397,7 @@ export class EsInstrumenter {
 }
 
 
-    instrumentBlockStatement(node, code, self = this){
+    instrumentBlockStatement(node, path, code, self = this){
         let autoLogNode = self.getDefaultAutoLogNode(self), locationData;
         let TraceParameters = self.TraceParameters,
             getDefaultAutoLogNode= self.getDefaultAutoLogNode,
@@ -378,11 +411,16 @@ export class EsInstrumenter {
         if(!(node.body)){
             return undefined;
         }
+        // if(path && path[0] && self.traceTypes.Function.indexOf(path[0].type) > -1){ //parent
+        //     isFunctionBlock = true;
+        // }
+        let containingBlock = self.lookupForContainingBlock(path);
+
         let block = self.getNewBlock(self, blockCounter, getTextRange(code, node.range));
 
 
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.type, 'value' : node.type} );
-        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : "null"} );
+        setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value' : containingBlock? JSON.stringify({ type: containingBlock.type, range:self.toAceRange(containingBlock.loc)}): "null"} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.text, 'value' : getTextRange(code, node.range)} );
         setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.value, 'value' : getTextRange(code, node.range)} );
         locationData = getLocationDataNode(node.loc, node.range, self);
@@ -837,7 +875,7 @@ export class EsInstrumenter {
                     break;
 
                 case Syntax.BlockStatement:
-                    instrumentBlockStatement(node, code, self);
+                    instrumentBlockStatement(node, path, code, self);
                     break;
 
                 case Syntax.FunctionDeclaration:
@@ -845,7 +883,7 @@ export class EsInstrumenter {
                     break;
 
                 case Syntax.Program:
-                    instrumentBlockStatement(node, code, self);
+                    instrumentBlockStatement(node, path, code, self);
                     break;
 
                 case Syntax.Property:

@@ -111,6 +111,10 @@ export class TraceModel{
         };
 
         this.traceTypes = {
+            Function: [
+                Syntax.FunctionDeclaration,
+                Syntax.FunctionExpression
+                ],
             Stack: [
                 Syntax.FunctionDeclaration,
                 Syntax.FunctionExpression,
@@ -155,6 +159,7 @@ export class TraceModel{
                 Syntax.ForStatement,
                 Syntax.ForInStatement,
                 Syntax.SwitchStatement,
+                Syntax.SwitchCase,
                 Syntax.TryStatement,
                 Syntax.CatchClause
                 ],

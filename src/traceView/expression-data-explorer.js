@@ -153,7 +153,6 @@ export class ExpressionDataExplorer{
     this.eventAggregator.publish("expressionHovered", match);
   }
 
-
   $hideTooltip(){
     let $popoverContentElement = $("#"+this.editorTooltipContentId);
     if(this.$editorTooltip && $popoverContentElement.length  && !$popoverContentElement.is(":hover")){

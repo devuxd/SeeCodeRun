@@ -78,7 +78,7 @@ export class AutoLogTracer{
         var TraceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
-            scriptCounter: 0, programCounter: 0, branchCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            scriptCounter: 0, programCounter: 0, branchCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : {}, stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             preautolog: function preAutolog(range, type, id, text){
             //todo: document.currentScript as context and handle a callstack per each one [Fixes timeout, Ajax callbacks and other external libraries interaction]
                 var info = { id: id , value: null, range: range, type: type, text: text};
@@ -269,14 +269,14 @@ export class AutoLogTracer{
 
                             if(isEnteringBlock){
                                 this.stackIndex.push({path: [this.stackIndex], scope: stackKey});
-                                this.stack.push(key);
+                                this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                             }else{
                               //  this.stackIndex = this.stackIndex.pop();
                             }
                         }
 
                     }else{
-                        this.stack.push(key);
+                        this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                     }
 
                 }

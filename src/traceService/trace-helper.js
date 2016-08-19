@@ -1,6 +1,6 @@
 import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
-
+    timelineLength = 0;
     constructor(trace, traceModel, event){
         this.traceModel = traceModel;
         this.description = trace.description;
@@ -12,6 +12,8 @@ export class TraceHelper {
         this.startNavigation();
         this.branches =[];
         this.blockScopes = [];
+        this.blockBranches = [];
+        this.functionBranches = [];
     }
 
     startNavigation(){
@@ -94,6 +96,41 @@ export class TraceHelper {
         // this.navigationTrace.traceGutterData = traceGutterData;
     }
 
+    // navigateToBranch(){
+    //     let branchExpressionRange = this.currentNavigationDatum.entry.range,
+    //         branchIndex = this.currentNavigationDatum.branchIndex,
+    //         branchMax = this.currentNavigationDatum.branchMax;
+    //     let traceGutterData = [];
+    //     let timelineHitsLowerbound = (branchIndex - 1)*2 + 1;
+    //     let timelineHitsHigherBound = branchIndex*2 + 1; // call appears at entrance and exit of block
+    //     let timelineMaxHits = branchMax*2;
+    //     let timeline = this.trace.timeline;
+    //     let branchTimeline = [];
+    //     let branchHits = 0;
+    //     for(let j = 0; j < timeline.length; j++) {
+
+    //         if(branchHits === timelineMaxHits){
+    //             branchTimeline.push(timeline[j]);
+    //             break;
+    //         }
+
+    //         if(branchHits === timelineHitsHigherBound){
+    //             break;
+    //         }
+
+    //         if(branchHits >= timelineHitsLowerbound){
+    //             branchTimeline.push(timeline[j]);
+    //         }
+
+    //         if(this.rangeEquals(timeline[j].range, branchExpressionRange)) {
+    //           branchHits++;
+    //         }
+
+    //      }
+    //     this.navigationTrace.timeline = branchTimeline;
+    //     // this.navigationTrace.traceGutterData = traceGutterData;
+    // }
+
     getNavigationTrace(){
         return this.navigationTrace;
     }
@@ -104,6 +141,7 @@ export class TraceHelper {
 
     setTrace(trace){
         this.trace = this.traceModel.makeTrace(trace);
+        this.timelineLength = this.trace.timeline? this.trace.timeline.length: 0;
     }
 
     getExpressionAtPosition(traceData, acePosition){
@@ -239,12 +277,13 @@ export class TraceHelper {
         return ((r1||r2))&&((l1||l2));
     }
 
+    //pending
     handleBlockRescope(entry){
         if(!entry){
             return;
         }
 
-        if(entry.type ===  "BlockStatement"){
+        if(entry.type !==  "BlockStatement"){
             return;
         }
 
@@ -253,60 +292,64 @@ export class TraceHelper {
         do{
             let topScope = this.blockScopes.length ? this.blockScopes[this.blockScopes.length -1] : entry;
             if(topScope.range === entry.range){
-                // ignore if not local or function Data has not been reached
                 return;
             }
 
-            if(this.isRangeInRange(entry.range, topScope.functionRange)){
-                isBadScope = true;
-                topScope.tryExit = true;
-                // console.log("TS: " +this.stringify(topScope.functionRange));
-                // console.log("CE: " + this.stringify(info.range));
-                this.exitFunctionScope(entry, true);
+            if(this.isRangeInRange(entry.range, topScope.range)){
+                this.blockScopes.push(entry);
             }else{
                 isBadScope = true;
+                this.blockScopes.pop();
             }
         }while(this.blockScopes.length && isBadScope);
     }
 
     getStackBlockCounts() {
-        let stack = this.trace.stack, data = this.trace.data, hits = this.trace.hits;
-        let entry,
-            stackData = [];
-        for (let i in stack) {
-            if (stack.hasOwnProperty(i)) {
-                entry = stack[i];
-                stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  count: hits[entry]});
+        let stack = this.trace.stack, data = this.trace.data;
+        let stackData = [];
+        for (let key in stack) {
+            stackData.push({ text: key.split(':')[0], range: data[key].range,  count: stack[key]});
+        }
+        return stackData;
+    }
+
+    getNavigationStackBlockCounts(lowerBound = 0, upperBound = this.timelineLength) {
+        let stack = this.trace.stack, data = this.trace.data;
+        let stackData = [];
+        for (let key in stack) {
+            if(data[key]){
+                let containingBlock = JSON.parse(data[key].id);
+                if(containingBlock){
+                    let timelineIndexes = null, count = 0;
+                    if(containingBlock.type === "FunctionDeclaration" || containingBlock.type === "FunctionExpression"){
+                        timelineIndexes = this.getTimelineIndexesByBlockKey(key);
+                        count = stack[key];
+                    }else{
+                        timelineIndexes = this.getTimelineIndexesByBlockKey(key, lowerBound, upperBound);
+                        count = timelineIndexes.length - 2;
+                    }
+                    stackData.push({ blockKey: key, type: containingBlock.type, range: containingBlock.range, blockRange: data[key].range,  timelineIndexes: timelineIndexes, count: count});
+                }
             }
         }
         return stackData;
     }
 
-    getNavigationStackBlockCounts() {
-        let stack = this.trace.stack, data = this.trace.data;
-        let timeline = this.navigationTrace.timeline;
-        let entry,
-            stackData = [];
-        for (let i in stack) {
-            if (stack.hasOwnProperty(i)) {
-                entry = stack[i];
-                let branchIndexRanges = [];
-                let lowerBound = 0;
-                let upperBound = 0;
-                for(let j in timeline){
-                    if(timeline[j].key === entry){
-                        upperBound = j;
-                        branchIndexRanges.push({lowerBound: lowerBound, upperBound: upperBound});
-                        lowerBound = j;
-                    }
-                }
-                if(branchIndexRanges.length){
-                    stackData.push({ index: i, text: entry.split(':')[0], range: data[entry].range,  branchIndexRanges: branchIndexRanges, count: branchIndexRanges.length});
-                }
+    getTimelineIndexesByBlockKey(key, lowerBound = 0, upperBound = this.timelineLength){
+        let timeline = this.trace.timeline;
+        if(!timeline){
+            return [];
+        }
 
+        let timelineIndexes = [lowerBound];
+        for(let i = lowerBound; i < upperBound; i++){
+            if(timeline[i] && key === timeline[i].key){
+                timelineIndexes.push(i);
             }
         }
-        return stackData;
+        timelineIndexes.push(upperBound);
+
+        return timelineIndexes;
     }
 
     getExpressions() {
