@@ -35,6 +35,10 @@ export class TraceHelper {
 
     pushNavigationData(navigationDatum, branches){
         if(navigationDatum){
+            let type = navigationDatum.entry.type;
+            if(type === "FunctionDeclaration" || type === "FunctionExpression"){
+                this.currentNavigationFunction = navigationDatum;
+            }
             this.currentNavigationDatum = navigationDatum;
             if(navigationDatum.row != null){
                 this.navigationTrace.navigationData[navigationDatum.row] = navigationDatum;
@@ -62,38 +66,15 @@ export class TraceHelper {
     }
 
     navigateToBranch(){
-        let branchExpressionRange = this.currentNavigationDatum.entry.range,
-            branchIndex = this.currentNavigationDatum.branchIndex,
-            branchMax = this.currentNavigationDatum.branchMax;
-        let traceGutterData = [];
-        let timelineHitsLowerbound = (branchIndex - 1)*2 + 1;
-        let timelineHitsHigherBound = branchIndex*2 + 1; // call appears at entrance and exit of block
-        let timelineMaxHits = branchMax*2;
+        let branchIndex = this.currentNavigationDatum.branchIndex;
+        let lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
+        let upperBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex + 1]; // call appears at entrance and exit of block
         let timeline = this.trace.timeline;
         let branchTimeline = [];
-        let branchHits = 0;
-        for(let j = 0; j < timeline.length; j++) {
-
-            if(branchHits === timelineMaxHits){
+        for(let j = lowerBound; j < upperBound; j++) {
                 branchTimeline.push(timeline[j]);
-                break;
-            }
-
-            if(branchHits === timelineHitsHigherBound){
-                break;
-            }
-
-            if(branchHits >= timelineHitsLowerbound){
-                branchTimeline.push(timeline[j]);
-            }
-
-            if(this.rangeEquals(timeline[j].range, branchExpressionRange)) {
-              branchHits++;
-            }
-
          }
         this.navigationTrace.timeline = branchTimeline;
-        // this.navigationTrace.traceGutterData = traceGutterData;
     }
 
     // navigateToBranch(){
@@ -316,6 +297,27 @@ export class TraceHelper {
     getNavigationStackBlockCounts(lowerBound = 0, upperBound = this.timelineLength) {
         let stack = this.trace.stack, data = this.trace.data;
         let stackData = [];
+        if(this.currentNavigationFunction && this.currentNavigationFunction.entry && this.currentNavigationFunction.entry.timelineIndexes){
+            let timelineIndexesLength = this.currentNavigationFunction.entry.timelineIndexes.length;
+            let branchIndex = this.currentNavigationFunction.branchIndex;
+            if( timelineIndexesLength > 2){
+                // lowerBound = this.currentNavigationFunction.entry.timelineIndexes[1];
+                // upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[timelineIndexesLength - 2]: upperBound;
+                lowerBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex];
+                upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[branchIndex+1]: upperBound;
+            }
+        }
+
+        // if(this.currentNavigationDatum && this.currentNavigationDatum.entry && this.currentNavigationDatum.entry.timelineIndexes){
+        //     let timelineIndexesLength = this.currentNavigationDatum.entry.timelineIndexes.length;
+        //     let branchIndex = this.currentNavigationDatum.branchIndex;
+        //     if( timelineIndexesLength > 2){
+        //         // lowerBound = this.currentNavigationFunction.entry.timelineIndexes[1];
+        //         // upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[timelineIndexesLength - 2]: upperBound;
+        //         lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
+        //         upperBound = timelineIndexesLength > 3? this.currentNavigationDatum.entry.timelineIndexes[branchIndex+1]: upperBound;
+        //     }
+        // }
         for (let key in stack) {
             if(data[key]){
                 let containingBlock = JSON.parse(data[key].id);

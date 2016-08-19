@@ -38,7 +38,7 @@ export class BranchNavigator{
             for(let row in navigationData){
                 let navigationDatum = navigationData[row];
                 if(navigationDatum.row !=  null && traceGutterData.rows.hasOwnProperty(navigationDatum.row)){
-                    traceGutterData.rows[navigationDatum.row].count = navigationDatum.branchMax;
+                    traceGutterData.rows[navigationDatum.row].count = navigationDatum.entry.count;
                     traceGutterData.rows[navigationDatum.row].branch = navigationDatum.brancIndex;
                 }
             }
@@ -116,8 +116,6 @@ export class BranchNavigator{
                     this.traceHelper.startNavigation();
                     this.traceHelper.navigateToBranch();
                     let localTraceGutterData = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
-                    // traceViewModel.traceGutterData.maxCount = localTraceGutterData.maxCount;
-                    // traceViewModel.traceGutterData.rows = localTraceGutterData.rows;
                     traceViewModel.updateTraceGutterRowCount(localTraceGutterData);
                     eventAggregator.publish("traceGutterDataChanged");
                     eventAggregator.publish("traceNavigationChange", this.traceHelper);
