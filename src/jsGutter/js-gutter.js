@@ -26,7 +26,6 @@ export class JsGutter {
     lastLine = 0;
     isTraceServiceProccesing =false;
     isTraceChange = false;
-    traceHelper = null;
     scrollTop = 0;
 
     constructor(eventAggregator, aceUtils, aceJsEditorDiv = "aceJsEditorDiv") {
@@ -34,6 +33,10 @@ export class JsGutter {
         this.aceUtils = aceUtils;
         this.aceJsEditorDiv = aceJsEditorDiv;
         this.jsUtils = new JsUtils();
+    }
+
+    setTraceViewModel(traceViewModel){
+        this.traceViewModel = traceViewModel;
     }
 
     adjustFontStyle(aceJsEditorDiv = this.aceJsEditorDiv){
@@ -100,15 +103,15 @@ export class JsGutter {
           $previousLine = $newLine;
         }
 
-        if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
+        if(self.isTraceChange && self.traceViewModel && editorLayout.lastRow){
             self.isTraceChange = false;
-            if(self.traceHelper.isValid()){
-                let entries = self.traceHelper.getTimeline();
+            if(self.traceViewModel.isRepOK()){
+                let entries = self.traceViewModel.branchModel.getTimeline();
                 let isAppendToContent = true;
-                if(self.traceHelper.isNavigationMode){
-                    entries = self.traceHelper.getNavigationTimeline();
+                if(self.traceViewModel.branchModel.isNavigationMode){
                     isAppendToContent = false;
                 }
+
                 for ( let indexInTimeline = 0; indexInTimeline < entries.length; indexInTimeline++) {
                     let entry = entries[indexInTimeline];
                     self.setGutterLineContent(indexInTimeline, entry, isAppendToContent);
@@ -122,7 +125,7 @@ export class JsGutter {
             self.$gutter.addClass(self.jsGutterBlurClass);
         }else{
             self.$gutter.removeClass(self.jsGutterBlurClass);
-            if(self.traceHelper && self.traceHelper.isValid()){
+            if(self.traceViewModel && self.traceViewModel.isRepOK()){
                 self.$gutter.removeClass(self.jsGutterInvalidClass);
             }else{
                 if(editorLayout.lastRow){
@@ -183,13 +186,6 @@ export class JsGutter {
             this.highlightLine(this.selectedLine);
         });
 
-        ea.subscribe("traceChanged", payload => {
-            this.isTraceChange = true;
-            this.traceHelper = payload.data;
-            this.clearGutter();
-            this.update();
-        });
-
         ea.subscribe("jsEditorChangeScrollTop", scrollData => {
                 this.scrollTop = scrollData.scrollTop;
                 this.scrollerHeight = scrollData.scrollerHeight;
@@ -197,9 +193,9 @@ export class JsGutter {
                 $gutter.scrollTop(this.scrollTop);
         });
 
-        ea.subscribe("traceNavigationChange", traceHelper => {
-                if(traceHelper){
-                    this.traceHelper = traceHelper;
+        ea.subscribe("traceNavigationChange", traceViewModel => {
+                if(traceViewModel){
+                    this.setTraceViewModel(traceViewModel);
                     this.clearGutter();
                     this.isTraceChange=true;
                     this.update();

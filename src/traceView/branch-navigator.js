@@ -12,7 +12,6 @@ export class BranchNavigator{
     gutterTooltipShowDelay = 50;
     gutterTooltipHideDelay = 500;
     gutterDecorationClassName = "seecoderun-gutter-decoration";
-    branches = [];
 
     constructor(eventAggregator, aceUtils, jsEditor, traceViewModel){
         this.eventAggregator = eventAggregator;
@@ -22,34 +21,9 @@ export class BranchNavigator{
         this.tracePlayer = new TracePlayer(eventAggregator, aceUtils);
     }
 
-    updateGutterBranches(traceGutterData){
-        for(let row in traceGutterData.rows){
-            if(traceGutterData.rows.hasOwnProperty(row)){
-                let count = traceGutterData.rows[row].count;
-                if(count != null){
-                    traceGutterData.rows[row].branch = count;
-                }
-
-            }
-        }
-
-        if(this.traceHelper && this.traceHelper.navigationTrace){
-            let navigationData = this.traceHelper.navigationTrace.navigationData;
-            for(let row in navigationData){
-                let navigationDatum = navigationData[row];
-                if(navigationDatum.row !=  null && traceGutterData.rows.hasOwnProperty(navigationDatum.row)){
-                    traceGutterData.rows[navigationDatum.row].count = navigationDatum.entry.count;
-                    traceGutterData.rows[navigationDatum.row].branch = navigationDatum.brancIndex;
-                }
-            }
-
-        }
-        this.branches = traceGutterData.rows;
-    }
-
     attached(){
         let self = this;
-        let traceViewModel = this.traceViewModel;
+        let branchModel = this.traceViewModel.branchModel;
         let aceUtils = this.aceUtils;
         let gutterDecorationClassName = this.gutterDecorationClassName;
         let editor = this.jsEditor.editor;
@@ -57,15 +31,13 @@ export class BranchNavigator{
 
         this.attachGutterTooltip();
 
-        aceUtils.setTraceGutterRenderer(editor, traceViewModel.traceGutterData);
+        aceUtils.setTraceGutterRenderer(editor, branchModel.traceGutterData);
     	aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip,
-    	    gutterDecorationClassName, traceViewModel.traceGutterData, this.update$GutterTooltip,
+    	    gutterDecorationClassName, branchModel.traceGutterData, this.update$GutterTooltip,
     	    this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
     	    );
     	$(this.resetNavigationBoxSelector).click(function resetNavigationBoxClick(){
-    	    self.traceHelper.stopNavigation();
-    	    self.eventAggregator.publish("traceChanged", {status: self.traceHelper.event, description : self.traceHelper.description , data: self.traceHelper});
-    	    self.eventAggregator.publish("branchNavigatorReset",{indexInTimeline: 0});
+            self.eventAggregator.publish("branchNavigatorReset", { indexInTimeline: 0});
     	});
 
         this.tracePlayer.attached();
@@ -82,7 +54,6 @@ export class BranchNavigator{
         eventAggregator.subscribe("jsEditorCursorMoved", info => {
             this.selectedLine = info.cursor ||1;
             this.$hideTooltip();
-
         });
 
         eventAggregator.subscribe(
@@ -99,32 +70,27 @@ export class BranchNavigator{
 
         eventAggregator.subscribe(
             "traceGutterDataChanged", payload =>{
-                this.updateGutterBranches(traceViewModel.traceGutterData);
-                aceUtils.updateGutterDecorations(editor, [], traceViewModel.traceGutterData.rows, gutterDecorationClassName);
-
+                aceUtils.updateGutterDecorations(editor, [], traceViewModel.branchModel.traceGutterData.rows, gutterDecorationClassName);
             }
         );
 
         eventAggregator.subscribe("traceChanged", payload => {
-            this.traceHelper = payload.data;
+            this.$hideTooltip();
+            eventAggregator.publish("traceNavigationChange", traceViewModel);
         });
 
         eventAggregator.subscribe(
-            "traceNavigationPrepareChange", navigationData =>{
-                if(this.traceHelper){
-                    this.traceHelper.pushNavigationData(navigationData, this.branches);
-                    this.traceHelper.startNavigation();
-                    this.traceHelper.navigateToBranch();
-                    let localTraceGutterData = traceViewModel.extractTraceGutterData(this.traceHelper.getNavigationStackBlockCounts());
-                    traceViewModel.updateTraceGutterRowCount(localTraceGutterData);
+            "traceNavigationPrepareChange", navigationDatum =>{
+                if(traceViewModel){
+                    traceViewModel.updateTraceGutterData(navigationDatum);
                     eventAggregator.publish("traceGutterDataChanged");
-                    eventAggregator.publish("traceNavigationChange", this.traceHelper);
+                    eventAggregator.publish("traceNavigationChange", traceViewModel);
                 }
 
                 if(traceViewModel.isTraceGutterDataValid()){
-                    if(navigationData.branchIndex && traceViewModel.isTraceGutterDataRowValid(navigationData.row)){
-                        traceViewModel.setTraceGutterDataRowBranchIndex(navigationData.row, navigationData.branchIndex);
-                        editor.getSession().addGutterDecoration(navigationData.row, "");
+                    if(traceViewModel.isTraceGutterDataRowValid(navigationDatum.row)){
+                        traceViewModel.setTraceGutterDataRowBranchIndex(navigationDatum.row, navigationDatum.branchIndex);
+                        editor.getSession().addGutterDecoration(navigationDatum.row, "");
                     }
                 }
             }
@@ -175,7 +141,7 @@ export class BranchNavigator{
 	        self.currentRow = row;
 	        let content = context.entry;
 	        let count = context.count;
-	        let branch = context.branch;
+	        let branch = context.branch == null? context.count: context.branch;
 		    if(content){
 	            self.currentContent = content;
 			    let $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);

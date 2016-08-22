@@ -26,6 +26,12 @@ export class TraceViewController{
                     }
         );
 
+        eventAggregator.subscribe(
+            "branchNavigatorReset", () =>{
+                        this.onBranchNavigatorReset();
+                    }
+        );
+
         aceUtils.publishExpressionHoverEvents(editor, eventAggregator, traceViewModel);
 
         this.expressionDataExplorer.attached();
@@ -37,14 +43,21 @@ export class TraceViewController{
             if(!traceHelper){
                 throw "onTraceChanged() triggered without a Trace Helper.";
             }
-
-            let traceViewModel = this.traceViewModel;
-
-            traceViewModel.setTraceHelper(traceHelper);
-
-            traceViewModel.updateTraceGutterData();
+            this.traceViewModel.setTraceHelper(traceHelper);
             this.eventAggregator.publish("traceGutterDataChanged");
-            traceViewModel.setTraceValuesDataRanges(traceHelper.getTimeline());
+
+            this.traceViewModel.setTraceValuesDataRanges(traceHelper.getTimeline());
             this.eventAggregator.publish("traceValuesDataRangesChanged");
+    }
+
+    onBranchNavigatorReset(){
+        if(!this.traceViewModel){
+            return;
+        }
+        let traceHelper = this.traceViewModel.getTraceHelper();
+	    if(traceHelper){
+    	    this.traceViewModel.stopNavigation();
+    	    this.onTraceChanged(traceHelper);
+	    }
     }
 }

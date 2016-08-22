@@ -1,5 +1,6 @@
 import {TraceQueryManager} from './trace-query-manager';
 export class TraceHelper {
+    blockScopes = [];
     timelineLength = 0;
     constructor(trace, traceModel, event){
         this.traceModel = traceModel;
@@ -8,121 +9,42 @@ export class TraceHelper {
         this.error = trace.error;
         this.traceQueryManager = new TraceQueryManager(this.traceModel);
         this.setTrace(trace);
-        this.resetNavigation();
-        this.startNavigation();
-        this.branches =[];
-        this.blockScopes = [];
-        this.blockBranches = [];
-        this.functionBranches = [];
     }
 
-    startNavigation(){
-        this.isNavigationMode = true;
-    }
+    isRepOK(){
+        if(!this.trace){
+		    return false;
+		}
 
-    toggleNavigation(){
-        this.isNavigationMode = !this.isNavigationMode;
-    }
+		if(!this.trace.timeline){
+		    return false;
+		}
 
-    stopNavigation(){
-        this.isNavigationMode = false;
-        this.resetNavigation();
-    }
+		if(!this.trace.data){
+		    return false;
+		}
 
-    resetNavigation(){
-        this.navigationTrace = {timeline: this.trace.timeline, traceGutterData: [], navigationData: {}};
-    }
+		if(!this.trace.stack){
+		    return false;
+		}
 
-    pushNavigationData(navigationDatum, branches){
-        if(navigationDatum){
-            let type = navigationDatum.entry.type;
-            if(type === "FunctionDeclaration" || type === "FunctionExpression"){
-                this.currentNavigationFunction = navigationDatum;
-            }
-            this.currentNavigationDatum = navigationDatum;
-            if(navigationDatum.row != null){
-                this.navigationTrace.navigationData[navigationDatum.row] = navigationDatum;
-                if(branches[navigationDatum.row]){
-                   branches[navigationDatum.row].branch = navigationDatum.branchIndex;
-                }
-            }
-        }
-        this.branches = branches;
-    }
-
-    recalculateBranchIndexes(){
-
-    }
-
-    getTimeline(){
-        if(this.isNavigationMode){
-            return this.getNavigationTimeline();
-        }
-        return this.trace.timeline;
-    }
-
-    getNavigationTimeline(){
-        return this.navigationTrace.timeline;
-    }
-
-    navigateToBranch(){
-        let branchIndex = this.currentNavigationDatum.branchIndex;
-        let lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
-        let upperBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex + 1]; // call appears at entrance and exit of block
-        let timeline = this.trace.timeline;
-        let branchTimeline = [];
-        for(let j = lowerBound; j < upperBound; j++) {
-                branchTimeline.push(timeline[j]);
-         }
-        this.navigationTrace.timeline = branchTimeline;
-    }
-
-    // navigateToBranch(){
-    //     let branchExpressionRange = this.currentNavigationDatum.entry.range,
-    //         branchIndex = this.currentNavigationDatum.branchIndex,
-    //         branchMax = this.currentNavigationDatum.branchMax;
-    //     let traceGutterData = [];
-    //     let timelineHitsLowerbound = (branchIndex - 1)*2 + 1;
-    //     let timelineHitsHigherBound = branchIndex*2 + 1; // call appears at entrance and exit of block
-    //     let timelineMaxHits = branchMax*2;
-    //     let timeline = this.trace.timeline;
-    //     let branchTimeline = [];
-    //     let branchHits = 0;
-    //     for(let j = 0; j < timeline.length; j++) {
-
-    //         if(branchHits === timelineMaxHits){
-    //             branchTimeline.push(timeline[j]);
-    //             break;
-    //         }
-
-    //         if(branchHits === timelineHitsHigherBound){
-    //             break;
-    //         }
-
-    //         if(branchHits >= timelineHitsLowerbound){
-    //             branchTimeline.push(timeline[j]);
-    //         }
-
-    //         if(this.rangeEquals(timeline[j].range, branchExpressionRange)) {
-    //           branchHits++;
-    //         }
-
-    //      }
-    //     this.navigationTrace.timeline = branchTimeline;
-    //     // this.navigationTrace.traceGutterData = traceGutterData;
-    // }
-
-    getNavigationTrace(){
-        return this.navigationTrace;
+		return true;
     }
 
     isValid(){
         return (this.error === "" && this.trace);
     }
 
+    getTimeline(){
+        if(this.trace && this.trace.timeline){
+            return this.trace.timeline;
+        }
+        return [];
+    }
+
     setTrace(trace){
         this.trace = this.traceModel.makeTrace(trace);
-        this.timelineLength = this.trace.timeline? this.trace.timeline.length: 0;
+        this.timelineLength = this.getTimeline().length;
     }
 
     getExpressionAtPosition(traceData, acePosition){
@@ -137,7 +59,7 @@ export class TraceHelper {
         for(let i = traceData.length; i; i--){
             let entry = traceData[i-1];
             if(entry.hasOwnProperty("range") && ignoreTypeList.indexOf(entry.type) === -1){
-                if( isPositionInRange(acePosition, entry.range)){
+                if(isPositionInRange(acePosition, entry.range)){
     			     if(match){
     			         if(isRangeInRangeStrict(entry.range, match.range)){
     			             match = entry;
@@ -285,7 +207,7 @@ export class TraceHelper {
         }while(this.blockScopes.length && isBadScope);
     }
 
-    getStackBlockCounts() {
+    getStackBlockCounts(){
         let stack = this.trace.stack, data = this.trace.data;
         let stackData = [];
         for (let key in stack) {
@@ -294,73 +216,14 @@ export class TraceHelper {
         return stackData;
     }
 
-    getNavigationStackBlockCounts(lowerBound = 0, upperBound = this.timelineLength) {
-        let stack = this.trace.stack, data = this.trace.data;
-        let stackData = [];
-        if(this.currentNavigationFunction && this.currentNavigationFunction.entry && this.currentNavigationFunction.entry.timelineIndexes){
-            let timelineIndexesLength = this.currentNavigationFunction.entry.timelineIndexes.length;
-            let branchIndex = this.currentNavigationFunction.branchIndex;
-            if( timelineIndexesLength > 2){
-                // lowerBound = this.currentNavigationFunction.entry.timelineIndexes[1];
-                // upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[timelineIndexesLength - 2]: upperBound;
-                lowerBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex];
-                upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[branchIndex+1]: upperBound;
-            }
-        }
-
-        // if(this.currentNavigationDatum && this.currentNavigationDatum.entry && this.currentNavigationDatum.entry.timelineIndexes){
-        //     let timelineIndexesLength = this.currentNavigationDatum.entry.timelineIndexes.length;
-        //     let branchIndex = this.currentNavigationDatum.branchIndex;
-        //     if( timelineIndexesLength > 2){
-        //         // lowerBound = this.currentNavigationFunction.entry.timelineIndexes[1];
-        //         // upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[timelineIndexesLength - 2]: upperBound;
-        //         lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
-        //         upperBound = timelineIndexesLength > 3? this.currentNavigationDatum.entry.timelineIndexes[branchIndex+1]: upperBound;
-        //     }
-        // }
-        for (let key in stack) {
-            if(data[key]){
-                let containingBlock = JSON.parse(data[key].id);
-                if(containingBlock){
-                    let timelineIndexes = null, count = 0;
-                    if(containingBlock.type === "FunctionDeclaration" || containingBlock.type === "FunctionExpression"){
-                        timelineIndexes = this.getTimelineIndexesByBlockKey(key);
-                        count = stack[key];
-                    }else{
-                        timelineIndexes = this.getTimelineIndexesByBlockKey(key, lowerBound, upperBound);
-                        count = timelineIndexes.length - 2;
-                    }
-                    stackData.push({ blockKey: key, type: containingBlock.type, range: containingBlock.range, blockRange: data[key].range,  timelineIndexes: timelineIndexes, count: count});
-                }
-            }
-        }
-        return stackData;
-    }
-
-    getTimelineIndexesByBlockKey(key, lowerBound = 0, upperBound = this.timelineLength){
-        let timeline = this.trace.timeline;
-        if(!timeline){
-            return [];
-        }
-
-        let timelineIndexes = [lowerBound];
-        for(let i = lowerBound; i < upperBound; i++){
-            if(timeline[i] && key === timeline[i].key){
-                timelineIndexes.push(i);
-            }
-        }
-        timelineIndexes.push(upperBound);
-
-        return timelineIndexes;
-    }
-
-    getExpressions() {
+    getExpressions(){
          return {variables : this.trace.identifiers, timeline: this.trace.timeline};
     }
 
     getVariables(){
         return {variables : this.trace.identifiers};
     }
+
     getValues(){
         return this.trace.values;
     }
@@ -405,7 +268,7 @@ export class TraceHelper {
         return trace;
       }
 
-      if(!traceHelper.getTimeline()){
+      if(!traceHelper.isRepOK()){
         return trace;
       }
 
@@ -432,42 +295,27 @@ export class TraceHelper {
       return trace;
     }
 
-    getBranchingForExpression(expression, traceHelper =this){
+    getBranchIndexesForExpression(expression, traceHelper =this){
+        let branching = {
+            branch : expression,
+            branchIndexes: []
+        };
 
-      let branching = {
-        branch : expression,
-        branchIndexes: []
-      };
+        if(!traceHelper){
+            return branching;
+        }
 
-      if(!traceHelper){
-        return branching;
-      }
-
-        let execution = this.trace.execution;
-        for (let i in execution) {
-            if (execution.hasOwnProperty(i)) {
-                let entry = execution[i];
+        let timeline = this.trace.timeline;
+        for (let i in timeline) {
+            if (timeline.hasOwnProperty(i)) {
+                let entry = timeline[i];
                 if(traceHelper.isRangeInRange(entry.range, expression.range)){
                     branching.branchIndexes.push(i);
                 }
              }
         }
-      return branching;
-    }
 
-    getTraceTillIndex(index, collection = this.trace){
-        let result = [];
-        for (let i in collection) {
-            if (collection.hasOwnProperty(i)) {
-                let entry = collection[i];
-                result.push(entry);
-                if(i === index){
-                    return result;
-                }
-             }
-        }
-        return result;
+        return branching;
     }
-
 
 }
