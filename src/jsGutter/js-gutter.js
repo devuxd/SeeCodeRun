@@ -112,7 +112,7 @@ export class JsGutter {
                     isAppendToContent = false;
                 }
 
-                for ( let indexInTimeline = 0; indexInTimeline < entries.length; indexInTimeline++) {
+                for ( let indexInTimeline in entries) {
                     let entry = entries[indexInTimeline];
                     self.setGutterLineContent(indexInTimeline, entry, isAppendToContent);
                 }

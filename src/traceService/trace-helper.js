@@ -49,19 +49,19 @@ export class TraceHelper {
 
     getExpressionAtPosition(traceData, acePosition){
         let isPositionInRange = this.isPositionInRange;
-        let isRangeInRangeStrict = this.isRangeInRangeStrict;
+        let isRangeInRange = this.isRangeInRange;
 
         if(!acePosition || !traceData){
             return null;
         }
         let ignoreTypeList = this.traceModel.expressionMatcherIgnoreTypeList;
         let match = null;
-        for(let i = traceData.length; i; i--){
-            let entry = traceData[i-1];
+        for(let i in traceData){
+            let entry = traceData[i];
             if(entry.hasOwnProperty("range") && ignoreTypeList.indexOf(entry.type) === -1){
                 if(isPositionInRange(acePosition, entry.range)){
     			     if(match){
-    			         if(isRangeInRangeStrict(entry.range, match.range)){
+    			         if(isRangeInRange(entry.range, match.range)){
     			             match = entry;
     			         }
     			     }else{

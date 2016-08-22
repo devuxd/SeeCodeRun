@@ -122,27 +122,27 @@ export class ObjectExplorer {
 
   generateLeafNode(object){
     let objectType = this.jsUtils.type(object);
+    let escapedHMTLString =  object? this.escapeHMTLString(object): object;
     if(objectType === "string"){
-      let escapedHMTLString =  this.escapeHMTLString(object);
-      let escapedHMTLString1 =  escapedHMTLString.length > 62? escapedHMTLString.substring(0, 62) : escapedHMTLString;
-      let escapedHMTLString2 =  escapedHMTLString.length > 62? escapedHMTLString.substring(62) : "";
+      let escapedHMTLString1 =  escapedHMTLString.length > 32? escapedHMTLString.substring(0, 32) : escapedHMTLString;
+      let escapedHMTLString2 =  escapedHMTLString.length > 32? escapedHMTLString.substring(32) : "";
 
       return `<span class='treeObj string' data-toggle="tooltip"  data-placement="bottom" title= '${escapedHMTLString}' >"${escapedHMTLString1}</span><span class='treeObj string'>${escapedHMTLString2}"</span>`;
     // return `<span class='treeObj string' data-tooltip = '${escapedHMTLString === ""? " " : escapedHMTLString}' data-tooltip-position = 'top left'>"${escapedHMTLString}"</span>`;
     // data-viewport = '#editorTooltipContent'
     }else{
-      return `<span class='treeObj ${objectType}'>${object}</span>`;
+      return `<span class='treeObj ${objectType}'>${escapedHMTLString}</span>`;
     }
 
   }
 
   generateLeaf(object){
     let objectType = this.jsUtils.type(object);
+    let escapedHMTLString =  object? this.escapeHMTLString(object): object;
     if(objectType === "string"){
-      let escapedHMTLString =  this.escapeHMTLString(object);
       return `<span class='lineObj string'>"${escapedHMTLString}"</span>`;
     }else{
-      return `<span class='lineObj ${objectType}'>${object}</span>`;
+      return `<span class='lineObj ${objectType}'>${escapedHMTLString}</span>`;
     }
 
   }

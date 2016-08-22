@@ -141,7 +141,7 @@ export class BranchNavigator{
 	        self.currentRow = row;
 	        let content = context.entry;
 	        let count = context.count;
-	        let branch = context.branch == null? context.count: context.branch;
+	        let branch = context.branch;
 		    if(content){
 	            self.currentContent = content;
 			    let $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
@@ -243,7 +243,7 @@ export class BranchNavigator{
     		            left: `${position.pageX}px`
     		        });
     		    }
-                if(!$gutterTooltip.is( ":visible" )){
+                if(!$gutterTooltip.is( ":visible" ) || $gutterTooltip.is( ":animated" )){
                     if(self.previousRow){
                         self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
                     }
@@ -275,7 +275,7 @@ export class BranchNavigator{
     }
 
     $hideTooltip(){
-        if(this.$gutterTooltip && this.$gutterTooltip.is( ":visible" )){
+        if(this.$gutterTooltip && !this.$gutterTooltip.is( ":animated")){
             this.currentRow = null;
             this.$gutterTooltip.hide("slide", { direction: "down" }, this.gutterTooltipSlideTime);
             this.eventAggregator.publish("branchNavigatorChange", {isVisible: false});
@@ -283,7 +283,7 @@ export class BranchNavigator{
     }
 
     $showTooltip(isForceShow = false){
-        if(this.$gutterTooltip && (!this.$gutterTooltip.is( ":visible" || isForceShow))){
+        if(this.$gutterTooltip && (!this.$gutterTooltip.is( ":animated" || isForceShow))){
             this.$gutterTooltip.show("slide", { direction: "down" }, this.gutterTooltipSlideTime);
             this.eventAggregator.publish("branchNavigatorChange", {isVisible: true});
         }

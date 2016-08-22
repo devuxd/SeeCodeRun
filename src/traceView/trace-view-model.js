@@ -79,7 +79,7 @@ export class TraceViewModel {
 
     getExpressionAtPosition(mousePosition){
         if(this.isRepOK()){
-            return this.traceHelper.getExpressionAtPosition(this.traceHelper.getTimeline(), mousePosition);
+            return this.traceHelper.getExpressionAtPosition(this.branchModel.getTimeline(), mousePosition);
         }
         return null;
     }

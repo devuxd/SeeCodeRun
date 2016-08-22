@@ -316,7 +316,7 @@ export class AceUtils{
             getWidth: function(session, lastLineNumber, config) {
                 let format = "";
                 if(traceGutterData.maxCount > 0){
-                    format = "[/]  ";
+                    format = "-[-/-]-";
                 }
 
                 return (format.length + traceGutterData.maxCount.toString().length*2 + lastLineNumber.toString().length )* config.characterWidth;

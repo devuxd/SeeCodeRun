@@ -60,14 +60,23 @@ export class BranchModel{
     }
 
     navigateToBranch(){
+        // if(!this.currentNavigationFunction){
+            // this.navigationTimeline = this.traceHelper.getTimeline();
+            // return;
+        // }
         let branchIndex = this.currentNavigationDatum.branchIndex;
         let lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
-        let upperBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex + 1]; // call appears at entrance and exit of block
+        let upperBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex + 1];
         let timeline = this.traceHelper.getTimeline();
-        let branchTimeline = [];
+        // let branchIndex = this.currentNavigationFunction.branchIndex|| 1;
+        // let lowerBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex];
+        // let upperBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex + 1];
+        // let timeline = this.traceHelper.getTimeline();
+        let branchTimeline = {};
         for(let j = lowerBound; j < upperBound; j++) {
-                branchTimeline.push(timeline[j]);
+                branchTimeline[j] = timeline[j];
          }
+
         this.navigationTimeline = branchTimeline;
     }
 
@@ -78,7 +87,16 @@ export class BranchModel{
                 this.currentNavigationFunction = navigationDatum;
             }
             this.currentNavigationDatum = navigationDatum;
-            this.navigationData[navigationDatum.entry.key] = navigationDatum;
+            let navigationDatumKey = null;
+            if(this.currentNavigationFunction){
+                navigationDatumKey = this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex;
+            }else{
+                navigationDatumKey = "GLOBAL";
+            }
+            if(!this.navigationData[navigationDatumKey]){
+                this.navigationData[navigationDatumKey] = {};
+            }
+            this.navigationData[navigationDatumKey][navigationDatum.entry.blockKey] = navigationDatum;
         }
     }
 
@@ -98,7 +116,7 @@ export class BranchModel{
 			let row = entry.range.start.row;
 
 			if(!result.rows.hasOwnProperty(row)){
-                result.rows[row] = {entry: entry, count: entry.count, branch : entry.count};
+                result.rows[row] = { entry: entry, count: entry.count, branch : entry.count};
 			}
 
             if(result.maxCount< entry.count){
@@ -113,32 +131,24 @@ export class BranchModel{
 	    if(!this.isRepOK()){
 	        return [];
 	    }
+	    let timelineLength = this.traceHelper.getTimeline().length;
         let stack = this.traceHelper.trace.stack, data = this.traceHelper.trace.data;
         let stackData = [];
+        let navigationDatumKey = "GLOBAL";
         if(this.currentNavigationFunction && this.currentNavigationFunction.entry && this.currentNavigationFunction.entry.timelineIndexes){
             let timelineIndexesLength = this.currentNavigationFunction.entry.timelineIndexes.length;
             let branchIndex = this.currentNavigationFunction.branchIndex;
             if( timelineIndexesLength > 2){
-                // lowerBound = this.currentNavigationFunction.entry.timelineIndexes[1];
-                // upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[timelineIndexesLength - 2]: upperBound;
                 lowerBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex];
                 upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[branchIndex+1]: upperBound;
             }
+
+            navigationDatumKey = this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex;
         }
 
-        // if(this.currentNavigationDatum && this.currentNavigationDatum.entry && this.currentNavigationDatum.entry.timelineIndexes){
-        //     let timelineIndexesLength = this.currentNavigationDatum.entry.timelineIndexes.length;
-        //     let branchIndex = this.currentNavigationDatum.branchIndex;
-        //     if( timelineIndexesLength > 2){
-        //         // lowerBound = this.currentNavigationFunction.entry.timelineIndexes[1];
-        //         // upperBound = timelineIndexesLength > 3? this.currentNavigationFunction.entry.timelineIndexes[timelineIndexesLength - 2]: upperBound;
-        //         lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
-        //         upperBound = timelineIndexesLength > 3? this.currentNavigationDatum.entry.timelineIndexes[branchIndex+1]: upperBound;
-        //     }
-        // }
-
         if(!upperBound){
-            upperBound = this.traceHelper.getTimeline().length;
+            lowerBound = 0;
+            upperBound = timelineLength;
         }
 
         for (let key in stack) {
@@ -147,11 +157,31 @@ export class BranchModel{
                 if(containingBlock){
                     let timelineIndexes = null, count = 0;
                     if(containingBlock.type === "FunctionDeclaration" || containingBlock.type === "FunctionExpression"){
-                        timelineIndexes = this.getTimelineIndexesByBlockKey(key);
+                        timelineIndexes = this.getTimelineIndexesByBlockKey(key, 0, timelineLength);
                         count = stack[key];
                     }else{
-                        timelineIndexes = this.getTimelineIndexesByBlockKey(key, lowerBound, upperBound);
-                        count = timelineIndexes.length - 2;
+                        let navigationDatum = this.navigationData[navigationDatumKey]? this.navigationData[navigationDatumKey][key]: null;
+
+                        if(navigationDatum && navigationDatum !== this.currentNavigationFunction){
+                            if(navigationDatum === this.currentNavigationDatum){
+                                timelineIndexes = this.getTimelineIndexesByBlockKey(key, 0, timelineLength);
+                                count = timelineIndexes.length - 2;
+                            }
+                            let timelineIndexesLength = navigationDatum.entry.timelineIndexes.length;
+                            let branchIndex = navigationDatum.branchIndex;
+                            if( timelineIndexesLength > 2){
+                                lowerBound = navigationDatum.entry.timelineIndexes[branchIndex];
+                                upperBound = timelineIndexesLength > 3? navigationDatum.entry.timelineIndexes[branchIndex+1]: upperBound;
+                            }
+                        }else{
+                            timelineIndexes = this.getTimelineIndexesByBlockKey(key, lowerBound, upperBound);
+                            count = timelineIndexes.length - 2;
+                        }
+
+                        // if(navigationDatum !== this.currentNavigationDatum){
+                        //     timelineIndexes = this.getTimelineIndexesByBlockKey(key, lowerBound, upperBound);
+                        //     count = timelineIndexes.length - 2;
+                        // }
                     }
                     stackData.push({ blockKey: key, type: containingBlock.type, range: containingBlock.range, blockRange: data[key].range,  timelineIndexes: timelineIndexes, count: count});
                 }
@@ -160,12 +190,12 @@ export class BranchModel{
         return stackData;
     }
 
-    getTimelineIndexesByBlockKey(key, lowerBound = 0, upperBound = this.timelineLength){
+    getTimelineIndexesByBlockKey(key, lowerBound, upperBound){
         if(!this.isRepOK()){
 	        return [];
 	    }
 
-        let timeline = this.traceHelper.trace.timeline;
+        let timeline = this.traceHelper.getTimeline();
         if(!timeline){
             return [];
         }
@@ -185,39 +215,31 @@ export class BranchModel{
         if(!this.isRepOK()){
             return;
         }
-        let traceCollection = this.getNavigationStackBlockCounts();
-        let localTraceGutterData = this.extractTraceGutterData(traceCollection);
 
         if(!navigationDatum){
+            let traceCollection = this.getNavigationStackBlockCounts();
+            let localTraceGutterData = this.extractTraceGutterData(traceCollection);
             this.traceGutterData.maxCount = localTraceGutterData.maxCount;
             this.traceGutterData.rows = localTraceGutterData.rows;
         }else{
             this.pushNavigationData(navigationDatum);
             this.startNavigation();
             this.navigateToBranch();
+            let traceCollection = this.getNavigationStackBlockCounts();
+            let localTraceGutterData = this.extractTraceGutterData(traceCollection);
             for (let rowIndex in localTraceGutterData.rows){
-                let rowCount = localTraceGutterData.rows[rowIndex].count;
-                if(rowCount && this.traceGutterData.rows[rowIndex]){
-                    this.traceGutterData.rows[rowIndex].count = rowCount;
-                    this.traceGutterData.rows[rowIndex].branch = Math.min(this.traceGutterData.rows[rowIndex].branch || rowCount, rowCount);
-                }
-            }
-        }
-    }
-
-    updateGutterBranches(){
-        let traceGutterData = this.getTraceGutterData();
-        let navigationData = this.getNavigationData();
-        for(let row in traceGutterData.rows){
-            if(traceGutterData.rows.hasOwnProperty(row)){
-                let count = traceGutterData.rows[row].count;
-                if(count != null){
-                    traceGutterData.rows[row].branch = count;
-                }
-                let navigationDatum = navigationData[row];
-                if(navigationDatum){
-                    traceGutterData.rows[row].count = navigationDatum.entry.count;
-                    traceGutterData.rows[row].branch = navigationDatum.brancIndex;
+                let row = localTraceGutterData.rows[rowIndex];
+                if(row && this.traceGutterData.rows[rowIndex]){
+                    let rowCount = row.count;
+                    let navigationDatumKey = this.currentNavigationFunction? this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex: "GLOBAL";
+                    let navigationDatum = this.navigationData[navigationDatumKey]? this.navigationData[navigationDatumKey][row.entry.blockKey]: null;
+                    if(navigationDatum){
+                        // this.traceGutterData.rows[rowIndex].count = Math.min(this.traceGutterData.rows[rowIndex].count? this.traceGutterData.rows[rowIndex].count: 0, rowCount);
+                        this.traceGutterData.rows[rowIndex].branch = Math.min(navigationDatum.branchIndex? navigationDatum.branchIndex: rowCount, rowCount);
+                    }else{
+                        this.traceGutterData.rows[rowIndex].count = rowCount;
+                        this.traceGutterData.rows[rowIndex].branch = this.traceGutterData.rows[rowIndex].count;
+                    }
                 }
             }
         }
