@@ -6,23 +6,21 @@ export class AutoLogTracer{
     }
 
     wrapCodeInTryCatch(code){
-        // return `
-
-        //         ${code}
-        //         window.IS_AFTER_LOAD = true;
-        //         window.START_TIME = null;
-
-        // `;
         return `
-            // try{
                 ${code}
                 window.IS_AFTER_LOAD = true;
                 window.START_TIME = null;
-            // }catch(error){
-            //     window.TRACE.error = error;
-            //     throw JSON.stringify({ range: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
-            // }
         `;
+        // return `
+        //     // try{
+        //         ${code}
+        //         window.IS_AFTER_LOAD = true;
+        //         window.START_TIME = null;
+        //     // }catch(error){
+        //     //     window.TRACE.error = error;
+        //     //     throw JSON.stringify({ range: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
+        //     // }
+        // `;
 
     }
 
@@ -78,7 +76,7 @@ export class AutoLogTracer{
         var TraceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
         window.ISCANCELLED = false;
         window.TRACE = {
-            scriptCounter: 0, programCounter: 0, branchCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : {}, stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            indexInTimeline: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : {},  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             preautolog: function preAutolog(range, type, id, text){
             //todo: document.currentScript as context and handle a callstack per each one [Fixes timeout, Ajax callbacks and other external libraries interaction]
                 var info = { id: id , value: null, range: range, type: type, text: text};
@@ -109,7 +107,7 @@ export class AutoLogTracer{
                     // console.log("enter " +info.id);
             },
             populateFunctionScope: function populateFunctionScope(info, infoValueString, key, isParameter){
-            //todo cllbacks
+            //todo callbacks
                 if(!this.functionScopes.length || !info){
                     return;
                 }
@@ -123,7 +121,6 @@ export class AutoLogTracer{
 
                 var callExpressionArguments= [];
                 var callExpressionText = calleeInfo.text;
-                // console.log(info);
                 if(calleeInfo.text){
                     try{
                         var data = JSON.parse(calleeInfo.text);
@@ -235,14 +232,10 @@ export class AutoLogTracer{
                 }
 
                 if(window.IS_AFTER_LOAD){
-                    // if(!window.START_TIME){
-                    //     window.START_TIME = +new Date();
-                    // }
                     clearTimeout(this.updateTimeout);
                     this.updateTimeout = setTimeout(function updateTrace(){
                         traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
                         traceDataContainerElement.click();
-                        // window.START_TIME = null;
                     }, 100);
                 }
 
@@ -258,7 +251,6 @@ export class AutoLogTracer{
                 var extra = info.extra;
 
                 if(TraceTypes.Stack.indexOf(info.type) > -1){
-
                     if(extra){
                         var extraValues = extra.split(":");
                         if(extraValues.length > 1){
@@ -268,18 +260,15 @@ export class AutoLogTracer{
                             key = key + ":" + extra;
 
                             if(isEnteringBlock){
-                                this.stackIndex.push({path: [this.stackIndex], scope: stackKey});
                                 this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
-                            }else{
-                              //  this.stackIndex = this.stackIndex.pop();
                             }
                         }
 
                     }else{
                         this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                     }
-
                 }
+
                 var infoValueString = null;
                 try{
                     if(info.value && info.value.nodeType === 1){
@@ -289,14 +278,6 @@ export class AutoLogTracer{
                     }
                 }catch(e){
                     infoValueString = info.value == null? null: info.value.toString();
-                }
-
-                if(TraceTypes.Expression.indexOf(info.type) > -1){
-                    if(info.id){
-                        this.values.push({id: info.id , value: infoValueString, range: info.range});
-                    }else{
-                        this.values.push({id: info.text , value: infoValueString, range: info.range});
-                    }
                 }
 
                 if(info.type === Syntax.CallExpression && !isParameter){
@@ -314,22 +295,26 @@ export class AutoLogTracer{
                         entry.isCallback = parameterData.isCallback;
                     }
                     this.timeline.push(entry);
+                    this.indexInTimeline = this.timeline.length;
                 }
 
-                var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;
+                if(TraceTypes.Expression.indexOf(info.type) > -1){
+                    if(info.id){
+                        this.values.push({indexInTimeline: this.indexInTimeline, id: info.id , value: infoValueString, range: info.range});
+                    }else{
+                        this.values.push({indexInTimeline: this.indexInTimeline, id: info.text , value: infoValueString, range: info.range});
+                    }
+                }
 
 				if (this.hits.hasOwnProperty(key)) {
                     this.hits[key] = this.hits[key] + 1;
-                    this.data[key].hits[stackTop] = this.data[key].hits[stackTop] + 1;
-                    this.data[key].values.push({ stackIndex : stackTop + ":" + this.data[key].hits[stackTop]  , infoValueString});
-                } else {
-
+                    this.data[key].values.push({ indexInTimeline: this.indexInTimeline, infoValueString});
+                }else{
                     if(info.type === Syntax.VariableDeclarator){
                        this.variables.push({id: info.id , range: info.range});
                     }
 
                     this.identifiers.push({id: info.id , range: info.range});
-
 
                     this.hits[key] = 1;
                     this.execution.push(key);
@@ -337,12 +322,10 @@ export class AutoLogTracer{
                         type : info.type,
                         id : info.id,
                         text : info.text,
-                        values: [{stackIndex: stackTop + ":1", value : infoValueString}],
+                        values: [{  indexInTimeline: this.indexInTimeline, value : infoValueString}],
                         range: info.range,
-                        hits : [],
                         extra : info.extra
                     };
-                    this.data[key].hits[stackTop] = 1;
                 }
 
                 if(window.ISCANCELLED){

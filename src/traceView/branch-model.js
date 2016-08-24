@@ -17,10 +17,21 @@ export class BranchModel{
 		    return false;
 		}
 
+		if(!this.blockHierarchy){
+		    return false;
+		}
+
 		if(!this.traceGutterData.rows){
 		    return false;
 		}
 		return true;
+	}
+
+	setTraceHelper(traceHelper){
+	    this.traceHelper = traceHelper;
+	    this.navigationTimeline = traceHelper.getTimeline();
+	    this.buildBlockHierarchy();
+	    this.updateTraceGutterData();
 	}
 
 	startNavigation(){
@@ -126,6 +137,26 @@ export class BranchModel{
         return result;
 	}
 
+	getTimelineIndexesByBlockKey(key, lowerBound, upperBound){
+        if(!this.isRepOK()){
+	        return [];
+	    }
+
+        let timeline = this.traceHelper.getTimeline();
+        if(!timeline){
+            return [];
+        }
+
+        let timelineIndexes = [lowerBound];
+        for(let i = lowerBound; i < upperBound; i++){
+            if(timeline[i] && key === timeline[i].key){
+                timelineIndexes.push(i);
+            }
+        }
+        timelineIndexes.push(upperBound);
+
+        return timelineIndexes;
+    }
 
 	getNavigationStackBlockCounts(lowerBound = 0, upperBound) {
 	    if(!this.isRepOK()){
@@ -190,25 +221,106 @@ export class BranchModel{
         return stackData;
     }
 
-    getTimelineIndexesByBlockKey(key, lowerBound, upperBound){
-        if(!this.isRepOK()){
+    buildBlockHierarchy(){
+        if(!this.traceHelper){
+            return;
+        }
+        let stack = this.traceHelper.trace.stack, data = this.traceHelper.trace.data;
+        let blockHierarchy = {};
+        for (let key in stack) {
+            if(data[key]){
+                let containingBlock = JSON.parse(data[key].id);
+                if(containingBlock){
+                    blockHierarchy[key] = { parentBlockKey: null, containingBlocks: [], type: containingBlock.type, range: containingBlock.range, };
+                }
+            }
+        }
+
+        for (let key in blockHierarchy) {
+            let block = blockHierarchy[key];
+            for (let otherKey in blockHierarchy) {
+                let otherBlock = blockHierarchy[otherKey];
+                if(key !== otherKey && this.traceHelper.isRangeInRange(otherBlock.range, block.range)){
+                    otherBlock.parentBlockKey = key;
+                    otherBlock.containingBlocks.push(key);
+                }
+            }
+        }
+        this.blockHierarchy = blockHierarchy;
+    }
+
+    getNavigationStackBlockCountsByIndexInTimeline(indexInTimeline) {
+	    if(!this.isRepOK()){
 	        return [];
 	    }
 
-        let timeline = this.traceHelper.getTimeline();
-        if(!timeline){
-            return [];
-        }
+	    let timeline = this.traceHelper.getTimeline();
+        let entryInTimeline = timeline[indexInTimeline];
 
-        let timelineIndexes = [lowerBound];
-        for(let i = lowerBound; i < upperBound; i++){
-            if(timeline[i] && key === timeline[i].key){
-                timelineIndexes.push(i);
+	    if(indexInTimeline && !entryInTimeline){
+	        return [];
+	    }
+
+	    let timelineLength = this.traceHelper.getTimeline().length;
+        let stack = this.traceHelper.trace.stack, data = this.traceHelper.trace.data;
+        let stackBoundaries = [];
+        for (let key in stack) {
+            if(data[key]){
+                let containingBlock = JSON.parse(data[key].id);
+                if(containingBlock){
+                    let timelineIndexes = null, count = 0;
+                    timelineIndexes = this.getTimelineIndexesByBlockKey(key, 0, timelineLength);
+                    let blockBoundaries = this.getBlockBoundariesForIndexInTimeline(indexInTimeline, timelineIndexes);
+                    count = stack[key];
+                    if(blockBoundaries && (!indexInTimeline || this.traceHelper.isRangeInRange(entryInTimeline.range, data[key].range))){
+                        let relativeTimelineIndexes = null, relativeCount = 0, relativeBlockBoundaries = null, parentBlockKey = this.blockHierarchy[key].parentBlockKey;
+                        if(parentBlockKey){
+                            let parentTimelineIndexes = this.getTimelineIndexesByBlockKey(parentBlockKey, 0, timelineLength);
+                            let parentBlockBoundaries = this.getBlockBoundariesForIndexInTimeline(indexInTimeline, parentTimelineIndexes);
+                            if(parentBlockBoundaries){
+                                relativeTimelineIndexes = this.getTimelineIndexesByBlockKey(key, parentBlockBoundaries.lowerBound, parentBlockBoundaries.upperBound);
+                                relativeBlockBoundaries= this.getBlockBoundariesForIndexInTimeline(indexInTimeline, relativeTimelineIndexes);
+                                relativeCount = relativeTimelineIndexes.length - 2;
+                            }
+                        }
+                        let relativeBranchIndex = relativeBlockBoundaries? relativeBlockBoundaries.branchIndex: 0;
+                        stackBoundaries.push({
+                            range: containingBlock.range,
+                            type: containingBlock.type,
+                            blockKey: key,
+                            blockRange: data[key].range,
+                            timelineIndexes: timelineIndexes,
+                            count: count,
+                            branchIndex: blockBoundaries.branchIndex,
+                            relativeTimelineIndexes: relativeTimelineIndexes,
+                            relativeCount: relativeCount,
+                            relativeBranchIndex: relativeBranchIndex
+                        });
+                    }
+                }
             }
         }
-        timelineIndexes.push(upperBound);
+        return stackBoundaries;
+    }
 
-        return timelineIndexes;
+    getBlockBoundariesForIndexInTimeline(indexInTimeline, timelineIndexes){
+        let lowerBound = null, upperBound = null, previousIndex = null;
+        for(let index in timelineIndexes){
+            lowerBound = upperBound;
+            upperBound = timelineIndexes[index];
+            if(indexInTimeline){
+                if(lowerBound != null && lowerBound <= indexInTimeline && indexInTimeline <= upperBound){
+                    return {branchIndex: previousIndex, lowerBound: lowerBound, upperBound: upperBound};
+                }
+            }
+            previousIndex = index;
+        }
+
+        if(!indexInTimeline){
+           return {branchIndex: previousIndex, lowerBound: lowerBound, upperBound: upperBound};
+        }
+
+        return null;
     }
 
 	updateTraceGutterData(navigationDatum){
@@ -217,7 +329,7 @@ export class BranchModel{
         }
 
         if(!navigationDatum){
-            let traceCollection = this.getNavigationStackBlockCounts();
+            let traceCollection = this.getNavigationStackBlockCountsByIndexInTimeline();
             let localTraceGutterData = this.extractTraceGutterData(traceCollection);
             this.traceGutterData.maxCount = localTraceGutterData.maxCount;
             this.traceGutterData.rows = localTraceGutterData.rows;
@@ -225,27 +337,64 @@ export class BranchModel{
             this.pushNavigationData(navigationDatum);
             this.startNavigation();
             this.navigateToBranch();
-            let traceCollection = this.getNavigationStackBlockCounts();
+            let indexInTimeline = navigationDatum.entry.timelineIndexes? navigationDatum.entry.timelineIndexes[navigationDatum.branchIndex]: null;
+            let traceCollection = this.getNavigationStackBlockCountsByIndexInTimeline(indexInTimeline);
+            console.log(indexInTimeline,traceCollection);
             let localTraceGutterData = this.extractTraceGutterData(traceCollection);
+            console.log(localTraceGutterData);
             for (let rowIndex in localTraceGutterData.rows){
                 let row = localTraceGutterData.rows[rowIndex];
-                if(row && this.traceGutterData.rows[rowIndex]){
-                    let rowCount = row.count;
-                    let navigationDatumKey = this.currentNavigationFunction? this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex: "GLOBAL";
-                    let navigationDatum = this.navigationData[navigationDatumKey]? this.navigationData[navigationDatumKey][row.entry.blockKey]: null;
-                    if(navigationDatum){
-                        // this.traceGutterData.rows[rowIndex].count = Math.min(this.traceGutterData.rows[rowIndex].count? this.traceGutterData.rows[rowIndex].count: 0, rowCount);
-                        this.traceGutterData.rows[rowIndex].branch = Math.min(navigationDatum.branchIndex? navigationDatum.branchIndex: rowCount, rowCount);
-                    }else{
+                // if(row && this.traceGutterData.rows[rowIndex]){
+                    let rowCount = row.entry.relativeCount? row.entry.relativeCount: row.count;
+                    // let navigationDatumKey = this.currentNavigationFunction? this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex: "GLOBAL";
+                    // let navigationDatum = this.navigationData[navigationDatumKey]? this.navigationData[navigationDatumKey][row.entry.blockKey]: null;
+                    // if(navigationDatum){
+                    //     // this.traceGutterData.rows[rowIndex].count = Math.min(this.traceGutterData.rows[rowIndex].count? this.traceGutterData.rows[rowIndex].count: 0, rowCount);
+                    //     this.traceGutterData.rows[rowIndex].branch = Math.min(navigationDatum.branchIndex? navigationDatum.branchIndex: rowCount, rowCount);
+                    // }else{
                         this.traceGutterData.rows[rowIndex].count = rowCount;
                         this.traceGutterData.rows[rowIndex].branch = this.traceGutterData.rows[rowIndex].count;
-                    }
-                }
+                    // }
+                // }
             }
         }
     }
 
-	getTraceGutterData(){
+    // updateTraceGutterData(navigationDatum){
+    //     if(!this.isRepOK()){
+    //         return;
+    //     }
+
+    //     if(!navigationDatum){
+    //         let traceCollection = this.getNavigationStackBlockCounts();
+    //         let localTraceGutterData = this.extractTraceGutterData(traceCollection);
+    //         this.traceGutterData.maxCount = localTraceGutterData.maxCount;
+    //         this.traceGutterData.rows = localTraceGutterData.rows;
+    //     }else{
+    //         this.pushNavigationData(navigationDatum);
+    //         this.startNavigation();
+    //         this.navigateToBranch();
+    //         let traceCollection = this.getNavigationStackBlockCounts();
+    //         let localTraceGutterData = this.extractTraceGutterData(traceCollection);
+    //         for (let rowIndex in localTraceGutterData.rows){
+    //             let row = localTraceGutterData.rows[rowIndex];
+    //             if(row && this.traceGutterData.rows[rowIndex]){
+    //                 let rowCount = row.count;
+    //                 let navigationDatumKey = this.currentNavigationFunction? this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex: "GLOBAL";
+    //                 let navigationDatum = this.navigationData[navigationDatumKey]? this.navigationData[navigationDatumKey][row.entry.blockKey]: null;
+    //                 if(navigationDatum){
+    //                     // this.traceGutterData.rows[rowIndex].count = Math.min(this.traceGutterData.rows[rowIndex].count? this.traceGutterData.rows[rowIndex].count: 0, rowCount);
+    //                     this.traceGutterData.rows[rowIndex].branch = Math.min(navigationDatum.branchIndex? navigationDatum.branchIndex: rowCount, rowCount);
+    //                 }else{
+    //                     this.traceGutterData.rows[rowIndex].count = rowCount;
+    //                     this.traceGutterData.rows[rowIndex].branch = this.traceGutterData.rows[rowIndex].count;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    getTraceGutterData(){
         return this.traceGutterData;
     }
 

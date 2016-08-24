@@ -76,7 +76,7 @@ export class BranchNavigator{
 
         eventAggregator.subscribe("traceChanged", payload => {
             this.$hideTooltip();
-            eventAggregator.publish("traceNavigationChange", traceViewModel);
+            eventAggregator.publish("traceNavigationChange", {traceViewModel: traceViewModel, isEditorChange: true});
         });
 
         eventAggregator.subscribe(
@@ -84,7 +84,7 @@ export class BranchNavigator{
                 if(traceViewModel){
                     traceViewModel.updateTraceGutterData(navigationDatum);
                     eventAggregator.publish("traceGutterDataChanged");
-                    eventAggregator.publish("traceNavigationChange", traceViewModel);
+                    eventAggregator.publish("traceNavigationChange", {traceViewModel: traceViewModel, isEditorChange: false});
                 }
 
                 if(traceViewModel.isTraceGutterDataValid()){

@@ -44,8 +44,7 @@ export class TraceViewModel {
 
     setTraceHelper(traceHelper){
         this.traceHelper = traceHelper;
-        this.branchModel.traceHelper = traceHelper;
-        this.branchModel.updateTraceGutterData();
+        this.branchModel.setTraceHelper(traceHelper);
     }
 
     updateTraceGutterData(navigationDatum){

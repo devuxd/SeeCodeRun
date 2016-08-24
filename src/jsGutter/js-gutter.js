@@ -104,21 +104,19 @@ export class JsGutter {
         }
 
         if(self.isTraceChange && self.traceViewModel && editorLayout.lastRow){
-            self.isTraceChange = false;
             if(self.traceViewModel.isRepOK()){
+
+            self.isTraceChange = false;
                 let entries = self.traceViewModel.branchModel.getTimeline();
-                let isAppendToContent = true;
-                if(self.traceViewModel.branchModel.isNavigationMode){
-                    isAppendToContent = false;
-                }
 
                 for ( let indexInTimeline in entries) {
                     let entry = entries[indexInTimeline];
-                    self.setGutterLineContent(indexInTimeline, entry, isAppendToContent);
+                    self.setGutterLineContent(indexInTimeline, entry);
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
-            }
+
             self.isTraceServiceProccesing = false;
+            }
         }
 
         if(self.isTraceServiceProccesing){
@@ -193,14 +191,15 @@ export class JsGutter {
                 $gutter.scrollTop(this.scrollTop);
         });
 
-        ea.subscribe("traceNavigationChange", traceViewModel => {
-                if(traceViewModel){
-                    this.setTraceViewModel(traceViewModel);
-                    this.clearGutter();
-                    this.isTraceChange=true;
-                    this.update();
-                    // this.traceHelper.stopNavigation();
-                }
+        ea.subscribe("traceNavigationChange", traceData => {
+            if(traceData.isEditorChange){
+                this.clearGutter();
+            }
+            if(traceData.traceViewModel){
+                this.setTraceViewModel(traceData.traceViewModel);
+                this.isTraceChange=true;
+                this.update();
+            }
 
         });
     }

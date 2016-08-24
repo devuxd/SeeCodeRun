@@ -169,7 +169,7 @@ export class AceUtils{
     		}
 
     		let row = e.getDocumentPosition().row;
-    		let content = "";
+    		let content = null;
     		if(dataModel.rows.hasOwnProperty(row)){
     		        content = dataModel.rows[row];
                     let pixelPosition = {};

@@ -144,6 +144,7 @@ export class ExpressionDataExplorer{
 
     let match =  timeline[indexInTimeline];
     if(match){
+      this.traceViewModel.branchModel.getNavigationStackBlockCountsByIndexInTimeline(indexInTimeline);
       this.eventAggregator.publish("expressionHovered", match);
     }
   }
