@@ -76,9 +76,12 @@ export class BranchModel{
             // return;
         // }
         let branchIndex = this.currentNavigationDatum.branchIndex;
-        let lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
-        let upperBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex + 1];
+        let lowerBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex - 1];
+        let upperBound = this.currentNavigationDatum.entry.timelineIndexes[branchIndex];
         let timeline = this.traceHelper.getTimeline();
+        if(!branchIndex){
+            return timeline;
+        }
         // let branchIndex = this.currentNavigationFunction.branchIndex|| 1;
         // let lowerBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex];
         // let upperBound = this.currentNavigationFunction.entry.timelineIndexes[branchIndex + 1];

@@ -10,18 +10,8 @@ export class AutoLogTracer{
                 ${code}
                 window.IS_AFTER_LOAD = true;
                 window.START_TIME = null;
+                clearTimeout(window.TRACE.runTimeout);
         `;
-        // return `
-        //     // try{
-        //         ${code}
-        //         window.IS_AFTER_LOAD = true;
-        //         window.START_TIME = null;
-        //     // }catch(error){
-        //     //     window.TRACE.error = error;
-        //     //     throw JSON.stringify({ range: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
-        //     // }
-        // `;
-
     }
 
     getTraceDataContainerCodeBoilerPlate(){
@@ -38,7 +28,7 @@ export class AutoLogTracer{
 
     getTraceDataCodeBoilerPlate(){
         return `
-        traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
+        traceDataContainerElement.textContent= window.TRACE.stringify(window.TRACE.getTraceData());
         `;
     }
 
@@ -68,8 +58,8 @@ export class AutoLogTracer{
             };
         }());
 
-        window.START_TIME = +new Date();
         window.TIME_LIMIT = ${timeLimit};
+        window.START_TIME = +new Date();
 
         var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
         var TraceRuntimeTypes =  ${JSON.stringify(this.traceModel.traceRuntimeTypes)};
@@ -85,6 +75,31 @@ export class AutoLogTracer{
                 if(type === Syntax.CallExpression){
                     this.timeline.push(info);
                     this.enterFunctionScope(info);
+                }
+
+                if(info.type === "BlockStatement"){
+                    clearTimeout(this.runTimeout);
+                    this.runTimeout = setTimeout(function updateTrace(){
+                        window.START_TIME = null;
+                    }, window.TIME_LIMIT- 250);
+                    window.START_TIME = window.START_TIME ? window.START_TIME : +new Date();
+                }
+
+                var duration  = 0;
+                if(window.START_TIME){
+                    duration = (+new Date()) - window.START_TIME;
+                }
+
+                if(duration > window.TIME_LIMIT){
+                     throw "Trace Timeout. Running code exceeded " + window.TIME_LIMIT + " ms time limit.";
+                }
+
+                if(window.IS_AFTER_LOAD){
+                    clearTimeout(this.updateTimeout);
+                    this.updateTimeout = setTimeout(function updateTrace(){
+                        traceDataContainerElement.textContent = window.TRACE.stringify(window.TRACE.getTraceData());
+                        traceDataContainerElement.click();
+                    }, 100);
                 }
                 return window.TRACE;
             },  // From TraceHelper
@@ -172,7 +187,7 @@ export class AutoLogTracer{
                     this.timeline[topScope.timelineStartIndex].value= "EXCEPTION/ERROR THROWN";
                 }else{
                     if(info.type === Syntax.CallExpression){
-                        this.timeline[topScope.timelineStartIndex].value= info.value;
+                        this.timeline[topScope.timelineStartIndex].value= this.stringify(info.value);
                     }
                 }
                 // console.log("exit " +topScope.id);
@@ -214,6 +229,7 @@ export class AutoLogTracer{
                 }while(this.functionScopes.length && isBadScope);
             },
             autoLog: function autoLog(info) {
+                var self = this;
                 this.currentExpressionRange = info.range;
 
                 var isParameter = false;
@@ -225,26 +241,6 @@ export class AutoLogTracer{
                     if(this.isFunction(info.value)){
                          parameterData.isCallback = true;
                     }
-                }
-
-                if(this.hits.length < 1){
-                    window.START_TIME = +new Date();
-                }
-
-                if(window.IS_AFTER_LOAD){
-                    clearTimeout(this.updateTimeout);
-                    this.updateTimeout = setTimeout(function updateTrace(){
-                        traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
-                        traceDataContainerElement.click();
-                    }, 100);
-                }
-
-                var duration = 0;
-                if(window.START_TIME){
-                    duration = (+new Date()) - window.START_TIME;
-                }
-                if(duration > window.TIME_LIMIT){
-                     throw "Trace Timeout. Running code exceeded " + window.TIME_LIMIT + " ms time limit.";
                 }
 
                 var key = info.indexRange[0]+ ':' + info.indexRange[1];
@@ -272,7 +268,8 @@ export class AutoLogTracer{
                 var infoValueString = null;
                 try{
                     if(info.value && info.value.nodeType === 1){
-                        infoValueString = this.toJSON(info.value);
+                        // infoValueString = this.toJSON(info.value);
+                        infoValueString = this.stringify(info.value);
                     }else{
                         infoValueString = this.stringify(info.value);
                     }
