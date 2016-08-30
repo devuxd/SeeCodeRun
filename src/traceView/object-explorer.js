@@ -27,6 +27,7 @@ export class ObjectExplorer {
           this.objectType = ObjectExplorer.ObjectType.DOM;
           this.classType = element.toString();
           this.nodeType = element.nodeType;
+          this.nodeName = element.nodeType === 1 ? "tagName" : "nodeName";
         }else{
           this.objectType = ObjectExplorer.ObjectType.JS;
         }
@@ -38,6 +39,9 @@ export class ObjectExplorer {
   }
 
   escapeHMTLString(aString){
+    if(aString && this.jsUtils.type(aString) !== "string"){
+      aString = aString.toString();
+    }
     return this._$buffer.text(aString).html();
   }
 
@@ -58,7 +62,7 @@ export class ObjectExplorer {
    makeAttributes(attributes) {
     let str = "";
     for(let i = 0; i < attributes.length; i++) {
-      str += "<span class='treeObj attr'>" + attributes[i].nodeName + "</span>"
+      str += "<span class='treeObj attr'>" + attributes[i][this.nodeName] + "</span>"
         + "<span class='treeObj sign'>=\"</span><span class='treeObj attrValue'>" + this.escapeHMTLString(attributes[i].nodeValue)
         + "</span>" + "<span class='treeObj sign'>\"</span> ";
     }
@@ -99,7 +103,7 @@ export class ObjectExplorer {
             attr = " " + attr;
           html += "<span class='treeObj sign'>&lt;</span>"
             + "<span class='treeObj elementNode'>"
-            + children[i].nodeName.toLowerCase()
+            + children[i][this.nodeName].toLowerCase()
             + "</span><span class='treeObj sign'>" + attr + "&gt;</span>";
         }
 
@@ -149,11 +153,10 @@ export class ObjectExplorer {
   // convert object tree into HTML collapsible list
    generateObjectTree(object, isCollapsable = true) {
 
-    if(this.jsUtils.isPrimitiveType(object)){
+    if(this.jsUtils.isPrimitiveType(object) || object.toString() === "[object Window]"){
       let leafNode = this.generateLeafNode(object);
       return this.wrapInULTag(this.wrapInLITag(leafNode));
     }
-
     let keys = Object.keys(object);
 
     let html = "";
@@ -221,15 +224,16 @@ export class ObjectExplorer {
   generateDOMTreeViewHTMLString() {
     let tree;
     if(!this.isObjectEmpty(this.element)) {
+      // console.log(this.element);
       tree = "<ul id = '"+this.objectViewId+"' class='treeObj treeView'><li>" + "<span class='treeObj sign'>&lt;</span>" +
-        "<span class='treeObj elementNode'>" + this.element.nodeName.toLowerCase() +
+        "<span class='treeObj elementNode'>" + this.element[this.nodeName].toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" +
         this.generateDOMTree(this.element) +
         "</li></ul>";
     }
     else {
       tree = "<ul  id = '"+this.objectViewId+"' class='treeObj treeView'>" + "<span class='treeObj sign'>&lt;</span>" +
-        "<span class='treeObj elementNode'>" + this.element.nodeName.toLowerCase() +
+        "<span class='treeObj elementNode'>" + this.element[this.nodeName].toLowerCase() +
         "</span><span class='treeObj sign'>&gt;</span>" + "</ul>";
     }
     return tree;
@@ -271,7 +275,8 @@ export class ObjectExplorer {
 
   generateDOMLineViewHTMLString() {
     let tree;
-    tree = "<span id = '"+this.objectViewId+"' class='elementNode'>" + this.element.nodeName.toLowerCase() +"</span>";
+    // console.log(this.element);
+    tree = "<span id = '"+this.objectViewId+"' class='elementNode'>" + this.element[this.nodeName].toLowerCase() +"</span>";
     return tree;
   }
 

@@ -112,7 +112,10 @@ export class AutoLogTracer{
             }, // from "Jquery"
             isFunction: function isFunction(obj){
                 return obj == null? false : toString.call( obj ) === "[object Function]";
-            },
+            }, // from "Jquery"
+            isWindow: function isWindow( obj ) {
+        		return obj != null && obj === obj.window;
+        	},
             enterFunctionScope: function enterFunctionScope(info){
                     var isRoot = this.functionScopes.length? false: true;
                     this.functionScopes.push({id: info.id, isRoot: isRoot, isLocal: false, isCallback: false, argumentsString: "[]", parametersString: "[]", range: info.range, functionRange: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
@@ -268,13 +271,13 @@ export class AutoLogTracer{
                 var infoValueString = null;
                 try{
                     if(info.value && info.value.nodeType === 1){
-                        // infoValueString = this.toJSON(info.value);
-                        infoValueString = this.stringify(info.value);
+                        infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.tryToJSON(info.value);
+                        // infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.stringify(info.value);
                     }else{
-                        infoValueString = this.stringify(info.value);
+                        infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.stringify(info.value);
                     }
                 }catch(e){
-                    infoValueString = info.value == null? null: info.value.toString();
+                    infoValueString = info.value == null? this.stringify(null): this.stringify(info.value.toString());
                 }
 
                 if(info.type === Syntax.CallExpression && !isParameter){
@@ -332,7 +335,11 @@ export class AutoLogTracer{
                 return info.value;
             },
             stringify: function stringify(obj, replacer, spaces, cycleReplacer) {
-              return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+                try{
+                    return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+                }catch(e){
+                    return obj == null? "null" : obj.toString();
+                }
             },
             serializer: function serializer(replacer, cycleReplacer) {
               var stack = [], keys = [];
@@ -355,6 +362,13 @@ export class AutoLogTracer{
                 }
                 return replacer == null ? value : replacer.call(this, key, value);
               };
+            },
+            tryToJSON: function tryToJSON(node){
+                try{
+                    return this.toJSON(node);
+                }catch(e){
+                    return this.stringify(node);
+                }
             },
             toJSON: function toJSON(node) {
             //https://gist.github.com/sstur/7379870
