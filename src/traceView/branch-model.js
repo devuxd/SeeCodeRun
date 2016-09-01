@@ -260,11 +260,11 @@ export class BranchModel{
 	    let timeline = this.traceHelper.getTimeline();
         let entryInTimeline = timeline[indexInTimeline];
 
-	    if(indexInTimeline && !entryInTimeline){
+	    if(indexInTimeline !== null && !entryInTimeline){
 	        return [];
 	    }
 
-	    let timelineLength = this.traceHelper.getTimeline().length;
+	    let timelineLength = timeline.length;
         let stack = this.traceHelper.trace.stack, data = this.traceHelper.trace.data;
         let stackBoundaries = [];
         for (let key in stack) {
@@ -275,7 +275,7 @@ export class BranchModel{
                     timelineIndexes = this.getTimelineIndexesByBlockKey(key, 0, timelineLength);
                     let blockBoundaries = this.getBlockBoundariesForIndexInTimeline(indexInTimeline, timelineIndexes);
                     count = stack[key];
-                    if(blockBoundaries && (!indexInTimeline || this.traceHelper.isRangeInRange(entryInTimeline.range, data[key].range))){
+                    if(blockBoundaries && (indexInTimeline == null || this.traceHelper.isRangeInRange(entryInTimeline.range, data[key].range))){
                         let relativeTimelineIndexes = null, relativeCount = 0, relativeBlockBoundaries = null, parentBlockKey = this.blockHierarchy[key].parentBlockKey;
                         if(parentBlockKey){
                             let parentTimelineIndexes = this.getTimelineIndexesByBlockKey(parentBlockKey, 0, timelineLength);
@@ -309,17 +309,17 @@ export class BranchModel{
     getBlockBoundariesForIndexInTimeline(indexInTimeline, timelineIndexes){
         let lowerBound = null, upperBound = null, previousIndex = null;
         for(let index in timelineIndexes){
-            lowerBound = upperBound;
+            lowerBound = lowerBound == null? timelineIndexes[index] : upperBound;
             upperBound = timelineIndexes[index];
-            if(indexInTimeline){
-                if(lowerBound != null && lowerBound <= indexInTimeline && indexInTimeline <= upperBound){
+            if(indexInTimeline != null){
+                if(lowerBound != upperBound && lowerBound <= indexInTimeline && indexInTimeline <= upperBound){
                     return {branchIndex: previousIndex, lowerBound: lowerBound, upperBound: upperBound};
                 }
             }
             previousIndex = index;
         }
 
-        if(!indexInTimeline){
+        if(indexInTimeline == null){
            return {branchIndex: previousIndex, lowerBound: lowerBound, upperBound: upperBound};
         }
 
@@ -342,13 +342,18 @@ export class BranchModel{
             this.navigateToBranch();
             let indexInTimeline = navigationDatum.entry.timelineIndexes? navigationDatum.entry.timelineIndexes[navigationDatum.branchIndex]: null;
             let traceCollection = this.getNavigationStackBlockCountsByIndexInTimeline(indexInTimeline);
-            console.log(indexInTimeline,traceCollection);
+            console.log("index",indexInTimeline,traceCollection);
             let localTraceGutterData = this.extractTraceGutterData(traceCollection);
-            console.log(localTraceGutterData);
+            let currentNavigationFunctionRow = this.currentNavigationFunction? this.currentNavigationFunction.row : -1;
+            let currentNavigationDatumRow = this.currentNavigationDatum? this.currentNavigationDatum.row : -1;
             for (let rowIndex in localTraceGutterData.rows){
                 let row = localTraceGutterData.rows[rowIndex];
-                // if(row && this.traceGutterData.rows[rowIndex]){
-                    let rowCount = row.entry.relativeCount? row.entry.relativeCount: row.count;
+
+                console.log("local ", rowIndex, row);
+                // console.log("global", "b", this.traceGutterData.rows[rowIndex]);
+                if(row && this.traceGutterData.rows[rowIndex] && rowIndex !== currentNavigationFunctionRow && rowIndex !== currentNavigationDatumRow){
+                    let rowCount = row.entry.relativeTimelineIndexes? row.entry.relativeCount: row.count;
+                    let rowBranch = row.entry.relativeTimelineIndexes? row.entry.relativeBranchIndex -1: row.branch;
                     // let navigationDatumKey = this.currentNavigationFunction? this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex: "GLOBAL";
                     // let navigationDatum = this.navigationData[navigationDatumKey]? this.navigationData[navigationDatumKey][row.entry.blockKey]: null;
                     // if(navigationDatum){
@@ -356,9 +361,12 @@ export class BranchModel{
                     //     this.traceGutterData.rows[rowIndex].branch = Math.min(navigationDatum.branchIndex? navigationDatum.branchIndex: rowCount, rowCount);
                     // }else{
                         this.traceGutterData.rows[rowIndex].count = rowCount;
-                        this.traceGutterData.rows[rowIndex].branch = this.traceGutterData.rows[rowIndex].count;
+                        this.traceGutterData.rows[rowIndex].branch = rowBranch;
+                        // this.traceGutterData.rows[rowIndex].branch = this.traceGutterData.rows[rowIndex].count;
                     // }
-                // }
+                }
+
+                // console.log("global", "a", this.traceGutterData.rows[rowIndex]);
             }
         }
     }

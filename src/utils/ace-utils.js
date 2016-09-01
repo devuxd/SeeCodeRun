@@ -323,15 +323,16 @@ export class AceUtils{
             },
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row].entry.relativeTimelineIndexes? traceGutterData.rows[row].entry.relativeCount :traceGutterData.rows[row].entry.count;
+                    // console.log("gutter", row, traceGutterData.rows[row].branch, traceGutterData.rows[row].count, traceGutterData.rows[row].entry);
+                    let count = traceGutterData.rows[row].entry.relativeTimelineIndexes? traceGutterData.rows[row].entry.relativeCount :traceGutterData.rows[row].count;
                     if(count == null){
                         count = "n.a.";
                     }
-                    let branch = traceGutterData.rows[row].entry.relativeTimelineIndexes? traceGutterData.rows[row].entry.relativeBranchIndex :traceGutterData.rows[row].entry.branchIndex;
+                    let branch = traceGutterData.rows[row].entry.relativeTimelineIndexes? traceGutterData.rows[row].entry.relativeBranchIndex -1 :traceGutterData.rows[row].branch;
                     if(branch == null){
                         branch = count;
                     }
-                    return "["+(branch -1)+"/"+ count +"] "+ (row + 1);
+                    return "["+(branch)+"/"+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;
                 }

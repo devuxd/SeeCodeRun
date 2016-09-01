@@ -114,7 +114,7 @@ export class AutoLogTracer{
                 return obj == null? false : toString.call( obj ) === "[object Function]";
             }, // from "Jquery"
             isWindow: function isWindow( obj ) {
-        		return obj != null && obj === obj.window;
+        		return obj && obj === obj.window;
         	},
             enterFunctionScope: function enterFunctionScope(info){
                     var isRoot = this.functionScopes.length? false: true;
@@ -271,9 +271,11 @@ export class AutoLogTracer{
                 var infoValueString = null;
                 try{
                     if(info.value && info.value.nodeType === 1){
+                        // infoValueString = this.tryToJSON(info.value);
                         infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.tryToJSON(info.value);
                         // infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.stringify(info.value);
                     }else{
+                        // infoValueString = this.stringify(info.value);
                         infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.stringify(info.value);
                     }
                 }catch(e){
@@ -370,21 +372,36 @@ export class AutoLogTracer{
                     return this.stringify(node);
                 }
             },
-            toJSON: function toJSON(node) {
+            toJSON: function toJSON(node, visited, visitedValue) {
             //https://gist.github.com/sstur/7379870
+              visited = visited? visited : [];
+              visitedValue = visitedValue? visitedValue : {};
               node = node || this;
+
               var obj = {
                 nodeType: node.nodeType
               };
+
+            var visitedIndex = visited.indexOf(node);
+            if(visitedIndex > -1){
+                return visitedValue[visitedIndex];
+            }else{
+                visited.push(node);
+                visitedValue.push(obj);
+            }
+
               if (node.tagName) {
                 obj.tagName = node.tagName.toLowerCase();
-              } else
-              if (node.nodeName) {
-                obj.nodeName = node.nodeName;
+              } else{
+                  if (node.nodeName) {
+                    obj.nodeName = node.nodeName;
+                  }
               }
+
               if (node.nodeValue) {
                 obj.nodeValue = node.nodeValue;
               }
+
               var attrs = node.attributes;
               if (attrs) {
                 var length = attrs.length;
@@ -394,14 +411,16 @@ export class AutoLogTracer{
                   arr[i] = [attr.nodeName, attr.nodeValue];
                 }
               }
+
               var childNodes = node.childNodes;
               if (childNodes) {
                 length = childNodes.length;
                 arr = obj.childNodes = new Array(length);
                 for (i = 0; i < length; i++) {
-                  arr[i] = this.toJSON(childNodes[i]);
+                  arr[i] = this.toJSON(childNodes[i], visited, visitedValue);
                 }
               }
+
               return obj;
             },
             getTraceData: function getTraceData() {

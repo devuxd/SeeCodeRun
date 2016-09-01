@@ -81,18 +81,23 @@ export class BranchNavigator{
 
         eventAggregator.subscribe(
             "traceNavigationPrepareChange", navigationDatum =>{
+
                 if(traceViewModel){
+
                     traceViewModel.updateTraceGutterData(navigationDatum);
                     eventAggregator.publish("traceGutterDataChanged");
                     eventAggregator.publish("traceNavigationChange", {traceViewModel: traceViewModel, isEditorChange: false});
-                }
 
-                if(traceViewModel.isTraceGutterDataValid()){
-                    if(traceViewModel.isTraceGutterDataRowValid(navigationDatum.row)){
-                        traceViewModel.setTraceGutterDataRowBranchIndex(navigationDatum.row, navigationDatum.branchIndex);
-                        editor.getSession().addGutterDecoration(navigationDatum.row, "");
+                    if(traceViewModel.isTraceGutterDataValid()){
+                        if(traceViewModel.isTraceGutterDataRowValid(navigationDatum.row)){
+                            traceViewModel.setTraceGutterDataRowBranchIndex(navigationDatum.row, navigationDatum.branchIndex);
+                            editor.getSession().addGutterDecoration(navigationDatum.row, "");
+                            console.log("u", navigationDatum.branchIndex, navigationDatum.row);
+                        }
                     }
                 }
+
+
             }
         );
 

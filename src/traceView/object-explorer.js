@@ -126,7 +126,7 @@ export class ObjectExplorer {
 
   generateLeafNode(object){
     let objectType = this.jsUtils.type(object);
-    let escapedHMTLString =  object? this.escapeHMTLString(object): object;
+    let escapedHMTLString =  object == null || object.toString() === "[object Window]"? object : this.escapeHMTLString(object);
     if(objectType === "string"){
       let escapedHMTLString1 =  escapedHMTLString.length > 32? escapedHMTLString.substring(0, 32) : escapedHMTLString;
       let escapedHMTLString2 =  escapedHMTLString.length > 32? escapedHMTLString.substring(32) : "";
@@ -142,7 +142,7 @@ export class ObjectExplorer {
 
   generateLeaf(object){
     let objectType = this.jsUtils.type(object);
-    let escapedHMTLString =  object? this.escapeHMTLString(object): object;
+    let escapedHMTLString =  object == null? object: this.escapeHMTLString(object);
     if(objectType === "string"){
       return `<span class='lineObj string'>"${escapedHMTLString}"</span>`;
     }else{
@@ -151,11 +151,24 @@ export class ObjectExplorer {
 
   }
   // convert object tree into HTML collapsible list
-   generateObjectTree(object, isCollapsable = true) {
+   generateObjectTree(object, isCollapsable = true, visited, visitedValue) {
+    let result = null;
+    visited =  visited? visited : [];
+    visitedValue =  visitedValue? visitedValue : {};
+
+    let visitedIndex = visited.indexOf(object);
+    if(visitedIndex > -1){
+      return visitedValue[visitedIndex];
+    }else{
+      visited.push(object);
+      visitedIndex = visited.length - 1;
+    }
 
     if(this.jsUtils.isPrimitiveType(object) || object.toString() === "[object Window]"){
       let leafNode = this.generateLeafNode(object);
-      return this.wrapInULTag(this.wrapInLITag(leafNode));
+      result = this.wrapInULTag(this.wrapInLITag(leafNode));
+      visitedValue[visitedIndex] = result;
+      return result;
     }
     let keys = Object.keys(object);
 
@@ -165,7 +178,7 @@ export class ObjectExplorer {
         html += "<li>";
 
         let key = "<span class='treeObj key'>";
-        let value;
+        let value = "";
 
         if(typeof keys[i] === "object") {
           key += keys[i].constructor.name;
@@ -175,23 +188,36 @@ export class ObjectExplorer {
         }
 
         key += "</span>";
-        if(this.jsUtils.isPrimitiveType(object[keys[i]])){
-         value = this.generateLeafNode(object[keys[i]]);
+        if(this.jsUtils.isPrimitiveType(object[keys[i]]) || object.toString() === "[object Window]"){
+         value += this.generateLeafNode(object[keys[i]]);
         }else{
-          value = object[keys[i]].constructor.name;
-          if(this.jsUtils.type(object[keys[i]]) === "array"){
-            value += "[" + object[keys[i]].length + "]";
+          if(object[keys[i]].constructor){
+            value += object[keys[i]].constructor.name;
+            if(this.jsUtils.type(object[keys[i]]) === "array"){
+              value += "[" + object[keys[i]].length + "]";
+            }
+            value += this.generateObjectTree(object[keys[i]], false, visited, visitedValue);
+          }else{
+            value += this.jsUtils.type(object[keys[i]]);
           }
-          value += this.generateObjectTree(object[keys[i]], false);
         }
 
         html += key + ": " + value;
+        // if (html.length> 1000){
+        // //   console.log(key, value);
+        // html +="</li>";
+        // break;
+        // }
         html +="</li>";
       }
-      return this.wrapInULTag(html, isCollapsable? "class='treeObj collapsibleList'" : "");
+      result = this.wrapInULTag(html, isCollapsable? "class='treeObj collapsibleList'" : "");
+      visitedValue[visitedIndex] = result;
+      return result;
     }else{
       let emptyObject = this.jsUtils.type(object) === "array"? "[]" : "{}";
-      return this.wrapInULTag(this.wrapInLITag(`<span class='treeObj key'>${emptyObject}</span>`));
+      result = this.wrapInULTag(this.wrapInLITag(`<span class='treeObj key'>${emptyObject}</span>`));
+      visitedValue[visitedIndex] = result;
+      return result;
     }
   }
 
@@ -240,7 +266,7 @@ export class ObjectExplorer {
   }
 
   generateJSONTreeViewHTMLString() {
-    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
+    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType) || this.element.toString() === "[object Window]"){
       return `<div id = '${this.objectViewId}'> ${this.generateLeafNode(this.element)}</div>`;
     }
     let tree;
@@ -259,7 +285,7 @@ export class ObjectExplorer {
   }
 
   generateJSONLineViewHTMLString() {
-    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
+    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType) || this.element.toString() === "[object Window]"){
       return `<span id = '${this.objectViewId}'> ${this.generateLeaf(this.element)}</span>`;
     }
     let line;
