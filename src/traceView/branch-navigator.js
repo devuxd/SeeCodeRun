@@ -89,11 +89,10 @@ export class BranchNavigator{
                     eventAggregator.publish("traceNavigationChange", {traceViewModel: traceViewModel, isEditorChange: false});
 
                     if(traceViewModel.isTraceGutterDataValid()){
-                        if(traceViewModel.isTraceGutterDataRowValid(navigationDatum.row)){
-                            traceViewModel.setTraceGutterDataRowBranchIndex(navigationDatum.row, navigationDatum.branchIndex);
-                            editor.getSession().addGutterDecoration(navigationDatum.row, "");
-                            console.log("u", navigationDatum.branchIndex, navigationDatum.row);
+                        for(let row in traceViewModel.branchModel.traceGutterData.rows){
+                            editor.getSession().addGutterDecoration(row, "");
                         }
+                        console.log("navigating ", navigationDatum.branchIndex, navigationDatum.branchTotal);
                     }
                 }
 
@@ -139,16 +138,16 @@ export class BranchNavigator{
 	        self.$hideTooltip();
 	    };
 
-        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, context, row, lineHeight){
+        self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight){
             if(!$gutterTooltip){
 			        return;
 			}
 	        self.currentRow = row;
-	        let content = context.entry;
-	        let count = context.count;
-	        let branch = context.branch;
-		    if(content){
-	            self.currentContent = content;
+		    if(rowData && rowData.UI.branchTotal){
+		        let count = rowData.UI.branchTotal;
+	            let branch = rowData.UI.branchIndex;
+	            let timelineIndexes = rowData.timelineIndexes;
+	            self.currentEntry = rowData;
 			    let $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
 
 			    if(!$gutterNavigatorSlider.length){
@@ -179,7 +178,8 @@ export class BranchNavigator{
     			    $gutterNavigatorSlider.slider({
                       slide: function gutterNavigatorSliderChange(event, ui) {
                           if(self.gutterNavigatorSliderValue !== ui.value){
-                            self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: ui.value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            let indexInTimeline = self.timelineIndexes[ui.value];
+                            self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: ui.value, branchTotal: self.branchTotal, indexInTimeline: indexInTimeline, entry: self.currentEntry, row: self.currentRow });
                             self.gutterNavigatorSliderValue = ui.value;
                           }
                       }
@@ -190,7 +190,8 @@ export class BranchNavigator{
     			        let value = $gutterNavigatorSlider.slider('value') - 1;
     			        $gutterNavigatorSlider.slider('value',  value);
     			        if($gutterNavigatorSlider.slider('value') === value){
-        			        self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            let indexInTimeline = self.timelineIndexes[value];
+        			        self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: value, branchTotal: self.branchTotal, indexInTimeline: indexInTimeline, entry: self.currentEntry, row: self.currentRow });
                             self.gutterNavigatorSliderValue = value;
     			        }
     			     });
@@ -200,7 +201,8 @@ export class BranchNavigator{
                         let value = $gutterNavigatorSlider.slider('value') + 1;
     			        $gutterNavigatorSlider.slider('value',  value);
     			        if($gutterNavigatorSlider.slider('value') === value){
-        			        self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: value, branchMax: self.branchMax, entry: self.currentContent, row: self.currentRow });
+                            let indexInTimeline = self.timelineIndexes[value];
+        			        self.eventAggregator.publish("traceNavigationPrepareChange", {branchIndex: value, branchTotal: self.branchTotal, indexInTimeline: indexInTimeline, entry: self.currentEntry, row: self.currentRow });
                             self.gutterNavigatorSliderValue = value;
     			        }
                     });
@@ -238,9 +240,10 @@ export class BranchNavigator{
                 let $button$Width = 31;// todo get the actual value
 		        $gutterNavigatorSlider.width($aceEditor$Width - $button$Width*4);
 
-		        $gutterNavigatorSlider.slider('option', {min: 1, max: count, value: branch});
-		        self.branchMax = count;
+		        $gutterNavigatorSlider.slider('option', {min: 0, max: count, value: branch});
+		        self.branchTotal = count;
 		        self.branchIndex = branch;
+		        self.timelineIndexes = timelineIndexes;
 		        if(position){
     		        $gutterTooltip.css({
     		            height: `${lineHeight}px`,

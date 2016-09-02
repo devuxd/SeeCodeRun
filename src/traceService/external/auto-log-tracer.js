@@ -375,7 +375,7 @@ export class AutoLogTracer{
             toJSON: function toJSON(node, visited, visitedValue) {
             //https://gist.github.com/sstur/7379870
               visited = visited? visited : [];
-              visitedValue = visitedValue? visitedValue : {};
+              visitedValue = visitedValue? visitedValue : [];
               node = node || this;
 
               var obj = {
