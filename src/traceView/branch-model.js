@@ -266,7 +266,7 @@ export class BranchModel{
 
 	    let timeline = this.traceHelper.getTimeline();
         let entryInTimeline = timeline[indexInTimeline];
-        console.log("blocks for ", indexInTimeline);
+        // console.log("blocks for ", indexInTimeline);
 
 	    if(indexInTimeline != null && !entryInTimeline){
 	        return [];
@@ -291,7 +291,7 @@ export class BranchModel{
                             let parentTimelineIndexes = this.getTimelineIndexesByBlockKey(parentBlockKey, 0, timelineLength);
                             let parentBlockBoundaries = this.getBlockBoundariesForIndexInTimeline(indexInTimeline, parentTimelineIndexes);
                             if(parentBlockBoundaries){
-                                console.log("parent ", parentBlockBoundaries)
+                                // console.log("parent ", parentBlockBoundaries)
                                 relativeTimelineIndexes = this.getTimelineIndexesByBlockKey(key, parentBlockBoundaries.lowerBound, parentBlockBoundaries.upperBound);
                                 relativeBlockBoundaries= this.getBlockBoundariesForIndexInTimeline(indexInTimeline, relativeTimelineIndexes);
                                 relativeCount = relativeTimelineIndexes.length - 2;
@@ -311,7 +311,7 @@ export class BranchModel{
                             relativeBranchTotal: relativeCount,
                             relativeBranchIndex: relativeBranchIndex
                         });
-                         console.log("boundaries: ", containingBlock.type, relativeBranchIndex, relativeCount);
+                        //  console.log("boundaries: ", containingBlock.type, relativeBranchIndex, relativeCount);
                     // }
                 }
             }

@@ -67,6 +67,22 @@ export class AutoLogTracer{
         window.ISCANCELLED = false;
         window.TRACE = {
             indexInTimeline: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : {},  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            serialize: function serialize(object){
+                let serializedObjectString;
+                // try{
+                //     if(object && object.nodeType === 1){
+                //         // serializedObjectString = this.tryToJSON(object);
+                //         // serializedObjectString = this.isWindow(info.value)? this.stringify(object.toString()) : this.tryToJSON(object);
+                //         serializedObjectString = this.isWindow(object)? this.stringify(object.toString()) : this.stringify(object);
+                //     }else{
+                //         // serializedObjectString = this.stringify(object);
+                //         serializedObjectString = this.isWindow(object)? this.stringify(object.toString()) : this.stringify(object);
+                //     }
+                // }catch(e){
+                    serializedObjectString = object == null? this.stringify(object): this.stringify(object.toString());
+                // }
+                return serializedObjectString;
+            },
             preautolog: function preAutolog(range, type, id, text){
             //todo: document.currentScript as context and handle a callstack per each one [Fixes timeout, Ajax callbacks and other external libraries interaction]
                 var info = { id: id , value: null, range: range, type: type, text: text};
@@ -81,7 +97,7 @@ export class AutoLogTracer{
                     clearTimeout(this.runTimeout);
                     this.runTimeout = setTimeout(function updateTrace(){
                         window.START_TIME = null;
-                    }, window.TIME_LIMIT- 250);
+                    }, window.TIME_LIMIT- 500);
                     window.START_TIME = window.START_TIME ? window.START_TIME : +new Date();
                 }
 
@@ -97,6 +113,7 @@ export class AutoLogTracer{
                 if(window.IS_AFTER_LOAD){
                     clearTimeout(this.updateTimeout);
                     this.updateTimeout = setTimeout(function updateTrace(){
+                        window.START_TIME = null;
                         traceDataContainerElement.textContent = window.TRACE.stringify(window.TRACE.getTraceData());
                         traceDataContainerElement.click();
                     }, 100);
@@ -175,8 +192,8 @@ export class AutoLogTracer{
                 if(!isExternalCallExpression){
 
                 }
-                calleeInfo.text = this.stringify({text: callExpressionText, parameteres: callExpressionArguments});
-                topScope.argumentsString = this.stringify(callExpressionArguments);
+                calleeInfo.text = this.serialize({text: callExpressionText, parameteres: callExpressionArguments});
+                topScope.argumentsString = this.serialize(callExpressionArguments);
             },
             exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock, isParameter){
                 if(!this.functionScopes.length || !info){
@@ -190,12 +207,12 @@ export class AutoLogTracer{
                     this.timeline[topScope.timelineStartIndex].value= "EXCEPTION/ERROR THROWN";
                 }else{
                     if(info.type === Syntax.CallExpression){
-                        this.timeline[topScope.timelineStartIndex].value= this.stringify(info.value);
+                        this.timeline[topScope.timelineStartIndex].value= this.serialize(info.value);
                     }
                 }
                 // console.log("exit " +topScope.id);
                 topScope.timelineEndIndex = this.timeline.length;
-                this.timeline[topScope.timelineStartIndex].path = this.stringify(this.functionScopes);
+                this.timeline[topScope.timelineStartIndex].path = this.serialize(this.functionScopes);
                 this.timeline[topScope.timelineStartIndex].functionRange = topScope.functionRange;
                 this.functionScopes.pop();
                 this.scopeCounter = this.functionScopes.length - 1;
@@ -223,8 +240,8 @@ export class AutoLogTracer{
                     if(!this.isRangeInRange(info.range, topScope.functionRange)){
                         isBadScope = true;
                         topScope.tryExit = true;
-                        // console.log("TS: " +this.stringify(topScope.functionRange));
-                        // console.log("CE: " + this.stringify(info.range));
+                        // console.log("TS: " +this.serialize(topScope.functionRange));
+                        // console.log("CE: " + this.serialize(info.range));
                         this.exitFunctionScope(info, true);
                     }else{
                         isBadScope = false;
@@ -268,19 +285,7 @@ export class AutoLogTracer{
                     }
                 }
 
-                var infoValueString = null;
-                try{
-                    if(info.value && info.value.nodeType === 1){
-                        // infoValueString = this.tryToJSON(info.value);
-                        infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.tryToJSON(info.value);
-                        // infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.stringify(info.value);
-                    }else{
-                        // infoValueString = this.stringify(info.value);
-                        infoValueString = this.isWindow(info.value)? this.stringify(info.value.toString()) : this.stringify(info.value);
-                    }
-                }catch(e){
-                    infoValueString = info.value == null? this.stringify(null): this.stringify(info.value.toString());
-                }
+                var infoValueString = this.serialize(info.value);
 
                 if(info.type === Syntax.CallExpression && !isParameter){
                     this.exitFunctionScope(info);
@@ -369,7 +374,7 @@ export class AutoLogTracer{
                 try{
                     return this.toJSON(node);
                 }catch(e){
-                    return this.stringify(node);
+                    return this.serialize(node);
                 }
             },
             toJSON: function toJSON(node, visited, visitedValue) {
