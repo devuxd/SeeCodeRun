@@ -129,17 +129,17 @@ export class AceUtils{
      	self.gutterCellLeftPadding = parseFloat($(aceGutterCellSelector).css("padding-left"), 10);
      	self.gutterCellRightPadding = parseFloat($(aceGutterCellSelector).css("padding-right"), 10);
 
-        let setTooltipMouseMove =	function setTooltipMouseMove(target, row, pixelPosition, content){
+        let setTooltipMouseMove =	function setTooltipMouseMove(target, row, pixelPosition, rowData){
             $(target).mouseenter( function onMouseEnterGutterCell(){
 		            clearTimeout(self.gutterTooltipHideTimeout);
 		               self.previousRow = row;
-            	  	   updateTooltip(tooltip, pixelPosition, content, row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
+            	  	   updateTooltip(tooltip, pixelPosition, rowData, row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
 		        } ).mouseleave( function onMouseLeaveGutterCell(){
                     clearTimeout(self.gutterTooltipHideTimeout);
     			    self.gutterTooltipHideTimeout =
     			    setTimeout( function gutterTooltipHideTimeout(){
     			        self.previousRow = null;
-    			        updateTooltip(tooltip, pixelPosition, "", row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
+    			        updateTooltip(tooltip, pixelPosition, null, row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
     			    }, tooltipHideDelay);
     			    $(target).off("mouseenter mouseleave");
             } );
@@ -169,16 +169,16 @@ export class AceUtils{
     		}
 
     		let row = e.getDocumentPosition().row;
-    		let content = null;
+    		let rowData = null;
     		if(dataModel.rows.hasOwnProperty(row)){
-    		        content = dataModel.rows[row];
+    		        rowData = dataModel.rows[row];
                     let pixelPosition = {};
                     let boundingRect = target.getBoundingClientRect();
     			    pixelPosition.pageY = boundingRect.top - editor.renderer.lineHeight;
     				pixelPosition.pageX = boundingRect.left;
 
                     if(row !== self.previousRow){
-                        setTooltipMouseMove(target, row,  pixelPosition, content);
+                        setTooltipMouseMove(target, row,  pixelPosition, rowData);
                     }
     		}
     		e.stop();
@@ -323,15 +323,15 @@ export class AceUtils{
             },
             getText: function(session, row) {
                 if(traceGutterData.rows.hasOwnProperty(row)){
-                    let count = traceGutterData.rows[row].entry.relativeTimelineIndexes? traceGutterData.rows[row].entry.relativeCount :traceGutterData.rows[row].entry.count;
+                    let count = traceGutterData.rows[row].UI.branchTotal;
                     if(count == null){
                         count = "n.a.";
                     }
-                    let branch = traceGutterData.rows[row].entry.relativeTimelineIndexes? traceGutterData.rows[row].entry.relativeBranchIndex :traceGutterData.rows[row].entry.branchIndex;
+                    let branch = traceGutterData.rows[row].UI.branchIndex;
                     if(branch == null){
                         branch = count;
                     }
-                    return "["+(branch -1)+"/"+ count +"] "+ (row + 1);
+                    return "["+(branch)+"/"+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;
                 }
