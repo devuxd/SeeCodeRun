@@ -326,7 +326,7 @@ export class BranchModel{
             upperBound = timelineIndexes[index];
             if(indexInTimeline != null){
                 if(lowerBound != null && lowerBound <= indexInTimeline && indexInTimeline < upperBound){
-                    return {branchIndex: previousIndex, lowerBound: lowerBound, upperBound: upperBound};
+                    return {branchIndex: index, lowerBound: lowerBound, upperBound: upperBound};
                 }
             }
             previousPreviousIndex = previousIndex;
@@ -334,7 +334,7 @@ export class BranchModel{
         }
 
         if(indexInTimeline == null){
-           return {branchIndex: previousPreviousIndex, lowerBound: lowerBound, upperBound: upperBound};
+           return {branchIndex: previousIndex, lowerBound: lowerBound, upperBound: upperBound};
         }
 
         return null;

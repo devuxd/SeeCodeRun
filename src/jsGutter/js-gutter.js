@@ -108,10 +108,11 @@ export class JsGutter {
 
             self.isTraceChange = false;
                 let entries = self.traceViewModel.branchModel.getTimeline();
+                let timeline = self.traceViewModel.traceHelper.getTimeline();
 
                 for ( let indexInTimeline in entries) {
                     let entry = entries[indexInTimeline];
-                    self.setGutterLineContent(indexInTimeline, entry);
+                    self.setGutterLineContent(indexInTimeline, entry, timeline);
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
 
@@ -196,6 +197,10 @@ export class JsGutter {
                 this.clearGutter();
             }
             if(traceData.traceViewModel){
+                if(traceData.traceViewModel.branchModel.currentNavigationDatum){
+                    console.log("entry", traceData.traceViewModel.branchModel.currentNavigationDatum.entry);
+                    this.clearGutter(traceData.traceViewModel.branchModel.currentNavigationDatum.entry.entry.range);
+                }
                 this.setTraceViewModel(traceData.traceViewModel);
                 this.isTraceChange=true;
                 this.update();
@@ -204,7 +209,7 @@ export class JsGutter {
         });
     }
 
-    setGutterLineContent(indexInTimeline, entry, isAppendToContent) {
+    setGutterLineContent(indexInTimeline, entry, timeline, isAppendToContent) {
         let firstLineNumber = this.editorLayout? this.editorLayout.firstLineNumber: 1;
         let line = entry.range.start.row + firstLineNumber;
         let readableString = entry.value;
@@ -218,7 +223,7 @@ export class JsGutter {
 
         if ($line.length) {
 
-            if(["Literal", "BlockStatement", "Program"].indexOf(entry.type) > -1){
+            if(["Literal", "BlockStatement", "Program", "FunctionData"].indexOf(entry.type) > -1){
                 // $line.text("");
                 return;
             }
@@ -226,11 +231,11 @@ export class JsGutter {
             if(isAppendToContent){
                 $line.append("[" + content + "] ");
             }else{
-                let entryId = this.aceUtils.parseRangeString(entry.range);
-                let lineEntrySelector = this.jsGutterLineSelectorPrefix + line + "-"+ entryId;
+
+                let lineEntrySelector = this.aceUtils.idifyRange(this.jsGutterLineSelectorPrefix + line, entry.range);;
                 let $lineEntry = $(lineEntrySelector);
                 if(!$lineEntry.length){
-                    let lineEntryId = this.jsGutterLineIdPrefix + line + "-"+ entryId;
+                    let lineEntryId = this.aceUtils.idifyRange(this.jsGutterLineIdPrefix  + line, entry.range);;
                     if(entry.type === "Parameter"){
                         $line.append("<div id = '"+lineEntryId+"' class = '"+this.jsGutterEntryClass+"' ></div>");
                     }else{
@@ -238,12 +243,23 @@ export class JsGutter {
                     }
                     $lineEntry = $(lineEntrySelector);
                 }
-                // $lineEntry.html("[" + content + "]");
-                // $lineEntry.prop('title', $lineEntry.text());
-                 $lineEntry.text("[" + content + "]");
+                let previousEntry = timeline[$lineEntry.data("itimeline")];
+                // console.log("entries", previousEntry !== entry, previousEntry, entry);
+                $lineEntry.text("[" + content + "]");
                 $lineEntry.data("itimeline", indexInTimeline);
+                if(previousEntry && previousEntry.value !== entry.value){
+                    this.animateLineEntryChange($lineEntry);
+                }
             }
         }
+    }
+
+    animateLineEntryChange($lineEntry){
+        // $lineEntry.html("[" + content + "]");
+        // $lineEntry.prop('title', $lineEntry.text());
+        $lineEntry.stop(true).animate( { backgroundColor: '#E7EFF5' }, 250, function(){
+            $(this).animate( { backgroundColor: 'transparent' }, 350);
+        });
     }
 
     highlightLine(line) {
@@ -257,8 +273,21 @@ export class JsGutter {
         }
     }
 
-    clearGutter() {
-        this.$gutter.find(this.jsGutterLineClassSelector).html("");
+    clearGutter(rangeToClear) {
+        if(rangeToClear){
+            let self = this;
+            let isRangeInRange = this.traceViewModel.getTraceHelper().isRangeInRange;
+            this.$gutter.find(this.jsGutteEntryClassSelector).each(function (){
+                let range = self.aceUtils.parseIdifiedRange($(this).attr('id'));
+                if(range && isRangeInRange(range, rangeToClear)){
+                    let indexInTimeline = $(this).data("itimeline");
+                    $(this).html("");
+                    $(this).data("itimeline", indexInTimeline);
+                }
+            });
+        }else{
+            this.$gutter.find(this.jsGutterLineClassSelector).html("");
+        }
     }
 
     cleanGutter() {

@@ -240,7 +240,7 @@ export class BranchNavigator{
                 let $button$Width = 31;// todo get the actual value
 		        $gutterNavigatorSlider.width($aceEditor$Width - $button$Width*4);
 
-		        $gutterNavigatorSlider.slider('option', {min: 0, max: count, value: branch});
+		        $gutterNavigatorSlider.slider('option', {min: 1, max: count, value: branch});
 		        self.branchTotal = count;
 		        self.branchIndex = branch;
 		        self.timelineIndexes = timelineIndexes;

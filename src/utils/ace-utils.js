@@ -7,12 +7,23 @@ import '../ace/mode/mode-css';
 
 export class AceUtils{
 
-    parseRangeString(range){
+    idifyRange(prefix, range){
         try{
-            return `${range.start.row}-${range.start.column}-${range.end.row}-${range.end.column}`;
+            return `${prefix}-${range.start.row}-${range.start.column}-${range.end.row}-${range.end.column}`;
         }catch(e){
-            return "parse-range-string-error";
+            return "error-idify-range-string-faulty";
         }
+    }
+
+    parseIdifiedRange(rangeIdString){
+        if(rangeIdString){
+            let values = rangeIdString.toString().split("-");
+            if(values.length > 4){
+                return {start:{row: values[1], column: values[2]}, end:{row: values[3], column: values[4]}};
+            }
+        }
+        return null;
+
     }
 
     removeAllGutterDecorations(editor, className){
@@ -322,7 +333,7 @@ export class AceUtils{
                 return (format.length + traceGutterData.maxCount.toString().length*2 + lastLineNumber.toString().length )* config.characterWidth;
             },
             getText: function(session, row) {
-                if(traceGutterData.rows.hasOwnProperty(row)){
+                if(traceGutterData.rows.hasOwnProperty(row) && traceGutterData.rows[row].UI.branchTotal){
                     let count = traceGutterData.rows[row].UI.branchTotal;
                     if(count == null){
                         count = "n.a.";
@@ -331,7 +342,7 @@ export class AceUtils{
                     if(branch == null){
                         branch = count;
                     }
-                    return "["+(branch)+"/"+ count +"] "+ (row + 1);
+                    return "["+(branch-1||1)+"/"+ count +"] "+ (row + 1);
                 }else{
                     return row + 1;
                 }
