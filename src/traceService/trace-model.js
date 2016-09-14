@@ -42,7 +42,9 @@ export class TraceModel{
             AssignmentExpression: "AssignmentExpression",
             BinaryExpression: "BinaryExpression",
             BlockStatement: "BlockStatement",
+            BreakStatement: "BreakStatement",
             CallExpression: "CallExpression",
+            ContinueStatement: "ContinueStatement",
             DoWhileStatement: "DoWhileStatement",
             ExpressionStatement: "ExpressionStatement",
             ForStatement: "ForStatement",
@@ -177,6 +179,11 @@ export class TraceModel{
             Exception: [
                 Syntax.TryStatement,
                 Syntax.CatchClause
+                ],
+            FlowExit: [
+                Syntax.ThrowStatement,
+                Syntax.ReturnStatement,
+                Syntax.BreakStatement
                 ]
         };
 
