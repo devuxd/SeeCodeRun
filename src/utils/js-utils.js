@@ -85,7 +85,6 @@ export class JsUtils{
 
 	each( obj, callback ) {
 		let length, i = 0;
-
 		if ( this.isArrayLike( obj ) ) {
 			length = obj.length;
 			for ( ; i < length; i++ ) {
