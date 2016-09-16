@@ -5,7 +5,7 @@ export class AutoLogTracer{
         this.traceModel = new TraceModel();
     }
 
-    wrapCodeInTryCatch(code){
+  static wrapCodeInTryCatch(code) {
         return `
                 ${code}
                 window.IS_AFTER_LOAD = true;
@@ -26,7 +26,7 @@ export class AutoLogTracer{
         `;
     }
 
-    getTraceDataCodeBoilerPlate(){
+  static getTraceDataCodeBoilerPlate() {
         return `
         traceDataContainerElement.textContent= window.TRACE.stringify(window.TRACE.getTraceData());
         `;
@@ -64,7 +64,7 @@ export class AutoLogTracer{
         var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
         var TraceRuntimeTypes =  ${JSON.stringify(this.traceModel.traceRuntimeTypes)};
         var TraceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
-        window.ISCANCELLED = false;
+        window.IS_CANCELLED = false;
         window.TRACE = {
             indexInTimeline: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : {},  execution : [], variables: [], values : [], timeline: [], identifiers: [],
             decycle: function decycle(obj) {
@@ -133,7 +133,7 @@ export class AutoLogTracer{
             //todo: document.currentScript as context and handle a callstack per each one [Fixes timeout, Ajax callbacks and other external libraries interaction]
                 var info = { id: id , value: null, range: range, type: type, text: text};
                 this.currentExpressionRange = range;
-                this.handleTryRescope(info);
+                this.handleTryReScope(info);
                 if(type === Syntax.CallExpression){
                     this.timeline.push(info);
                     this.enterFunctionScope(info);
@@ -265,7 +265,7 @@ export class AutoLogTracer{
                 this.currentScope = this.functionScopes[this.scopeCounter];
                 // console.log("current " +(this.currentScope?this.currentScope.id: "none"));
             },
-            handleTryRescope: function handleTryRescope(info){
+            handleTryReScope: function handleTryReScope(info){
                 if(!this.functionScopes.length || !info){
                     return;
                 }
@@ -297,6 +297,10 @@ export class AutoLogTracer{
             autoLog: function autoLog(info) {
                 var self = this;
                 this.currentExpressionRange = info.range;
+                
+                if(window.IS_CANCELLED){
+                    throw "Trace Cancelled.";
+                }
 
                 var isParameter = false;
                 var parameterData = null;
@@ -359,7 +363,7 @@ export class AutoLogTracer{
                     }
                 }
 
-				if (this.hits.hasOwnProperty(key)) {
+				        if (this.hits.hasOwnProperty(key)){
                     this.hits[key] = this.hits[key] + 1;
                     this.data[key].values.push({ indexInTimeline: this.indexInTimeline, infoValueString});
                 }else{
@@ -379,10 +383,6 @@ export class AutoLogTracer{
                         range: info.range,
                         extra : info.extra
                     };
-                }
-
-                if(window.ISCANCELLED){
-                    throw "Trace Cancelled.";
                 }
 
                 return info.value;

@@ -114,3 +114,24 @@ The app will be exported into ```export``` directory preserving the directory st
 #### Configuration
 The configuration is done by ```bundles.json``` file.
 In addition, ```export.json``` file is available for including individual files.
+
+## Deployment
+The default deployment of SeeCodeRun is to a Firebase host. For that, it requires Firebase tools and authentication.
+First, to get the tools, run:
+
+```sh
+npm install --save -g firebase-tools
+```
+
+Then login into your Firebase account:
+
+```sh
+firebase login
+```
+Following the instructions will end up opening a tab in your default browser where you can grant permissions to firebase tools with your Google account.
+#####Note: The Firebase default deployment project is set in firebase.json.
+Finally, to deploy:
+
+```sh
+gulp deploy
+```
