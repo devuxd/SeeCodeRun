@@ -7,6 +7,7 @@ export class BranchModel {
     this.navigationData = {};
     this.currentNavigationDatum = null;
     this.currentNavigationDatum = null;
+    this.exitSyntaxTypes = ["ThrowStatement", "ReturnStatement", "BreakStatement", "ContinueStatement", "BlockStatementExit"];
   }
 
   isRepOK() {
@@ -75,6 +76,12 @@ export class BranchModel {
     let indexInTimeline = this.currentNavigationDatum.indexInTimeline;
     let timeline = this.traceHelper.getTimeline();
     let timelineIndexes = this.getTimelineIndexesByBlockKey(this.currentNavigationDatum.entry.entry.blockKey, 0, timeline.length);
+    let timelineIndexesExitPoints = this.getTimelineIndexesExitPoints(timeline, timelineIndexes, this.exitSyntaxTypes);
+    let lastBranchIndex = timelineIndexes.length - 2; // last branch range lowerBound  index
+    if (timelineIndexes[lastBranchIndex] && timelineIndexesExitPoints[lastBranchIndex]) {
+      timelineIndexes[lastBranchIndex + 1] = timelineIndexesExitPoints[lastBranchIndex].exitPointIndex + 1; // replace last branch upperBound index with the one after the exit point
+      // console.log("exit ", timelineIndexesExitPoints);
+    }
     let boundaries = this.getBlockBoundariesForIndexInTimeline(indexInTimeline, timelineIndexes);
 
     if (!indexInTimeline || !boundaries) {
@@ -168,21 +175,34 @@ export class BranchModel {
         timelineIndexes.push(i);
       }
     }
+    timelineIndexes.push(upperBound);
+    return timelineIndexes;
+  }
+
+  getTimelineIndexesExitPoints(timeline, timelineIndexes, exitSyntaxTypes) {
     let timeLineIndexesExitPoints = [];
-    let exitSyntaxTypes = ["ThrowStatement", "ReturnStatement", "BreakStatement", "ContinueStatement", "BlockStatementExit"];
     for (let i = 1; i < timelineIndexes.length; i++) {
+      let blockEntry = timeline[timelineIndexes[i - 1]];
+      if (blockEntry.type === "Program") {
+        continue;
+      }
+
       for (let branchEntryIndex = timelineIndexes[i - 1]; branchEntryIndex < timelineIndexes[i]; branchEntryIndex++) {
         let branchEntry = timeline[branchEntryIndex];
-        if (exitSyntaxTypes.indexOf(branchEntry.type) > -1) {
-          timeLineIndexesExitPoints[i - 1] = {exitPointIndex: branchEntryIndex, entry: branchEntry};
+        if (exitSyntaxTypes.indexOf(branchEntry.type) > -1 && this.traceHelper.isRangeInRange(branchEntry.range, blockEntry.range)) {
+          // timeLineIndexesExitPoints[i] = {upperbound: timelineIndexes[i],exitPointIndex: branchEntryIndex, block: timeline[timelineIndexes[i - 1]], entry: branchEntry};
+          timeLineIndexesExitPoints[i - 1] = {
+            upperbound: timelineIndexes[i],
+            exitPointIndex: branchEntryIndex,
+            line: timeline[timelineIndexes[i - 1]].range.start.row + 1,
+            blockType: blockEntry.type,
+            exitType: branchEntry.type
+          };
+          // break;
         }
       }
     }
-    console.log(timelineIndexes.length, timeLineIndexesExitPoints.length);
-
-    timelineIndexes.push(upperBound);
-
-    return timelineIndexes;
+    return timeLineIndexesExitPoints;
   }
 
   getNavigationStackBlockCounts(lowerBound = 0, upperBound) {

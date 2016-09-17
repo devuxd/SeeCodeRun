@@ -317,22 +317,22 @@ export class AutoLogTracer{
                 var extra = info.extra;
 
                 if(TraceTypes.Stack.indexOf(info.type) > -1){
-                    if(extra){
-                        var extraValues = extra.split(":");
-                        if(extraValues.length > 1){
-                            var blockId = extraValues[0];
-                            var isEnteringBlock = extraValues[1] === "Enter" ? true : false;
-                            var stackKey = key + ":" + blockId;
-                            key = key + ":" + extra;
-
-                            if(isEnteringBlock){
-                                this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
-                            }
-                        }
-
-                    }else{
+                    // if(extra){
+                    //     var extraValues = extra.split(":");
+                    //     if(extraValues.length > 1){
+                    //         var blockId = extraValues[0];
+                    //         var isEnteringBlock = extraValues[1] === "Enter" ? true : false;
+                    //         var stackKey = key + ":" + blockId;
+                    //         key = key + ":" + extra;
+                    //
+                    //         if(isEnteringBlock){
+                    //             this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
+                    //         }
+                    //     }
+                    //
+                    // }else{
                         this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
-                    }
+                    // }
                 }
 
                 var infoValueString = this.serialize(info.value);

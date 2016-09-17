@@ -3,6 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/export" />
       <excludeFolder url="file://$MODULE_DIR$/jspm_packages" />
     </content>
     <orderEntry type="inheritedJdk" />
