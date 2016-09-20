@@ -22,10 +22,8 @@ export class BranchModel {
       return false;
     }
 
-    if (!this.traceGutterData.rows) {
-      return false;
-    }
-    return true;
+    return this.traceGutterData.rows;
+
   }
 
   setTraceHelper(traceHelper) {
