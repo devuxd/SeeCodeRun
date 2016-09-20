@@ -1,5 +1,4 @@
 export class BranchModel {
-  timelineLength = 0;
 
   constructor() {
     this.traceGutterData = {maxCount: 0, rows: []};
@@ -38,10 +37,6 @@ export class BranchModel {
 
   startNavigation() {
     this.isNavigationMode = true;
-  }
-
-  toggleNavigation() {
-    this.isNavigationMode = !this.isNavigationMode;
   }
 
   stopNavigation() {

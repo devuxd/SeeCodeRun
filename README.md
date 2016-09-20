@@ -135,3 +135,62 @@ Finally, to deploy:
 ```sh
 gulp deploy
 ```
+
+# Windows troubleshooting
+
+## Browser-Sync error
+Install the latest Visual Studio C++ compiler, or the whole Visual Studio.
+
+Then, re-install Browser-Sync
+```cmd
+npm uninstall browse-sync
+npm install -g browser-sync --msvs_version=2013
+```
+More details [here](https://www.browsersync.io/docs#windows-users)
+
+for error:
+```sh
+> bufferutil@1.2.1 install C:\Users\DavidIgnacio\WebstormProjects\SeeCodeRun\node_modules\bufferutil
+> node-gyp rebuild
+
+
+C:\Users\DavidIgnacio\WebstormProjects\SeeCodeRun\node_modules\bufferutil>if not defined npm_config_node_gyp (node "C:\Program Files\no
+dejs\node_modules\npm\bin\node-gyp-bin\\..\..\node_modules\node-gyp\bin\node-gyp.js" rebuild )  else (node "" rebuild )
+Building the projects in this solution one at a time. To enable parallel build, please add the "/m" switch.
+C:\Users\DavidIgnacio\WebstormProjects\SeeCodeRun\node_modules\bufferutil\build\bufferutil.vcxproj(20,3): error MSB4019: The imported 
+project "C:\Microsoft.Cpp.Default.props" was not found. Confirm that the path in the <Import> declaration is correct, and that the fil
+e exists on disk.
+gyp ERR! build error
+gyp ERR! stack Error: `C:\Windows\Microsoft.NET\Framework\v4.0.30319\msbuild.exe` failed with exit code: 1
+gyp ERR! stack     at ChildProcess.onExit (C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp\lib\build.js:276:23)
+gyp ERR! stack     at emitTwo (events.js:100:13)
+gyp ERR! stack     at ChildProcess.emit (events.js:185:7)
+gyp ERR! stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:200:12)
+gyp ERR! System Windows_NT 10.0.10586
+gyp ERR! command "C:\\Program Files\\nodejs\\node.exe" "C:\\Program Files\\nodejs\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node
+-gyp.js" "rebuild"
+gyp ERR! cwd C:\Users\DavidIgnacio\WebstormProjects\SeeCodeRun\node_modules\bufferutil
+gyp ERR! node -v v5.7.0
+gyp ERR! node-gyp -v v3.2.1
+gyp ERR! not ok
+npm WARN install:bufferutil@1.2.1 bufferutil@1.2.1 install: `node-gyp rebuild`
+npm WARN install:bufferutil@1.2.1 Exit status 1
+
+> utf-8-validate@1.2.1 install C:\Users\DavidIgnacio\WebstormProjects\SeeCodeRun\node_modules\utf-8-validate
+> node-gyp rebuild
+
+```
+
+do :
+```sh
+npm install --global --production windows-build-tools
+```
+
+## Update NPM
+```cmd
+npm update -g npm
+```
+## Update Node
+```cmd
+@powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+```
