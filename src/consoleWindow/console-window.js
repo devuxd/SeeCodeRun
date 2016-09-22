@@ -1,6 +1,5 @@
 /* global $, PR*/
-import {JsUtils} from "../utils/js-utils";
-import {ObjectExplorer} from "../traceView/object-explorer";
+import {ObjectViewer} from "../utils/object-viewer";
 export class ConsoleWindow {
   title = 'Console';
   consoleLogFeedbackSelector = "#consoleLogFeedback";
@@ -14,7 +13,6 @@ export class ConsoleWindow {
 
   constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
-    this.jsUtils = new JsUtils();
   }
 
   attached() {
@@ -97,14 +95,14 @@ export class ConsoleWindow {
   }
 
   prettifyConsoleLine(consoleArguments) {
-    let lineData = "", moreData = "", currentObjectExplorer;
+    let lineData = "", moreData = "", currentObjectViewer;
     if(consoleArguments.length){
-      currentObjectExplorer = new ObjectExplorer(this.jsUtils, consoleArguments[0], "argument-" + 0);
-      lineData = currentObjectExplorer.generateLineViewContent().content;
+      currentObjectViewer = new ObjectViewer(consoleArguments[0], "argument-" + 0);
+      lineData = currentObjectViewer.generateLineViewContent().content;
     }
     for(let i = 1; i < consoleArguments.length; i++){
-      currentObjectExplorer = new ObjectExplorer(this.jsUtils, consoleArguments[i], "argument-" + i);
-      moreData = ", " + currentObjectExplorer.generateLineViewContent().content;
+      currentObjectViewer = new ObjectViewer(consoleArguments[i], "argument-" + i);
+      moreData = ", " + currentObjectViewer.generateLineViewContent().content;
     }
     if(moreData){
       lineData = "[" + lineData + moreData + "]";

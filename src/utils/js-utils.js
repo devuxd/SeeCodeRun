@@ -1,32 +1,34 @@
 
 export class JsUtils{
   //from JQuery: https://github.com/jquery/jquery/blob/master/src/core.js
-  constructor(){
-      this.primitiveTypes = ["undefined", "null", "boolean", "number", "string", "function", "symbol"];
-      let objectClasses = "Boolean Number String Function Array Date RegExp Object Error Symbol".split( " " );
-      let class2type = [];
-      for(let classIndex = 0; classIndex < objectClasses.length; classIndex++ ){
-          let name = objectClasses[classIndex];
-  	    class2type[ "[object " + name + "]" ] = name.toLowerCase();
-      }
-      this.class2type = class2type;
-      this.getProto = Object.getPrototypeOf;
-      this.isArray = Array.isArray;
-  }
+  static getProto = Object.getPrototypeOf;
+  static isArray = Array.isArray;
+  static primitiveTypes = ["undefined", "null", "boolean", "number", "string", "function", "symbol"];
+  static objectClasses = [];
 
-  isWindow( obj ) {
+  static class2type = (function mapClass2Type() {
+    JsUtils.objectClasses = "Boolean Number String Function Array Date RegExp Object Error Symbol".split(" ");
+    let class2type = [];
+    for (let classIndex = 0; classIndex < JsUtils.objectClasses.length; classIndex++) {
+      let name = JsUtils.objectClasses[classIndex];
+      class2type["[object " + name + "]"] = name.toLowerCase();
+    }
+    return class2type;
+  })();
+
+  static isWindow(obj) {
 		return obj != null && obj === obj.window;
 	}
 
-	isPrimitiveType( obj ){
-	  return this.primitiveTypes.indexOf(this.type(obj)) > -1;
+  static isPrimitiveType(obj) {
+    return JsUtils.primitiveTypes.indexOf(JsUtils.type(obj)) > -1;
 	}
 
-	isTypeInPrimitiveTypes( objType ){
-	  return this.primitiveTypes.indexOf(objType) > -1;
+  static isTypeInPrimitiveTypes(objType) {
+    return JsUtils.primitiveTypes.indexOf(objType) > -1;
 	}
 
-	isEmptyObject( obj ) {
+  static isEmptyObject(obj) {
 
 		/* eslint-disable no-unused-vars */
 		// See https://github.com/eslint/eslint/issues/6125
@@ -38,30 +40,29 @@ export class JsUtils{
 		return true;
 	}
 
-  type( obj ) {
+  static type(obj) {
 		if ( obj == null ) {
 			return obj + "";
 		}
 		// Support: Android <=2.3 only (functionish RegExp)
 		return typeof obj === "object" || typeof obj === "function" ?
-			this.class2type[ toString.call( obj ) ] || "object" :
+    JsUtils.class2type[toString.call(obj)] || "object" :
 			typeof obj;
 	}
 
-	isFunction( obj ) {
-		return this.type( obj ) === "function";
+  static isFunction(obj) {
+    return JsUtils.type(obj) === "function";
 	}
 
-	isArrayLike( obj ) {
-
+  static isArrayLike(obj) {
     	// Support: real iOS 8.2 only (not reproducible in simulator)
     	// `in` check used to prevent JIT error (gh-2145)
     	// hasOwn isn't used here due to false negatives
     	// regarding Nodelist length in IE
     	var length = !!obj && "length" in obj && obj.length,
-    		type = this.type( obj );
+        type = JsUtils.type(obj);
 
-    	if ( type === "function" || this.isWindow( obj ) ) {
+    if (type === "function" || JsUtils.isWindow(obj)) {
     		return false;
     	}
 
@@ -69,12 +70,11 @@ export class JsUtils{
     		typeof length === "number" && length > 0 && ( length - 1 ) in obj;
     }
 
-    isNumeric( obj ) {
-
+  static isNumeric(obj) {
 		// As of jQuery 3.0, isNumeric is limited to
 		// strings and numbers (primitives or objects)
 		// that can be coerced to finite numbers (gh-2662)
-		let type = this.type( obj );
+    let type = JsUtils.type(obj);
 		return ( type === "number" || type === "string" ) &&
 
 			// parseFloat NaNs numeric-cast false positives ("")
@@ -83,9 +83,26 @@ export class JsUtils{
 			!isNaN( obj - parseFloat( obj ) );
 	}
 
-	each( obj, callback ) {
+  //source: http://stackoverflow.com/questions/384286/javascript-isdom-how-do-you-check-if-a-javascript-object-is-a-dom-object
+  //Returns true if it is a DOM node
+  static isNode(o) {
+    return (
+      typeof Node === "object" ? o instanceof Node :
+      o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName === "string"
+    );
+  }
+
+//Returns true if it is a DOM element
+  static isElement(o) {
+    return (
+      typeof HTMLElement === "object" ? o instanceof HTMLElement : //DOM2
+      o && typeof o === "object" && o !== null && o.nodeType === 1 && typeof o.nodeName === "string"
+    );
+  }
+
+  static each(obj, callback) {
 		let length, i = 0;
-		if ( this.isArrayLike( obj ) ) {
+    if (JsUtils.isArrayLike(obj)) {
 			length = obj.length;
 			for ( ; i < length; i++ ) {
 				if ( callback.call( obj[ i ], i, obj[ i ] ) === false ) {
@@ -103,7 +120,7 @@ export class JsUtils{
 		return obj;
 	}
 
-	toJSON(node) {
+  static toJSON(node) {
   //https://gist.github.com/sstur/7379870
     var obj = {
       nodeType: node.nodeType
@@ -131,13 +148,13 @@ export class JsUtils{
       length = childNodes.length;
       arr = obj.childNodes = new Array(length);
       for (i = 0; i < length; i++) {
-        arr[i] = this.toJSON(childNodes[i]);
+        arr[i] = JsUtils.toJSON(childNodes[i]);
       }
     }
     return obj;
   }
 
-  toDOM(obj) {
+  static toDOM(obj) {
       // https://gist.github.com/sstur/7379870
     if (typeof obj == 'string') {
       obj = JSON.parse(obj);
@@ -173,17 +190,17 @@ export class JsUtils{
     if (nodeType == 1 || nodeType == 11) {
       var childNodes = obj.childNodes || [];
       for (i = 0, len = childNodes.length; i < len; i++) {
-        node.appendChild(this.toDOM(childNodes[i]));
+        node.appendChild(JsUtils.toDOM(childNodes[i]));
       }
     }
     return node;
   }
 
-  stringify(obj, replacer, spaces, cycleReplacer) {
-    return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+  static stringify(obj, replacer, spaces, cycleReplacer) {
+    return JSON.stringify(obj, JsUtils.serializer(replacer, cycleReplacer), spaces);
   }
 
-  serializer(replacer, cycleReplacer) {
+  static serializer(replacer, cycleReplacer) {
     var stack = [], keys = [];
 
     if (cycleReplacer == null){
@@ -195,7 +212,7 @@ export class JsUtils{
 
     return function(key, value) {
       if(stack.length > 0){
-        var thisPos = stack.indexOf(this);
+        var thisPos = stack.indexOf(JsUtils);
         ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
         ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
         if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
@@ -206,29 +223,29 @@ export class JsUtils{
     };
   }
 
-  toReadableString(referenceInput, maxDepth = 2, depth = 0, isParsable = true, self = this) {
+  static toReadableString(referenceInput, maxDepth = 2, depth = 0, isParsable = true) {
 	    let readableString = null;
-	    if (self.isPrimitiveType(referenceInput) && self.type(referenceInput) !== "string") {
+    if (JsUtils.isPrimitiveType(referenceInput) && JsUtils.type(referenceInput) !== "string") {
 	      return  `${referenceInput}`;
 	    }
 
-	    if (self.type(referenceInput) === "string") {
+    if (JsUtils.type(referenceInput) === "string") {
 	      if(isParsable){
   	    	try{
-  	           return self.toReadableString(JSON.parse(referenceInput), maxDepth, depth, false);
+            return JsUtils.toReadableString(JSON.parse(referenceInput), maxDepth, depth, false);
   	        }catch(e){}
 	      }else{
 	        return `"${referenceInput}"`;
 	      }
 	    }
-	    let isArrayLike = self.isArrayLike(referenceInput);
-	    self.each(referenceInput, function (key, value) {
+    let isArrayLike = JsUtils.isArrayLike(referenceInput);
+    JsUtils.each(referenceInput, function (key, value) {
 	      let eachContent;
 	      if (isArrayLike) {
-	        eachContent = depth === maxDepth ? self.type(value) : self.toReadableString(value, maxDepth, depth + 1, false);
+          eachContent = depth === maxDepth ? JsUtils.type(value) : JsUtils.toReadableString(value, maxDepth, depth + 1, false);
 	      }
 	      else {
-	        eachContent = depth === maxDepth ? key + ": " + self.type(value) : key + ": " + self.toReadableString(value, maxDepth, depth + 1, false);
+          eachContent = depth === maxDepth ? key + ": " + JsUtils.type(value) : key + ": " + JsUtils.toReadableString(value, maxDepth, depth + 1, false);
 	      }
 	      readableString = readableString == null ? eachContent : readableString + ", " + eachContent;
 	    });

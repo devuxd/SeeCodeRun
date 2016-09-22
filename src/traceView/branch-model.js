@@ -22,8 +22,10 @@ export class BranchModel {
       return false;
     }
 
-    return this.traceGutterData.rows;
-
+    if (!this.traceGutterData.rows) {
+      return false;
+    }
+    return true;
   }
 
   setTraceHelper(traceHelper) {
@@ -35,6 +37,10 @@ export class BranchModel {
 
   startNavigation() {
     this.isNavigationMode = true;
+  }
+
+  toggleNavigation() {
+    this.isNavigationMode = !this.isNavigationMode;
   }
 
   stopNavigation() {
@@ -93,21 +99,21 @@ export class BranchModel {
 
   pushNavigationData(navigationDatum) {
     if (navigationDatum && navigationDatum.entry) {
-      let type = navigationDatum.entry.type;
+      let type = navigationDatum.entry.entry.type;
       if (type === "FunctionDeclaration" || type === "FunctionExpression") {
         this.currentNavigationFunction = navigationDatum;
       }
       this.currentNavigationDatum = navigationDatum;
       let navigationDatumKey = null;
       if (this.currentNavigationFunction) {
-        navigationDatumKey = this.currentNavigationFunction.entry.blockKey + this.currentNavigationFunction.branchIndex;
+        navigationDatumKey = this.currentNavigationFunction.entry.entry.blockKey + this.currentNavigationFunction.branchIndex;
       } else {
         navigationDatumKey = "GLOBAL";
       }
       if (!this.navigationData[navigationDatumKey]) {
         this.navigationData[navigationDatumKey] = {};
       }
-      this.navigationData[navigationDatumKey][navigationDatum.entry.blockKey] = navigationDatum;
+      this.navigationData[navigationDatumKey][navigationDatum.entry.entry.blockKey] = navigationDatum;
     }
   }
 
@@ -180,7 +186,7 @@ export class BranchModel {
         continue;
       }
 
-      for (let branchEntryIndex = timelineIndexes[i - 1]; branchEntryIndex < timelineIndexes[i]; branchEntryIndex++) {
+      for (let branchEntryIndex = timelineIndexes[i] - 1; branchEntryIndex > timelineIndexes[i - 1]; branchEntryIndex--) {
         let branchEntry = timeline[branchEntryIndex];
         if (exitSyntaxTypes.indexOf(branchEntry.type) > -1 && this.traceHelper.isRangeInRange(branchEntry.range, blockEntry.range)) {
           // timeLineIndexesExitPoints[i] = {upperbound: timelineIndexes[i],exitPointIndex: branchEntryIndex, block: timeline[timelineIndexes[i - 1]], entry: branchEntry};
@@ -191,7 +197,7 @@ export class BranchModel {
             blockType: blockEntry.type,
             exitType: branchEntry.type
           };
-          // break;
+          break;
         }
       }
     }

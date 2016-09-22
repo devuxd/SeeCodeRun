@@ -68,9 +68,7 @@ export class TraceHelper {
         }
       }
     }
-
     return match;
-
   }
 
   /*

@@ -58,7 +58,8 @@
     "require-dir": "^0.3.0",
     "run-sequence": "^1.0.2",
     "vinyl-paths": "^1.0.0",
-    "yargs": "^5.0.0"
+    "yargs": "^5.0.0",
+    "aurelia-framework": "latest"
   },
   "jspm": {
     "dependencies": {

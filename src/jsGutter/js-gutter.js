@@ -1,7 +1,6 @@
 /* global $ */
 import {bindable} from 'aurelia-framework';
-import {JsUtils} from '../utils/js-utils';
-import {ObjectExplorer} from "../traceView/object-explorer";
+import {ObjectViewer} from "../utils/object-viewer";
 import {TraceViewUtils} from '../utils/trace-view-utils';
 
 export class JsGutter {
@@ -32,7 +31,6 @@ export class JsGutter {
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.aceJsEditorDiv = aceJsEditorDiv;
-        this.jsUtils = new JsUtils();
     }
 
     setTraceViewModel(traceViewModel){
@@ -111,8 +109,10 @@ export class JsGutter {
                 let timeline = self.traceViewModel.traceHelper.getTimeline();
 
                 for ( let indexInTimeline in entries) {
+                  if (entries.hasOwnProperty(indexInTimeline)) {
                     let entry = entries[indexInTimeline];
                     self.setGutterLineContent(indexInTimeline, entry, timeline);
+                  }
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
 
@@ -215,8 +215,8 @@ export class JsGutter {
         let readableString = entry.value;
 
         // let readableStringTitle = this.jsUtils.toReadableString(readableString);
-        let currentObjectExplorer = new ObjectExplorer(this.jsUtils, readableString);
-        readableString = currentObjectExplorer.stringifyHMTLString(currentObjectExplorer.generateLineViewContent().content);
+      let currentObjectViewer = new ObjectViewer(readableString);
+      readableString = currentObjectViewer.stringifyHMTLString(currentObjectViewer.generateLineViewContent().content);
 
         let content = entry.id + " = " + readableString;
         let $line = $(this.jsGutterLineSelectorPrefix + line);

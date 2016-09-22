@@ -3,7 +3,7 @@ var browserSync = require('browser-sync').create("SeeCodeRun");
 
 // this task utilizes the browsersync plugin
 // to create a dev server instance
-// at http://localhost:8082
+// at http://localhost:3000
 gulp.task('serve', ['build'], function(done) {
   browserSync.init({
     online: false,
@@ -12,12 +12,36 @@ gulp.task('serve', ['build'], function(done) {
     ghostMode: false,
     // {
     //   clicks: true,
-    //     forms: true,
-    //   scroll: false
+    //     scroll: true,
+    //   forms: {
+    //   submit: true,
+    //     inputs: true,
+    //     toggles: true
     // }
+    // },
+    socket: {
+      socketIoOptions: {
+        log: true
+      },
+      socketIoClientConfig: {
+        reconnectionAttempts: 500
+      },
+      // path: "/browser-sync/socket.io",
+      // clientPath: "/browser-sync",
+      // namespace: "/browser-sync",
+      clients: {
+        heartbeatTimeout: 50000
+      }
+    },
     reloadOnRestart: true,
-    port: 8082,
-    ui: false,
+    port: 3000,
+    ui: {
+      port: 3001,
+      weinre: {
+        port: 8080
+      }
+    },
+    // false,
     server: {
       baseDir: ['.'],
       middleware: function(req, res, next) {

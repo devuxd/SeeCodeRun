@@ -204,7 +204,7 @@ export class TraceModel{
 
         this.traceEvents = {
             instrumented    : {  event :"traceInstrumented"   , description : "Code Instrumented successfully." },
-            changed         : {  event :"traceChanged"   , description : "Trace results obtained succesfully." },
+          changed: {event: "traceChanged", description: "Trace results obtained successfully."},
             failed          : {  event :"instrumentationFailed"    , description : "Code rewriting failed (Compilation error)." }
          };
 
@@ -220,7 +220,7 @@ export class TraceModel{
           Exception: "Exception"
         };
 
-        this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement"];
+      this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement", "BlockStatementExit"];
         this.timeLimit = 3000;
 
     }
