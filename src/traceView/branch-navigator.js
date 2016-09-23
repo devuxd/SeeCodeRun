@@ -12,7 +12,10 @@ export class BranchNavigator {
   gutterTooltipSlideTime = 50;
   gutterTooltipShowDelay = 50;
   gutterTooltipHideDelay = 500;
-  gutterDecorationClassName = "seecoderun-gutter-decoration";
+  gutterDecorationClassNames = {
+    branchGlobal: "seecoderun-gutter-decoration-branch-global",
+    branchLocal: "seecoderun-gutter-decoration-branch-local"
+  };
 
   constructor(eventAggregator, aceUtils, jsEditor, traceViewModel) {
     this.eventAggregator = eventAggregator;
@@ -27,7 +30,8 @@ export class BranchNavigator {
     let self = this;
     let branchModel = this.traceViewModel.branchModel;
     let aceUtils = this.aceUtils;
-    let gutterDecorationClassName = this.gutterDecorationClassName;
+    let gutterDecorationClassNames = this.gutterDecorationClassNames;
+    branchModel.gutterDecorationClassNames = gutterDecorationClassNames;
     let editor = this.jsEditor.editor;
     this.editor = editor;
     this.setAceMarkerManager(editor);
@@ -36,7 +40,7 @@ export class BranchNavigator {
 
     aceUtils.setTraceGutterRenderer(editor, branchModel.traceGutterData);
     aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip,
-      gutterDecorationClassName, branchModel.traceGutterData, this.update$GutterTooltip,
+      gutterDecorationClassNames, branchModel.traceGutterData, this.update$GutterTooltip,
       this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
     );
     $(this.resetNavigationBoxSelector).click(function resetNavigationBoxClick() {
@@ -52,7 +56,7 @@ export class BranchNavigator {
       aceUtils = this.aceUtils,
       editor = this.editor,
       traceViewModel = this.traceViewModel,
-      gutterDecorationClassName = this.gutterDecorationClassName;
+      gutterDecorationClassNames = this.gutterDecorationClassNames;
 
     eventAggregator.subscribe("jsEditorCursorMoved", info => {
       this.selectedLine = info.cursor || 1;
@@ -73,7 +77,7 @@ export class BranchNavigator {
 
     eventAggregator.subscribe(
       "traceGutterDataChanged", payload => {
-        aceUtils.updateGutterDecorations(editor, [], traceViewModel.branchModel.traceGutterData.rows, gutterDecorationClassName);
+        aceUtils.updateGutterDecorations(editor, [], traceViewModel.branchModel.traceGutterData.rows);
       }
     );
 
@@ -98,11 +102,22 @@ export class BranchNavigator {
             console.log("navigating ", navigationDatum.branchIndex, navigationDatum.branchTotal, navigationDatum);
 
             if (traceViewModel.branchModel.currentNavigationFunction) {
-              this.aceUtils.updateAceMarkers(this.branchGlobalMarkerManager, [traceViewModel.branchModel.currentNavigationFunction.entry.entry]);
+              let globalEntry = traceViewModel.branchModel.currentNavigationFunction.entry.entry;
+              let branchRange = {
+                start: {row: globalEntry.range.start.row, column: 0},
+                end: {row: globalEntry.range.end.row, column: globalEntry.range.end.column}
+              }
+              this.aceUtils.updateAceMarkers(this.branchGlobalMarkerManager, [{range: branchRange}]);
             }
 
             if (traceViewModel.branchModel.currentNavigationFunction !== navigationDatum) {
-              this.aceUtils.updateAceMarkers(this.branchLocalMarkerManager, [navigationDatum.entry.entry]);
+              let localEntry = navigationDatum.entry.entry;
+              let branchRange = {
+                start: {row: localEntry.range.start.row, column: 0},
+                end: {row: localEntry.range.end.row, column: localEntry.range.end.column}
+              }
+
+              this.aceUtils.updateAceMarkers(this.branchLocalMarkerManager, [{range: branchRange}]);
             } else {
               this.aceUtils.updateAceMarkers(this.branchLocalMarkerManager, []);
             }
@@ -313,8 +328,13 @@ export class BranchNavigator {
     }
     this.$hideTooltip();
     $(`${this.jsEditorSelector} .ace_gutter-cell`).off("mouseenter mouseleave");
-    this.aceUtils.removeAllGutterDecorations(this.editor, this.gutterDecorationClassName);
-    $(`${this.jsEditorSelector}.ace_gutter-cell`).removeClass(this.gutterDecorationClassName);
+    for (let key in this.gutterDecorationClassNames) {
+      if (this.gutterDecorationClassNames.hasOwnProperty(key)) {
+        let gutterDecorationClassName = this.gutterDecorationClassNames[key];
+        this.aceUtils.removeAllGutterDecorations(this.editor, gutterDecorationClassName);
+        $(`${this.jsEditorSelector}.ace_gutter-cell`).removeClass(gutterDecorationClassName);
+      }
+    }
     this.traceViewModel.resetTraceGutterDataRows();
   }
 
@@ -347,11 +367,11 @@ export class BranchNavigator {
     this.branchGlobalMarkerManager = this.aceUtils.makeAceMarkerManager(editor);
     this.branchGlobalMarkerManager.markerRenderer = this.aceUtils.getAvailableMarkers().branchGlobalMarker;
     this.branchGlobalMarkerManager.markerType = "line";
-    this.branchGlobalMarkerManager.inFront = true;
+    this.branchGlobalMarkerManager.inFront = false;
 
     this.branchLocalMarkerManager = this.aceUtils.makeAceMarkerManager(editor);
     this.branchLocalMarkerManager.markerRenderer = this.aceUtils.getAvailableMarkers().branchLocalMarker
     this.branchLocalMarkerManager.markerType = "line";
-    this.branchLocalMarkerManager.inFront = true;
+    this.branchLocalMarkerManager.inFront = false;
   }
 }

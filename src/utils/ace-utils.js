@@ -133,7 +133,7 @@ export class AceUtils {
     aceMarkerManager.markers = newMarkers;
   }
 
-  subscribeToGutterEvents(editor, tooltip, gutterDecorationClassName, dataModel,
+  subscribeToGutterEvents(editor, tooltip, gutterDecorationClassNames, dataModel,
                           updateTooltip = this.updateTooltip, tooltipSlideDelay = 100, tooltipShowDelay = 100, tooltipHideDelay = 2000,
                           aceGutterCellSelector = ".ace_gutter-cell") {
     let self = this;
@@ -170,7 +170,17 @@ export class AceUtils {
         return;
       }
 
-      if (target.className.indexOf(gutterDecorationClassName) == -1) {
+      let gutterDecorationClassNameFound = false;
+      for (let key in gutterDecorationClassNames) {
+        if (gutterDecorationClassNames.hasOwnProperty(key)) {
+          let gutterDecorationClassName = gutterDecorationClassNames[key];
+          if (target.className.indexOf(gutterDecorationClassName)) {
+            gutterDecorationClassNameFound = true;
+            break;
+          }
+        }
+      }
+      if (!gutterDecorationClassNameFound) {
         return;
       }
 
@@ -290,23 +300,25 @@ export class AceUtils {
     }
   }
 
-  updateGutterDecorations(editor, previousRows, rows, gutterDecorationClassName) {
-    this.removeGutterDecorations(editor, previousRows, gutterDecorationClassName);
-    this.addGutterDecorations(editor, rows, gutterDecorationClassName);
+  updateGutterDecorations(editor, previousRows, rows) {
+    this.removeGutterDecorations(editor, previousRows);
+    this.addGutterDecorations(editor, rows);
   }
 
-  addGutterDecorations(editor, rows, gutterDecorationClassName) {
+  addGutterDecorations(editor, rows) {
     for (let row in rows) {
       if (rows.hasOwnProperty(row)) {
-        editor.getSession().addGutterDecoration(row, gutterDecorationClassName);
+        let rowGutterDecorationClassName = rows[row].gutterDecorationClassName;
+        editor.getSession().addGutterDecoration(row, rowGutterDecorationClassName);
       }
     }
   }
 
-  removeGutterDecorations(editor, rows, gutterDecorationClassName) {
+  removeGutterDecorations(editor, rows) {
     for (let row in rows) {
       if (rows.hasOwnProperty(row)) {
-        editor.getSession().removeGutterDecoration(row, gutterDecorationClassName);
+        let rowGutterDecorationClassName = rows[row].gutterDecorationClassName;
+        editor.getSession().removeGutterDecoration(row, rowGutterDecorationClassName);
       }
     }
   }

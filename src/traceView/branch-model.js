@@ -144,7 +144,9 @@ export class BranchModel {
           branchIndex = entry.branchIndex;
           branchTotal = entry.branchTotal;
         }
+        let gutterDecorationClassName = ["FunctionDeclaration", "FunctionExpression"].indexOf(entry.type) > -1 ? this.gutterDecorationClassNames.branchGlobal : this.gutterDecorationClassNames.branchLocal;
         result.rows[row] = {
+          gutterDecorationClassName: gutterDecorationClassName,
           entry: entry,
           timelineIndexes: timelineIndexes,
           UI: {branchIndex: branchIndex, branchTotal: branchTotal}

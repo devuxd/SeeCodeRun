@@ -218,7 +218,9 @@ export class JsGutter {
       let currentObjectViewer = new ObjectViewer(readableString);
       readableString = currentObjectViewer.stringifyHMTLString(currentObjectViewer.generateLineViewContent().content);
 
-        let content = entry.id + " = " + readableString;
+      // let content = entry.id + " = " + readableString;
+
+      let content = readableString;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
 
         if ($line.length) {
