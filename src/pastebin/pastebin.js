@@ -25,7 +25,7 @@ import {TraceSearchHistory} from '../traceSearch/trace-search-history';
 import {customElement} from 'aurelia-framework';
 
 import $ from 'jquery';
-import { resizable } from 'jquery-ui';
+import {resizable} from 'jquery-ui';
 
 @customElement('pastebin')
 @inject(EventAggregator, Router, TraceModel, AceUtils, FirebaseManager, DOM.Element)
@@ -46,10 +46,10 @@ export class Pastebin {
     this.jsEditor = new JsEditor(eventAggregator, firebaseManager, aceUtils);
     this.jsGutter = new JsGutter(eventAggregator, this.aceUtils);
     this.htmlEditor = new HtmlEditor(eventAggregator, firebaseManager, aceUtils);
-    this.cssEditor  = new CssEditor(eventAggregator, firebaseManager, aceUtils);
+    this.cssEditor = new CssEditor(eventAggregator, firebaseManager, aceUtils);
 
     this.htmlViewer = new HtmlViewer(eventAggregator, traceModel);
-    this.visViewer  =new VisViewer(eventAggregator, aceUtils, this.jsEditor);
+    this.visViewer = new VisViewer(eventAggregator, aceUtils, this.jsEditor);
 
     this.traceViewController = new TraceViewController(eventAggregator, aceUtils, this.jsEditor);
     this.expressionSelection = new ExpressionSelection(eventAggregator);
@@ -59,13 +59,34 @@ export class Pastebin {
   }
 
   activate(params) {
-    this.firebaseManager.activate(params.id);
-    if(!params.id){
-      window.history.replaceState({}, null, window.location + "#"+ this.firebaseManager.pastebinId);
+    let pastebinId = null;
+    if (params.id) {
+      let copyAndId = params.id.split(":");
+      if (copyAndId[0] === "") {
+        pastebinId = this.getPastebinCopy(copyAndId[1]);
+        let windowLocation = window.location.toString().split("#")[0];
+        window.history.replaceState({}, null, windowLocation + "#" + pastebinId);
+      } else {
+        pastebinId = params.id;
+      }
+    }
+    this.firebaseManager.activate(pastebinId);
+    if (!pastebinId) {
+      window.history.replaceState({}, null, window.location + "#" + this.firebaseManager.pastebinId);
     }
   }
 
-  update(){
+  getPastebinCopy(parentPastebinId) {
+    let firebaseManager = this.firebaseManager;
+    let pastebinCopyId = firebaseManager.makeNewPastebinFirebaseReferenceId();
+
+    let oldRef = firebaseManager.makePastebinFirebaseReference(parentPastebinId);
+    let newRef = firebaseManager.makePastebinFirebaseReference(pastebinCopyId);
+    firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef, parentPastebinId);
+    return pastebinCopyId;
+  }
+
+  update() {
     let editorHeight = $("#main-splitter-left").height() - $("#codeTabs").height();
     let layout = {editorHeight: editorHeight};
     this.eventAggregator.publish("windowResize", layout);
@@ -73,9 +94,13 @@ export class Pastebin {
 
   attached() {
     let self = this;
-    $(window).on('resize', windowResize => { self.update(); });
+    $(window).on('resize', windowResize => {
+      self.update();
+    });
 
-    this.eventAggregator.subscribe("jsGutterContentUpdate", payload =>{ setTimeout(self.update(), 500); });
+    this.eventAggregator.subscribe("jsGutterContentUpdate", payload => {
+      setTimeout(self.update(), 500);
+    });
 
     this.navigationBar.attached();
 
@@ -101,26 +126,26 @@ export class Pastebin {
     this.traceSearchHistory.attached();
 
     this.mainSplitterOptions = {
-          sizes: [60, 40],
-          gutterSize: 3,
-          cursor: 'col-resize',
-          minSize: 250
+      sizes: [60, 40],
+      gutterSize: 3,
+      cursor: 'col-resize',
+      minSize: 250
     };
     Split(['#main-splitter-left', '#main-splitter-right'], this.mainSplitterOptions);
 
     this.rightSplitterOptions = {
-          direction: 'vertical',
-          sizes: [85, 15],
-          gutterSize: 3,
-          cursor: 'row-resize',
-          minSize: 50
+      direction: 'vertical',
+      sizes: [85, 15],
+      gutterSize: 3,
+      cursor: 'row-resize',
+      minSize: 50
     };
     Split(['#right-splitter-top', '#right-splitter-bottom'], this.rightSplitterOptions);
 
     this.$jsEditorCodeOptions = {
-            containment: "parent",
-            autoHide: false,
-            handles: 'ew'
+      containment: "parent",
+      autoHide: false,
+      handles: 'ew'
     };
 
     let $jsEditorCode = $("#js-editor-code");
@@ -133,9 +158,9 @@ export class Pastebin {
       self.eventAggregator.publish("activeTabChange", {tabContainerSelector: e.target.href.substring(e.target.href.lastIndexOf("#"))});
     });
 
-    self.eventAggregator.subscribe("activeTabChange", tabEvent=>{
+    self.eventAggregator.subscribe("activeTabChange", tabEvent=> {
       let activeEditor = this.editors[tabEvent.tabContainerSelector];
-      if(activeEditor){
+      if (activeEditor) {
         self.eventAggregator.publish("activeEditorChange", {activeEditor: activeEditor});
       }
     });

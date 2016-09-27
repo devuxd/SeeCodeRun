@@ -121,10 +121,6 @@ export class BranchNavigator {
             } else {
               this.aceUtils.updateAceMarkers(this.branchLocalMarkerManager, []);
             }
-
-            // this.aceUtils.updateAceMarkers(this.disableMarkerManager, [navigationDatum.entry.entry]);
-            // let testRange = {start:{row: navigationDatum.entry.entry.range.start.row+1, column:0}, end:{row: navigationDatum.entry.entry.range.end.row-1, column:0}}
-            // this.aceUtils.updateAceMarkers(this.transparentMarkerManager, [{range:testRange}]);
           }
         }
 

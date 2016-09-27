@@ -127,8 +127,8 @@
 
 .ace-chrome .ace_marker-layer .branch-global-marker {
   position: absolute;
-  background-color: rgba(0, 0, 255, 0.01);
-  border: 1px blue;
+  background-color: rgba(0, 102, 255, 0.015);
+  border: 1px #0066ff;
   border-style: none none none solid;
   margin-left: -4px;
 
@@ -139,7 +139,7 @@
 
 .ace-chrome .ace_marker-layer .branch-local-marker {
   position: absolute;
-  background-color: rgba(255, 165, 0, 0.02);
+  background-color: rgba(255, 165, 0, 0.025);
   border: 1px orange;
   border-style: none none none solid;
   margin-left: -4px;
