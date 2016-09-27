@@ -227,7 +227,7 @@ export class Chat {
     let elapsedTimeMs = currentTime.getTime() - date.getTime();
     let elapsedTimeSeconds = elapsedTimeMs/1000;
     let elapsedTimeMinutes = elapsedTimeMs/(60*1000);
-    let elapsedTimeHours = elapsedTimeMs/elapsedTimeMinutes;
+    let elapsedTimeHours = elapsedTimeMinutes/60;
     if ( elapsedTimeSeconds >=60 && elapsedTimeSeconds < 120)
     {
       formattedTime = `a minute ago`;
