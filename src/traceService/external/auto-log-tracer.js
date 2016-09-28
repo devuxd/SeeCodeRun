@@ -5,25 +5,13 @@ export class AutoLogTracer{
         this.traceModel = new TraceModel();
     }
 
-    wrapCodeInTryCatch(code){
-        // return `
-
-        //         ${code}
-        //         window.IS_AFTER_LOAD = true;
-        //         window.START_TIME = null;
-
-        // `;
+  static wrapCodeInTryCatch(code) {
         return `
-            // try{
                 ${code}
                 window.IS_AFTER_LOAD = true;
                 window.START_TIME = null;
-            // }catch(error){
-            //     window.TRACE.error = error;
-            //     throw JSON.stringify({ range: window.TRACE.currentExpressionRange,  indexInTimeline: window.TRACE.timeline.length - 1 , details: window.TRACE.error});
-            // }
+                clearTimeout(window.TRACE.runTimeout);
         `;
-
     }
 
     getTraceDataContainerCodeBoilerPlate(){
@@ -38,9 +26,9 @@ export class AutoLogTracer{
         `;
     }
 
-    getTraceDataCodeBoilerPlate(){
+  static getTraceDataCodeBoilerPlate() {
         return `
-        traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
+        traceDataContainerElement.textContent= window.TRACE.stringify(window.TRACE.getTraceData());
         `;
     }
 
@@ -70,23 +58,111 @@ export class AutoLogTracer{
             };
         }());
 
-        window.START_TIME = +new Date();
         window.TIME_LIMIT = ${timeLimit};
+        window.START_TIME = +new Date();
 
         var Syntax =  ${JSON.stringify(this.traceModel.esSyntax)};
         var TraceRuntimeTypes =  ${JSON.stringify(this.traceModel.traceRuntimeTypes)};
         var TraceTypes = ${JSON.stringify(this.traceModel.traceTypes)};
-        window.ISCANCELLED = false;
+        window.IS_CANCELLED = false;
         window.TRACE = {
-            scriptCounter: 0, programCounter: 0, branchCounter: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : [], stackIndex: [{path: [], scope: "program"}],  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            indexInTimeline: 0, scopeCounter: 0, currentScope: null, functionScopes : [], updateTimeout: null, error: "", currentExpressionRange: null, hits: {}, data: {}, stack : {},  execution : [], variables: [], values : [], timeline: [], identifiers: [],
+            decycle: function decycle(obj) {
+              var keys = [];
+              var stack = [];
+              var stackSet = new Set();
+              var detected = false;
+              function visit(obj, key) {
+                if (obj == null) { return obj; }
+                if (typeof obj != 'object') { return obj; }
+                if (stackSet.has(obj)) {
+                  var oldindex = stack.indexOf(obj);
+                  var l1 = keys.join('.') + '.' + key;
+                  var l2 = keys.slice(0, oldindex + 1).join('.');
+                  detected = true;
+                  return "[Circular ~" +l1 +"= "+l2+ "]";
+                }
+
+                keys.push(key);
+                stack.push(obj);
+                stackSet.add(obj);
+                var shadowCopy;
+                if (obj instanceof Date){
+                    shadowCopy = new obj.constructor(); //or new Date(obj);
+                }else{
+                  try{
+                   shadowCopy =  obj.constructor();
+                  }catch(e){
+
+                  }
+                }
+                if(shadowCopy == null){
+                    shadowCopy = {};
+                }
+                for (var k in obj) {
+                  if (obj.hasOwnProperty(k)) {
+                   shadowCopy[k]= visit(obj[k], k);
+                  }
+                }
+                keys.pop();
+                stack.pop();
+                stackSet.delete(obj);
+                return shadowCopy;
+              }
+              return visit(obj, 'root');
+            },
+            serialize: function serialize(object){
+                let serializedObjectString;
+                try{
+                    // if(object && object.toString() ==="[object Arguments]"){
+                    //     object = (object.length === 1 ? [object[0]] : Array.apply(null, object));
+                    // }
+                    object = this.decycle(object);
+                    if(object && object.nodeType === 1){
+                        serializedObjectString = this.tryToJSON(object);
+                    }else{
+                        serializedObjectString = this.stringify(object);
+                    }
+                }catch(e){
+                    console.log("ERROR", object.toString(), object);
+                    serializedObjectString = object == null? this.stringify(object): this.stringify(object.toString());
+                }
+                return serializedObjectString;
+            },
             preautolog: function preAutolog(range, type, id, text){
             //todo: document.currentScript as context and handle a callstack per each one [Fixes timeout, Ajax callbacks and other external libraries interaction]
                 var info = { id: id , value: null, range: range, type: type, text: text};
                 this.currentExpressionRange = range;
-                this.handleTryRescope(info);
+                this.handleTryReScope(info);
                 if(type === Syntax.CallExpression){
                     this.timeline.push(info);
                     this.enterFunctionScope(info);
+                }
+
+                if(info.type === "BlockStatement"){
+                    clearTimeout(this.runTimeout);
+                    this.runTimeout = setTimeout(function updateTrace(){
+                        window.START_TIME = null;
+                    }, window.TIME_LIMIT- 500);
+                    window.START_TIME = window.START_TIME ? window.START_TIME : +new Date();
+                }
+
+                var duration  = 0;
+                if(window.START_TIME){
+                    duration = (+new Date()) - window.START_TIME;
+                }
+
+                if(duration > window.TIME_LIMIT){
+                     throw "Trace Timeout. Running code exceeded " + window.TIME_LIMIT + " ms time limit.";
+                }
+
+                if(window.IS_AFTER_LOAD){
+                    clearTimeout(this.updateTimeout);
+                    this.updateTimeout = setTimeout(function updateTrace(){
+                        window.START_TIME = null;
+                        traceDataContainerElement.textContent = window.TRACE.stringify(window.TRACE.getTraceData());
+                        traceDataContainerElement.click();
+                    }, 100);
                 }
                 return window.TRACE;
             },  // From TraceHelper
@@ -99,7 +175,10 @@ export class AutoLogTracer{
             }, // from "Jquery"
             isFunction: function isFunction(obj){
                 return obj == null? false : toString.call( obj ) === "[object Function]";
-            },
+            }, // from "Jquery"
+            isWindow: function isWindow( obj ) {
+        		return obj && obj === obj.window;
+        	},
             enterFunctionScope: function enterFunctionScope(info){
                     var isRoot = this.functionScopes.length? false: true;
                     this.functionScopes.push({id: info.id, isRoot: isRoot, isLocal: false, isCallback: false, argumentsString: "[]", parametersString: "[]", range: info.range, functionRange: null, timelineStartIndex: this.timeline.length - 1, timelineEndIndex: 0});
@@ -109,7 +188,7 @@ export class AutoLogTracer{
                     // console.log("enter " +info.id);
             },
             populateFunctionScope: function populateFunctionScope(info, infoValueString, key, isParameter){
-            //todo cllbacks
+            //todo callbacks
                 if(!this.functionScopes.length || !info){
                     return;
                 }
@@ -123,7 +202,6 @@ export class AutoLogTracer{
 
                 var callExpressionArguments= [];
                 var callExpressionText = calleeInfo.text;
-                // console.log(info);
                 if(calleeInfo.text){
                     try{
                         var data = JSON.parse(calleeInfo.text);
@@ -160,8 +238,8 @@ export class AutoLogTracer{
                 if(!isExternalCallExpression){
 
                 }
-                calleeInfo.text = this.stringify({text: callExpressionText, parameteres: callExpressionArguments});
-                topScope.argumentsString = this.stringify(callExpressionArguments);
+                calleeInfo.text = this.serialize({text: callExpressionText, parameteres: callExpressionArguments});
+                topScope.argumentsString = this.serialize(callExpressionArguments);
             },
             exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock, isParameter){
                 if(!this.functionScopes.length || !info){
@@ -175,19 +253,19 @@ export class AutoLogTracer{
                     this.timeline[topScope.timelineStartIndex].value= "EXCEPTION/ERROR THROWN";
                 }else{
                     if(info.type === Syntax.CallExpression){
-                        this.timeline[topScope.timelineStartIndex].value= info.value;
+                        this.timeline[topScope.timelineStartIndex].value= this.serialize(info.value);
                     }
                 }
                 // console.log("exit " +topScope.id);
                 topScope.timelineEndIndex = this.timeline.length;
-                this.timeline[topScope.timelineStartIndex].path = this.stringify(this.functionScopes);
+                this.timeline[topScope.timelineStartIndex].path = this.serialize(this.functionScopes);
                 this.timeline[topScope.timelineStartIndex].functionRange = topScope.functionRange;
                 this.functionScopes.pop();
                 this.scopeCounter = this.functionScopes.length - 1;
                 this.currentScope = this.functionScopes[this.scopeCounter];
                 // console.log("current " +(this.currentScope?this.currentScope.id: "none"));
             },
-            handleTryRescope: function handleTryRescope(info){
+            handleTryReScope: function handleTryReScope(info){
                 if(!this.functionScopes.length || !info){
                     return;
                 }
@@ -208,8 +286,8 @@ export class AutoLogTracer{
                     if(!this.isRangeInRange(info.range, topScope.functionRange)){
                         isBadScope = true;
                         topScope.tryExit = true;
-                        // console.log("TS: " +this.stringify(topScope.functionRange));
-                        // console.log("CE: " + this.stringify(info.range));
+                        // console.log("TS: " +this.serialize(topScope.functionRange));
+                        // console.log("CE: " + this.serialize(info.range));
                         this.exitFunctionScope(info, true);
                     }else{
                         isBadScope = false;
@@ -217,7 +295,12 @@ export class AutoLogTracer{
                 }while(this.functionScopes.length && isBadScope);
             },
             autoLog: function autoLog(info) {
+                var self = this;
                 this.currentExpressionRange = info.range;
+                
+                if(window.IS_CANCELLED){
+                    throw "Trace Cancelled.";
+                }
 
                 var isParameter = false;
                 var parameterData = null;
@@ -230,35 +313,10 @@ export class AutoLogTracer{
                     }
                 }
 
-                if(this.hits.length < 1){
-                    window.START_TIME = +new Date();
-                }
-
-                if(window.IS_AFTER_LOAD){
-                    // if(!window.START_TIME){
-                    //     window.START_TIME = +new Date();
-                    // }
-                    clearTimeout(this.updateTimeout);
-                    this.updateTimeout = setTimeout(function updateTrace(){
-                        traceDataContainerElement.textContent= JSON.stringify(window.TRACE.getTraceData());
-                        traceDataContainerElement.click();
-                        // window.START_TIME = null;
-                    }, 100);
-                }
-
-                var duration = 0;
-                if(window.START_TIME){
-                    duration = (+new Date()) - window.START_TIME;
-                }
-                if(duration > window.TIME_LIMIT){
-                     throw "Trace Timeout. Running code exceeded " + window.TIME_LIMIT + " ms time limit.";
-                }
-
                 var key = info.indexRange[0]+ ':' + info.indexRange[1];
                 var extra = info.extra;
 
                 if(TraceTypes.Stack.indexOf(info.type) > -1){
-
                     if(extra){
                         var extraValues = extra.split(":");
                         if(extraValues.length > 1){
@@ -268,36 +326,15 @@ export class AutoLogTracer{
                             key = key + ":" + extra;
 
                             if(isEnteringBlock){
-                                this.stackIndex.push({path: [this.stackIndex], scope: stackKey});
-                                this.stack.push(key);
-                            }else{
-                              //  this.stackIndex = this.stackIndex.pop();
+                                this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                             }
                         }
-
                     }else{
-                        this.stack.push(key);
-                    }
-
-                }
-                var infoValueString = null;
-                try{
-                    if(info.value && info.value.nodeType === 1){
-                        infoValueString = this.toJSON(info.value);
-                    }else{
-                        infoValueString = this.stringify(info.value);
-                    }
-                }catch(e){
-                    infoValueString = info.value == null? null: info.value.toString();
-                }
-
-                if(TraceTypes.Expression.indexOf(info.type) > -1){
-                    if(info.id){
-                        this.values.push({id: info.id , value: infoValueString, range: info.range});
-                    }else{
-                        this.values.push({id: info.text , value: infoValueString, range: info.range});
+                        this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                     }
                 }
+
+                var infoValueString = this.serialize(info.value);
 
                 if(info.type === Syntax.CallExpression && !isParameter){
                     this.exitFunctionScope(info);
@@ -314,22 +351,26 @@ export class AutoLogTracer{
                         entry.isCallback = parameterData.isCallback;
                     }
                     this.timeline.push(entry);
+                    this.indexInTimeline = this.timeline.length;
                 }
 
-                var stackTop =	this.stackIndex[ this.stackIndex.length - 1].scope;
+                if(TraceTypes.Expression.indexOf(info.type) > -1){
+                    if(info.id){
+                        this.values.push({indexInTimeline: this.indexInTimeline, id: info.id , value: infoValueString, range: info.range});
+                    }else{
+                        this.values.push({indexInTimeline: this.indexInTimeline, id: info.text , value: infoValueString, range: info.range});
+                    }
+                }
 
-				if (this.hits.hasOwnProperty(key)) {
+				        if (this.hits.hasOwnProperty(key)){
                     this.hits[key] = this.hits[key] + 1;
-                    this.data[key].hits[stackTop] = this.data[key].hits[stackTop] + 1;
-                    this.data[key].values.push({ stackIndex : stackTop + ":" + this.data[key].hits[stackTop]  , infoValueString});
-                } else {
-
+                    this.data[key].values.push({ indexInTimeline: this.indexInTimeline, infoValueString});
+                }else{
                     if(info.type === Syntax.VariableDeclarator){
                        this.variables.push({id: info.id , range: info.range});
                     }
 
                     this.identifiers.push({id: info.id , range: info.range});
-
 
                     this.hits[key] = 1;
                     this.execution.push(key);
@@ -337,22 +378,20 @@ export class AutoLogTracer{
                         type : info.type,
                         id : info.id,
                         text : info.text,
-                        values: [{stackIndex: stackTop + ":1", value : infoValueString}],
+                        values: [{  indexInTimeline: this.indexInTimeline, value : infoValueString}],
                         range: info.range,
-                        hits : [],
                         extra : info.extra
                     };
-                    this.data[key].hits[stackTop] = 1;
-                }
-
-                if(window.ISCANCELLED){
-                    throw "Trace Cancelled.";
                 }
 
                 return info.value;
             },
             stringify: function stringify(obj, replacer, spaces, cycleReplacer) {
-              return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+                try{
+                    return JSON.stringify(obj, this.serializer(replacer, cycleReplacer), spaces);
+                }catch(e){
+                    return obj == null? "" + obj: obj.toString();
+                }
             },
             serializer: function serializer(replacer, cycleReplacer) {
               var stack = [], keys = [];
@@ -376,21 +415,43 @@ export class AutoLogTracer{
                 return replacer == null ? value : replacer.call(this, key, value);
               };
             },
-            toJSON: function toJSON(node) {
+            tryToJSON: function tryToJSON(node){
+                try{
+                    return this.toJSON(node);
+                }catch(e){
+                    return this.serialize(node);
+                }
+            },
+            toJSON: function toJSON(node, visited, visitedValue) {
             //https://gist.github.com/sstur/7379870
+              visited = visited? visited : [];
+              visitedValue = visitedValue? visitedValue : [];
               node = node || this;
+
               var obj = {
                 nodeType: node.nodeType
               };
+
+            var visitedIndex = visited.indexOf(node);
+            if(visitedIndex > -1){
+                return visitedValue[visitedIndex];
+            }else{
+                visited.push(node);
+                visitedValue.push(obj);
+            }
+
               if (node.tagName) {
                 obj.tagName = node.tagName.toLowerCase();
-              } else
-              if (node.nodeName) {
-                obj.nodeName = node.nodeName;
+              } else{
+                  if (node.nodeName) {
+                    obj.nodeName = node.nodeName;
+                  }
               }
+
               if (node.nodeValue) {
                 obj.nodeValue = node.nodeValue;
               }
+
               var attrs = node.attributes;
               if (attrs) {
                 var length = attrs.length;
@@ -400,14 +461,16 @@ export class AutoLogTracer{
                   arr[i] = [attr.nodeName, attr.nodeValue];
                 }
               }
+
               var childNodes = node.childNodes;
               if (childNodes) {
                 length = childNodes.length;
                 arr = obj.childNodes = new Array(length);
                 for (i = 0; i < length; i++) {
-                  arr[i] = this.toJSON(childNodes[i]);
+                  arr[i] = this.toJSON(childNodes[i], visited, visitedValue);
                 }
               }
+
               return obj;
             },
             getTraceData: function getTraceData() {

@@ -23,13 +23,13 @@
    display: none;
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global {
    background-color: #FFF;
    border-radius: 0px;
    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration::before {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global::before {
     display: block;
     float: left;
     width: 0;
@@ -38,7 +38,7 @@
     content: '';
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration:hover::before {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global:hover::before {
     display: block;
     float: left;
     width: 0;
@@ -47,10 +47,41 @@
     content: '';
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration:hover {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global:hover {
     color: #FFF;
     background-color: #0066ff;
 }
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local {
+  background-color: #FFF;
+  border-radius: 0px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local::before {
+  display: block;
+  float: left;
+  width: 0;
+  height: 100%;
+  border-left: 1px solid orange;
+  content: '';
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover::before {
+  display: block;
+  float: left;
+  width: 0;
+  height: 100%;
+  border-left: 1px solid #FFF;
+  content: '';
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover {
+  color: #FFF;
+  background-color: orange;
+}
+
+
 
 #gutterTooltip {
    position: absolute;
@@ -102,137 +133,51 @@
     border-radius: 0;
 }
 
-#editorTooltipContentId .custom-popover-title{
-    line-height: 18px;
-    font-size: 12px;
+#editorTooltipContent .custom-popover-title{
+    line-height: 14px;
+    font-size: 10px;
     -webkit-border-radius: 0;
     -moz-border-radius: 0;
     -o-border-radius: 0;
     border-radius: 0;
-    margin: 4px;
+    margin: 2px;
     border: none;
     border-bottom: 1px solid #eee;
 }
 
-#editorTooltipContentId:hover .custom-popover-title{
+#editorTooltipContent .custom-popover-title i:first-letter {
+    text-transform:capitalize;
+}
+
+
+#editorTooltipContent:hover .custom-popover-title{
     border-bottom: 1px solid #0066ff;
 }
 
-#editorTooltipContentId .popover-content{
-    padding: 4px;
+#editorTooltipContent .popover-content{
+    padding: 2px;
     margin: 0;
     -webkit-border-radius: 0;
     -moz-border-radius: 0;
     -o-border-radius: 0;
     border-radius: 0;
+    /*word-wrap: break-word;*/
+    overflow: auto;
+}
+
+#editorTooltipContent .tooltip.bottom .tooltip-inner {
+    background-color: #0066ff;
     word-wrap: break-word;
 }
 
-.treeView {
-  -moz-user-select:none;
-  position:relative;
+#editorTooltipContent .tooltip.bottom .tooltip-arrow {
+    border-bottom-color: #0066ff;
 }
 
-.treeObj {
-  font-family: Monaco;
-  font-size: 12px;
+#editorTooltipContent .tooltip.in {
+  opacity: .97;
+  filter: alpha(opacity = 97);
 }
 
-.treeView ul {
-  margin:0 0 0 -1.5em;
-  padding:0 0 0 1.5em;
-}
-
-.treeView ul ul {
-  background:url('../../res/list-item-contents.png') repeat-y left;
-}
-
-.treeView li.lastChild > ul {
-  background-image:none;
-}
-
-.treeView li {
-  margin:0;
-  padding:0;
-  background:url('../../res/list-item-root.png') no-repeat top left;
-  list-style-position:inside;
-  list-style-image:url('../../res/button.png');
-  cursor:auto;
-}
-
-.treeView li.collapsibleListOpen {
-  list-style-image:url('../../res/button-open.png');
-  cursor:pointer;
-}
-
-.treeView li.collapsibleListClosed {
-  list-style-image:url('../../res/button-closed.png');
-  cursor:pointer;
-}
-
-.treeView li li {
-  background-image:url('../../res/list-item.png');
-  padding-left:1.5em;
-}
-
-.treeView li.lastChild {
-  background-image:url('../../res/list-item-last.png');
-}
-
-.treeView li.collapsibleListOpen {
-  background-image:url('../../res/list-item-open.png');
-}
-
-.treeView li.collapsibleListOpen.lastChild {
-  background-image:url('../../res/list-item-last-open.png');
-}
-
-.elementNode {
-  color: #881280;
-}
-
-.sign {
-  color: #A894A6;
-}
-
-.textNode {
-  color: rgb(196, 26, 22);
-}
-
-.attr {
-  color: rgb(153, 69, 0);
-}
-
-.attrValue {
-  color: rgb(26, 26, 166);
-}
-
-.key {
-  color: #881280;
-}
-
-.stringLiteral {
-  color: rgb(196, 26, 22);
-}
-
-.literal {
-  color: rgb(26, 26, 166);
-}
-
-.null {
-    font-weight: bold;
-    color: rgb(26, 26, 100);
-}
-
-.undefined {
-    font-style: italic;
-    color: rgb(26, 26, 66);
-}
-
-.boolean {
-  color: rgb(26, 166, 166);
-}
-
-.function {
-  color: rgb(26, 26, 166);
-}
+/*#editorTooltipContent .red-tooltip + .tooltip > .tooltip-inner {background-color: #0066ff;}*/
+/*#editorTooltipContent .red-tooltip + .tooltip > .tooltip-arrow { border-bottom-color: #0066ff; }*/

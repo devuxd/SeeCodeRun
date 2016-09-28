@@ -1,6 +1,6 @@
 /* global $ */
 import {bindable} from 'aurelia-framework';
-import {JsUtils} from '../utils/js-utils';
+import {ObjectViewer} from "../utils/object-viewer";
 import {TraceViewUtils} from '../utils/trace-view-utils';
 
 export class JsGutter {
@@ -25,14 +25,16 @@ export class JsGutter {
     lastLine = 0;
     isTraceServiceProccesing =false;
     isTraceChange = false;
-    traceHelper = null;
     scrollTop = 0;
 
     constructor(eventAggregator, aceUtils, aceJsEditorDiv = "aceJsEditorDiv") {
         this.eventAggregator = eventAggregator;
         this.aceUtils = aceUtils;
         this.aceJsEditorDiv = aceJsEditorDiv;
-        this.jsUtils = new JsUtils();
+    }
+
+    setTraceViewModel(traceViewModel){
+        this.traceViewModel = traceViewModel;
     }
 
     adjustFontStyle(aceJsEditorDiv = this.aceJsEditorDiv){
@@ -99,29 +101,30 @@ export class JsGutter {
           $previousLine = $newLine;
         }
 
-        if(self.isTraceChange && self.traceHelper && editorLayout.lastRow){
+        if(self.isTraceChange && self.traceViewModel && editorLayout.lastRow){
+            if(self.traceViewModel.isRepOK()){
+
             self.isTraceChange = false;
-            if(self.traceHelper.isValid()){
-                let entries = self.traceHelper.getTimeline();
-                let isAppendToContent = true;
-                if(self.traceHelper.isNavigationMode){
-                    entries = self.traceHelper.getNavigationTimeline();
-                    isAppendToContent = false;
-                }
-                for ( let indexInTimeline = 0; indexInTimeline < entries.length; indexInTimeline++) {
+                let entries = self.traceViewModel.branchModel.getTimeline();
+                let timeline = self.traceViewModel.traceHelper.getTimeline();
+
+                for ( let indexInTimeline in entries) {
+                  if (entries.hasOwnProperty(indexInTimeline)) {
                     let entry = entries[indexInTimeline];
-                    self.setGutterLineContent(indexInTimeline, entry, isAppendToContent);
+                    self.setGutterLineContent(indexInTimeline, entry, timeline);
+                  }
                 }
                 self.eventAggregator.publish("jsGutterContentUpdate", {data: entries});
-            }
+
             self.isTraceServiceProccesing = false;
+            }
         }
 
         if(self.isTraceServiceProccesing){
             self.$gutter.addClass(self.jsGutterBlurClass);
         }else{
             self.$gutter.removeClass(self.jsGutterBlurClass);
-            if(self.traceHelper && self.traceHelper.isValid()){
+            if(self.traceViewModel && self.traceViewModel.isRepOK()){
                 self.$gutter.removeClass(self.jsGutterInvalidClass);
             }else{
                 if(editorLayout.lastRow){
@@ -182,13 +185,6 @@ export class JsGutter {
             this.highlightLine(this.selectedLine);
         });
 
-        ea.subscribe("traceChanged", payload => {
-            this.isTraceChange = true;
-            this.traceHelper = payload.data;
-            this.clearGutter();
-            this.update();
-        });
-
         ea.subscribe("jsEditorChangeScrollTop", scrollData => {
                 this.scrollTop = scrollData.scrollTop;
                 this.scrollerHeight = scrollData.scrollerHeight;
@@ -196,31 +192,40 @@ export class JsGutter {
                 $gutter.scrollTop(this.scrollTop);
         });
 
-        ea.subscribe("traceNavigationChange", traceHelper => {
-                if(traceHelper){
-                    this.traceHelper = traceHelper;
-                    this.clearGutter();
-                    this.isTraceChange=true;
-                    this.update();
-                    // this.traceHelper.stopNavigation();
+        ea.subscribe("traceNavigationChange", traceData => {
+            if(traceData.isEditorChange){
+                this.clearGutter();
+            }
+            if(traceData.traceViewModel){
+                if(traceData.traceViewModel.branchModel.currentNavigationDatum){
+                    console.log("entry", traceData.traceViewModel.branchModel.currentNavigationDatum.entry);
+                    this.clearGutter(traceData.traceViewModel.branchModel.currentNavigationDatum.entry.entry.range);
                 }
+                this.setTraceViewModel(traceData.traceViewModel);
+                this.isTraceChange=true;
+                this.update();
+            }
 
         });
     }
 
-    setGutterLineContent(indexInTimeline, entry, isAppendToContent) {
+    setGutterLineContent(indexInTimeline, entry, timeline, isAppendToContent) {
         let firstLineNumber = this.editorLayout? this.editorLayout.firstLineNumber: 1;
         let line = entry.range.start.row + firstLineNumber;
         let readableString = entry.value;
 
-        readableString = this.jsUtils.toReadableString(readableString);
+        // let readableStringTitle = this.jsUtils.toReadableString(readableString);
+      let currentObjectViewer = new ObjectViewer(readableString);
+      readableString = currentObjectViewer.stringifyHMTLString(currentObjectViewer.generateLineViewContent().content);
 
-        let content = entry.id + " = " + readableString;
+      // let content = entry.id + " = " + readableString;
+
+      let content = readableString;
         let $line = $(this.jsGutterLineSelectorPrefix + line);
 
         if ($line.length) {
 
-            if(["Literal", "BlockStatement", "Program"].indexOf(entry.type) > -1){
+            if(["Literal", "BlockStatement", "Program", "FunctionData"].indexOf(entry.type) > -1){
                 // $line.text("");
                 return;
             }
@@ -228,11 +233,11 @@ export class JsGutter {
             if(isAppendToContent){
                 $line.append("[" + content + "] ");
             }else{
-                let entryId = this.aceUtils.parseRangeString(entry.range);
-                let lineEntrySelector = this.jsGutterLineSelectorPrefix + line + "-"+ entryId;
+
+                let lineEntrySelector = this.aceUtils.idifyRange(this.jsGutterLineSelectorPrefix + line, entry.range);;
                 let $lineEntry = $(lineEntrySelector);
                 if(!$lineEntry.length){
-                    let lineEntryId = this.jsGutterLineIdPrefix + line + "-"+ entryId;
+                    let lineEntryId = this.aceUtils.idifyRange(this.jsGutterLineIdPrefix  + line, entry.range);;
                     if(entry.type === "Parameter"){
                         $line.append("<div id = '"+lineEntryId+"' class = '"+this.jsGutterEntryClass+"' ></div>");
                     }else{
@@ -240,10 +245,23 @@ export class JsGutter {
                     }
                     $lineEntry = $(lineEntrySelector);
                 }
+                let previousEntry = timeline[$lineEntry.data("itimeline")];
+                // console.log("entries", previousEntry !== entry, previousEntry, entry);
                 $lineEntry.text("[" + content + "]");
                 $lineEntry.data("itimeline", indexInTimeline);
+                if(previousEntry && previousEntry.value !== entry.value){
+                    this.animateLineEntryChange($lineEntry);
+                }
             }
         }
+    }
+
+    animateLineEntryChange($lineEntry){
+        // $lineEntry.html("[" + content + "]");
+        // $lineEntry.prop('title', $lineEntry.text());
+        $lineEntry.stop(true).animate( { backgroundColor: '#E7EFF5' }, 250, function(){
+            $(this).animate( { backgroundColor: 'transparent' }, 350);
+        });
     }
 
     highlightLine(line) {
@@ -257,8 +275,21 @@ export class JsGutter {
         }
     }
 
-    clearGutter() {
-        this.$gutter.find(this.jsGutterLineClassSelector).html("");
+    clearGutter(rangeToClear) {
+        if(rangeToClear){
+            let self = this;
+            let isRangeInRange = this.traceViewModel.getTraceHelper().isRangeInRange;
+            this.$gutter.find(this.jsGutteEntryClassSelector).each(function (){
+                let range = self.aceUtils.parseIdifiedRange($(this).attr('id'));
+                if(range && isRangeInRange(range, rangeToClear)){
+                    let indexInTimeline = $(this).data("itimeline");
+                    $(this).html("");
+                    $(this).data("itimeline", indexInTimeline);
+                }
+            });
+        }else{
+            this.$gutter.find(this.jsGutterLineClassSelector).html("");
+        }
     }
 
     cleanGutter() {

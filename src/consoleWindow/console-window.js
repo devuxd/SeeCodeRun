@@ -1,6 +1,5 @@
 /* global $, PR*/
-import {JsUtils} from "../utils/js-utils";
-
+import {ObjectViewer} from "../utils/object-viewer";
 export class ConsoleWindow {
   title = 'Console';
   consoleLogFeedbackSelector = "#consoleLogFeedback";
@@ -14,7 +13,6 @@ export class ConsoleWindow {
 
   constructor(eventAggregator) {
     this.eventAggregator = eventAggregator;
-    this.jsUtils = new JsUtils();
   }
 
   attached() {
@@ -97,11 +95,24 @@ export class ConsoleWindow {
   }
 
   prettifyConsoleLine(consoleArguments) {
+    let lineData = "", moreData = "", currentObjectViewer;
+    if(consoleArguments.length){
+      currentObjectViewer = new ObjectViewer(consoleArguments[0], "argument-" + 0);
+      lineData = currentObjectViewer.generateLineViewContent().content;
+    }
+    for(let i = 1; i < consoleArguments.length; i++){
+      currentObjectViewer = new ObjectViewer(consoleArguments[i], "argument-" + i);
+      moreData = ", " + currentObjectViewer.generateLineViewContent().content;
+    }
+    if(moreData){
+      lineData = "[" + lineData + moreData + "]";
+    }
     let onClick = `$('.${this.styleConsoleWindowTextCompactOverflow}').click( function consoleWindowTextCompactOverflowClick(){
       	$(this).toggleClass('${this.styleConsoleWindowTextLooseOverflow}');
       })`;
+      // this.jsUtils.toReadableString(consoleArguments)
     return `<pre class="${this.styleConsoleWindowJSONPrettyPrint} ${this.styleConsoleWindowTextCompactOverflow}" onclick = "${onClick}">
-        ${this.jsUtils.toReadableString(consoleArguments)}
+        ${lineData}
       </pre>`;
   }
 }

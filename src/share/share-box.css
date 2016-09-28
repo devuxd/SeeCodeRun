@@ -9,9 +9,7 @@
 }
 
 #copyTarget{
-  padding-top: 0px;
-  padding-bottom: 0px;
-  padding-right: 20px;
+  padding: 0px 20px 0px 20px;
   line-height: 20px;
   font-size: 12px;
   border-color: #0066ff;
@@ -31,4 +29,21 @@
 #copyButton:active {
     cursor: pointer;
     color: #0066ff;
+}
+
+#goToShareButton {
+  font-size: 19px;
+  position: absolute;
+  left: 0px;
+  /*float: left;*/
+}
+
+#goToShareButton:hover {
+  cursor: pointer;
+  color: #3C8AFC;
+}
+
+#goToShareButton:active {
+  cursor: pointer;
+  color: #0066ff;
 }

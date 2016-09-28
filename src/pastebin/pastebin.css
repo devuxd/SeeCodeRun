@@ -53,6 +53,7 @@
 
 #right-splitter-top{
    border-top: 1px solid #eee;
+   overflow: hidden;
 }
 #right-splitter-bottom{
     bottom: 0px;
@@ -71,6 +72,13 @@
 
 #visualization-container{
     padding-top: 5px;
+    min-height: 100%;
+    /*overflow: hidden;*/
+}
+
+#visualization-container .panel-body{
+    padding: 0;
+    overflow: auto;
 }
 
 #visualization-container .panel {

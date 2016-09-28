@@ -52,7 +52,11 @@
  }
 
  .js-gutter-entry{
-      display: inline-block;
+    display: inline-block;
+    max-width: 250px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
  }
 
  .js-gutter-entry:hover{

@@ -5,6 +5,7 @@ export class EsprimaNodeFactory{
 
     getDefaultAutoLogNode(){
         return {
+            "visited": true,
             "type": "CallExpression",
             "callee": {
                     "type": "MemberExpression",

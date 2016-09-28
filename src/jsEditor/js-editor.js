@@ -89,6 +89,8 @@ export class JsEditor {
       ea.publish('jsEditorPreChange',
               editorLayout
       );
+      clearTimeout(self.editorChangedTimeout);
+      self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
     });
 
     let onAnnotationChanged = function onAnnotationChanged() {

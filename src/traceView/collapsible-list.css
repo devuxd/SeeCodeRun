@@ -1,0 +1,138 @@
+.treeView {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    position: relative;
+    padding-left: 4px;
+    vertical-align: baseline;
+    color: inherit;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.treeObj {
+    font-family: Monaco;
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.lineObj {
+    font-family: Monaco;
+    font-size: 12px;
+}
+
+/*.treeObj:hover{*/
+/*    overflow: auto;*/
+/*    text-overflow: unset;*/
+    /*white-space: normal;*/
+/*    word-wrap: break-word;*/
+    /*-ms-hyphens: auto;*/
+    /*-moz-hyphens: auto;*/
+    /*-epub-hyphens: auto;*/
+    /*-webkit-hyphens: auto;*/
+    /*hyphens: auto;*/
+/*}*/
+
+.treeView ul {
+    margin: 0 0 0 -1.0em;
+    padding: 0 0 0 1.0em;
+}
+
+.treeView li {
+    margin: 0;
+    padding: 0;
+    list-style-position: inside;
+    list-style-image: url('../../res/button-leaf.png');
+    cursor: auto;
+}
+
+.treeView .collapsibleListOpen {
+    list-style-image: url('../../res/button-branch-expanded.png');
+    cursor: pointer;
+}
+
+.treeView .collapsibleListClosed {
+    list-style-image: url('../../res/button-branch-collapsed.png');
+    cursor: pointer;
+}
+
+.treeView li li {
+    padding-left: 1.0em;
+    text-indent: 1.0em;
+}
+
+.elementNode {
+    color: #881280;
+}
+
+.sign {
+    color: #A894A6;
+}
+
+.textNode {
+    color: rgb(196, 26, 22);
+}
+
+.attr {
+    color: rgb(153, 69, 0);
+}
+
+.attrValue {
+    color: rgb(26, 26, 166);
+}
+
+.key {
+    color: #881280;
+}
+
+/*JS types*/
+
+.undefined {
+    font-style: italic;
+    color: rgb(26, 26, 66);
+}
+
+.null {
+    font-weight: bold;
+    color: rgb(26, 26, 100);
+}
+
+.boolean, .number  {
+    color: rgb(28, 0, 207);
+}
+
+.string {
+    color: rgb(196, 26, 22);
+    /*white-space: pre;*/
+    /*unicode-bidi: -webkit-isolate;*/
+}
+
+.regexp{
+    color: inherit;
+}
+
+.function {
+    color: rgb(26, 26, 166);
+}
+
+.object{
+    color: inherit;
+}
+
+.array{
+    color: inherit;
+}
+
+.date{
+    color: inherit;
+}
+
+.error{
+    color: inherit;
+}
+
+.symbol{
+    color: inherit;
+}

@@ -42,7 +42,9 @@ export class TraceModel{
             AssignmentExpression: "AssignmentExpression",
             BinaryExpression: "BinaryExpression",
             BlockStatement: "BlockStatement",
+            BreakStatement: "BreakStatement",
             CallExpression: "CallExpression",
+            ContinueStatement: "ContinueStatement",
             DoWhileStatement: "DoWhileStatement",
             ExpressionStatement: "ExpressionStatement",
             ForStatement: "ForStatement",
@@ -110,11 +112,20 @@ export class TraceModel{
             WithStatement: "WithStatement"
         };
 
+      this.customTypes = {
+        BlockStatementExit: "BlockStatementExit"
+      };
+
         this.traceTypes = {
+            Function: [
+                Syntax.FunctionDeclaration,
+                Syntax.FunctionExpression
+                ],
             Stack: [
                 Syntax.FunctionDeclaration,
                 Syntax.FunctionExpression,
                 Syntax.BlockStatement,
+              Syntax.LabeledStatement,
                 Syntax.SwitchCase
                 ],
             Expression: [
@@ -155,6 +166,7 @@ export class TraceModel{
                 Syntax.ForStatement,
                 Syntax.ForInStatement,
                 Syntax.SwitchStatement,
+                Syntax.SwitchCase,
                 Syntax.TryStatement,
                 Syntax.CatchClause
                 ],
@@ -171,7 +183,14 @@ export class TraceModel{
                 ],
             Exception: [
                 Syntax.TryStatement,
-                Syntax.CatchClause
+              Syntax.CatchClause,
+                ],
+            FlowExit: [
+                Syntax.ThrowStatement,
+                Syntax.ReturnStatement,
+              Syntax.BreakStatement,
+              Syntax.ContinueStatement,
+              this.customTypes.BlockStatementExit
                 ]
         };
 
@@ -185,7 +204,7 @@ export class TraceModel{
 
         this.traceEvents = {
             instrumented    : {  event :"traceInstrumented"   , description : "Code Instrumented successfully." },
-            changed         : {  event :"traceChanged"   , description : "Trace results obtained succesfully." },
+          changed: {event: "traceChanged", description: "Trace results obtained successfully."},
             failed          : {  event :"instrumentationFailed"    , description : "Code rewriting failed (Compilation error)." }
          };
 
@@ -201,7 +220,7 @@ export class TraceModel{
           Exception: "Exception"
         };
 
-        this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement"];
+      this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement", "BlockStatementExit"];
         this.timeLimit = 3000;
 
     }

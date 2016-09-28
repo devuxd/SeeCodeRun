@@ -111,7 +111,6 @@ export class HtmlViewer {
         // doc.body.textContent =this.js;
         let traceDataContainerElement = doc.getElementById(traceDataContainer);
         self.result = JSON.parse(traceDataContainerElement.textContent);
-
         traceDataContainerElement.addEventListener("click", function getTraceDataClick(){
             self.result = JSON.parse(traceDataContainerElement.textContent);
             self.result.error = self.popErrors();
