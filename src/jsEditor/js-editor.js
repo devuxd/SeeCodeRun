@@ -10,7 +10,7 @@ export class JsEditor {
   editorChangedTimeout = null;
   hasErrors = false;
   height = 700;
-  editorChangeDelay= 1500;
+  editorChangeDelay = 1500;
 
   constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
@@ -39,45 +39,47 @@ export class JsEditor {
     let ea = this.eventAggregator;
 
     let publishEditorChanged = function publishEditorChanged() {
-        let jsCode = editor.getValue();
-        let curs = editor.getCursorPosition().row + 1;
-        if(jsCode){
-          let editorCompactedText = jsCode;
+      let jsCode = editor.getValue();
+      let curs = editor.getCursorPosition().row + 1;
+      if (jsCode) {
+        let editorCompactedText = jsCode;
 
-          if (self.editorChangedText !== editorCompactedText ) {
-            self.editorChangedText = editorCompactedText;
-            ea.publish('jsEditorChange', {
-              js: jsCode,
-              length: session.getLength(),
-              cursor: curs
-            });
-          }
+        if (self.editorChangedText !== editorCompactedText) {
+          self.editorChangedText = editorCompactedText;
+          ea.publish('jsEditorChange', {
+            js: jsCode,
+            length: session.getLength(),
+            cursor: curs
+          });
         }
+      }
     };
 
     this.onEditorChangeChecked = function onEditorChangeChecked(hasErrors) {
       let editorLayout = self.aceUtils.getLayout(editor);
-      if(hasErrors){
+      if (hasErrors) {
         ea.publish('jsEditorChangeError',
-              editorLayout
+          editorLayout
         );
         return;
       }
 
       ea.publish('jsEditorPreChange',
-              editorLayout
+        editorLayout
       );
 
-      if(self.isFirstLoad){
+      if (self.isFirstLoad) {
         self.isFirstLoad = false;
         publishEditorChanged();
         ea.publish("jsEditorReady", editor);
         editor.resize(true);
         let editorLayout = self.aceUtils.getLayout(editor);
-        editor.scrollToLine(editorLayout.firstLineNumber + editorLayout.lastRow, false, false, trueafterScrollAnimationFinish =>{});
-        editor.scrollToLine(editorLayout.firstLineNumber, false, false, afterScrollAnimationFinish =>{});
+        editor.scrollToLine(editorLayout.firstLineNumber + editorLayout.lastRow, false, false, trueafterScrollAnimationFinish => {
+        });
+        editor.scrollToLine(editorLayout.firstLineNumber, false, false, afterScrollAnimationFinish => {
+        });
         editor.gotoLine(editorLayout.firstLineNumber);
-      }else{
+      } else {
         clearTimeout(self.editorChangedTimeout);
         self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
       }
@@ -85,13 +87,13 @@ export class JsEditor {
 
     session.on('change',
       function onEditorChanged() {
-      let editorLayout = self.aceUtils.getLayout(editor);
-      ea.publish('jsEditorPreChange',
-              editorLayout
-      );
-      clearTimeout(self.editorChangedTimeout);
-      self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
-    });
+        let editorLayout = self.aceUtils.getLayout(editor);
+        ea.publish('jsEditorPreChange',
+          editorLayout
+        );
+        clearTimeout(self.editorChangedTimeout);
+        self.editorChangedTimeout = setTimeout(publishEditorChanged, self.editorChangeDelay);
+      });
 
     let onAnnotationChanged = function onAnnotationChanged() {
       let annotations = session.getAnnotations();
@@ -113,9 +115,9 @@ export class JsEditor {
       onAnnotationChanged);
 
     session.selection.on('changeCursor', () => {
-      let cursorPosition =this.editor.getCursorPosition();
+      let cursorPosition = this.editor.getCursorPosition();
 
-      if(!cursorPosition){
+      if (!cursorPosition) {
         return;
       }
 
@@ -127,8 +129,8 @@ export class JsEditor {
       ea.publish("jsEditorCursorMoved", info);
     });
 
-    editor.on("click", function jsEditorClick(event){
-        ea.publish("jsEditorClick", event);
+    editor.on("click", function jsEditorClick(event) {
+      ea.publish("jsEditorClick", event);
     });
 
     editor.renderer.on('resize', function jsEditorResize() {
@@ -149,11 +151,11 @@ export class JsEditor {
     editor.getSession().on('changeScrollTop', function jsEditorchangeScrollTop(scrollTop) {
       let scrollerHeight = editor.renderer.$size.scrollerHeight;
       // let scrollerHeight =$(`${this.jsEditorSelector} .ace_scrollbar-inner`).prop('scrollHeight');
-        let scrollData = {
-            scrollTop: scrollTop,
-            scrollerHeight: scrollerHeight
-        };
-        ea.publish('jsEditorChangeScrollTop', scrollData);
+      let scrollData = {
+        scrollTop: scrollTop,
+        scrollerHeight: scrollerHeight
+      };
+      ea.publish('jsEditorChangeScrollTop', scrollData);
     });
   }
 
@@ -161,7 +163,7 @@ export class JsEditor {
     let ea = this.eventAggregator;
     let self = this;
 
-    ea.subscribe("windowResize", layout =>{
+    ea.subscribe("windowResize", layout => {
         $(self.jsEditorSelector).height(layout.editorHeight);
         self.editor.resize();
       }
@@ -177,7 +179,8 @@ export class JsEditor {
     });
 
     ea.subscribe('jsGutterLineClick', lineNumber => {
-      this.editor.scrollToLine(lineNumber, true, true, afterScrollAnimationFinish =>{});
+      this.editor.scrollToLine(lineNumber, true, true, afterScrollAnimationFinish => {
+      });
       this.editor.gotoLine(lineNumber);
     });
 
@@ -188,8 +191,9 @@ export class JsEditor {
       ea.publish('visualizationSelectionRangeResponse', selection);
     });
 
-    ea.subscribe("traceSearchGotoLine", lineData =>{
-      this.editor.scrollToLine(lineData.lineNumber, true, true, afterScrollAnimationFinish =>{});
+    ea.subscribe("traceSearchGotoLine", lineData => {
+      this.editor.scrollToLine(lineData.lineNumber, true, true, afterScrollAnimationFinish => {
+      });
       this.editor.gotoLine(lineData.lineNumber);
     });
 
