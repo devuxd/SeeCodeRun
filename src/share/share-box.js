@@ -1,7 +1,6 @@
 import $ from 'jquery';
 
 export class ShareBox {
-  selectedEffect = "fold";
   hideTimeout = 5000;
   slideAnimationDuration = 500;
 

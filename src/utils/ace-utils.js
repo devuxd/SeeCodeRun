@@ -48,7 +48,9 @@ export class AceUtils {
     editor.setOptions({
       enableBasicAutocompletion: true,
       enableSnippets: true,
-      enableLiveAutocompletion: true
+      enableLiveAutocompletion: true,
+      liveAutocompletionDelay: 2000,
+      liveAutocompletionThreshold: 3
     });
 
     ace.require("ace/ext/spellcheck");

@@ -225,7 +225,7 @@ export class JsGutter {
 
         if ($line.length) {
 
-            if(["Literal", "BlockStatement", "Program", "FunctionData"].indexOf(entry.type) > -1){
+          if (["Literal", "BlockStatement", "Program", "FunctionData", "BlockStatementExit"].indexOf(entry.type) > -1) {
                 // $line.text("");
                 return;
             }
@@ -238,7 +238,7 @@ export class JsGutter {
                 let $lineEntry = $(lineEntrySelector);
                 if(!$lineEntry.length){
                     let lineEntryId = this.aceUtils.idifyRange(this.jsGutterLineIdPrefix  + line, entry.range);;
-                    if(entry.type === "Parameter"){
+                  if (["Parameter", "ExpressionStatement", "VariableDeclarator"].indexOf(entry.type) > -1) {
                         $line.append("<div id = '"+lineEntryId+"' class = '"+this.jsGutterEntryClass+"' ></div>");
                     }else{
                         $line.prepend("<div id = '"+lineEntryId+"' class = '"+this.jsGutterEntryClass+"' ></div>");
