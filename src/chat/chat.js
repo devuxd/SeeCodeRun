@@ -228,13 +228,17 @@ export class Chat {
     let elapsedTimeSeconds = elapsedTimeMs/1000;
     let elapsedTimeMinutes = elapsedTimeMs/(60*1000);
     //let elapsedTimeHours = elapsedTime.getHours();
-    if ( elapsedTimeSeconds <=60)
+    if ( elapsedTimeSeconds <60 )
     {
-      formattedTime = `a minute ago`;
+        formattedTime = "Just now";
     }
-    else if(elapsedTimeMinutes <=60)
+    else if(elapsedTimeSeconds>60 && elapsedTimeMinutes<60)
     {
-      formattedTime = `an hour ago`;
+        formattedTime = Math.floor(elapsedTimeMinutes)+" minutes ago";
+    }
+    else if(elapsedTimeMinutes>60)
+    {
+      formattedTime=Math.floor(elapsedTimeMinutes/60)+" hours ago";
     }
     // the same for minutes, hours, days, months, and even years.
     // let hours = date.getHours();
@@ -245,5 +249,6 @@ export class Chat {
     //todo: format time as C9 does
     return formattedTime;
   }
+
 
 }

@@ -126,7 +126,7 @@ export class ObjectExplorer {
 
   generateLeafNode(object){
     let objectType = this.jsUtils.type(object);
-    let escapedHMTLString =  object == null || object.toString() === "[object Window]"? object : this.escapeHMTLString(object);
+    let escapedHMTLString =  object == null ? object : this.escapeHMTLString(object);
     if(objectType === "string"){
       let escapedHMTLString1 =  escapedHMTLString.length > 32? escapedHMTLString.substring(0, 32) : escapedHMTLString;
       let escapedHMTLString2 =  escapedHMTLString.length > 32? escapedHMTLString.substring(32) : "";
@@ -164,7 +164,7 @@ export class ObjectExplorer {
       visitedIndex = visited.length - 1;
     }
 
-    if(this.jsUtils.isPrimitiveType(object) || object.toString() === "[object Window]"){
+    if(this.jsUtils.isPrimitiveType(object)){
       let leafNode = this.generateLeafNode(object);
       result = this.wrapInULTag(this.wrapInLITag(leafNode));
       visitedValue[visitedIndex] = result;
@@ -188,7 +188,7 @@ export class ObjectExplorer {
         }
 
         key += "</span>";
-        if(this.jsUtils.isPrimitiveType(object[keys[i]]) || object.toString() === "[object Window]"){
+        if(this.jsUtils.isPrimitiveType(object[keys[i]])){
          value += this.generateLeafNode(object[keys[i]]);
         }else{
           if(object[keys[i]].constructor){
@@ -266,7 +266,7 @@ export class ObjectExplorer {
   }
 
   generateJSONTreeViewHTMLString() {
-    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType) || this.element.toString() === "[object Window]"){
+    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
       return `<div id = '${this.objectViewId}'> ${this.generateLeafNode(this.element)}</div>`;
     }
     let tree;
@@ -285,7 +285,7 @@ export class ObjectExplorer {
   }
 
   generateJSONLineViewHTMLString() {
-    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType) || this.element.toString() === "[object Window]"){
+    if(this.jsUtils.isTypeInPrimitiveTypes(this.classType)){
       return `<span id = '${this.objectViewId}'> ${this.generateLeaf(this.element)}</span>`;
     }
     let line;
