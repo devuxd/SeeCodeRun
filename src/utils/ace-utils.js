@@ -338,18 +338,20 @@ export class AceUtils {
   }
 
   setTraceGutterRenderer(editor, traceGutterData) {
-
+    let navigationElementWidth = 0;
     let session = editor.getSession();
     let traceGutterRenderer = {
       getWidth: function (session, lastLineNumber, config) {
-        let format = "";
         if (traceGutterData.maxCount > 0) {
-          format = "-[-/-]-";
+          let format = "/-";
+          return navigationElementWidth + (format.length + traceGutterData.maxCount.toString().length * 2 + lastLineNumber.toString().length ) * config.characterWidth;
         }
-
-        return (format.length + traceGutterData.maxCount.toString().length * 2 + lastLineNumber.toString().length ) * config.characterWidth;
+        return lastLineNumber.toString().length * config.characterWidth;
       },
       getText: function (session, row) {
+        return row + 1;
+      },
+      getNavigationElement: function (session, row) {
         if (traceGutterData.rows.hasOwnProperty(row) && traceGutterData.rows[row].UI.branchTotal) {
           let count = traceGutterData.rows[row].UI.branchTotal;
           if (count == null) {
@@ -359,9 +361,13 @@ export class AceUtils {
           if (branch == null) {
             branch = count;
           }
-          return "[" + (branch - 1 || 1) + "/" + count + "] " + (row + 1);
+          let navigationElement = document.createElement("div");
+          navigationElement.className = "navigator-cell";
+          let navigationTextNode = document.createTextNode((branch - 1 || 1) + "/" + count);
+          navigationElement.appendChild(navigationTextNode);
+          return navigationElement;
         } else {
-          return row + 1;
+          return null;
         }
       }
     };
@@ -394,123 +400,155 @@ export class AceUtils {
     return gutterLayout;
   }
 
-  customUpdateGutter(editor, traceGutterRenderer) {
+  setCustomGutterUpdate(editor, traceGutterRenderer) {
     let dom = document;
     let gutter = editor.renderer.$gutterLayer;
-    let config = editor.renderer.layerConfig;
-    let session = editor.getSession();
+    // let config = editor.renderer.layerConfig;
+    gutter.setShowLineNumbers = function (show) {
+      this.$renderer = !show && {
+          getWidth: function () {
+            return ""
+          },
+          getText: function () {
+            return ""
+          },
+          getNavigationElement: function () {
+            return ""
+          }
+        };
+    };
+    gutter.update = function (config) {
+      let session = gutter.session;
 
-    if (traceGutterRenderer) {
-      session.gutterRenderer = traceGutterRenderer;
-    }
-
-    let firstRow = config.firstRow;
-    var lastRow = Math.min(config.lastRow + config.gutterOffset,  // needed to compensate for hor scollbar
-      session.getLength() - 1);
-    var fold = session.getNextFoldLine(firstRow);
-    var foldStart = fold ? fold.start.row : Infinity;
-    var foldWidgets = gutter.$showFoldWidgets && session.foldWidgets;
-    var breakpoints = session.$breakpoints;
-    var decorations = session.$decorations;
-    var firstLineNumber = session.$firstLineNumber;
-    var lastLineNumber = 0;
-
-    var gutterRenderer = session.gutterRenderer || gutter.$renderer;
-
-    var cell = null;
-    var index = -1;
-    var row = firstRow;
-    while (true) {
-      if (row > foldStart) {
-        row = fold.end.row + 1;
-        fold = session.getNextFoldLine(row, fold);
-        foldStart = fold ? fold.start.row : Infinity;
+      if (traceGutterRenderer) {
+        session.gutterRenderer = traceGutterRenderer;
       }
-      if (row > lastRow) {
-        while (gutter.$cells.length > index + 1) {
-          cell = gutter.$cells.pop();
-          gutter.element.removeChild(cell.element);
+
+      let firstRow = config.firstRow;
+      var lastRow = Math.min(config.lastRow + config.gutterOffset,  // needed to compensate for hor scrollbar
+        session.getLength() - 1);
+      var fold = session.getNextFoldLine(firstRow);
+      var foldStart = fold ? fold.start.row : Infinity;
+      var foldWidgets = gutter.$showFoldWidgets && session.foldWidgets;
+      var breakpoints = session.$breakpoints;
+      var decorations = session.$decorations;
+      var firstLineNumber = session.$firstLineNumber;
+      var lastLineNumber = 0;
+
+      var gutterRenderer = session.gutterRenderer || gutter.$renderer;
+
+      var cell = null;
+      var index = -1;
+      var row = firstRow;
+      while (true) {
+        if (row > foldStart) {
+          row = fold.end.row + 1;
+          fold = session.getNextFoldLine(row, fold);
+          foldStart = fold ? fold.start.row : Infinity;
         }
-        break;
-      }
-
-      cell = gutter.$cells[++index];
-      if (!cell) {
-        cell = {element: null, textNode: null, foldWidget: null};
-        cell.element = dom.createElement("div");
-        cell.textNode = document.createTextNode('');
-        cell.element.appendChild(cell.textNode);
-        gutter.element.appendChild(cell.element);
-        gutter.$cells[index] = cell;
-      }
-
-      var className = "ace_gutter-cell ";
-      if (breakpoints[row])
-        className += breakpoints[row];
-      if (decorations[row])
-        className += decorations[row];
-      if (gutter.$annotations[row])
-        className += gutter.$annotations[row].className;
-      if (cell.element.className != className)
-        cell.element.className = className;
-
-      var height = session.getRowLength(row) * config.lineHeight + "px";
-      if (height != cell.element.style.height)
-        cell.element.style.height = height;
-
-      if (foldWidgets) {
-        var c = foldWidgets[row];
-        // check if cached value is invalidated and we need to recompute
-        if (c == null)
-          c = foldWidgets[row] = session.getFoldWidget(row);
-      }
-
-      if (c) {
-        if (!cell.foldWidget) {
-          cell.foldWidget = dom.createElement("span");
-          cell.element.appendChild(cell.foldWidget);
+        if (row > lastRow) {
+          while (gutter.$cells.length > index + 1) {
+            cell = gutter.$cells.pop();
+            gutter.element.removeChild(cell.element);
+          }
+          break;
         }
-        className = "ace_fold-widget ace_" + c;
-        if (c == "start" && row == foldStart && row < fold.end.row)
-          className += " ace_closed";
-        else
-          className += " ace_open";
-        if (cell.foldWidget.className != className)
-          cell.foldWidget.className = className;
 
-        height = config.lineHeight + "px";
-        if (cell.foldWidget.style.height != height)
-          cell.foldWidget.style.height = height;
-      } else {
-        if (cell.foldWidget) {
-          cell.element.removeChild(cell.foldWidget);
-          cell.foldWidget = null;
+        cell = gutter.$cells[++index];
+        if (!cell) {
+          cell = {element: null, navigationElement: null, textNode: null, foldWidget: null};
+          cell.element = dom.createElement("div");
+          //the magic
+          cell.navigationElement = dom.createElement("div");
+          cell.element.appendChild(cell.navigationElement);
+          //end of magic
+          cell.textNode = dom.createTextNode('');
+          cell.element.appendChild(cell.textNode);
+          gutter.element.appendChild(cell.element);
+          gutter.$cells[index] = cell;
         }
+
+        var className = "ace_gutter-cell ";
+        if (breakpoints[row])
+          className += breakpoints[row];
+        if (decorations[row])
+          className += decorations[row];
+        if (gutter.$annotations[row])
+          className += gutter.$annotations[row].className;
+        if (cell.element.className != className)
+          cell.element.className = className;
+
+        var height = session.getRowLength(row) * config.lineHeight + "px";
+        if (height != cell.element.style.height)
+          cell.element.style.height = height;
+
+        if (foldWidgets) {
+          var c = foldWidgets[row];
+          // check if cached value is invalidated and we need to recompute
+          if (c == null)
+            c = foldWidgets[row] = session.getFoldWidget(row);
+        }
+
+        if (c) {
+          if (!cell.foldWidget) {
+            cell.foldWidget = dom.createElement("span");
+            cell.element.appendChild(cell.foldWidget);
+          }
+          className = "ace_fold-widget ace_" + c;
+          if (c == "start" && row == foldStart && row < fold.end.row)
+            className += " ace_closed";
+          else
+            className += " ace_open";
+          if (cell.foldWidget.className != className)
+            cell.foldWidget.className = className;
+
+          height = config.lineHeight + "px";
+          if (cell.foldWidget.style.height != height)
+            cell.foldWidget.style.height = height;
+        } else {
+          if (cell.foldWidget) {
+            cell.element.removeChild(cell.foldWidget);
+            cell.foldWidget = null;
+          }
+        }
+
+        //the magic
+        var navigationElement = (gutterRenderer && gutterRenderer.getNavigationElement) ? gutterRenderer.getNavigationElement(session, row) : null;
+        if (navigationElement && navigationElement != cell.navigationElement) {
+          cell.navigationElement.innerHTML = navigationElement.innerHTML;
+          cell.navigationElement.className = navigationElement.className;
+        } else {
+          if (cell.navigationElement) {
+            cell.navigationElement.innerHTML = "";
+          }
+        }
+        //end of magic
+
+        var text = lastLineNumber = gutterRenderer
+          ? gutterRenderer.getText(session, row)
+          : row + firstLineNumber;
+        if (text != cell.textNode.data) {
+          cell.textNode.data = text;
+        }
+
+        row++;
       }
+      gutter.element.style.height = config.minHeight + "px";
 
-      var text = lastLineNumber = gutterRenderer
-        ? gutterRenderer.getText(session, row)
-        : row + firstLineNumber;
-      if (text != cell.textNode.data)
-        cell.textNode.data = text;
+      if (gutter.$fixedWidth || session.$useWrapMode)
+        lastLineNumber = session.getLength() + firstLineNumber;
 
-      row++;
-    }
-    gutter.element.style.height = config.minHeight + "px";
+      var gutterWidth = gutterRenderer
+        ? gutterRenderer.getWidth(session, lastLineNumber, config)
+        : lastLineNumber.toString().length * config.characterWidth;
 
-    if (gutter.$fixedWidth || session.$useWrapMode)
-      lastLineNumber = session.getLength() + firstLineNumber;
-
-    var gutterWidth = gutterRenderer
-      ? gutterRenderer.getWidth(session, lastLineNumber, config)
-      : lastLineNumber.toString().length * config.characterWidth;
-
-    var padding = gutter.$padding || gutter.$computePadding();
-    gutterWidth += padding.left + padding.right;
-    if (gutterWidth !== gutter.gutterWidth && !isNaN(gutterWidth)) {
-      gutter.gutterWidth = gutterWidth;
-      gutter.element.style.width = Math.ceil(gutter.gutterWidth) + "px";
-      gutter._emit("changeGutterWidth", gutterWidth);
+      var padding = gutter.$padding || gutter.$computePadding();
+      gutterWidth += padding.left + padding.right;
+      if (gutterWidth !== gutter.gutterWidth && !isNaN(gutterWidth)) {
+        gutter.gutterWidth = gutterWidth;
+        gutter.element.style.width = Math.ceil(gutter.gutterWidth) + "px";
+        gutter._emit("changeGutterWidth", gutterWidth);
+      }
     }
   }
 
