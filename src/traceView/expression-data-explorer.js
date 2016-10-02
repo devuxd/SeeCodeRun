@@ -40,11 +40,11 @@ export class ExpressionDataExplorer{
     let $editorTooltip = $(this.editorTooltipSelector);
 
     if(!$editorTooltip.length){
-      $editorTooltip = $(`<div id='${this.editorTooltipId}' />`);
+      $editorTooltip = $(`<div id='${this.editorTooltipId}' />`);      
       $editorTooltip.attr({
         "data-toggle": "popover",
-        "data-placement": "bottom",
-        "data-content": "No value found."
+        "data-placement": "bottom",              //TODO: change CSS relevant to these tooltips to have 'overflow: auto' -Collin
+        "data-content": "No value found."           
       });
   		$editorTooltip.popover({
   		    viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
