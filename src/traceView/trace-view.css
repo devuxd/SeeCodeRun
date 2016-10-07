@@ -131,7 +131,7 @@
     -moz-border-radius: 0;
     -o-border-radius: 0;
     border-radius: 0;
-	overflow: auto;
+    overflow: auto;
 }
 
 #editorTooltipContent .custom-popover-title{
