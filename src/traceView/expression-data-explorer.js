@@ -1,7 +1,6 @@
 /* global $ */
 /* global CollapsibleLists */
-import {JsUtils} from "../utils/js-utils";
-import {ObjectExplorer} from "./object-explorer";
+import {ObjectViewer} from "../utils/object-viewer";
 
 export class ExpressionDataExplorer{
   editorTooltipSelector = "#editorTooltip";
@@ -12,16 +11,17 @@ export class ExpressionDataExplorer{
   viewportPadding = -6;
   editorTooltipShowDelay = 750;
   editorTooltipHideDelay = 750;
+  content = "";
 
   constructor(eventAggregator, aceUtils, aureliaEditor, traceViewModel){
     this.eventAggregator = eventAggregator;
     this.aceUtils = aceUtils;
     this.aureliaEditor = aureliaEditor;
     this.traceViewModel = traceViewModel;
-    this.jsUtils = new JsUtils();
   }
 
   attached(){
+    let self = this;
     let eventAggregator = this.eventAggregator;
     let aceUtils = this.aceUtils;
     let editor = this.aureliaEditor.editor;
@@ -56,6 +56,12 @@ export class ExpressionDataExplorer{
 
     $editorTooltip.appendTo('body');
     $editorTooltip.on('inserted.bs.popover', function(){
+      let $popoverContentTreeViewContent = $("#" + self.editorTooltipContentId);
+      $popoverContentTreeViewContent.html("");
+      $popoverContentTreeViewContent.append(self.title);
+      $popoverContentTreeViewContent.append(self.content);
+      self.title = "";
+      self.content = "";
       CollapsibleLists.apply();
       $('[data-toggle="tooltip"]').tooltip();
     });
@@ -101,11 +107,13 @@ export class ExpressionDataExplorer{
 		    }
 
   			if(match && !self.isBranchNavigatorVisible){
-  		      self.currentObjectExplorer = new ObjectExplorer(self.jsUtils, match.value, self.treeViewId);
-            let popoverData = self.currentObjectExplorer.generatePopoverTreeViewContent();
-            let popoverTitle =`<strong>${match.id !== null ? match.id: ""} :</strong> <i>${self.currentObjectExplorer.classType}</i>`;
-  		      $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
-
+          self.currentObjectViewer = new ObjectViewer(match.value, self.treeViewId);
+          let popoverData = self.currentObjectViewer.generatePopoverTreeViewContent();
+          let popoverTitle = `<strong>${match.id !== null ? match.id : ""} :</strong> <i>${self.currentObjectViewer.classType}</i>`;
+          // $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
+          $editorTooltip.attr("data-content", "");
+          self.title = `<div class="custom-popover-title">${popoverTitle}</div>`;
+          self.content = popoverData.content;
             $editorTooltip.popover("show");
             aceUtils.updateAceMarkers(self.expressionMarkerManager, [match]);
   			}else{
@@ -157,6 +165,7 @@ export class ExpressionDataExplorer{
   $hideTooltip(){
     let $popoverContentElement = $("#"+this.editorTooltipContentId);
     if(this.$editorTooltip && $popoverContentElement.length  && !$popoverContentElement.is(":hover")){
+      this.content = "";
         this.$editorTooltip.popover("hide");
         this.aceUtils.updateAceMarkers(this.expressionMarkerManager, []);
         clearTimeout(this.onExpressionHoveredTimeout);

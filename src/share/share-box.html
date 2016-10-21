@@ -1,8 +1,9 @@
 <template bindable="share">
-<require from = "./share-box.css"></require>
-   <div id="shareDiv" >
-      <i id="copyButton" class="material-icons">&#xE14D;</i>
-      <!--<i id="copyButton" class="material-icons">content_copy</i>-->
-      <input id="copyTarget" type="text" class="w3-input  w3-hover-light-grey"  value.bind="pastebinIdshare">
-   </div>
+  <require from="./share-box.css"></require>
+  <div id="shareDiv">
+    <i id="goToShareButton" class="material-icons">&#xE89E;</i>
+    <i id="copyButton" class="material-icons">&#xE14D;</i>
+    <!--<i id="copyButton" class="material-icons">content_copy</i>-->
+    <input id="copyTarget" type="text" class="w3-input  w3-hover-light-grey" readonly>
+  </div>
 </template>

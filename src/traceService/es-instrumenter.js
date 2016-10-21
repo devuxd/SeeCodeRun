@@ -10,6 +10,7 @@ export class EsInstrumenter {
     this.esprimaNodeFactory = new EsprimaNodeFactory();
     this.autoLogTracer = new AutoLogTracer(traceModel.traceDataContainer);
     this.Syntax = this.traceModel.traceSyntax;
+    this.customTypes = this.traceModel.customTypes;
     this.traceTypes = this.traceModel.traceTypes;
     this.TraceParameters = this.traceModel.traceParameters;
     this.blockCounter = 0;
@@ -629,11 +630,10 @@ export class EsInstrumenter {
     node.body.unshift(wrapInExpressionStatementNode(autoLogNode));
 
     autoLogNode = getDefaultAutoLogNode(self);
-    //TODO: Introduced BlockStatementExit
     setNodeTextValue({
       'autoLogNode': autoLogNode,
       'propertyIndex': TraceParameters.type,
-      'value': "BlockStatementExit"
+      'value': self.customTypes.BlockStatementExit
     });
     setNodeTextValue({'autoLogNode': autoLogNode, 'propertyIndex': TraceParameters.id, 'value': "null"});
     setNodeTextValue({

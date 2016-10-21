@@ -112,6 +112,43 @@
     border-left: 1px solid green;
 }
 
+.ace-chrome .ace_marker-layer .disable-marker {
+  position: absolute;
+  background-color: lightgrey;
+  opacity: 0.2;
+  border: none;
+}
+
+.ace-chrome .ace_marker-layer .transparent-marker {
+  position: absolute;
+  background-color: inherit;
+  border: solid 1px blue;
+}
+
+.ace-chrome .ace_marker-layer .branch-global-marker {
+  position: absolute;
+  background-color: rgba(0, 102, 255, 0.015);
+  border: 1px #0066ff;
+  border-style: none none none solid;
+  margin-left: -4px;
+
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+}
+
+.ace-chrome .ace_marker-layer .branch-local-marker {
+  position: absolute;
+  background-color: rgba(255, 165, 0, 0.025);
+  border: 1px orange;
+  border-style: none none none solid;
+  margin-left: -4px;
+
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+}
+
 .ace-chrome .ace_marker-layer .git-line-added-marker {
     position: absolute;
     background-color: #eaffea;

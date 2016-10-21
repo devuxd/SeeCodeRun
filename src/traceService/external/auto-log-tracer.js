@@ -329,7 +329,6 @@ export class AutoLogTracer{
                                 this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                             }
                         }
-
                     }else{
                         this.stack[key]= this.stack[key]? this.stack[key]+ 1 : 1;
                     }

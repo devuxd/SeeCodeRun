@@ -23,13 +23,13 @@
    display: none;
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global {
    background-color: #FFF;
    border-radius: 0px;
    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration::before {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global::before {
     display: block;
     float: left;
     width: 0;
@@ -38,7 +38,7 @@
     content: '';
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration:hover::before {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global:hover::before {
     display: block;
     float: left;
     width: 0;
@@ -47,10 +47,41 @@
     content: '';
 }
 
-.ace_gutter-cell.seecoderun-gutter-decoration:hover {
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-global:hover {
     color: #FFF;
     background-color: #0066ff;
 }
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local {
+  background-color: #FFF;
+  border-radius: 0px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local::before {
+  display: block;
+  float: left;
+  width: 0;
+  height: 100%;
+  border-left: 1px solid orange;
+  content: '';
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover::before {
+  display: block;
+  float: left;
+  width: 0;
+  height: 100%;
+  border-left: 1px solid #FFF;
+  content: '';
+}
+
+.ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover {
+  color: #FFF;
+  background-color: orange;
+}
+
+
 
 #gutterTooltip {
    position: absolute;

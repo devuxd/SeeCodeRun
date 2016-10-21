@@ -112,6 +112,10 @@ export class TraceModel{
             WithStatement: "WithStatement"
         };
 
+      this.customTypes = {
+        BlockStatementExit: "BlockStatementExit"
+      };
+
         this.traceTypes = {
             Function: [
                 Syntax.FunctionDeclaration,
@@ -121,6 +125,7 @@ export class TraceModel{
                 Syntax.FunctionDeclaration,
                 Syntax.FunctionExpression,
                 Syntax.BlockStatement,
+              Syntax.LabeledStatement,
                 Syntax.SwitchCase
                 ],
             Expression: [
@@ -178,12 +183,14 @@ export class TraceModel{
                 ],
             Exception: [
                 Syntax.TryStatement,
-                Syntax.CatchClause
+              Syntax.CatchClause,
                 ],
             FlowExit: [
                 Syntax.ThrowStatement,
                 Syntax.ReturnStatement,
-                Syntax.BreakStatement
+              Syntax.BreakStatement,
+              Syntax.ContinueStatement,
+              this.customTypes.BlockStatementExit
                 ]
         };
 
@@ -197,7 +204,7 @@ export class TraceModel{
 
         this.traceEvents = {
             instrumented    : {  event :"traceInstrumented"   , description : "Code Instrumented successfully." },
-            changed         : {  event :"traceChanged"   , description : "Trace results obtained succesfully." },
+          changed: {event: "traceChanged", description: "Trace results obtained successfully."},
             failed          : {  event :"instrumentationFailed"    , description : "Code rewriting failed (Compilation error)." }
          };
 
@@ -213,7 +220,7 @@ export class TraceModel{
           Exception: "Exception"
         };
 
-        this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement"];
+      this.expressionMatcherIgnoreTypeList = ["Program", "FunctionDeclaration", "FunctionExpression", "FunctionData", "BlockStatement", "BlockStatementExit"];
         this.timeLimit = 3000;
 
     }
