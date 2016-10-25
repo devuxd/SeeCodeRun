@@ -158,6 +158,13 @@
   border-radius: 0;
 }
 
+#editorTooltipContent {
+  max-height: 800px;
+  max-width: 600px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
 #editorTooltipContent .custom-popover-title {
   line-height: 14px;
   font-size: 10px;
