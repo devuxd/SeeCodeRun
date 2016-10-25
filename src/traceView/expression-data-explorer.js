@@ -288,3 +288,7 @@ export class ExpressionDataExplorer{
     }
   }
 }
+/*$(document).ready(function() {
+ var aceHeight=$('#code-section').width();
+ console.log(aceHeight);
+ });*/

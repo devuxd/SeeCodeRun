@@ -132,6 +132,10 @@
     -o-border-radius: 0;
     border-radius: 0;
     overflow: auto;
+    max-width: 53%;
+    max-height: 70%;
+
+
 }
 
 #editorTooltipContent .custom-popover-title{
