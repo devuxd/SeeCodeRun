@@ -117,14 +117,21 @@ export class AutoLogTracer{
                     // if(object && object.toString() ==="[object Arguments]"){
                     //     object = (object.length === 1 ? [object[0]] : Array.apply(null, object));
                     // }
-                    object = this.decycle(object);
+                    //clone first
+                    
+                    
                     if(object && object.nodeType === 1){
+                        object = this.decycle(object);
                         serializedObjectString = this.tryToJSON(object);
                     }else{
+                        if(object){
+                          object = JSON.parse(JSON.stringify(object));
+                        }
+                        object = this.decycle(object);
                         serializedObjectString = this.stringify(object);
                     }
                 }catch(e){
-                    console.log("ERROR", object.toString(), object);
+                    console.log("ERROR", object? object.toString(): object, object);
                     serializedObjectString = object == null? this.stringify(object): this.stringify(object.toString());
                 }
                 return serializedObjectString;
@@ -238,7 +245,7 @@ export class AutoLogTracer{
                 if(!isExternalCallExpression){
 
                 }
-                calleeInfo.text = this.serialize({text: callExpressionText, parameteres: callExpressionArguments});
+                calleeInfo.text = this.serialize({text: callExpressionText, parameters: callExpressionArguments});
                 topScope.argumentsString = this.serialize(callExpressionArguments);
             },
             exitFunctionScope: function exitFunctionScope(info, isScopeToCatchBlock, isParameter){

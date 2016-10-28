@@ -22,7 +22,7 @@ export class AppConfiguration{
         firebaseURL: "https://seecoderun.firebaseio.com/production"
     };
 
-    getConfiguration(){
-        return this.isDebug? this.debugConfiguration : this.deployConfiguration;
+  getConfiguration(isDev = this.isDebug) {
+    return isDev ? this.debugConfiguration : this.deployConfiguration;
     }
 }

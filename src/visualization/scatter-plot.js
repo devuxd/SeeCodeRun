@@ -97,8 +97,16 @@ export class ScatterPlot {
     let yAxis = d3.axisLeft(y);
 
     let svg = d3.select(divElement).append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+      .style("width", "99%")
+      .style("height", "99%")
+      .attr("position", "relative")
+      .call(d3.zoom()
+        .on("zoom", function () {
+          svg.attr("transform", function () {
+            let devent = d3.event.transform;
+            return "translate(" + devent.x + ", " + devent.y + ") scale(" + devent.k + ")";
+          });
+        }))
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
