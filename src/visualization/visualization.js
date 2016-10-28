@@ -40,12 +40,6 @@ export class Visualization {
     let self = this;
 
     ea.subscribe('onVisRequest', payload => {
-      self.traceHelper = payload.traceHelper;
-      self.trace = payload.trace;
-      self.renderVisualization();
-    });
-
-    ea.subscribe('onVisRequest', payload => {
         self.traceHelper = payload.traceHelper;
         self.trace = payload.trace;
         self.renderVisualization();
