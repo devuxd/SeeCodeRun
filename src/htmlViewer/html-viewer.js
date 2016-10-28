@@ -74,7 +74,7 @@ export class HtmlViewer {
       } else {
         this.js = editorText;
       }
-      console.log("Instrumentation", this.js);
+      // console.log("Instrumentation", this.js);
       this.buildOutput();
     });
 

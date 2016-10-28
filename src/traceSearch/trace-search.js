@@ -70,7 +70,9 @@ export class TraceSearch {
       });
     });
     this.eventAggregator.subscribe("rightSplitterResize", () => {
-      this.adjustHeight($(this.traceSearchPanelBodySelector));
+      if ($(this.traceSearchPanelBodySelector).is(":visible")) {
+        this.adjustHeight($(this.traceSearchPanelBodySelector));
+      }
     });
     this.eventAggregator.subscribe("jsEditorReady", editor => {
       this.searchBox.aceMarkerManager = this.aceUtils.makeAceMarkerManager(editor);

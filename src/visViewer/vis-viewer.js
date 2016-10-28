@@ -38,6 +38,12 @@ export class VisViewer {
     $(this.seePanelBodySelector).on('hidden.bs.collapse', function (e) {
       $("#traceSearchPanelHeading").click();
     });
+
+    this.eventAggregator.subscribe("rightSplitterResize", () => {
+      if ($("#seePanelBody").is(":visible")) {
+        self.adjustHeight($("#seePanelBody"));
+      }
+    });
     for (let visualization of this.visualizations) {
       visualization.attached();
     }

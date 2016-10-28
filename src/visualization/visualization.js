@@ -39,14 +39,6 @@ export class Visualization {
     let ea = this.eventAggregator;
     let self = this;
 
-    ea.subscribe('seePanelBodyResize', payload => {
-      // self.traceHelper = payload.traceHelper;
-      // self.trace = payload.trace;
-      if (this.type === "CallGraph") {
-        self.renderVisualization();
-      }
-    });
-
     ea.subscribe('onVisRequest', payload => {
       self.traceHelper = payload.traceHelper;
       self.trace = payload.trace;
