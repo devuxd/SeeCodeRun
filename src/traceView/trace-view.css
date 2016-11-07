@@ -156,6 +156,13 @@
   -moz-border-radius: 0;
   -o-border-radius: 0;
   border-radius: 0;
+  vertical-align: bottom;
+  /*position: fixed;*/
+}
+
+#treeViewContent {
+  vertical-align: bottom;
+  display: table-cell;
 }
 
 #editorTooltipContent {
