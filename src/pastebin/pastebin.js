@@ -90,15 +90,17 @@ export class Pastebin {
     let editorHeight = $("#main-splitter-left").height() - $("#codeTabs").height();
     let layout = {editorHeight: editorHeight};
     this.eventAggregator.publish("windowResize", layout);
+    this.eventAggregator.publish("seePanelBodyResize", layout);
+
   }
 
   attached() {
     let self = this;
-    $(window).on('resize', windowResize => {
+    $(window).on('resize', () => {
       self.update();
     });
 
-    this.eventAggregator.subscribe("jsGutterContentUpdate", payload => {
+    this.eventAggregator.subscribe("jsGutterContentUpdate", () => {
       setTimeout(self.update(), 500);
     });
 
@@ -138,7 +140,10 @@ export class Pastebin {
       sizes: [85, 15],
       gutterSize: 3,
       cursor: 'row-resize',
-      minSize: 50
+      minSize: 150,
+      onDrag: function Pastebin_rightSplitterOptions_onDragEnd() {
+        self.eventAggregator.publish("rightSplitterResize");
+      }
     };
     Split(['#right-splitter-top', '#right-splitter-bottom'], this.rightSplitterOptions);
 
@@ -154,6 +159,8 @@ export class Pastebin {
 
     let $panelHeadingTitles = $('.panel-heading-title');
     $panelHeadingTitles.click();
+
+    self.eventAggregator.publish("panelHeadingsLoaded", $panelHeadingTitles);
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
       self.eventAggregator.publish("activeTabChange", {tabContainerSelector: e.target.href.substring(e.target.href.lastIndexOf("#"))});
     });

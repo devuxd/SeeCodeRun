@@ -39,6 +39,7 @@ export class BranchNavigator {
     this.attachGutterTooltip();
 
     aceUtils.setTraceGutterRenderer(editor, branchModel.traceGutterData);
+    aceUtils.setCustomGutterUpdate(editor);
     aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip,
       gutterDecorationClassNames, branchModel.traceGutterData, this.update$GutterTooltip,
       this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
@@ -64,7 +65,9 @@ export class BranchNavigator {
     });
 
     eventAggregator.subscribe(
-      "jsEditorPreChange", payload => {
+      "jsEditorPreChange", () => {
+        this.aceUtils.updateAceMarkers(this.branchLocalMarkerManager, []);
+        this.aceUtils.updateAceMarkers(this.branchGlobalMarkerManager, []);
         this.cleanGutterUI();
       }
     );
@@ -182,24 +185,25 @@ export class BranchNavigator {
           let navigator = `
 			        <div class = "w3-row">
     			        <div class="gutterNavigatorSliderLeft">
-    			            <i class="material-icons seecoderun-text-blue">&#xE5CB;</i>
+    			            <i class="material-icons navigator-global-branch">&#xE5CB;</i>
     			        </div>
     			        <div class="gutterNavigatorSliderRight">
-    			         <i class="material-icons seecoderun-text-blue">&#xE5CC;</i>
+    			         <i class="material-icons navigator-global-branch">&#xE5CC;</i>
                         </div>
 
     			        <div class="gutterNavigatorSlider"></div>
 
     			        <div class="gutterNavigatorSliderLeft">
-    			            <i class="material-icons seecoderun-text-blue">&#xE5CB;</i>
+    			            <i class="material-icons navigator-global-branch">&#xE5CB;</i>
     			        </div>
     			        <div class="gutterNavigatorSliderRight">
-    			         <i class="material-icons seecoderun-text-blue">&#xE5CC;</i>
+    			         <i class="material-icons navigator-global-branch">&#xE5CC;</i>
                         </div>
 
                     </div>
     			    `;
           $gutterTooltip.html(navigator);
+
           $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
 
           self.gutterNavigatorSliderValue = 0;
@@ -266,6 +270,13 @@ export class BranchNavigator {
                 setTimeout(gutterMouseMoveUpdateTooltipTimeout, self.gutterTooltipHideDelay);
             });
         }
+
+        if (rowData.gutterDecorationClassName === self.gutterDecorationClassNames.branchGlobal) {
+          $(self.gutterTooltipSelector + " i.material-icons").removeClass("navigator-local-branch").addClass("navigator-global-branch");
+        } else {
+          $(self.gutterTooltipSelector + " i.material-icons").removeClass("navigator-global-branch").addClass("navigator-local-branch");
+        }
+
         let $aceEditor$Width = $("#aceJsEditorDiv").width();
 
         $("#gutterTooltip").width($aceEditor$Width);

@@ -29,25 +29,25 @@ export class CssEditor {
   }
 
   setupSessionEvents(editor, session) {
-      let self = this;
-      let ea = this.eventAggregator;
+    let self = this;
+    let ea = this.eventAggregator;
 
-      let onEditorChanged = function onEditorChanged(e) {
-        if(self.isFirstLoad){
-          self.isFirstLoad = false;
+    let onEditorChanged = function onEditorChanged(e) {
+      if (self.isFirstLoad) {
+        self.isFirstLoad = false;
+        ea.publish('onCssEditorChanged', editor.getValue());
+      } else {
+        clearTimeout(self.editorChangedTimeout);
+        self.editorChangedTimeout = setTimeout(function pub() {
           ea.publish('onCssEditorChanged', editor.getValue());
-        }else{
-          clearTimeout(self.editorChangedTimeout);
-          self.editorChangedTimeout = setTimeout(function pub() {
-              ea.publish('onCssEditorChanged', editor.getValue());
-          }, self.editorChangeDelay);
-        }
-      };
-      session.on('change', onEditorChanged);
+        }, self.editorChangeDelay);
+      }
+    };
+    session.on('change', onEditorChanged);
   }
 
-  subscribe(){
-    this.eventAggregator.subscribe("windowResize", layout =>{
+  subscribe() {
+    this.eventAggregator.subscribe("windowResize", layout => {
         $(this.cssEditorSelector).height(layout.editorHeight);
         this.editor.resize();
       }

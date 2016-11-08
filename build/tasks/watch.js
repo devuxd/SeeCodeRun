@@ -41,23 +41,4 @@ gulp.task('watch', ['serve'], function() {
       .pipe(reload({stream: true}));
   }).on('change', reportChange);
 
-  // gulp.watch(paths.style, function() {
-  //   return gulp.src(paths.style)
-  //     .pipe(stream({once: true}));
-  // }).on('change', reportChange);
-  //
-  // gulp.watch(paths.include, function() {
-  //   return gulp.src(paths.include)
-  //     .pipe(stream({once: true}));
-  // }).on('change', reportChange);
-  //
-  // gulp.watch(paths.resources, function() {
-  //   return gulp.src(paths.resources)
-  //     .pipe(stream({once: true}));
-  // }).on('change', reportChange);
-  //
-  // gulp.watch(paths.e2eSpecsDist, function() {
-  //   return gulp.src(paths.e2eSpecsDist)
-  //     .pipe(stream({once: true}));
-  // }).on('change', reportChange);
 });

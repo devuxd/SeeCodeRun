@@ -1,6 +1,5 @@
 /* global $ */
 /* global CollapsibleLists */
-import {customElement} from 'aurelia-framework';
 import {ObjectViewer} from "../utils/object-viewer";
 import $ from 'jquery';
 import {resizable} from 'jquery-ui';
@@ -29,7 +28,6 @@ export class ExpressionDataExplorer{
     let eventAggregator = this.eventAggregator;
     let aceUtils = this.aceUtils;
     let editor = this.aureliaEditor.editor;
-    let $editorTooltipContent = $('#editorTooltipContent');
     this.expressionMarkerManager = aceUtils.makeAceMarkerManager(editor);
     this.errorMarkerManager = aceUtils.makeAceMarkerManager(editor);
     this.logMarkerManager = aceUtils.makeAceMarkerManager(editor);
@@ -48,7 +46,7 @@ export class ExpressionDataExplorer{
       $editorTooltip = $(`<div id='${this.editorTooltipId}' />`);
       $editorTooltip.attr({
         "data-toggle": "popover",
-        "data-placement": "bottom",
+        "data-placement": "auto",
         "data-content": "No value found."
       });
       $editorTooltip.popover({
@@ -104,20 +102,25 @@ export class ExpressionDataExplorer{
     let $editorTooltip =   this.$editorTooltip;
     let aceUtils = this.aceUtils;
 
-    this.update$Tooltip = function update$Tooltip(position, match){
+    this.update$Tooltip = function update$Tooltip(position, match, dimensions) {
       if(!$editorTooltip){
         return;
       }
 
-      if(position){
-        $editorTooltip.css({
-          position: "absolute",
-          marginLeft: 0,
-          marginTop: 0,
-          top: `${position.pageY}px`,
-          left: `${position.pageX}px`
-        });
-      }
+		    if(position){
+		        $editorTooltip.css({
+		            position: "absolute",
+		            marginLeft: 0,
+		            marginTop: 0,
+		            top: `${position.pageY}px`,
+              left: `${position.pageX}px`,
+              width: `${dimensions.width}`,
+              height: `${dimensions.height}`
+              ,
+              "z-index": -1000
+
+		        });
+		    }
 
       if(match && !self.isBranchNavigatorVisible){
         self.currentObjectViewer = new ObjectViewer(match.value, self.treeViewId);
@@ -280,7 +283,7 @@ export class ExpressionDataExplorer{
     );
   }
 
-  onExpressionHovered(match, pixelPosition){
+  onExpressionHovered(match, pixelPosition, dimensions) {
     let isEditorTooltipContentVisible = $("#"+this.editorTooltipContentId).is(":visible");
 
     if(isEditorTooltipContentVisible && this.currentMatch === match){
@@ -292,7 +295,7 @@ export class ExpressionDataExplorer{
     if(match && match.range){
       clearTimeout(this.onExpressionHoveredTimeout);
       this.onExpressionHoveredTimeout = setTimeout( function onExpressionHoveredTimeout(){
-        self.update$Tooltip(pixelPosition, match);
+        self.update$Tooltip(pixelPosition, match, dimensions);
       }, this.editorTooltipShowDelay);
     }else{
       clearTimeout(this.onExpressionHoveredTimeout);

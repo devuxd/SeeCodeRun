@@ -11,7 +11,7 @@ export class HtmlEditor {
   constructor(eventAggregator, firebaseManager, aceUtils) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
-    this.aceUtils =aceUtils;
+    this.aceUtils = aceUtils;
   }
 
   attached() {
@@ -31,25 +31,25 @@ export class HtmlEditor {
   }
 
   setupSessionEvents(editor, session) {
-      let self = this;
-      let ea = this.eventAggregator;
+    let self = this;
+    let ea = this.eventAggregator;
 
-      let onEditorChanged =function onEditorChanged(e) {
-         if(self.isFirstLoad){
-          self.isFirstLoad = false;
+    let onEditorChanged = function onEditorChanged(e) {
+      if (self.isFirstLoad) {
+        self.isFirstLoad = false;
+        ea.publish('onHtmlEditorChanged', editor.getValue());
+      } else {
+        clearTimeout(self.editorChangedTimeout);
+        self.editorChangedTimeout = setTimeout(function onHtmlEditorChangedTimeout() {
           ea.publish('onHtmlEditorChanged', editor.getValue());
-         }else{
-          clearTimeout(self.editorChangedTimeout);
-          self.editorChangedTimeout = setTimeout(function onHtmlEditorChangedTimeout() {
-              ea.publish('onHtmlEditorChanged', editor.getValue());
-          }, self.editorChangeDelay);
-         }
-      };
-      session.on('change', onEditorChanged);
+        }, self.editorChangeDelay);
+      }
+    };
+    session.on('change', onEditorChanged);
   }
 
-  subscribe(){
-    this.eventAggregator.subscribe("windowResize", layout =>{
+  subscribe() {
+    this.eventAggregator.subscribe("windowResize", layout => {
         $(this.aceHtmlEditorSelector).height(layout.editorHeight);
         this.editor.resize();
       }

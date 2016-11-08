@@ -3,6 +3,7 @@ var outputRoot = 'dist/';
 var exportSrvRoot = 'export/';
 
 module.exports = {
+  client: "client/**/*",
   root: appRoot,
   resources: 'res/**/*',
   include: 'include/**/*.js',

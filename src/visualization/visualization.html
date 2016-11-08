@@ -1,5 +1,5 @@
-<template bindable="visualization">
-  <div id="${visualization.id}" class = "${visualization.styleClass}" style="min-height: 100%">
+<template bindable="visualization" style="min-height: inherit;  height: inherit;">
+  <div id="${visualization.id}" class="${visualization.styleClass}" style="min-height: inherit;  height: inherit;">
     <!--<div class="visualization-title">${visualization.title}</div>-->
     <div if.bind="visualization.hasError" class="alert alert-danger" role="alert">${visualization.errorMessage}</div>
     <div if.bind="visualization.type === 'DataTable'">
@@ -8,6 +8,6 @@
       </label>
       <button id="${visualization.buttonId}" type="button" class="btn btn-default" click.trigger="visualization.requestSelectionRange()">Add Column</button>
     </div>
-    <div id="${visualization.contentId}"></div>
+    <div id="${visualization.contentId}" style="min-height: inherit;  height: inherit;"></div>
   </div>
 </template>
