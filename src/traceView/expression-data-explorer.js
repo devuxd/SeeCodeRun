@@ -107,20 +107,20 @@ export class ExpressionDataExplorer{
         return;
       }
 
-		    if(position){
-		        $editorTooltip.css({
-		            position: "absolute",
-		            marginLeft: 0,
-		            marginTop: 0,
-		            top: `${position.pageY}px`,
-              left: `${position.pageX}px`,
-              width: `${dimensions.width}`,
-              height: `${dimensions.height}`
-              ,
-              "z-index": -1000
+      if (position) {
+        $editorTooltip.css({
+          position: "absolute",
+          marginLeft: 0,
+          marginTop: 0,
+          top: `${position.pageY}px`,
+          left: `${position.pageX}px`,
+          width: `${dimensions.width}`,
+          height: `${dimensions.height}`
+          ,
+          "z-index": -1000
 
-		        });
-		    }
+        });
+      }
 
       if(match && !self.isBranchNavigatorVisible){
         self.currentObjectViewer = new ObjectViewer(match.value, self.treeViewId);
