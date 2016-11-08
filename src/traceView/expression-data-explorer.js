@@ -3,8 +3,9 @@
 import {customElement} from 'aurelia-framework';
 import {ObjectViewer} from "../utils/object-viewer";
 import $ from 'jquery';
-import { draggable, resizable } from 'jquery-ui';
+import {resizable} from 'jquery-ui';
 
+@customElement('pastebin')
 export class ExpressionDataExplorer{
   editorTooltipSelector = "#editorTooltip";
   editorTooltipId = "editorTooltip";
@@ -70,14 +71,18 @@ export class ExpressionDataExplorer{
       $('[data-toggle="tooltip"]').tooltip();
     });
 
+    $editorTooltip.on('shown.bs.popover', function () {
+      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby"));
+      $popoverContentTreeViewContainer.resizable({
+        handles: "n, e, s, w"
+      });
+
+    });
+
     this.$editorTooltip = $editorTooltip;
     aceUtils.subscribeToExpressionHoverEvents(editor, eventAggregator, this);
     this.attachTooltipUpdate();
     this.subscribe();
-
-    $editorTooltipContent.resizable({
-      handles: "n, e, s, w"
-    });
   }
 
   decoratePopoverContentElement($popoverContentElement){
@@ -127,8 +132,9 @@ export class ExpressionDataExplorer{
       }else{
         self.$hideTooltip();
       }
-      let $popoverContentElement = $("#"+self.editorTooltipContentId);
-      $popoverContentElement.mouseenter(
+      // let $popoverContentElement = $("#"+self.editorTooltipContentId);
+      let $popoverContentTreeViewContainer = $("#" + $(self.editorTooltipId).attr("aria-describedby"));
+      $popoverContentTreeViewContainer.mouseenter(
         function editorTooltipMouseenter(){
           clearTimeout(self.onExpressionHoveredTimeout);
           clearTimeout(self.editorTooltiptimeout);
@@ -140,7 +146,7 @@ export class ExpressionDataExplorer{
           }, self.editorTooltipHideDelay);
         }
       );
-      self.decoratePopoverContentElement($popoverContentElement);
+      self.decoratePopoverContentElement($popoverContentTreeViewContainer);
     };
   }
 
