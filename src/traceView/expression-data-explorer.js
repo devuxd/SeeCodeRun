@@ -1,5 +1,6 @@
 /* global $ */
 /* global CollapsibleLists */
+import {customElement} from 'aurelia-framework';
 import {ObjectViewer} from "../utils/object-viewer";
 import $ from 'jquery';
 import {resizable} from 'jquery-ui';

@@ -156,16 +156,18 @@
 }
 
 .popover {
-  padding: 0;
-  margin: 0;
+  padding: 0px;
+  margin: 0px;
   -webkit-border-radius: 0;
   -moz-border-radius: 0;
   -o-border-radius: 0;
   border-radius: 0;
   vertical-align: bottom;
   overflow: auto;
-  max-width: 53%;
-  max-height: 70%;
+  min-height: 10px;
+  min-width: 20px;
+  max-height: 800px;
+  max-width: 600px;
   /*position: fixed;*/
 }
 
@@ -175,8 +177,6 @@
 }
 
 #editorTooltipContent {
-  max-height: 800px;
-  max-width: 600px;
   overflow: auto;
   padding-right: 4px;
 }
