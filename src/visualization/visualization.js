@@ -32,7 +32,7 @@ export class Visualization {
       console.log(`No trace found when rendering visualization #${this.id}`);
     }
     let formattedTrace = this.formatTrace(this.trace, this.traceHelper);
-    this.render(formattedTrace, `#${this.contentId}`, this.query, this.queryType, this.aceUtils, this.aceMarkerManager);
+    this.render(formattedTrace, `#${this.contentId}`, this.query, this.queryType, this.aceUtils, this.aceMarkerManager, null, this.eventAggregator);
   }
 
   subscribe() {

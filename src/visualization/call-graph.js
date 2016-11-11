@@ -1,7 +1,9 @@
 /*global d3*/
 import {Vertex} from "./vertex.js";
+import {AceUtils} from "../utils/ace-utils";
 
 export class CallGraph {
+  focusedNode = null;
   currentDirection = "down"; // or "right"
   directionManager = {
     right: {
@@ -39,6 +41,9 @@ export class CallGraph {
       renderFx: this.renderFx,
       errorMessage: null
     };
+    this.aceUtils = new AceUtils();
+    this.focusMarker = this.aceUtils.makeAceMarkerManager(null, this.aceUtils.getAvailableMarkers().callGraphFocusMarker, "line");
+    this.hoverMarker = this.aceUtils.makeAceMarkerManager(null, this.aceUtils.getAvailableMarkers().callGraphHoverMarker);
 
   }
 
@@ -87,7 +92,7 @@ export class CallGraph {
       return rootsList[0];
     };
 
-    this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions) {
+    this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions, eventAggregator) {
       if (!formattedTrace) {
         return;
       }
@@ -225,11 +230,31 @@ export class CallGraph {
       }
 
       function highlight(d) {
-        aceUtils.updateAceMarkers(aceMarkerManager, d.data.ranges);
+        unhighlight();
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: d.data.ranges});
       }
 
-      function unhighlight(d) {
-        aceUtils.updateAceMarkers(aceMarkerManager, []);
+      function unhighlight() {
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: []});
+      }
+
+      function focus(d) {
+        if (d.data.isFocused === true) {
+          unfocus();
+          d.data.isFocused = false;
+          return;
+        }
+        if (self.focusedNode) {
+          unfocus();
+          self.focusedNode.data.isFocused = false;
+        }
+        self.focusedNode = d;
+        d.data.isFocused = true;
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: d.data.ranges});
+      }
+
+      function unfocus() {
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: []});
       }
 
       // console.log('nodes')
@@ -305,20 +330,20 @@ export class CallGraph {
         }
       });
 
-     // regNodes.on("mouseover", showHoverText)
-      //  .on("mouseout", hideHoverText);
+      regNodes.on("mouseover", showHoverText)
+        .on("mouseout", hideHoverText);
 
-     // filteredNodes.on("mouseover", highlight)
-      //  .on("mouseout", unhighlight);
+      filteredNodes.on("mouseover", highlight)
+        .on("mouseout", unhighlight);
 
-       regNodes.on("mousedown", showHoverText)
-        .on("mouseup", hideHoverText);
+      //  regNodes.on("mousedown", showHoverText)
+      //   .on("mouseup", hideHoverText);
+      //
+      // regNodes.on("mousedown", addClass)
 
-      regNodes.on("mousedown", addClass)
 
-
-       filteredNodes.on("mousedown", highlight)
-        .on("mouseup", unhighlight);
+      filteredNodes.on("mousedown", focus)
+        .on("mouseup", unfocus);
 
       regNodes.append("circle")
         .attr("r", 6)
