@@ -305,11 +305,20 @@ export class CallGraph {
         }
       });
 
-      regNodes.on("mouseover", showHoverText)
-        .on("mouseout", hideHoverText);
+     // regNodes.on("mouseover", showHoverText)
+      //  .on("mouseout", hideHoverText);
 
-      filteredNodes.on("mouseover", highlight)
-        .on("mouseout", unhighlight);
+     // filteredNodes.on("mouseover", highlight)
+      //  .on("mouseout", unhighlight);
+
+       regNodes.on("mousedown", showHoverText)
+        .on("mouseup", hideHoverText);
+
+      regNodes.on("mousedown", addClass)
+
+
+       filteredNodes.on("mousedown", highlight)
+        .on("mouseup", unhighlight);
 
       regNodes.append("circle")
         .attr("r", 6)
