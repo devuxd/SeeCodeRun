@@ -318,8 +318,8 @@ export class CallGraph {
         .attr("height", rectHeight)
         .attr("transform", "translate(" + (-1 * rectWidth / 2) + ",0)")
         .style("fill", "#fff")
-        .style("stroke", "steelblue")
-        .style("stroke-width", "1.5px");
+        .style("stroke", "green")
+        .style("stroke-width", "1px");
 
       let regNodes = node.filter(function (d, i) {
         if (queryType === "functions") {
