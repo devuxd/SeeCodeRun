@@ -43,7 +43,7 @@ export class ExpressionDataExplorer{
       $editorTooltip = $(`<div id='${this.editorTooltipId}' />`);
       $editorTooltip.attr({
         "data-toggle": "popover",
-        "data-placement": "auto",
+        "data-placement": "auto bottom",
         "data-content": "No value found."
       });
   		$editorTooltip.popover({
