@@ -76,7 +76,7 @@ export class ExpressionDataExplorer{
       //});
 
       let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby")+".collapsibleListOpen");
-      $($popoverContentTreeViewContainer).click(function(){
+      $($popoverContentTreeViewContainer).on("click",function(){
         console.log("#editorTooltipContent.style.width");
       //$popoverContentTreeViewContainer.resizable({
         //handles: "n, e, s, w"
