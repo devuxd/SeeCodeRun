@@ -71,9 +71,15 @@ export class ExpressionDataExplorer{
     });
 
     $editorTooltip.on('shown.bs.popover', function () {
-      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby"));
-      $popoverContentTreeViewContainer.resizable({
-        handles: "n, e, s, w"
+        //$(".collapsibleListOpen", ".collapsibleListClosed").click(function(){
+          //console.log("#editorTooltipContent.style.width");
+      //});
+
+      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby")+".collapsibleListOpen");
+      $($popoverContentTreeViewContainer).click(function(){
+        console.log("#editorTooltipContent.style.width");
+      //$popoverContentTreeViewContainer.resizable({
+        //handles: "n, e, s, w"
       });
 
     });
