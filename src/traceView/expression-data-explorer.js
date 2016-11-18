@@ -83,6 +83,11 @@ export class ExpressionDataExplorer{
 
       //$popoverContentTreeViewContainer.resizable({
         //handles: "n, e, s, w"
+
+      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby"));
+      $popoverContentTreeViewContainer.resizable({
+        handles: "n, e, s, w"
+
       });
       $($popoverListClosed).on("click",function() {
         console.log("#editorTooltipContent.style.width");
