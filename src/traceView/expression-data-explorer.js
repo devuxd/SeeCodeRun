@@ -64,6 +64,9 @@ export class ExpressionDataExplorer{
       $popoverContentTreeViewContent.html("");
       $popoverContentTreeViewContent.append(self.title);
       $popoverContentTreeViewContent.append(self.content);
+      $popoverContentTreeViewContent.on("resize", function () {
+        console.log("x", arguments);
+      });
       self.title = "";
       self.content = "";
       CollapsibleLists.apply();
@@ -72,8 +75,15 @@ export class ExpressionDataExplorer{
 
     $editorTooltip.on('shown.bs.popover', function () {
       let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby"));
-      $popoverContentTreeViewContainer.resizable({
-        handles: "n, e, s, w"
+      // $popoverContentTreeViewContainer.resizable({
+      //   handles: "n, e, s, w"
+      // });
+      $("#" + $(this).attr("aria-describedby") + " .collapsibleListClosed").on("click", function () {
+        console.log("close", $popoverContentTreeViewContainer.width());
+        $popoverContentTreeViewContainer.width(300)
+      });
+      $("#" + $(this).attr("aria-describedby") + " .collapsibleListOpen").on("click", function () {
+        console.log("open", $popoverContentTreeViewContainer.width());
       });
 
     });
