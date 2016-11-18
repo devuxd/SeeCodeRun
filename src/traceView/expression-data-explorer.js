@@ -76,11 +76,8 @@ export class ExpressionDataExplorer{
       //});
 
       let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby")+".collapsibleListOpen");
-      let $popoverListOpen = $popoverContentTreeViewContainer +".collapsibleListOpen";
-      let $popoverListClosed = $popoverContentTreeViewContainer +".collapsibleListClosed";
-      $($popoverListOpen).on("click",function(){
+      $($popoverContentTreeViewContainer).on("click",function(){
         console.log("#editorTooltipContent.style.width");
-
       //$popoverContentTreeViewContainer.resizable({
         //handles: "n, e, s, w"
 
@@ -88,9 +85,6 @@ export class ExpressionDataExplorer{
       $popoverContentTreeViewContainer.resizable({
         handles: "n, e, s, w"
 
-      });
-      $($popoverListClosed).on("click",function() {
-        console.log("#editorTooltipContent.style.width");
       });
 
     });
