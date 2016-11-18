@@ -145,10 +145,13 @@ export class CallGraph {
       //   height = dimensions.height - 4;
 
       let rectWidth = 100,
-        rectHeight = 40;
+        rectHeight = 30;
 
       let tree = d3.tree()
-        .nodeSize([160, 200]);
+        .nodeSize([200, 100]).separation(function separation(a, b) {
+          console.log(a, a.height, a.data, a.boxWidth, a.data.name);
+          return a.parent == b.parent ? .2 + (a.data.name ? getBoxWidth(a.data.name) / 200 + getBoxWidth(b.data.name) / 200 : .8) : 2;
+        });
 
       let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
@@ -238,6 +241,10 @@ export class CallGraph {
         eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: []});
       }
 
+      function getBoxWidth(text) {
+        return (text.length || 1) * 6 + 6;
+      }
+
       function focus(d) {
         if (d.data.isFocused === true) {
           unfocus();
@@ -314,12 +321,25 @@ export class CallGraph {
       });
 
       filteredNodes.append("rect")
-        .attr("width", rectWidth)
+        .attr("width", function (d) {
+          d.boxWidth = (d.data.name.length || 1) * 6 + 6;
+          return d.boxWidth;
+        })
         .attr("height", rectHeight)
-        .attr("transform", "translate(" + (-1 * rectWidth / 2) + ",0)")
+        .attr("transform", function (d) {
+            return "translate(" + (-1 * d.boxWidth / 2) + ", 0)"
+          }
+        )
         .style("fill", "#fff")
         .style("stroke", "green")
         .style("stroke-width", "1px");
+
+      filteredNodes.append("text")
+        .attr("dy", 18)
+        .attr("text-anchor", "middle")
+        .text(function (d) {
+          return d.data.name;
+        });
 
       let regNodes = node.filter(function (d, i) {
         if (queryType === "functions") {
@@ -349,12 +369,6 @@ export class CallGraph {
         .attr("r", 6)
         .attr("transform", "translate(0," + rectHeight / 2 + ")");
 
-      filteredNodes.append("text")
-        .attr("dy", 22.5)
-        .attr("text-anchor", "middle")
-        .text(function (d) {
-          return d.data.name;
-        });
     }
   }
 
