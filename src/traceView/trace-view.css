@@ -166,8 +166,8 @@
   overflow: auto;
   min-height: 10px;
   min-width: 20px;
-  max-height: 800px;
-  max-width: 600px;
+  /*max-height: 800px;*/
+  /*max-width: 600px;*/
   /*position: fixed;*/
 }
 
