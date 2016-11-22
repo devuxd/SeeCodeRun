@@ -49,12 +49,12 @@ export class ExpressionDataExplorer{
         "data-placement": "auto bottom",
         "data-content": "No value found."
       });
-  		$editorTooltip.popover({
-  		    viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
-  		    html: true,
-  		    trigger: 'manual',
-              template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
-  		});
+      $editorTooltip.popover({
+        viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
+        html: true,
+        trigger: 'manual',
+        template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "' + this.editorTooltipContentId + '"><div class="popover-content"></div></div></div>'
+      });
     }
 
     $editorTooltip.appendTo('body');

@@ -82,44 +82,44 @@ export class Chat {
       if (e.keyCode == 13) {
         $chatMessageInput.focus();
       }
-        let username = $chatUserNameInput.val();
-        if(!username.trim().length){
-          username = "anonymous";
-        }
+      let username = $chatUserNameInput.val();
+      if (!username.trim().length) {
+        username = "anonymous";
+      }
 
-        self.currentUsercolor = self.userToColorMap[username];
+      self.currentUsercolor = self.userToColorMap[username];
 
-        if(self.currentUsercolor){
-          $chatToolbar.css("border-color", `#${self.currentUsercolor}`);
-        }else{
-          $chatToolbar.css("border-color", "initial");
-        }
+      if (self.currentUsercolor) {
+        $chatToolbar.css("border-color", `#${self.currentUsercolor}`);
+      } else {
+        $chatToolbar.css("border-color", "initial");
+      }
 
-        if(!username){
-          username = "anonymous";
-        }
+      if (!username) {
+        username = "anonymous";
+      }
 
       self.currentUsername = username;
     });
 
-    $chatMessageInput.keypress(function(e) {
+    $chatMessageInput.keypress(function (e) {
       if (e.keyCode == 13) {
 
         let message = $chatMessageInput.val();
 
-        if(!message.trim().length){
+        if (!message.trim().length) {
           $("#chatMessageFeedbackNotSent").css("display", "inline").fadeOut(750);
           return;
         }
 
         let username = $chatUserNameInput.val();
-        if(!username.trim().length){
+        if (!username.trim().length) {
           username = "anonymous";
         }
         self.currentUsername = username;
 
-        if(!self.currentUsercolor){
-          self.currentUsercolor =self.getRandomColor(self.currentUsercolor);
+        if (!self.currentUsercolor) {
+          self.currentUsercolor = self.getRandomColor(self.currentUsercolor);
           self.updateUserToColorMapping(self.currentUsercolor, username);
         }
 
@@ -138,66 +138,65 @@ export class Chat {
 
     chatFirebaseRef.limitToLast(100).on('child_added', function child_added(snapshot) {
 
-        let data = snapshot.val();
-        if(!data){
-          return;
-        }
+      let data = snapshot.val();
+      if (!data) {
+        return;
+      }
 
-        let username = data.name;
-        let message = data.text;
-        let color = data.color;
-        let timestamp = data.timestamp;
-        let formattedTime = self.getFormattedTime(timestamp);
+      let username = data.name;
+      let message = data.text;
+      let color = data.color;
+      let timestamp = data.timestamp;
+      let formattedTime = self.getFormattedTime(timestamp);
 
-        if(color){
-          self.updateUserToColorMapping(color, username);
-        }
+      if (color) {
+        self.updateUserToColorMapping(color, username);
+      }
 
-        let $messageElement = $(`<li data-color ='${color}'>`);
-        $messageElement.css("border-color", `#${color}`);
-        let $nameElement = $(`<strong class='seecoderun-chat-username' data-username ='${username}'></strong>`);
-        $nameElement.text(username);
-        let $timestampElement = $(`<span class='seecoderun-chat-timestamp'data-timestamp ='${timestamp}'></span>`);
-        $timestampElement.text(formattedTime);
+      let $messageElement = $(`<li data-color ='${color}'>`);
+      $messageElement.css("border-color", `#${color}`);
+      let $nameElement = $(`<strong class='seecoderun-chat-username' data-username ='${username}'></strong>`);
+      $nameElement.text(username);
+      let $timestampElement = $(`<span class='seecoderun-chat-timestamp'data-timestamp ='${timestamp}'></span>`);
+      $timestampElement.text(formattedTime);
 
-        $messageElement.text(message).prepend('<br/>').prepend($timestampElement).prepend($nameElement);
+      $messageElement.text(message).prepend('<br/>').prepend($timestampElement).prepend($nameElement);
 
-        $chatMessages.append($messageElement);
+      $chatMessages.append($messageElement);
 
-        $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
+      $("#chatMessageFeedbackSent").css("display", "inline").fadeOut(1000);
 
-        if(self.currentUsername === username){
-          $chatToolbar.css("border-color", `#${color}`);
-          $chatMessages.stop().animate({
-            scrollTop: $chatMessages[0].scrollHeight
-          }, 1000);
-        }
+      if (self.currentUsername === username) {
+        $chatToolbar.css("border-color", `#${color}`);
+        $chatMessages.stop().animate({
+          scrollTop: $chatMessages[0].scrollHeight
+        }, 1000);
+      }
     });
 
 
     $('#chatButton').click(function hideChatBox() {
-        if($chat.is(":visible")){
-            $("#chatButton span").removeClass("navigation-bar-active-item");
-            $("#chatButton label").removeClass("navigation-bar-active-item");
-            clearInterval(self.updateMessagesInterval);
-        }else{
-            $("#chatButton span").addClass("navigation-bar-active-item");
-            $("#chatButton label").addClass("navigation-bar-active-item");
+      if ($chat.is(":visible")) {
+        $("#chatButton span").removeClass("navigation-bar-active-item");
+        $("#chatButton label").removeClass("navigation-bar-active-item");
+        clearInterval(self.updateMessagesInterval);
+      } else {
+        $("#chatButton span").addClass("navigation-bar-active-item");
+        $("#chatButton label").addClass("navigation-bar-active-item");
             self.updateMessagesTimes();
-            self.updateMessagesInterval = window.setInterval(
-              function updateMessagesInterval()
-              {
-                self.updateMessagesTimes();
-              },
-            self.updateMessagesIntervalTime);
-        }
+        self.updateMessagesInterval = window.setInterval(
+          function updateMessagesInterval() {
+            self.updateMessagesTimes();
+          },
+          self.updateMessagesIntervalTime);
+      }
 
       $chat.toggle();
-      if(self.isFirstToggle){
+      if (self.isFirstToggle) {
         $chatMessages.scrollTop($chatMessages[0].scrollHeight);
         $chatUserNameInput.focus();
         self.isFirstToggle = false;
-      }else{
+      } else {
         $chatMessageInput.focus();
       }
     });
@@ -208,40 +207,38 @@ export class Chat {
     });
   }
 
-  getRandomColor(color, colors = this.colors){
-    do{
-        color = "000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-      }while(colors.indexOf(color)> -1);
+  getRandomColor(color, colors = this.colors) {
+    do {
+      color = "000000".replace(/0/g, function () {
+        return (~~(Math.random() * 16)).toString(16);
+      });
+    } while (colors.indexOf(color) > -1);
     return color;
   }
 
-  updateUserToColorMapping(color, username, self = this){
+  updateUserToColorMapping(color, username, self = this) {
     self.userToColorMap[username] = color;
     self.colors.push(color);
   }
 
-  getFormattedTime(timestamp){
+  getFormattedTime(timestamp) {
     let date = new Date(timestamp);
     let currentTime = new Date();
     let formattedTime = "";
     let elapsedTimeMs = currentTime.getTime() - date.getTime();
-    let elapsedTimeSeconds = elapsedTimeMs/1000;
-    let elapsedTimeMinutes = elapsedTimeMs/(60*1000);
-    let elapsedTimeHours = elapsedTimeMinutes/60;
-    if ( elapsedTimeSeconds >=60 && elapsedTimeSeconds < 120)
-    {
+    let elapsedTimeSeconds = elapsedTimeMs / 1000;
+    let elapsedTimeMinutes = elapsedTimeMs / (60 * 1000);
+    let elapsedTimeHours = elapsedTimeMinutes / 60;
+    if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds < 120) {
       formattedTime = `a minute ago`;
     }
-    else if ( elapsedTimeSeconds >=120)
-    {
+    else if (elapsedTimeSeconds >= 120) {
       formattedTime = Math.floor(elapsedTimeMinutes) + ' minutes ago';
     }
-    if(elapsedTimeMinutes >=60  && elapsedTimeMinutes < 120)
-    {
+    if (elapsedTimeMinutes >= 60 && elapsedTimeMinutes < 120) {
       formattedTime = `an hour ago`;
     }
-    else if(elapsedTimeMinutes >=120)
-    {
+    else if (elapsedTimeMinutes >= 120) {
       formattedTime = Math.floor(elapsedTimeHours) + ' hours ago';
     }
     // the same for minutes, hours, days, months, and even years.
