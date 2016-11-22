@@ -1,11 +1,7 @@
 /* global $ */
 /* global CollapsibleLists */
-import {customElement} from 'aurelia-framework';
 import {ObjectViewer} from "../utils/object-viewer";
-import $ from 'jquery';
-import {resizable} from 'jquery-ui';
 
-@customElement('pastebin')
 export class ExpressionDataExplorer{
   editorTooltipSelector = "#editorTooltip";
   editorTooltipId = "editorTooltip";
@@ -50,12 +46,12 @@ export class ExpressionDataExplorer{
         "data-placement": "auto bottom",
         "data-content": "No value found."
       });
-      $editorTooltip.popover({
-        viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
-        html: true,
-        trigger: 'manual',
-        template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
-      });
+  		$editorTooltip.popover({
+  		    viewport: {selector: this.viewportSelector, padding: this.viewportPadding},
+  		    html: true,
+  		    trigger: 'manual',
+              template: '<div class="popover" role="tooltip"><div class="arrow"></div><div id = "'+this.editorTooltipContentId+'"><div class="popover-content"></div></div></div>'
+  		});
     }
 
     $editorTooltip.appendTo('body');
@@ -68,25 +64,6 @@ export class ExpressionDataExplorer{
       self.content = "";
       CollapsibleLists.apply();
       $('[data-toggle="tooltip"]').tooltip();
-    });
-
-    $editorTooltip.on('shown.bs.popover', function () {
-        //$(".collapsibleListOpen", ".collapsibleListClosed").click(function(){
-          //console.log("#editorTooltipContent.style.width");
-      //});
-
-      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby")+".collapsibleListOpen");
-      $($popoverContentTreeViewContainer).on("click",function(){
-        console.log("#editorTooltipContent.style.width");
-      //$popoverContentTreeViewContainer.resizable({
-        //handles: "n, e, s, w"
-
-      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby"));
-      $popoverContentTreeViewContainer.resizable({
-        handles: "n, e, s, w"
-
-      });
-
     });
 
     this.$editorTooltip = $editorTooltip;
@@ -110,58 +87,57 @@ export class ExpressionDataExplorer{
   }
 
   attachTooltipUpdate(){
-    let self = this;
-    let $editorTooltip =   this.$editorTooltip;
-    let aceUtils = this.aceUtils;
+      let self = this;
+      let $editorTooltip =   this.$editorTooltip;
+      let aceUtils = this.aceUtils;
 
     this.update$Tooltip = function update$Tooltip(position, match, dimensions) {
-      if(!$editorTooltip){
-        return;
-      }
+        if(!$editorTooltip){
+		        return;
+		    }
 
-      if (position) {
-        $editorTooltip.css({
-          position: "absolute",
-          marginLeft: 0,
-          marginTop: 0,
-          top: `${position.pageY}px`,
-          left: `${position.pageX}px`,
-          width: `${dimensions.width}`,
-          height: `${dimensions.height}`
-          ,
-          "z-index": -1000
+		    if(position){
+		        $editorTooltip.css({
+		            position: "absolute",
+		            marginLeft: 0,
+		            marginTop: 0,
+		            top: `${position.pageY}px`,
+              left: `${position.pageX}px`,
+              width: `${dimensions.width}`,
+              height: `${dimensions.height}`
+              ,
+              "z-index": -1000
 
-        });
-      }
+		        });
+		    }
 
-      if(match && !self.isBranchNavigatorVisible){
-        self.currentObjectViewer = new ObjectViewer(match.value, self.treeViewId);
-        let popoverData = self.currentObjectViewer.generatePopoverTreeViewContent();
-        let popoverTitle = `<strong>${match.id !== null ? match.id : ""} :</strong> <i>${self.currentObjectViewer.classType}</i>`;
-        // $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
-        $editorTooltip.attr("data-content", "");
-        self.title = `<div class="custom-popover-title">${popoverTitle}</div>`;
-        self.content = popoverData.content;
-        $editorTooltip.popover("show");
-        aceUtils.updateAceMarkers(self.expressionMarkerManager, [match]);
-      }else{
-        self.$hideTooltip();
-      }
-      // let $popoverContentElement = $("#"+self.editorTooltipContentId);
-      let $popoverContentTreeViewContainer = $("#" + $(self.editorTooltipId).attr("aria-describedby"));
-      $popoverContentTreeViewContainer.mouseenter(
-        function editorTooltipMouseenter(){
-          clearTimeout(self.onExpressionHoveredTimeout);
-          clearTimeout(self.editorTooltiptimeout);
-        }
-      ).mouseleave(
-        function editorTooltipMouseleave(){
-          self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
-            self.$hideTooltip();
-          }, self.editorTooltipHideDelay);
-        }
-      );
-      self.decoratePopoverContentElement($popoverContentTreeViewContainer);
+  			if(match && !self.isBranchNavigatorVisible){
+          self.currentObjectViewer = new ObjectViewer(match.value, self.treeViewId);
+          let popoverData = self.currentObjectViewer.generatePopoverTreeViewContent();
+          let popoverTitle = `<strong>${match.id !== null ? match.id : ""} :</strong> <i>${self.currentObjectViewer.classType}</i>`;
+          // $editorTooltip.attr("data-content", `<div class="custom-popover-title">${popoverTitle}</div>${popoverData.content}`);
+          $editorTooltip.attr("data-content", "");
+          self.title = `<div class="custom-popover-title">${popoverTitle}</div>`;
+          self.content = popoverData.content;
+            $editorTooltip.popover("show");
+            aceUtils.updateAceMarkers(self.expressionMarkerManager, [match]);
+  			}else{
+  			    self.$hideTooltip();
+  	    }
+        let $popoverContentElement = $("#"+self.editorTooltipContentId);
+        $popoverContentElement.mouseenter(
+              function editorTooltipMouseenter(){
+                  clearTimeout(self.onExpressionHoveredTimeout);
+                  clearTimeout(self.editorTooltiptimeout);
+              }
+          ).mouseleave(
+              function editorTooltipMouseleave(){
+                  self.editorTooltiptimeout = setTimeout(function editorTooltiptimeout(){
+                      self.$hideTooltip();
+                  }, self.editorTooltipHideDelay);
+              }
+        );
+        self.decoratePopoverContentElement($popoverContentElement);
     };
   }
 
@@ -195,19 +171,19 @@ export class ExpressionDataExplorer{
     let $popoverContentElement = $("#"+this.editorTooltipContentId);
     if(this.$editorTooltip && $popoverContentElement.length  && !$popoverContentElement.is(":hover")){
       this.content = "";
-      this.$editorTooltip.popover("hide");
-      this.aceUtils.updateAceMarkers(this.expressionMarkerManager, []);
-      clearTimeout(this.onExpressionHoveredTimeout);
-      clearTimeout(this.editorTooltiptimeout);
+        this.$editorTooltip.popover("hide");
+        this.aceUtils.updateAceMarkers(this.expressionMarkerManager, []);
+        clearTimeout(this.onExpressionHoveredTimeout);
+        clearTimeout(this.editorTooltiptimeout);
     }
   }
 
   $showError(data){
-    this.aceUtils.updateAceMarkers(this.errorMarkerManager, [data]);
+        this.aceUtils.updateAceMarkers(this.errorMarkerManager, [data]);
   }
 
   $hideError(causeRange){
-    this.aceUtils.updateAceMarkers(this.errorMarkerManager, []);
+        this.aceUtils.updateAceMarkers(this.errorMarkerManager, []);
   }
 
   subscribe(){
@@ -219,13 +195,13 @@ export class ExpressionDataExplorer{
         if(this.isBranchNavigatorVisible){
           this.$hideTooltip();
         }
-      });
+    });
 
     eventAggregator.subscribe(
       "jsEditorCursorMoved", info => {
         this.selectedLine = info.cursor ||1;
         this.$hideTooltip();
-      });
+    });
 
     eventAggregator.subscribe(
       "jsEditorPreChange", payload =>{
