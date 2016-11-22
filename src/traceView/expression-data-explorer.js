@@ -71,17 +71,24 @@ export class ExpressionDataExplorer{
     });
 
     $editorTooltip.on('shown.bs.popover', function () {
-        //$(".collapsibleListOpen", ".collapsibleListClosed").click(function(){
-          //console.log("#editorTooltipContent.style.width");
-      //});
-
-      let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby")+".collapsibleListOpen");
-      $($popoverContentTreeViewContainer).on("click",function(){
-        console.log("#editorTooltipContent.style.width");
-      //$popoverContentTreeViewContainer.resizable({
-        //handles: "n, e, s, w"
-
       let $popoverContentTreeViewContainer = $("#" + $(this).attr("aria-describedby"));
+
+      $popoverContentTreeViewContainer.find(".collapsibleList li").on("click", function (event) {
+        if ($(event.target).hasClass("collapsibleListOpen")) {
+          let maxX = $("#previewTab").offset().left;
+          let maxWidth = maxX - $popoverContentTreeViewContainer.offset().left;
+
+          if ($popoverContentTreeViewContainer.width() > maxWidth) {
+            $popoverContentTreeViewContainer.width(maxWidth)
+          }
+
+          console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width());
+        }
+        if ($(event.target).hasClass("collapsibleListClosed")) {
+          console.log("List Closed, tooltip width: ", $popoverContentTreeViewContainer.width());
+        }
+      });
+
       $popoverContentTreeViewContainer.resizable({
         handles: "n, e, s, w"
       });
