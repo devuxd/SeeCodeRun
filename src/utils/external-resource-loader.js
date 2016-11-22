@@ -197,7 +197,7 @@ export class ExternalResourceLoader {
             } else {
               publisher.publish(eventName, {response: self.response});
             }
-          }
+            }
         )
           .fail(
             function loadScriptFail(jqxhr, settings, exception) {
