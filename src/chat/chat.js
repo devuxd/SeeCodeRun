@@ -227,14 +227,22 @@ export class Chat {
     let elapsedTimeMs = currentTime.getTime() - date.getTime();
     let elapsedTimeSeconds = elapsedTimeMs/1000;
     let elapsedTimeMinutes = elapsedTimeMs/(60*1000);
-    //let elapsedTimeHours = elapsedTime.getHours();
-    if ( elapsedTimeSeconds <=60)
+    let elapsedTimeHours = elapsedTimeMinutes/60;
+    if ( elapsedTimeSeconds >=60 && elapsedTimeSeconds < 120)
     {
       formattedTime = `a minute ago`;
     }
-    else if(elapsedTimeMinutes <=60)
+    else if ( elapsedTimeSeconds >=120)
+    {
+      formattedTime = Math.floor(elapsedTimeMinutes) + ' minutes ago';
+    }
+    if(elapsedTimeMinutes >=60  && elapsedTimeMinutes < 120)
     {
       formattedTime = `an hour ago`;
+    }
+    else if(elapsedTimeMinutes >=120)
+    {
+      formattedTime = Math.floor(elapsedTimeHours) + ' hours ago';
     }
     // the same for minutes, hours, days, months, and even years.
     // let hours = date.getHours();
