@@ -2,8 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5a30f93a-5d95-4315-96de-e28b14fd0784" name="Default" comment="Navigation branch">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/SeeCodeRun.iml" afterPath="$PROJECT_DIR$/.idea/SeeCodeRun.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/utils/external-resource-loader.js" afterPath="$PROJECT_DIR$/src/utils/external-resource-loader.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/package.json" afterPath="$PROJECT_DIR$/package.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/traceService/es-instrumenter.js" afterPath="$PROJECT_DIR$/src/traceService/es-instrumenter.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/traceService/external/auto-log-tracer.js" afterPath="$PROJECT_DIR$/src/traceService/external/auto-log-tracer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/traceService/trace-model.js" afterPath="$PROJECT_DIR$/src/traceService/trace-model.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/traceView/branch-model.js" afterPath="$PROJECT_DIR$/src/traceView/branch-model.js" />
     </list>
     <ignored path="SeeCodeRun.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -22,11 +27,11 @@
     <favorites_list name="SeeCodeRun" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+    <leaf>
       <file leaf-file-name="auto-log-tracer.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/traceService/external/auto-log-tracer.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5644">
+            <state relative-caret-position="442">
               <caret line="332" column="29" selection-start-line="332" selection-start-column="29" selection-end-line="332" selection-end-column="29" />
               <folding />
             </state>
@@ -36,8 +41,8 @@
       <file leaf-file-name="trace-model.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/traceService/trace-model.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3264">
-              <caret line="192" column="49" selection-start-line="192" selection-start-column="49" selection-end-line="192" selection-end-column="49" />
+            <state relative-caret-position="213">
+              <caret line="192" column="51" selection-start-line="192" selection-start-column="51" selection-end-line="192" selection-end-column="51" />
               <folding />
             </state>
           </provider>
@@ -56,31 +61,19 @@
       <file leaf-file-name="branch-model.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/traceView/branch-model.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1479">
-              <caret line="87" column="13" selection-start-line="87" selection-start-column="13" selection-end-line="87" selection-end-column="13" />
+            <state relative-caret-position="401">
+              <caret line="87" column="41" selection-start-line="87" selection-start-column="41" selection-end-line="87" selection-end-column="41" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="package.json" pinned="false" current-in-tab="false">
+      <file leaf-file-name="package.json" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/package.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
+            <state relative-caret-position="-650">
               <caret line="35" column="9" selection-start-line="35" selection-start-column="5" selection-end-line="35" selection-end-column="9" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="external-resource-loader.js" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/utils/external-resource-loader.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="604">
-              <caret line="278" column="36" selection-start-line="278" selection-start-column="36" selection-end-line="278" selection-end-column="36" />
-              <folding>
-                <element signature="n#!!doc" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -88,7 +81,7 @@
       <file leaf-file-name="es-instrumenter.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/traceService/es-instrumenter.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="10761">
+            <state relative-caret-position="401">
               <caret line="635" column="50" selection-start-line="635" selection-start-column="50" selection-end-line="635" selection-end-column="50" />
               <folding>
                 <element signature="e#0#34#0" expanded="true" />
@@ -425,24 +418,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="utils" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="SeeCodeRun" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="SeeCodeRun" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="traceView" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -620,7 +595,6 @@
       <workItem from="1473865821555" duration="10802000" />
       <workItem from="1473888390782" duration="5008000" />
       <workItem from="1473978455717" duration="21471000" />
-      <workItem from="1478569365784" duration="113000" />
     </task>
     <task id="LOCAL-00001" summary="Updated Webstorm config">
       <created>1473826236848</created>
@@ -647,7 +621,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="54659000" />
+    <option name="totallyTimeSpent" value="54546000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -660,16 +634,17 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1843" height="1096" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Gulp" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.19612189" sideWeight="0.53481483" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17451523" sideWeight="0.5073116" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32987553" sideWeight="0.48698062" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.14730291" sideWeight="0.5567867" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1680498" sideWeight="0.44496644" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32987553" sideWeight="0.4936288" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1680498" sideWeight="0.44764543" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.14211619" sideWeight="0.43878117" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.17396122" sideWeight="0.4651852" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1680498" sideWeight="0.55503356" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1680498" sideWeight="0.5523546" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.22382271" sideWeight="0.49221557" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.39937758" sideWeight="0.4891967" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -679,7 +654,6 @@
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32987553" sideWeight="0.4936288" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
@@ -748,6 +722,14 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/traceService/external/esprima-node-factory.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="12" column="31" selection-start-line="12" selection-start-column="31" selection-end-line="12" selection-end-column="31" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/traceService/es-instrumenter.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -918,6 +900,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="374">
           <caret line="22" column="37" selection-start-line="22" selection-start-column="37" selection-end-line="22" selection-end-column="37" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -986,25 +969,35 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="357">
           <caret line="21" column="36" selection-start-line="21" selection-start-column="36" selection-end-line="21" selection-end-column="36" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/export/dist/app-build-fad434e9c1.js" />
+    <entry file="file://$PROJECT_DIR$/export/dist/app-build-fad434e9c1.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="206">
+          <caret line="23" column="1070" selection-start-line="23" selection-start-column="1070" selection-end-line="23" selection-end-column="1070" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider editor-type-id="MarkdownFxPreviewEditor">
         <state />
+      </provider>
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="545">
+          <caret line="127" column="5" selection-start-line="127" selection-start-column="5" selection-end-line="127" selection-end-column="5" />
+          <folding />
+        </state>
       </provider>
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="FIRST">
           <first_editor relative-caret-position="-867">
             <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <folding />
           </first_editor>
           <second_editor />
-        </state>
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="545">
-          <caret line="127" column="5" selection-start-line="127" selection-start-column="5" selection-end-line="127" selection-end-column="5" />
         </state>
       </provider>
     </entry>
@@ -1012,6 +1005,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="357">
           <caret line="21" column="39" selection-start-line="21" selection-start-column="39" selection-end-line="21" selection-end-column="39" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1033,15 +1027,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/traceService/trace-model.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3264">
-          <caret line="192" column="49" selection-start-line="192" selection-start-column="49" selection-end-line="192" selection-end-column="49" />
+        <state relative-caret-position="213">
+          <caret line="192" column="51" selection-start-line="192" selection-start-column="51" selection-end-line="192" selection-end-column="51" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/traceService/external/auto-log-tracer.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5644">
+        <state relative-caret-position="442">
           <caret line="332" column="29" selection-start-line="332" selection-start-column="29" selection-end-line="332" selection-end-column="29" />
           <folding />
         </state>
@@ -1049,7 +1043,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/traceService/es-instrumenter.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="10761">
+        <state relative-caret-position="401">
           <caret line="635" column="50" selection-start-line="635" selection-start-column="50" selection-end-line="635" selection-end-column="50" />
           <folding>
             <element signature="e#0#34#0" expanded="true" />
@@ -1059,27 +1053,17 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/traceView/branch-model.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1479">
-          <caret line="87" column="13" selection-start-line="87" selection-start-column="13" selection-end-line="87" selection-end-column="13" />
+        <state relative-caret-position="401">
+          <caret line="87" column="41" selection-start-line="87" selection-start-column="41" selection-end-line="87" selection-end-column="41" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
+        <state relative-caret-position="-650">
           <caret line="35" column="9" selection-start-line="35" selection-start-column="5" selection-end-line="35" selection-end-column="9" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/utils/external-resource-loader.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="604">
-          <caret line="278" column="36" selection-start-line="278" selection-start-column="36" selection-end-line="278" selection-end-column="36" />
-          <folding>
-            <element signature="n#!!doc" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
