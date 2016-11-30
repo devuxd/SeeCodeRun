@@ -86,6 +86,9 @@ export class ExpressionDataExplorer{
             $(".popover").width(maxWidth);
             //$(".popover").width()
           }
+          if($popoverContentTreeViewContainer.width()< maxWidth) {
+            $(".popover").css("maxWidth", maxWidth);
+          }
           ///previewtab offset left gives me how many pixels from the left
           //$(".popover").width(2);
           //$popoverContentTreeViewContainer.min-width(2);
