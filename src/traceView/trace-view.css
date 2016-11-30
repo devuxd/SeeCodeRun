@@ -163,21 +163,26 @@
   -o-border-radius: 0;
   border-radius: 0;
   vertical-align: bottom;
-  overflow: auto;
+  /*overflow: auto;*/
   min-height: 10px;
   min-width: 20px;
-  /*max-height: 800px;*/
-  /*max-width: 600px;*/
+  max-height: none;
+  max-width: none;
   /*position: fixed;*/
+}
+
+#treeViewContainer {
+  overflow: auto;
 }
 
 #treeViewContent {
   vertical-align: bottom;
   display: table-cell;
+  overflow: auto;
 }
 
 #editorTooltipContent {
-  overflow: auto;
+  overflow: visible;
   padding-right: 4px;
 }
 

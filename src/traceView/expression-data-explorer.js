@@ -75,13 +75,14 @@ export class ExpressionDataExplorer{
       $popoverContentTreeViewContainer.find(".collapsibleList li").on("click", function (event) {
         if ($(event.target).hasClass("collapsibleListOpen")) {
           let maxX = $("#previewTab").offset().left;
-          let maxWidth = maxX - $popoverContentTreeViewContainer.offset().left;
-
-          if ($popoverContentTreeViewContainer.width() > maxWidth) {
-            $popoverContentTreeViewContainer.width(maxWidth)
+          let maxWidth = maxX - $popoverContentTreeViewContainer.offset().left - 6;//padding
+          let $treeView = $("#treeViewContent");
+          if ($treeView.width() > maxWidth) {
+            $popoverContentTreeViewContainer.width(maxWidth);
+            console.log("width changed");
           }
 
-          console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width());
+          console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width(), "max width", maxWidth, "splitter x", maxX, "tooltip left", $popoverContentTreeViewContainer.offset().left, "tree width", $treeView.width());
         }
         if ($(event.target).hasClass("collapsibleListClosed")) {
           console.log("List Closed, tooltip width: ", $popoverContentTreeViewContainer.width());

@@ -249,7 +249,12 @@ export class ObjectViewer {
     else {
       content = this.generateJSONTreeViewHTMLString();
     }
-    return {objectType: this.objectType, classType: this.classType, nodeType: this.nodeType, content: content};
+    return {
+      objectType: this.objectType,
+      classType: this.classType,
+      nodeType: this.nodeType,
+      content: "<div id='treeViewContainer'>" + content + "</div>"
+    };
   }
 
   generateLineViewContent() {
