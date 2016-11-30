@@ -81,7 +81,6 @@ export class ExpressionDataExplorer{
             $popoverContentTreeViewContainer.width(maxWidth);
             console.log("width changed");
           }
-
           console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width(), "max width", maxWidth, "splitter x", maxX, "tooltip left", $popoverContentTreeViewContainer.offset().left, "tree width", $treeView.width());
         }
         if ($(event.target).hasClass("collapsibleListClosed")) {
