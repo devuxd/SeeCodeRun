@@ -76,15 +76,30 @@ export class ExpressionDataExplorer{
         if ($(event.target).hasClass("collapsibleListOpen")) {
           let maxX = $("#previewTab").offset().left;
           let maxWidth = maxX - $popoverContentTreeViewContainer.offset().left;
-
+          $(".popover").width(600);
+          //console.log("size of popover ", $popoverContentTreeViewContainer.max-width());
+          //so popovertree doesnt get a max width? even tho popover does?
           if ($popoverContentTreeViewContainer.width() > maxWidth) {
-            $popoverContentTreeViewContainer.width(maxWidth)
+            console.log("size of popover ", $popoverContentTreeViewContainer.width());
+            console.log("size of space", maxWidth);
+            //$popoverContentTreeViewContainer.width(maxWidth);
+            $(".popover").width(maxWidth);
+            //$(".popover").width()
           }
-
-          console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width());
+          ///previewtab offset left gives me how many pixels from the left
+          //$(".popover").width(2);
+          //$popoverContentTreeViewContainer.min-width(2);
+          //$popoverContentTreeViewContainer.max-width(maxWidth);
+          //console.log("size of space left of popover: ", $popoverContentTreeViewContainer.offset().left);
+          //console.log("size of previewtab: ", $("#previewTab").offset().left);
+          //console.log("size of preview - popover: ", maxWidth);
+          //console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width());
         }
         if ($(event.target).hasClass("collapsibleListClosed")) {
+          let maxX = $("#previewTab").offset().left;
+          let maxWidth = maxX - $popoverContentTreeViewContainer.offset().left;
           console.log("List Closed, tooltip width: ", $popoverContentTreeViewContainer.width());
+          $(".popover").width(119.2);
         }
       });
 
