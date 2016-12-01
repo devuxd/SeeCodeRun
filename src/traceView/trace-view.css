@@ -70,11 +70,17 @@
 }
 
 .ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover::before {
-  font-s: 1.0;
+  display: block;
+  float: left;
+  width: 0;
+  height: 100%;
+  border-left: 1px solid #FFF;
+  content: '';
 }
 
 .ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover {
-  opacity: 1.0;
+  color: #FFF;
+  background-color: orange;
 }
 
 /*.ace_gutter-cell.seecoderun-gutter-decoration-branch-local:hover::before {*/
@@ -150,25 +156,33 @@
 }
 
 .popover {
-  padding: 0;
-  margin: 0;
+  padding: 0px;
+  margin: 0px;
   -webkit-border-radius: 0;
   -moz-border-radius: 0;
   -o-border-radius: 0;
   border-radius: 0;
   vertical-align: bottom;
+  /*overflow: auto;*/
+  min-height: 10px;
+  min-width: 20px;
+  max-height: none;
+  max-width: none;
   /*position: fixed;*/
+}
+
+#treeViewContainer {
+  overflow: auto;
 }
 
 #treeViewContent {
   vertical-align: bottom;
   display: table-cell;
+  overflow: auto;
 }
 
 #editorTooltipContent {
-  max-height: 800px;
-  max-width: 600px;
-  overflow: auto;
+  overflow: visible;
   padding-right: 4px;
 }
 
