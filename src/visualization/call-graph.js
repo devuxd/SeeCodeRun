@@ -61,7 +61,7 @@ export class CallGraph {
       let funcs = [];
       //
       funcs = self.findFuncs(trace);
-
+//random comment
       for (let i = 0; i < funcs.length; i++)
         map[funcs[i].name] = funcs[i]; //try with adjacency list
 
