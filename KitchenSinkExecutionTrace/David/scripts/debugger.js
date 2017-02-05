@@ -36,7 +36,7 @@ Debugger.run = function(testCode, callsLogs) {
                  + testCode;
 
     // console.log( JSON.stringify(Debugger.logs) );
-    //console.log(evalCode);
+    console.log(evalCode);
     
     var _testResult = {};
     try {
@@ -44,7 +44,7 @@ Debugger.run = function(testCode, callsLogs) {
         _testResult.passed = true;
     } 
     catch( e ){
-        // console.log(e);
+        console.log(e);
         if( e instanceof chai.AssertionError ){
             _testResult = e;
         }
@@ -69,6 +69,7 @@ Debugger.setFunction = function(functName, functObj, trace) {
         Debugger.functionsName.push(functName);
 
     // create the abstract syntax tree
+    console.log(JSON.stringify(functObj));
     var bodyNode = esprima.parse( functObj.code, {loc:true} ).body[0];
 
     // if it's not a function declaration throw exception
@@ -105,7 +106,7 @@ Debugger.instrumentFunction = function(fNode){
     estraverse.replace( fNode.body, {
         enter: function(node,parent){
 
-            // console.log(node.type,escodegen.generate(node));
+            console.log(node.type,escodegen.generate(node));
             if (node.type === 'UpdateExpression') {
                 node = Debugger.instrumentTreeNode(node,scope);
                 this.skip();
