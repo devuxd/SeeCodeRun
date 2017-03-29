@@ -73,7 +73,7 @@ export class BranchNavigator {
     );
 
     eventAggregator.subscribe(
-      "jsEditorChangeError", payload => {
+      "jsEditorChangeError", () => {
         this.$hideTooltip();
       }
     );

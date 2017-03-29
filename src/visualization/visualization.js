@@ -57,6 +57,16 @@ export class Visualization {
       this.renderVisualization();
     });
 
+    ea.subscribe('traceNavigationChange', payload => {
+      let self = this;
+      console.log(payload)
+      //without timeout, at least one value of attribute "branch" in the payload is undefined
+      setTimeout(function () {
+        this.traceHelper = payload;
+        self.renderVisualization();
+      }, 1000)
+    });
+
     ea.publish('searchBoxStateRequest');
   }
 
