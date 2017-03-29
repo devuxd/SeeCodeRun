@@ -1,7 +1,9 @@
 /*global d3*/
 import {Vertex} from "./vertex.js";
+import {AceUtils} from "../utils/ace-utils";
 
 export class CallGraph {
+  focusedNode = null;
   currentDirection = "down"; // or "right"
   directionManager = {
     right: {
@@ -39,6 +41,9 @@ export class CallGraph {
       renderFx: this.renderFx,
       errorMessage: null
     };
+    this.aceUtils = new AceUtils();
+    this.focusMarker = this.aceUtils.makeAceMarkerManager(null, this.aceUtils.getAvailableMarkers().callGraphFocusMarker, "line");
+    this.hoverMarker = this.aceUtils.makeAceMarkerManager(null, this.aceUtils.getAvailableMarkers().callGraphHoverMarker);
 
   }
 
@@ -56,7 +61,7 @@ export class CallGraph {
       let funcs = [];
       //
       funcs = self.findFuncs(trace);
-
+//random comment: I see
       for (let i = 0; i < funcs.length; i++)
         map[funcs[i].name] = funcs[i]; //try with adjacency list
 
@@ -87,7 +92,7 @@ export class CallGraph {
       return rootsList[0];
     };
 
-    this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions) {
+    this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions, eventAggregator) {
       if (!formattedTrace) {
         return;
       }
@@ -130,10 +135,13 @@ export class CallGraph {
 
       d3.select(divElement).html("");
       let rectWidth = 100,
-        rectHeight = 40;
+        rectHeight = 30;
 
       let tree = d3.tree()
-        .nodeSize([160, 200]);
+        .nodeSize([200, 100]).separation(function separation(a, b) {
+          console.log(a, a.height, a.data, a.boxWidth, a.data.name);
+          return a.parent == b.parent ? .2 + (a.data.name ? getBoxWidth(a.data.name) / 200 + getBoxWidth(b.data.name) / 200 : .8) : 2;
+        });
 
       let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
@@ -214,11 +222,35 @@ export class CallGraph {
       }
 
       function highlight(d) {
-        aceUtils.updateAceMarkers(aceMarkerManager, d.data.ranges);
+        unhighlight();
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: d.data.ranges});
       }
 
-      function unhighlight(d) {
-        aceUtils.updateAceMarkers(aceMarkerManager, []);
+      function unhighlight() {
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: []});
+      }
+
+      function getBoxWidth(text) {
+        return (text.length || 1) * 6 + 6;
+      }
+
+      function focus(d) {
+        if (d.data.isFocused === true) {
+          unfocus();
+          d.data.isFocused = false;
+          return;
+        }
+        if (self.focusedNode) {
+          unfocus();
+          self.focusedNode.data.isFocused = false;
+        }
+        self.focusedNode = d;
+        d.data.isFocused = true;
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: d.data.ranges});
+      }
+
+      function unfocus() {
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: []});
       }
 
       // console.log('nodes')
@@ -278,12 +310,25 @@ export class CallGraph {
       });
 
       filteredNodes.append("rect")
-        .attr("width", rectWidth)
+        .attr("width", function (d) {
+          d.boxWidth = (d.data.name.length || 1) * 6 + 6;
+          return d.boxWidth;
+        })
         .attr("height", rectHeight)
-        .attr("transform", "translate(" + (-1 * rectWidth / 2) + ",0)")
+        .attr("transform", function (d) {
+            return "translate(" + (-1 * d.boxWidth / 2) + ", 0)"
+          }
+        )
         .style("fill", "#fff")
-        .style("stroke", "steelblue")
-        .style("stroke-width", "1.5px");
+        .style("stroke", "green")
+        .style("stroke-width", "1px");
+
+      filteredNodes.append("text")
+        .attr("dy", 18)
+        .attr("text-anchor", "middle")
+        .text(function (d) {
+          return d.data.name;
+        });
 
       let regNodes = node.filter(function (d, i) {
         if (queryType === "functions") {
@@ -300,16 +345,19 @@ export class CallGraph {
       filteredNodes.on("mouseover", highlight)
         .on("mouseout", unhighlight);
 
+      //  regNodes.on("mousedown", showHoverText)
+      //   .on("mouseup", hideHoverText);
+      //
+      // regNodes.on("mousedown", addClass)
+
+
+      filteredNodes.on("mousedown", focus)
+        .on("mouseup", unfocus);
+
       regNodes.append("circle")
         .attr("r", 6)
         .attr("transform", "translate(0," + rectHeight / 2 + ")");
 
-      filteredNodes.append("text")
-        .attr("dy", 22.5)
-        .attr("text-anchor", "middle")
-        .text(function (d) {
-          return d.data.name;
-        });
     }
   }
 

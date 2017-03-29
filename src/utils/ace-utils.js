@@ -80,18 +80,36 @@ export class AceUtils {
       disableMarker: "disable-marker",
       transparentMarker: "transparent-marker",
       branchGlobalMarker: "branch-global-marker",
-      branchLocalMarker: "branch-local-marker"
+      branchLocalMarker: "branch-local-marker",
+      gitTextAddedMarker: "git-text-added-marker",
+      callGraphFocusMarker: "call-graph-focus-marker",
+      callGraphHoverMarker: "call-graph-hover-marker"
     };
   }
 
-  makeAceMarkerManager(aceEditor) {
+  makeAceMarkerManager(aceEditor, markerRenderer = this.getAvailableMarkers().defaultMarker, markerType = "text", inFront = false) {
     return {
       aceEditor: aceEditor,
       markers: [],
-      markerRenderer: this.getAvailableMarkers().defaultMarker,
-      markerType: "text",
-      inFront: false
+      markerRenderer: markerRenderer,
+      markerType: markerType,
+      inFront: inFront
     };
+  }
+
+  updateAceMarkerManager(aceMarkerManager, markerRenderer, markerType, inFront) {
+    if (markerRenderer) {
+      aceMarkerManager.markerRenderer = markerRenderer;
+    }
+
+    if (markerType) {
+      aceMarkerManager.markerType = markerType;
+    }
+
+    if (inFront) {
+      aceMarkerManager.inFront = inFront;
+    }
+
   }
 
   updateAceMarkers(aceMarkerManager, elementsWithRangeProperty) {

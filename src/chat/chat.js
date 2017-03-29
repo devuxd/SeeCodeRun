@@ -6,7 +6,7 @@ import {draggable, resizable} from 'jquery-ui';
 @customElement('chat')
 export class Chat {
   seecoderunChatTimestampSelector = ".seecoderun-chat-timestamp";
-  updateMessagesIntervalTime = 30000;
+  updateMessagesIntervalTime = 86400000;
   currentUsername = "";
   currentUsercolor = "";
   isFirstToggle = true;
@@ -135,7 +135,8 @@ export class Chat {
         self.updateMessageUsername(username);
       }
     });
-
+    let previousUsername = null;
+    let previousFormattedTime = null;
     chatFirebaseRef.limitToLast(100).on('child_added', function child_added(snapshot) {
 
       let data = snapshot.val();
@@ -160,7 +161,13 @@ export class Chat {
       let $timestampElement = $(`<span class='seecoderun-chat-timestamp'data-timestamp ='${timestamp}'></span>`);
       $timestampElement.text(formattedTime);
 
-      $messageElement.text(message).prepend('<br/>').prepend($timestampElement).prepend($nameElement);
+      if (previousUsername == username && previousFormattedTime == formattedTime) {
+        $messageElement.text(message);
+      } else {
+        $messageElement.text(message).prepend('<br/>').prepend($timestampElement).prepend($nameElement);
+      }
+      previousUsername = username;
+      previousFormattedTime = formattedTime;
 
       $chatMessages.append($messageElement);
 
@@ -221,33 +228,19 @@ export class Chat {
     self.colors.push(color);
   }
 
-  getFormattedTime(timestamp) {
+  getFormattedTime(timestamp){
+    //Facebook Messenger Format
     let date = new Date(timestamp);
     let currentTime = new Date();
-    let formattedTime = "";
-    let elapsedTimeMs = currentTime.getTime() - date.getTime();
-    let elapsedTimeSeconds = elapsedTimeMs / 1000;
-    let elapsedTimeMinutes = elapsedTimeMs / (60 * 1000);
-    let elapsedTimeHours = elapsedTimeMinutes / 60;
-    if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds < 120) {
-      formattedTime = `a minute ago`;
+    let elapsedTimeInMs = currentTime.getTime() - date.getTime();
+    let formattedTime = date.getHours() + ":" + date.getMinutes();
+    let dayInMs = 86400000;
+    if (elapsedTimeInMs > dayInMs)
+    {
+      let dayOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      formattedTime = dayOfTheWeek[date.getDay()] + " AT " + formattedTime;
     }
-    else if (elapsedTimeSeconds >= 120) {
-      formattedTime = Math.floor(elapsedTimeMinutes) + ' minutes ago';
-    }
-    if (elapsedTimeMinutes >= 60 && elapsedTimeMinutes < 120) {
-      formattedTime = `an hour ago`;
-    }
-    else if (elapsedTimeMinutes >= 120) {
-      formattedTime = Math.floor(elapsedTimeHours) + ' hours ago';
-    }
-    // the same for minutes, hours, days, months, and even years.
-    // let hours = date.getHours();
-    // let minutes = "0" + date.getMinutes();
-    // let seconds = "0" + date.getSeconds();
-    // let formattedTime = `${hours} : ${minutes.substr(-2)} : ${seconds.substr(-2)} [ elapsed: ${elapsedTimeInSeconds} seconds]` ;
-    //let formattedTime = `${elapsedTimeSeconds} seconds ago` ;
-    //todo: format time as C9 does
+
     return formattedTime;
   }
 
