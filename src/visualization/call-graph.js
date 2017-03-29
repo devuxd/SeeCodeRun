@@ -134,16 +134,6 @@ export class CallGraph {
       }
 
       d3.select(divElement).html("");
-
-      // let margin = {
-      //     top: 20,
-      //     right: 20,
-      //     bottom: 30,
-      //     left: 40
-      //   },
-      //   width = dimensions.width - 4,
-      //   height = dimensions.height - 4;
-
       let rectWidth = 100,
         rectHeight = 30;
 
@@ -158,7 +148,6 @@ export class CallGraph {
       let nodeRenderer = self.directionManager[self.currentDirection].nodeRenderer;
 
       d3.select(divElement).select("svg").remove();
-      //todo: look for #seePanelBody and match the height of the svg. Be aware of resizing events
       let svg = d3.select(divElement).append("svg")
         .classed("svg-container", true)
         .style("width", "100%")
@@ -167,8 +156,8 @@ export class CallGraph {
         .call(d3.zoom()
           .on("zoom", function () {
             svg.attr("transform", function () {
-              let devent = d3.event.transform;
-              return "translate(" + devent.x + ", " + devent.y + ") scale(" + devent.k + ")";
+              let d3Event = d3.event.transform;
+              return "translate(" + d3Event.x + ", " + d3Event.y + ") scale(" + d3Event.k + ")";
             });
           }))
         .append("g");
