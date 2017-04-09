@@ -222,12 +222,11 @@ export class ObjectViewer {
           }
         }
 
-        html += key + ": " + value;
-        // if (html.length> 1000){
-        // //   console.log(key, value);
-        // html +="</li>";
-        // break;
-        // }
+        if (value && value.length > 300) {
+          html += key + ":" + value.substr(0, 300);
+        } else {
+          html += key + ": " + value;
+        }
         html += "</li>";
       }
       result = this.wrapInULTag(html, isCollapsable ? "class='treeObj collapsibleList'" : "");

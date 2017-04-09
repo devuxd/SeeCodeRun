@@ -59,7 +59,7 @@ export class Visualization {
 
     ea.subscribe('traceNavigationChange', payload => {
       let self = this;
-      console.log(payload)
+      // console.log(payload)
       //without timeout, at least one value of attribute "branch" in the payload is undefined
       setTimeout(function () {
         this.traceHelper = payload;

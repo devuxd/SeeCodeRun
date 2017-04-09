@@ -1,5 +1,8 @@
 import {TraceModel} from '../trace-model';
 export class AutoLogTracer{
+  // to debug, set AUTOLOG_TRACER_DEBUG_MODE to true in html-viewer.js as well
+  AUTOLOG_TRACER_DEBUG_MODE = false;
+
     constructor(traceDataContainer){
         this.traceDataContainer = traceDataContainer;
         this.traceModel = new TraceModel();
@@ -33,19 +36,11 @@ export class AutoLogTracer{
     }
 
     getAutologCodeBoilerPlate(timeLimit){
-        return `
-        /*AutoLogTracer*/
-
-        var isIntercepted;
-        (function () {
-            if(isIntercepted){
-                return;
-            }
-            isIntercepted= true;
+      let overrideLogAndError = `
 
             var log = console.log;
             console.log = function () {
-                if(window.TRACE.currentScope && window.TRACE.currentScope){
+                if(window.TRACE && window.TRACE.currentScope){
                   log.apply(this, [JSON.stringify({ type: "log", range: window.TRACE.currentScope.range, indexInTimeline: window.TRACE.currentScope.timelineStartIndex})].concat(Array.prototype.slice.call(arguments)));
                 }else{
                     log.apply(this, Array.prototype.slice.call(arguments));
@@ -56,6 +51,23 @@ export class AutoLogTracer{
                 log.apply(this, [JSON.stringify({ type: "error", range: window.TRACE? window.TRACE.currentExpressionRange : null, indexInTimeline: window.TRACE && window.TRACE.timeline && window.TRACE.timeline.length? window.TRACE.timeline.length - 1: 0})].concat(Array.prototype.slice.call(arguments)));
                 return true;
             };
+            
+        `;
+
+      if (this.AUTOLOG_TRACER_DEBUG_MODE) {
+        overrideLogAndError = "";
+      }
+
+      return `
+        /*AutoLogTracer*/
+
+        var isIntercepted;
+        (function () {
+            if(isIntercepted){
+                return;
+            }
+            isIntercepted= true;
+            ${overrideLogAndError}
         }());
 
         window.TIME_LIMIT = ${timeLimit};
@@ -118,20 +130,23 @@ export class AutoLogTracer{
                     //     object = (object.length === 1 ? [object[0]] : Array.apply(null, object));
                     // }
                     //clone first
+                    if(window === object){
+                      return "window";
+                    }
                     
-                    
+                    if(document === object){
+                      return "document";
+                    }
+
                     if(object && object.nodeType === 1){
                         object = this.decycle(object);
                         serializedObjectString = this.tryToJSON(object);
                     }else{
-                        if(object){
-                          object = JSON.parse(JSON.stringify(object));
-                        }
                         object = this.decycle(object);
                         serializedObjectString = this.stringify(object);
                     }
                 }catch(e){
-                    console.log("ERROR", object? object.toString(): object, object);
+                    console.log("ERROR", object? object.toString(): object, object, " was not serialized");
                     serializedObjectString = object == null? this.stringify(object): this.stringify(object.toString());
                 }
                 return serializedObjectString;
@@ -400,11 +415,22 @@ export class AutoLogTracer{
                     return obj == null? "" + obj: obj.toString();
                 }
             },
+            ignoreTypeList: {"Window": "window", "HTMLDocument": "document"},
+            getIgnoreTypeMatch: function getIgnoreTypeMatch(value){
+                var ignoreType = null;                
+                if(value && value.constructor){
+                  ignoreType = this.ignoreTypeList[value.constructor.name];
+                }
+                return ignoreType;
+            },
             serializer: function serializer(replacer, cycleReplacer) {
               var stack = [], keys = [];
-
               if (cycleReplacer == null){
                   cycleReplacer = function(key, value) {
+                    var ignoreType = this.getIgnoreTypeMatch(value);
+                    if(ignoreType){
+                      return ignoreType;
+                    }
                     if (stack[0] === value) return "[Circular ~]";
                     return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
                   };

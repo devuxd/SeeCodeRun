@@ -1,5 +1,8 @@
 export class BranchModel {
-
+  gutterDecorationClassNames = {
+    branchGlobal: "seecoderun-gutter-decoration-branch-global",
+    branchLocal: "seecoderun-gutter-decoration-branch-local"
+  };
   constructor() {
     this.traceGutterData = {maxCount: 0, rows: []};
     this.navigationTimeline = [];

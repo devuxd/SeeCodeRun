@@ -73,14 +73,7 @@ export class CallGraph {
         if (map[key].parents.length === 0)
           rootsList.push(map[key]);
       }
-      //
-      // console.log( "funcs" ) ;
-      // console.log( funcs ) ;
-      // console.log( "map" ) ;
-      // console.log( map ) ;
 
-      // console.log( map[ "alpha()" ].children[ 1 ] === map[ "alpha()" ].children[ 2 ] ) ;
-      //turns matrix into tree
 
       let masterHead = new Vertex("Program", "Program");
 
@@ -139,7 +132,7 @@ export class CallGraph {
 
       let tree = d3.tree()
         .nodeSize([200, 100]).separation(function separation(a, b) {
-          console.log(a, a.height, a.data, a.boxWidth, a.data.name);
+          // console.log(a, a.height, a.data, a.boxWidth, a.data.name);
           return a.parent == b.parent ? .2 + (a.data.name ? getBoxWidth(a.data.name) / 200 + getBoxWidth(b.data.name) / 200 : .8) : 2;
         });
 
@@ -465,7 +458,6 @@ export class CallGraph {
             }
 
           }
-          //
           //	if( index1 !== index2 && funcs[index1].type === "CallExpression"
           //		&& funcs[index1].text.indexOf( funcs[index2].name.replace( /[()""]/g , "" ) ) )
           //	{

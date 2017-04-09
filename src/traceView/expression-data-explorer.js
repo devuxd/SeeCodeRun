@@ -79,12 +79,12 @@ export class ExpressionDataExplorer{
           let $treeView = $("#treeViewContent");
           if ($treeView.width() > maxWidth) {
             $popoverContentTreeViewContainer.width(maxWidth);
-            console.log("width changed");
+            // console.log("width changed");
           }
-          console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width(), "max width", maxWidth, "splitter x", maxX, "tooltip left", $popoverContentTreeViewContainer.offset().left, "tree width", $treeView.width());
+          // console.log("List open, tooltip width: ", $popoverContentTreeViewContainer.width(), "max width", maxWidth, "splitter x", maxX, "tooltip left", $popoverContentTreeViewContainer.offset().left, "tree width", $treeView.width());
         }
         if ($(event.target).hasClass("collapsibleListClosed")) {
-          console.log("List Closed, tooltip width: ", $popoverContentTreeViewContainer.width());
+          // console.log("List Closed, tooltip width: ", $popoverContentTreeViewContainer.width());
         }
       });
 

@@ -12,6 +12,7 @@ export class Chat {
   isFirstToggle = true;
   colors = [];
   userToColorMap = {};
+  dayOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
   constructor(firebaseManager) {
     this.firebaseManager = firebaseManager;
@@ -181,7 +182,6 @@ export class Chat {
       }
     });
 
-
     $('#chatButton').click(function hideChatBox() {
       if ($chat.is(":visible")) {
         $("#chatButton span").removeClass("navigation-bar-active-item");
@@ -214,18 +214,18 @@ export class Chat {
     });
   }
 
-  getRandomColor(color, colors = this.colors) {
+  getRandomColor(color) {
     do {
       color = "000000".replace(/0/g, function () {
         return (~~(Math.random() * 16)).toString(16);
       });
-    } while (colors.indexOf(color) > -1);
+    } while (this.colors.indexOf(color) > -1);
     return color;
   }
 
-  updateUserToColorMapping(color, username, self = this) {
-    self.userToColorMap[username] = color;
-    self.colors.push(color);
+  updateUserToColorMapping(color, username) {
+    this.userToColorMap[username] = color;
+    this.colors.push(color);
   }
 
   getFormattedTime(timestamp){
@@ -237,8 +237,7 @@ export class Chat {
     let dayInMs = 86400000;
     if (elapsedTimeInMs > dayInMs)
     {
-      let dayOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-      formattedTime = dayOfTheWeek[date.getDay()] + " AT " + formattedTime;
+      formattedTime = this.dayOfTheWeek[date.getDay()] + " AT " + formattedTime;
     }
 
     return formattedTime;

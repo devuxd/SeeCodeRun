@@ -62,6 +62,7 @@ export class ShareBox {
     let $goToShareButton = $("#goToShareButton");
     $goToShareButton.click(function goToSharedPastebin() {
       window.open(self.shareURL, '_blank');
+      //todo add event here
     });
   }
 
