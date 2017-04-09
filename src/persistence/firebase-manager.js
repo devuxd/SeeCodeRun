@@ -16,7 +16,21 @@ export class FirebaseManager {
   }
 
   makeNewPastebinFirebaseReferenceId(baseURL = this.baseURL) {
-    return new Firebase(baseURL).push().key();
+    let defaultPastebinScheme = {
+      creationTimestamp: this.SERVER_TIMESTAMP,
+      content: {
+        //js, css and html handled by Firepad
+        search: 0,
+        chat: 0,
+        share: {
+          currentEvent: 0,
+          parentPastebinId: 0,
+          children: 0
+        }
+      },
+      users: 0
+    };
+    return new Firebase(baseURL).push(defaultPastebinScheme).key();
   }
 
   makePastebinFirebaseReference(pastebinId = this.pastebinId) {
@@ -31,8 +45,11 @@ export class FirebaseManager {
     return new Firebase(`${this.baseURL}/${pastebinId}/content/chat`);
   }
 
+  makeShareEventsFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/content/share/events`);
+  }
 
-  makeShareFirebaseChildren(pastebinId = this.pastebinId) {
+  makeShareChildrenFirebase(pastebinId = this.pastebinId) {
     return new Firebase(`${this.baseURL}/${pastebinId}/content/share/children`);
   }
 
@@ -46,7 +63,7 @@ export class FirebaseManager {
     let firebaseManager = this;
     let childPastebinId = firebaseManager.makeNewPastebinFirebaseReferenceId();
 
-    let parentShareReferenceChildren = firebaseManager.makeShareFirebaseChildren(parentPastebinId);
+    let parentShareReferenceChildren = firebaseManager.makeShareChildrenFirebase(parentPastebinId);
     parentShareReferenceChildren.push({childPastebinId: childPastebinId, timestamp: firebaseManager.SERVER_TIMESTAMP});
 
     let sourceReference = firebaseManager.makePastebinFirebaseReference(parentPastebinId);
@@ -55,11 +72,12 @@ export class FirebaseManager {
     let dataChanger = {
       changeData: (data) => {
         if (data.content) {
+          data.creationTimestamp = this.SERVER_TIMESTAMP;
           data.content.chat = {};
           data.content.share = {
-            creationTimestamp: firebaseManager.SERVER_TIMESTAMP,
+            currentEvent: 0,
             parentPastebinId: parentPastebinId,
-            children: {}
+            children: 0
           };
         }
         return data;
