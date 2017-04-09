@@ -6,6 +6,7 @@ export class FirebaseManager {
   baseURL = new AppConfiguration().getConfiguration().firebaseURL;
   pastebinId = undefined;
   SERVER_TIMESTAMP = Firebase.ServerValue.TIMESTAMP;
+  isCopy = false;
 
   activate(pastebinId) {
     if (pastebinId) {
@@ -60,6 +61,7 @@ export class FirebaseManager {
    * @return {String} childPastebinId, the pastebin id of the newly created copy.
    */
   copyPastebinById(parentPastebinId, copyChat = false) {
+    this.isCopy = true;
     let firebaseManager = this;
     let childPastebinId = firebaseManager.makeNewPastebinFirebaseReferenceId();
 
@@ -107,6 +109,10 @@ export class FirebaseManager {
   makeFirepad(subject, editor, defaultText) {
     let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
     let firebase = new Firebase(subjectURL);
+
+    if (this.isCopy) {
+      defaultText = null;
+    }
 
     return Firepad.fromACE(
       firebase,
