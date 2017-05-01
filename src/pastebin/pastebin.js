@@ -22,6 +22,8 @@ import {ExpressionSelection} from '../expressionSelection/expression-selection';
 import {TraceSearch} from '../traceSearch/trace-search';
 import {TraceSearchHistory} from '../traceSearch/trace-search-history';
 
+import {Searcher} from '../searcher/searcher';
+
 import {customElement} from 'aurelia-framework';
 
 import $ from 'jquery';
@@ -56,6 +58,9 @@ export class Pastebin {
 
     this.traceSearch = new TraceSearch(eventAggregator, traceModel, aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(eventAggregator, firebaseManager);
+
+
+    this.searcher = new Searcher(eventAggregator, firebaseManager);
   }
 
   activate(params) {
@@ -118,6 +123,7 @@ export class Pastebin {
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
 
+    this.searcher.attached();
     this.mainSplitterOptions = {
       sizes: [60, 40],
       gutterSize: 3,

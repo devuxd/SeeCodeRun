@@ -8,6 +8,7 @@ export class JsEditor {
   isFirstLoad = true;
   editorCompactedText = "";
   editorChangedTimeout = null;
+  searcherTimeout = null;
   hasErrors = false;
   height = 700;
   editorChangeDelay = 1500;
@@ -88,6 +89,22 @@ export class JsEditor {
     session.on('change',
       function onEditorChanged() {
         let editorLayout = self.aceUtils.getLayout(editor);
+
+        //Searcher binding
+        if (!$(".ace_autocomplete").is(":visible")) {
+          ea.publish("autoCompleteHidden", editorLayout, "jsEditor");
+        }
+        clearTimeout(self.searcherTimeout);
+        self.searcherTimeout = setTimeout(function () {
+          if ($(".ace_autocomplete").is(":visible")) {
+            let aceAutoCompletePosition = {};
+            aceAutoCompletePosition.top = $(".ace_autocomplete").offset().top - 30;
+            aceAutoCompletePosition.left = $(".ace_autocomplete").offset().left + 5 + $(".ace_autocomplete").width();
+
+            ea.publish("autoCompleteShown", aceAutoCompletePosition, "jsEditor");
+          }
+        }, 2300); // same as editor timeout
+
         ea.publish('jsEditorPreChange',
           editorLayout
         );
@@ -115,6 +132,12 @@ export class JsEditor {
       onAnnotationChanged);
 
     session.selection.on('changeCursor', () => {
+      let editorLayout = self.aceUtils.getLayout(editor);
+      if ($(".ace_autocomplete").is(":visible")) {
+        ea.publish('jsEditorAutoCompleteShown', editorLayout);
+      } else {
+        ea.publish('jsEditorAutoCompleteHidden', editorLayout);
+      }
       let cursorPosition = this.editor.getCursorPosition();
 
       if (!cursorPosition) {
@@ -127,6 +150,7 @@ export class JsEditor {
         position: cursorPosition
       };
       ea.publish("jsEditorCursorMoved", info);
+
     });
 
     editor.on("click", function jsEditorClick(event) {
@@ -156,6 +180,29 @@ export class JsEditor {
         scrollerHeight: scrollerHeight
       };
       ea.publish('jsEditorChangeScrollTop', scrollData);
+    });
+
+    // Copy-n-Paste tracking
+    editor.on("copy", function (text) {
+      ea.publish('editorCopyAction', text, "jsEditor");
+    });
+    editor.on("paste", function (event) {
+      ea.publish('editorPasteAction', event, "jsEditor");
+    });
+
+    //Searcher Binding
+    editor.commands.addCommand({
+      name: "Toggle Searcher's Quick Search",
+      bindKey: {win: "Ctrl-q", mac: "Command-q"},
+      exec: function (thisEditor) {
+        let cursorPosition = thisEditor.getCursorPosition();
+        if (!cursorPosition) {
+          return;
+        }
+        let pixelPosition = thisEditor.renderer.textToScreenCoordinates(cursorPosition);
+        let cssPosition = {top: pixelPosition.pageY - 40, left: pixelPosition.pageX, takeFocus: true};
+        ea.publish('toggleSearcher', cssPosition, "jsEditor");
+      }
     });
   }
 
