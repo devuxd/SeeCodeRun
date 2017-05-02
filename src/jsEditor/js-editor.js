@@ -98,6 +98,7 @@ export class JsEditor {
         self.searcherTimeout = setTimeout(function () {
           if ($(".ace_autocomplete").is(":visible")) {
             let aceAutoCompletePosition = {};
+            //todo makes position fix responsability of Searcher
             aceAutoCompletePosition.top = $(".ace_autocomplete").offset().top - 30;
             aceAutoCompletePosition.left = $(".ace_autocomplete").offset().left + 5 + $(".ace_autocomplete").width();
 
