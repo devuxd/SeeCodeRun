@@ -229,67 +229,116 @@ export class Searcher {
     let globalMetagsURLsFirebase = this.globalMetagsURLsFirebase;
     let pastesToQueries = 0; // array with entries ["x()": {hits: 0, contains: [], queries: ["call func": 2, "invoke func":1]}], we show paste super sets
     let searchQueries = {};
-    searchQueries[query] = 1;
+    let queryHash = this.getStringHashCode(query);
+    searchQueries[queryHash] = {hits: 1, queryText: query};
     let globalMetagRanking = {votes: 0, hits: 1, searchQueries: searchQueries, pastesToQueries: pastesToQueries};
     let globalMetagURL = {url: resultURL, globalMetagRanking: globalMetagRanking};
     let globalMetagURLKey = globalMetagsURLsFirebase.push().set(globalMetagURL).key;
     return globalMetagURLKey;
   }
 
+  getGlobalMetagTopSearchPaste(globalMetagURL) {
+    if (!globalMetagURL) {
+      return null;
+    }
+    if (!globalMetagURL.pastesToQueries) {
+      return null;
+    }
+
+    let topSearchPaste = {queryText: "", queryHits: 0, pasteText: "", pasteHits: 0, pasteIsUsefulCount: 0};
+    let maxPasteHits = -1;
+    let maxPasteHash = null;
+
+    console.log("glo", globalMetagURL);
+    // if(true){
+    //   return;
+    // }
+    for (const hashPaste in globalMetagURL.pastesToQueries) {
+      console.log("prop", globalMetagURL.pastesToQueries[hashPaste]);
+      if (globalMetagURL.pastesToQueries[hashPaste].hits > maxPasteHits) {
+        maxPasteHits = globalMetagURL.pastesToQueries[hashPaste].hits;
+        maxPasteHash = hashPaste;
+      }
+    }
+    if (maxPasteHash) {
+      topSearchPaste.pasteText = globalMetagURL.pastesToQueries[maxPasteHash].pastedText;
+      topSearchPaste.pasteIsUsefulCount = globalMetagURL.pastesToQueries[maxPasteHash].usefulCount;
+      topSearchPaste.pasteHits = maxPasteHits;
+
+      let maxSearchHits = 0;
+      let maxSearchHash = null;
+      for (const hashSearch in globalMetagURL.pastesToQueries[maxPasteHash].queries) {
+        if (globalMetagURL.pastesToQueries[maxPasteHash].queries[hashSearch].hits > maxSearchHits) {
+          maxSearchHits = globalMetagURL.pastesToQueries[maxPasteHash].queries[hashSearch].hits;
+          maxSearchHash = hashSearch;
+        }
+      }
+
+      if (maxSearchHash) {
+        topSearchPaste.queryText = globalMetagURL.pastesToQueries[maxPasteHash].queries[maxSearchHash].queryText;
+        topSearchPaste.queryHits = maxPasteHits;
+      }
+    }
+    return topSearchPaste;
+  }
+
   updateGlobalMetagOnPaste(resultURL, query, pastedText, isUseful) {
-    let pastesToQueries = 0; // array with entries ["x()": {hits: 0, usefulCount:0 contains: [], queries: ["call func": 2, "invoke func":1]}], we show paste super sets
+    // let pastesToQueries = 0; // array with entries ["x()": {hits: 0, usefulCount:0 contains: [], queries: ["call func": 2, "invoke func":1]}], we show paste super sets
     let metagGlobalURLKey = this.urls2GlobalMetags[resultURL];
     if (!metagGlobalURLKey) {
       console.log("ERROR: global key not found");
       return;
     }
     let pastedTextHash = this.getStringHashCode(pastedText);
+    let queryHash = this.getStringHashCode(query);
     // console.log("paste", JSON.stringify({"p": pastedText}), pastedTextHash);
 
     let globalMetagsURLsFirebaseRef = this.firebaseManager.makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey);
     globalMetagsURLsFirebaseRef.once("value", function onResult(snapshot) {
       let globalMetagURL = snapshot.val();
+      // console.log(globalMetagURL);
       globalMetagURL.hits++;
       let pastesToQueries = globalMetagURL.pastesToQueries;
       if (pastesToQueries) {
-        if (pastesToQueries[pastedText]) {
-          pastesToQueries[pastedText].hits++;
-          if (pastesToQueries[pastedText].queries[query]) {
-            pastesToQueries[pastedText].queries[query]++;
+        if (pastesToQueries[pastedTextHash]) {
+          pastesToQueries[pastedTextHash].hits++;
+          if (pastesToQueries[pastedTextHash].queries[queryHash]) {
+            pastesToQueries[pastedTextHash].queries[queryHash].hits++;
           } else {
-            pastesToQueries[pastedText].queries[query] = 1;
+            pastesToQueries[pastedTextHash].queries[queryHash] = {hits: 1, queryText: query};
           }
-
         } else {
-          pastesToQueries[pastedText].hits = 1;
-          pastesToQueries[pastedText].queries[query] = 1;
+          pastesToQueries[pastedTextHash].hits = 1;
+          pastesToQueries[pastedTextHash].queries[queryHash] = {hits: 1, queryText: query};
+          pastesToQueries[pastedTextHash].pastedText = pastedText;
           // associate pasted texts
-          for (const paste in pastesToQueries.keys()) {
+          for (const pasteHash in pastesToQueries) {
+            let paste = pastesToQueries[pasteHash].pastedText;
             if (paste.includes(pastedText)) {
-              if (pastesToQueries[paste].contains) {
-                if (pastesToQueries[paste].contains[pastedText]) {
-                  pastesToQueries[paste].contains[pastedText]++;
+              if (pastesToQueries[pasteHash].contains) {
+                if (pastesToQueries[pasteHash].contains[pastedTextHash]) {
+                  pastesToQueries[pasteHash].contains[pastedTextHash].hits++;
                 } else {
-                  pastesToQueries[paste].contains[pastedText] = 1;
+                  pastesToQueries[pasteHash].contains[pastedTextHash] = {hits: 1, containsText: pastedText};
                 }
               } else {
                 let contains = {}
-                contains[pastedText] = 1;
-                pastesToQueries[paste].contains = contains;
+                contains[pastedTextHash] = {hits: 1, containsText: pastedText};
+                pastesToQueries[pasteHash].contains = contains;
               }
 
             } else {
               if (pastedText.includes(paste)) {
-                if (pastesToQueries[pastedText].contains) {
-                  if (pastesToQueries[pastedText].contains[paste]) {
-                    pastesToQueries[pastedText].contains[paste]++;
+                if (pastesToQueries[pastedTextHash].contains) {
+                  if (pastesToQueries[pastedTextHash].contains[paste]) {
+                    pastesToQueries[pastedTextHash].contains[paste].hits++;
                   } else {
-                    pastesToQueries[pastedText].contains[paste] = 1;
+                    pastesToQueries[pastedTextHash].contains[paste] = {hits: 1, containsText: paste};
                   }
                 } else {
                   let contains = {}
-                  contains[paste] = 1;
-                  pastesToQueries[pastedText].contains = contains;
+                  contains[paste] = {hits: 1, containsText: paste};
+                  pastesToQueries[pastedTextHash].contains = contains;
                 }
 
               }
@@ -301,8 +350,14 @@ export class Searcher {
       } else {
         globalMetagURL.pastesToQueries = {};
         let queries = {};
-        queries[query] = 1;
-        globalMetagURL.pastesToQueries[pastedText] = {hits: 0, usefulCount: 0, contains: 0, queries: queries};
+        queries[queryHash] = {hits: 1, queryText: query};
+        globalMetagURL.pastesToQueries[pastedTextHash] = {
+          hits: 0,
+          pastedText: pastedText,
+          usefulCount: 0,
+          contains: 0,
+          queries: queries
+        };
       }
 
       globalMetagsURLsFirebaseRef.update(globalMetagURL);
@@ -369,20 +424,20 @@ export class Searcher {
               if (data && data.url === resultURL) {
                 let metagURLKey = child.key();
                 self.urls2pastebinMetags[resultURL] = metagURLKey;
-                self.appendMetagRank(context, $element, metagURLKey);
+                self.appendMetagRank(context, $element, metagURLKey, resultURL);
                 found = true;
               }
               if (!found && !childrenCount) {
                 let metagURLKey = self.pushNewMetag(resultURL);
                 self.urls2pastebinMetags[resultURL] = metagURLKey;
-                self.appendMetagRank(context, $element, metagURLKey);
+                self.appendMetagRank(context, $element, metagURLKey, resultURL);
               }
             });
           } else {
             //set urls for the first time
             let metagURLKey = self.pushNewMetag(resultURL);
             self.urls2pastebinMetags[resultURL] = metagURLKey;
-            self.appendMetagRank(context, $element, metagURLKey);
+            self.appendMetagRank(context, $element, metagURLKey, resultURL);
           }
         },
         function onError() {
@@ -411,11 +466,12 @@ export class Searcher {
                 if (!data.searchQueries) {
                   data.searchQueries = {};
                 }
-                if (data.searchQueries[self.currentSearchQuery]) {
+                let currentSearchQueryHash = self.getStringHashCode(self.currentSearchQuery);
+                if (data.searchQueries[currentSearchQueryHash]) {
                   console.log("hit ", self.currentSearchQuery, data);
-                  data.searchQueries[self.currentSearchQuery]++;
+                  data.searchQueries[currentSearchQueryHash].hits++;
                 } else {
-                  data.searchQueries[self.currentSearchQuery] = 1;
+                  data.searchQueries[currentSearchQueryHash] = {hits: 1, queryText: self.currentSearchQuery};
                 }
 
                 globalUrlQuery.child(child.key()).update(data);
@@ -440,7 +496,7 @@ export class Searcher {
   }
 
 
-  appendMetagRank(context, $element, metagURLKey) {
+  appendMetagRank(context, $element, metagURLKey, resultURL) {
     // if (true) {
     //   return;
     // }
@@ -448,9 +504,9 @@ export class Searcher {
     let self = this;
     let metagRankTemplate = `
     <div class="metag metagRank" id = "${metagURLKey}">
-  <div class="rankingContainer">
-         <label class="rankingLabel"></label>
-  </div>
+  <!--<div class="rankingContainer">-->
+         <!--<label class="rankingLabel"></label>-->
+  <!--</div>-->
   
   <div class="voteContainer">
     <div>
@@ -480,6 +536,8 @@ export class Searcher {
      <i class="fa fa-thumb-tack"></i>
    </div> 
  </div>
+ 
+   <div class="SearchNPasteContainer"> No Results yet</div>
 </div>
     `;
     let popoverTemplate = '<div class="popover metag-popover" role="tooltip"><div class="arrow"></div><div class="popover-content"></div></div>'
@@ -513,6 +571,7 @@ export class Searcher {
       );
       self.bindViewListenersToFirebaseMetagPublishers(metagURLKey);
       self.subscribeToFirebaseMetagChangesAndBindToView(metagURLKey);
+      self.subscribeToURLPasteActionChanges(metagURLKey, resultURL);
     });
 
     $element.data("metagURLKey", metagURLKey);
@@ -541,6 +600,66 @@ export class Searcher {
       }
     });
   }
+
+  subscribeToURLPasteActionChanges(metagURLKey, resultURL) {
+    let self = this;
+    let metagGlobalURLKey = self.urls2GlobalMetags[resultURL];
+    if (!metagGlobalURLKey) {
+      console.log("ERROR: global key not found in subscribeToURLPasteActionChanges()");
+      return;
+    }
+
+    let globalMetagsURLsFirebaseRef = this.firebaseManager.makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey);
+    globalMetagsURLsFirebaseRef.on("value", function (snapshot) {
+      let globalMetagURL = snapshot.val();
+      if (!globalMetagURL) {
+        return;
+      }
+
+      let topSearchPaste = self.getGlobalMetagTopSearchPaste(globalMetagURL);
+      // topSearchPaste structure = {queryText: "", queryHits:0,  pasteText: "", pasteHits: 0, pasteIsUsefulCount: 0};
+      let escapedQuery = $('<div/>').text(topSearchPaste.queryText).html();
+      let escapedPaste = $('<div/>').text(topSearchPaste.pasteText).html();
+      // let topSearchPasteHtml = `
+      //   <div class="searchContainer">
+      //     <div class="queryText">${escapedQuery}</div>
+      //     <!--<div class="queryHits">${topSearchPaste.queryHits}</div>-->
+      //   </div>
+      //   <!--<div class="pasteContainer">-->
+      //     <!--<button class="copyPasteButton">Copy</button>-->
+      //     <!--<textarea id="clipboard-content" style="visibility: hidden"></textarea>-->
+      //     <pre class="pasteText" id="pasteEditor">${escapedPaste}</pre>
+      //     <!--<div class="pasteHits">${topSearchPaste.pasteHits}</div>-->
+      //     <!--<div class="pasteIsUsefulCount">${topSearchPaste.pasteIsUsefulCount}</div>        -->
+      //
+      //   <!--</div>        -->
+      // `;
+      let topSearchPasteHtml = `
+        <div class="searchContainer">
+          <div class="queryText">${escapedQuery}</div>
+        </div>
+        <pre class="pasteText" id="pasteEditor">${escapedPaste}</pre>
+      `;
+
+      $(`#${metagURLKey} .SearchNPasteContainer`).html(topSearchPasteHtml);
+      let pasteEditor = ace.edit("pasteEditor");
+      pasteEditor.getSession().setMode('ace/mode/javascript');
+      // pasteEditor.setAutoScrollEditorIntoView(true);
+      // $("#copyPasteButton").click(function (){
+      //   // let copyTextarea = document.querySelector('#clipboard-content');
+      //   // copyTextarea.value = pasteEditor.getValue();
+      //   // copyTextarea.select();
+      //   // document.execCommand('copy');
+      //   // // Reset textarea
+      //   // copyTextarea.value = "";
+      //   console.log("copy");
+      //   pasteEditor.selectAll();
+      //   pasteEditor.focus();
+      //   document.execCommand('copy');
+      // });
+    });
+  }
+
 
   bindViewListenersToFirebaseMetagPublishers(metagURLKey) {
     let self = this;

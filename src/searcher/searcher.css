@@ -33,12 +33,14 @@
 
 .metag-popover {
   z-index: 7778;
+  width: auto;
+  height: auto;
 }
 
 .metagRank {
   margin: 0 auto;
   width: 340px;
-  height: 40px;
+  /*height: 40px;*/
   padding: 5px;
 }
 
@@ -129,4 +131,31 @@
 
 .searcher-search-result-highlight {
   background-color: rgba(255, 165, 0, 0.3);
+}
+
+.SearchNPasteContainer {
+  margin-left: 70px;
+}
+
+.searchContainer {
+  background-color: lightgoldenrodyellow;
+  padding-bottom: 4px;
+  font-size: small;
+  /*left-padding: 40px;*/
+}
+
+.pasteContainer {
+  background-color: lightskyblue;
+  padding-bottom: 4px;
+  font-size: medium;
+  /*left-padding: 40px;*/
+}
+
+#pasteEditor {
+  top: 0;
+  right: 0;
+  /*bottom: 0;*/
+  left: 0;
+  height: 100px;
+  margin-top: -40px;
 }
