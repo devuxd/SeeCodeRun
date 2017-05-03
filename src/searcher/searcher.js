@@ -249,7 +249,7 @@ export class Searcher {
     let maxPasteHits = -1;
     let maxPasteHash = null;
 
-    console.log("glo", globalMetagURL);
+    console.log("URL data", globalMetagURL);
     // if(true){
     //   return;
     // }
@@ -308,9 +308,8 @@ export class Searcher {
             pastesToQueries[pastedTextHash].queries[queryHash] = {hits: 1, queryText: query};
           }
         } else {
-          pastesToQueries[pastedTextHash].hits = 1;
+          pastesToQueries[pastedTextHash] = {hits: 1, queries: {}, pastedText: pastedText};
           pastesToQueries[pastedTextHash].queries[queryHash] = {hits: 1, queryText: query};
-          pastesToQueries[pastedTextHash].pastedText = pastedText;
           // associate pasted texts
           for (const pasteHash in pastesToQueries) {
             let paste = pastesToQueries[pasteHash].pastedText;
@@ -574,6 +573,12 @@ export class Searcher {
       self.subscribeToURLPasteActionChanges(metagURLKey, resultURL);
     });
 
+    $element.on('hide.bs.popover', function () {
+      if ($(`#pasteEditor${metagURLKey}`).length) {
+        ace.edit("pasteEditor" + metagURLKey).destroy();
+      }
+    })
+
     $element.data("metagURLKey", metagURLKey);
   }
 
@@ -617,6 +622,10 @@ export class Searcher {
       }
 
       let topSearchPaste = self.getGlobalMetagTopSearchPaste(globalMetagURL);
+
+      if (!topSearchPaste) {
+        return
+      }
       // topSearchPaste structure = {queryText: "", queryHits:0,  pasteText: "", pasteHits: 0, pasteIsUsefulCount: 0};
       let escapedQuery = $('<div/>').text(topSearchPaste.queryText).html();
       let escapedPaste = $('<div/>').text(topSearchPaste.pasteText).html();
@@ -638,28 +647,67 @@ export class Searcher {
         <div class="searchContainer">
           <div class="queryText">${escapedQuery}</div>
         </div>
-        <pre class="pasteText" id="pasteEditor">${escapedPaste}</pre>
+        <button id="copyPasteButton${metagURLKey}">Copy</button>
+        <pre id="pasteEditor${metagURLKey}">${escapedPaste}</pre>
       `;
 
       $(`#${metagURLKey} .SearchNPasteContainer`).html(topSearchPasteHtml);
-      let pasteEditor = ace.edit("pasteEditor");
+
+      $(`#pasteEditor${metagURLKey}`).css({
+        position: "relative",
+        top: 0,
+        right: 0,
+        left: 0,
+        height: "100px",
+        "margin-top": "-40px"
+      });
+
+      let pasteEditor = ace.edit("pasteEditor" + metagURLKey);
+      pasteEditor.$blockScrolling = Infinity;
+      pasteEditor.renderer.setShowGutter(false);
       pasteEditor.getSession().setMode('ace/mode/javascript');
-      // pasteEditor.setAutoScrollEditorIntoView(true);
-      // $("#copyPasteButton").click(function (){
-      //   // let copyTextarea = document.querySelector('#clipboard-content');
-      //   // copyTextarea.value = pasteEditor.getValue();
-      //   // copyTextarea.select();
-      //   // document.execCommand('copy');
-      //   // // Reset textarea
-      //   // copyTextarea.value = "";
-      //   console.log("copy");
-      //   pasteEditor.selectAll();
-      //   pasteEditor.focus();
-      //   document.execCommand('copy');
-      // });
+      pasteEditor.setAutoScrollEditorIntoView(true);
+      $(`#copyPasteButton${metagURLKey}`).click(function () {
+        let textToCopy = pasteEditor.getValue();
+        if (self.copyTextToClipboard(textToCopy)) {
+          pasteEditor.selection.selectAll();
+        }
+      });
     });
   }
 
+  copyTextToClipboard(textToCopy) {
+    let targetId = "_hiddenCopyPasteText_";
+    let target = document.getElementById(targetId);
+
+    if (!target) {
+      target = document.createElement("textarea");
+      target.style.position = "absolute";
+      target.style.left = "-9999px";
+      target.style.top = "0";
+      target.id = targetId;
+      document.body.appendChild(target);
+    }
+    target.textContent = textToCopy;
+
+    let currentFocus = document.activeElement;
+    target.focus();
+    target.setSelectionRange(0, target.value.length);
+
+    let succeed;
+    try {
+      succeed = document.execCommand("copy");
+    }
+    catch (e) {
+      succeed = false;
+    }
+
+    if (currentFocus && typeof currentFocus.focus === "function") {
+      currentFocus.focus();
+    }
+
+    return succeed;
+  }
 
   bindViewListenersToFirebaseMetagPublishers(metagURLKey) {
     let self = this;
