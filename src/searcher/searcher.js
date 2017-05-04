@@ -289,6 +289,12 @@ export class Searcher {
       console.log("ERROR: global key not found");
       return;
     }
+    //todo
+
+    // ERROR: global key not found in subscribeToURLPasteActionChanges()
+    // searcher.js:143 Storing https://www.w3schools.com/bootstrap/ <h1>My First Bootstrap Page</h1> bootstrap false
+    //   searcher.js:289 ERROR: global key not found
+
     let pastedTextHash = this.getStringHashCode(pastedText);
     let queryHash = this.getStringHashCode(query);
     // console.log("paste", JSON.stringify({"p": pastedText}), pastedTextHash);
@@ -329,14 +335,14 @@ export class Searcher {
             } else {
               if (pastedText.includes(paste)) {
                 if (pastesToQueries[pastedTextHash].contains) {
-                  if (pastesToQueries[pastedTextHash].contains[paste]) {
-                    pastesToQueries[pastedTextHash].contains[paste].hits++;
+                  if (pastesToQueries[pastedTextHash].contains[pasteHash]) {
+                    pastesToQueries[pastedTextHash].contains[pasteHash].hits++;
                   } else {
-                    pastesToQueries[pastedTextHash].contains[paste] = {hits: 1, containsText: paste};
+                    pastesToQueries[pastedTextHash].contains[pasteHash] = {hits: 1, containsText: paste};
                   }
                 } else {
                   let contains = {}
-                  contains[paste] = {hits: 1, containsText: paste};
+                  contains[pasteHash] = {hits: 1, containsText: paste};
                   pastesToQueries[pastedTextHash].contains = contains;
                 }
 
@@ -662,7 +668,14 @@ export class Searcher {
         "margin-top": "-40px"
       });
 
-      let pasteEditor = ace.edit("pasteEditor" + metagURLKey);
+      let pasteEditor = null;
+      try {
+        pasteEditor = ace.edit("pasteEditor" + metagURLKey);
+      } catch (e) {
+        console.log("Ace Error: popover( or parent) destroyed before destroying editor");
+        return;
+      }
+
       pasteEditor.$blockScrolling = Infinity;
       pasteEditor.renderer.setShowGutter(false);
       pasteEditor.getSession().setMode('ace/mode/javascript');
@@ -670,9 +683,11 @@ export class Searcher {
       $(`#copyPasteButton${metagURLKey}`).click(function () {
         let textToCopy = pasteEditor.getValue();
         if (self.copyTextToClipboard(textToCopy)) {
+          self.currentURL = resultURL;
           pasteEditor.selection.selectAll();
         }
       });
+      //todo keep track of copy in editor and button to make pastes more relevant and differentiate it from page result's
     });
   }
 
