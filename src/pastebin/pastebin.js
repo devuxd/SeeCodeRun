@@ -156,6 +156,9 @@ export class Pastebin {
     let $jsEditorCode = $("#js-editor-code");
 
     $jsEditorCode.resizable(this.$jsEditorCodeOptions);
+    let $codeSection = $("#code-section");
+    let jsEditorWidth = $codeSection.width() * .8;
+    $jsEditorCode.width(jsEditorWidth);
 
     let $panelHeadingTitles = $('.panel-heading-title');
     $panelHeadingTitles.click();

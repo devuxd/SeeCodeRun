@@ -343,8 +343,10 @@ export class AceUtils {
     let traceGutterRenderer = {
       getWidth: function (session, lastLineNumber, config) {
         if (traceGutterData.maxCount > 0) {
+          let leftGutterFontSize = $(".navigator-cell").css('font-size');
+          let leftGutterCharacterWidth = parseFloat(leftGutterFontSize) * 0.5;
           let format = "/-";
-          return navigationElementWidth + (format.length + traceGutterData.maxCount.toString().length * 2 + lastLineNumber.toString().length ) * config.characterWidth;
+          return navigationElementWidth + (format.length + traceGutterData.maxCount.toString().length * 2) * leftGutterCharacterWidth + lastLineNumber.toString().length * config.characterWidth;
         }
         return lastLineNumber.toString().length * config.characterWidth;
       },
