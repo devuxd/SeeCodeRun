@@ -158,6 +158,13 @@ export class CallGraph {
 
       svg.attr("transform", "translate(100,0)");
 
+      svg.on('mouseover', mouseover);
+      function mouseover() {
+        var mousePositionX = (d3.event.clientX);
+        var mousePositionY = (d3.event.clientY);
+      }
+
+
       let root = d3.hierarchy(formattedTrace),
         nodes = root.descendants(),
         links = root.descendants().slice(1);

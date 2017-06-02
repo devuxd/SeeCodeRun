@@ -172,10 +172,167 @@ export class BranchNavigator {
     self.update$GutterTooltip = function ($gutterTooltip, position, rowData, row, lineHeight, context) {
       if (context === "visualization") {
         //todo: variant of update$GutterTooltip function that works for visualizations. update$GutterTooltip must set context parameter to "visualization" to differentiate the caller
+        update$GraphTooltip($gutterTooltip, mousePositionX, mousePositionX, visualization);
       } else {
+        console.log("test");
         update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight);
       }
     };
+
+
+    function update$GraphTooltip($gutterTooltip, mousePositionX, mousePositionY, visualization) {
+      if (!$gutterTooltip) {
+        return;
+      }
+      self.currentRow = row;
+      if (rowData && rowData.UI.branchTotal) {
+        let count = rowData.UI.branchTotal;
+        let branch = rowData.UI.branchIndex;
+        let timelineIndexes = rowData.timelineIndexes;
+        self.currentEntry = rowData;
+        let $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
+
+        if (!$gutterNavigatorSlider.length) {
+          let navigator = `
+			        <div class = "w3-row">
+    			        <div class="gutterNavigatorSliderLeft">
+    			            <i class="material-icons navigator-global-branch">&#xE5CB;</i>
+    			        </div>
+    			        <div class="gutterNavigatorSliderRight">
+    			         <i class="material-icons navigator-global-branch">&#xE5CC;</i>
+                        </div>
+
+    			        <div class="gutterNavigatorSlider"></div>
+                </div>
+    			    `;
+          $gutterTooltip.html(navigator);
+
+          $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
+
+          self.gutterNavigatorSliderValue = 0;
+          $gutterNavigatorSlider.slider({
+            slide: function gutterNavigatorSliderChange(event, ui) {
+              if (self.gutterNavigatorSliderValue !== ui.value) {
+                let indexInTimeline = self.timelineIndexes[ui.value];
+                self.eventAggregator.publish("traceNavigationPrepareChange", {
+                  branchIndex: ui.value,
+                  branchTotal: self.branchTotal,
+                  indexInTimeline: indexInTimeline,
+                  entry: self.currentEntry,
+                  row: self.currentRow
+                });
+                self.gutterNavigatorSliderValue = ui.value;
+              }
+            }
+          });
+
+          $gutterNavigatorSlider.show();
+
+          $(self.gutterNavigatorSliderLeftSelector).click(function gutterNavigatorSliderLeftClick(event) {
+            let value = $gutterNavigatorSlider.slider('value') - 1;
+            $gutterNavigatorSlider.slider('value', value);
+            if ($gutterNavigatorSlider.slider('value') === value) {
+              let indexInTimeline = self.timelineIndexes[value];
+              self.eventAggregator.publish("traceNavigationPrepareChange", {
+                branchIndex: value,
+                branchTotal: self.branchTotal,
+                indexInTimeline: indexInTimeline,
+                entry: self.currentEntry,
+                row: self.currentRow
+              });
+              self.gutterNavigatorSliderValue = value;
+            }
+          });
+          $(self.gutterNavigatorSliderLeftSelector).show();
+
+          $(self.gutterNavigatorSliderRightSelector).click(function gutterNavigatorSliderRightClick(event) {
+            let value = $gutterNavigatorSlider.slider('value') + 1;
+            $gutterNavigatorSlider.slider('value', value);
+            if ($gutterNavigatorSlider.slider('value') === value) {
+              let indexInTimeline = self.timelineIndexes[value];
+              self.eventAggregator.publish("traceNavigationPrepareChange", {
+                branchIndex: value,
+                branchTotal: self.branchTotal,
+                indexInTimeline: indexInTimeline,
+                entry: self.currentEntry,
+                row: self.currentRow
+              });
+              self.gutterNavigatorSliderValue = value;
+            }
+          });
+          $(self.gutterNavigatorSliderRightSelector).show();
+          $gutterTooltip.hide();
+          $gutterTooltip.mouseenter(function gutterTooltipMouseEnter() {
+            clearTimeout(self.gutterMouseMoveTimeout);
+            if (!$gutterTooltip.is(":visible")) {
+              self.$showTooltip();
+            }
+          })
+            .mouseleave(function gutterTooltipMouseLeave() {
+              clearTimeout(self.gutterMouseMoveTimeout);
+              self.gutterMouseMoveTimeout =
+                setTimeout(gutterMouseMoveUpdateTooltipTimeout, self.gutterTooltipHideDelay);
+            });
+        }
+
+        if (rowData.gutterDecorationClassName === self.gutterDecorationClassNames.branchGlobal) {
+          $(self.gutterTooltipSelector + " i.material-icons").removeClass("navigator-local-branch").addClass("navigator-global-branch");
+        } else {
+          $(self.gutterTooltipSelector + " i.material-icons").removeClass("navigator-global-branch").addClass("navigator-local-branch");
+        }
+
+        let $aceEditor$Width = $("#aceJsEditorDiv").width();
+
+        $("#gutterTooltip").width($aceEditor$Width);
+
+        $("#gutterTooltip > div").height(lineHeight);
+
+        $("#gutterTooltip > div > div").height(lineHeight);
+
+        $("#gutterTooltip > div > div > i").css({
+          "line-height": `${lineHeight - 2}px`,
+          "padding-top": `1px`
+        });
+
+        $gutterNavigatorSlider.css({
+          height: `${lineHeight - 4}px`,
+          top: `-${lineHeight / 2}px`
+        });
+        let $button$Width = 31;// todo get the actual value
+        $gutterNavigatorSlider.width($aceEditor$Width - $button$Width * 4);
+
+        $gutterNavigatorSlider.slider('option', {min: 1, max: count, value: branch});
+        self.branchTotal = count;
+        self.branchIndex = branch;
+        self.timelineIndexes = timelineIndexes;
+        if (position) {
+          $gutterTooltip.css({
+            height: `${lineHeight}px`,
+            top: `${position.pageY}px`,
+            left: `${position.pageX}px`
+          });
+        }
+        if (!$gutterTooltip.is(":visible") || $gutterTooltip.is(":animated")) {
+          if (self.previousRow) {
+            self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
+          }
+          self.$showTooltip();
+          $gutterTooltip.mouseenter();
+        }
+      } else {
+        let isGutterTooltipHovered = !!$($gutterTooltip).filter(function () {
+          return $(this).is(":hover");
+        }).length;
+        if (!isGutterTooltipHovered) {
+          clearTimeout(self.gutterMouseMoveTimeout);
+          self.gutterMouseMoveTimeout =
+            setTimeout(gutterMouseMoveUpdateTooltipTimeout, self.gutterTooltipHideDelay);
+        }
+      }
+      self.previousRow = row;
+    };
+
+
     function update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight) {
       if (!$gutterTooltip) {
         return;
@@ -229,6 +386,7 @@ export class BranchNavigator {
               }
             }
           });
+
           $gutterNavigatorSlider.show();
 
           $(self.gutterNavigatorSliderLeftSelector).click(function gutterNavigatorSliderLeftClick(event) {
