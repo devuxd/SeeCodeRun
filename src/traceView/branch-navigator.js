@@ -173,6 +173,7 @@ export class BranchNavigator {
       if (context === "visualization") {
         //todo: variant of update$GutterTooltip function that works for visualizations. update$GutterTooltip must set context parameter to "visualization" to differentiate the caller
       } else {
+        console.log("test");
         update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight);
       }
     };
