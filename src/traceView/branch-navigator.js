@@ -186,9 +186,8 @@ export class BranchNavigator {
       let branchModel = this.traceViewModel.branchModel;
 
 
-      let row = // you need to look in the node's data for the row the code belongs. Take a look of the highlighting logic to see how is done.
-        let
-      rowData = null;
+      let row = nodeRow// you need to look in the node's data for the row the code belongs. Take a look of the highlighting logic to see how is done.
+      let rowData = null;
       if (dataModel.rows.hasOwnProperty(row)) {
         rowData = dataModel.rows[row];
         let pixelPosition = {};
@@ -196,7 +195,6 @@ export class BranchNavigator {
         pixelPosition.pageX = mousepositionX;     //mousePositionX is set in the call-graph.js class
 
         setTooltipMouseMove(target, row, pixelPosition, rowData);
-
       }
 
 

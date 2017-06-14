@@ -162,6 +162,11 @@ export class CallGraph {
       function mouseover() {
         var mousePositionX = (d3.event.clientX);
         var mousePositionY = (d3.event.clientY);
+        var nodeRow = (d3);
+        console.log(d3.event);
+        console.log(d3.data);
+        console.log(d3.data.row);
+        console.log(d3.event.data.row);
       }
 
 
