@@ -1,5 +1,5 @@
 /*global d3*/
-import {Vertex} from "./vertex.js";
+import {DataNode} from "./data-node.js";
 import {AceUtils} from "../utils/ace-utils";
 
 export class CallGraph {
@@ -75,7 +75,7 @@ export class CallGraph {
       }
 
 
-      let masterHead = new Vertex("Program", "Program");
+      let masterHead = new DataNode("Program", "Program");
 
       // rootsList.map(function(e) {
       //   masterHead.children.push(e);
@@ -86,11 +86,14 @@ export class CallGraph {
     };
 
     this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions, eventAggregator) {
+
+      // execution trace formatted for use in d3.hierarchy
       if (!formattedTrace) {
         return;
       }
       console.log(formattedTrace);
 
+      // user search handling: when the user searches, the renderFx will use scrubTree and scrubLeaves to remove not matching nodes
       if (query !== null && (query == undefined || query.trim() === "")) {
         query = null;
       }
@@ -126,8 +129,9 @@ export class CallGraph {
       if (query !== null && queryType === "functions") {
         makeQuery();
       }
+      // end of user search handling
 
-      d3.select(divElement).html("");
+      // d3.select(divElement).html("");
       let rectWidth = 100,
         rectHeight = 30;
 
@@ -142,46 +146,47 @@ export class CallGraph {
       let nodeRenderer = self.directionManager[self.currentDirection].nodeRenderer;
 
       d3.select(divElement).select("svg").remove();
-      let svg = d3.select(divElement).append("svg")
+      let graph = d3.select(divElement).append("svg")
         .classed("svg-container", true)
         .style("width", "100%")
         .style("height", "99%")
         .attr("position", "relative")
         .call(d3.zoom()
           .on("zoom", function () {
-            svg.attr("transform", function () {
+            graph.attr("transform", function () {
               let d3Event = d3.event.transform;
               return "translate(" + d3Event.x + ", " + d3Event.y + ") scale(" + d3Event.k + ")";
             });
           }))
         .append("g");
 
-      svg.attr("transform", "translate(100,0)");
+      graph.attr("transform", "translate(100,0)");
 
-      svg.on('mouseover', mouseover);
-      function mouseover() {
-        var mousePositionX = (d3.event.clientX);
-        var mousePositionY = (d3.event.clientY);
-        var nodeRow = (d3);
-        console.log(d3.event);
-        console.log(d3.data);
-        console.log(d3.data.row);
-        console.log(d3.event.data.row);
-      }
+      // svg.on('mouseover', mouseover);
+      // function mouseover() {
+      //   var mousePositionX = (d3.event.clientX);
+      //   var mousePositionY = (d3.event.clientY);
+      //   var nodeRow = (d3);
+      //   console.log(d3.event);
+      //   console.log(d3.data);
+      //   console.log(d3.data.row);
+      //   console.log(d3.event.data.row);
+      // }
 
-
+      // conso
       let root = d3.hierarchy(formattedTrace),
         nodes = root.descendants(),
         links = root.descendants().slice(1);
 
       tree(root);
-      let link = svg.selectAll(".link")
+      let graphLinks = graph
+        .selectAll(".link")
         .data(links)
         .enter()
         .append("g")
         .attr("class", "link");
 
-      link.append("line")
+      graphLinks.append("line")
         .attr("x1", function (d) {
           return d.parent.x;
         })
@@ -198,7 +203,7 @@ export class CallGraph {
         .style("stroke", "#ccc")
         .style("stroke-width", "1.5px");
 
-      // link.append("text")
+      // graphLinks.append("text")
       //   .attr("class","num_text")
       //   .attr("x", function(d) {
       //     return (d.x + d.parent.x)/2;
@@ -212,28 +217,48 @@ export class CallGraph {
       //   })
       //   .style("font","10px sans-serif");
 
-      function showHoverText(d) {
-        d3.select(this).append("text")
+      function showHoverText(g, d) {
+        d3.select(g).append("text")
           .attr("class", "hover")
-          .attr("transform", function (d) {
+          .attr("transform", function () {
             return "translate(5, -5)";
           })
           .text(d.data.name);
-        highlight(d);
       }
 
-      function hideHoverText(d) {
-        d3.select(this).select("text.hover").remove();
-        unhighlight(d);
+      function hideHoverText(g) {
+        d3.select(g).select("text.hover").remove();
       }
 
       function highlight(d) {
-        unhighlight();
-        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: d.data.ranges});
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: [d.data.range]});
       }
 
       function unhighlight() {
         eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: []});
+      }
+
+      function onMouseOver(d) {
+        console.log("this:", this, "data:", d.data);
+        let position = {};
+        position.pageX = d3.event.clientX;
+        position.pageY = d3.event.clientY;
+        let row = d.data.range.start.row;
+        // le rowData =
+        eventAggregator.publish("showBranchNavigator", {
+          context: "call-graph",
+          target: this,
+          row: row,
+          pixelPosition: position
+        });
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: d.data.ranges});
+        // showHoverText(this, d);
+        highlight(d);
+      }
+
+      function onMouseOut(d) {
+        hideHoverText(this);
+        unhighlight(d);
       }
 
       function getBoxWidth(text) {
@@ -242,7 +267,7 @@ export class CallGraph {
 
       function focus(d) {
         if (d.data.isFocused === true) {
-          unfocus();
+          unfocus()
           d.data.isFocused = false;
           return;
         }
@@ -261,11 +286,11 @@ export class CallGraph {
 
       // console.log('nodes')
       // console.log(node)
-      let node = svg.selectAll(".node")
+      let graphNodes = graph.selectAll(".node")
         .data(nodes)
         .enter().append("g");
 
-      let multiParents = node.filter(function (d, i) {
+      let multiParents = graphNodes.filter(function (d, i) {
         return d.data.parents.length > 1;
       });
 
@@ -274,7 +299,7 @@ export class CallGraph {
       multiParents.each(function (d) {
         for (let i = 1; i < d.data.parents.length; i++) {
           let p;
-          node.filter(function (d2, i2) {
+          graphNodes.filter(function (d2, i2) {
             return d2.data.id === d.data.parents[i].id;
           }).each(function (pNode) {
             p = pNode;
@@ -287,7 +312,7 @@ export class CallGraph {
       });
 
       parentPairs.forEach(function (multiPair) {
-        link.append("line")
+        graphLinks.append("line")
           .attr("class", "additionalParentLink")
           .attr("x1", multiPair.parent.x)
           .attr("y1", !multiPair.parent.data.name.includes(query) ? multiPair.parent.y + rectHeight / 2 : multiPair.parent.y + rectHeight)
@@ -299,14 +324,14 @@ export class CallGraph {
           .style("stroke-width", "1.5px")
       })
 
-      node.attr("class", "node")
+      graphNodes.attr("class", "node")
         .attr("class", function (d) {
           return "node" + (d.children ? " node--internal" : " node--leaf");
         })
         .attr("transform", nodeRenderer)
         .style("font", "10px sans-serif");
 
-      let filteredNodes = node.filter(function (d, i) {
+      let filteredNodes = graphNodes.filter(function (d, i) {
         if (queryType === "functions") {
           return query === null || d.data.name.includes(query) || i === 0;
         }
@@ -336,33 +361,15 @@ export class CallGraph {
           return d.data.name;
         });
 
-      let regNodes = node.filter(function (d, i) {
-        if (queryType === "functions") {
-          return query !== null && i !== 0 && !d.data.name.includes(query);
-        }
-        else {
-          return false; // TODO support other query types
-        }
-      });
-
-      regNodes.on("mouseover", showHoverText)
-        .on("mouseout", hideHoverText);
-
-      filteredNodes.on("mouseover", highlight)
-        .on("mouseout", unhighlight);
-
-      //  regNodes.on("mousedown", showHoverText)
-      //   .on("mouseup", hideHoverText);
-      //
-      // regNodes.on("mousedown", addClass)
-
+      filteredNodes.on("mouseover", onMouseOver)
+        .on("mouseout", onMouseOut);
 
       filteredNodes.on("mousedown", focus)
         .on("mouseup", unfocus);
 
-      regNodes.append("circle")
-        .attr("r", 6)
-        .attr("transform", "translate(0," + rectHeight / 2 + ")");
+      // filteredNodes.append("circle")
+      //   .attr("r", 6)
+      //   .attr("transform", "translate(0," + rectHeight / 2 + ")");
 
     }
   }
@@ -398,13 +405,9 @@ export class CallGraph {
         case "FunctionData":
           if (!doesFuncExist[step.id]) {
             if (!lastBlockRange)
-              funcs.push(new Vertex(step.type, step.id, [{
-                range: step.range
-              }], step.value, step.text));
+              funcs.push(new DataNode(step.type, step.id, step.range, step.value, step.text));
             else {
-              funcs.push(new Vertex(step.type, step.id, [{
-                range: lastBlockRange
-              }], step.value, step.text));
+              funcs.push(new DataNode(step.type, step.id, lastBlockRange, step.value, step.text));
               lastBlockRange = null;
             }
             doesFuncExist[step.id] = true;
@@ -413,7 +416,6 @@ export class CallGraph {
 
           }
           break;
-        //
         case "CallExpression":
           let found = false;
           for (let i = 0; i < callfuncs.length; i++) {
@@ -422,17 +424,16 @@ export class CallGraph {
             }
           }
           if (!found || step.id.includes(".")) {
-            let currentVertex = new Vertex(step.type, step.id, [{
-              range: step.range
-            }], null, step.text);
+            let currentVertex = new DataNode(step.type, step.id, step.range, null, step.text);
             funcs.push(currentVertex);
             callfuncs.push(step.id)
           }
           else {
             for (let i = 0; i < funcs.length; i++) {
               if (funcs[i].name === step.id) {
-                funcs[i].ranges.push({
-                  range: step.range
+                funcs[i].callRanges.push({
+                  range: step.range,
+                  timelineIndex: index
                 })
               }
             }
@@ -455,7 +456,8 @@ export class CallGraph {
 
         if (funcs[index2].type === "FunctionData") {
 
-          if (index1 !== index2 && self.isRangeInRange(funcs[index1].ranges[0].range, funcs[index2].ranges[0].range)) {
+          if (index1 !== index2 && self.isRangeInRange(funcs[index1].range, funcs[index2].range)) {
+            // the smallest containing range should be selected
             let mom = funcs[index2].name;
             let child = funcs[index1].name;
 

@@ -153,9 +153,7 @@ export class AceUtils {
     aceMarkerManager.markers = newMarkers;
   }
 
-  subscribeToGutterEvents(editor, tooltip, gutterDecorationClassNames, dataModel,
-                          updateTooltip = this.updateTooltip, tooltipSlideDelay = 100, tooltipShowDelay = 100, tooltipHideDelay = 2000,
-                          aceGutterCellSelector = ".ace_gutter-cell") {
+  subscribeToGutterEvents(eventAggregator, editor, gutterDecorationClassNames, dataModel, aceGutterCellSelector) {
     let self = this;
     self.gutterTooltipHideTimeout = null;
     self.previousRow = null;
@@ -163,22 +161,7 @@ export class AceUtils {
     self.gutterCellLeftPadding = parseFloat($(aceGutterCellSelector).css("padding-left"), 10);
     self.gutterCellRightPadding = parseFloat($(aceGutterCellSelector).css("padding-right"), 10);
 
-    let setTooltipMouseMove = function setTooltipMouseMove(target, row, pixelPosition, rowData) {
-      $(target).mouseenter(function onMouseEnterGutterCell() {
-        clearTimeout(self.gutterTooltipHideTimeout);
-        self.previousRow = row;
-        updateTooltip(tooltip, pixelPosition, rowData, row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
-      }).mouseleave(function onMouseLeaveGutterCell() {
-        clearTimeout(self.gutterTooltipHideTimeout);
-        self.gutterTooltipHideTimeout =
-          setTimeout(function gutterTooltipHideTimeout() {
-            self.previousRow = null;
-            updateTooltip(tooltip, pixelPosition, null, row, editor.renderer.lineHeight, tooltipSlideDelay, tooltipShowDelay, tooltipHideDelay);
-          }, tooltipHideDelay);
-        $(target).off("mouseenter mouseleave");
-      });
-      $(target).mouseenter();
-    };
+
     editor.on("guttermousemove", function (e) {
       let target = e.domEvent.target;
 
@@ -222,12 +205,19 @@ export class AceUtils {
         pixelPosition.pageX = boundingRect.left;
 
         if (row !== self.previousRow) {
-          setTooltipMouseMove(target, row, pixelPosition, rowData);
+          eventAggregator.publish("showBranchNavigator", {
+            context: "gutter",
+            target: target,
+            row: row,
+            pixelPosition: pixelPosition,
+            rowData: rowData
+          });
         }
       }
       e.stop();
     });
   }
+
 
   publishExpressionHoverEvents(editor, eventAggregator, mousePositionHandler) {
 

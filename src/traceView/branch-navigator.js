@@ -9,9 +9,11 @@ export class BranchNavigator {
   gutterNavigatorSliderLeftSelector = ".gutterNavigatorSliderLeft";
   gutterNavigatorSliderRightSelector = ".gutterNavigatorSliderRight";
   gutterNavigatorSliderSelector = ".gutterNavigatorSlider";
+  callGraphNavigatorSliderSelector = ".callGraphNavigatorSlider";
   gutterTooltipSlideTime = 50;
   gutterTooltipShowDelay = 50;
   gutterTooltipHideDelay = 500;
+  aceGutterCellSelector = ".ace_gutter-cell";
   gutterDecorationClassNames = {
     branchGlobal: "seecoderun-gutter-decoration-branch-global",
     branchLocal: "seecoderun-gutter-decoration-branch-local"
@@ -40,10 +42,7 @@ export class BranchNavigator {
 
     aceUtils.setTraceGutterRenderer(editor, branchModel.traceGutterData);
     aceUtils.setCustomGutterUpdate(editor);
-    aceUtils.subscribeToGutterEvents(editor, this.$gutterTooltip,
-      gutterDecorationClassNames, branchModel.traceGutterData, this.update$GutterTooltip,
-      this.gutterTooltipSlideTime, this.gutterTooltipShowDelay, this.gutterTooltipShowDelay
-    );
+    aceUtils.subscribeToGutterEvents(this.eventAggregator, editor, gutterDecorationClassNames, branchModel.traceGutterData, this.aceGutterCellSelector);
     $(this.resetNavigationBoxSelector).click(function resetNavigationBoxClick() {
       self.eventAggregator.publish("branchNavigatorReset", {indexInTimeline: 0});
     });
@@ -53,6 +52,7 @@ export class BranchNavigator {
   }
 
   subscribe() {
+    let self = this;
     let eventAggregator = this.eventAggregator,
       aceUtils = this.aceUtils,
       editor = this.editor,
@@ -151,6 +151,34 @@ export class BranchNavigator {
       }
     );
 
+    let setTooltipMouseMoveForGutter = function setTooltipMouseMove(target, row, pixelPosition, rowData) {
+      $(target).mouseenter(function onMouseEnterGutterCell() {
+        clearTimeout(self.gutterTooltipHideTimeout);
+        self.previousRow = row;
+        self.update$GutterTooltip(pixelPosition, rowData, row, editor.renderer.lineHeight);
+      }).mouseleave(function onMouseLeaveGutterCell() {
+        clearTimeout(self.gutterTooltipHideTimeout);
+        self.gutterTooltipHideTimeout =
+          setTimeout(function gutterTooltipHideTimeout() {
+            self.previousRow = null;
+            self.update$GutterTooltip(pixelPosition, null, row, editor.renderer.lineHeight);
+          }, self.gutterTooltipHideDelay);
+        $(target).off("mouseenter mouseleave");
+      });
+      $(target).mouseenter();
+    };
+
+    eventAggregator.subscribe("showBranchNavigator", payload => {
+      if (payload.context === "gutter") {
+        setTooltipMouseMoveForGutter(payload.target, payload.row, payload.pixelPosition, payload.rowData);
+      } else {
+        self.update$GraphTooltip(payload.pixelPosition, null, payload.row, 14)
+      }
+    });
+
+    eventAggregator.subscribe("hideBranchNavigator", payload => {
+
+    });
   }
 
   attachGutterTooltip() {
@@ -169,45 +197,26 @@ export class BranchNavigator {
       self.$hideTooltip();
     };
 
-    self.update$GutterTooltip = function ($gutterTooltip, position, rowData, row, lineHeight, context) {
-      if (context === "visualization") {
-        //todo: variant of update$GutterTooltip function that works for visualizations. update$GutterTooltip must set context parameter to "visualization" to differentiate the caller
-        update$GraphTooltip($gutterTooltip, mousePositionX, mousePositionX, visualization);
-      } else {
-        console.log("test");
-        update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight);
-      }
-    };
 
-
-    function update$GraphTooltip($gutterTooltip, mousePositionX, mousePositionY, visualization) {
-
-
-      let branchModel = this.traceViewModel.branchModel;
-
-
-      let row = nodeRow// you need to look in the node's data for the row the code belongs. Take a look of the highlighting logic to see how is done.
-      let rowData = null;
-      if (dataModel.rows.hasOwnProperty(row)) {
-        rowData = dataModel.rows[row];
-        let pixelPosition = {};
-        pixelPosition.pageY = mousePositionY;     //mousePositionY is set in the call-graph.js class
-        pixelPosition.pageX = mousepositionX;     //mousePositionX is set in the call-graph.js class
-
-        setTooltipMouseMove(target, row, pixelPosition, rowData);
-      }
-
-
+    self.update$GraphTooltip = function update$GraphTooltip(position, rowData, row, lineHeight) {
+      let $gutterTooltip = self.$gutterTooltip;
       if (!$gutterTooltip) {
         return;
       }
+      let branchModel = self.traceViewModel.branchModel;
+      let dataModel = branchModel.traceGutterData;
+      if (dataModel.rows.hasOwnProperty(row)) {
+        rowData = dataModel.rows[row];
+        // setTooltipMouseMove(target, row, position, rowData);
+      }
+
       self.currentRow = row;
       if (rowData && rowData.UI.branchTotal) {
         let count = rowData.UI.branchTotal;
         let branch = rowData.UI.branchIndex;
         let timelineIndexes = rowData.timelineIndexes;
         self.currentEntry = rowData;
-        let $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
+        let $gutterNavigatorSlider = $(self.callGraphNavigatorSliderSelector);
 
         if (!$gutterNavigatorSlider.length) {
           let navigator = `
@@ -350,10 +359,12 @@ export class BranchNavigator {
     };
 
 
-    function update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight) {
+    self.update$GutterTooltip = function update$GutterTooltip(position, rowData, row, lineHeight) {
+      let $gutterTooltip = self.$gutterTooltip;
       if (!$gutterTooltip) {
         return;
       }
+      console.log(arguments);
       self.currentRow = row;
       if (rowData && rowData.UI.branchTotal) {
         let count = rowData.UI.branchTotal;
