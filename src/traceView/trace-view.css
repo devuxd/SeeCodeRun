@@ -114,7 +114,7 @@
 
 }
 
-#gutterTooltip {
+.navigator-tooltip {
   position: absolute;
   background-color: #FFF;
   border-radius: 0px;
@@ -130,28 +130,28 @@
   z-index: 999999;
 }
 
-#gutterTooltip > div > div {
+.navigator-tooltip > div > div {
   display: inline-block;
   cursor: pointer;
 }
 
-#gutterTooltip > div > :first-child {
+.navigator-tooltip > div > :first-child {
   padding-right: 4px;
 }
 
-#gutterTooltip > div > :last-child {
+.navigator-tooltip > div > :last-child {
   padding-left: 4px;
 }
 
-#gutterTooltip > div > div:hover {
+.navigator-tooltip > div > div:hover {
   background-color: #eee;
 }
 
-#gutterTooltip > div > div:active {
+.navigator-tooltip > div > div:active {
   background-color: #0066ff;
 }
 
-#gutterNavigatorSlider {
+.navigator-slider {
   min-width: 40px;
 }
 
