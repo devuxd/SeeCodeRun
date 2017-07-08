@@ -91,7 +91,7 @@ export class CallGraph {
       if (!formattedTrace) {
         return;
       }
-      console.log(formattedTrace);
+      // console.log(formattedTrace);
 
       // user search handling: when the user searches, the renderFx will use scrubTree and scrubLeaves to remove not matching nodes
       if (query !== null && (query == undefined || query.trim() === "")) {
@@ -239,10 +239,14 @@ export class CallGraph {
       }
 
       function onMouseOver(d) {
-        console.log("this:", this, "data:", d.data);
+        // console.log("this:", this, "data:", d.data);
         let position = {};
-        position.pageX = d3.event.clientX;
-        position.pageY = d3.event.clientY;
+        // position.pageX = d3.event.clientX;
+        // position.pageY = d3.event.clientY;
+        // console.log(d3.event, $(this).position());
+
+        position.pageX = $(this).position().left;
+        position.pageY = $(this).position().top - 14;
         let row = d.data.range.start.row;
         // le rowData =
         eventAggregator.publish("showBranchNavigator", {
