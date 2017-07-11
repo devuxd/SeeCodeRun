@@ -17,20 +17,16 @@ export class GraphicalAnalyzer{
   subscribe(){
     let aceUtils = new AceUtils();
     let aceEditor = ace.edit('aceJsEditorDiv'); // example
-    let aceMarkerManager = aceUtils.makeAceMarkerManager(aceEditor, aceUtils.getAvailableMarkers().errorMarker, "line", true);
-      this.eventAggregator.subscribe("traceChanged", payload=>{
-        let traceHelper = payload.data;
-        //todo: David will create getGraphicalObjectsFromTimeline() with the references to DOM elements
-        let timeline = traceHelper.getTimeline();
-        // console.log("GA", );
-        let identifiers = [];
-        for (let index in timeline) {
-          //console.log("", timeline[index]);
-          if (timeline[index].type === "VariableDeclarator") {
-            identifiers.push(timeline[index]);
+    let aceMarkerManager = aceUtils.makeAceMarkerManager(aceEditor, aceUtils.getAvailableMarkers().errorMarker);
+    this.eventAggregator.subscribe("graphicalTraceChanged", payload => {
+      let referenceTimeline = payload;
+      let graphicalTimeline = [];
+      for (let index in referenceTimeline) {
+        if (referenceTimeline[index].isGraphical) {
+          graphicalTimeline.push(referenceTimeline[index]);
           }
         }
-        aceUtils.updateAceMarkers(aceMarkerManager, identifiers);
+      aceUtils.updateAceMarkers(aceMarkerManager, graphicalTimeline);
       });
   }
 }

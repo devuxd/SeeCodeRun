@@ -5,6 +5,8 @@ import {HtmlParser} from '../utils/html-parser';
 
 export class HtmlViewer {
   AUTOLOG_TRACER_DEBUG_MODE = false;
+  isOutputBuilt = false;
+  liveTimeline = [];
   errors = "";
   errorObjs = [];
   html = "";
@@ -88,6 +90,16 @@ export class HtmlViewer {
     ea.subscribe("bodyJsScriptsLoaded", scriptsLoadedData => {
       this.handleResponse("body", scriptsLoadedData.response);
       this.addJs();
+    });
+
+    ea.subscribe("graphicalTraceChanged", payload => {
+      let referenceTimeline = payload;
+      for (let index in referenceTimeline) {
+        if (referenceTimeline[index].isGraphical) {
+          $(referenceTimeline[index].reference).css("background-color", "#ffe6e6");
+        }
+      }
+
     });
   }
 
@@ -206,13 +218,56 @@ export class HtmlViewer {
     if (this.AUTOLOG_TRACER_DEBUG_MODE) {
       return;
     }
-    contentWindow.console.log = function hmtlViewerConsoleLogAndError() {
+
+    ea.subscribe('beforeOutputBuild', payload => {
+      this.isOutputBuilt = false;
+      this.liveTimeline = [];
+    });
+
+    contentWindow.console.log = function hmtlViewerConsoleLogAndError(type, info, value) {
       // if(arguments[0] === 'CLIENT_OUTPUT'){
       //   self.clientDocument = arguments[1];
       //   arguments[1].getElementById("xx").click();
       //   console.log("got it", arguments[1].getElementById("xx"));
       //
       // }
+      if (type === "REF_LOG") {
+        switch (info.type) {
+          case "OUTPUT_BUILD":
+            self.isOutputBuilt = true;
+            ea.publish("graphicalTraceChanged", self.liveTimeline);
+            ea.publish("referenceTraceChanged", self.liveTimeline);
+            break;
+
+          case "CallExpression":
+            let result = null;
+            try {
+              result = $(value);
+            } catch (e) {
+
+            }
+
+            if (result && result.length) {
+              info.isGraphical = true;
+              // console.log("GRAPH", info.range, value);
+            }
+
+          default:
+            info.reference = value;
+            self.liveTimeline.push(info);
+            if (self.isOutputBuilt) {
+              if (info.isGraphical) {
+                ea.publish("graphicalTraceChanged", self.liveTimeline);
+              }
+              ea.publish("referenceTraceChanged", self.liveTimeline);
+            }
+        }
+
+
+        return;
+      }
+
+
       ea.publish('htmlViewerConsoleLog', {
         contentWindow: contentWindow,
         this: this,
