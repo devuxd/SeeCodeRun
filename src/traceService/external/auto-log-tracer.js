@@ -43,6 +43,7 @@ export class AutoLogTracer{
             console.log = function (type) {
                 if(type === "REF_LOG"){
                   log.apply(this, Array.prototype.slice.call(arguments));
+                  return;
                 }
                 if(window.TRACE && window.TRACE.currentScope){
                   log.apply(this, [JSON.stringify({ type: "log", range: window.TRACE.currentScope.range, indexInTimeline: window.TRACE.currentScope.timelineStartIndex})].concat(Array.prototype.slice.call(arguments)));
