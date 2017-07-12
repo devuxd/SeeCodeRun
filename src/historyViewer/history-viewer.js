@@ -12,6 +12,7 @@ export class HistoryViewer {
  sliderValue = 0;
  sliderMaxValue = 10;
   historyEditors = [];
+  sliderValues = [];
 
  constructor(firebaseManager, eventAggregator) {
   this.eventAggregator = eventAggregator;
@@ -39,7 +40,8 @@ export class HistoryViewer {
                      if(willBeVisible){
                       self.backToThePast();
                      }else{
-                      self.backToThePresent();
+                       // self.backToThePresent();
+                       self.backToEditing();
                      }
                 }
           );
@@ -85,16 +87,13 @@ export class HistoryViewer {
        }
    });
   }
-
   this.subscribe();
  }
 
  slideHistoryViewer() {
-   // console.log("slider val", this.sliderValue, this.subjectFirebase, this.historyFirebase );
    if (!this.activeHistoryEditor) {
    return;
   }
-
 
   if(!this.subjectFirebase || !this.historyFirebase){
    return;
@@ -102,20 +101,15 @@ export class HistoryViewer {
 
   this.sliderValue = Number(this.sliderValue);
 
-  // this.backToThePast();
    let self = this;
    clearTimeout(self.slideHistoryTimeout);
    self.slideHistoryTimeout = setTimeout(function () {
-     self.historyFirepad.dispose();
-     self.activeHistoryEditor.setValue("");
+     self.sliderValues[self.activeHistoryEditorSelector] = self.sliderValue;
      self.firebaseManager.slideHistoryViewerFirepad(self.subjectFirebase, self.historyFirebase, self.sliderValue, self.activeHistoryEditor, self);
    }, 250);
 
  }
 
-  updateActiveHistoryEditor() {
-    this.activeHistoryEditor.resize();
-  }
 
  subscribe(){
   this.eventAggregator.subscribe("activeEditorChange", activeEditorData =>{
@@ -144,78 +138,74 @@ export class HistoryViewer {
       this.historyEditors[historyEditorId].setValue("");
       this.historyEditors[historyEditorId].setReadOnly(true);
     }
-
+    this.activeEditor = activeEditorData.activeEditor;
     this.activeHistoryEditor = this.historyEditors[historyEditorId];
     this.activeHistoryEditorSelector = "#" + historyEditorId;
+
+    if ($('#historySlider').is(":visible")) {
+      this.backToThePast();
+    }
   });
  }
 
   updateSliderMaxValue(sliderMaxValue) {
     this.sliderMaxValue = sliderMaxValue;
-    $('#historySlider').slider('option', {min: 1, max: this.sliderMaxValue, value: this.sliderMaxValue});
- }
 
-  dettachHistorySliderUpdater(){
-   let self = this;
-   if(!self.subjectFirebase){
-    return;
-   }
-   self.subjectFirebase.child('history').off("child_added");
+    let previousSliderValue = this.sliderValues[this.activeHistoryEditorSelector];
+    if (previousSliderValue) {
+      this.sliderValue = previousSliderValue;
+      this.slideHistoryViewer();
+    } else {
+      this.sliderValue = this.sliderMaxValue;
+    }
+    $('#historySlider').slider('option', {min: 1, max: this.sliderMaxValue, value: this.sliderValue});
   }
+
 
  backToThePast(){
    if (!this.activeHistoryEditor) {
    return;
   }
    this.activeHistoryEditor.setValue("");
+
   let historyViewerFireData =
    this.firebaseManager.makeHistoryViewerFirepad(this.activeFirebaseContentEditorTag, this.activeHistoryEditor, this);
 
   this.sliderMaxValue = historyViewerFireData.sliderMaxValue;
   this.subjectFirebase = historyViewerFireData.subjectFirebase;
   this.historyFirebase = historyViewerFireData.historyFirebase;
-   this.historyFirepad = historyViewerFireData.historyFirepad;
-   // console.log("SL", historyViewerFireData);
+   this.historyFirepadHeadless = historyViewerFireData.historyFirepadHeadless;
+
 
    let activeEditorSelector = this.activeHistoryEditorSelector.replace("History", "");
-   console.log(activeEditorSelector, this.activeHistoryEditorSelector);
    $(this.activeHistoryEditorSelector).css({display: "block"});
    $(activeEditorSelector).css({display: "none"});
-
-   let self = this;
-
-   // this.historyFirebase.child("history").on("child_added", function(){
-   //   self.activeHistoryEditor.setValue("");
-   //   Firepad.fromACE(self.historyFirebase, self.activeHistoryEditor, {defaultText: ""});
-   // });
  }
 
- backToThePresent(){
-   if (!this.activeHistoryEditor) {
-   return;
-  }
-
-   let activeEditorSelector = this.activeHistoryEditorSelector.replace("History", "");
-   $(this.activeHistoryEditorSelector).css({display: "none"});
-   $(activeEditorSelector).css({display: "block"});
-
- }
 
  backToTheFuture(){// move past to present
-  if(!this.activeEditor){
-   return;
-  }
-  this.activeEditor.editor.setReadOnly(false);
-  let pastValue = this.activeEditor.editor.getValue();
-  this.activeEditor.firepad.dispose();
-  this.dettachHistorySliderUpdater();
-  this.subjectFirebase = null;
-
-  this.activeEditor.editor.setValue("");
-  this.activeEditor.firepad = this.firebaseManager.
-    makeFirepad(this.activeEditor.firebaseTag, this.activeEditor.editor, "");
-  this.activeEditor.editor.setValue("");
+   if (!this.activeEditor) {
+     return;
+   }
+   if (!this.activeHistoryEditor) {
+     return;
+   }
+   let pastValue = this.activeHistoryEditor.getValue();
   this.activeEditor.editor.setValue(pastValue);
+   this.backToEditing();
  }
+
+  backToEditing() {
+    $("#aceJsEditorDivHistory").css({display: "none"});
+    $("#aceJsEditorDiv").css({display: "block"});
+
+    $("#aceHtmlEditorDivHistory").css({display: "none"});
+    $("#aceHtmlEditorDiv").css({display: "block"});
+
+    $("#cssEditorDivHistory").css({display: "none"});
+    $("#cssEditorDiv").css({display: "block"});
+
+  }
+
 
 }

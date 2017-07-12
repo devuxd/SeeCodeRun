@@ -128,35 +128,46 @@ export class FirebaseManager {
     let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/historyViewer/${subject}`;
     let historyFirebase = new Firebase(subjectHistoryURL);
 
-    // Remove the folder from the firebase
-    // historyFirebase.set(null);
-    // editor.setValue("");
     // Copy the entire firebase to the history firebase
     subjectFirebase.once("value", function (snapshot) {
       historyFirebase.set(snapshot.val());
     });
+
 
     subjectFirebase.child('history').once("value", function (snapshot) {
       let sliderMaxValue = snapshot.numChildren();
       context.updateSliderMaxValue(sliderMaxValue);
     });
 
-    // editor.setValue("");
+    let headless = Firepad.Headless(historyFirebase);
+    headless.getText(function (text) {
+      editor.setValue(text);
+    });
     return {
       subjectFirebase: subjectFirebase,
       historyFirebase: historyFirebase,
-      historyFirepad: Firepad.fromACE(historyFirebase, editor, {defaultText: ""})
+      historyFirepadHeadless: headless
     };
   }
 
   slideHistoryViewerFirepad(subjectFirebase, historyFirebase, sliderValue, activeHistoryEditor, context) {
-    // Remove the history from the history firebase
-    // historyFirebase.child('history').setValue(null);
+    context.historyFirepadHeadless.dispose();
     // Copy history from the firebase to the history firebase to display values till a specific point in history.
     subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snapshot) {
       historyFirebase.child('history').set(snapshot.val());
-      context.historyFirepad = Firepad.fromACE(historyFirebase, activeHistoryEditor, {defaultText: ""});
+      context.historyFirepadHeadless = Firepad.Headless(historyFirebase);
+      context.historyFirepadHeadless.getText(function (text) {
+        activeHistoryEditor.setValue(text);
+      });
+
     });
+  }
+
+  stopReceivingHistoryUpdates(firebaseRef) {
+    if (!firebaseRef) {
+      return;
+    }
+    firebaseRef.child('history').off("child_added");
   }
 
   makeFirebaseReferenceCopy(source, destination, dataChanger = this, thenCallback) {

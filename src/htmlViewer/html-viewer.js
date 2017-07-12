@@ -92,15 +92,15 @@ export class HtmlViewer {
       this.addJs();
     });
 
-    ea.subscribe("graphicalTraceChanged", payload => {
-      let referenceTimeline = payload;
-      for (let index in referenceTimeline) {
-        if (referenceTimeline[index].isGraphical) {
-          $(referenceTimeline[index].reference).css("background-color", "#ffe6e6");
-        }
-      }
-
-    });
+    // ea.subscribe("graphicalTraceChanged", payload => {
+    //   let referenceTimeline = payload;
+    //   for (let index in referenceTimeline) {
+    //     if (referenceTimeline[index].isGraphical) {
+    //       $(referenceTimeline[index].reference).css("background-color", "#ffe6e6");
+    //     }
+    //   }
+    //
+    // });
   }
 
   handleResponse(elementName, response) {
