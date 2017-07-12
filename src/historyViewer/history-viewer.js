@@ -103,7 +103,14 @@ export class HistoryViewer {
   this.sliderValue = Number(this.sliderValue);
 
   // this.backToThePast();
-  this.firebaseManager.slideHistoryViewerFirepad(this.subjectFirebase, this.historyFirebase, this.sliderValue, this.activeHistoryEditor);
+   let self = this;
+   clearTimeout(self.slideHistoryTimeout);
+   self.slideHistoryTimeout = setTimeout(function () {
+     self.historyFirepad.dispose();
+     self.activeHistoryEditor.setValue("");
+     self.firebaseManager.slideHistoryViewerFirepad(self.subjectFirebase, self.historyFirebase, self.sliderValue, self.activeHistoryEditor, self);
+   }, 250);
+
  }
 
   updateActiveHistoryEditor() {
@@ -114,7 +121,7 @@ export class HistoryViewer {
   this.eventAggregator.subscribe("activeEditorChange", activeEditorData =>{
 
     let historyEditorId = null;
-
+    let aceSessionMode = "ace/mode/javascript";
     if (activeEditorData.activeEditor.aceJsEditorDiv) {
       historyEditorId = "aceJsEditorDivHistory";
       this.activeFirebaseContentEditorTag = "js";
@@ -122,15 +129,20 @@ export class HistoryViewer {
       if (activeEditorData.activeEditor.aceHtmlEditorDiv) {
         historyEditorId = "aceHtmlEditorDivHistory";
         this.activeFirebaseContentEditorTag = "html";
+        aceSessionMode = "ace/mode/html";
       } else {// css
         historyEditorId = "cssEditorDivHistory";
         this.activeFirebaseContentEditorTag = "css";
+        aceSessionMode = "ace/mode/css";
       }
     }
     if (!this.historyEditors[historyEditorId]) {
       this.historyEditors[historyEditorId] = ace.edit(historyEditorId);
+      activeEditorData.activeEditor.aceUtils.configureEditor(this.historyEditors[historyEditorId]);
+      let session = this.historyEditors[historyEditorId].getSession();
+      activeEditorData.activeEditor.aceUtils.configureSession(session, aceSessionMode);
       this.historyEditors[historyEditorId].setValue("");
-      // this.historyEditors[historyEditorId].setReadOnly(true);
+      this.historyEditors[historyEditorId].setReadOnly(true);
     }
 
     this.activeHistoryEditor = this.historyEditors[historyEditorId];
@@ -162,6 +174,7 @@ export class HistoryViewer {
   this.sliderMaxValue = historyViewerFireData.sliderMaxValue;
   this.subjectFirebase = historyViewerFireData.subjectFirebase;
   this.historyFirebase = historyViewerFireData.historyFirebase;
+   this.historyFirepad = historyViewerFireData.historyFirepad;
    // console.log("SL", historyViewerFireData);
 
    let activeEditorSelector = this.activeHistoryEditorSelector.replace("History", "");

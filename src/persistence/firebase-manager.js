@@ -149,14 +149,13 @@ export class FirebaseManager {
     };
   }
 
-  slideHistoryViewerFirepad(subjectFirebase, historyFirebase, sliderValue, activeHistoryEditor) {
+  slideHistoryViewerFirepad(subjectFirebase, historyFirebase, sliderValue, activeHistoryEditor, context) {
     // Remove the history from the history firebase
     // historyFirebase.child('history').setValue(null);
     // Copy history from the firebase to the history firebase to display values till a specific point in history.
     subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snapshot) {
       historyFirebase.child('history').set(snapshot.val());
-      activeHistoryEditor.setValue("");
-      Firepad.fromACE(historyFirebase, activeHistoryEditor, {defaultText: ""});
+      context.historyFirepad = Firepad.fromACE(historyFirebase, activeHistoryEditor, {defaultText: ""});
     });
   }
 
