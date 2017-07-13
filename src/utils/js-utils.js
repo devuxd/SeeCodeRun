@@ -45,9 +45,13 @@ export class JsUtils{
 			return obj + "";
 		}
 		// Support: Android <=2.3 only (functionish RegExp)
-		return typeof obj === "object" || typeof obj === "function" ?
+    let type = typeof obj === "object" || typeof obj === "function" ?
     JsUtils.class2type[toString.call(obj)] || "object" :
 			typeof obj;
+    // if (type === "object" && obj.constructor && obj.constructor.name ){
+    //   type = type + ": " + obj.constructor.name;
+    // }
+    return type;
 	}
 
   static isFunction(obj) {

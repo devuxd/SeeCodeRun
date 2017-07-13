@@ -1,7 +1,9 @@
 /*global d3*/
 import {Vertex} from "./vertex.js";
+import {AceUtils} from "../utils/ace-utils";
 
 export class CallGraph {
+  focusedNode = null;
   currentDirection = "down"; // or "right"
   directionManager = {
     right: {
@@ -39,6 +41,9 @@ export class CallGraph {
       renderFx: this.renderFx,
       errorMessage: null
     };
+    this.aceUtils = new AceUtils();
+    this.focusMarker = this.aceUtils.makeAceMarkerManager(null, this.aceUtils.getAvailableMarkers().callGraphFocusMarker, "line");
+    this.hoverMarker = this.aceUtils.makeAceMarkerManager(null, this.aceUtils.getAvailableMarkers().callGraphHoverMarker);
 
   }
 
@@ -56,7 +61,7 @@ export class CallGraph {
       let funcs = [];
       //
       funcs = self.findFuncs(trace);
-
+//random comment: I see
       for (let i = 0; i < funcs.length; i++)
         map[funcs[i].name] = funcs[i]; //try with adjacency list
 
@@ -68,14 +73,7 @@ export class CallGraph {
         if (map[key].parents.length === 0)
           rootsList.push(map[key]);
       }
-      //
-      // console.log( "funcs" ) ;
-      // console.log( funcs ) ;
-      // console.log( "map" ) ;
-      // console.log( map ) ;
 
-      // console.log( map[ "alpha()" ].children[ 1 ] === map[ "alpha()" ].children[ 2 ] ) ;
-      //turns matrix into tree
 
       let masterHead = new Vertex("Program", "Program");
 
@@ -87,10 +85,11 @@ export class CallGraph {
       return rootsList[0];
     };
 
-    this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions) {
+    this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions, eventAggregator) {
       if (!formattedTrace) {
         return;
       }
+      console.log(formattedTrace);
 
       if (query !== null && (query == undefined || query.trim() === "")) {
         query = null;
@@ -129,28 +128,20 @@ export class CallGraph {
       }
 
       d3.select(divElement).html("");
-
-      // let margin = {
-      //     top: 20,
-      //     right: 20,
-      //     bottom: 30,
-      //     left: 40
-      //   },
-      //   width = dimensions.width - 4,
-      //   height = dimensions.height - 4;
-
       let rectWidth = 100,
-        rectHeight = 40;
+        rectHeight = 30;
 
       let tree = d3.tree()
-        .nodeSize([160, 200]);
+        .nodeSize([200, 100]).separation(function separation(a, b) {
+          // console.log(a, a.height, a.data, a.boxWidth, a.data.name);
+          return a.parent == b.parent ? .2 + (a.data.name ? getBoxWidth(a.data.name) / 200 + getBoxWidth(b.data.name) / 200 : .8) : 2;
+        });
 
       let diagonal = self.directionManager[self.currentDirection].linkRenderer;
 
       let nodeRenderer = self.directionManager[self.currentDirection].nodeRenderer;
 
       d3.select(divElement).select("svg").remove();
-      //todo: look for #seePanelBody and match the height of the svg. Be aware of resizing events
       let svg = d3.select(divElement).append("svg")
         .classed("svg-container", true)
         .style("width", "100%")
@@ -159,8 +150,8 @@ export class CallGraph {
         .call(d3.zoom()
           .on("zoom", function () {
             svg.attr("transform", function () {
-              let devent = d3.event.transform;
-              return "translate(" + devent.x + ", " + devent.y + ") scale(" + devent.k + ")";
+              let d3Event = d3.event.transform;
+              return "translate(" + d3Event.x + ", " + d3Event.y + ") scale(" + d3Event.k + ")";
             });
           }))
         .append("g");
@@ -225,11 +216,35 @@ export class CallGraph {
       }
 
       function highlight(d) {
-        aceUtils.updateAceMarkers(aceMarkerManager, d.data.ranges);
+        unhighlight();
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: d.data.ranges});
       }
 
-      function unhighlight(d) {
-        aceUtils.updateAceMarkers(aceMarkerManager, []);
+      function unhighlight() {
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.hoverMarker, elements: []});
+      }
+
+      function getBoxWidth(text) {
+        return (text.length || 1) * 6 + 6;
+      }
+
+      function focus(d) {
+        if (d.data.isFocused === true) {
+          unfocus();
+          d.data.isFocused = false;
+          return;
+        }
+        if (self.focusedNode) {
+          unfocus();
+          self.focusedNode.data.isFocused = false;
+        }
+        self.focusedNode = d;
+        d.data.isFocused = true;
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: d.data.ranges});
+      }
+
+      function unfocus() {
+        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: []});
       }
 
       // console.log('nodes')
@@ -289,12 +304,25 @@ export class CallGraph {
       });
 
       filteredNodes.append("rect")
-        .attr("width", rectWidth)
+        .attr("width", function (d) {
+          d.boxWidth = (d.data.name.length || 1) * 6 + 6;
+          return d.boxWidth;
+        })
         .attr("height", rectHeight)
-        .attr("transform", "translate(" + (-1 * rectWidth / 2) + ",0)")
+        .attr("transform", function (d) {
+            return "translate(" + (-1 * d.boxWidth / 2) + ", 0)"
+          }
+        )
         .style("fill", "#fff")
-        .style("stroke", "steelblue")
-        .style("stroke-width", "1.5px");
+        .style("stroke", "green")
+        .style("stroke-width", "1px");
+
+      filteredNodes.append("text")
+        .attr("dy", 18)
+        .attr("text-anchor", "middle")
+        .text(function (d) {
+          return d.data.name;
+        });
 
       let regNodes = node.filter(function (d, i) {
         if (queryType === "functions") {
@@ -311,16 +339,19 @@ export class CallGraph {
       filteredNodes.on("mouseover", highlight)
         .on("mouseout", unhighlight);
 
+      //  regNodes.on("mousedown", showHoverText)
+      //   .on("mouseup", hideHoverText);
+      //
+      // regNodes.on("mousedown", addClass)
+
+
+      filteredNodes.on("mousedown", focus)
+        .on("mouseup", unfocus);
+
       regNodes.append("circle")
         .attr("r", 6)
         .attr("transform", "translate(0," + rectHeight / 2 + ")");
 
-      filteredNodes.append("text")
-        .attr("dy", 22.5)
-        .attr("text-anchor", "middle")
-        .text(function (d) {
-          return d.data.name;
-        });
     }
   }
 
@@ -428,7 +459,6 @@ export class CallGraph {
             }
 
           }
-          //
           //	if( index1 !== index2 && funcs[index1].type === "CallExpression"
           //		&& funcs[index1].text.indexOf( funcs[index2].name.replace( /[()""]/g , "" ) ) )
           //	{

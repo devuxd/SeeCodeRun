@@ -22,6 +22,8 @@ import {ExpressionSelection} from '../expressionSelection/expression-selection';
 import {TraceSearch} from '../traceSearch/trace-search';
 import {TraceSearchHistory} from '../traceSearch/trace-search-history';
 
+import {GraphicalAnalyzer} from '../visualAnalysis/graphical-analyzer';
+
 import {customElement} from 'aurelia-framework';
 
 import $ from 'jquery';
@@ -56,6 +58,7 @@ export class Pastebin {
 
     this.traceSearch = new TraceSearch(eventAggregator, traceModel, aceUtils);
     this.traceSearchHistory = new TraceSearchHistory(eventAggregator, firebaseManager);
+    this.graphicalAnalyzer =  new GraphicalAnalyzer(eventAggregator);
   }
 
   activate(params) {
@@ -63,7 +66,8 @@ export class Pastebin {
     if (params.id) {
       let copyAndId = params.id.split(":");
       if (copyAndId[0] === "") {
-        pastebinId = this.getPastebinCopy(copyAndId[1]);
+        let parentPastebinId = copyAndId[1];
+        pastebinId = this.firebaseManager.copyPastebinById(parentPastebinId);
         let windowLocation = window.location.toString().split("#")[0];
         window.history.replaceState({}, null, windowLocation + "#" + pastebinId);
       } else {
@@ -74,16 +78,6 @@ export class Pastebin {
     if (!pastebinId) {
       window.history.replaceState({}, null, window.location + "#" + this.firebaseManager.pastebinId);
     }
-  }
-
-  getPastebinCopy(parentPastebinId) {
-    let firebaseManager = this.firebaseManager;
-    let pastebinCopyId = firebaseManager.makeNewPastebinFirebaseReferenceId();
-
-    let oldRef = firebaseManager.makePastebinFirebaseReference(parentPastebinId);
-    let newRef = firebaseManager.makePastebinFirebaseReference(pastebinCopyId);
-    firebaseManager.makePastebinFirebaseReferenceCopy(oldRef, newRef, parentPastebinId);
-    return pastebinCopyId;
   }
 
   update() {
@@ -127,6 +121,8 @@ export class Pastebin {
     this.traceSearch.attached();
     this.traceSearchHistory.attached();
 
+    this.graphicalAnalyzer.attached();
+
     this.mainSplitterOptions = {
       sizes: [60, 40],
       gutterSize: 3,
@@ -156,6 +152,9 @@ export class Pastebin {
     let $jsEditorCode = $("#js-editor-code");
 
     $jsEditorCode.resizable(this.$jsEditorCodeOptions);
+    let $codeSection = $("#code-section");
+    let jsEditorWidth = $codeSection.width() * .8;
+    $jsEditorCode.width(jsEditorWidth);
 
     let $panelHeadingTitles = $('.panel-heading-title');
     $panelHeadingTitles.click();

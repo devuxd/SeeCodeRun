@@ -172,3 +172,21 @@
     background-color: #f8cbcb;
     border: none;
 }
+
+.ace-chrome .ace_marker-layer .call-graph-focus-marker {
+  position: absolute;
+  background-color: rgba(166, 243, 166, 0.015);
+  border: 1px #a6f3a6;
+  border-style: none none none solid;
+  margin-left: -4px;
+
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+}
+
+.ace-chrome .ace_marker-layer .call-graph-hover-marker {
+  position: absolute;
+  background-color: #a6f3a6;
+  border: none;
+}

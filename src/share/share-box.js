@@ -10,6 +10,22 @@ export class ShareBox {
   }
 
   attached() {
+    let firebaseManager = this.firebaseManager;
+    let shareEventsFirebase = firebaseManager.makeShareEventsFirebase();
+
+    firebaseManager.makeShareChildrenFirebase().limitToLast(1).on('child_added', function child_added(snapshot) {
+      let data = snapshot.val();
+      if (!data) {
+        return;
+      }
+
+      $("#shareButton label")
+        .css("display", "none")
+        .fadeOut(50)
+        .fadeIn(450);
+      shareEventsFirebase.push({event: 'shareLinkUsed', timestamp: firebaseManager.SERVER_TIMESTAMP});
+    });
+
     this.shareURL = 'https://seecode.run/#:' + this.firebaseManager.pastebinId;
     let copyTarget = document.getElementById("copyTarget");
     copyTarget.value = this.shareURL;
@@ -30,6 +46,8 @@ export class ShareBox {
         self.eventAggregator.publish("shareBoxShown");
         $("#shareButton span").addClass("navigation-bar-active-item");
         $("#shareButton label").addClass("navigation-bar-active-item");
+
+        shareEventsFirebase.push({event: 'shareLinkShown', timestamp: firebaseManager.SERVER_TIMESTAMP});
       }
       if (!$("#shareBox").is(":animated")) {
         $("#shareBox").toggle("slide", {direction: "right"}, self.slideAnimationDuration);
@@ -57,11 +75,13 @@ export class ShareBox {
     $copyButton.click(function copyButtonClick() {
       let copyTarget = document.getElementById("copyTarget");
       self.copyToClipboard(copyTarget);
+      shareEventsFirebase.push({event: 'shareLinkCopied', timestamp: firebaseManager.SERVER_TIMESTAMP});
     });
 
     let $goToShareButton = $("#goToShareButton");
     $goToShareButton.click(function goToSharedPastebin() {
       window.open(self.shareURL, '_blank');
+      shareEventsFirebase.push({event: 'shareLinkClicked', timestamp: firebaseManager.SERVER_TIMESTAMP});
     });
   }
 

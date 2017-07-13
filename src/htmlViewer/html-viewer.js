@@ -4,6 +4,7 @@ import {ExternalResourceLoader}  from '../utils/external-resource-loader';
 import {HtmlParser} from '../utils/html-parser';
 
 export class HtmlViewer {
+  AUTOLOG_TRACER_DEBUG_MODE = false;
   errors = "";
   errorObjs = [];
   html = "";
@@ -11,7 +12,7 @@ export class HtmlViewer {
   js = "";
   webAppViewerId = 'webAppViewer';
   iFrameSourceUrl = "client/output.html";
-
+  //fix https://seecode.run/#-KhE2Ki_J4fttZQ_J3I2 AKA ace editor not working
   constructor(eventAggregator, traceModel) {
     this.eventAggregator = eventAggregator;
     this.traceService = new TraceService(eventAggregator, traceModel);
@@ -184,6 +185,9 @@ export class HtmlViewer {
     let ea = eventAggregator;
     let contentWindow = this.getContentWindow();
     let self = this;
+    if (this.AUTOLOG_TRACER_DEBUG_MODE) {
+      return;
+    }
     contentWindow.console.log = function hmtlViewerConsoleLogAndError() {
       // if(arguments[0] === 'CLIENT_OUTPUT'){
       //   self.clientDocument = arguments[1];
