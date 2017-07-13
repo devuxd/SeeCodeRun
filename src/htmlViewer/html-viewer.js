@@ -128,22 +128,7 @@ export class HtmlViewer {
 
     let doc = this.getContentDocument();
     let scriptElement = this.externalResourceLoader.createScriptElement(this.js, doc);
-    // console.log(this.js);
-    let previous = null;
-    let previousBG = null;
-    doc.addEventListener("mousemove", function (event) {
-      if (previous && previous !== event.target) {
-        previous.style.backgroundColor = previousBG;
-      }
 
-      if (previous !== event.target) {
-        previous = event.target;
-        previousBG = event.target.style.backgroundColor;
-        event.target.style.backgroundColor = "#E5F1FB";
-        //publish event here
-      }
-
-    });
     self.result = {error: ""};
 
     try {
