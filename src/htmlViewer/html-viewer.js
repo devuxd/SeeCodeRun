@@ -128,7 +128,7 @@ export class HtmlViewer {
 
     let doc = this.getContentDocument();
     let scriptElement = this.externalResourceLoader.createScriptElement(this.js, doc);
-    // console.log(this.js);
+
     let previous = null;
     let previousBG = null;
     doc.addEventListener("mousemove", function (event) {
@@ -144,6 +144,15 @@ export class HtmlViewer {
       }
 
     });
+
+    doc.addEventListener("mouseout", function (event) {
+      if (previous) {
+        previous.style.backgroundColor = previousBG;
+      }
+      previous = null;
+      previousBG = null;
+    });
+
     self.result = {error: ""};
 
     try {
