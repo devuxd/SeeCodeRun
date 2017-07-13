@@ -222,12 +222,11 @@ export class ObjectViewer {
           }
         }
 
-        html += key + ": " + value;
-        // if (html.length> 1000){
-        // //   console.log(key, value);
-        // html +="</li>";
-        // break;
-        // }
+        if (value && value.length > 300) {
+          html += key + ":" + value.substr(0, 300);
+        } else {
+          html += key + ": " + value;
+        }
         html += "</li>";
       }
       result = this.wrapInULTag(html, isCollapsable ? "class='treeObj collapsibleList'" : "");
@@ -249,7 +248,12 @@ export class ObjectViewer {
     else {
       content = this.generateJSONTreeViewHTMLString();
     }
-    return {objectType: this.objectType, classType: this.classType, nodeType: this.nodeType, content: content};
+    return {
+      objectType: this.objectType,
+      classType: this.classType,
+      nodeType: this.nodeType,
+      content: "<div id='treeViewContainer'>" + content + "</div>"
+    };
   }
 
   generateLineViewContent() {

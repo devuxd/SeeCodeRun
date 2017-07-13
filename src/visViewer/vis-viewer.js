@@ -26,10 +26,32 @@ export class VisViewer {
 
   attached() {
     this.aceEditor = this.aureliaEditor.editor;
+    let self = this;
+    $(this.seePanelBodySelector).on('show.bs.collapse', function (e) {
+      self.adjustHeight($("#seePanelBody"));
+    });
+    $(this.seePanelBodySelector).on('shown.bs.collapse', function (e) {
+      self.adjustHeight($("#seePanelBody"));
+      self.eventAggregator.publish("seePanelBodyResize", $("#seePanelBody"));
+    });
 
+    $(this.seePanelBodySelector).on('hidden.bs.collapse', function (e) {
+      $("#traceSearchPanelHeading").click();
+    });
+
+    this.eventAggregator.subscribe("rightSplitterResize", () => {
+      if ($("#seePanelBody").is(":visible")) {
+        self.adjustHeight($("#seePanelBody"));
+      }
+    });
     for (let visualization of this.visualizations) {
       visualization.attached();
     }
+  }
+
+  adjustHeight($container) {
+    let pendingHorizontalPixels = 15 + 25;
+    $container.height($("#console-window").offset().top - $(this.seePanelHeadingSelector).offset().top - $(this.seePanelHeadingSelector).parent().height() - $("#traceSearchPanelHeading").parent().height() - pendingHorizontalPixels);
   }
 
   subscribe() {

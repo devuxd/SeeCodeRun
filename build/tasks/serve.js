@@ -44,10 +44,14 @@ gulp.task('serve', ['build'], function(done) {
     // false,
     server: {
       baseDir: ['.'],
+      index: "index.html",
       middleware: function(req, res, next) {
         res.setHeader('Access-Control-Allow-Origin', '*');
         next();
       }
+    },
+    snippetOptions: {
+      blacklist: ["*client/output.html"]
     }
   }, done);
 });

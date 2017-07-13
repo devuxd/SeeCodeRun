@@ -80,18 +80,36 @@ export class AceUtils {
       disableMarker: "disable-marker",
       transparentMarker: "transparent-marker",
       branchGlobalMarker: "branch-global-marker",
-      branchLocalMarker: "branch-local-marker"
+      branchLocalMarker: "branch-local-marker",
+      gitTextAddedMarker: "git-text-added-marker",
+      callGraphFocusMarker: "call-graph-focus-marker",
+      callGraphHoverMarker: "call-graph-hover-marker"
     };
   }
 
-  makeAceMarkerManager(aceEditor) {
+  makeAceMarkerManager(aceEditor, markerRenderer = this.getAvailableMarkers().defaultMarker, markerType = "text", inFront = false) {
     return {
       aceEditor: aceEditor,
       markers: [],
-      markerRenderer: this.getAvailableMarkers().defaultMarker,
-      markerType: "text",
-      inFront: false
+      markerRenderer: markerRenderer,
+      markerType: markerType,
+      inFront: inFront
     };
+  }
+
+  updateAceMarkerManager(aceMarkerManager, markerRenderer, markerType, inFront) {
+    if (markerRenderer) {
+      aceMarkerManager.markerRenderer = markerRenderer;
+    }
+
+    if (markerType) {
+      aceMarkerManager.markerType = markerType;
+    }
+
+    if (inFront) {
+      aceMarkerManager.inFront = inFront;
+    }
+
   }
 
   updateAceMarkers(aceMarkerManager, elementsWithRangeProperty) {
@@ -260,8 +278,8 @@ export class AceUtils {
 
     eventAggregator.subscribe("expressionHovered", match => {
       if (match) {
-        let pixelPosition = this.calculateRangeCoordinates(editor, match.range);
-        renderer.onExpressionHovered(match, pixelPosition);
+        let rangeCoordinates = this.calculateRangeCoordinates(editor, match.range);
+        renderer.onExpressionHovered(match, rangeCoordinates.pixelPosition, rangeCoordinates.dimensions);
       } else {
         renderer.onExpressionHovered();
       }
@@ -270,18 +288,29 @@ export class AceUtils {
   }
 
   calculateRangeCoordinates(editor, range) {
-    let midColumn = range.start.column;
-    if (range.start.row === range.end.row) {
-      midColumn = Math.ceil(( midColumn + range.end.column) / 2);
-    }
-    let midColumnPixelPosition = editor.renderer.textToScreenCoordinates({row: range.end.row, column: midColumn});
 
-    let bottomRightPosition = {row: range.end.row, column: range.end.column};
-    let pixelPosition = editor.renderer.textToScreenCoordinates(bottomRightPosition);
-    pixelPosition.pageX = midColumnPixelPosition.pageX < pixelPosition.pageX ? midColumnPixelPosition.pageX : pixelPosition.pageX;
-    pixelPosition.pageY += editor.renderer.lineHeight;
-    return pixelPosition;
+    let startPixelPosition = editor.renderer.textToScreenCoordinates(range.start);
+    let endPixelPosition = editor.renderer.textToScreenCoordinates(range.end);
+    let width = endPixelPosition.pageX - startPixelPosition.pageX;
+    let height = endPixelPosition.pageY - startPixelPosition.pageY
+    let pixelPosition = startPixelPosition;
+    height += editor.renderer.lineHeight;
+    return {pixelPosition: pixelPosition, dimensions: {width: width, height: height}};
   }
+
+  // calculateRangeCoordinates(editor, range) {
+  //   let midColumn = range.start.column;
+  //   if (range.start.row === range.end.row) {
+  //     midColumn = Math.ceil(( midColumn + range.end.column) / 2);
+  //   }
+  //   let midColumnPixelPosition = editor.renderer.textToScreenCoordinates({row: range.end.row, column: midColumn});
+  //
+  //   let bottomRightPosition = {row: range.end.row, column: range.end.column};
+  //   let pixelPosition = editor.renderer.textToScreenCoordinates(bottomRightPosition);
+  //   pixelPosition.pageX = midColumnPixelPosition.pageX < pixelPosition.pageX ? midColumnPixelPosition.pageX : pixelPosition.pageX;
+  //   pixelPosition.pageY += editor.renderer.lineHeight;
+  //   return pixelPosition;
+  // }
 
   updateTooltip(div, position, content) {
     if (!div) {
@@ -343,8 +372,10 @@ export class AceUtils {
     let traceGutterRenderer = {
       getWidth: function (session, lastLineNumber, config) {
         if (traceGutterData.maxCount > 0) {
+          let leftGutterFontSize = $(".navigator-cell").css('font-size');
+          let leftGutterCharacterWidth = parseFloat(leftGutterFontSize) * 0.5;
           let format = "/-";
-          return navigationElementWidth + (format.length + traceGutterData.maxCount.toString().length * 2 + lastLineNumber.toString().length ) * config.characterWidth;
+          return navigationElementWidth + (format.length + traceGutterData.maxCount.toString().length * 2) * leftGutterCharacterWidth + lastLineNumber.toString().length * config.characterWidth;
         }
         return lastLineNumber.toString().length * config.characterWidth;
       },

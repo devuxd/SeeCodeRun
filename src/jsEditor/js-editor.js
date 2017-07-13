@@ -197,6 +197,12 @@ export class JsEditor {
       this.editor.gotoLine(lineData.lineNumber);
     });
 
+    ea.subscribe("jsEditorHighlight", highlightData => {
+      let aceMarkerManager = highlightData.aceMarkerManager;
+      aceMarkerManager.aceEditor = this.editor;
+      let elements = highlightData.elements;
+      this.aceUtils.updateAceMarkers(aceMarkerManager, elements);
+    });
   }
 
 }

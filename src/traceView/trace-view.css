@@ -81,8 +81,6 @@
   background-color: orange;
 }
 
-
-
 #gutterTooltip {
    position: absolute;
    background-color: #FFF;
@@ -134,8 +132,6 @@
     overflow: auto;
     max-width: 53%;
     max-height: 70%;
-
-
 }
 
 #editorTooltipContent .custom-popover-title{

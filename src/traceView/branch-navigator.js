@@ -73,7 +73,7 @@ export class BranchNavigator {
     );
 
     eventAggregator.subscribe(
-      "jsEditorChangeError", payload => {
+      "jsEditorChangeError", () => {
         this.$hideTooltip();
       }
     );
@@ -169,7 +169,14 @@ export class BranchNavigator {
       self.$hideTooltip();
     };
 
-    self.update$GutterTooltip = function update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight) {
+    self.update$GutterTooltip = function ($gutterTooltip, position, rowData, row, lineHeight, context) {
+      if (context === "visualization") {
+        //todo: variant of update$GutterTooltip function that works for visualizations. update$GutterTooltip must set context parameter to "visualization" to differentiate the caller
+      } else {
+        update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight);
+      }
+    };
+    function update$GutterTooltip($gutterTooltip, position, rowData, row, lineHeight) {
       if (!$gutterTooltip) {
         return;
       }

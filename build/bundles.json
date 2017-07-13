@@ -1,6 +1,5 @@
 {
   "bundles": {
-
     "dist/app-build": {
       "includes": [
         "text",

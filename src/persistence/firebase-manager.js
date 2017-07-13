@@ -6,6 +6,7 @@ export class FirebaseManager {
   baseURL = new AppConfiguration().getConfiguration().firebaseURL;
   pastebinId = undefined;
   SERVER_TIMESTAMP = Firebase.ServerValue.TIMESTAMP;
+  isCopy = false;
 
   activate(pastebinId) {
     if (pastebinId) {
@@ -15,20 +16,79 @@ export class FirebaseManager {
     }
   }
 
-  makeNewPastebinFirebaseReferenceId() {
-    return new Firebase(this.baseURL).push().key();
+  makeNewPastebinFirebaseReferenceId(baseURL = this.baseURL) {
+    let defaultPastebinScheme = {
+      creationTimestamp: this.SERVER_TIMESTAMP,
+      content: {
+        //js, css and html handled by Firepad
+        search: 0,
+        chat: 0,
+        share: {
+          currentEvent: 0,
+          parentPastebinId: 0,
+          children: 0
+        }
+      },
+      users: 0
+    };
+    return new Firebase(baseURL).push(defaultPastebinScheme).key();
   }
 
   makePastebinFirebaseReference(pastebinId = this.pastebinId) {
     return new Firebase(`${this.baseURL}/${pastebinId}/`);
   }
 
-  makeTraceSearchHistoryFirebase() {
-    return new Firebase(`${this.baseURL}/${this.pastebinId}/content/search`);
+  makeTraceSearchHistoryFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/content/search`);
   }
 
-  makeChatFirebase() {
-    return new Firebase(`${this.baseURL}/${this.pastebinId}/content/chat`);
+  makeChatFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/content/chat`);
+  }
+
+  makeShareEventsFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/content/share/events`);
+  }
+
+  makeShareChildrenFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/content/share/children`);
+  }
+
+  /**
+   * Copies a pastebin content to a new one. It associates them as parent and child, once the copy is created. In Firebase, reference "parentPastebinId/content/share/children" will get childPastebinId pushed and "childPastebinId/share/parent" will be set to parentPastebinId.
+   * @param {String} parentPastebinId - the pastebin id to be copied.
+   * @param {Boolean} copyChat - the pastebin's should be copied or not. It will not copy the chat content by default(false).
+   * @return {String} childPastebinId, the pastebin id of the newly created copy.
+   */
+  copyPastebinById(parentPastebinId, copyChat = false) {
+    this.isCopy = true;
+    let firebaseManager = this;
+    let childPastebinId = firebaseManager.makeNewPastebinFirebaseReferenceId();
+
+    let parentShareReferenceChildren = firebaseManager.makeShareChildrenFirebase(parentPastebinId);
+    parentShareReferenceChildren.push({childPastebinId: childPastebinId, timestamp: firebaseManager.SERVER_TIMESTAMP});
+
+    let sourceReference = firebaseManager.makePastebinFirebaseReference(parentPastebinId);
+    let destinationReference = firebaseManager.makePastebinFirebaseReference(childPastebinId);
+
+    let dataChanger = {
+      changeData: (data) => {
+        if (data.content) {
+          data.creationTimestamp = this.SERVER_TIMESTAMP;
+          data.content.chat = {};
+          data.content.share = {
+            currentEvent: 0,
+            parentPastebinId: parentPastebinId,
+            children: 0
+          };
+        }
+        return data;
+      }
+    };
+
+    firebaseManager.makeFirebaseReferenceCopy(sourceReference, destinationReference, dataChanger);
+
+    return childPastebinId;
   }
 
   makeJsEditorFirepad(jsEditor) {
@@ -49,6 +109,10 @@ export class FirebaseManager {
   makeFirepad(subject, editor, defaultText) {
     let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
     let firebase = new Firebase(subjectURL);
+
+    if (this.isCopy) {
+      defaultText = null;
+    }
 
     return Firepad.fromACE(
       firebase,
@@ -94,11 +158,11 @@ export class FirebaseManager {
     });
   }
 
-  makePastebinFirebaseReferenceCopy(source, destination, parentPastebinId) {
+  makeFirebaseReferenceCopy(source, destination, dataChanger = this, thenCallback) {
     source.once("value", function (snapshot) {
       let data = snapshot.val();
       if (data) {
-        data.parentPastebinId = parentPastebinId;
+        data = dataChanger.changeData(data);
       }
       destination.set(data, function (error) {
         if (error && typeof(console) !== 'undefined' && console.error) {
@@ -106,6 +170,15 @@ export class FirebaseManager {
         }
       });
     });
+  }
+
+  /**
+   * Default method for DataChanger Interface. In this case, it does not change anything.
+   * @param {Object} data - the JSON object to be modified.
+   * @return {Object}, the JSON object result of the modification.
+   */
+  changeData(data) {
+    return data;
   }
 
 }

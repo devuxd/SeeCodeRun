@@ -4,18 +4,20 @@ import {ExternalResourceLoader}  from '../utils/external-resource-loader';
 import {HtmlParser} from '../utils/html-parser';
 
 export class HtmlViewer {
+  AUTOLOG_TRACER_DEBUG_MODE = false;
   errors = "";
   errorObjs = [];
   html = "";
   css = "";
   js = "";
-
+  webAppViewerId = 'webAppViewer';
+  iFrameSourceUrl = "client/output.html";
+  //fix https://seecode.run/#-KhE2Ki_J4fttZQ_J3I2 AKA ace editor not working
   constructor(eventAggregator, traceModel) {
     this.eventAggregator = eventAggregator;
     this.traceService = new TraceService(eventAggregator, traceModel);
     this.htmlParser = new HtmlParser();
     this.externalResourceLoader = new ExternalResourceLoader();
-    this.div = 'htmlView';
     this.subscribe();
   }
 
@@ -34,13 +36,19 @@ export class HtmlViewer {
   }
 
   attached() {
-    this.addConsoleLogging(this.eventAggregator);
+    this.webAppViewer = document.getElementById(this.webAppViewerId);
   }
 
   buildOutput() {
     if (this.js && this.css && this.html) {
       this.eventAggregator.publish("beforeOutputBuild");
-      this.addCss();
+      this.webAppViewer = document.getElementById(this.webAppViewerId);
+      let self = this;
+      this.webAppViewer.onload = function () {
+        self.addConsoleLogging(self.eventAggregator);
+        self.addCss();
+      };
+      this.webAppViewer.src = `${this.iFrameSourceUrl}?cache_cancel=${Math.random() * 100000}`;
     }
   }
 
@@ -67,12 +75,13 @@ export class HtmlViewer {
       } else {
         this.js = editorText;
       }
-
+      // console.log("Instrumentation", this.js);
       this.buildOutput();
     });
 
     ea.subscribe("headJsScriptsLoaded", scriptsLoadedData => {
       this.handleResponse("head", scriptsLoadedData.response);
+
       this.addHtml();
     });
 
@@ -105,14 +114,11 @@ export class HtmlViewer {
 
     let doc = this.getContentDocument();
     let scriptElement = this.externalResourceLoader.createScriptElement(this.js, doc);
-
     self.result = {error: ""};
 
     try {
       ea.publish(traceService.executionEvents.running.event);
-
-      doc.head.appendChild(scriptElement);
-      // doc.body.textContent =this.js;
+      doc.body.appendChild(scriptElement);
       let traceDataContainerElement = doc.getElementById(traceDataContainer);
       self.result = JSON.parse(traceDataContainerElement.textContent);
       traceDataContainerElement.addEventListener("click", function getTraceDataClick() {
@@ -159,7 +165,6 @@ export class HtmlViewer {
     this.htmlParser.setAttributes($(doc.head), newHeadAttributes);
     doc.head.appendChild(styleElement);
     this.externalResourceLoader.loadAndAttachJsScripts(doc.head, doc, this.eventAggregator, "headJsScriptsLoaded");
-
   }
 
   addHtml() {
@@ -173,15 +178,23 @@ export class HtmlViewer {
   }
 
   getContentDocument() {
-    return document.getElementById(this.div)
-      .contentDocument;
+    return document.getElementById(this.webAppViewerId).contentDocument || document.getElementById(this.webAppViewerId).contentWindow.document;
   }
 
   addConsoleLogging(eventAggregator) {
     let ea = eventAggregator;
     let contentWindow = this.getContentWindow();
-
+    let self = this;
+    if (this.AUTOLOG_TRACER_DEBUG_MODE) {
+      return;
+    }
     contentWindow.console.log = function hmtlViewerConsoleLogAndError() {
+      // if(arguments[0] === 'CLIENT_OUTPUT'){
+      //   self.clientDocument = arguments[1];
+      //   arguments[1].getElementById("xx").click();
+      //   console.log("got it", arguments[1].getElementById("xx"));
+      //
+      // }
       ea.publish('htmlViewerConsoleLog', {
         contentWindow: contentWindow,
         this: this,
@@ -191,7 +204,6 @@ export class HtmlViewer {
   }
 
   getContentWindow() {
-    return document.getElementById(this.div)
-      .contentWindow;
+    return document.getElementById(this.webAppViewerId).contentWindow;
   }
 }
