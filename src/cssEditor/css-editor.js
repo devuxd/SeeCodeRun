@@ -33,6 +33,26 @@ export class CssEditor {
     let ea = this.eventAggregator;
 
     let onEditorChanged = function onEditorChanged(e) {
+
+      let editorLayout = self.aceUtils.getLayout(editor);
+      if (!$(".ace_autocomplete").is(":visible")) {
+        ea.publish('autoCompleteHidden', editorLayout, "cssEditor");
+      }
+      clearTimeout(self.searcherTimeout);
+      self.searcherTimeout = setTimeout(function () {
+        if ($(".ace_autocomplete").is(":visible")) {
+          let aceAutoCompletePosition = {};
+          aceAutoCompletePosition.top = $(".ace_autocomplete").offset().top - 30;
+          aceAutoCompletePosition.left = $(".ace_autocomplete").offset().left + 5 + $(".ace_autocomplete").width();
+
+          ea.publish('autoCompleteShown', aceAutoCompletePosition, "cssEditor");
+        }
+      }, 2300); // same as editor timeout
+
+      ea.publish('jsEditorPreChange',
+        editorLayout
+      );
+
       if (self.isFirstLoad) {
         self.isFirstLoad = false;
         ea.publish('onCssEditorChanged', editor.getValue());
@@ -44,6 +64,29 @@ export class CssEditor {
       }
     };
     session.on('change', onEditorChanged);
+
+    // Copy-n-Paste tracking
+    editor.on("copy", function (text) {
+      ea.publish('editorCopyAction', text, "cssEditor");
+    });
+    editor.on("paste", function (event) {
+      ea.publish('editorPasteAction', event, "cssEditor");
+    });
+
+    //Searcher Binding
+    editor.commands.addCommand({
+      name: "Toggle Searcher's Quick Search",
+      bindKey: {win: "Ctrl-q", mac: "Command-q"},
+      exec: function (thisEditor) {
+        let cursorPosition = thisEditor.getCursorPosition();
+        if (!cursorPosition) {
+          return;
+        }
+        let pixelPosition = thisEditor.renderer.textToScreenCoordinates(cursorPosition);
+        let cssPosition = {top: pixelPosition.pageY - 40, left: pixelPosition.pageX, takeFocus: true};
+        ea.publish('toggleSearcher', cssPosition, "cssEditor");
+      }
+    });
   }
 
   subscribe() {

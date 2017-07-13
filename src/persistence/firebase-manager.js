@@ -54,6 +54,23 @@ export class FirebaseManager {
     return new Firebase(`${this.baseURL}/${pastebinId}/content/share/children`);
   }
 
+  makeMetagsURLFirebaseVote(metagURLKey, pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls/${metagURLKey}`);
+  }
+
+
+  makePastebinMetagsURLsFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls`);
+  }
+
+  makeGlobalMetagsURLsFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/metags/urls`);
+  }
+
+  makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey) {
+    return new Firebase(`${this.baseURL}/metags/urls/${metagGlobalURLKey}`);
+  }
+
   /**
    * Copies a pastebin content to a new one. It associates them as parent and child, once the copy is created. In Firebase, reference "parentPastebinId/content/share/children" will get childPastebinId pushed and "childPastebinId/share/parent" will be set to parentPastebinId.
    * @param {String} parentPastebinId - the pastebin id to be copied.
