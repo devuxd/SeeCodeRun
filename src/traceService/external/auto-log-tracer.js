@@ -14,6 +14,7 @@ export class AutoLogTracer{
                 window.IS_AFTER_LOAD = true;
                 window.START_TIME = null;
                 clearTimeout(window.TRACE.runTimeout);
+                console.log("REF_LOG", {type: "OUTPUT_BUILD"});
         `;
     }
 
@@ -39,7 +40,11 @@ export class AutoLogTracer{
       let overrideLogAndError = `
 
             var log = console.log;
-            console.log = function () {
+            console.log = function (type) {
+                if(type === "REF_LOG"){
+                  log.apply(this, Array.prototype.slice.call(arguments));
+                  return;
+                }
                 if(window.TRACE && window.TRACE.currentScope){
                   log.apply(this, [JSON.stringify({ type: "log", range: window.TRACE.currentScope.range, indexInTimeline: window.TRACE.currentScope.timelineStartIndex})].concat(Array.prototype.slice.call(arguments)));
                 }else{
@@ -405,7 +410,8 @@ export class AutoLogTracer{
                         extra : info.extra
                     };
                 }
-
+                info.timelineIndex = this.timeline.length;
+                console.log("REF_LOG", info, info.value);
                 return info.value;
             },
             stringify: function stringify(obj, replacer, spaces, cycleReplacer) {

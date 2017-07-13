@@ -89,7 +89,7 @@ export class CallGraph {
       if (!formattedTrace) {
         return;
       }
-      console.log(formattedTrace);
+      // console.log(formattedTrace);
 
       if (query !== null && (query == undefined || query.trim() === "")) {
         query = null;
