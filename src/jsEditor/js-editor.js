@@ -192,15 +192,17 @@ export class JsEditor {
     });
 
     //Searcher Binding
+    //todo: refactor into class
     editor.commands.addCommand({
       name: "Toggle Searcher's Quick Search",
       bindKey: {win: "Ctrl-q", mac: "Command-q"},
       exec: function (thisEditor) {
         let cursorPosition = thisEditor.getCursorPosition();
-        if (!cursorPosition) {
-          return;
+        let pixelPosition =  {pageX: "200px", pageY:"200px"};
+        if (cursorPosition) {
+          pixelPosition = thisEditor.renderer.textToScreenCoordinates(cursorPosition);
         }
-        let pixelPosition = thisEditor.renderer.textToScreenCoordinates(cursorPosition);
+
         let cssPosition = {top: pixelPosition.pageY - 40, left: pixelPosition.pageX, takeFocus: true};
         ea.publish('toggleSearcher', cssPosition, "jsEditor");
       }

@@ -256,7 +256,43 @@ export class AceUtils {
         let match = mousePositionHandler.getExpressionAtPosition(position);
         eventAggregator.publish("expressionHovered", match);
       } else {
-        eventAggregator.publish("expressionHovered", undefined);
+        eventAggregator.publish("expressionHovered", null);
+      }
+
+    });
+
+  }
+
+  publishExpressionCursorMovedEvents(editor, eventAggregator, mousePositionHandler) {
+
+    if (!editor) {
+      throw "An Ace editor is required";
+    }
+
+    if (!eventAggregator) {
+      throw "An event aggregator (or an object with a publish('Event_Name', data_structure ) method) is required";
+    }
+
+    if (!mousePositionHandler) {
+      throw "A mouse position handler object  with a getExpressionAtPosition(position) method (e.g. a Trace Helper) is required";
+    }
+
+    editor.session.selection.on("changeCursor", function (e) {
+      let cursorPosition = editor.getCursorPosition();
+      if (!cursorPosition) {
+        return;
+      }
+      let isTextMatch = null;
+
+      if (cursorPosition) {
+        isTextMatch = editor.getSession().getWordRange(cursorPosition);
+      }
+
+      if (isTextMatch) {
+        let match = mousePositionHandler.getExpressionAtPosition(cursorPosition);
+        eventAggregator.publish("expressionAfterCursorChanged", match);
+      } else {
+        eventAggregator.publish("expressionAfterCursorChanged", null);
       }
 
     });

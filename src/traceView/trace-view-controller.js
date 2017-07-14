@@ -33,6 +33,7 @@ export class TraceViewController{
         );
 
         aceUtils.publishExpressionHoverEvents(editor, eventAggregator, traceViewModel);
+        aceUtils.publishExpressionCursorMovedEvents(editor, eventAggregator, traceViewModel);
 
         this.expressionDataExplorer.attached();
         this.traceNavigator.attached();
