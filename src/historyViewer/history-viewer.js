@@ -11,6 +11,8 @@ export class HistoryViewer {
  hasAutoHide = false;
  sliderValue = 0;
  sliderMaxValue = 10;
+  historyEditors = [];
+  sliderValues = [];
 
  constructor(firebaseManager, eventAggregator) {
   this.eventAggregator = eventAggregator;
@@ -18,10 +20,12 @@ export class HistoryViewer {
  }
  attached() {
   let self = this;
-  $('#historyBox').hide();
+   let $historyBox = $('#historyBox');
+   $historyBox.hide();
+
   $('#historyButton').click( function toggleHistoryBox() {
       let willBeVisible = true;
-      if($("#historyBox").is(":visible")){
+    if ($historyBox.is(":visible")) {
           willBeVisible = false;
           $("#historyButton span").removeClass("navigation-bar-active-item");
           $("#historyButton label").removeClass("navigation-bar-active-item");
@@ -30,13 +34,14 @@ export class HistoryViewer {
           $("#historyButton span").addClass("navigation-bar-active-item");
           $("#historyButton label").addClass("navigation-bar-active-item");
       }
-      if(!$("#historyBox").is(":animated")){
-          $("#historyBox").toggle("slide", { direction: "left" }, self.slideAnimationDuration,
+    if (!$historyBox.is(":animated")) {
+      $historyBox.toggle("slide", {direction: "left"}, self.slideAnimationDuration,
                 function historyBoxShown(){
                      if(willBeVisible){
                       self.backToThePast();
                      }else{
-                      self.backToThePresent();
+                       // self.backToThePresent();
+                       self.backToEditing();
                      }
                 }
           );
@@ -44,7 +49,7 @@ export class HistoryViewer {
   });
 
   self.eventAggregator.subscribe("shareBoxShown", () => {
-    if($("#historyBox").is(":visible")){
+    if ($historyBox.is(":visible")) {
           $("#historyButton").click();
      }
   });
@@ -53,7 +58,7 @@ export class HistoryViewer {
     self.backToTheFuture();
     $("#historyButton span").removeClass("navigation-bar-active-item");
     $("#historyButton label").removeClass("navigation-bar-active-item");
-    $("#historyBox").toggle();
+    $historyBox.toggle();
   });
 
 
@@ -70,29 +75,23 @@ export class HistoryViewer {
 
   if(this.hasAutoHide){
    let toggleHistoryBoxTimeoutCallback = function toggleHistoryBoxTimeoutCallback(){
-    $("#historyBox").toggle("slide", { direction: "left" }, self.slideAnimationDuration);
+     $historyBox.toggle("slide", {direction: "left"}, self.slideAnimationDuration);
     $("#historyButton span").removeClass("navigation-bar-active-item");
     $("#historyButton label").removeClass("navigation-bar-active-item");
    };
    $('#historyListItem').mouseenter(function historyListItemMouseEnter(){
        clearTimeout(self.toggleHistoryBoxTimeout);
    }).mouseleave(function historyListItemMouseLeave(){
-       if($("#historyBox").is(":visible")){
+     if ($historyBox.is(":visible")) {
            self.toggleHistoryBoxTimeout = setTimeout(toggleHistoryBoxTimeoutCallback, self.hideTimeout);
        }
    });
   }
-
   this.subscribe();
  }
 
  slideHistoryViewer() {
-
-  if(!this.activeEditor){
-   return;
-  }
-
-  if(!this.activeEditor.editor){
+   if (!this.activeHistoryEditor) {
    return;
   }
 
@@ -102,96 +101,111 @@ export class HistoryViewer {
 
   this.sliderValue = Number(this.sliderValue);
 
-  // this.backToThePast();
-  this.firebaseManager.
-   slideHistoryViewerFirepad(this.subjectFirebase, this.historyFirebase, this.activeEditor.editor, this.sliderValue);
+   let self = this;
+   clearTimeout(self.slideHistoryTimeout);
+   self.slideHistoryTimeout = setTimeout(function () {
+     self.sliderValues[self.activeHistoryEditorSelector] = self.sliderValue;
+     self.firebaseManager.slideHistoryViewerFirepad(self.subjectFirebase, self.historyFirebase, self.sliderValue, self.activeHistoryEditor, self);
+   }, 250);
+
  }
+
 
  subscribe(){
   this.eventAggregator.subscribe("activeEditorChange", activeEditorData =>{
-   if($("#historyBox").is(":visible")){
-    return;
-   }
-   this.activeEditor = activeEditorData.activeEditor;
+
+    let historyEditorId = null;
+    let aceSessionMode = "ace/mode/javascript";
+    if (activeEditorData.activeEditor.aceJsEditorDiv) {
+      historyEditorId = "aceJsEditorDivHistory";
+      this.activeFirebaseContentEditorTag = "js";
+    } else {
+      if (activeEditorData.activeEditor.aceHtmlEditorDiv) {
+        historyEditorId = "aceHtmlEditorDivHistory";
+        this.activeFirebaseContentEditorTag = "html";
+        aceSessionMode = "ace/mode/html";
+      } else {// css
+        historyEditorId = "cssEditorDivHistory";
+        this.activeFirebaseContentEditorTag = "css";
+        aceSessionMode = "ace/mode/css";
+      }
+    }
+    if (!this.historyEditors[historyEditorId]) {
+      this.historyEditors[historyEditorId] = ace.edit(historyEditorId);
+      activeEditorData.activeEditor.aceUtils.configureEditor(this.historyEditors[historyEditorId]);
+      let session = this.historyEditors[historyEditorId].getSession();
+      activeEditorData.activeEditor.aceUtils.configureSession(session, aceSessionMode);
+      this.historyEditors[historyEditorId].setValue("");
+      this.historyEditors[historyEditorId].setReadOnly(true);
+    }
+    this.activeEditor = activeEditorData.activeEditor;
+    this.activeHistoryEditor = this.historyEditors[historyEditorId];
+    this.activeHistoryEditorSelector = "#" + historyEditorId;
+
+    if ($('#historySlider').is(":visible")) {
+      this.backToThePast();
+    }
   });
  }
 
- attachHistorySliderUpdater(){
-  let self = this;
-  if(!self.sliderMaxValue){
-   return;
-  }
-  $('#historySlider').slider('option', {min: 1, max: self.sliderMaxValue, value: self.sliderValue});
-  // update the history slider as more children are added to the history of the firebase
-  // self.subjectFirebase.child('history').on("child_added", function (snap) {
-  //  self.subjectFirebase.child('history').once("value", function (sna) {
-  //   self.sliderMaxValue = sna.numChildren();
-  //   $('#historySlider').slider('option', {min: 1, max: self.sliderMaxValue, value: self.sliderValue});
-  //  });
-  // });
+  updateSliderMaxValue(sliderMaxValue) {
+    this.sliderMaxValue = sliderMaxValue;
 
- }
-
-  dettachHistorySliderUpdater(){
-   let self = this;
-   if(!self.subjectFirebase){
-    return;
-   }
-   self.subjectFirebase.child('history').off("child_added");
+    let previousSliderValue = this.sliderValues[this.activeHistoryEditorSelector];
+    if (previousSliderValue) {
+      this.sliderValue = previousSliderValue;
+      this.slideHistoryViewer();
+    } else {
+      this.sliderValue = this.sliderMaxValue;
+    }
+    $('#historySlider').slider('option', {min: 1, max: this.sliderMaxValue, value: this.sliderValue});
   }
+
 
  backToThePast(){
-  if(!this.activeEditor){
+   if (!this.activeHistoryEditor) {
    return;
   }
-  if(!this.activeEditor.firepad){
-   return;
-  }
-  this.activeEditor.firepad.dispose();
-
-  this.activeEditor.editor.setValue("");
-  this.activeEditor.editor.setReadOnly(true);
+   this.activeHistoryEditor.setValue("");
 
   let historyViewerFireData =
-   this.firebaseManager.
-    makeHistoryViewerFirepad(this.activeEditor.firebaseTag, this.activeEditor.editor);
+   this.firebaseManager.makeHistoryViewerFirepad(this.activeFirebaseContentEditorTag, this.activeHistoryEditor, this);
 
   this.sliderMaxValue = historyViewerFireData.sliderMaxValue;
   this.subjectFirebase = historyViewerFireData.subjectFirebase;
   this.historyFirebase = historyViewerFireData.historyFirebase;
-  this.activeEditor.firepad = historyViewerFireData.historyFirepad;
-  // this.attachHistorySliderUpdater();
+   this.historyFirepadHeadless = historyViewerFireData.historyFirepadHeadless;
+
+
+   let activeEditorSelector = this.activeHistoryEditorSelector.replace("History", "");
+   $(this.activeHistoryEditorSelector).css({display: "block"});
+   $(activeEditorSelector).css({display: "none"});
  }
 
- backToThePresent(){
-  if(!this.activeEditor){
-   return;
-  }
-  this.activeEditor.editor.setReadOnly(false);
-  this.activeEditor.firepad.dispose();
-  this.dettachHistorySliderUpdater();
-  this.subjectFirebase = null;
-
-  this.activeEditor.editor.setValue("");
-  this.activeEditor.firepad = this.firebaseManager.
-    makeFirepad(this.activeEditor.firebaseTag, this.activeEditor.editor, "");
- }
 
  backToTheFuture(){// move past to present
-  if(!this.activeEditor){
-   return;
-  }
-  this.activeEditor.editor.setReadOnly(false);
-  let pastValue = this.activeEditor.editor.getValue();
-  this.activeEditor.firepad.dispose();
-  this.dettachHistorySliderUpdater();
-  this.subjectFirebase = null;
-
-  this.activeEditor.editor.setValue("");
-  this.activeEditor.firepad = this.firebaseManager.
-    makeFirepad(this.activeEditor.firebaseTag, this.activeEditor.editor, "");
-  this.activeEditor.editor.setValue("");
+   if (!this.activeEditor) {
+     return;
+   }
+   if (!this.activeHistoryEditor) {
+     return;
+   }
+   let pastValue = this.activeHistoryEditor.getValue();
   this.activeEditor.editor.setValue(pastValue);
+   this.backToEditing();
  }
+
+  backToEditing() {
+    $("#aceJsEditorDivHistory").css({display: "none"});
+    $("#aceJsEditorDiv").css({display: "block"});
+
+    $("#aceHtmlEditorDivHistory").css({display: "none"});
+    $("#aceHtmlEditorDiv").css({display: "block"});
+
+    $("#cssEditorDivHistory").css({display: "none"});
+    $("#cssEditorDiv").css({display: "block"});
+
+  }
+
 
 }

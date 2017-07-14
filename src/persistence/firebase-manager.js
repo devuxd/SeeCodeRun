@@ -54,6 +54,23 @@ export class FirebaseManager {
     return new Firebase(`${this.baseURL}/${pastebinId}/content/share/children`);
   }
 
+  makeMetagsURLFirebaseVote(metagURLKey, pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls/${metagURLKey}`);
+  }
+
+
+  makePastebinMetagsURLsFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls`);
+  }
+
+  makeGlobalMetagsURLsFirebase(pastebinId = this.pastebinId) {
+    return new Firebase(`${this.baseURL}/metags/urls`);
+  }
+
+  makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey) {
+    return new Firebase(`${this.baseURL}/metags/urls/${metagGlobalURLKey}`);
+  }
+
   /**
    * Copies a pastebin content to a new one. It associates them as parent and child, once the copy is created. In Firebase, reference "parentPastebinId/content/share/children" will get childPastebinId pushed and "childPastebinId/share/parent" will be set to parentPastebinId.
    * @param {String} parentPastebinId - the pastebin id to be copied.
@@ -121,41 +138,53 @@ export class FirebaseManager {
       });
   }
 
-  makeHistoryViewerFirepad(subject, editor) {
+  makeHistoryViewerFirepad(subject, editor, context) {
     let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
     let subjectFirebase = new Firebase(subjectURL);
 
-    let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/content/${subject}/historyViewer`;
+    let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/historyViewer/${subject}`;
     let historyFirebase = new Firebase(subjectHistoryURL);
 
-    // Remove the folder from the firebase
-    historyFirebase.remove();
-    editor.setValue("");
     // Copy the entire firebase to the history firebase
-    subjectFirebase.once("value", function (snap) {
-      historyFirebase.set(snap.val());
-    });
-    let sliderMaxValue = 0;
-    subjectFirebase.child('history').once("value", function (sna) {
-      sliderMaxValue = sna.numChildren();
+    subjectFirebase.once("value", function (snapshot) {
+      historyFirebase.set(snapshot.val());
     });
 
-    editor.setValue("");
+
+    subjectFirebase.child('history').once("value", function (snapshot) {
+      let sliderMaxValue = snapshot.numChildren();
+      context.updateSliderMaxValue(sliderMaxValue);
+    });
+
+    let headless = Firepad.Headless(historyFirebase);
+    headless.getText(function (text) {
+      editor.setValue(text);
+    });
     return {
-      sliderMaxValue: sliderMaxValue,
       subjectFirebase: subjectFirebase,
       historyFirebase: historyFirebase,
-      historyFirepad: Firepad.fromACE(historyFirebase, editor, {defaultText: ""})
+      historyFirepadHeadless: headless
     };
   }
 
-  slideHistoryViewerFirepad(subjectFirebase, historyFirebase, editor, sliderValue) {
-    // Remove the history from the history firebase
-    historyFirebase.child('history').remove();
+  slideHistoryViewerFirepad(subjectFirebase, historyFirebase, sliderValue, activeHistoryEditor, context) {
+    context.historyFirepadHeadless.dispose();
     // Copy history from the firebase to the history firebase to display values till a specific point in history.
-    subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snap) {
-      historyFirebase.child('history').set(snap.val());
+    subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snapshot) {
+      historyFirebase.child('history').set(snapshot.val());
+      context.historyFirepadHeadless = Firepad.Headless(historyFirebase);
+      context.historyFirepadHeadless.getText(function (text) {
+        activeHistoryEditor.setValue(text);
+      });
+
     });
+  }
+
+  stopReceivingHistoryUpdates(firebaseRef) {
+    if (!firebaseRef) {
+      return;
+    }
+    firebaseRef.child('history').off("child_added");
   }
 
   makeFirebaseReferenceCopy(source, destination, dataChanger = this, thenCallback) {

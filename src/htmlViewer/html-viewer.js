@@ -99,8 +99,8 @@ export class HtmlViewer {
           $(referenceTimeline[index].reference).css("background-color", "#ffe6e6");
         }
       }
-
     });
+    
   }
 
   handleResponse(elementName, response) {
@@ -128,7 +128,7 @@ export class HtmlViewer {
 
     let doc = this.getContentDocument();
     let scriptElement = this.externalResourceLoader.createScriptElement(this.js, doc);
-
+    
     let previous = null;
     let previousBG = null;
     doc.addEventListener("mousemove", function (event) {

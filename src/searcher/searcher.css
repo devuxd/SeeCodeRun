@@ -1,0 +1,152 @@
+#cse {
+  width: 60%; /* make sure you don't use inline width */
+  margin: 0 auto;
+}
+
+.cse .gsc-search-button input.gsc-search-button-v2, input.gsc-search-button-v2 {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+.searcher .gsib_a {
+  padding: 1px 4px 2px 15px;
+}
+
+.searcher .gsib_a > input {
+  z-index: 7779;
+}
+
+.searcher {
+  display: none;
+  z-index: 7777;
+  position: absolute;
+  padding-left: 5px;
+  padding-right: 5px;
+  background-color: whitesmoke;
+  max-width: 500px;
+  max-height: 500px;
+  overflow: auto;
+  margin: auto;
+  border: 1px solid lightsalmon;
+}
+
+.metag-popover {
+  z-index: 7778;
+  width: auto;
+  height: auto;
+}
+
+.metagRank {
+  margin: 0 auto;
+  width: 340px;
+  /*height: 40px;*/
+  padding: 5px;
+}
+
+.rankingLabel {
+  display: block;
+  text-align: center;
+  line-height: 150%;
+  font-size: 2em;
+  top: 20px;
+  padding: 0.2em;
+}
+
+.voteCountLabel {
+  text-align: center;
+  padding-left: 2px;
+}
+
+.metagRank .rankingContainer {
+  margin: 0 auto;
+  float: left;
+  width: 30px;
+  height: 75px;
+}
+
+.metagRank .voteContainer {
+  margin: 0 auto;
+  float: left;
+  width: 45px;
+  height: 75px;
+}
+
+.metagRank .userChoicesContainer {
+  margin: 0 auto;
+  float: left;
+  width: 45px;
+  height: 75px;
+}
+
+.metagRank .commentChatContainer {
+  margin: 0 auto;
+  float: left;
+  width: 220px;
+  height: 75px;
+  position: relative;
+  left: -20px;
+  background: white;
+}
+
+.voteButton {
+  /*background-color: Transparent;*/
+  border: none;
+}
+
+.iconChosenFalse {
+  color: gray;
+}
+
+.iconChosenTrue {
+  color: DodgerBlue;
+}
+
+.favoriteToggleIcon {
+  padding-left: 0px;
+  padding-top: 15px;
+  cursor: pointer;
+}
+
+.pinnedToggleIcon {
+  cursor: pointer;
+}
+
+.commentsSection {
+  left-padding: 50px;
+}
+
+.commentsSaveSection {
+  /*//left-padding: 200px;*/
+  position: relative;
+  left: 100px;
+  bottom: 60px;
+  /*// margin: 0 auto 10px;*/
+  /*//border: 3px solid #73AD21;*/
+}
+
+.ansSection {
+  left-padding: 50px;
+}
+
+.searcher-search-result-highlight {
+  background-color: rgba(255, 165, 0, 0.3);
+}
+
+.SearchNPasteContainer {
+  margin-left: 70px;
+}
+
+.searchContainer {
+  background-color: lightgoldenrodyellow;
+  padding-bottom: 4px;
+  font-size: small;
+  /*left-padding: 40px;*/
+}
+
+.pasteContainer {
+  background-color: lightskyblue;
+  padding-bottom: 4px;
+  font-size: medium;
+  /*left-padding: 40px;*/
+}
