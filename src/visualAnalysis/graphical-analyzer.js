@@ -3,6 +3,7 @@
  */
 import {AceUtils} from '../utils/ace-utils';
 export class GraphicalAnalyzer{
+  referenceTimeLine = null;
   graphicalTimeline = null;
   constructor(eventAggregator){
     this.eventAggregator = eventAggregator;
@@ -18,6 +19,7 @@ export class GraphicalAnalyzer{
     let aceMarkerManager = aceUtils.makeAceMarkerManager(aceEditor, aceUtils.getAvailableMarkers().errorMarker);
     this.eventAggregator.subscribe("graphicalTraceChanged", payload => {
       let referenceTimeline = payload;
+      this.referenceTimeLine = referenceTimeline;
       let graphicalTimeline = [];
       for (let index in referenceTimeline) {
         if (referenceTimeline[index].isGraphical) {
@@ -38,9 +40,34 @@ export class GraphicalAnalyzer{
       if(!match){
         return;
       }
+      // console.log("selected: ", match);
       // here you get the info for expressions after cursor changes
       let expressionText =  aceEditor.session.doc.getTextRange(match.range);
-      console.log("expression at cursor: ", expressionText, match);
+
+      /**
+       * for obj in referencetime{
+       *  if obj.id == reftime.id
+       *  if reftime exists
+       *  then console.log reftime.ref
+       *  then we check if the reference is graphical and has  value
+       * }
+       */
+      let graphicalReference = null;
+      for(let objInd in this.referenceTimeLine){
+        let obj = this.referenceTimeLine[objInd];
+        if(obj.id == match.id){
+          if(obj.reference && obj.isGraphical){
+            graphicalReference = obj.reference;
+          }
+        }
+      }
+
+      if(graphicalReference && graphicalReference.length == 1){
+        // console.log("selected Graphical Reference id", graphicalReference[0].id);
+        let attr = $(graphicalReference).css("background-color");
+        $(graphicalReference).fadeOut(100).fadeIn();
+      }
+
     });
   }
 }
