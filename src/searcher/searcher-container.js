@@ -7,10 +7,10 @@ export class SearcherContainer{
     this.firebaseManager = firebaseManager;
   }
   attached(){
-    let firebaseURLs = this.firebaseManager.makePastebinMetagsURLsFirebase();
+    let firebaseURLs = this.firebaseManager.makeGlobalMetagsURLsFirebase();
     firebaseURLs.on("child_added", function(snapshot){
         let data = snapshot.val();
-      $("#urlList").append(`<li> ${JSON.stringify(data)}/li>`);
+      $("#urlList").append(`<li> ${JSON.stringify(data)}</li>`);
     });
   }
 
