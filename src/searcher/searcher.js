@@ -26,7 +26,7 @@ export class Searcher {
   constructor(eventAggregator, firebaseManager) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
-    this.searcherContainer = new SearcherContainer();
+    this.searcherContainer = new SearcherContainer(firebaseManager);
   }
 
   // storing hashes in Firebase, hence normal strings cannot be indexes. null, undefined throw errors
