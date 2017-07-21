@@ -31,6 +31,7 @@ export class GraphicalAnalyzer{
 
 
     this.eventAggregator.subscribe("graphicalTraceChanged", payload => {
+      defaultMarkerIndexer = 0;
       let referenceTimeline = payload;
       this.referenceTimeLine = referenceTimeline;
       let graphicalTimeline = [];
@@ -53,13 +54,11 @@ export class GraphicalAnalyzer{
         refToMarker.push({key: uniqueRef, marker: markerToUse}); //creates an object and pushes into array, key is the name of the reference, value is the availible marker
         defaultMarkerIndexer++;
       }
-      //todo figure out why ace marker is not being updated for each graphical reference
       for(let index in refToMarker){
         let reference = refToMarker[index].key;
         let codeLines = generateCodeLinesForReference(reference, this.referenceTimeLine);
         let marker = refToMarker[index].marker;
         let markerManager = aceUtils.makeAceMarkerManager(aceEditor, marker);
-
         aceUtils.updateAceMarkers(markerManager, codeLines);
       }
 

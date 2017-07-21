@@ -193,33 +193,33 @@
 
 
 /***Colors for highlighting lines in graphical analysis***/
-.ace-chrome .ace-marker-layer .graphical-analysis-red-marker {
+.ace-chrome .ace_marker-layer .graphical-analysis-red-marker {
   position: absolute;
   border: none;
-  background-color: #fc6360;
+  background-color: #fc8b7a;
 }
-.ace-chrome .ace-marker-layer .graphical-analysis-orange-marker {
+.ace-chrome .ace_marker-layer .graphical-analysis-orange-marker {
   position: absolute;
   border: none;
-  background-color: #f7a550;
+  background-color: #ffa954;
 }
-.ace-chrome .ace-marker-layer .graphical-analysis-yellow-marker {
+.ace-chrome .ace_marker-layer .graphical-analysis-yellow-marker {
   position: absolute;
   border: none;
-  background-color: #f5cd56;
+  background-color: #ffda33;
 }
-.ace-chrome .ace-marker-layer .graphical-analysis-green-marker {
+.ace-chrome .ace_marker-layer .graphical-analysis-green-marker {
   position: absolute;
   border: none;
-  background-color: #70ca57;
+  background-color: #8ef261;
 }
-.ace-chrome .ace-marker-layer .graphical-analysis-blue-marker{
+.ace-chrome .ace_marker-layer .graphical-analysis-blue-marker{
   position: absolute;
   border: none;
-  background-color: #51b9f1;
+  background-color: #54c4ff;
 }
-.ace-chrome .ace-marker-layer .graphical-analysis-purple-marker {
+.ace-chrome .ace_marker-layer .graphical-analysis-purple-marker {
   position: absolute;
   border: none;
-  background-color: #d1a6db;
+  background-color: #e1b5eb;
 }
