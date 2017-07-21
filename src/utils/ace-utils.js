@@ -83,7 +83,13 @@ export class AceUtils {
       branchLocalMarker: "branch-local-marker",
       gitTextAddedMarker: "git-text-added-marker",
       callGraphFocusMarker: "call-graph-focus-marker",
-      callGraphHoverMarker: "call-graph-hover-marker"
+      callGraphHoverMarker: "call-graph-hover-marker",
+      graphicalAnalysisRedMarker: "graphical-analysis-red-marker",
+      graphicalAnalysisOrangeMarker: "graphical-analysis-orange-marker",
+      graphicalAnalysisYellowMarker: "graphical-analysis-yellow-marker",
+      graphicalAnalysisGreenMarker: "graphical-analysis-green-marker",
+      graphicalAnalysisBlueMarker: "graphical-analysis-blue-marker",
+      graphicalAnalysisPurpleMarker: "graphical-analysis-purple-marker"
     };
   }
 

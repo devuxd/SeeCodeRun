@@ -2,6 +2,7 @@
 import {TraceService} from '../traceService/trace-service';
 import {ExternalResourceLoader}  from '../utils/external-resource-loader';
 import {HtmlParser} from '../utils/html-parser';
+import {AceUtils} from '../utils/ace-utils';
 
 export class HtmlViewer {
   AUTOLOG_TRACER_DEBUG_MODE = false;
@@ -14,6 +15,7 @@ export class HtmlViewer {
   js = "";
   webAppViewerId = 'webAppViewer';
   iFrameSourceUrl = "client/output.html";
+  uniqueGraphicalReferences = [];
   //fix https://seecode.run/#-KhE2Ki_J4fttZQ_J3I2 AKA ace editor not working
   constructor(eventAggregator, traceModel) {
     this.eventAggregator = eventAggregator;
@@ -94,12 +96,29 @@ export class HtmlViewer {
 
     ea.subscribe("graphicalTraceChanged", payload => {
       let referenceTimeline = payload;
+      var uniqueReferences = [];
+      let referencesForSyntaxHighlighting = [];
       for (let index in referenceTimeline) {
         if (referenceTimeline[index].isGraphical) {
-          $(referenceTimeline[index].reference).css("background-color", "#ffe6e6");
+          let refID = referenceTimeline[index].reference;
+          if (!uniqueReferences.includes(refID)) {
+            uniqueReferences.push(refID);
+          }
         }
       }
+      ea.publish("uniqueGraphicalReferencesCalculated", uniqueReferences);
+      this.uniqueGraphicalReferences = uniqueReferences;
+      //todo create colors based on ace editor highlights
+      /**Create Colors for each unique reference**/
+      // let num = (1 / (uniqueReferences.length));
+      // let op = num;
+      // for(let index in uniqueReferences){
+      //   let obj = uniqueReferences[index];
+      //   op += num;
+      // }
     });
+
+
     
   }
 
@@ -140,7 +159,8 @@ export class HtmlViewer {
         previous = event.target;
         previousBG = event.target.style.backgroundColor;
         event.target.style.backgroundColor = "#E5F1FB";
-        //publish event here
+        let graphicalElement = previous;
+        ea.publish("outputGraphicalElementHovered", graphicalElement);
       }
 
     });
