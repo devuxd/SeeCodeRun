@@ -10,7 +10,7 @@
     "favicon.ico",
     "LICENSE",
     "jspm_packages/system.js",
-    "jspm_packages/npm/font-awesome@4.6.3/css/font-awesome.css",
-    "jspm_packages/npm/font-awesome@4.6.3/fonts/*"
+    "jspm_packages/npm/font-awesome@4.7.0/css/font-awesome.css",
+    "jspm_packages/npm/font-awesome@4.7.0/fonts/*"
   ]
 }
