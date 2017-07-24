@@ -3,7 +3,7 @@ import {TraceService} from '../traceService/trace-service';
 import {ExternalResourceLoader}  from '../utils/external-resource-loader';
 import {HtmlParser} from '../utils/html-parser';
 import {AceUtils} from '../utils/ace-utils';
-import {VisualAnalyzer} from "../visualAnalysis/visual-analyzer";
+import {VisualAnalyzer} from "../visualAnalysis/visualAnalyzer";
 export class HtmlViewer {
   AUTOLOG_TRACER_DEBUG_MODE = false;
   isOutputBuilt = false;

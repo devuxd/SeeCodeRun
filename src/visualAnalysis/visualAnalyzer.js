@@ -6,11 +6,10 @@ export class VisualAnalyzer{
         this.eventAggregator = eventAggregator;
     }
     highlight(reference, color){
-        if (this.previousReference && this.previousReference !== reference) {
+        if(this.previousReference && this.previousReference !== reference){
             $(this.previousReference).css("background-color", this.previousReferenceBG);
         }
-
-        if (this.previousReference !== reference) {
+        if(this.previousReference !== reference){
             this.previousReference = reference;
             this.previousReferenceBG = $(reference).css("background-color");
             $(reference).css("background-color", color);
@@ -19,26 +18,21 @@ export class VisualAnalyzer{
         }
     }
     unhighlight(){
-        if (this.previousReference && this.previousReferenceBG) {
+        if(this.previousReference && this.previousReferenceBG){
             $(this.previousReference).css("background-color", this.previousReferenceBG);
         }
         this.previousReference = null;
         this.previousReferenceBG = null;
     }
     subscribe(){
-      this.eventAggregator.subscribe("highlightVisualElement", payload => {
-
-                var ref = null;
-                var highlightColor = null;
-                ref = payload.reference;
-                highlightColor = payload.color;
-                if(ref){
-                  this.highlight(ref, highlightColor);
-                 }else{
-                  this.unhighlight();
-                }
-          });
+        this.eventAggregator.subscribe("highlightVisualElement", payload => {
+            var ref = payload.reference;
+            var highlightColor = payload.color;
+            if(ref){
+                this.highlight(ref, highlightColor);
+            }else{
+                this.unhighlight();
+            }
+        });
     }
 }
-
-
