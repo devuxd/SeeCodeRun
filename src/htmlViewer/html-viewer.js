@@ -3,7 +3,7 @@ import {TraceService} from '../traceService/trace-service';
 import {ExternalResourceLoader}  from '../utils/external-resource-loader';
 import {HtmlParser} from '../utils/html-parser';
 import {AceUtils} from '../utils/ace-utils';
-
+import {VisualAnalyzer} from "../visualAnalysis/visual-analyzer";
 export class HtmlViewer {
   AUTOLOG_TRACER_DEBUG_MODE = false;
   isOutputBuilt = false;
@@ -16,12 +16,15 @@ export class HtmlViewer {
   webAppViewerId = 'webAppViewer';
   iFrameSourceUrl = "client/output.html";
   uniqueGraphicalReferences = [];
+  visualAnalyzer = null;
+  defaultHighlight = "#E5F1FB";
   //fix https://seecode.run/#-KhE2Ki_J4fttZQ_J3I2 AKA ace editor not working
   constructor(eventAggregator, traceModel) {
     this.eventAggregator = eventAggregator;
     this.traceService = new TraceService(eventAggregator, traceModel);
     this.htmlParser = new HtmlParser();
     this.externalResourceLoader = new ExternalResourceLoader();
+    this.visualAnalyzer = new VisualAnalyzer(eventAggregator);
     this.subscribe();
   }
 
@@ -57,6 +60,7 @@ export class HtmlViewer {
   }
 
   subscribe() {
+
     let ea = this.eventAggregator;
     let traceService = this.traceService;
 
@@ -116,9 +120,12 @@ export class HtmlViewer {
       //   let obj = uniqueReferences[index];
       //   op += num;
       // }
+
     });
-
-
+    this.visualAnalyzer.subscribe();
+    // ea.subscribe("highlightVisualElement", ref =>{
+    //   console.log("ref");
+    // });
     
   }
 
@@ -151,26 +158,18 @@ export class HtmlViewer {
     let previous = null;
     let previousBG = null;
     doc.addEventListener("mousemove", function (event) {
-      if (previous && previous !== event.target) {
-        previous.style.backgroundColor = previousBG;
-      }
-
-      if (previous !== event.target) {
-        previous = event.target;
-        previousBG = event.target.style.backgroundColor;
-        event.target.style.backgroundColor = "#E5F1FB";
-        let graphicalElement = previous;
-        ea.publish("outputGraphicalElementHovered", graphicalElement);
-      }
-
+      let ref = event.target;
+      let refBG = ref.style.backgroundColor;
+      self.visualAnalyzer.highlight(ref, self.defaultHighlight);
     });
 
     doc.addEventListener("mouseout", function (event) {
-      if (previous) {
-        previous.style.backgroundColor = previousBG;
-      }
-      previous = null;
-      previousBG = null;
+      // if (previous) {
+      //   previous.style.backgroundColor = previousBG;
+      // }
+      // previous = null;
+      // previousBG = null;
+      self.visualAnalyzer.unhighlight();
     });
 
     self.result = {error: ""};

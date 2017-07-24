@@ -16,9 +16,9 @@ export class GraphicalAnalyzer{
 
   subscribe(){
     let aceUtils = new AceUtils();
-    let aceEditor = ace.edit('aceJsEditorDiv'); // example
+    let aceEditor = ace.edit('aceJsEditorDiv');
     let aceMarkerManager = aceUtils.makeAceMarkerManager(aceEditor, aceUtils.getAvailableMarkers().errorMarker);
-    let defaultMarkers = [ //all the markers we plan to use for graphical highlighting
+    let defaultMarkers = [
       aceUtils.getAvailableMarkers().graphicalAnalysisRedMarker,
       aceUtils.getAvailableMarkers().graphicalAnalysisOrangeMarker,
       aceUtils.getAvailableMarkers().graphicalAnalysisYellowMarker,
@@ -27,7 +27,7 @@ export class GraphicalAnalyzer{
       aceUtils.getAvailableMarkers().graphicalAnalysisPurpleMarker
     ];
     var defaultMarkerIndexer = 0;
-    var refToMarker = []; //a "dictionary" (still an array though) which will index with the reference name and the marker for that reference
+    var refToMarker = [];
 
 
     this.eventAggregator.subscribe("graphicalTraceChanged", payload => {
@@ -41,7 +41,6 @@ export class GraphicalAnalyzer{
         }
       }
       this.graphicalTimeline = graphicalTimeline;
-      // aceUtils.updateAceMarkers(aceMarkerManager, graphicalTimeline);
 
     });
 
@@ -53,6 +52,7 @@ export class GraphicalAnalyzer{
         let markerToUse = defaultMarkers[defaultMarkerIndexer]; //based on the marker incrementer, get the available marker from my array
         refToMarker.push({key: uniqueRef, marker: markerToUse}); //creates an object and pushes into array, key is the name of the reference, value is the availible marker
         defaultMarkerIndexer++;
+        console.log("unique ref", uniqueRef);
       }
       for(let index in refToMarker){
         let reference = refToMarker[index].key;
@@ -85,10 +85,47 @@ export class GraphicalAnalyzer{
       }
     });
 
+    this.eventAggregator.subscribe("expressionHovered", exp =>{
+      let referenceTimeLineObject = null;
+      if(exp){
+        if(exp.type === "CallExpression"){
+        for(let ind in this.referenceTimeLine){
+          let loopRef = this.referenceTimeLine[ind];
+          if(loopRef.isGraphical){
+            if(checkRangeEquate(exp.range, loopRef.range)){
+              referenceTimeLineObject = loopRef;
+            }
+          }
+        }
+        if(referenceTimeLineObject){
+          for(let index in refToMarker){
+            let obj = refToMarker[index];
+            if(obj.key === referenceTimeLineObject.reference){
+              for(let ind in defaultMarkers){
+                let marker = defaultMarkers[ind];
+                if(obj.marker === marker){
+                  let highlightColor = $("." + marker).css("background-color");
+                  let payload = {reference: referenceTimeLineObject.reference, color: highlightColor};
+                  this.eventAggregator.publish("highlightVisualElement", payload);
+                }
+              }
+            }
+          }
+        }
+        }
+      }else{
+        let payload = {};
+        this.eventAggregator.publish("highlightVisualElement", payload);
+      }
+    });
+    function checkRangeEquate(n, a){
+      return n.start.row === a.start.row && n.start.column === a.start.column && a.end.row === n.end.row && a.end.column === n.end.column;
+    }
+
     this.eventAggregator.subscribe("outputGraphicalElementHovered", elem => {
       for(let ind in this.uniqueGraphicalReferences){
       }
-      // console.log(elem);
+      console.log(elem);
 
       // if(elem){
       //   let hoveredDOMString = createToken(elem);
@@ -112,7 +149,6 @@ export class GraphicalAnalyzer{
 
 
 }
-
 
 
 
