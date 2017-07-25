@@ -2,6 +2,11 @@
 <html>
 	<head>
 		<title>SeeCode.Run</title>
+    <script>
+      if (location.host === 'seecode.run' && location.protocol !== 'https:') {
+        location.protocol = 'https';
+      }
+    </script>
 		<link rel="stylesheet" href="styles/smoothness.jquery-ui.css">
 		<link rel="stylesheet" href="styles/googleapis.material.icons.css">
 		<link rel="stylesheet" href="styles/w3.css" />
@@ -23,23 +28,9 @@
           <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-right">
             <span class='glyphicon glyphicon-menu-hamburger'></span>
           </button>
-          <!--<a onclick="window.open('https://seecode.run/', '_blank');">-->
-          <!--<div class="logo seecoderun-text-blue">-->
-          <!--&lt;!&ndash;youtube_searched&ndash;&gt;-->
-          <!--<i class="material-icons">&#xE8FA;</i>-->
-          <!--&lt;!&ndash;chevron_left&ndash;&gt;-->
-          <!--<i class="material-icons">&#xE5CB;</i>-->
-          <!--<i class="material-icons seecoderun-font-title">js</i>-->
-          <!--&lt;!&ndash;chevron_right&ndash;&gt;-->
-          <!--<i class="material-icons">&#xE5CC;</i>-->
-          <!--<i class="material-icons seecoderun-font-title">.</i>-->
-          <!--&lt;!&ndash;play_circle_outline&ndash;&gt;-->
-          <!--<i class="material-icons">&#xE039;</i>-->
-          <!--</div>-->
           <img  src="../../res/scrLogo.png" onclick="window.open('https://seecode.run/', '_blank');">
-          <!--</a>-->
         </div>
-				<ul id="navbar-collapse-right" class="nav navbar-nav navbar-right" >
+				<ul id="navbar-collapse-right" class="nav navbar-nav navbar-right">
 			        <li>
 			          <div>
 			          	<span id="shareButton">
@@ -89,21 +80,27 @@
 
 		<script src="include/progressbar.min.js"></script>
 		<script>
-				var bar = new ProgressBar.Line('#progressbar', {
-				  strokeWidth: 1,
-				  easing: 'easeInOut',
-				  duration: 3000,
-				  color: '#0067FF',
-				  trailColor: '#eee',
-				  trailWidth: 1,
-				  svgStyle: {width: '100%', height: '100%'},
-				  from: {color: '#3C8AFC'},
-				  to: {color: '#00398D'},
-				  step: (state, bar) => {
-				    bar.path.setAttribute('stroke', state.color);
-				  }
-				});
-				bar.animate(1);
+      // makes right navigation compact
+      var navItems = document.querySelectorAll("#navbar-collapse-right label");
+      for(var index=0; index < navItems.length; index++){
+        navItems[index].style.display ="none";
+      }
+
+      var bar = new ProgressBar.Line('#progressbar', {
+        strokeWidth: 1,
+        easing: 'easeInOut',
+        duration: 3000,
+        color: '#0067FF',
+        trailColor: '#eee',
+        trailWidth: 1,
+        svgStyle: {width: '100%', height: '100%'},
+        from: {color: '#3C8AFC'},
+        to: {color: '#00398D'},
+        step: (state, bar) => {
+          bar.path.setAttribute('stroke', state.color);
+        }
+      });
+      bar.animate(1);
 		</script>
 
 		<!--src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"-->
