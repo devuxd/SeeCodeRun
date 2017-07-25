@@ -364,7 +364,7 @@ export class BranchNavigator {
     }
   }
 
-  $showTooltip(isForceShow = false) {
+  $showTooltip(isForceShow) {
     if (this.$gutterTooltip && (!this.$gutterTooltip.is(":visible")|| isForceShow)) {
       this.$gutterTooltip.show("slide", {direction: "down"}, this.gutterTooltipSlideTime);
       this.eventAggregator.publish("branchNavigatorChange", {isVisible: true});
