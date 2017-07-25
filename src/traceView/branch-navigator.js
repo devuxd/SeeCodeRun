@@ -56,8 +56,7 @@ export class BranchNavigator {
     let eventAggregator = this.eventAggregator,
       aceUtils = this.aceUtils,
       editor = this.editor,
-      traceViewModel = this.traceViewModel,
-      gutterDecorationClassNames = this.gutterDecorationClassNames;
+      traceViewModel = this.traceViewModel;
 
     eventAggregator.subscribe("jsEditorCursorMoved", info => {
       this.selectedLine = info.cursor || 1;
@@ -209,6 +208,9 @@ export class BranchNavigator {
 
                     </div>
     			    `;
+
+
+
           $gutterTooltip.html(navigator);
 
           $gutterNavigatorSlider = $(self.gutterNavigatorSliderSelector);
@@ -284,6 +286,8 @@ export class BranchNavigator {
           $(self.gutterTooltipSelector + " i.material-icons").removeClass("navigator-global-branch").addClass("navigator-local-branch");
         }
 
+
+
         let $aceEditor$Width = $("#aceJsEditorDiv").width();
 
         $("#gutterTooltip").width($aceEditor$Width);
@@ -352,8 +356,8 @@ export class BranchNavigator {
     this.traceViewModel.resetTraceGutterDataRows();
   }
 
-  $hideTooltip() {
-    if (this.$gutterTooltip && !this.$gutterTooltip.is(":animated")) {
+  $hideTooltip(isForceHide) {
+    if (this.$gutterTooltip && (this.$gutterTooltip.is(":visible")|| isForceHide)) {
       this.currentRow = null;
       this.$gutterTooltip.hide("slide", {direction: "down"}, this.gutterTooltipSlideTime);
       this.eventAggregator.publish("branchNavigatorChange", {isVisible: false});
@@ -361,7 +365,7 @@ export class BranchNavigator {
   }
 
   $showTooltip(isForceShow = false) {
-    if (this.$gutterTooltip && (!this.$gutterTooltip.is(":animated" || isForceShow))) {
+    if (this.$gutterTooltip && (!this.$gutterTooltip.is(":visible")|| isForceShow)) {
       this.$gutterTooltip.show("slide", {direction: "down"}, this.gutterTooltipSlideTime);
       this.eventAggregator.publish("branchNavigatorChange", {isVisible: true});
     }
