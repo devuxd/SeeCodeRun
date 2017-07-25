@@ -181,7 +181,6 @@ export class AceUtils {
     };
     editor.on("guttermousemove", function (e) {
       let target = e.domEvent.target;
-
       if (!dataModel) {
         return;
       }
@@ -197,6 +196,12 @@ export class AceUtils {
           if (target.className.indexOf(gutterDecorationClassName)) {
             gutterDecorationClassNameFound = true;
             break;
+          }else{
+            if (target.parentElement && target.parentElement.className.indexOf(gutterDecorationClassName)) {
+              gutterDecorationClassNameFound = true;
+              target = target.parentElement;
+              break;
+            }
           }
         }
       }
@@ -204,11 +209,11 @@ export class AceUtils {
         return;
       }
 
-      if (e.clientX > target.parentElement.getBoundingClientRect().right - self.gutterCellRightPadding) {
+      if (e.clientX > target.getBoundingClientRect().right - self.gutterCellRightPadding) {
         return;
       }
 
-      if (e.clientX < target.parentElement.getBoundingClientRect().left + self.gutterCellLeftPadding) {
+      if (e.clientX < target.getBoundingClientRect().left + self.gutterCellLeftPadding) {
         return;
       }
 
