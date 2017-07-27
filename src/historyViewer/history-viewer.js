@@ -34,18 +34,18 @@ export class HistoryViewer {
           $("#historyButton span").addClass("navigation-bar-active-item");
           $("#historyButton label").addClass("navigation-bar-active-item");
       }
-    if (!$historyBox.is(":animated")) {
-      $historyBox.toggle("slide", {direction: "left"}, self.slideAnimationDuration,
-                function historyBoxShown(){
-                     if(willBeVisible){
-                      self.backToThePast();
-                     }else{
-                       // self.backToThePresent();
-                       self.backToEditing();
-                     }
-                }
-          );
+
+    $historyBox.toggle("slide", {direction: "left"}, self.slideAnimationDuration,
+      function historyBoxShown() {
+        if (willBeVisible) {
+          self.backToThePast();
+        } else {
+          // self.backToThePresent();
+          self.backToEditing();
+        }
       }
+    );
+
   });
 
   self.eventAggregator.subscribe("shareBoxShown", () => {

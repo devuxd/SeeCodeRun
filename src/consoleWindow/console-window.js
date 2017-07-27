@@ -29,14 +29,14 @@ export class ConsoleWindow {
 
   scrollToBottom() {
     let self = this;
-    if (!self.$consoleLogFeedback.is(":animated")) {
-      self.$consoleLogFeedback.css("display", "inline").fadeIn(50, function (event) {
-        // PR.prettyPrint();
-      }).fadeOut(450, function () {
-        self.$scroller.scrollTop(self.$scroller[0].scrollHeight);
-        // PR.prettyPrint();
-      });
-    }
+
+    self.$consoleLogFeedback.css("display", "inline").stop(true, true).fadeIn(50, function (event) {
+      // PR.prettyPrint();
+    }).fadeOut(450, function () {
+      self.$scroller.scrollTop(self.$scroller[0].scrollHeight);
+      // PR.prettyPrint();
+    });
+
   }
 
   mouseOver(data) {

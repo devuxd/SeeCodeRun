@@ -319,7 +319,7 @@ export class BranchNavigator {
             left: `${position.pageX}px`
           });
         }
-        if (!$gutterTooltip.is(":visible") || $gutterTooltip.is(":animated")) {
+        if (!$gutterTooltip.is(":visible")) {
           if (self.previousRow) {
             self.jsEditor.editor.getSession().removeGutterDecoration(self.previousRow, "seecoderun-gutter-decoration-active");
           }

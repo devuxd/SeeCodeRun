@@ -31,14 +31,7 @@ export class ShareBox {
     copyTarget.value = this.shareURL;
 
     let self = this;
-    let toggleShareBoxTimeoutCallback = function toggleShareBoxTimeoutCallback() {
-      $("#shareBox").toggle("slide", {direction: "right"}, self.slideAnimationDuration);
-      $("#shareButton span").removeClass("navigation-bar-active-item");
-      $("#shareButton label").removeClass("navigation-bar-active-item");
-    };
-
-    $('#shareBox').hide();
-    $('#shareButton').click(function toggleShareBox() {
+    let toggleShareBox = function toggleShareBox() {
       if ($("#shareBox").is(":visible")) {
         $("#shareButton span").removeClass("navigation-bar-active-item");
         $("#shareButton label").removeClass("navigation-bar-active-item");
@@ -46,13 +39,14 @@ export class ShareBox {
         self.eventAggregator.publish("shareBoxShown");
         $("#shareButton span").addClass("navigation-bar-active-item");
         $("#shareButton label").addClass("navigation-bar-active-item");
-
+        clearTimeout(self.toggleShareBoxTimeout);
         shareEventsFirebase.push({event: 'shareLinkShown', timestamp: firebaseManager.SERVER_TIMESTAMP});
       }
-      if (!$("#shareBox").is(":animated")) {
-        $("#shareBox").toggle("slide", {direction: "right"}, self.slideAnimationDuration);
-      }
-    });
+      $("#shareBox").toggle("slide", {direction: "right"}, self.slideAnimationDuration);
+    };
+
+    $('#shareBox').hide();
+    $('#shareButton').click(toggleShareBox);
 
     self.eventAggregator.subscribe("historyBoxShown", ()=> {
       if ($("#shareBox").is(":visible")) {
@@ -65,9 +59,12 @@ export class ShareBox {
     $('#shareListItem').mouseenter(function shareListItemMouseEnter() {
       clearTimeout(self.toggleShareBoxTimeout);
     }).mouseleave(function shareListItemMouseLeave() {
-      if ($("#shareBox").is(":visible")) {
-        self.toggleShareBoxTimeout = setTimeout(toggleShareBoxTimeoutCallback, self.hideTimeout);
-      }
+      clearTimeout(self.toggleShareBoxTimeout);
+      self.toggleShareBoxTimeout = setTimeout(function(){
+        if($("#shareBox").is(":visible")) {
+            toggleShareBox();
+          }
+        }, self.hideTimeout);
     });
 
     let $copyButton = $("#copyButton");
