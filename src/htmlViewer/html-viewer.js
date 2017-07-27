@@ -112,20 +112,9 @@ export class HtmlViewer {
       }
       ea.publish("uniqueGraphicalReferencesCalculated", uniqueReferences);
       this.uniqueGraphicalReferences = uniqueReferences;
-      //todo create colors based on ace editor highlights
-      /**Create Colors for each unique reference**/
-      // let num = (1 / (uniqueReferences.length));
-      // let op = num;
-      // for(let index in uniqueReferences){
-      //   let obj = uniqueReferences[index];
-      //   op += num;
-      // }
 
     });
     this.visualAnalyzer.subscribe();
-    // ea.subscribe("highlightVisualElement", ref =>{
-    //   console.log("ref");
-    // });
     
   }
 
@@ -171,7 +160,10 @@ export class HtmlViewer {
       // previousBG = null;
       self.visualAnalyzer.unhighlight();
     });
-
+    doc.addEventListener("mousemove", function (event) {
+      let ref = event.target;
+      ea.publish("outputGraphicalElementHovered", ref);
+    });
     self.result = {error: ""};
 
     try {

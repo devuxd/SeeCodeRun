@@ -6,7 +6,6 @@ import '../ace/mode/mode-html';
 import '../ace/mode/mode-css';
 
 export class AceUtils {
-
   idifyRange(prefix, range) {
     try {
       return `${prefix}-${range.start.row}-${range.start.column}-${range.end.row}-${range.end.column}`;

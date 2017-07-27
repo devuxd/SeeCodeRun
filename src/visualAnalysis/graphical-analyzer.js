@@ -41,27 +41,46 @@ export class GraphicalAnalyzer{
         }
       }
       this.graphicalTimeline = graphicalTimeline;
+      console.log(defaultMarkers);
 
     });
 
     this.eventAggregator.subscribe("uniqueGraphicalReferencesCalculated", payload =>{
+      var graphicalElementMarkers = [];
       let uniqueReferences = payload;
       this.uniqueGraphicalReferences = uniqueReferences;
+      let increment = parseInt((196-61) / uniqueReferences.length); ///Todo: make greyscale colors from rgb(61,61,61) to rgb(196,196,196)
+      let st = 61;
       for(let index in uniqueReferences){
-        let uniqueRef = uniqueReferences[index]; //get the name of the unique reference (e.g. div#jumbotron.class1)
-        let markerToUse = defaultMarkers[defaultMarkerIndexer]; //based on the marker incrementer, get the available marker from my array
-        refToMarker.push({key: uniqueRef, marker: markerToUse}); //creates an object and pushes into array, key is the name of the reference, value is the availible marker
-        defaultMarkerIndexer++;
-        console.log("unique ref", uniqueRef);
+        // graphicalElementMarkers.push(st);
+        // let styleObj = graphicalElementMarkers.push(".ace-chrome .ace_marker-layer .graphical-analysis-" + st);
+        st += increment;
+        /**Not able to make dynamic styles...not sure why aceutils cannot read from this array**/
+        var style = document.createElement('style');
+        style.type = "text/css";
+        style.innerHTML = ".ace-chrome .ace_marker-layer .graphical-analysis-" + st + "{ position: absolute; border: 2px dashed rgb(" + st + ", " + st + ", " + st + ");}";
+        graphicalElementMarkers.push(style);
       }
-      for(let index in refToMarker){
-        let reference = refToMarker[index].key;
-        let codeLines = generateCodeLinesForReference(reference, this.referenceTimeLine);
-        let marker = refToMarker[index].marker;
-        let markerManager = aceUtils.makeAceMarkerManager(aceEditor, marker);
-        aceUtils.updateAceMarkers(markerManager, codeLines);
-      }
+      console.log(graphicalElementMarkers);
+      if(graphicalElementMarkers.length === uniqueReferences.length) {
+        for (let index in uniqueReferences) {
+          let uniqueRef = uniqueReferences[index]; //get the name of the unique reference (e.g. div#jumbotron.class1)
+          let markerToUse = graphicalElementMarkers[defaultMarkerIndexer]; //based on the marker incrementer, get the available marker from my array
+          refToMarker.push({key: uniqueRef, marker: markerToUse}); //creates an object and pushes into array, key is the name of the reference, value is the availible marker
+          defaultMarkerIndexer++;
+          console.log("unique ref", uniqueRef, defaultMarkerIndexer);
+        }
 
+
+        for(let index in refToMarker){
+          let reference = refToMarker[index].key;
+          let codeLines = generateCodeLinesForReference(reference, this.referenceTimeLine);
+          let marker = refToMarker[index].marker;
+          console.log("makrer", marker);
+          let markerManager = aceUtils.makeAceMarkerManager(aceEditor, marker);
+          aceUtils.updateAceMarkers(markerManager, codeLines);
+        }
+      }
     });
 
     this.eventAggregator.subscribe("expressionAfterCursorChanged", match =>{
@@ -104,7 +123,7 @@ export class GraphicalAnalyzer{
               for(let ind in defaultMarkers){
                 let marker = defaultMarkers[ind];
                 if(obj.marker === marker){
-                  let highlightColor = $("." + marker).css("background-color");
+                  let highlightColor = $("." + marker).css("border-color");
                   let payload = {reference: referenceTimeLineObject.reference, color: highlightColor};
                   this.eventAggregator.publish("highlightVisualElement", payload);
                 }
@@ -123,25 +142,31 @@ export class GraphicalAnalyzer{
     }
 
     this.eventAggregator.subscribe("outputGraphicalElementHovered", elem => {
-      for(let ind in this.uniqueGraphicalReferences){
+      let referenceToMark = null;
+      for(let index in this.uniqueGraphicalReferences){
+        let reference = this.uniqueGraphicalReferences[index];
+        if(createSelector(elem) === createSelector(reference[0])){
+          referenceToMark = reference;
+        }
       }
-      console.log(elem);
 
-      // if(elem){
-      //   let hoveredDOMString = createToken(elem);
-      //   var superRef;
-      //   for(let objInd in this.graphicalTimeline){
-      //     let obj = this.graphicalTimeline[objInd];
-      //     if(obj.reference){
-      //       superRef = obj.reference;
-      //     }
-      //   }
-      //   let graphicalObjString = createToken(superRef[0]);
-      //   console.log("check", hoveredDOMString === graphicalObjString, "Hovered String: " + hoveredDOMString, "Graphical String: " + graphicalObjString);
-      //
-      //   // console.log("names: " + superRef, createToken(superRef[0]), name, superRef === name);
-      // }
-      // //Todo: Something went wrong in the code above because the references are really off plz check
+      if(referenceToMark){
+        let colorForBg = null;
+        for(let index in refToMarker){
+          let element = refToMarker[index];
+          if(element.key === referenceToMark){
+            colorForBg = $("." + element.marker).css("border-color");
+          }
+        }
+
+        if(colorForBg && referenceToMark){
+          let payload = {reference: referenceToMark, color: colorForBg};
+          this.eventAggregator.publish("highlightVisualElement", payload);
+        }
+        else{
+          console.log(colorForBg, referenceToMark);
+        }
+      }
 
     });
 
@@ -169,16 +194,16 @@ function generateCodeLinesForReference(aReference, referenceTimeline){
 }
 
 
-// function createToken(elem){
-//   let name = "";
-//   name += elem.tagName.toLowerCase();
-//   if(elem.id){
-//     name += "#" + elem.id;
-//   }
-//   if(elem.className){
-//     let classConcat = elem.className.replace(" ", ".");
-//     name += "." + classConcat;
-//   }
-//
-//   return name;
-// }
+function createSelector(elem){
+  let name = "";
+  name += elem.tagName.toLowerCase();
+  if(elem.id){
+    name += "#" + elem.id;
+  }
+  if(elem.className){
+    let classConcat = elem.className.replace(" ", ".");
+    name += "." + classConcat;
+  }
+
+  return name;
+}
