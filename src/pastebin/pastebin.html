@@ -16,6 +16,7 @@
   <require from = "traceSearch/trace-search.html"></require>
 
   <require from="searcher/searcher.html"></require>
+  <require from="searcher/searcher-container.html"></require>
 
   <div id = "mainContainer" class = "box-shadow-bottom">
     <div id = "main-splitter-left"  class = "split split-horizontal container-fluid">
@@ -61,6 +62,11 @@
                 Debug
               </a>
             </li>
+            <li id = "searcherTab" role = "tab" aria-controls = "search-container">
+            <a href = "#searcher-container"  data-toggle = "tab">
+              Searcher
+            </a>
+          </li>
           </ul>
           <div  class = "tab-content">
             <div id = "preview" class = "tab-pane fade in active" role = "tabpanel" aria-labelledby="previewTab">
@@ -70,6 +76,9 @@
               <trace-player tracePlayer.bind = "traceViewController.tracePlayer"></trace-player>
               <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
               <trace-search trace-search.bind = "traceSearch"></trace-search>
+            </div>
+            <div id="searcher-container">
+              <searcher-container trace-search.bind = "searcher.searcherContainer"></searcher-container>
             </div>
           </div>
         </div>

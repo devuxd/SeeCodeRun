@@ -3,9 +3,11 @@
  */
 import {customElement} from 'aurelia-framework';
 import {draggable} from 'jquery-ui';
+import {SearcherContainer} from './searcher-container';
 
 @customElement('pastebin')
 export class Searcher {
+  searcherContainer = null;
   searcherSelector = "#searcher";
   isFirstSearch = true;
   searcherQueryDefaultHeight = 38;
@@ -24,6 +26,7 @@ export class Searcher {
   constructor(eventAggregator, firebaseManager) {
     this.eventAggregator = eventAggregator;
     this.firebaseManager = firebaseManager;
+    this.searcherContainer = new SearcherContainer(firebaseManager);
   }
 
   // storing hashes in Firebase, hence normal strings cannot be indexes. null, undefined throw errors
@@ -39,6 +42,7 @@ export class Searcher {
   };
 
   attached() {
+    this.searcherContainer.attached();
     this.metagsURLsFirebase = this.firebaseManager.makePastebinMetagsURLsFirebase();
     this.globalMetagsURLsFirebase = this.firebaseManager.makeGlobalMetagsURLsFirebase();
 

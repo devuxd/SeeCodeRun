@@ -63,7 +63,7 @@ export class FirebaseManager {
     return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls`);
   }
 
-  makeGlobalMetagsURLsFirebase(pastebinId = this.pastebinId) {
+  makeGlobalMetagsURLsFirebase() {
     return new Firebase(`${this.baseURL}/metags/urls`);
   }
 
