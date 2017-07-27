@@ -12,5 +12,7 @@ export class DataNode
 		this.childCalls = [];
 		this.isCallback = false ;
 		this.text = text ;
+		this.x = 0 ;
+		this.y = 0;
     }
 }

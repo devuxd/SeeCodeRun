@@ -1,4 +1,5 @@
 <template bindable="visualization" style="min-height: inherit;  height: inherit;">
+  <require from = "./call-graph.css"></require>
   <div id="${visualization.id}" class="${visualization.styleClass}" style="min-height: inherit;  height: inherit;">
     <!--<div class="visualization-title">${visualization.title}</div>-->
     <div if.bind="visualization.hasError" class="alert alert-danger" role="alert">${visualization.errorMessage}</div>

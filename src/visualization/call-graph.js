@@ -4,7 +4,7 @@ import {AceUtils} from "../utils/ace-utils";
 
 export class CallGraph {
   focusedNode = null;
-  currentDirection = "down"; // or "right"
+  currentDirection = "groovy"; // or "right"
   directionManager = {
     right: {
       nodeRenderer: function translateRight(d) {
@@ -26,6 +26,25 @@ export class CallGraph {
           "C" + (d.parent.x + 100) + "," + d.y +
           " " + (d.parent.x + 100) + "," + d.parent.y +
           " " + d.parent.x + "," + d.parent.y;
+      }
+    },
+    groovy: {
+      nodeRenderer: function translateRight(d) {
+        return "translate(" + d.x+ "," + d.y + ")";
+      },
+      linkRenderer: function link(d) {
+        if(d.source){
+          return "M" + d.source.y + "," + d.source.x
+            + "C" + (d.source.y + d.target.y) / 2 + "," + d.source.x
+            + " " + (d.source.y + d.target.y) / 2 + "," + d.target.x
+            + " " + d.target.y + "," + d.target.x;
+        }
+
+        return "M" + d.x + "," + d.y +
+          "C" + (d.parent.x + 100) + "," + d.y +
+          " " + (d.parent.x + 100) + "," + d.parent.y +
+          " " + d.parent.x + "," + d.parent.y;
+
       }
     }
   };
@@ -132,13 +151,19 @@ export class CallGraph {
       // end of user search handling
 
       // d3.select(divElement).html("");
+
+      let visualizationContainer = d3.select(divElement).node();
       let rectWidth = 100,
         rectHeight = 30;
 
+      let defaultWidth = visualizationContainer && visualizationContainer.getBoundingClientRect().width? visualizationContainer.getBoundingClientRect().width: 500;
       let tree = d3.tree()
-        .nodeSize([200, 100]).separation(function separation(a, b) {
+        .nodeSize([100, 70]).separation(function separation(a, b) {
           // console.log(a, a.height, a.data, a.boxWidth, a.data.name);
-          return a.parent == b.parent ? .2 + (a.data.name ? getBoxWidth(a.data.name) / 200 + getBoxWidth(b.data.name) / 200 : .8) : 2;
+          // return a.parent == b.parent ? .2 + (a.data.name ? getBoxWidth(a.data.name)/defaultWidth: .8) : 2;
+          // let nodeProportion = getBoxWidth(a.data.name)/100;
+          // return  nodeProportion ;
+          return 1;
         });
 
       let diagonal = self.directionManager[self.currentDirection].linkRenderer;
@@ -173,12 +198,13 @@ export class CallGraph {
       //   console.log(d3.event.data.row);
       // }
 
-      // conso
       let root = d3.hierarchy(formattedTrace),
         nodes = root.descendants(),
         links = root.descendants().slice(1);
 
       tree(root);
+      // Normalize for fixed-depth.
+      // nodes.forEach(function(d) { d.y = d.depth * 180; });
       let graphLinks = graph
         .selectAll(".link")
         .data(links)
@@ -255,7 +281,8 @@ export class CallGraph {
           row: row,
           pixelPosition: position
         });
-        eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: d.data.ranges});
+        // console.log(d.data);
+        // eventAggregator.publish("jsEditorHighlight", {aceMarkerManager: self.focusMarker, elements: [d.data.range]});
         // showHoverText(this, d);
         highlight(d);
       }
@@ -266,7 +293,7 @@ export class CallGraph {
       }
 
       function getBoxWidth(text) {
-        return (text.length || 1) * 6 + 6;
+        return (text.length || 1) * 10 + 10;
       }
 
       function focus(d) {
@@ -329,9 +356,9 @@ export class CallGraph {
       })
 
       graphNodes.attr("class", "node")
-        .attr("class", function (d) {
-          return "node" + (d.children ? " node--internal" : " node--leaf");
-        })
+        // .attr("class", function (d) {
+        //   return "node" + (d.children ? " node--internal" : " node--leaf");
+        // })
         .attr("transform", nodeRenderer)
         .style("font", "10px sans-serif");
 
@@ -371,10 +398,116 @@ export class CallGraph {
       filteredNodes.on("mousedown", focus)
         .on("mouseup", unfocus);
 
+
+      let i = 0, duration = 750;
+      // update(root);
+      filteredNodes.on("click", click);
       // filteredNodes.append("circle")
       //   .attr("r", 6)
       //   .attr("transform", "translate(0," + rectHeight / 2 + ")");
 
+      // Toggle children on click.
+      function click(d) {
+        if (d.children) {
+          d.data.children = d.children;
+          d.children = null;
+        } else {
+          d.children = d.data.children;
+          d.data.children = null;
+        }
+        tree(root);
+        update(d);
+      }
+
+      function update(source) {
+
+        // Compute the new tree layout.
+        let nodes = root.descendants(),
+          links = root.descendants().slice(1);
+
+        // Normalize for fixed-depth.
+        nodes.forEach(function(d) { d.x = d.depth * 180; });
+
+        // Update the nodes…
+        var node = graph.selectAll(".node")
+          .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+        // Enter any new nodes at the parent's previous position.
+        var nodeEnter = node.enter().append("g")
+          .attr("class", "node")
+          .attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; })
+          .on("click", click);
+
+        nodeEnter.append("rect")
+          // .attr("r", 1e-6)
+          .style("fill", function(d) { return d.data.children ? "lightsteelblue" : "#fff"; });
+
+        nodeEnter.append("text")
+          .attr("y", function(d) { return d.children || d.data.children ? -10 : 10; })
+          .attr("dx", ".35em")
+          .attr("text-anchor", function(d) { return d.children || d.data.children ? "end" : "start"; })
+          .text(function(d) { return d.text; })
+          .style("fill-opacity", 1e-6);
+
+        // Transition nodes to their new position.
+        var nodeUpdate = node.transition()
+          .duration(duration)
+          .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+        nodeUpdate.select("rect")
+          // .attr("r", 4.5)
+          .style("fill", function(d) { return d.data.children ? "lightsteelblue" : "#fff"; });
+
+        nodeUpdate.select("text")
+          .style("fill-opacity", 1);
+
+        // Transition exiting nodes to the parent's new position.
+        var nodeExit = node.exit().
+          // attr("cx", source.y).
+          // attr("cy", source.x).
+          transition()
+          .duration(duration)
+          .attr("transform", function(d) { return "translate(" + source.x + "," + source.y + ")"; })
+          .remove();
+
+        nodeExit.select("rect")
+          // .attr("r", 1e-6);
+      .style("stroke", "red");
+
+        nodeExit.select("text")
+          .style("fill-opacity", 1e-6);
+
+        // Update the links…
+        var link = graph.selectAll("line")
+          .data(links, function(d) { return d.id; });
+
+        // Enter any new links at the parent's previous position.
+        link.enter().insert("link", "g")
+          .attr("class", "link")
+          .attr("d", function(d) {
+            var o = {x: source.y0, y: source.x0};
+            return diagonal({source: o, target: o});
+          });
+
+        // Transition links to their new position.
+        link.transition()
+          .duration(duration)
+          .attr("d", diagonal);
+
+        // Transition exiting nodes to the parent's new position.
+        link.exit().transition()
+          .duration(duration)
+          .attr("d", function(d) {
+            var o = {x: source.y, y: source.x};
+            return diagonal({source: o, target: o});
+          }).remove();
+
+        // Stash the old positions for transition.
+        nodes.forEach(function(d) {
+          d.y0 = d.x;
+          d.x0 = d.y;
+        });
+      }
     }
   }
 
