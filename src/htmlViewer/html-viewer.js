@@ -100,17 +100,29 @@ export class HtmlViewer {
 
     ea.subscribe("graphicalTraceChanged", payload => {
       let referenceTimeline = payload;
-      var uniqueReferences = [];
-      let referencesForSyntaxHighlighting = [];
-      for (let index in referenceTimeline) {
-        if (referenceTimeline[index].isGraphical) {
-          let refID = referenceTimeline[index].reference;
-          if (!uniqueReferences.includes(refID)) {
-            uniqueReferences.push(refID);
+      let uniqueReferences = [];
+      let doubleRef = false;
+      for (let refTimeIndex in referenceTimeline) {
+        if(referenceTimeline[refTimeIndex].type === "CallExpression") {
+          let testReference = referenceTimeline[refTimeIndex].reference;
+          if (referenceTimeline[refTimeIndex].isGraphical) {
+            for (let index in uniqueReferences) {
+              if (testReference[0] === uniqueReferences[index][0]) {
+                doubleRef = true;
+                console.log("Graphical trace detected a double reference: ", testReference);
+              } else {
+                console.log("Graphical reference is unique", testReference, "it was checked against ", uniqueReferences[index]);
+              }
+            }
+            if (!doubleRef) {
+              uniqueReferences.push(testReference);
+            }
+            doubleRef = false;
           }
         }
       }
       ea.publish("uniqueGraphicalReferencesCalculated", uniqueReferences);
+
       this.uniqueGraphicalReferences = uniqueReferences;
 
     });
@@ -133,7 +145,6 @@ export class HtmlViewer {
     }
   }
 
-  //todo subscribe to "graphicalObjectMouseEnter" and "graphicalObjectMouseLeave"
 
   addJs() {
     let self = this;

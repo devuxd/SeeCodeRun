@@ -13,8 +13,8 @@ export class VisualAnalyzer{
             this.previousReference = reference;
             this.previousReferenceBG = $(reference).css("background-color");
             $(reference).css("background-color", color);
-            //let graphicalElement = $(this.previousReference);
-            //this.eventAggregator.publish("outputGraphicalElementHovered", graphicalElement);
+            let graphicalElement = $(this.previousReference);
+            this.eventAggregator.publish("outputGraphicalElementHovered", graphicalElement);
         }
     }
     unhighlight(){

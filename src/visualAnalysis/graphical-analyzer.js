@@ -17,7 +17,6 @@ export class GraphicalAnalyzer{
   subscribe(){
     let aceUtils = new AceUtils();
     let aceEditor = ace.edit('aceJsEditorDiv');
-    let aceMarkerManager = aceUtils.makeAceMarkerManager(aceEditor, aceUtils.getAvailableMarkers().errorMarker);
     let defaultMarkers = [
       aceUtils.getAvailableMarkers().graphicalAnalysisRedMarker,
       aceUtils.getAvailableMarkers().graphicalAnalysisOrangeMarker,
@@ -41,46 +40,24 @@ export class GraphicalAnalyzer{
         }
       }
       this.graphicalTimeline = graphicalTimeline;
-      console.log(defaultMarkers);
-
     });
 
     this.eventAggregator.subscribe("uniqueGraphicalReferencesCalculated", payload =>{
-      var graphicalElementMarkers = [];
       let uniqueReferences = payload;
       this.uniqueGraphicalReferences = uniqueReferences;
-      let increment = parseInt((196-61) / uniqueReferences.length); ///Todo: make greyscale colors from rgb(61,61,61) to rgb(196,196,196)
-      let st = 61;
-      for(let index in uniqueReferences){
-        // graphicalElementMarkers.push(st);
-        // let styleObj = graphicalElementMarkers.push(".ace-chrome .ace_marker-layer .graphical-analysis-" + st);
-        st += increment;
-        /**Not able to make dynamic styles...not sure why aceutils cannot read from this array**/
-        var style = document.createElement('style');
-        style.type = "text/css";
-        style.innerHTML = ".ace-chrome .ace_marker-layer .graphical-analysis-" + st + "{ position: absolute; border: 2px dashed rgb(" + st + ", " + st + ", " + st + ");}";
-        graphicalElementMarkers.push(style);
-      }
-      console.log(graphicalElementMarkers);
-      if(graphicalElementMarkers.length === uniqueReferences.length) {
-        for (let index in uniqueReferences) {
+        for (let index in this.uniqueGraphicalReferences) {
           let uniqueRef = uniqueReferences[index]; //get the name of the unique reference (e.g. div#jumbotron.class1)
-          let markerToUse = graphicalElementMarkers[defaultMarkerIndexer]; //based on the marker incrementer, get the available marker from my array
+          let markerToUse = defaultMarkers[defaultMarkerIndexer]; //based on the marker incrementer, get the available marker from my array
           refToMarker.push({key: uniqueRef, marker: markerToUse}); //creates an object and pushes into array, key is the name of the reference, value is the availible marker
           defaultMarkerIndexer++;
-          console.log("unique ref", uniqueRef, defaultMarkerIndexer);
         }
-
-
         for(let index in refToMarker){
           let reference = refToMarker[index].key;
           let codeLines = generateCodeLinesForReference(reference, this.referenceTimeLine);
           let marker = refToMarker[index].marker;
-          console.log("makrer", marker);
           let markerManager = aceUtils.makeAceMarkerManager(aceEditor, marker);
           aceUtils.updateAceMarkers(markerManager, codeLines);
         }
-      }
     });
 
     this.eventAggregator.subscribe("expressionAfterCursorChanged", match =>{
@@ -119,7 +96,7 @@ export class GraphicalAnalyzer{
         if(referenceTimeLineObject){
           for(let index in refToMarker){
             let obj = refToMarker[index];
-            if(obj.key === referenceTimeLineObject.reference){
+            if(obj.key[0] && referenceTimeLineObject.reference[0] && obj.key[0] === referenceTimeLineObject.reference[0]){
               for(let ind in defaultMarkers){
                 let marker = defaultMarkers[ind];
                 if(obj.marker === marker){
@@ -143,6 +120,33 @@ export class GraphicalAnalyzer{
 
     this.eventAggregator.subscribe("outputGraphicalElementHovered", elem => {
       let referenceToMark = null;
+      let allCallsToElem = [];
+      for(let obj of this.referenceTimeLine){
+        if(obj.reference){
+          if(obj.reference[0] === elem && obj.type === "CallExpression"){
+            if(allCallsToElem.length > 0){
+              for(let x of allCallsToElem){
+                if(x.id !== obj.id){
+                  allCallsToElem.push(obj);
+                }
+              }
+            }
+            if(allCallsToElem.length === 0){
+              allCallsToElem.push(obj);
+            }
+          }
+        }
+        if(allCallsToElem.length > 0){console.log("a", allCallsToElem);}
+        //TODO branch selector status at this point.  Branch selector should recognize the state of code and output as a function is called multiple times
+        /**
+         * At this point, we store all calls that relate to element x.  Even if a function (e.g. helloWorld()) is called twice
+         * and element x is modified twice, we store it regardless (so we would have two instances of that modification in
+         * allCallsToElem).  It remains to parse through this array and recognize that graphical Function calls (e.g. $helloMessage.addClass("shiny-red"))
+         * are called multiple times when the parent function (helloWorld()) is called multiple times.  Then, we can implement a branch selector
+         * to step through the changes to the output element (the hello message) as the function (helloWorld()) is called again and again.
+          */
+      }
+
       for(let index in this.uniqueGraphicalReferences){
         let reference = this.uniqueGraphicalReferences[index];
         if(createSelector(elem) === createSelector(reference[0])){
@@ -164,7 +168,7 @@ export class GraphicalAnalyzer{
           this.eventAggregator.publish("highlightVisualElement", payload);
         }
         else{
-          console.log(colorForBg, referenceToMark);
+          console.log("ERROR", colorForBg, referenceToMark);
         }
       }
 
@@ -196,14 +200,16 @@ function generateCodeLinesForReference(aReference, referenceTimeline){
 
 function createSelector(elem){
   let name = "";
-  name += elem.tagName.toLowerCase();
-  if(elem.id){
-    name += "#" + elem.id;
-  }
-  if(elem.className){
-    let classConcat = elem.className.replace(" ", ".");
-    name += "." + classConcat;
-  }
+  if(elem && elem.tagName) {
+    name += elem.tagName.toLowerCase();
+    if (elem.id) {
+      name += "#" + elem.id;
+    }
+    if (elem.className) {
+      let classConcat = elem.className.replace(" ", ".");
+      name += "." + classConcat;
+    }
 
-  return name;
+    return name;
+  }
 }
