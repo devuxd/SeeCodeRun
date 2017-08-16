@@ -75,37 +75,103 @@ export class CallGraph {
         self.traceHelper = traceHelper;
         self.isRangeInRange = traceHelper.isRangeInRange;
       }
-      //the text starts at line 0 by default, plus one to match natural line numbers
-      let map = {};
-      let funcs = [];
-      //
-      funcs = self.findFuncs(trace);
-//random comment: I see
-      for (let i = 0; i < funcs.length; i++)
-        map[funcs[i].name] = funcs[i]; //try with adjacency list
+      console.log("RENDER_______________________________________", traceHelper);
+      let formattedTrace = new DataNode("trunk", "Program");
 
-      map = self.makeMatrixList(funcs, map);
-      //
-      let rootsList = []; //list of functions that arent called
-      for (let key in map) {
-        //console.log( key ) ;
-        if (map[key].parents.length === 0)
-          rootsList.push(map[key]);
+      let calls = 0;
+      let functions = {};
+      for(let index in trace.timeline) {
+        let entry = trace.timeline[index];
+        if(entry.type === "FunctionDeclaration" || entry.type === "FunctionExpression" || entry.type === "FunctionData"){
+          functions[JSON.stringify(entry.range)] = entry;
+        }
+      }
+      console.log("functions", functions);
+
+      for(let index in trace.timeline){
+        let entry = trace.timeline[index];
+        let containingFunction = null;
+        if(entry.type === "CallExpression"){
+          for(let i in functions){
+            if(self.isRangeInRange(entry.range, functions[i].range)){
+              if(containingFunction){
+                if(self.isRangeInRange(functions[i].range, containingFunction.range)){
+                  containingFunction = functions[i];
+                }
+              }else{
+                containingFunction = functions[i];
+              }
+            }
+
+          }
+          let rangeinfo= "program";
+          if(containingFunction){
+            // rangeinfo = containingFunction.range.start.row +1;
+            // formattedTrace.children.push(new DataNode(entry.type, entry.name, entry.range, entry.value, entry.text));
+            for(let ind in formattedTrace.children){
+              if(self.isRangeInRange(containingFunction.range, formattedTrace.children[ind].range)){
+                formattedTrace.children[ind].children.push(new DataNode(entry.type, entry.id || entry.name || "anonymous", entry.range, entry.value, entry.text));
+              }
+            }
+          }else{
+            formattedTrace.children.push(new DataNode(entry.type, entry.id || entry.name || "anonymous", entry.range, entry.value, entry.text));
+          }
+          // console.log("expression", entry.range.start.row +1, entry.range.start.column,  "belongs to ", rangeinfo);
+        }
+        // if(entry.type === "FunctionData"){
+        // if(entry.type === "FunctionDeclaration" || entry.type === "FunctionExpression" || entry.type === "FunctionData"){
+        //     for(let i = --index; i > 0; i--){
+        //     let previousEntry = trace.timeline[i];
+        //     if(previousEntry.type === "CallExpression" ){
+        //       //&& JSON.stringify(entry.callExpressionRange) === JSON.stringify(previousEntry.range)
+        //       // console.log("Function definition", entry);
+        //       console.log("function call " +(calls++), functions[JSON.stringify(previousEntry.range)]);
+        //       break;
+        //     }
+        //   }
+        //
+        // }
       }
 
 
-      let masterHead = new DataNode("Program", "Program");
 
-      // rootsList.map(function(e) {
-      //   masterHead.children.push(e);
-      // })
+      return formattedTrace;
 
-      // return rootsList[ 0 ] ;
-      return rootsList[0];
+
+//
+//       //the text starts at line 0 by default, plus one to match natural line numbers
+//       let map = {};
+//       let funcs = [];
+//       //
+//       funcs = self.findFuncs(trace);
+// //random comment: I see
+//       for (let i = 0; i < funcs.length; i++)
+//         map[funcs[i].name] = funcs[i]; //try with adjacency list
+//
+//       map = self.makeMatrixList(funcs, map);
+//       //
+//       let rootsList = []; //list of functions that arent called
+//       for (let key in map) {
+//         //console.log( key ) ;
+//         if (map[key].parents.length === 0)
+//           rootsList.push(map[key]);
+//       }
+//
+//
+//       let masterHead = new DataNode("Program", "Program");
+//
+//       // rootsList.map(function(e) {
+//       //   masterHead.children.push(e);
+//       // })
+//
+//       // return rootsList[ 0 ] ;
+//       return rootsList[0];
     };
 
     this.renderFx = function renderFx(formattedTrace, divElement, query, queryType, aceUtils, aceMarkerManager, dimensions, eventAggregator) {
-
+      // if(true){
+      //   return;
+      // }
       // execution trace formatted for use in d3.hierarchy
       if (!formattedTrace) {
         return;
