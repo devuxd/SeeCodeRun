@@ -26,6 +26,26 @@
     "test": "gulp test",
     "e2e": "gulp serve webdriver-standalone e2e"
   },
+  "jscsConfig": {
+    "preset": "google",
+    "requireCurlyBraces": true
+  },
+  "eslintConfig":{
+    "env": { "es6": true },
+    "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    }
+  },
+  "eslintIgnore": [
+    "config.js",
+    "dist/*",
+    "export/*",
+    "jspm_packages/*"
+  ],
   "devDependencies": {
     "aurelia-bundler": "^0.4.0",
     "aurelia-tools": "^0.2.4",
