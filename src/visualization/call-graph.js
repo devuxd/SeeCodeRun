@@ -17,6 +17,20 @@ export class CallGraph {
           " " + d.parent.y + "," + d.parent.x;
       }
     },
+
+    /*
+    // adds the links between the nodes
+    var link = g.selectAll(".link")
+      .data( nodes.descendants().slice(1))
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        return "M" + d.x + "," + d.y
+          + "C" + d.x + "," + (d.y + d.parent.y) / 2
+          + " " + d.parent.x + "," +  (d.y + d.parent.y) / 2
+          + " " + d.parent.x + "," + d.parent.y;
+      });
+  */
     down: {
       nodeRenderer: function translateRight(d) {
         return "translate(" + d.x + "," + d.y + ")";
@@ -504,7 +518,7 @@ export class CallGraph {
           .attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; })
           .on("click", click);
 
-        nodeEnter.append("rect")
+        nodeEnter.append("circle")
           // .attr("r", 1e-6)
           .style("fill", function(d) { return d.data.children ? "lightsteelblue" : "#fff"; });
 
