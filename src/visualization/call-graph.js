@@ -54,10 +54,15 @@ export class CallGraph {
             + " " + d.target.y + "," + d.target.x;
         }
 
-        return "M" + d.x + "," + d.y +
-          "C" + (d.parent.x + 100) + "," + d.y +
-          " " + (d.parent.x + 100) + "," + d.parent.y +
-          " " + d.parent.x + "," + d.parent.y;
+        // // return "M" + d.x + "," + d.y +
+        //   "C" + (d.parent.x + 100) + "," + d.y +
+        //   " " + (d.parent.x + 100) + "," + d.parent.y +
+        //   " " + d.parent.x + "," + d.parent.y;
+
+        return "M" + d.x + "," + d.y
+          + "C" + d.x + "," + (d.y + d.parent.y) / 2
+          + " " + d.parent.x + "," +  (d.y + d.parent.y) / 2
+          + " " + d.parent.x + "," + d.parent.y;
 
       }
     }
@@ -106,6 +111,7 @@ export class CallGraph {
         let entry = trace.timeline[index];
         let containingFunction = null;
         if(entry.type === "CallExpression"){
+
           for(let i in functions){
             if(self.isRangeInRange(entry.range, functions[i].range)){
               if(containingFunction){
@@ -120,8 +126,12 @@ export class CallGraph {
           }
           let rangeinfo= "program";
           if(containingFunction){
+            console.log("has containing function: ", entry);
             // rangeinfo = containingFunction.range.start.row +1;
             // formattedTrace.children.push(new DataNode(entry.type, entry.name, entry.range, entry.value, entry.text));
+
+            // requires checking multiple levels. only looks in Program->a but should look into Program->a->b and check the call expression rather than the function defintion
+            // case: http://localhost:3000/#-KtrDqRJnDrTpQR7a_eQ
             for(let ind in formattedTrace.children){
               if(self.isRangeInRange(containingFunction.range, formattedTrace.children[ind].range)){
                 formattedTrace.children[ind].children.push(new DataNode(entry.type, entry.id || entry.name || "anonymous", entry.range, entry.value, entry.text));
@@ -148,7 +158,7 @@ export class CallGraph {
       }
 
 
-
+      console.log(formattedTrace);
       return formattedTrace;
 
 
