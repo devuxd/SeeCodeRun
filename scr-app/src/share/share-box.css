@@ -1,0 +1,49 @@
+#shareBox {
+    float: left;
+    width: 350px;
+}
+
+#shareDiv {
+    position: relative;
+    padding-right: 4px;
+}
+
+#copyTarget{
+  padding: 0px 20px 0px 20px;
+  line-height: 20px;
+  font-size: 12px;
+  border-color: #0066ff;
+}
+
+#copyButton {
+    font-size: 18px;
+    position: absolute;
+    right: 3px;
+}
+
+#copyButton:hover {
+    cursor: pointer;
+    color: #3C8AFC;
+}
+
+#copyButton:active {
+    cursor: pointer;
+    color: #0066ff;
+}
+
+#goToShareButton {
+  font-size: 19px;
+  position: absolute;
+  left: 0px;
+  /*float: left;*/
+}
+
+#goToShareButton:hover {
+  cursor: pointer;
+  color: #3C8AFC;
+}
+
+#goToShareButton:active {
+  cursor: pointer;
+  color: #0066ff;
+}

@@ -1,0 +1,16 @@
+<template bindable="chat">
+<require from="./chat.css"></require>
+  <div id="chatDiv" class="seecoderun-chat" >
+    <header><span class='glyphicon glyphicon-comment'></span>&#160;Chat</header>
+    <div id = 'chatToolbar' class='seecoderun-chat-toolbar'>
+      <label for="chatUserNameInput">Username:</label>
+      <input type='text' id='chatUserNameInput' placeholder='Enter Your Username...'>
+    </div>
+    <ul id='chatMessages'></ul>
+    <footer>
+      <input type='text' id='chatMessageInput' placeholder='Type Message Here...'>
+      <span id = "chatMessageFeedbackSent" class='glyphicon glyphicon-comment'></span>
+      <span id = "chatMessageFeedbackNotSent" class='glyphicon glyphicon-alert'></span>
+    </footer>
+  </div>
+</template>

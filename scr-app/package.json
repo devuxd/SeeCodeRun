@@ -1,0 +1,33 @@
+{
+  "name": "scr-app",
+  "version": "2.0.0",
+  "private": true,
+  "dependencies": {
+    "bootstrap": "^4.0.0-beta",
+    "jquery": "^3.2.1",
+    "jss": "^9.0.0",
+    "jss-preset-default": "^4.0.1",
+    "material-ui": "^1.0.0-beta.18",
+    "material-ui-icons": "^1.0.0-beta.17",
+    "popper.js": "^1.12.6",
+    "prop-types": "^15.6.0",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "react-jss": "^7.2.0",
+    "react-redux": "^5.0.6",
+    "react-scripts": "1.0.14",
+    "react-transition-group": "^2.3.0-beta.0",
+    "reactstrap": "^5.0.0-alpha.3",
+    "recompose": "^0.26.0",
+    "redux": "^3.7.2",
+    "redux-observable": "^0.16.0",
+    "rxjs": "^5.4.3",
+    "typeface-roboto": "0.0.43"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

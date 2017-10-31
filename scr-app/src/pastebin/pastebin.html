@@ -1,0 +1,93 @@
+<template>
+  <require from = "codeSection/code-section.css"></require>
+  <require from = "ace/ace-editor.css"></require>
+  <require from = "pastebin/pastebin.css"></require>
+  <require from = "traceView/trace-view.css"></require>
+  <require from = "traceView/collapsible-list.css"></require>
+
+  <require from = "jsEditor/js-editor.html"></require>
+  <require from = "jsGutter/js-gutter.html"></require>
+  <require from = "htmlEditor/html-editor.html"></require>
+  <require from = "cssEditor/css-editor.html"></require>
+  <require from = "visViewer/vis-viewer.html"></require>
+  <require from = "htmlViewer/html-viewer.html"></require>
+  <require from = "consoleWindow/console-window.html"></require>
+  <require from = "tracePlayer/trace-player.html"></require>
+  <require from = "traceSearch/trace-search.html"></require>
+
+  <require from="searcher/searcher.html"></require>
+
+  <div id = "mainContainer" class = "box-shadow-bottom">
+    <div id = "main-splitter-left"  class = "split split-horizontal container-fluid">
+      <ul id = "codeTabs" class = "nav nav-tabs" role = "tablist">
+        <li class = "nav-item">
+          <a id =  "jsTab" class="nav-link active" href="#js-container" data-toggle="tab" role = "tab" aria-controls = "js-container" aria-expanded="true">
+            JS
+          </a>
+        </li>
+        <li class = "nav-item">
+          <a id =  "htmlTab" class="nav-link" href = "#html-container" data-toggle = "tab" role = "tab" aria-controls = "html-container" aria-expanded="true">
+            HTML
+          </a>
+        </li>
+        <li class = "nav-item">
+          <a id =  "cssTab" class="nav-link" href = "#css-container" data-toggle = "tab" role = "tab" aria-controls = "css-container" aria-expanded="true">
+            CSS
+          </a>
+        </li>
+      </ul>
+      <div id = "codeContent" class = "tab-content box-shadow-left">
+        <div id = "js-container" class = "tab-pane fade show active" role = "tabpanel" aria-labelledby="jsTab">
+          <div id = "code-section" class = "w3-row">
+            <div id = "js-editor-code" class = "w3-half">
+              <js-editor js-editor.bind = "jsEditor"></js-editor>
+            </div>
+            <div id = "js-editor-trace-gutter" class = "w3-rest">
+              <js-gutter js-gutter.bind = "jsGutter"></js-gutter>
+            </div>
+          </div>
+        </div>
+        <div id = "html-container" class = "tab-pane fade show active"  role = "tabpanel" aria-labelledby="htmlTab">
+          <html-editor html-editor.bind = "htmlEditor"></html-editor>
+        </div>
+        <div id = "css-container"  class = "tab-pane fade show active" role = "tabpanel" aria-labelledby="cssTab">
+          <css-editor css-editor.bind = "cssEditor"></css-editor>
+        </div>
+      </div>
+    </div>
+
+    <div id = "main-splitter-right" class = "split split-horizontal container-fluid" >
+      <div id = "right-splitter">
+        <div id = "right-splitter-top" class = "split split-vertical box-shadow-right">
+          <ul id = "reviewTabs" class = "nav nav-tabs mb-2" role = "tablist">
+            <li class = "nav-item">
+              <a id = "previewTab" class="nav-link active" role = "tab" aria-controls = "preview" href = "#preview" data-toggle = "tab" aria-expanded="true">
+                Output
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a id = "visualizationTab" class="nav-link" role = "tab" aria-controls = "visualization-container" href = "#visualization-container"  data-toggle = "tab" aria-expanded="true">
+                Debug
+              </a>
+            </li>
+          </ul>
+          <div  class = "tab-content">
+            <div id = "preview" class = "tab-pane fade show active" role = "tabpanel" aria-labelledby="previewTab">
+              <html-viewer html-viewer.bind="htmlViewer"></html-viewer>
+            </div>
+            <div id = "visualization-container" class = "tab-pane fade show active"  role = "tabpanel" aria-labelledby="visualizationTab">
+              <trace-player tracePlayer.bind = "traceViewController.tracePlayer"></trace-player>
+              <vis-viewer vis-viewer.bind = "visViewer"></vis-viewer>
+              <trace-search trace-search.bind = "traceSearch"></trace-search>
+            </div>
+          </div>
+        </div>
+
+        <div id = "right-splitter-bottom" class = "split split-vertical box-shadow-right">
+          <console-window console.bind = 'consoleWindow'></console-window>
+        </div>
+      </div>
+    </div>
+    <searcher> searcher.bind = "searcher"</searcher>
+ </div>
+</template>
