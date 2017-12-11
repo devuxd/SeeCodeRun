@@ -1,58 +1,123 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="theme-color" content="#000000">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!--
-      manifest.json provides metadata used when your web app is added to the
-      homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
-    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+  <!--
+    manifest.json provides metadata used when your web app is added to the
+    homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
+  -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
+  <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
+  <!--
+    Notice the use of %PUBLIC_URL% in the tags above.
+    It will be replaced with the URL of the `public` folder during the build.
+    Only files inside the `public` folder can be referenced from the HTML.
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>seeCode.run</title>
-  </head>
-  <body>
-    <noscript>
-      You need to enable JavaScript to run this app.
-    </noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-    <script src="%PUBLIC_URL%/require.js"></script>
-    <script src="%PUBLIC_URL%/monaco-editor/dev/vs/loader.js"></script>
-    <script>
-      var reactComponent = null;
-      require.config({ paths: { 'vs': "%PUBLIC_URL%/monaco-editor/dev/vs" }});
-      require(['vs/editor/editor.main'], function() {
-       if(reactComponent){
-         reactComponent.onMonacoLoaded(monaco);
-       }
-      });
-
-      window.onPasteBinDidMount = function onPasteBinDidMount(pasteBin){
-        reactComponent = pasteBin;
+    Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+    work correctly both with client-side routing and a non-root public URL.
+    Learn how to configure a non-root public URL by running `npm run build`.
+  -->
+  <script>
+    window.scr = {
+      isCdnOk: true,
+      monacoBuild: '0.10.1',
+      monacoPath: 'dev', //is Development
+      monacoUrl: null,
+      monaco: null,
+      error: null,
+      firecoWorker: null
+    };
+    const host = 'seecode.run';
+    if (window.location.host === host) {
+      scr.monacoPath = 'min'; // is Production
+      if (window.location.protocol !== 'https:') {
+        window.location.protocol = 'https';
       }
+    }
+  </script>
+  <title>seeCode.run</title>
+</head>
+<body>
+<noscript>
+  You need to enable JavaScript to run this app.
+</noscript>
+<div id="root"></div>
+<!--
+  This HTML file is a template.
+  If you open it directly in the browser, you will see an empty page.
 
-    </script>
-  </body>
+  You can add webfonts, meta tags, or analytics to this file.
+  The build step will place the bundled scripts into the <body> tag.
+
+  To begin the development, run `npm start` or `yarn start`.
+  To create a production bundle, use `npm run build` or `yarn build`.
+-->
+<!--always uncomment the next script when deploying for production-->
+<!--<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.10.1/min/vs/loader.js"></script>-->
+<script>
+  scr.isCdnOk = !!window.require;
+  if (scr.isCdnOk) {
+    window.MonacoEnvironment = {
+      getWorkerUrl: function (workerId, label) {
+        if (window.scr.monacoPath === 'min') {
+          return 'monaco-editor-worker-loader-proxy.js';
+        } else {
+          return 'monaco-editor-worker-loader-proxy.dev.js';
+        }
+      }
+    };
+    scr.monacoUrl = 'https://cdn.jsdelivr.net/npm/monaco-editor@' + scr.monacoBuild + '/' + scr.monacoPath + '/vs';
+    loadMonaco();
+  } else {
+    scr.monacoUrl = '%PUBLIC_URL%/monaco-editor/' + scr.monacoPath + '/vs';
+    importScript('%PUBLIC_URL%/monaco-editor/' + scr.monacoPath + '/vs/loader.js',
+      loadMonaco
+      , onScrError);
+  }
+
+  function loadFirecoWebWorker() {
+    if (window.Worker) {
+      scr.firecoWorker = new Worker('firecoWebWorker.js');
+    }else{
+      alert("Browser is not compatible with seeCode.Run, it requires web workers.");
+    }
+  }
+
+  function loadMonaco() {
+    require.config({paths: {'vs': scr.monacoUrl}});
+    // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
+    // the default worker url location (used when creating WebWorkers). The problem here is that
+    // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
+    // a web worker through a same-domain script
+    require(['vs/editor/editor.main'], function loadMonacoFulfilled() {
+       // window.monaco is now accessible
+      setTimeout(loadFirecoWebWorker, 3000);
+    }, function loadMonacoRejected(error) {
+      scr.error = {type: 'monaco', description: error};
+    });
+  }
+
+  function onScrError(error) {
+    scr.error = {type: 'import', description: error};
+    alert('SeeCodeRun encounter an error loading required files: Monaco Editor. try refreshing the page.');
+  }
+
+  function importScript(sSrc, fOnload, fOnerror) {
+    const oScript = document.createElement('script');
+    oScript.type ='text\/javascript';
+    if (fOnload) {
+      oScript.onload = fOnload;
+    }
+    if (fOnload) {
+      oScript.onerror = fOnerror;
+    }
+    document.body.insertBefore(oScript, document.currentScript);
+    oScript.src = sSrc;
+  }
+</script>
+</body>
 </html>

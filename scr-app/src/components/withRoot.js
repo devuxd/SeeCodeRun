@@ -5,6 +5,7 @@ import JssProvider from 'react-jss/lib/JssProvider';
 import {withStyles, MuiThemeProvider} from 'material-ui/styles';
 import wrapDisplayName from 'recompose/wrapDisplayName';
 import createContext from '../styles/createContext';
+import PropTypes from "prop-types";
 
 // Apply some reset
 const styles = theme => ({
@@ -13,13 +14,22 @@ const styles = theme => ({
       background: theme.palette.background.default,
       WebkitFontSmoothing: 'antialiased', // Antialiasing.
       MozOsxFontSmoothing: 'grayscale', // Antialiasing.
+      height: '100%',
+      width: '100%'
     },
     body: {
+      minHeight: '100%',
+      minWidth: '100%',
+      height: '100%',
+      width: '100%',
       margin: 0,
-      padding: 0,
-      overflow: "hidden"
+      padding: 0
     },
-  },
+    "#root": {
+      height: '100%',
+      width: '100%'
+    }
+  }
 });
 
 let AppWrapper = props => props.children;
@@ -36,6 +46,8 @@ function withRoot(BaseComponent) {
       if (jssStyles && jssStyles.parentNode) {
         jssStyles.parentNode.removeChild(jssStyles);
       }
+      //cleaning warnings from Material-UI PropTypes checking
+      // console.clear();
     }
 
     render() {
@@ -57,5 +69,12 @@ function withRoot(BaseComponent) {
 
   return WithRoot;
 }
+
+withRoot.propTypes = {
+  jss: PropTypes.object.isRequired,
+  theme: PropTypes.object.isRequired,
+  sheetsManager: PropTypes.object.isRequired,
+  sheetsRegistry: PropTypes.object.isRequired
+};
 
 export default withRoot;

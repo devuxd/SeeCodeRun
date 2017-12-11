@@ -1,17 +1,59 @@
-import React, { Component } from 'react';
-import '../styles/pasteBin.css';
+import React, {Component} from 'react';
+import {Responsive, WidthProvider} from 'react-grid-layout';
+import Editor from '../components/Editor';
+import Playground from '../components/Playground';
+
+import {withStyles} from 'material-ui/styles';
+import '../styles/Pastebin.css';
+
+import Paper from 'material-ui/Paper';
+import Button from 'material-ui/Button';
+import AddIcon from 'material-ui-icons/Add';
+import PropTypes from "prop-types";
+
+import _ from 'lodash';
+
+const gridBreakpoints = {lg: 1200};
+const gridCols = {lg: 120};
+const gridRowHeight = {lg: 50};
+const gridLayouts = {
+  lg:
+    [
+      {i: 'scriptContainer', x: 0, y: 0, w: 50, h: 4, minW: 10, maxW: gridCols.lg - 20, minH: 2, isDraggable: false},
+      {i: 'htmlContainer', x: 50, y: 0, w: 30, h: 2, minW: 10, maxW: gridCols.lg - 20, minH: 1, isDraggable: false},
+      {i: 'cssContainer', x: 50, y: 2, w: 30, h: 2, minW: 10, maxW: gridCols.lg - 20, minH: 1, isDraggable: false},
+      {i: 'debugContainer', x: 80, y: 0, w: 40, h: 4, minW: 10, maxW: gridCols.lg - 20, minH: 2, isDraggable: false},
+      {i: 'consoleContainer', x: 0, y: 4, w: gridCols.lg, minW: gridCols.lg, h: 1},
+      {i: 'outputContainer', x: 0, y: 5, w: gridCols.lg, h: 4, isDraggable: false}
+    ]
+};
+const ResponsiveReactGridLayout = WidthProvider(Responsive);
+
+const styles = theme => ({
+  layout: {
+    height: '1500px'
+  },
+  button: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    float: 'right',
+    margin: theme.spacing.unit,
+  },
+});
 
 class PasteBin extends Component {
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.state={
+    this.state = {
+      gridLayouts: gridLayouts,
       monaco: null,
       editors: {
         scriptEditor: null,
         documentEditor: null,
         styleEditor: null
       },
-      navigatorDecorations:{
+      navigatorDecorations: {
         scriptEditor: null,
         documentEditor: null,
         styleEditor: null
@@ -19,182 +61,110 @@ class PasteBin extends Component {
 
     }
   }
-  render() {
-    return (
-      <div id="container" className="editor" >
-      </div>
-    );
+
+  //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,placeholder: LayoutItem, e: MouseEvent, element: HTMLElement
+  onResizeStart(layout, oldItem, newItem,
+                placeholder, e, element) {
+    // console.log("onResizeStart", oldItem, newItem, layout);
+    this.resizeEditorsAndDebugCells(layout, oldItem, newItem);
   }
 
-  onMonacoLoaded(monaco){
-    let jsEditor = monaco.editor.create(document.getElementById('container'), {
-      value: [
-        '"use strict";',
-        '',
-        "class Chuck {",
-        "    greet() {",
-        "        return Facts.next();",
-        "    }",
-        "}",
-        'function x() {',
-        '\tconsole.log("Hello world!");',
-        '}',
-        '// press ctrl + space while having the cursor on "mk"',
-        '"dependencies":{"mk"}'
-      ].join('\n'),
-      language: 'javascript',
-      glyphMargin: true,
-      nativeContextMenu: false
-    });
+  resizeEditorsAndDebugCells(layout, oldItem, newItem) {
 
-    this.setState({
-      monaco: monaco,
-      editors: {
-        scriptEditor: jsEditor
+    if (newItem.i === "scriptContainer" && (oldItem.w !== newItem.w || oldItem.h !== newItem.h)) {
+      layout[1].x = layout[0].x + layout[0].w;
+      layout[2].x = layout[0].x + layout[0].w;
+
+      layout[1].w = gridCols.lg - layout[0].w - layout[3].w;
+      layout[2].w = gridCols.lg - layout[0].w - layout[3].w;
+
+      if (layout[0].h > layout[1].h) {
+        layout[2].h = layout[0].h - layout[1].h;
+      } else {
+        layout[1].h = layout[1].h - 1;
+        layout[2].y = layout[1].y + layout[1].h + 1;
+        layout[2].h = 1;
       }
-    });
 
-    this.addNavigators();
-    this.addCodeLens();
-    this.addCompletionProviders();
-    this.addConfigurationDefaults();
-  }
+      layout[3].h = layout[0].h;
 
-  addNavigators(){
-    let monaco = this.state.monaco;
-    let editor = this.state.editors.scriptEditor;
-
-    let editorDecorations = editor.deltaDecorations([], [
-      {
-        range: new monaco.Range(3,1,3,1),
-        options: {
-          isWholeLine: true,
-          className: 'myContentClass',
-          glyphMarginClassName: 'myGlyphMarginClass'
-        }
-      }
-    ]);
-
-    this.setState({
-      navigatorDecorations: {
-        scriptEditor: editorDecorations
-      }
-    });
-
-  }
-
-  addCodeLens(){
-    let monaco = this.state.monaco;
-    let editor = this.state.editors.scriptEditor;
-    var commandId = editor.addCommand(0, function() {
-      // services available in `ctx`
-      console.log("c", arguments);
-
-    }, '');
-
-    monaco.languages.registerCodeLensProvider('javascript', {
-      provideCodeLenses: function(model, token) {
-        return [
-          {
-            range: {
-              startLineNumber: 2,
-              startColumn: 1,
-              endLineNumber: 2,
-              endColumn: 1
-            },
-            id: "First Line",
-            command: {
-              id: commandId,
-              title: "First Line: blaaaaaa",
-              content: "bluuuuuuuuu"
-            }
-          }
-        ];
-      },
-      resolveCodeLens: function(model, codeLens, token) {
-        console.log(arguments);
-        return codeLens;
-      }
-    });
-  }
-
-  addCompletionProviders() {
-    let monaco = this.state.monaco;
-
-    function createDependencyProposals() {
-      // returning a static list of proposals, not even looking at the prefix (filtering is done by the Monaco editor),
-      // here you could do a server side lookup
-      return [
-        {
-          label: '"lodash"',
-          kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "The Lodash library exported as Node.js modules.",
-          insertText: '"lodash": "*"'
-        },
-        {
-          label: '"express"',
-          kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "Fast, unopinionated, minimalist web framework",
-          insertText: '"express": "*"'
-        },
-        {
-          label: '"mkdirp"',
-          kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "Recursively mkdir, like <code>mkdir -p</code>",
-          insertText: '"mkdirp": "*"'
-        }
-      ];
     }
 
+  }
 
-    monaco.languages.registerCompletionItemProvider('javascript', {
-      provideCompletionItems: function(model, position) {
-        // find out if we are completing a property in the 'dependencies' object.
-        var textUntilPosition = model.getValueInRange({startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column});
-        var match = textUntilPosition.match(/"dependencies"\s*:\s*{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*("[^"]*)?$/);
-        console.log(match);
-        if (match) {
-          return createDependencyProposals();
-        }
-        return [];
-      }
-    });
+  onResize(layout, oldItem, newItem,
+           placeholder, e, element) {
+    // console.log("onResizeStop", oldItem, newItem, layout);
+    this.resizeEditorsAndDebugCells(layout, oldItem, newItem);
+  }
+
+  onResizeStop(layout, oldItem, newItem,
+               placeholder, e, element) {
+
+    this.resizeEditorsAndDebugCells(layout, oldItem, newItem);
 
   }
 
-  addConfigurationDefaults(){
-    let monaco = this.state.monaco;
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: true,
-      noSyntaxValidation: false
-    });
+  onLayoutChange = newLayout => {
+    const layout = this.context.store.getState().pastebinReducer.layout;
+    if (_.isEqual(layout, newLayout)) {
+      //this.context.store.dispatch(layoutChange(layout));
+    }
+  };
 
-// compiler options
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES6,
-      allowNonTsExtensions: true
-    });
-
-// extra libraries
-    monaco.languages.typescript.javascriptDefaults.addExtraLib([
-      'declare class Facts {',
-      '    /**',
-      '     * Returns the next fact',
-      '     */',
-      '    static next():string',
-      '}',
-    ].join('\n'), 'filename/facts.d.ts');
-
-
-  }
-
-    componentDidMount(){
-    // Workaround to sync loading React container and then Monaco
-    window.onPasteBinDidMount(this);
+  //ScriptEditor
+  render() {
+    const classes = this.props.classes;
+    return (
+      <ResponsiveReactGridLayout className={classes.layout}
+                                 layouts={gridLayouts}
+                                 breakpoints={gridBreakpoints}
+                                 cols={gridCols}
+                                 compactType={'vertical'}
+                                 measureBeforeMount={true}
+                                 autoSize={true}
+                                 rowHeight={151}
+                                 onResizeStart={this.onResizeStart.bind(this)}
+                                 onResize={this.onResize.bind(this)}
+                                 onResizeStop={this.onResizeStop.bind(this)}
+                                 onLayoutChange={this.onLayoutChange}
+      >
+        <Paper key="scriptContainer">
+          <Editor editorId={'js'} />
+        </Paper>
+        <Paper key="htmlContainer">
+          <Editor editorId={'html'} />
+        </Paper>
+        <Paper key="cssContainer">
+          <Editor editorId={'css'} />
+        </Paper>
+        <Paper key="debugContainer">
+          DEBUG
+          <Button fab color="primary" aria-label="add" className={classes.button}>
+            <AddIcon/>
+          </Button>
+        </Paper>
+        <Paper key="consoleContainer">
+          CONSOLE
+        </Paper>
+        <Paper key="outputContainer">
+          <Playground/>
+        </Paper>
+      </ResponsiveReactGridLayout>
+    );
   }
 }
 
-export default PasteBin;
+PasteBin.contextTypes = {
+  store: PropTypes.object.isRequired
+};
+
+PasteBin.propTypes = {
+  classes: PropTypes.object.isRequired,
+};
+
+
+export default withStyles(styles)(PasteBin);
 
 
 // /* global Split */

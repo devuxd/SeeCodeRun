@@ -1,19 +1,37 @@
-import 'bootstrap/dist/css/bootstrap.css';
 import 'typeface-roboto';
-import './index.css';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 
+import 'rxjs';
+import {Provider} from 'react-redux';
+import configureStore from './redux/configureStore';
 
 import registerServiceWorker from './registerServiceWorker';
 
 import React from 'react';
-import { render } from 'react-dom';
-import Index from './pages/index';
-// import NavigationBar from './components/navigationBar';
-import NavigationBar from './components/navigationBarMui';
-import PasteBin from './components/pasteBin';
+import {render} from 'react-dom';
 
-render(<Index />, document.querySelector('#root'));
-render(<NavigationBar />, document.querySelector('#navigationBar'));
-render(<PasteBin />, document.querySelector('#pasteBin'));
+import Index from './pages/Index';
+import {rootSubscriber} from "./redux/modules/root";
+import {fetchPastebin} from './redux/modules/pastebin';
+
+const store = configureStore();
+
+window.reduxStore = store;
+
+const rootUnsubscribe = rootSubscriber(store);
+
+window.addEventListener("beforeunload", function () {
+  store.dispatch({type: 'DISPOSE_PASTEBIN'});
+  rootUnsubscribe();
+}, false);
+
+store.dispatch(fetchPastebin());
+
+render(
+  <Provider store={store}>
+    <Index/>
+  </Provider>,
+  document.querySelector('#root'));
 
 registerServiceWorker();
