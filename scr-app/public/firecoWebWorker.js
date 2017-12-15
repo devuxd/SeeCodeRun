@@ -1,24 +1,64 @@
-importScripts(
-  'https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js',
-  'https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js',
-  'https://www.gstatic.com/firebasejs/4.6.2/firebase-database.js',
-  'firepad.js'
-);
+const MESSAGE_REJECTED = 'MESSAGE_REJECTED';
+const CONFIGURE = 'CONFIGURE';
+const CONFIGURE_FULFILLED = 'CONFIGURE_FULFILLED';
+const SET_TEXT = 'SET_TEXT';
+const GET_TEXT = 'GET_TEXT';
 
-const SERVER_TIMESTAMP = firebase.database.ServerValue.TIMESTAMP;
-const dataBaseRoot = '/scr2';
-const config = {
-  apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
-  authDomain: "seecoderun.firebaseapp.com",
-  databaseURL: "https://seecoderun.firebaseio.com",
-  projectId: "firebase-seecoderun",
-  storageBucket: "firebase-seecoderun.appspot.com",
-  messagingSenderId: "147785767581"
+let mutex = false;
+let isAuth = false; //todo receive token validation update
+let timeout = null;
+console.log("ddddddd");
+onmessage = function (e) {
+  if(!e.data){
+    postMessage({type: MESSAGE_REJECTED, editorId: null, error: 'No data was provided.'});
+  }
+
+  const payload = e.data;
+    switch (payload.type) {
+      case CONFIGURE:
+        configureFirecoWebWorker(payload.importScripts, payload.firebaseConfig);
+        break;
+      case GET_TEXT:
+        getText(payload.editorId, payload.firebasePath, payload.pastebinToken);
+        break;
+      case SET_TEXT:
+        setText(payload.editorId, payload.firebasePath, payload.text, payload.pastebinToken);
+        break;
+      default:
+        postMessage({type: MESSAGE_REJECTED, editorId: null, error: 'Message type is not recognized.'});
+    }
 };
 
-firebase.initializeApp(config);
+function configureFirecoWebWorker(scripts, config){
+  // console.log(arguments);
+  importScripts(...scripts);
+  firebase.initializeApp(config);
+  isFirecoWebWorkerReady = true;
+  postMessage({type: CONFIGURE_FULFILLED});
+}
 
+let isFirecoWebWorkerReady = false;
 const firecos = {};
+
+// const p =myAsyncFunction('https://us-central1-firebase-seecoderun.cloudfunctions.net/getPastebin?session=yes&pastebinId=-L029pzcgsjXQBdkWXDC');
+//
+// const p2 =myAsyncFunction('https://us-central1-firebase-seecoderun.cloudfunctions.net/getPastebin?');
+// function myAsyncFunction(url) {
+//   return new Promise((resolve, reject) => {
+//     const xhr = new XMLHttpRequest();
+//     xhr.open("GET", url);
+//     xhr.onload = () => resolve(xhr.responseText);
+//     xhr.onerror = () => reject(xhr.statusText);
+//     xhr.send();
+//   });
+// }
+//
+// p.then(function(){
+//   console.log(arguments);
+// });
+// p2.then(function(){
+//   console.log('2', arguments);
+// });
 
 function configureFireco(editorId, firebasePath) {
   if (!firecos[editorId]) {
@@ -27,13 +67,17 @@ function configureFireco(editorId, firebasePath) {
   }
 }
 
-const SET_TEXT = 'SET_TEXT';
-const GET_TEXT = 'GET_TEXT';
-let mutex = false;
-let isAuth = false; //todo receive token validation update
-let timeout = null;
+// function disposeFirecos(){
+//   for (const editorId in this.firecos) {
+//     if (this.firecos[editorId].headless) {
+//       this.firecos[editorId].headless.dispose();
+//     }
+//   }
+// }
 
-function getText(editorId, firebasePath, pastebinToken) {
+
+function getText(editorId, firebasePath, pastebinToken) {//editorId == DEFAULT_FIRECO
+  let retries =30;
   if (firecos[editorId] && firecos[editorId].isGetTextListening) {
     postMessage({type: 'FIRECO_GET_TEXT_REJECTED', editorId: editorId, error: 'Listener is already active.'});
     return;
@@ -51,9 +95,14 @@ function getText(editorId, firebasePath, pastebinToken) {
 
   function firepadGetText() {
     if (!firebase.auth().currentUser) {
-      setTimeout(firepadGetText, 250);
+      if(retries--){
+        setTimeout(firepadGetText, 250);
+      }else{
+        postMessage({type: 'FIRECO_GET_TEXT_REJECTED', editorId: editorId, error: 'Auth timeout.'});
+      }
       return;// {ignore: 'waiting auth'};
     }
+
     configureFireco(editorId, firebasePath);
     firecos[editorId].isGetTextListening = true;
     firecos[editorId].firebaseRef.on('value', () => {
@@ -63,14 +112,11 @@ function getText(editorId, firebasePath, pastebinToken) {
         }
       });
     });
-    // catch(error =>{
-    //   firecos[editorId].isGetTextListening = false;
-    //   postMessage({type: 'FIRECO_GET_TEXT_REJECTED', editorId: editorId, error: error});
-    // } );
   }
 }
 
-function setText(editorId, firebasePath, text, pastebinToken) {
+function setText(editorId, firebasePath, text, pastebinToken) { // text, editorId == DEFAULT_FIRECO
+  let retries =50;
   if (mutex) {
     return;// {ignore: 'Still writing'};
   }
@@ -78,15 +124,17 @@ function setText(editorId, firebasePath, text, pastebinToken) {
     firebase.auth().signInWithCustomToken(pastebinToken);
     isAuth = true;
   }
-  clearTimeout(timeout);
-  if (!firebase.auth().currentUser) {
-    setTimeout(firepadSetText, 1000);
-    return;//{ignore: 'waiting auth'};
-  }
-  setTimeout(firepadSetText, 100);
+
+  firepadSetText();
 
   function firepadSetText() {
-    if (mutex) {
+    if (mutex || !firebase.auth().currentUser) {
+      if(retries--){
+        clearTimeout(timeout);
+        timeout =setTimeout(firepadSetText, 100);
+      }else{
+        postMessage({type: 'FIRECO_SET_TEXT_REJECTED', editorId: editorId, error: 'Auth or write mutex timeout.'});
+      }
       return;// {ignore: 'Still writing'};
     }
     configureFireco(editorId, firebasePath);
@@ -99,21 +147,5 @@ function setText(editorId, firebasePath, text, pastebinToken) {
       postMessage({type: 'FIRECO_SET_TEXT_FULFILLED', editorId: editorId, error: err, committed: committed});
     });
   }
-
-  return {scheduled: 'true'};
 }
 
-onmessage = function (e) {
-  const payload = e.data;
-  switch (payload.type) {
-    //todo dispose firepads
-    case GET_TEXT:
-      getText(payload.editorId, payload.firebasePath, payload.pastebinToken);
-      break;
-    case SET_TEXT:
-      setText(payload.editorId, payload.firebasePath, payload.text, payload.pastebinToken);
-      break;
-    default:
-      postMessage({type: 'ACTION_REJECTED', editorId: null, error: 'No message type was provided.'});
-  }
-};

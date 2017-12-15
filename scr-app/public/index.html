@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="theme-color" content="#000000">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
   <!--
     manifest.json provides metadata used when your web app is added to the
     homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
@@ -27,12 +26,16 @@
       monacoBuild: '0.10.1',
       monacoPath: 'dev', //is Development
       monacoUrl: null,
-      monaco: null,
-      error: null,
-      firecoWorker: null
+      monacoLoadedListeners: [],
+      monacoLoadedTimeout: null,
+      monacoLoadedTimeoutMs: 10000,
+      firecoWorker: null,
+      errorType: null,
+      error: null
+      // functions declared in body
     };
-    const host = 'seecode.run';
-    if (window.location.host === host) {
+
+    if (window.location.host === 'seecode.run') {
       scr.monacoPath = 'min'; // is Production
       if (window.location.protocol !== 'https:') {
         window.location.protocol = 'https';
@@ -59,64 +62,114 @@
 <!--always uncomment the next script when deploying for production-->
 <!--<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.10.1/min/vs/loader.js"></script>-->
 <script>
-  scr.isCdnOk = !!window.require;
-  if (scr.isCdnOk) {
-    window.MonacoEnvironment = {
-      getWorkerUrl: function (workerId, label) {
-        if (window.scr.monacoPath === 'min') {
-          return 'monaco-editor-worker-loader-proxy.js';
-        } else {
-          return 'monaco-editor-worker-loader-proxy.dev.js';
-        }
-      }
-    };
-    scr.monacoUrl = 'https://cdn.jsdelivr.net/npm/monaco-editor@' + scr.monacoBuild + '/' + scr.monacoPath + '/vs';
-    loadMonaco();
-  } else {
-    scr.monacoUrl = '%PUBLIC_URL%/monaco-editor/' + scr.monacoPath + '/vs';
-    importScript('%PUBLIC_URL%/monaco-editor/' + scr.monacoPath + '/vs/loader.js',
-      loadMonaco
-      , onScrError);
-  }
-
-  function loadFirecoWebWorker() {
+  //function definitions, loader at the bottom
+  scr.initFirecoWebWorker = function initFirecoWebWorker() {// sync worker for the monaco editor
     if (window.Worker) {
+      console.log(scr.error);
       scr.firecoWorker = new Worker('firecoWebWorker.js');
-    }else{
-      alert("Browser is not compatible with seeCode.Run, it requires web workers.");
-    }
-  }
+      var defaultImportScripts = [
+        'https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js',
+        'https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js',
+        'https://www.gstatic.com/firebasejs/4.6.2/firebase-database.js',
+        'firepad.js'
+      ];
 
-  function loadMonaco() {
-    require.config({paths: {'vs': scr.monacoUrl}});
-    // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
-    // the default worker url location (used when creating WebWorkers). The problem here is that
-    // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
-    // a web worker through a same-domain script
-    require(['vs/editor/editor.main'], function loadMonacoFulfilled() {
-       // window.monaco is now accessible
-      setTimeout(loadFirecoWebWorker, 3000);
-    }, function loadMonacoRejected(error) {
-      scr.error = {type: 'monaco', description: error};
-    });
-  }
-
-  function onScrError(error) {
-    scr.error = {type: 'import', description: error};
-    alert('SeeCodeRun encounter an error loading required files: Monaco Editor. try refreshing the page.');
-  }
-
-  function importScript(sSrc, fOnload, fOnerror) {
-    const oScript = document.createElement('script');
-    oScript.type ='text\/javascript';
-    if (fOnload) {
-      oScript.onload = fOnload;
+      var defaultFirebaseConfig = {
+        apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
+        authDomain: "seecoderun.firebaseapp.com",
+        databaseURL: "https://seecoderun.firebaseio.com",
+        projectId: "firebase-seecoderun",
+        storageBucket: "firebase-seecoderun.appspot.com",
+        messagingSenderId: "147785767581"
+      };
+      scr.firecoWorker.postMessage({
+        type: 'CONFIGURE',
+        importScripts: defaultImportScripts,
+        firebaseConfig: defaultFirebaseConfig
+      });
+      return;
     }
-    if (fOnload) {
-      oScript.onerror = fOnerror;
+    scr.errorType = 'WEB_WORKER';
+  };
+
+  scr.monacoLoaded = function monacoLoaded() {
+    clearTimeout(scr.monacoLoadedTimeout); // triggered by initMonacoLoader
+    for (var i = 0; i < scr.monacoLoadedListeners.length; i++) {
+      scr.monacoLoadedListeners[i](window.monaco, scr.error);
     }
-    document.body.insertBefore(oScript, document.currentScript);
-    oScript.src = sSrc;
+    scr.monacoLoadedListener = [];
+  };
+
+  scr.onMonacoLoaded = function onMonacoLoaded(callbackFunc) { // returns window.monaco or null if error, error
+    if (window.monaco) {
+      callbackFunc(window.monaco, null);
+      return;
+    }
+    scr.monacoLoadedListeners.push(callbackFunc)
+  };
+
+  scr.initMonacoLoader = function initMonacoLoader() { // uses window.scr defined in head
+    scr.monacoLoadedTimeout = setTimeout(function monacoLoadedTimeout() {
+      scr.errorType = 'MONACO_LOAD_TIMEOUT';
+      scr.monacoLoaded();
+    }, scr.monacoLoadedTimeoutMs);
+
+    scr.isCdnOk = !!window.require;
+    if (scr.isCdnOk) { // loading monaco from CDN
+      // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
+      // the default worker url location (used when creating WebWorkers). The problem here is that
+      // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
+      // a web worker through a same-domain script
+      window.MonacoEnvironment = {
+        getWorkerUrl: function (/* workerId, label */) {
+          if (scr.monacoPath === 'min') {
+            return 'monaco-editor-worker-loader-proxy.js';
+          } else {
+            return 'monaco-editor-worker-loader-proxy.dev.js';
+          }
+        }
+      };
+      scr.monacoUrl = 'https://cdn.jsdelivr.net/npm/monaco-editor@' + scr.monacoBuild + '/' + scr.monacoPath + '/vs';
+      return loadMonaco();
+    } else {// loading monaco locally
+      scr.monacoUrl = '%PUBLIC_URL%/monaco-editor/' + scr.monacoPath + '/vs';
+      importScriptInBody('%PUBLIC_URL%/monaco-editor/' + scr.monacoPath + '/vs/loader.js'
+        , loadMonaco
+        , function loadMonacoScriptError(error) {
+          scr.errorType = 'MONACO_LOAD_LOCAL_SCRIPT'
+          scr.error = error;
+          scr.monacoLoaded();
+        });
+    }
+
+    return true;
+
+    function loadMonaco() {
+      require.config({paths: {'vs': scr.monacoUrl}});
+      require(['vs/editor/editor.main'], scr.monacoLoaded);
+    }
+
+    function importScriptInBody(sSrc, onloadFunc, onerrorFunc) {
+      const oScript = document.createElement('script');
+      oScript.type = 'text\/javascript';
+      if (onloadFunc) {
+        oScript.onload = onloadFunc;
+      }
+      if (onerrorFunc) {
+        oScript.onerror = onerrorFunc;
+      }
+      document.body.insertBefore(oScript, document.currentScript);
+      oScript.src = sSrc;
+    }
+  };
+
+  // loaders
+  try {
+    scr.initFirecoWebWorker();
+    scr.initMonacoLoader();
+  } catch (e) {
+    scr.errorType = 'UNCAUGHT';
+    scr.error = e;
   }
 </script>
 </body>

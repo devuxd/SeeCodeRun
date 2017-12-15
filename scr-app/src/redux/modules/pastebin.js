@@ -1,5 +1,6 @@
-import {Observable} from "rxjs/Observable";
+import {Observable, Subject, Subscriber} from "rxjs";
 import {ajax} from 'rxjs/observable/dom/ajax';
+
 import localStorage from 'store';
 
 const DISPOSE_PASTEBIN = 'DISPOSE_PASTEBIN';
@@ -34,23 +35,23 @@ const defaultPasteBinState = {
 };
 
 export const fetchPastebin = () => {
-  // localStorage.set('session', null);
-  try{
-    const session = localStorage.get('session') ? 'yes' : '';
-    const pastebinId = window.location.hash.replace(/#/g, ''); // yes: create a new session
+  try {
+    const pastebinId = window.location.hash.replace(/#/g, '');
+    const session = (pastebinId && localStorage.get(`scr_session#${pastebinId}`)) ? 'yes' : '';
+    // '': creates a new session
     return {type: FETCH_PASTEBIN, pastebinId: pastebinId, session: session};
-  }catch(e){
-    return {type: FETCH_PASTEBIN, e:e};
+  } catch (e) {
+    return {type: FETCH_PASTEBIN, e: e};
   }
 
 };
 
 const fetchPastebinFulfilled = (session, pastebinId, initialEditorsTexts) => {
-  localStorage.set('session', localStorage.get('session') || session);
+  localStorage.set(`scr_session#${pastebinId}`, localStorage.get(`scr_session#${pastebinId}`) || session);
   window.location.hash = pastebinId;
   return {
     type: FETCH_PASTEBIN_FULFILLED,
-    session: localStorage.get('session'),
+    session: localStorage.get(`scr_session#${pastebinId}`),
     pastebinId: pastebinId,
     initialEditorsTexts: initialEditorsTexts
   }
@@ -152,7 +153,7 @@ export const pastebinReducer = (state = defaultPasteBinState, action) => {
 };
 
 export const pastebinSubscribe = store => {
-  const pastebinUnsubscribe = store.subscribe(() => {
+  return store.subscribe(() => {
     const state = store.getState();
     if (state.pastebinReducer.error) {
       return;
@@ -174,7 +175,6 @@ export const pastebinSubscribe = store => {
       store.dispatch(authPastebin(state.pastebinReducer.pastebinToken));
     }
   });
-  return {pastebin: pastebinUnsubscribe};
 };
 
 export const disposePastebinEpic = (action$, store, deps) =>
@@ -183,43 +183,74 @@ export const disposePastebinEpic = (action$, store, deps) =>
       deps.appManager.observeDispose()
     );
 
-export const pastebinEpic = action$ =>
-  action$.ofType(FETCH_PASTEBIN)
-    // .mergeMap(action=>Observable.of({type:'LOG', action:action}))
-    .mergeMap(action =>
-      ajax({
+export const pastebinEpic = (action$, store) =>{
+  const progressSub = Subscriber.create(n => console.log("progressSub", n), error => {console.log("progressSub E", error);store.dispatch(fetchPastebinTokenRejected(error))}, () => console.log("progressSub complete"));
+  return action$.ofType(FETCH_PASTEBIN)
+  // .mergeMap(action=>Observable.of({type:'LOG', action:action}))
+    .mergeMap(action => {
+      const url = `${getPasteBinUrl}?${'session=' + action.session}${action.pastebinId ? '&pastebinId=' + action.pastebinId : ''}`;
+      return ajax({
         crossDomain: true,
-        withCredentials: false,
-        url: `${getPasteBinUrl}?${'session=' + action.session}${action.pastebinId ? '&pastebinId=' + action.pastebinId : ''}`
-      }).catch(error =>
-        Observable.of(fetchPastebinRejected(error.xhr.response)))
-    ).map(result => {
-      if (result.error) {
-        return fetchPastebinRejected(result.error);
-      } else {
-        return fetchPastebinFulfilled(result.response.session, result.response.pastebinId, result.response.initialEditorsTexts);
+        progressSubscriber: progressSub,
+        url: url
+      });
+      // return Observable.create(observer =>{
+      //   ajax({
+      //     crossDomain: true,
+      //     // progressSubscriber: progressSub,
+      //     url: url
+      //   }).catch(error => {console.log("catch E", error);observer.next({error:error})}).subscribe(e=> observer.next(e));
+      //
+      // });
+    })
+    .catch(error =>{console.log("catch E", error); return Observable.of(fetchPastebinTokenRejected(error))})
+
+    .map(result => {
+        console.log("DDDDD", result);
+        if(!result || result.type){
+          return fetchPastebinRejected('Request Timeout;');
+        }
+
+        if (!result) {
+          return fetchPastebinRejected('Request Timeout;');
+        }
+        if (result.error) {
+          return fetchPastebinRejected(result.error);
+        } else {
+          return fetchPastebinFulfilled(result.response.session, result.response.pastebinId, result.response.initialEditorsTexts);
+        }
       }
-    }
-  );
+    ).catch(error => Observable.of(fetchPastebinRejected(error)))
+}
+
+// .takeUntil(Observable.interval(1000)).subscribe(l=>{return {type:'LOG', l: l}});
 // .startWith(fetchPastebin());
 
 export const pastebinTokenEpic = (action$, store) =>
   action$.ofType(FETCH_PASTEBIN_TOKEN)
+  // .mergeMap(action=>Observable.of({type:'LOG', action:action}))
     .throttleTime(2000)
-    .mergeMap(action =>
-      ajax({
-        crossDomain: true,
-        withCredentials: false,
-        url: `${getPasteBinTokenUrl}?pastebinId=${action.pastebinId || store.getState().pastebinReducer.pastebinId}`
-      }).catch(error =>
-        Observable.of(fetchPastebinTokenRejected(error.xhr.response)))
-    ).map(result => {
-    if (result.error) {
-      return fetchPastebinTokenRejected(result.error);
-    } else {
-      return fetchPastebinTokenFulfilled(result.response.pastebinToken);
-    }
-  });
+    .mergeMap(action => {
+      const url =`${getPasteBinTokenUrl}?pastebinId=${action.pastebinId || store.getState().pastebinReducer.pastebinId}`;
+        return Observable.create(observer =>{
+          // const progressSub = Subscriber.create(n => console.log("progressSub", n), error => observer.next(fetchPastebinTokenRejected(error.xhr.response)), () => console.log("progressSub complete"));
+          ajax({
+            crossDomain: true,
+            // progressSubscriber: progressSub,
+            url: url
+          }).catch(error =>
+            Observable.of(fetchPastebinTokenRejected(error.xhr.response))).subscribe(e=> observer.next(e));
+
+        });
+      }
+    )
+    .map(result => {
+      if (result.error) {
+        return fetchPastebinTokenRejected(result.error);
+      } else {
+        return fetchPastebinTokenFulfilled(result.response.pastebinToken);
+      }
+    });
 
 
 export const authPastebinEpic = (action$, store, deps) =>

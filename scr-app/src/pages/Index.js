@@ -17,6 +17,10 @@ const styles = {
 };
 
 class Index extends Component {
+  constructor(props){
+    super(props);
+    this.state = {unsusbscribe:()=>({})};
+  }
 
   render() {
     const {classes} = this.props;
@@ -29,6 +33,12 @@ class Index extends Component {
   }
 
   componentDidMount() {
+    this.setState({unsusbscribe:
+      this.context.store.subscribe(()=>
+      {
+
+      })
+    });
 
   }
 }

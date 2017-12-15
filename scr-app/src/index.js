@@ -1,8 +1,6 @@
 import 'typeface-roboto';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-
-import 'rxjs';
 import {Provider} from 'react-redux';
 import configureStore from './redux/configureStore';
 
@@ -14,19 +12,46 @@ import {render} from 'react-dom';
 import Index from './pages/Index';
 import {rootSubscriber} from "./redux/modules/root";
 import {fetchPastebin} from './redux/modules/pastebin';
+import {loadMonacoFulfilled, loadMonacoRejected} from "./redux/modules/monaco";
+import {configureFirecoWorkerFulfilled} from "./redux/modules/fireco";
 
 const store = configureStore();
 
-window.reduxStore = store;
+const errorTypeMessages = {
+  'UNCAUGHT': 'Some files were not loaded, please check your internet connection.',
+  'WEB_WORKER': 'Browser is not compatible with seeCode.Run, it requires web workers.',
+  'MONACO_LOAD_TIMEOUT': 'Monaco Loading Timeout.',
+  'MONACO_LOAD_LOCAL_SCRIPT': 'Some files were not loaded, please check your internet connection.',
+  'FIRECO_WEB_WORKER_LOAD_TIMEOUT': 'Some files were not loaded, please check your internet connection.'
+};
+const configureScrLoaderListener = ()=>{
+  if (window.scr) { // assigned in index.html's head
+    if(window.scr.error){
+      store.dispatch()
+      return;
+    }
+    window.scr.onMonacoLoaded((monaco, error) => {
+      if (monaco) { // window.monaco is loaded
+        store.dispatch(loadMonacoFulfilled(monaco));
+        return;
+      }
+      store.dispatch(loadMonacoRejected(error));
+    });
+    store.dispatch(configureFirecoWorkerFulfilled(window.scr.firecoWorker));
+  }
+};
+
+store.dispatch(fetchPastebin());
+
+
+
+configureScrLoaderListener();
 
 const rootUnsubscribe = rootSubscriber(store);
-
 window.addEventListener("beforeunload", function () {
   store.dispatch({type: 'DISPOSE_PASTEBIN'});
   rootUnsubscribe();
 }, false);
-
-store.dispatch(fetchPastebin());
 
 render(
   <Provider store={store}>
@@ -35,3 +60,5 @@ render(
   document.querySelector('#root'));
 
 registerServiceWorker();
+
+

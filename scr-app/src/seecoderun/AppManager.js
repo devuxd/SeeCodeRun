@@ -1,5 +1,7 @@
 import * as firebase from "firebase";
-import {Observable} from "rxjs/Observable";
+import {Observable} from "rxjs";
+import localStorage from 'store';
+
 import {
   fetchPastebinToken,
   authPastebinFulfilled,
@@ -17,12 +19,11 @@ import {
 import {configureFirecoFulfilled, configureFirecoRejected} from "../redux/modules/fireco";
 
 import {
-  configureFirepad,
   configureMonaco,
   configureMonacoModel,
   configureMonacoEditor,
-  configureFireco
-} from "./modules/Fireco";
+  configureMonacoEditorWidgets
+} from "../utils/MonacoUtils";
 
 const SERVER_TIMESTAMP = firebase.database.ServerValue.TIMESTAMP;
 const dataBaseRoot = '/scr2';
@@ -71,6 +72,7 @@ class AppManager {
     return Observable.create(observer => {
       try {
         this.dispose();
+        this.saveEditorsViewStates();
         observer.next({type: 'DISPOSE_FULFILLED'});
       } catch (error) {
         observer.next({type: 'DISPOSE_REJECTED', error: error});
@@ -80,15 +82,51 @@ class AppManager {
     });
   }
 
+  saveEditorsViewStates(){
+    const editorsViewStates = {};
+    for(const editorId in this.firecos){
+      editorsViewStates[editorId] =  this.firecos[editorId].monacoEditor.saveViewState();
+    }
+    localStorage.set('scr_editorsViewStates', editorsViewStates)
+  }
+
+  restoreEditorsViewStates(){
+    const editorsViewStates = localStorage.set('scr_editorsViewStates');
+    if(!editorsViewStates){
+      return
+    }
+
+    for(const editorId in this.firecos){
+      if(editorsViewStates[editorId]){
+        this.firecos[editorId].monacoEditor.restoreViewState(editorsViewStates[editorId]);
+      }
+    }
+  }
+
+  storeEditorsValues(){
+    const editorsValues = {};
+    for(const editorId in this.firecos){
+      editorsValues[editorId] =  this.firecos[editorId].monacoEditor.getValue();
+    }
+    localStorage.set('scr_editorsValues', editorsValues)
+  }
+
+  recoverEditorsValues(){
+    const editorsValues = localStorage.set('scr_editorsValues');
+    if(!editorsValues){
+      return
+    }
+
+    for(const editorId in this.firecos){
+      if(editorsValues[editorId]){
+        this.firecos[editorId].monacoEditorModel.setValue(editorsValues[editorId]);
+      }
+    }
+  }
+
   dispose() {
-    //todo editor.saveViewState
     if (this.unsubscribeOnIdTokenChanged) {
       this.unsubscribeOnIdTokenChanged();
-    }
-    for (const editor in this.firecos) {
-      if (this.firecos[editor].headlessFirepad) {
-        this.firecos[editor].headlessFirepad.headless.dispose();
-      }
     }
   }
 
@@ -166,9 +204,7 @@ class AppManager {
     for (const editorId in this.firecos) {
       const firebasePath = `${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
       firepadPaths[editorId] = firebasePath;
-
       this.firecos[editorId].firebasePath = firebasePath;
-      this.firecos[editorId].headlessFirepad = configureFirepad(firebasePath, firebase, editorId);
     }
     return firepadPaths;
   }
@@ -246,13 +282,16 @@ class AppManager {
         try {
           const monacoEditor = this.firecos[editorId].monacoEditor;
           const dispatchFirecoActions = this.firecos[editorId].dispatchFirecoActions;
-          configureFireco(this.monaco, editorId, monacoEditor);
+          configureMonacoEditorWidgets(this.monaco, editorId, monacoEditor);
           const configureGetTextListener = () => {
             this.postMessageGetEditorText(editorId)
           };
 
           const configureSetTextListener = () => {
-            const onContentChanged = changes => {
+            const onContentChanged = () => { //changes object ignored
+              if(this.firecos[editorId].ignoreContentChange){
+                return;
+              }
               const currentText = monacoEditor.getValue();
               this.postMessageSetEditorText(editorId, currentText);
             };
@@ -275,7 +314,12 @@ class AppManager {
     if (text === this.firecos[editorId].monacoEditorModel.getValue()) {
       return;
     }
+    this.firecos[editorId].ignoreContentChange =true;
+    const viewState =this.firecos[editorId].monacoEditor.saveViewState();
     this.firecos[editorId].monacoEditorModel.setValue(text);
+    this.firecos[editorId].monacoEditor.restoreViewState(viewState);
+    this.firecos[editorId].ignoreContentChange= false;
+
   };
 
   getFirecoObservable = () => {

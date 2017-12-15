@@ -94,6 +94,7 @@ admin.initializeApp({
 
 exports.getPastebin = functions.https.onRequest((req, res) => {
   const pastebinResponse = {
+    timestamp: Date.now(),
     session: req.query.session,
     pastebinId: req.query.pastebinId,
     initialEditorsTexts: {},
@@ -101,8 +102,8 @@ exports.getPastebin = functions.https.onRequest((req, res) => {
   };
   const firepadsEditorIds = {'js': {isFulfilled: false}, 'html': {isFulfilled: false}, 'css': {isFulfilled: false}}; // keys are editorIds in firebase path 'pastebinId/content/editorId'
   const firepadTimeOut = setTimeout(function () {
-      pastebinResponse.error = '[Server Error]: Timeout getting pastebin data.';
-      console.log(pastebinResponse.error, REQUEST_TIMEOUT_MS);
+      pastebinResponse.error = '[Server Error]: Timeout getting pastebin data after '+REQUEST_TIMEOUT_MS+'ms';
+      console.log(pastebinResponse.error, pastebinResponse);
       res.status(500).send(pastebinResponse);
     },
     REQUEST_TIMEOUT_MS);
@@ -124,14 +125,14 @@ exports.getPastebin = functions.https.onRequest((req, res) => {
     let attemptResponse = function attemptResponse(doneEditorId, text) {
       firepadsEditorIds[doneEditorId].isFulfilled = true;
       pastebinResponse.initialEditorsTexts[doneEditorId] = text;
-      let done = true;
       for (const editorId in firepadsEditorIds) {
-        done = !firepadsEditorIds[editorId].isFulfilled ? false : done;
+        if (!firepadsEditorIds[editorId].isFulfilled) {
+          return;
+        }
       }
-      if (done) {
-        res.status(200).send(pastebinResponse);
-        clearTimeout(firepadTimeOut);
-      }
+      res.status(200).send(pastebinResponse);
+      console.log(pastebinResponse);
+      clearTimeout(firepadTimeOut);
     };
     for (const editorId in firepadsEditorIds) {
       const headlessFirepad = new Firepad.Headless(firebasePastebinRef.child(`firecos/${editorId}`));
@@ -214,6 +215,7 @@ exports.copyPastebin = functions.https.onRequest((req, res) => {
 exports.getPastebinToken = functions.https.onRequest((req, res) => {
   const uid = req.query.pastebinId;
   const pastebinResponse = {
+    timestamp: Date.now(),
     pastebinToken: null,
     error: null
   };

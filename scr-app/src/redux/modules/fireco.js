@@ -1,7 +1,11 @@
-import {Observable} from "rxjs/Observable";
+import {Observable} from "rxjs";
 import {configureMonacoModels, loadMonacoEditor, loadMonacoEditors, updateMonacoEditor} from "./monacoEditor";
 import {configureFirepads} from "./firepad";
 import {loadMonacoFulfilled, loadMonacoRejected} from "./monaco";
+
+const CONFIGURE_FIRECO_WORKER = 'CONFIGURE_FIRECO_WORKER';
+const CONFIGURE_FIRECO_WORKER_FULFILLED = 'CONFIGURE_FIRECO_WORKER_FULFILLED';
+const CONFIGURE_FIRECO_WORKER_REJECTED = 'CONFIGURE_FIRECO_WORKER_REJECTED';
 
 const CONFIGURE_FIRECOS = 'CONFIGURE_FIRECOS';
 const CONFIGURE_FIRECOS_FULFILLED = 'CONFIGURE_FIRECOS_FULFILLED';
@@ -16,12 +20,17 @@ const FIRECO_GET_TEXT_FULFILLED = 'FIRECO_GET_TEXT_FULFILLED';
 
 const defaultState = {
   error: null,
+  isFirecoWorkerConfigured:false,
   areFirecosConfiguring: false,
   areFirecosConfigured: false,
   fulfilledFirecos: 0,
   configuredFirecos: null,
   firecosTexts: null
 };
+
+export const configureFirecoWorker = firecoWorker => ({type: CONFIGURE_FIRECO_WORKER, firecoWorker:firecoWorker});
+export const configureFirecoWorkerFulfilled = () => ({type: CONFIGURE_FIRECO_WORKER_FULFILLED});
+export const configureFirecoWorkerRejected = error => ({type: CONFIGURE_FIRECO_WORKER_REJECTED, error:error});
 
 export const configureFirecos = () => ({type: CONFIGURE_FIRECOS});
 export const configureFirecosFulfilled = () => ({type: CONFIGURE_FIRECOS_FULFILLED});
@@ -57,7 +66,7 @@ export const firecoSubscribe = store => {
   };
   let dispatched = {...defaultDispatched};
 
-  const unsubscribe = store.subscribe(() => {
+  const subscriber = store.subscribe(() => {
     const state = store.getState();
     if (window.monaco) {
       if (!dispatched.loadMonacoFulfilled) {
@@ -142,7 +151,7 @@ export const firecoSubscribe = store => {
     //   // return;
     // }
   });
-  return {fireco: unsubscribe};
+  return subscriber;
 };
 export const firecoReducer =
   (state = defaultState,

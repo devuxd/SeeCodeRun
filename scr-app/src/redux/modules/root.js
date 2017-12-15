@@ -51,7 +51,9 @@ export const rootSubscriber = store => combineSubscribers(store, {
 export function combineSubscribers(store, subscribers) {
   const unsubscribes = {};
   for (const moduleName in subscribers) {
-    unsubscribes[moduleName] = subscribers[moduleName](store);
+    if(subscribers.hasOwnProperty(moduleName)){
+      unsubscribes[moduleName] = subscribers[moduleName](store);
+    }
   }
   return function combinedUnsubscribe() {
     for (const moduleName in unsubscribes) {
