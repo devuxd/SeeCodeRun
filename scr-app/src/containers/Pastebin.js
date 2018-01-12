@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Responsive, WidthProvider} from 'react-grid-layout';
-import Editor from '../components/Editor';
-import Playground from '../components/Playground';
+import Editor from './Editor';
+import Playground from './Playground';
 
 import {withStyles} from 'material-ui/styles';
 import '../styles/Pastebin.css';

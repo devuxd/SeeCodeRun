@@ -65,7 +65,6 @@
   //function definitions, loader at the bottom
   scr.initFirecoWebWorker = function initFirecoWebWorker() {// sync worker for the monaco editor
     if (window.Worker) {
-      console.log(scr.error);
       scr.firecoWorker = new Worker('firecoWebWorker.js');
       var defaultImportScripts = [
         'https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js',

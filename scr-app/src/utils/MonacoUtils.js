@@ -35,10 +35,7 @@ function observeAddViewZone(monacoEditor, afterLineNumber){
   return Observable.create(observer =>{
     const viewZone = {};
     monacoEditor.changeViewZones(function(changeAccessor) {
-      if(!once){
-        console.log("CA", changeAccessor);
-        once=true;
-      }
+
       viewZone.domNode = document.createElement('div');
       // viewZone.domNode.style.background = 'lightgreen';
       viewZone.domNode.style['z-index'] = 300;
@@ -52,8 +49,12 @@ function observeAddViewZone(monacoEditor, afterLineNumber){
       render(<Inspector data={viewZoneConf}/>, viewZone.domNode);
       observer.next(viewZone);
       observer.complete();
-    });
+      if(!once){
+        console.log("CA", changeAccessor);
+        once=true;
+      }
 
+    });
   });
 }
 

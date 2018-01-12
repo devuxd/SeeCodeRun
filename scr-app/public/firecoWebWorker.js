@@ -7,7 +7,7 @@ const GET_TEXT = 'GET_TEXT';
 let mutex = false;
 let isAuth = false; //todo receive token validation update
 let timeout = null;
-console.log("ddddddd");
+
 onmessage = function (e) {
   if(!e.data){
     postMessage({type: MESSAGE_REJECTED, editorId: null, error: 'No data was provided.'});

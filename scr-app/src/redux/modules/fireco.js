@@ -210,7 +210,7 @@ export const firecoReducer =
 export const firecoEpic = (action$, store, deps) =>
   action$.ofType(CONFIGURE_FIRECO)
     .mergeMap(action =>
-      deps.appManager.observeConfigureFireco(action.editorId)
+      deps.appManager.observeConfigureFireco(action.editorId, store)
     );
 
 export const firecosEpic = (action$, store) =>

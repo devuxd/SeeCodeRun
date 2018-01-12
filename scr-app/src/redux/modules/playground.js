@@ -29,11 +29,14 @@ const defaultUpdatePlaygroundState = {
   isPlaygroundUpdated: false,
   isPlaygroundCorrupted: false,
   errorType: null,
-  errorMessage: null
+  errorMessage: null,
+  editorsTexts:{},
+  editorsTextChanges:{}
 };
 
-export const updatePlayground = (text, changes) => ({
+export const updatePlayground = (editorId, text, changes) => ({
     type: UPDATE_PLAYGROUND,
+  editorId: editorId,
     text: text,
     changes: changes
   })
@@ -46,14 +49,21 @@ export const cancelUpdatePlayground = () => {
 };
 
 export const updatePlaygroundReducer =
-  (state = {},
+  (state = defaultUpdatePlaygroundState,
    action) => {
     switch (action.type) {
       case UPDATE_PLAYGROUND:
+        const editorsTexts = {...state.editorsTexts};
+        const editorsTextChanges = {...state.editorsTextChanges};
+        const changes = editorsTextChanges[action.editorId]? editorsTextChanges[action.editorId]: [];
+        editorsTexts[action.editorId] = action.text;
+        editorsTextChanges[action.editorId] = [...changes, action.changes];
         return {
-          ...defaultUpdatePlaygroundState,
+          ...state,
           isPlaygroundUpdating: true,
-          isInstrumenting: true
+          isInstrumenting: true,
+          editorsTexts: editorsTexts,
+          editorsTextChanges: editorsTextChanges
         };
 
       case UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS:
@@ -118,9 +128,9 @@ export const updatePlaygroundReducer =
 export const updatePlaygroundEpic = (action$, store, deps) =>
   action$.ofType(UPDATE_PLAYGROUND)
     .debounceTime(2000)
-    .filter(() => !store.getState().updatePlaygroundReducer.isPlaygroundUpdating)
-    .do(instrumentCode)
-    .mapTo({type: UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS})
+    // .filter(() => !store.getState().updatePlaygroundReducer.isPlaygroundUpdating)
+    // .do(instrumentCode)
+    .mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
     .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
 ;
 

@@ -37,7 +37,7 @@ const defaultPasteBinState = {
 export const fetchPastebin = () => {
   try {
     const pastebinId = window.location.hash.replace(/#/g, '');
-    const session = (pastebinId && localStorage.get(`scr_session#${pastebinId}`)) ? 'yes' : '';
+    const session = (pastebinId && localStorage.get(`scr_session#${pastebinId}`)) ? '1' : '0';
     // '': creates a new session
     return {type: FETCH_PASTEBIN, pastebinId: pastebinId, session: session};
   } catch (e) {
@@ -183,17 +183,18 @@ export const disposePastebinEpic = (action$, store, deps) =>
       deps.appManager.observeDispose()
     );
 
-export const pastebinEpic = (action$, store) =>{
-  const progressSub = Subscriber.create(n => console.log("progressSub", n), error => {console.log("progressSub E", error);store.dispatch(fetchPastebinTokenRejected(error))}, () => console.log("progressSub complete"));
+export const pastebinEpic = (action$, store, deps) =>{
+  // const progressSub = Subscriber.create(n => console.log("progressSub", n), error => {console.log("progressSub E", error);store.dispatch(fetchPastebinTokenRejected(error))}, () => console.log("progressSub complete"));
   return action$.ofType(FETCH_PASTEBIN)
   // .mergeMap(action=>Observable.of({type:'LOG', action:action}))
     .mergeMap(action => {
-      const url = `${getPasteBinUrl}?${'session=' + action.session}${action.pastebinId ? '&pastebinId=' + action.pastebinId : ''}`;
+      deps.appManager.restoreEditorsStates(action.pastebinId);
+      const url = `${getPasteBinUrl}?${'session=' + action.session||'0'}${action.pastebinId ? '&pastebinId=' + action.pastebinId : ''}`;
       return ajax({
         crossDomain: true,
-        progressSubscriber: progressSub,
+        // progressSubscriber: progressSub,
         url: url
-      });
+      }).catch(error =>{return Observable.of(fetchPastebinTokenRejected(error))});
       // return Observable.create(observer =>{
       //   ajax({
       //     crossDomain: true,
@@ -203,10 +204,8 @@ export const pastebinEpic = (action$, store) =>{
       //
       // });
     })
-    .catch(error =>{console.log("catch E", error); return Observable.of(fetchPastebinTokenRejected(error))})
-
     .map(result => {
-        console.log("DDDDD", result);
+        // console.log("DDDDD", result);
         if(!result || result.type){
           return fetchPastebinRejected('Request Timeout;');
         }
@@ -217,6 +216,7 @@ export const pastebinEpic = (action$, store) =>{
         if (result.error) {
           return fetchPastebinRejected(result.error);
         } else {
+          deps.appManager.restoreEditorsStates(result.response.pastebinId);
           return fetchPastebinFulfilled(result.response.session, result.response.pastebinId, result.response.initialEditorsTexts);
         }
       }

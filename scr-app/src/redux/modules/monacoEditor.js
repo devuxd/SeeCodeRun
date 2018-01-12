@@ -178,7 +178,7 @@ export const mountedEditorEpic = (action$, store, deps) =>
 export const monacoModelsEpic = (action$, store, deps) =>
   action$.ofType(CONFIGURE_MONACO_MODELS)
     .mergeMap(action =>
-      deps.appManager.observeConfigureMonacoModels(action.initialEditorsTexts)
+      deps.appManager.observeUpdateMonacoModels(action.initialEditorsTexts)
     );
 
 export const monacoEditorsEpic = (action$, store) =>

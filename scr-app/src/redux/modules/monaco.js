@@ -64,7 +64,7 @@ export const monacoReducer =
 export const monacoEpic = (action$, store, deps) => {
   return action$.ofType(LOAD_MONACO_FULFILLED)
     .mergeMap(action =>
-      deps.appManager.observeConfigureMonaco(action.monaco)
+      deps.appManager.observeConfigureMonaco(action.monaco, store.getState().pastebinReducer.pastebinId)
     ).startWith(loadMonaco());
 };
 

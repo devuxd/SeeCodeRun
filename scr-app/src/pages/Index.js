@@ -8,6 +8,7 @@ import Paper from 'material-ui/Paper';
 
 import TopNavigation from '../containers/TopNavigation';
 import PasteBin from '../containers/Pastebin';
+import ExpressionPopover from '../containers/ExpressionPopover';
 // import BottomNavigation from '../containers/bottomNavigation'; <BottomNavigation/>
 
 const styles = {
@@ -17,9 +18,9 @@ const styles = {
 };
 
 class Index extends Component {
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.state = {unsusbscribe:()=>({})};
+    this.state = {unsusbscribe: () => ({})};
   }
 
   render() {
@@ -28,16 +29,17 @@ class Index extends Component {
       <Paper className={classes.root}>
         <TopNavigation/>
         <PasteBin/>
+        <ExpressionPopover/>
       </Paper>
     );
   }
 
   componentDidMount() {
-    this.setState({unsusbscribe:
-      this.context.store.subscribe(()=>
-      {
+    this.setState({
+      unsusbscribe:
+        this.context.store.subscribe(() => {
 
-      })
+        })
     });
 
   }

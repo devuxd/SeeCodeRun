@@ -1,6 +1,7 @@
 /* eslint-disable flowtype/require-valid-file-annotation */
 import { create, SheetsRegistry } from 'jss';
-import preset from 'jss-preset-default';
+// import preset from 'jss-preset-default';
+import { jssPreset } from 'material-ui/styles';
 import { createMuiTheme } from 'material-ui/styles';
 import { blue, orange } from 'material-ui/colors';
 import createGenerateClassName from 'material-ui/styles/createGenerateClassName';
@@ -13,7 +14,7 @@ const theme = createMuiTheme({
 });
 
 // Configure JSS
-const jss = create(preset());
+const jss = create(jssPreset());
 jss.options.createGenerateClassName = createGenerateClassName;
 
 export const sheetsManager = new Map();

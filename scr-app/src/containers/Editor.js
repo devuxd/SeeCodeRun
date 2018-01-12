@@ -3,9 +3,6 @@ import PropTypes from "prop-types";
 import {withStyles} from 'material-ui/styles';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 
-import {updatePlayground} from "../redux/modules/playground";
-import {firecoGetTextFulfilled, firecoSetTextFulfilled} from "../redux/modules/fireco";
-
 const styles = () => ({
   editor: {
     height: '100%'
