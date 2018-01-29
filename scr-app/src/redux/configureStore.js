@@ -36,7 +36,6 @@ export default function configureStore() {
           return store;
 
         };
-    /* eslint-enable */
   } else {
     finalCreateStore = applyMiddleware(epicMiddleware)(createStore);
   }

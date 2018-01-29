@@ -56,12 +56,8 @@ export const firecoGetTextFulfilled = (editorId, text) => ({
 export const firecoSubscribe = store => {
   const defaultDispatched = {
     error: null,
-    loadMonacoEditors: false,
-    configureMonacoModels: false,
-    loadMonacoEditor: {},
     configureFirecos: false,
-    configureFireco: {},
-    configureFirecosFulfilled: false
+    configureFireco: {}
   };
   let dispatched = {...defaultDispatched};
 
@@ -78,15 +74,8 @@ export const firecoSubscribe = store => {
     if (state.pastebinReducer.pastebinId && state.pastebinReducer.isPastebinAuthenticated && !state.firepadReducer.isConfiguringFirepads
       && !state.firepadReducer.areFirepadsConfigured) {
       store.dispatch(configureFirepads(state.pastebinReducer.pastebinId));
+      return;
     }
-
-    // if (state.pastebinReducer.isPastebinFetched && state.monacoReducer.isMonacoConfigured
-    //   && !state.monacoEditorsReducer.isConfiguringMonacoModels && !state.monacoEditorsReducer.areMonacoModelsConfigured) {
-    //   if (!dispatched.configureMonacoModels) {
-    //     store.dispatch(configureMonacoModels(state.pastebinReducer.initialEditorsTexts));
-    //     dispatched.configureMonacoModels = true;
-    //   }
-    // }
 
     if (!state.firepadReducer.areFirepadsConfigured || !state.monacoReducer.isMonacoConfigured) {
       return;
@@ -111,11 +100,6 @@ export const firecoSubscribe = store => {
         }
       }
     }
-
-    // if (state.firecoReducer.areFirecosConfigured) {
-    //   dispatched = {...defaultDispatched, loadMonacoFulfilled: true};
-    //   // return;
-    // }
   });
 };
 export const firecoReducer =
@@ -172,10 +156,10 @@ export const firecoReducer =
     }
   };
 
-export const firecoEpic = (action$, store, deps) =>
+export const firecoEpic = (action$, store, {appManager}) =>
   action$.ofType(CONFIGURE_FIRECO)
     .mergeMap(action =>
-      deps.appManager.observeConfigureFireco(action.editorId, store)
+      appManager.observeConfigureFireco(action.editorId)
     );
 
 export const firecosEpic = (action$, store) =>
@@ -183,14 +167,14 @@ export const firecosEpic = (action$, store) =>
     .filter(() => (store.getState().firecoReducer.fulfilledFirecos === store.getState().monacoEditorsReducer.monacoEditorsToLoad))
     .mapTo({type: CONFIGURE_FIRECOS_FULFILLED});
 
-export const firecoSetTextEpic = (action$, store, deps) =>
+export const firecoSetTextEpic = (action$, store, {appManager}) =>
   action$.ofType(FIRECO_SET_TEXT_FULFILLED)
     .mergeMap(action=>Observable.of({type:'LOG', action:action}))
     // .do(action => {
     //   }
     //   // deps.appManager.monacoEditorSetText(action.editorId, action.text)
     // );
-export const firecoGetTextEpic = (action$, store, deps) =>
+export const firecoGetTextEpic = (action$, store, {appManager}) =>
   action$.ofType(FIRECO_GET_TEXT_FULFILLED)
     .mergeMap(action=>Observable.of({type:'LOG', action:action}))
     // .do(action => {

@@ -43,9 +43,9 @@ export const firepadReducer = (state = defaultFirepadState, action) => {
   }
 };
 
-export const firepadsEpic = (action$, store, deps) =>
+export const firepadsEpic = (action$, store, {appManager}) =>
   action$.ofType(CONFIGURE_FIREPADS)
-    .throttleTime(2000)
+    // .throttleTime(2000)
     .mergeMap(action =>
-      deps.appManager.observerConfigureFirepads(action.pastebinId)
+      appManager.observerConfigureFirepads(action.pastebinId)
     );

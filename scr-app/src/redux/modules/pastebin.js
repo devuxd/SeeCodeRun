@@ -176,10 +176,10 @@ export const pastebinSubscribe = store => {
   });
 };
 
-export const disposePastebinEpic = (action$, store, deps) =>
+export const disposePastebinEpic = (action$, store, {appManager}) =>
   action$.ofType(DISPOSE_PASTEBIN)
     .mergeMap(() =>
-      deps.appManager.observeDispose()
+      appManager.observeDispose()
     );
 
 export const pastebinEpic = (action$, store, {appManager}) =>
@@ -234,9 +234,9 @@ export const pastebinTokenEpic = (action$, store, {appManager}) =>
 ;
 
 
-export const authPastebinEpic = (action$, store, deps) =>
+export const authPastebinEpic = (action$, store, {appManager}) =>
   action$.ofType(AUTH_PASTEBIN)
   // .throttleTime(2000)
     .mergeMap(() =>
-      deps.appManager.observeAuthPastebin(store.getState().pastebinReducer.pastebinToken)
+      appManager.observeAuthPastebin(store.getState().pastebinReducer.pastebinToken)
     );

@@ -125,7 +125,7 @@ export const updatePlaygroundReducer =
     }
   };
 
-export const updatePlaygroundEpic = (action$, store, deps) =>
+export const updatePlaygroundEpic = (action$, store, {appManager}) =>
   action$.ofType(UPDATE_PLAYGROUND)
     .debounceTime(2000)
     // .filter(() => !store.getState().updatePlaygroundReducer.isPlaygroundUpdating)

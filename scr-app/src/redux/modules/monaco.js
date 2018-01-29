@@ -59,10 +59,10 @@ export const monacoReducer =
     }
   };
 
-export const monacoEpic = (action$, store, deps) => {
+export const monacoEpic = (action$, store, {appManager}) => {
   return action$.ofType(LOAD_MONACO_FULFILLED)
     .mergeMap(action =>
-      deps.appManager.observeConfigureMonaco(action.monaco, store.getState().pastebinReducer.pastebinId)
+      appManager.observeConfigureMonaco(action.monaco, store.getState().pastebinReducer.pastebinId)
     ).startWith(loadMonaco());
 };
 

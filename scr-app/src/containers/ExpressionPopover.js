@@ -10,6 +10,7 @@ const styles = theme => ({
     padding: theme.spacing.unit,
   },
   popover: {
+    // restricts backdrop from being modal
     width: 0,
     height: 0
     // pointerEvents: 'none',
@@ -111,7 +112,7 @@ class ExpressionPopover extends React.Component {
         }}
         onClose={this.handleClose}
       >
-        <ObjectExplorer data={data}/>
+        <ObjectExplorer data={document}/>
       </Popover>
     );
   }
