@@ -19,7 +19,7 @@ class AutoLog{
 
   toSource(){
     this.ast = AutoLog.autoLogSource(this.text, this.locationMap);
-    console.log(this.locationMap);
+   // console.log(this.locationMap);
   return this.ast.toSource();
   }
 }

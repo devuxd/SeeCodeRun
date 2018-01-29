@@ -7,14 +7,35 @@ import {
   authPastebinEpic,
   pastebinReducer, pastebinSubscribe
 } from './pastebin';
-import {firepadsEpic, firepadReducer} from './firepad';
-import {firecoEpic, firecoSetTextEpic, firecoGetTextEpic, firecoReducer, firecoSubscribe, firecosEpic} from './fireco';
-import {monacoEpic, monacoReducer} from './monaco';
 import {
-  monacoModelsEpic, monacoEditorsEpic, monacoEditorEpic, monacoEditorsReducer,
+  firepadsEpic,
+  firepadReducer
+} from './firepad';
+import {
+  firecoEpic,
+  firecoSetTextEpic,
+  firecoGetTextEpic,
+  firecoReducer,
+  firecoSubscribe,
+  firecosEpic
+}
+  from './fireco';
+import {
+  monacoEpic,
+  monacoReducer
+}
+  from './monaco';
+import {
+  monacoEditorsEpic,
+  monacoEditorEpic,
+  monacoEditorsReducer,
   mountedEditorEpic
 } from './monacoEditor'
-import {updatePlaygroundEpic, updatePlaygroundReducer} from './playground';
+import {
+  updatePlaygroundEpic,
+  updatePlaygroundReducer
+}
+  from './playground';
 
 export const rootEpic = combineEpics(
   disposePastebinEpic,
@@ -23,7 +44,6 @@ export const rootEpic = combineEpics(
   authPastebinEpic,
   firepadsEpic,
   mountedEditorEpic,
-  monacoModelsEpic,
   monacoEpic,
   monacoEditorsEpic,
   monacoEditorEpic,
@@ -51,7 +71,7 @@ export const rootSubscriber = store => combineSubscribers(store, {
 export function combineSubscribers(store, subscribers) {
   const unsubscribes = {};
   for (const moduleName in subscribers) {
-    if(subscribers.hasOwnProperty(moduleName)){
+    if (subscribers.hasOwnProperty(moduleName)) {
       unsubscribes[moduleName] = subscribers[moduleName](store);
     }
   }

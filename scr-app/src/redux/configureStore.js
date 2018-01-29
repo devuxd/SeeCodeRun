@@ -10,9 +10,8 @@ const epicMiddleware = createEpicMiddleware(rootEpic, {
 export default function configureStore() {
   let finalCreateStore = null;
   if (process.env.NODE_ENV !== 'production') {
-    /* eslint-disable no-underscore-dangle */
     finalCreateStore =
-      // if there is a browser extension of Redux devtools, that will be used by default
+      // if there is a browser extension of Redux devtools, that will be used instead
       typeof window === 'object' &&
       window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
         reducer => {

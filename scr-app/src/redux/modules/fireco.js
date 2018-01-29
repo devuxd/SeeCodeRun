@@ -55,8 +55,7 @@ export const firecoGetTextFulfilled = (editorId, text) => ({
 
 export const firecoSubscribe = store => {
   const defaultDispatched = {
-    loadMonacoFulfilled: false,
-    loadMonacoRejected: true,
+    error: null,
     loadMonacoEditors: false,
     configureMonacoModels: false,
     loadMonacoEditor: {},
@@ -66,61 +65,28 @@ export const firecoSubscribe = store => {
   };
   let dispatched = {...defaultDispatched};
 
-  const subscriber = store.subscribe(() => {
+  return store.subscribe(() => {
     const state = store.getState();
-    if (window.monaco) {
-      if (!dispatched.loadMonacoFulfilled) {
-        dispatched.loadMonacoFulfilled = true;
-        dispatched.loadMonacoRejected = false;
-        store.dispatch(loadMonacoFulfilled(window.monaco));
-        return;
-      }
-    } else {
-      if (!dispatched.loadMonacoRejected) {
-        dispatched.loadMonacoRejected = true;
-        store.dispatch(loadMonacoRejected('SeeCodeRun encounter an error loading required files: Monaco Editor. try refreshing the page.'));
-        return;
-      }
-    }
 
     const error = state.monacoReducer.error || state.pastebinReducer.error || state.firepadReducer.error || state.firecoReducer.error;
-    if (error) {
+    if (dispatched.error !== error) {
+      dispatched.error = error;
       console.log("System Error", error);
       return;
     }
 
-    // if (state.monacoReducer.isMonacoConfigured
-    //   && !state.monacoEditorsReducer.areMonacoEditorsLoading && !state.monacoEditorsReducer.areMonacoEditorsLoaded) {
-    //   if (!dispatched.loadMonacoEditors) {
-    //     dispatched.loadMonacoEditors = true;
-    //     store.dispatch(loadMonacoEditors());
-    //   }
-    // }
-
-    if (state.monacoReducer.isMonacoConfigured && state.monacoEditorsReducer.areMonacoEditorsLoading
-      && state.monacoEditorsReducer.monacoEditorsStates) {
-      for (const editorId in state.monacoEditorsReducer.monacoEditorsStates) {
-        if (state.monacoEditorsReducer.monacoEditorsStates[editorId].isMounted) {
-          if (!dispatched.loadMonacoEditor[editorId]) {
-            dispatched.loadMonacoEditor[editorId] = true;
-            store.dispatch(loadMonacoEditor(editorId));
-          }
-        }
-      }
-    }
-
-    if (state.pastebinReducer.isPastebinAuthenticated && !state.firepadReducer.isConfiguringFirepads
+    if (state.pastebinReducer.pastebinId && state.pastebinReducer.isPastebinAuthenticated && !state.firepadReducer.isConfiguringFirepads
       && !state.firepadReducer.areFirepadsConfigured) {
       store.dispatch(configureFirepads(state.pastebinReducer.pastebinId));
     }
 
-    if (state.pastebinReducer.isPastebinFetched && state.monacoReducer.isMonacoConfigured
-      && !state.monacoEditorsReducer.isConfiguringMonacoModels && !state.monacoEditorsReducer.areMonacoModelsConfigured) {
-      if (!dispatched.configureMonacoModels) {
-        store.dispatch(configureMonacoModels(state.pastebinReducer.initialEditorsTexts));
-        dispatched.configureMonacoModels = true;
-      }
-    }
+    // if (state.pastebinReducer.isPastebinFetched && state.monacoReducer.isMonacoConfigured
+    //   && !state.monacoEditorsReducer.isConfiguringMonacoModels && !state.monacoEditorsReducer.areMonacoModelsConfigured) {
+    //   if (!dispatched.configureMonacoModels) {
+    //     store.dispatch(configureMonacoModels(state.pastebinReducer.initialEditorsTexts));
+    //     dispatched.configureMonacoModels = true;
+    //   }
+    // }
 
     if (!state.firepadReducer.areFirepadsConfigured || !state.monacoReducer.isMonacoConfigured) {
       return;
@@ -151,7 +117,6 @@ export const firecoSubscribe = store => {
     //   // return;
     // }
   });
-  return subscriber;
 };
 export const firecoReducer =
   (state = defaultState,

@@ -7,7 +7,7 @@ import configureStore from './redux/configureStore';
 import registerServiceWorker from './registerServiceWorker';
 
 import React from 'react';
-import {render} from 'react-dom';
+import ReactDOM from 'react-dom';
 
 import Index from './pages/Index';
 import {rootSubscriber} from "./redux/modules/root";
@@ -27,7 +27,7 @@ const errorTypeMessages = {
 const configureScrLoaderListener = ()=>{
   if (window.scr) { // assigned in index.html's head
     if(window.scr.error){
-      store.dispatch()
+      store.dispatch({type:window.scr.errorType, error:{description: errorTypeMessages[window.scr.errorType], details:window.scr.error}});
       return;
     }
     window.scr.onMonacoLoaded((monaco, error) => {
@@ -43,8 +43,6 @@ const configureScrLoaderListener = ()=>{
 
 store.dispatch(fetchPastebin());
 
-
-
 configureScrLoaderListener();
 
 const rootUnsubscribe = rootSubscriber(store);
@@ -53,7 +51,7 @@ window.addEventListener("beforeunload", function () {
   rootUnsubscribe();
 }, false);
 
-render(
+ReactDOM.render(
   <Provider store={store}>
     <Index/>
   </Provider>,

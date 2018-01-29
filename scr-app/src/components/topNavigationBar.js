@@ -89,15 +89,15 @@ class TopNavigationBar extends Component {
                         onClick={this.logoClick}>
               <img src={scrLogo} className="scr-logo" alt="SCR"/>
             </IconButton>
-            <IconButton title={"Edit history"} onClick={this.editHistoryClick} color={this.state.isEditHistoryToggled? "accent": "default"}>
+            <IconButton title={"Edit history"} onClick={this.editHistoryClick} color={this.state.isEditHistoryToggled? "secondary": "default"}>
               <Icon>change_history</Icon>
             </IconButton>
             <Typography type="title" color="inherit" className={classes.flex}>
             </Typography>
-            <IconButton title={"Share playground"} onClick={this.shareClick} color={this.state.isShareToggled? "accent": "default"}>
+            <IconButton title={"Share playground"} onClick={this.shareClick} color={this.state.isShareToggled? "secondary": "default"}>
               <Icon>share</Icon>
             </IconButton>
-            <IconButton title={"Chat"} onClick={this.chatClick} color={this.state.isChatToggled? "accent": "default"}>
+            <IconButton title={"Chat"} onClick={this.chatClick} color={this.state.isChatToggled? "secondary": "default"}>
               <Icon>chat</Icon>
             </IconButton>
             <IconButton title={"Help"} onClick={this.helpClick}>

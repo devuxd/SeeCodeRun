@@ -1,5 +1,3 @@
-import {Observable} from 'rxjs';
-
 const LOAD_MONACO = 'LOAD_MONACO';
 const LOAD_MONACO_FULFILLED = 'LOAD_MONACO_FULFILLED';
 const LOAD_MONACO_REJECTED = 'LOAD_MONACO_REJECTED';

@@ -17,6 +17,13 @@ export const monacoEditorDefaultOptions = {
   minimap: {enabled: false}
 };
 
+export const monacoEditorMouseEventTypes = {
+  mouseMove: 'mouseMove',
+  mouseLeave: 'mouseLeave',
+  mouseDown: 'mouseDown',
+  contextMenu: 'contextMenu'
+};
+
 export function configureMonaco(monaco) {
   configureMonacoDefaults(monaco);
 }
@@ -26,15 +33,33 @@ export function configureMonacoModel(monaco, text, language) {
 }
 
 export function configureMonacoEditor(monaco, editorId, customEditorOptions) {
-  const options = {...monacoEditorDefaultOptions, customEditorOptions};
+  const options = {...monacoEditorDefaultOptions, ...customEditorOptions};
   return monaco.editor.create(document.getElementById(editorId), options);
 }
 
+export function configureMonacoEditorMouseEventsObservable(editor) {
+  return Observable.create(observer => {
+    editor.onMouseMove(event => {
+      observer.next({type: monacoEditorMouseEventTypes.mouseMove, event: event});
+    });
+    editor.onMouseLeave(event => {
+      observer.next({type: monacoEditorMouseEventTypes.mouseLeave, event: event});
+    });
+    editor.onMouseDown(event => {
+      observer.next({type: monacoEditorMouseEventTypes.mouseDown, event: event});
+    });
+    editor.onContextMenu(event => {
+      observer.next({type: monacoEditorMouseEventTypes.contextMenu, event: event});
+    });
+  });
+}
+
 let once = false;
-function observeAddViewZone(monacoEditor, afterLineNumber){
-  return Observable.create(observer =>{
+
+function observeAddViewZone(monacoEditor, afterLineNumber) {
+  return Observable.create(observer => {
     const viewZone = {};
-    monacoEditor.changeViewZones(function(changeAccessor) {
+    monacoEditor.changeViewZones(function (changeAccessor) {
 
       viewZone.domNode = document.createElement('div');
       // viewZone.domNode.style.background = 'lightgreen';
@@ -49,9 +74,9 @@ function observeAddViewZone(monacoEditor, afterLineNumber){
       render(<Inspector data={viewZoneConf}/>, viewZone.domNode);
       observer.next(viewZone);
       observer.complete();
-      if(!once){
+      if (!once) {
         console.log("CA", changeAccessor);
-        once=true;
+        once = true;
       }
 
     });
@@ -60,7 +85,7 @@ function observeAddViewZone(monacoEditor, afterLineNumber){
 
 export function configureMonacoEditorWidgets(monaco, editorId, monacoEditor) {
   let lineNumberDomSelectors = {};
-  let viewZones ={};
+  let viewZones = {};
   let ignoreLocalGetText = false;
 
   monacoEditor.updateOptions({
@@ -68,10 +93,12 @@ export function configureMonacoEditorWidgets(monaco, editorId, monacoEditor) {
       if (lineNumber === 1) { // is refresh
         lineNumberDomSelectors = {};
       }
-      if(!viewZones[lineNumber]){
-        observeAddViewZone(monacoEditor, lineNumber).subscribe(viewZone=>{viewZones[lineNumber]=viewZone});
+      if (!viewZones[lineNumber]) {
+        observeAddViewZone(monacoEditor, lineNumber).subscribe(viewZone => {
+          viewZones[lineNumber] = viewZone
+        });
       }
-      lineNumberDomSelectors[lineNumber] ={selector: `#${editorId} .line-number-${lineNumber}`} ;
+      lineNumberDomSelectors[lineNumber] = {selector: `#${editorId} .line-number-${lineNumber}`};
       return `<div><div class="line-number-${lineNumber}">${lineNumber}</div></div>`;
     }
   });

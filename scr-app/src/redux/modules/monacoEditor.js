@@ -1,5 +1,6 @@
 import {Observable} from 'rxjs';
 import {CONFIGURE_MONACO_FULFILLED} from "./monaco";
+import {FETCH_PASTEBIN_FULFILLED} from "./pastebin";
 
 const CONFIGURE_MONACO_MODELS = 'CONFIGURE_MONACO_MODELS';
 const CONFIGURE_MONACO_MODELS_FULFILLED = 'CONFIGURE_MONACO_MODELS_FULFILLED';
@@ -38,10 +39,11 @@ export const configureMonacoModels = initialEditorsTexts => ({
 export const configureMonacoModelsFulfilled = () => ({type: CONFIGURE_MONACO_MODELS_FULFILLED});
 export const configureMonacoModelsRejected = error => ({type: CONFIGURE_MONACO_MODELS_REJECTED, error: error});
 
-export const mountEditorFulfilled = (editorId, dispatchFirecoActions) => ({
+export const mountEditorFulfilled = (editorId, dispatchFirecoActions, dispatchMouseEvents) => ({
   type: MOUNT_EDITOR_FULFILLED,
   editorId: editorId,
-  dispatchFirecoActions: dispatchFirecoActions
+  dispatchFirecoActions: dispatchFirecoActions,
+  dispatchMouseEvents: dispatchMouseEvents
 });
 
 export const configureFirecoActionsFulfilled = (editorId) => ({
@@ -169,30 +171,32 @@ export const monacoEditorsReducer =
   };
 
 export const mountedEditorEpic = (action$, store, deps) =>
-  action$.ofType(MOUNT_EDITOR_FULFILLED)
-    // .mergeMap(action=>Observable.of({type:'LOG', action:action}))
-    .mergeMap(action =>
-        deps.appManager.observeConfigureDispatchFirecoActions(action.editorId, action.dispatchFirecoActions)
-    );
-
-export const monacoModelsEpic = (action$, store, deps) =>
-  action$.ofType(CONFIGURE_MONACO_MODELS)
-    .mergeMap(action =>
-      deps.appManager.observeUpdateMonacoModels(action.initialEditorsTexts)
+  action$.ofType(CONFIGURE_MONACO_FULFILLED).zip(action$.ofType(MOUNT_EDITOR_FULFILLED).bufferCount(store.getState().monacoEditorsReducer.monacoEditorsToLoad))
+    // .mergeMap(action=>Observable.of({type:'LOG', action:{a:action, b: window.monaco}}))
+    .concatMap(actions =>{
+      const mounts = actions[1];
+      const observables = [];
+      for(let i=0; i < mounts.length; i++){
+        const action = mounts[i];
+        observables.push(Observable.concat(
+          deps.appManager.observeConfigureDispatchActions(action.editorId, action.dispatchFirecoActions),
+          deps.appManager.observeConfigureMonacoEditor(action.editorId, action.dispatchMouseEvents)
+        ))
+      }
+      return Observable.merge(...observables);
+    }
     );
 
 export const monacoEditorsEpic = (action$, store) =>
   action$.ofType(LOAD_MONACO_EDITOR_FULFILLED)
-    // .concat(action$.ofType(CONFIGURE_MONACO_FULFILLED))
     .filter(() => (store.getState().monacoEditorsReducer.monacoEditorsLoaded === store.getState().monacoEditorsReducer.monacoEditorsToLoad))
     .mapTo(loadMonacoEditorsFulfilled()).startWith(loadMonacoEditors());
 
 export const monacoEditorEpic = (action$, store, deps) =>
-  action$.ofType(LOAD_MONACO_EDITOR)
-    // .concat(action$.ofType(CONFIGURE_MONACO_FULFILLED))
-.mergeMap(action => {
-      return deps.appManager.observeConfigureMonacoEditor(action.editorId)
-    }
-  );
+  action$.ofType(FETCH_PASTEBIN_FULFILLED).zip(action$.ofType(LOAD_MONACO_EDITORS_FULFILLED))
+    .mergeMap(actions => {
+        return deps.appManager.observeUpdateMonacoModels(actions[0].initialEditorsTexts)
+      }
+    );
 
 

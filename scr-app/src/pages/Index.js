@@ -1,14 +1,12 @@
-/* eslint-disable flowtype/require-valid-file-annotation */
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-
+import Reboot from 'material-ui/Reboot';
 import {withStyles} from 'material-ui/styles';
 import withRoot from '../components/withRoot';
 import Paper from 'material-ui/Paper';
 
 import TopNavigation from '../containers/TopNavigation';
 import PasteBin from '../containers/Pastebin';
-import ExpressionPopover from '../containers/ExpressionPopover';
 // import BottomNavigation from '../containers/bottomNavigation'; <BottomNavigation/>
 
 const styles = {
@@ -18,31 +16,36 @@ const styles = {
 };
 
 class Index extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {unsusbscribe: () => ({})};
-  }
+  // constructor(props) {
+  //   super(props);
+  //   this.state = {unsusbscribe: () => ({})};
+  // }
 
   render() {
     const {classes} = this.props;
     return (
-      <Paper className={classes.root}>
-        <TopNavigation/>
-        <PasteBin/>
-        <ExpressionPopover/>
-      </Paper>
+      <div>
+        <Reboot/>
+        <Paper className={classes.root}>
+          <TopNavigation/>
+          <PasteBin/>
+        </Paper>
+      </div>
     );
   }
 
-  componentDidMount() {
-    this.setState({
-      unsusbscribe:
-        this.context.store.subscribe(() => {
-
-        })
-    });
-
-  }
+  // componentWillMount() {
+  //   this.setState({
+  //     unsusbscribe:
+  //       this.context.store.subscribe(() => {
+  //       })
+  //   });
+  //
+  // }
+  //
+  // componentWillUnmount(){
+  //   this.state.unsubscribe();
+  // }
 }
 
 Index.propTypes = {

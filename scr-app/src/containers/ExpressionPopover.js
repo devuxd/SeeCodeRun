@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Popover from 'material-ui/Popover';
-import Typography from 'material-ui/Typography';
 import {withStyles} from 'material-ui/styles';
 
 import ObjectExplorer from '../components/ObjectExplorer';
@@ -11,80 +10,109 @@ const styles = theme => ({
     padding: theme.spacing.unit,
   },
   popover: {
+    width: 0,
+    height: 0
     // pointerEvents: 'none',
   }
 });
 
-const closeDelay = 1000;
+const defaultCloseDelay = 1000;
+
+const closedState = {
+  timeout: null,
+  previousAnchorEl: null,
+  anchorEl: null,
+  mouseEvent: null,
+};
 
 class ExpressionPopover extends React.Component {
   state = {
-    anchorEl: null,
-    timeout: null
+    ...closedState
   };
 
-  handlePopoverOpen = event => {
-    let {timeout} = this.state;
+  componentWillReceiveProps(nextProps, nextContext) {
+    const {previousAnchorEl} = this.state;
+    const {anchorEl, mouseEvent} = nextProps;
+    if (anchorEl) {
+      // if (previousAnchorEl !== anchorEl) {
+        this.handleOpen(anchorEl, mouseEvent);
+      // }
+    } else {
+      this.handleClose();
+    }
+  }
+
+  handleOpen = (newAnchorEl, mouseEvent) => {
+    const {timeout} = this.state;
     clearTimeout(timeout);
-    console.log("open", event.target, timeout);
-   this.setState({anchorEl: event.target, timeout: null});
+    if (newAnchorEl && mouseEvent) {
+      const {anchorEl} = this.state;
+      this.setState({
+        anchorEl: null,
+      });
+
+      setTimeout(() => {
+        // this.store.dispatch();
+        this.setState({
+          previousAnchorEl: anchorEl,
+          anchorEl: newAnchorEl,
+          mouseEvent: mouseEvent,
+          timeout: null,
+        });
+      }, 0);
+
+    } else {
+      this.setState({timeout: null});
+    }
   };
 
-  handlePopoverClose = event => {
-    // if(event){
-    //   return;
-    // }
+  handleClose = event => {
+    const {closeDelay} = this.props;
     let {timeout} = this.state;
     clearTimeout(timeout);
-    console.log("close", event, timeout);
+
+    const eventType = event ? event.type : 'click';
+    if (eventType === 'click') {
+      this.setState({...closedState});
+      return;
+    }
+
     timeout = setTimeout(() => {
-        this.setState({anchorEl: null});
+        this.setState({...closedState});
       },
-      closeDelay
+      isNaN(closeDelay)?defaultCloseDelay: closeDelay
     );
     this.setState({timeout: timeout});
   };
 
   render() {
-    const {classes} = this.props;
-    const {anchorEl} = this.state;
+    const {classes, data} = this.props;
+    let {anchorEl} = this.state;
     const open = !!anchorEl;
-
     return (
-      <div className="wrapper">
-        <Typography onMouseOver={this.handlePopoverOpen} onMouseOut={this.handlePopoverClose}>
-          Hover with a Popover.
-        </Typography>
-        <Popover
-          className={classes.popover}
-          classes={{
-            paper: classes.paper,
-          }}
-          open={open}
-          anchorEl={anchorEl}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-          onClose={this.handlePopoverClose}
-          onEntering={console.log("Entering")}
-          onEnter={console.log("Enter")}
-          onEntered={console.log("Entered")}
-        >
-          <ObjectExplorer
-            onMouseOver={this.handlePopoverOpen}
-            onMouseOut={this.handlePopoverClose}
-            data={{
-              x: {x1: 0},
-              y: 'ssssssssssssssswdhievbrigbbtgbirt',
-              z: ['1111113242543747764', 53647457658578799979]
-            }}/>
-        </Popover>
-      </div>
+      <Popover
+        className={classes.popover}
+        classes={{
+          paper: classes.paper,
+        }}
+        hideBackdrop={true}
+        disableBackdropClick={true}
+        disableAutoFocus={true}
+        disableEnforceFocus={true}
+        open={open}
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        onClose={this.handleClose}
+      >
+        <ObjectExplorer data={data}/>
+      </Popover>
     );
   }
 }

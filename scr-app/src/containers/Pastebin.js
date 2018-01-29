@@ -1,22 +1,22 @@
 import React, {Component} from 'react';
+import PropTypes from "prop-types";
 import {Responsive, WidthProvider} from 'react-grid-layout';
-import Editor from './Editor';
-import Playground from './Playground';
-
-import {withStyles} from 'material-ui/styles';
-import '../styles/Pastebin.css';
-
+// import _ from 'lodash';
+import localStorage from "store";
 import Paper from 'material-ui/Paper';
 import Button from 'material-ui/Button';
 import AddIcon from 'material-ui-icons/Add';
-import PropTypes from "prop-types";
+import {withStyles} from 'material-ui/styles';
 
-import _ from 'lodash';
+import '../styles/Pastebin.css';
+import Editor from './Editor';
+import Playground from './Playground';
+
 
 const gridBreakpoints = {lg: 1200};
 const gridCols = {lg: 120};
-const gridRowHeight = {lg: 50};
-const gridLayouts = {
+const gridHeights = {lg: '1200px'};
+const defaultGridLayouts = {
   lg:
     [
       {i: 'scriptContainer', x: 0, y: 0, w: 50, h: 4, minW: 10, maxW: gridCols.lg - 20, minH: 2, isDraggable: false},
@@ -27,11 +27,13 @@ const gridLayouts = {
       {i: 'outputContainer', x: 0, y: 5, w: gridCols.lg, h: 4, isDraggable: false}
     ]
 };
+
+let currentGridLayouts = defaultGridLayouts;
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 const styles = theme => ({
   layout: {
-    height: '1500px'
+    height: gridHeights.lg
   },
   button: {
     position: 'absolute',
@@ -46,7 +48,7 @@ class PasteBin extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      gridLayouts: gridLayouts,
+      gridLayouts: currentGridLayouts,
       monaco: null,
       editors: {
         scriptEditor: null,
@@ -60,6 +62,35 @@ class PasteBin extends Component {
       }
 
     }
+  }
+
+  componentWillMount() {
+    const {store} = this.context;
+    const pastebinId = store.getState().pastebinReducer.pastebinId;
+    if (!pastebinId) {
+      return;
+    }
+    currentGridLayouts = localStorage.get(`scr_layoutSavedState#${pastebinId}`) ? localStorage.get(`scr_layoutSavedState#${pastebinId}`) : currentGridLayouts;
+    this.setState({
+      gridLayouts: currentGridLayouts
+    });
+  }
+
+  onUnload = () => {
+    const {store} = this.context;
+    const pastebinId = store.getState().pastebinReducer.pastebinId;
+    if (!pastebinId || !currentGridLayouts) {
+      return;
+    }
+    localStorage.set(`scr_layoutSavedState#${pastebinId}`, currentGridLayouts);
+  };
+
+  componentDidMount() {
+    window.addEventListener("beforeunload", this.onUnload);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("beforeunload", this.onUnload)
   }
 
   //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,placeholder: LayoutItem, e: MouseEvent, element: HTMLElement
@@ -105,16 +136,19 @@ class PasteBin extends Component {
 
   }
 
-  onLayoutChange = newLayout => {
-    const layout = this.context.store.getState().pastebinReducer.layout;
-    if (_.isEqual(layout, newLayout)) {
-      //this.context.store.dispatch(layoutChange(layout));
-    }
+  onLayoutChange = (newLayout, newGridLayouts) => {
+    // const layout = this.context.store.getState().pastebinReducer.layout;
+    // if (_.isEqual(layout, newLayout)) {
+    //   //this.context.store.dispatch(layoutChange(layout));
+    // }
+    // this.setState({gridLayouts: c})
+    currentGridLayouts = newGridLayouts;
   };
 
   //ScriptEditor
   render() {
     const classes = this.props.classes;
+    const {gridLayouts} = this.state;
     return (
       <ResponsiveReactGridLayout className={classes.layout}
                                  layouts={gridLayouts}
@@ -130,13 +164,13 @@ class PasteBin extends Component {
                                  onLayoutChange={this.onLayoutChange}
       >
         <Paper key="scriptContainer">
-          <Editor editorId={'js'} />
+          <Editor editorId={'js'}/>
         </Paper>
         <Paper key="htmlContainer">
-          <Editor editorId={'html'} />
+          <Editor editorId={'html'}/>
         </Paper>
         <Paper key="cssContainer">
-          <Editor editorId={'css'} />
+          <Editor editorId={'css'}/>
         </Paper>
         <Paper key="debugContainer">
           DEBUG
