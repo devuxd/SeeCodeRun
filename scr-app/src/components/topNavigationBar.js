@@ -92,7 +92,7 @@ class TopNavigationBar extends Component {
             <IconButton title={"Edit history"} onClick={this.editHistoryClick} color={this.state.isEditHistoryToggled? "secondary": "default"}>
               <Icon>change_history</Icon>
             </IconButton>
-            <Typography type="title" color="inherit" className={classes.flex}>
+            <Typography variant="title" color="inherit" className={classes.flex}>
             </Typography>
             <IconButton title={"Share playground"} onClick={this.shareClick} color={this.state.isShareToggled? "secondary": "default"}>
               <Icon>share</Icon>

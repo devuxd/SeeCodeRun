@@ -7,8 +7,6 @@ import Paper from 'material-ui/Paper';
 
 import TopNavigation from '../containers/TopNavigation';
 import PasteBin from '../containers/Pastebin';
-// import BottomNavigation from '../containers/bottomNavigation'; <BottomNavigation/>
-
 const styles = {
   root: {
     height: '99.9%'
@@ -16,11 +14,6 @@ const styles = {
 };
 
 class Index extends Component {
-  // constructor(props) {
-  //   super(props);
-  //   this.state = {unsusbscribe: () => ({})};
-  // }
-
   render() {
     const {classes} = this.props;
     return (
@@ -33,19 +26,6 @@ class Index extends Component {
       </div>
     );
   }
-
-  // componentWillMount() {
-  //   this.setState({
-  //     unsusbscribe:
-  //       this.context.store.subscribe(() => {
-  //       })
-  //   });
-  //
-  // }
-  //
-  // componentWillUnmount(){
-  //   this.state.unsubscribe();
-  // }
 }
 
 Index.propTypes = {

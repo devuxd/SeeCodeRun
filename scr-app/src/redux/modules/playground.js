@@ -1,24 +1,25 @@
-const UPDATE_PLAYGROUND = 'UPDATE_PLAYGROUND';
+import {Observable} from 'rxjs';
+const UPDATE_PLAYGROUND='UPDATE_PLAYGROUND';
 // const UPDATE_PLAYGROUND_FULFILLED = 'UPDATE_PLAYGROUND_FULFILLED';
 // const UPDATE_PLAYGROUND_REJECTED = 'UPDATE_PLAYGROUND_REJECTED';
-const UPDATE_PLAYGROUND_CANCELED = 'UPDATE_PLAYGROUND_CANCELED';
+const UPDATE_PLAYGROUND_CANCELED='UPDATE_PLAYGROUND_CANCELED';
 
-const UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS = 'UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS';
-const UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE = 'UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE';
+const UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS='UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS';
+const UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE='UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE';
 
-const UPDATE_PLAYGROUND_BUNDLE_SUCCESS = 'UPDATE_PLAYGROUND_BUNDLE_SUCCESS';
-const UPDATE_PLAYGROUND_BUNDLE_FAILURE = 'UPDATE_PLAYGROUND_BUNDLE_FAILURE';
+const UPDATE_PLAYGROUND_BUNDLE_SUCCESS='UPDATE_PLAYGROUND_BUNDLE_SUCCESS';
+const UPDATE_PLAYGROUND_BUNDLE_FAILURE='UPDATE_PLAYGROUND_BUNDLE_FAILURE';
 
-const UPDATE_PLAYGROUND_LOAD_SUCCESS = 'UPDATE_PLAYGROUND_LOAD_SUCCESS';
-const UPDATE_PLAYGROUND_LOAD_FAILURE = 'UPDATE_PLAYGROUND_LOAD_FAILURE';
+const UPDATE_PLAYGROUND_LOAD_SUCCESS='UPDATE_PLAYGROUND_LOAD_SUCCESS';
+const UPDATE_PLAYGROUND_LOAD_FAILURE='UPDATE_PLAYGROUND_LOAD_FAILURE';
 
-const UpdatePlaygroundErrorTypes = {
+const UpdatePlaygroundErrorTypes={
   INSTRUMENTATION_ERROR: 'INSTRUMENTATION',
   BUNDLING_ERROR: 'BUNDLING_ERROR',
   LOADING_ERROR: 'LOADING_ERROR'
 };
 
-const defaultUpdatePlaygroundState = {
+const defaultUpdatePlaygroundState={
   isPlaygroundUpdatingCanceled: false,
   isPlaygroundUpdating: false,
   isInstrumenting: false,
@@ -30,42 +31,71 @@ const defaultUpdatePlaygroundState = {
   isPlaygroundCorrupted: false,
   errorType: null,
   errorMessage: null,
-  editorsTexts:{},
-  editorsTextChanges:{}
+  updatedEditorId: null,
+  editorsTexts: {},
+  editorsTextChanges: {}
 };
 
-export const updatePlayground = (editorId, text, changes) => ({
+export const updatePlayground=(editorId, text, changes) => ({
     type: UPDATE_PLAYGROUND,
-  editorId: editorId,
+    editorId: editorId,
     text: text,
     changes: changes
   })
 ;
 
-export const cancelUpdatePlayground = () => {
+export const updatePlaygroundInstrumentationSuccess=(editorId, autoLog) => ({
+    type: UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS,
+    editorId: editorId,
+    autoLog: autoLog,
+  })
+;
+
+export const updatePlaygroundInstrumentationFailure=(editorId, error) => ({
+    type: UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE,
+    editorId: editorId,
+    error: error,
+  })
+;
+
+export const updatePlaygroundLoadSuccess=(editorId) => ({
+    type: UPDATE_PLAYGROUND_LOAD_SUCCESS,
+    editorId: editorId,
+  })
+;
+
+export const updatePlaygroundLoadFailure=(editorId, error) => ({
+    type: UPDATE_PLAYGROUND_LOAD_FAILURE,
+    editorId: editorId,
+    error: error
+  })
+;
+
+export const cancelUpdatePlayground=() => {
   return {
     type: UPDATE_PLAYGROUND_CANCELED
   }
 };
 
-export const updatePlaygroundReducer =
-  (state = defaultUpdatePlaygroundState,
+export const updatePlaygroundReducer=
+  (state=defaultUpdatePlaygroundState,
    action) => {
     switch (action.type) {
       case UPDATE_PLAYGROUND:
-        const editorsTexts = {...state.editorsTexts};
-        const editorsTextChanges = {...state.editorsTextChanges};
-        const changes = editorsTextChanges[action.editorId]? editorsTextChanges[action.editorId]: [];
-        editorsTexts[action.editorId] = action.text;
-        editorsTextChanges[action.editorId] = [...changes, action.changes];
+        const editorsTexts={...state.editorsTexts};
+        const editorsTextChanges={...state.editorsTextChanges};
+        const changes=editorsTextChanges[action.editorId] ? editorsTextChanges[action.editorId] : [];
+        editorsTexts[action.editorId]=action.text;
+        editorsTextChanges[action.editorId]=[...changes, action.changes];
         return {
           ...state,
+          updatedEditorId: action.editorId,
           isPlaygroundUpdating: true,
           isInstrumenting: true,
           editorsTexts: editorsTexts,
           editorsTextChanges: editorsTextChanges
         };
-
+      
       case UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS:
         return {
           ...state,
@@ -73,7 +103,7 @@ export const updatePlaygroundReducer =
           isInstrumented: true,
           isBundling: true
         };
-
+      
       case UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE:
         return {
           ...state,
@@ -82,7 +112,7 @@ export const updatePlaygroundReducer =
           errorType: UpdatePlaygroundErrorTypes.INSTRUMENTATION_ERROR,
           errorMessage: "An instrumentation error"
         };
-
+      
       case UPDATE_PLAYGROUND_BUNDLE_SUCCESS:
         return {
           ...state,
@@ -90,7 +120,7 @@ export const updatePlaygroundReducer =
           isBundled: true,
           isPlaygroundLoading: true
         };
-
+      
       case UPDATE_PLAYGROUND_BUNDLE_FAILURE:
         return {
           ...state,
@@ -99,14 +129,14 @@ export const updatePlaygroundReducer =
           errorType: UpdatePlaygroundErrorTypes.BUNDLING_ERROR,
           errorMessage: "A bundling error"
         };
-
+      
       case UPDATE_PLAYGROUND_LOAD_SUCCESS:
         return {
           ...state,
           isPlaygroundUpdating: false,
           isPlaygroundUpdated: true
         };
-
+      
       case UPDATE_PLAYGROUND_LOAD_FAILURE:
         return {
           ...state,
@@ -115,23 +145,32 @@ export const updatePlaygroundReducer =
           errorType: UpdatePlaygroundErrorTypes.LOADING_ERROR,
           errorMessage: "A loading error"
         };
-
+      
       case UPDATE_PLAYGROUND_CANCELED:
         console.log("CANCELED");
-        return {...state, isPlaygroundUpdating: false, isPlaygroundUpdatingCanceled: true};
-
+        return {
+          ...state,
+          isPlaygroundUpdating: false,
+          isPlaygroundUpdatingCanceled: true
+        };
+      
       default:
         return state;
     }
   };
 
-export const updatePlaygroundEpic = (action$, store, {appManager}) =>
-  action$.ofType(UPDATE_PLAYGROUND)
-    .debounceTime(2000)
-    // .filter(() => !store.getState().updatePlaygroundReducer.isPlaygroundUpdating)
-    // .do(instrumentCode)
-    .mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
-    .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
+export const updatePlaygroundEpic=(action$, store, {appManager}) =>
+  action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
+    .mergeMap(action=>{
+      console.log("ACCCCCC",action);
+      return Observable.of({type:'log', action:action});
+    })
+    // .do(action => {
+    //   console.log("BOMMMMMMMMMMMM", action);
+    //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
+    // })
+    //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
+    // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
 ;
 
 function instrumentCode() {

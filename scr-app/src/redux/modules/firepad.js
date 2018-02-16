@@ -1,5 +1,8 @@
+import {Observable} from 'rxjs';
+import {AUTH_PASTEBIN_FULFILLED} from "./pastebin";
+
 const CONFIGURE_FIREPADS = 'CONFIGURE_FIREPADS';
-const CONFIGURE_FIREPADS_FULFILLED = 'CONFIGURE_FIREPADS_FULFILLED';
+export const CONFIGURE_FIREPADS_FULFILLED = 'CONFIGURE_FIREPADS_FULFILLED';
 const CONFIGURE_FIREPADS_REJECTED = 'CONFIGURE_FIREPADS_REJECTED';
 
 const defaultFirepadState = {
@@ -44,8 +47,8 @@ export const firepadReducer = (state = defaultFirepadState, action) => {
 };
 
 export const firepadsEpic = (action$, store, {appManager}) =>
-  action$.ofType(CONFIGURE_FIREPADS)
-    // .throttleTime(2000)
-    .mergeMap(action =>
-      appManager.observerConfigureFirepads(action.pastebinId)
+  action$.ofType(AUTH_PASTEBIN_FULFILLED)
+    .throttleTime(2000)
+    .mergeMap(() =>
+      appManager.observerConfigureFirepads(store.getState().pastebinReducer.pastebinId)
     );

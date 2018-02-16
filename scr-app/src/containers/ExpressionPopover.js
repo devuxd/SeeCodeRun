@@ -21,7 +21,6 @@ const defaultCloseDelay = 1000;
 
 const closedState = {
   timeout: null,
-  previousAnchorEl: null,
   anchorEl: null,
   mouseEvent: null,
 };
@@ -32,31 +31,27 @@ class ExpressionPopover extends React.Component {
   };
 
   componentWillReceiveProps(nextProps, nextContext) {
-    const {previousAnchorEl} = this.state;
     const {anchorEl, mouseEvent} = nextProps;
     if (anchorEl) {
-      // if (previousAnchorEl !== anchorEl) {
-        this.handleOpen(anchorEl, mouseEvent);
-      // }
+      this.handleOpen(anchorEl, mouseEvent);
     } else {
       this.handleClose();
     }
   }
 
-  handleOpen = (newAnchorEl, mouseEvent) => {
+  handleOpen = (anchorEl, mouseEvent) => {
     const {timeout} = this.state;
     clearTimeout(timeout);
-    if (newAnchorEl && mouseEvent) {
-      const {anchorEl} = this.state;
+    if (anchorEl && mouseEvent) {
+      // 1/2 => forces popover update anchorEl position
       this.setState({
         anchorEl: null,
       });
 
       setTimeout(() => {
-        // this.store.dispatch();
+        // 2/2 => forces popover update anchorEl position
         this.setState({
-          previousAnchorEl: anchorEl,
-          anchorEl: newAnchorEl,
+          anchorEl: anchorEl,
           mouseEvent: mouseEvent,
           timeout: null,
         });
@@ -81,7 +76,7 @@ class ExpressionPopover extends React.Component {
     timeout = setTimeout(() => {
         this.setState({...closedState});
       },
-      isNaN(closeDelay)?defaultCloseDelay: closeDelay
+      isNaN(closeDelay) ? defaultCloseDelay : closeDelay
     );
     this.setState({timeout: timeout});
   };

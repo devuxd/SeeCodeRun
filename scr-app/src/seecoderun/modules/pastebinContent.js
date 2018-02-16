@@ -36,21 +36,30 @@ const htmlDefaultText = `<!DOCTYPE html>
 </head>
 <body>
 <script type="text/javascript">
-  let geval = eval;
   window.load = function (js, css) {
     if (css) {
+      const cssId = 'scr-css-script';
+      const prev =document.getElementById(cssId).remove();
+      if(prev){
+        prev.remove();
+      }
       const style = document.createElement("style");
+      style.id = cssId;
       style.type = "text/css";
       style.innerHTML = css;
       document.body.appendChild(style);
     }
 
     if (js) {
-      try {
-        geval(js);
-      } catch (error) {
-        console.log(error);
+      const jsId = 'scr-js-script';
+      const prev = document.getElementById(jsId);
+      if(prev){
+        prev.remove();
       }
+      const script = document.createElement("script");
+      script.id = jsId;
+      script.innerHTML = js;
+      document.body.appendChild(script);
     }
   };
   if (receivedCall) {

@@ -174,7 +174,7 @@ class PasteBin extends Component {
         </Paper>
         <Paper key="debugContainer">
           DEBUG
-          <Button fab color="primary" aria-label="add" className={classes.button}>
+          <Button variant="fab" color="primary" aria-label="add" className={classes.button}>
             <AddIcon/>
           </Button>
         </Paper>

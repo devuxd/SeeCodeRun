@@ -1,5 +1,5 @@
 import * as firebase from "firebase";
-import {Observable} from "rxjs";
+import {Observable, Subject} from "rxjs";
 import localStorage from 'store';
 
 import {
@@ -8,28 +8,41 @@ import {
   authPastebinRejected
 } from '../redux/modules/pastebin';
 
-import {configureFirepadsFulfilled, configureFirepadsRejected} from '../redux/modules/firepad';
-import {configureMonacoFulfilled, configureMonacoRejected} from "../redux/modules/monaco";
+import {
+  configureFirepadsFulfilled,
+  configureFirepadsRejected
+} from '../redux/modules/firepad';
+import {
+  configureMonacoFulfilled,
+  configureMonacoRejected
+} from "../redux/modules/monaco";
 import {
   configureFirecoActionsFulfilled,
   configureFirecoActionsRejected,
-  configureMonacoModelsFulfilled, configureMonacoModelsRejected, loadMonacoEditorFulfilled,
+  configureMonacoModelsFulfilled,
+  configureMonacoModelsRejected,
+  loadMonacoEditorFulfilled,
   loadMonacoEditorRejected
 } from "../redux/modules/monacoEditor";
-import {configureFirecoFulfilled, configureFirecoRejected} from "../redux/modules/fireco";
+import {
+  configureFirecoFulfilled,
+  configureFirecoRejected
+} from "../redux/modules/fireco";
 
 import {
   configureMonaco,
   configureMonacoModel,
   configureMonacoEditor,
   configureMonacoEditorWidgets, configureMonacoEditorMouseEventsObservable
-} from "../utils/MonacoUtils";
+} from "../utils/monacoUtils";
 import {getDefaultTextForLanguage} from "./modules/pastebinContent";
 import {updatePlayground} from "../redux/modules/playground";
+import JSXColoringProvider from "../utils/JSXColoringProvider";
+import LiveExpressionStore from "./modules/LiveExpressionStore";
 
-const SERVER_TIMESTAMP = firebase.database.ServerValue.TIMESTAMP;
-const dataBaseRoot = '/scr2';
-const config = {
+const SERVER_TIMESTAMP=firebase.database.ServerValue.TIMESTAMP;
+const dataBaseRoot='/scr2';
+const config={
   apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
   authDomain: "seecoderun.firebaseapp.com",
   databaseURL: "https://seecoderun.firebaseio.com",
@@ -38,8 +51,10 @@ const config = {
   messagingSenderId: "147785767581"
 };
 
-const defaultFireco = {
+const defaultFireco={
   language: 'html',
+  monacoEditor: null,
+  monacoEditorModel: null,
   monacoEditorSavedState: null, //{text: null, viewState: null}
   editorOptions: {},
   observeMonacoEditorMouseEvents: false,
@@ -51,35 +66,34 @@ const defaultFireco = {
 
 class AppManager {
   constructor() {
-    this.isOnline$ =
+    this.isOnline$=
       Observable.of(window.navigator.onLine);
-    this.goesOffline$ =
+    this.goesOffline$=
       Observable.fromEvent(window, 'offline').mapTo(false);
-    this.goesOnline$ =
+    this.goesOnline$=
       Observable.fromEvent(window, 'online').mapTo(true);
-
-    this.online$ = Observable.merge(
+    
+    this.online$=Observable.merge(
       this.isOnline$,
       this.goesOffline$,
       this.goesOnline$
     );
-
+    
     firebase.initializeApp(config);
-    this.firebase = firebase;
-    this.SERVER_TIMESTAMP = SERVER_TIMESTAMP;
-    this.pastebinId = null;
-    this.monaco = null;
+    this.firebase=firebase;
+    this.SERVER_TIMESTAMP=SERVER_TIMESTAMP;
+    this.pastebinId=null;
+    this.monaco=null;
     this.isFetchPastebinRestored=false;
-    this.hasSavedEditorsStates = false;
-    this.firecos = { // editorIds as in Firebase: pastebinId/content/editorId (e.g. js)
+    this.hasSavedEditorsStates=false;
+    this.firecos={ // editorIds as in Firebase: pastebinId/content/editorId (e.g. js)
       'js': {
         ...defaultFireco,
         language: 'javascript',
         editorOptions: {
           glyphMargin: true,
           nativeContextMenu: false,
-          hover: false,
-          minimap: {enabled: true},
+          hover: true,
         },
         observeMonacoEditorMouseEvents: true
       },
@@ -90,36 +104,34 @@ class AppManager {
         language: 'css'
       }
     };
+    this.jsxColoringProvider=null;
   }
-
+  
   observeDispose() {
-    return Observable.create(observer => {
-      try {
-        this.dispose();
-        this.saveEditorsStates();
-        observer.next({type: 'DISPOSE_FULFILLED'});
-      } catch (error) {
-        observer.next({type: 'DISPOSE_REJECTED', error: error});
-      } finally {
-        observer.complete();
-      }
-    });
-  }
-
-  setPastebinId(pastebinId, shouldReplace = false) {
-    if (pastebinId && (!this.pastebinId || shouldReplace)) {
-      this.pastebinId = pastebinId;
+    try {
+      this.dispose();
+      this.saveEditorsStates();
+      return Observable.of({type: 'DISPOSE_FULFILLED'});
+    } catch (error) {
+      
+      return Observable.of({type: 'DISPOSE_REJECTED', error: error});
     }
   }
-
+  
+  setPastebinId(pastebinId, shouldReplace=false) {
+    if (pastebinId && (!this.pastebinId || shouldReplace)) {
+      this.pastebinId=pastebinId;
+    }
+  }
+  
   saveEditorsStates() {
     if (!this.pastebinId) {
       return;
     }
-    const editorsStates = {};
+    const editorsStates={};
     for (const editorId in this.firecos) {
       // console.log("save", editorId, this.firecos[editorId].monacoEditor.getValue());
-      editorsStates[editorId] = {
+      editorsStates[editorId]={
         text: this.firecos[editorId].monacoEditor.getValue(),
         viewState: this.firecos[editorId].monacoEditor.saveViewState()
       };
@@ -127,37 +139,37 @@ class AppManager {
     localStorage.set(`scr_monacoEditorsSavedStates#${this.pastebinId}`, editorsStates);
     //  console.log("save", JSON.stringify(localStorage.get(`scr_monacoEditorsSavedStates#${this.pastebinId}`)));
   }
-
+  
   restoreEditorsStates(isFetchPastebinRestoration) {
     if (!this.pastebinId) {
       return;
     }
-    if(isFetchPastebinRestoration && this.isFetchPastebinRestored){
+    if (isFetchPastebinRestoration && this.isFetchPastebinRestored) {
       return;
     }
-
-    const editorsStates = localStorage.get(`scr_monacoEditorsSavedStates#${this.pastebinId}`);
+    
+    const editorsStates=localStorage.get(`scr_monacoEditorsSavedStates#${this.pastebinId}`);
     if (!editorsStates) {
       return;
     }
-
-    this.hasSavedEditorsStates = true;
-
+    
+    this.hasSavedEditorsStates=true;
+    
     for (const editorId in this.firecos) {
       if (editorsStates[editorId]) {
-        this.firecos[editorId].monacoEditorSavedState = editorsStates[editorId];
+        this.firecos[editorId].monacoEditorSavedState=editorsStates[editorId];
       }
     }
-
-    this.isFetchPastebinRestored = isFetchPastebinRestoration?isFetchPastebinRestoration:this.isFetchPastebinRestored;
+    
+    this.isFetchPastebinRestored=isFetchPastebinRestoration ? isFetchPastebinRestoration : this.isFetchPastebinRestored;
   }
-
+  
   dispose() {
     if (this.unsubscribeOnIdTokenChanged) {
       this.unsubscribeOnIdTokenChanged();
     }
   }
-
+  
   //todo editor.restoreViewState
   observeConfigureDispatchActions(editorId, dispatchFirecoActions) {
     try {
@@ -167,19 +179,20 @@ class AppManager {
       return Observable.of(configureFirecoActionsRejected(editorId, error));
     }
   }
-
+  
   configureDispatchFirecoActions(editorId, dispatchFirecoActions) {
-    this.firecos[editorId].dispatchFirecoActions = dispatchFirecoActions;
+    this.firecos[editorId].dispatchFirecoActions=dispatchFirecoActions;
   }
-
+  
   observeAuthPastebin(pastebinToken) {
-    this.pastebinToken = pastebinToken;
+    this.pastebinToken=pastebinToken;
     if (this.unsubscribeOnIdTokenChanged) {
       this.unsubscribeOnIdTokenChanged();
     }
-    this.observableAuthPastebin = Observable.create(
+    
+    this.observableAuthPastebin=Observable.create(
       observer => {
-        this.unsubscribeOnIdTokenChanged = firebase.auth().onIdTokenChanged(
+        this.unsubscribeOnIdTokenChanged=firebase.auth().onIdTokenChanged(
           user => {
             if (user) {
               observer.next(authPastebinFulfilled(user));
@@ -210,195 +223,203 @@ class AppManager {
     );
     return this.observableAuthPastebin;
   }
-
+  
   observerConfigureFirepads(pastebinId) {
-    return Observable.create(observer => {
-      if (!pastebinId) {
-        observer.next(configureFirepadsRejected('Error: PastebinId was not provided'));
-      }
-      try {
-        const firepadPaths = this.configureFirepads(pastebinId);
-        observer.next(configureFirepadsFulfilled(firepadPaths));
-      } catch (error) {
-        observer.next(configureFirepadsRejected(error));
-      } finally {
-        observer.complete();
-      }
-    });
+    if (!pastebinId) {
+      return Observable.of(configureFirepadsRejected('Error: PastebinId was' +
+        ' not' +
+        ' provided'));
+    }
+    try {
+      const firepadPaths=this.configureFirepads(pastebinId);
+      return Observable.of(configureFirepadsFulfilled(firepadPaths));
+    } catch (error) {
+      return Observable.of(configureFirepadsRejected(error));
+    }
   }
-
+  
   configureFirepads(pastebinId) {
-    const firepadPaths = {};
-
+    const firepadPaths={};
+    
     for (const editorId in this.firecos) {
-      const firebasePath = `${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
-      firepadPaths[editorId] = firebasePath;
-      this.firecos[editorId].firebasePath = firebasePath;
+      const firebasePath=`${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
+      firepadPaths[editorId]=firebasePath;
+      this.firecos[editorId].firebasePath=firebasePath;
     }
     return firepadPaths;
   }
-
+  
   observeConfigureMonaco(monaco) {
-    return Observable.create(observer => {
-      try {
-        if (monaco) {
-          this.monaco = monaco;
-          configureMonaco(monaco);
-          for (const editorId in this.firecos) {
-            let text = this.pastebinId ? '//...loading your code =]' : getDefaultTextForLanguage(editorId);
-            //    console.log("this.hasSavedEditorsStates",this.hasSavedEditorsStates);
-            if (this.hasSavedEditorsStates) {
-              text = this.firecos[editorId].monacoEditorSavedState.text;
-            }
-            this.firecos[editorId].monacoEditorModel = configureMonacoModel(this.monaco, text, this.firecos[editorId].language);
+    try {
+      if (monaco) {
+        this.monaco=monaco;
+        configureMonaco(monaco);
+        for (const editorId in this.firecos) {
+          let text=this.pastebinId ? '//...loading your code =]' : getDefaultTextForLanguage(editorId);
+          //    console.log("this.hasSavedEditorsStates",this.hasSavedEditorsStates);
+          if (this.hasSavedEditorsStates) {
+            text=this.firecos[editorId].monacoEditorSavedState.text;
           }
-          observer.next(configureMonacoFulfilled());
-        } else {
-          observer.next(configureMonacoRejected('Error: Provide a monaco library reference'));
+          this.firecos[editorId].monacoEditorModel=configureMonacoModel(this.monaco, editorId, text, this.firecos[editorId].language);
         }
-      } catch (e) {
-        observer.next(configureMonacoRejected(e));
+        this.jsxColoringProvider=new JSXColoringProvider(monaco);
+        return Observable.of(configureMonacoFulfilled());
+      } else {
+        return Observable.of(configureMonacoRejected('Error: Provide a monaco library reference'));
       }
-    });
+    } catch (e) {
+      return Observable.of(configureMonacoRejected(e));
+    }
   }
-
+  
   observeUpdateMonacoModels(initialEditorsTexts) {
-    return Observable.create(observer => {
-      try {
-        // console.log("here !", initialEditorsTexts);
-        if (initialEditorsTexts) {
-          for (const editorId in this.firecos) {
-            if (!this.hasSavedEditorsStates
-              || this.firecos[editorId].monacoEditorSavedState.text !== initialEditorsTexts[editorId]) {
-              this.setEditorText(editorId, initialEditorsTexts[editorId]);
-            }
+    try {
+      // console.log("here !", initialEditorsTexts);
+      if (initialEditorsTexts) {
+        for (const editorId in this.firecos) {
+          if (!this.hasSavedEditorsStates
+            || this.firecos[editorId].monacoEditorSavedState.text !== initialEditorsTexts[editorId]) {
+            this.setEditorText(editorId, initialEditorsTexts[editorId]);
           }
-          observer.next(configureMonacoModelsFulfilled());
-        } else {
-          observer.next(configureMonacoModelsRejected('Error: no editors texts was provided'));
         }
-      } catch (e) {
-        observer.next(configureMonacoModelsRejected(e));
-      } finally {
-        observer.complete();
+        return Observable.of(configureMonacoModelsFulfilled());
+      } else {
+        return Observable.of(configureMonacoModelsRejected('Error: no editors texts was provided'));
       }
-    });
+    } catch (e) {
+      return Observable.of(configureMonacoModelsRejected(e));
+    }
+    
   }
-
-  observeConfigureMonacoEditor(editorId, dispatchMouseEvents) {
-    return Observable.create(observer => {
+  
+  observeConfigureMonacoEditor(editorId, editorDiv, dispatchMouseEvents) {
       if (this.monaco) {
-        this.firecos[editorId].dispatchMouseEvents = dispatchMouseEvents;
+        this.firecos[editorId].dispatchMouseEvents=dispatchMouseEvents;
         try {
-          let model = this.firecos[editorId].monacoEditorModel;
-          const editorOptions = {
+          let model=this.firecos[editorId].monacoEditorModel;
+          const editorOptions={
             ...this.firecos[editorId].editorOptions
           };
-          this.firecos[editorId].monacoEditor = configureMonacoEditor(this.monaco, editorId, editorOptions);
+          this.firecos[editorId].monacoEditor=configureMonacoEditor(this.monaco, editorDiv, editorOptions);
           if (this.firecos[editorId].monacoEditorSavedState) {
             this.firecos[editorId].monacoEditor.restoreViewState(this.firecos[editorId].monacoEditorSavedState.viewState);
             this.firecos[editorId].monacoEditorModel.setValue(this.firecos[editorId].monacoEditorSavedState.text);
           }
           this.firecos[editorId].monacoEditor.setModel(model);
-
-          if (this.firecos[editorId].observeMonacoEditorMouseEvents) {
-            this.firecos[editorId].monacoEditorMouseEventsObservable = configureMonacoEditorMouseEventsObservable(this.firecos[editorId].monacoEditor);
-            this.firecos[editorId].dispatchMouseEvents(this.firecos[editorId].monacoEditorMouseEventsObservable);
-          }
-
-          observer.next(loadMonacoEditorFulfilled(editorId));
+          
+          // if (this.firecos[editorId].observeMonacoEditorMouseEvents) {
+          //   this.firecos[editorId].monacoEditorMouseEventsObservable=configureMonacoEditorMouseEventsObservable(this.firecos[editorId].monacoEditor);
+          //   this.firecos[editorId].dispatchMouseEvents(this.firecos[editorId].monacoEditorMouseEventsObservable);
+          // }
+  
+          return Observable.of(loadMonacoEditorFulfilled(editorId));
         } catch (error) {
-          observer.next(loadMonacoEditorRejected(editorId, error));
-        } finally {
-          observer.complete();
+          return Observable.of(loadMonacoEditorRejected(editorId, error));
         }
 
       } else {
-        observer.next(loadMonacoEditorRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
-        observer.complete();
+        return Observable.of(loadMonacoEditorRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
       }
-    });
   }
-
-
-  observeConfigureFireco(editorId) {
-    return Observable.create(observer => {
-      if (this.monaco) {
-        try {
-          const monacoEditor = this.firecos[editorId].monacoEditor;
-          const dispatchFirecoActions = this.firecos[editorId].dispatchFirecoActions;
-          //configureMonacoEditorWidgets(this.monaco, editorId, monacoEditor);
-          const configureGetTextListener = () => {
-            this.postMessageGetEditorText(editorId)
+  
+  observerConfigureFireco(editorId) {
+    if (this.monaco) {
+      try {
+        const monacoEditor=this.firecos[editorId].monacoEditor;
+        const dispatchFirecoActions=this.firecos[editorId].dispatchFirecoActions;
+        configureMonacoEditorWidgets(this.monaco, editorId, monacoEditor);
+        const configureGetTextListener=() => {
+          this.postMessageGetEditorText(editorId)
+        };
+        const monacoEditorOnDidChangeModelContentSubject=new Subject();
+        const configureSetTextListener=() => {
+          const onContentChanged=changes => { //changes object ignored
+            monacoEditorOnDidChangeModelContentSubject.next(updatePlayground(editorId, monacoEditor.getValue(), changes));
+            const setTextDelay=this.firecos[editorId].ignoreContentChange ? 1000 : 0;
+            clearTimeout(this.firecos[editorId].postMessageSetEditorTextTimeout);
+            this.firecos[editorId].postMessageSetEditorTextTimeout=
+              setTimeout(() => {
+                if (this.firecos[editorId].ignoreContentChange) {
+                  return;
+                }
+                this.postMessageSetEditorText(editorId, monacoEditor.getValue());
+              }, setTextDelay);
+            
+            setTimeout(() => {
+              this.jsxColoringProvider.colorize(monacoEditor);
+            }, 0);
           };
-
-          const configureSetTextListener = (store) => {
-            const onContentChanged = changes => { //changes object ignored
-              if (this.firecos[editorId].ignoreContentChange) {
-                return;
-              }
-              const currentText = monacoEditor.getValue();
-              store.dispatch(updatePlayground(editorId, currentText, changes));
-              this.postMessageSetEditorText(editorId, currentText);
-            };
-            monacoEditor.onDidChangeModelContent(onContentChanged);
-          };
-          dispatchFirecoActions(configureGetTextListener, configureSetTextListener, this.getFirecoObservable(), this.setEditorText);
-          observer.next(configureFirecoFulfilled(editorId));
-        } catch (error) {
-          observer.next(configureFirecoRejected(editorId, error));
-        }
-      } else {
-        observer.next(configureFirecoRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
+          monacoEditor.onDidChangeModelContent(onContentChanged);
+          
+          setTimeout(() => {
+            this.jsxColoringProvider.colorize(monacoEditor);
+          }, 0);
+        };
+        dispatchFirecoActions(monacoEditorOnDidChangeModelContentSubject, configureGetTextListener, configureSetTextListener, this.getFirecoObservable(), this.setEditorText);
+        return Observable.of(configureFirecoFulfilled(editorId));
+      } catch (error) {
+        return Observable.of(configureFirecoRejected(editorId, error));
       }
-    });
+    } else {
+      return Observable.of(configureFirecoRejected(editorId, 'Error: monaco' +
+        ' is not' +
+        ' configured. Execute configureMonaco(monaco) first, providing a' +
+        ' monaco library reference'));
+    }
   }
-
-  setEditorText = (editorId, text) => {
+  
+  observeConfigureLiveExpressionStore(editorId, autoLog) {
+    const monacoEditor=this.firecos[editorId].monacoEditor;
+    this.firecos[editorId].liveExpressionStore=new LiveExpressionStore(this.monaco, editorId, monacoEditor, autoLog);
+    
+  }
+  
+  setEditorText=(editorId, text) => {
     if (text === this.firecos[editorId].monacoEditor.getValue()) {
       return;
     }
     // console.log("here?", text);
-    this.firecos[editorId].ignoreContentChange = true;
-    const viewState = this.firecos[editorId].monacoEditor.saveViewState();
+    this.firecos[editorId].ignoreContentChange=true;
+    const viewState=this.firecos[editorId].monacoEditor.saveViewState();
     this.firecos[editorId].monacoEditor.setValue(text);
     this.firecos[editorId].monacoEditor.restoreViewState(viewState);
-    this.firecos[editorId].ignoreContentChange = false;
-
+    this.firecos[editorId].ignoreContentChange=false;
+    
   };
-
-  getFirecoObservable = () => {
+  
+  getFirecoObservable=() => {
     if (!this.firecoObservable) {
-      this.firecoObservable = this.configurePostMessageObservable();
+      this.firecoObservable=this.configurePostMessageObservable();
     }
     return this.firecoObservable;
   };
-
+  
   configurePostMessageObservable() {
     return Observable.create(observer => {
-      let retries = 20;
+      let retries=0;
+      const maxRetries=30;
       firecoWorkerReady();
-
+      
       function firecoWorkerReady() {
         if (window.scr && window.scr.firecoWorker) {
           observer.next({type: 'FIRECO_WORKER_READY'});
-          window.scr.firecoWorker.onmessage = function (e) {
+          window.scr.firecoWorker.onmessage=function (e) {
             observer.next(e.data);
           };
         } else {
-          if (retries--) {
-            setTimeout(firecoWorkerReady, 500);
+          if (retries === maxRetries) {
+            observer.next({error:'Fireco worker not found.'});
           } else {
-            observer.error('Fireco worker not found.');
+            setTimeout(firecoWorkerReady, (retries++) * 10);
           }
         }
       }
     });
   }
-
-  postMessageSetEditorText = (editorId, text) => {
+  
+  postMessageSetEditorText=(editorId, text) => {
     if (window.scr && window.scr.firecoWorker) {
-      const firebasePath = this.firecos[editorId].firebasePath;
+      const firebasePath=this.firecos[editorId].firebasePath;
       window.scr.firecoWorker.postMessage({
         type: 'SET_TEXT',
         editorId: editorId,
@@ -408,10 +429,10 @@ class AppManager {
       });
     }
   };
-
-  postMessageGetEditorText = (editorId) => {
+  
+  postMessageGetEditorText=(editorId) => {
     if (window.scr && window.scr.firecoWorker) {
-      const firebasePath = this.firecos[editorId].firebasePath;
+      const firebasePath=this.firecos[editorId].firebasePath;
       window.scr.firecoWorker.postMessage({
         type: 'GET_TEXT',
         editorId: editorId,
@@ -420,7 +441,7 @@ class AppManager {
       });
     }
   };
-
+  
   //
   // makePastebinFirebaseReference(pastebinId = this.pastebinId) {
   //   return new Firebase(`${this.baseURL}/${pastebinId}/`);
@@ -457,73 +478,6 @@ class AppManager {
   //
   // makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey) {
   //   return new Firebase(`${this.baseURL}/metags/urls/${metagGlobalURLKey}`);
-  // }
-  //
-  // /**
-  //  * Copies a pastebin content to a new one. It associates them as parent and child, once the copy is created. In Firebase, reference "parentPastebinId/content/share/children" will get childPastebinId pushed and "childPastebinId/share/parent" will be set to parentPastebinId.
-  //  * @param {String} parentPastebinId - the pastebin id to be copied.
-  //  * @param {Boolean} copyChat - the pastebin's should be copied or not. It will not copy the chat content by default(false).
-  //  * @return {String} childPastebinId, the pastebin id of the newly created copy.
-  //  */
-  // copyPastebinById(parentPastebinId, copyChat = false) {
-  //   this.isCopy = true;
-  //   let firebaseManager = this;
-  //   let childPastebinId = firebaseManager.makeNewPastebinFirebaseReferenceId();
-  //
-  //   let parentShareReferenceChildren = firebaseManager.makeShareChildrenFirebase(parentPastebinId);
-  //   parentShareReferenceChildren.push({childPastebinId: childPastebinId, timestamp: firebaseManager.SERVER_TIMESTAMP});
-  //
-  //   let sourceReference = firebaseManager.makePastebinFirebaseReference(parentPastebinId);
-  //   let destinationReference = firebaseManager.makePastebinFirebaseReference(childPastebinId);
-  //
-  //   let dataChanger = {
-  //     changeData: (data) => {
-  //       if (data.content) {
-  //         data.creationTimestamp = this.SERVER_TIMESTAMP;
-  //         data.content.chat = {};
-  //         data.content.share = {
-  //           currentEvent: 0,
-  //           parentPastebinId: parentPastebinId,
-  //           children: 0
-  //         };
-  //       }
-  //       return data;
-  //     }
-  //   };
-  //
-  //   firebaseManager.makeFirebaseReferenceCopy(sourceReference, destinationReference, dataChanger);
-  //
-  //   return childPastebinId;
-  // }
-  //
-  // makeJsEditorFirepad(jsEditor) {
-  //   let defaultText = '\nhelloWorld();\n\nfunction helloWorld() {\n\tvar message = "world!";\n\tvar $helloMessage = $("#hello_message");\n\t$helloMessage.append(message);\n\t$helloMessage.addClass("shiny-red");\n}';
-  //   return this.makeFirepad("js", jsEditor, defaultText);
-  // }
-  //
-  // makeHtmlEditorFirepad(htmlEditor) {
-  //   let defaultText = '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>SeeCodeRun Pastebin</title>\n\t<script src="https://code.jquery.com/jquery-3.1.1.js">\n\t</script>\n</head>\n<body>\n\t<div id="hello_message">\n\t\tHello,\n\t</div>\n</body>\n</html>';
-  //   return this.makeFirepad("html", htmlEditor, defaultText);
-  // }
-  //
-  // makeCssEditorFirepad(cssEditor) {
-  //   let defaultText = 'body > div:first-child {\n\t font-weight: bold;\n}\n\n.shiny-red {\n\t color: red;\n}';
-  //   return this.makeFirepad("css", cssEditor, defaultText);
-  // }
-  //
-  // makeFirepad(subject, editor, defaultText) {
-  //   let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
-  //   let firebase = new Firebase(subjectURL);
-  //
-  //   if (this.isCopy) {
-  //     defaultText = null;
-  //   }
-  //
-  //   return Firepad.fromACE(
-  //     firebase,
-  //     editor, {
-  //       defaultText: defaultText
-  //     });
   // }
   //
   // makeHistoryViewerFirepad(subject, editor, context) {
@@ -574,30 +528,7 @@ class AppManager {
   //   }
   //   firebaseRef.child('history').off("child_added");
   // }
-  //
-  // makeFirebaseReferenceCopy(source, destination, dataChanger = this, thenCallback) {
-  //   source.once("value", function (snapshot) {
-  //     let data = snapshot.val();
-  //     if (data) {
-  //       data = dataChanger.changeData(data);
-  //     }
-  //     destination.set(data, function (error) {
-  //       if (error && typeof(console) !== 'undefined' && console.error) {
-  //         console.error(error);
-  //       }
-  //     });
-  //   });
-  // }
-  //
-  // /**
-  //  * Default method for DataChanger Interface. In this case, it does not change anything.
-  //  * @param {Object} data - the JSON object to be modified.
-  //  * @return {Object}, the JSON object result of the modification.
-  //  */
-  // changeData(data) {
-  //   return data;
-  // }
-
+  
 }
 
 export default function configureAppManager() {

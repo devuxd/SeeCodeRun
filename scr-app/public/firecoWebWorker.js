@@ -1,44 +1,80 @@
+/* eslint-env webWorker */
 const MESSAGE_REJECTED = 'MESSAGE_REJECTED';
 const CONFIGURE = 'CONFIGURE';
 const CONFIGURE_FULFILLED = 'CONFIGURE_FULFILLED';
 const SET_TEXT = 'SET_TEXT';
 const GET_TEXT = 'GET_TEXT';
 
+let isFirecoWebWorkerReady = false;
+const firecos = {};
 let mutex = false;
-let isAuth = false; //todo receive token validation update
+let isAuth = false; // todo receive token validation update
 let timeout = null;
 
 onmessage = function (e) {
-  if(!e.data){
-    postMessage({type: MESSAGE_REJECTED, editorId: null, error: 'No data was provided.'});
+  if (!e.data) {
+    postMessage({
+      type: MESSAGE_REJECTED,
+      editorId: null,
+      error: 'No data was provided.',
+    });
   }
 
   const payload = e.data;
-    switch (payload.type) {
-      case CONFIGURE:
-        configureFirecoWebWorker(payload.importScripts, payload.firebaseConfig);
-        break;
-      case GET_TEXT:
+  switch (payload.type) {
+    case CONFIGURE:
+      configureFirecoWebWorker(payload.importScripts, payload.firebaseConfig);
+      break;
+    case GET_TEXT:
+      if (!isFirecoWebWorkerReady) {
+        postMessage({
+          type: MESSAGE_REJECTED,
+          editorId: null,
+          error: 'The workers has not been configured.' +
+          ' Try posting {type:"CONFIGURE"}',
+        });
+      } else {
         getText(payload.editorId, payload.firebasePath, payload.pastebinToken);
-        break;
-      case SET_TEXT:
-        setText(payload.editorId, payload.firebasePath, payload.text, payload.pastebinToken);
-        break;
-      default:
-        postMessage({type: MESSAGE_REJECTED, editorId: null, error: 'Message type is not recognized.'});
-    }
+      }
+      break;
+    case SET_TEXT:
+      if (!isFirecoWebWorkerReady) {
+        postMessage({
+          type: MESSAGE_REJECTED,
+          editorId: null,
+          error: 'The workers has not been configured.' +
+          ' Try posting {type:"CONFIGURE"}',
+        });
+      } else {
+        setText(
+          payload.editorId,
+          payload.firebasePath,
+          payload.text,
+          payload.pastebinToken
+        );
+      }
+      break;
+    default:
+      postMessage({
+        type: MESSAGE_REJECTED,
+        editorId: null,
+        error: 'Message type is not recognized.',
+      });
+  }
 };
 
-function configureFirecoWebWorker(scripts, config){
+/**
+ * Initializes configuration of the web worker.
+ * @param {Array} scripts - Array with the required imports.
+ * @param {Array} config - Firebase init config.
+ */
+function configureFirecoWebWorker(scripts, config) {
   // console.log(arguments);
   importScripts(...scripts);
   firebase.initializeApp(config);
   isFirecoWebWorkerReady = true;
   postMessage({type: CONFIGURE_FULFILLED});
 }
-
-let isFirecoWebWorkerReady = false;
-const firecos = {};
 
 // const p =myAsyncFunction('https://us-central1-firebase-seecoderun.cloudfunctions.net/getPastebin?session=yes&pastebinId=-L029pzcgsjXQBdkWXDC');
 //
@@ -76,10 +112,14 @@ function configureFireco(editorId, firebasePath) {
 // }
 
 
-function getText(editorId, firebasePath, pastebinToken) {//editorId == DEFAULT_FIRECO
-  let retries =30;
+function getText(editorId, firebasePath, pastebinToken) {// editorId == DEFAULT_FIRECO
+  let retries = 30;
   if (firecos[editorId] && firecos[editorId].isGetTextListening) {
-    postMessage({type: 'FIRECO_GET_TEXT_REJECTED', editorId: editorId, error: 'Listener is already active.'});
+    postMessage({
+      type: 'FIRECO_GET_TEXT_REJECTED',
+      editorId: editorId,
+      error: 'Listener is already active.'
+    });
     return;
   }
   if (!isAuth) {
@@ -95,10 +135,14 @@ function getText(editorId, firebasePath, pastebinToken) {//editorId == DEFAULT_F
 
   function firepadGetText() {
     if (!firebase.auth().currentUser) {
-      if(retries--){
+      if (retries--) {
         setTimeout(firepadGetText, 250);
-      }else{
-        postMessage({type: 'FIRECO_GET_TEXT_REJECTED', editorId: editorId, error: 'Auth timeout.'});
+      } else {
+        postMessage({
+          type: 'FIRECO_GET_TEXT_REJECTED',
+          editorId: editorId,
+          error: 'Auth timeout.'
+        });
       }
       return;// {ignore: 'waiting auth'};
     }
@@ -108,7 +152,11 @@ function getText(editorId, firebasePath, pastebinToken) {//editorId == DEFAULT_F
     firecos[editorId].firebaseRef.on('value', () => {
       firecos[editorId].headless.getText(function (text) {
         if (!mutex) {
-          postMessage({type: 'FIRECO_GET_TEXT_FULFILLED', editorId: editorId, text: text});
+          postMessage({
+            type: 'FIRECO_GET_TEXT_FULFILLED',
+            editorId: editorId,
+            text: text
+          });
         }
       });
     });
@@ -116,7 +164,7 @@ function getText(editorId, firebasePath, pastebinToken) {//editorId == DEFAULT_F
 }
 
 function setText(editorId, firebasePath, text, pastebinToken) { // text, editorId == DEFAULT_FIRECO
-  let retries =50;
+  let retries = 50;
   if (mutex) {
     return;// {ignore: 'Still writing'};
   }
@@ -129,11 +177,15 @@ function setText(editorId, firebasePath, text, pastebinToken) { // text, editorI
 
   function firepadSetText() {
     if (mutex || !firebase.auth().currentUser) {
-      if(retries--){
+      if (retries--) {
         clearTimeout(timeout);
-        timeout =setTimeout(firepadSetText, 100);
-      }else{
-        postMessage({type: 'FIRECO_SET_TEXT_REJECTED', editorId: editorId, error: 'Auth or write mutex timeout.'});
+        timeout = setTimeout(firepadSetText, 100);
+      } else {
+        postMessage({
+          type: 'FIRECO_SET_TEXT_REJECTED',
+          editorId: editorId,
+          error: 'Auth or write mutex timeout.'
+        });
       }
       return;// {ignore: 'Still writing'};
     }
@@ -144,7 +196,12 @@ function setText(editorId, firebasePath, text, pastebinToken) { // text, editorI
       // *err*       will be set if there was a catastrophic failure
       // *committed* will be true on success, or false if there was a history
       //               conflict writing to the pad's history.
-      postMessage({type: 'FIRECO_SET_TEXT_FULFILLED', editorId: editorId, error: err, committed: committed});
+      postMessage({
+        type: 'FIRECO_SET_TEXT_FULFILLED',
+        editorId: editorId,
+        error: err,
+        committed: committed
+      });
     });
   }
 }

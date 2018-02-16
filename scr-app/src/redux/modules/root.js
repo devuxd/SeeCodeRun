@@ -5,7 +5,7 @@ import {
   pastebinEpic,
   pastebinTokenEpic,
   authPastebinEpic,
-  pastebinReducer, pastebinSubscribe
+  pastebinReducer, pastebinContentEpic
 } from './pastebin';
 import {
   firepadsEpic,
@@ -16,7 +16,6 @@ import {
   firecoSetTextEpic,
   firecoGetTextEpic,
   firecoReducer,
-  firecoSubscribe,
   firecosEpic
 }
   from './fireco';
@@ -40,6 +39,7 @@ import {
 export const rootEpic = combineEpics(
   disposePastebinEpic,
   pastebinEpic,
+  pastebinContentEpic,
   pastebinTokenEpic,
   authPastebinEpic,
   firepadsEpic,
@@ -47,11 +47,11 @@ export const rootEpic = combineEpics(
   monacoEpic,
   monacoEditorsEpic,
   monacoEditorEpic,
+  updatePlaygroundEpic,
   firecoEpic,
   firecosEpic,
   firecoSetTextEpic,
   firecoGetTextEpic,
-  updatePlaygroundEpic
 );
 
 export const rootReducer = combineReducers({
@@ -63,24 +63,23 @@ export const rootReducer = combineReducers({
   updatePlaygroundReducer
 });
 
-export const rootSubscriber = store => combineSubscribers(store, {
-  pastebinSubscribe,
-  firecoSubscribe
-});
+// export const rootSubscriber = store => combineSubscribers(store, {
+//
+// });
 
-export function combineSubscribers(store, subscribers) {
-  const unsubscribes = {};
-  for (const moduleName in subscribers) {
-    if (subscribers.hasOwnProperty(moduleName)) {
-      unsubscribes[moduleName] = subscribers[moduleName](store);
-    }
-  }
-  return function combinedUnsubscribe() {
-    for (const moduleName in unsubscribes) {
-      unsubscribes[moduleName]();
-    }
-  }
-}
+// export function combineSubscribers(store, subscribers) {
+//   const unsubscribes = {};
+//   for (const moduleName in subscribers) {
+//     if (subscribers.hasOwnProperty(moduleName)) {
+//       unsubscribes[moduleName] = subscribers[moduleName](store);
+//     }
+//   }
+//   return function combinedUnsubscribe() {
+//     for (const moduleName in unsubscribes) {
+//       unsubscribes[moduleName]();
+//     }
+//   }
+// }
 
 
 

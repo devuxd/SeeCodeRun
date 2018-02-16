@@ -45,10 +45,10 @@ store.dispatch(fetchPastebin());
 
 configureScrLoaderListener();
 
-const rootUnsubscribe = rootSubscriber(store);
+// const rootUnsubscribe = rootSubscriber(store);
 window.addEventListener("beforeunload", function () {
   store.dispatch({type: 'DISPOSE_PASTEBIN'});
-  rootUnsubscribe();
+  // rootUnsubscribe();
 }, false);
 
 ReactDOM.render(
