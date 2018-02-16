@@ -31,7 +31,6 @@ class Index extends Component {
 Index.propTypes = {
   classes: PropTypes.object.isRequired
 };
-
 Index.contextTypes = {
   store: PropTypes.object.isRequired
 };
