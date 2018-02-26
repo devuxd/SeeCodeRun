@@ -87,6 +87,28 @@ function copyPastebinById(parentPastebinId, copyChat=false) {
   return childPastebinId;
 }
 
+const firepadsEditorIds={
+  'js': {isFulfilled: false},
+  'html': {isFulfilled: false},
+  'css': {isFulfilled: false}
+}; // keys are editorIds in firebase path 'pastebinId/content/editorId'
+
+function setPastebinContent(pastebinResponse) { //firepadsEditorIds, pastebinResponse
+  // console.log(pastebinResponse);
+  const firebasePastebinRef=admin.database().ref(`${dataBaseRoot}/${pastebinResponse.pastebinId}`);
+  for (const editorId in firepadsEditorIds) {
+    const headlessFirepad=new Firepad.Headless(firebasePastebinRef.child(`firecos/${editorId}`));
+    headlessFirepad.setText(pastebinResponse.initialEditorsTexts[editorId], function (error, committed) {
+      if (error || !committed) {
+        console.log(`[Server Error]: Firepad setText on ${editorId} Failed. Firepad error:${error || 'none'}, committed:${committed} `, pastebinResponse);
+      }else{
+        console.log(pastebinResponse.pastebinId, pastebinResponse.initialEditorsTexts[editorId]);
+      }
+      headlessFirepad.dispose();
+    });
+  }
+}
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: dataBaseUrl,
@@ -104,13 +126,25 @@ exports.getPastebinId=functions.https.onRequest((req, res) => {
   };
   
   try {
+    let isNew = false;
     if(!pastebinResponse.pastebinId){
       pastebinResponse.pastebinId=makeNewPastebinId();
+      isNew = true;
     }
     if (!pastebinResponse.session) {
       pastebinResponse.session=makeNewPastebinSession(pastebinResponse.pastebinId);
     }
+    if(isNew){
+      pastebinResponse.initialEditorsTexts = {};
+      for (const editorId in firepadsEditorIds) {
+        pastebinResponse.initialEditorsTexts[editorId]=getDefaultTextForLanguage(editorId);
+      }
+      setPastebinContent(pastebinResponse);
+    }
     res.status(200).send(pastebinResponse);
+    
+    
+    // console.log(pastebinResponse);
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';
     res.status(500).send(pastebinResponse);
@@ -124,11 +158,7 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
     initialEditorsTexts: {},
     error: null
   };
-  const firepadsEditorIds={
-    'js': {isFulfilled: false},
-    'html': {isFulfilled: false},
-    'css': {isFulfilled: false}
-  }; // keys are editorIds in firebase path 'pastebinId/content/editorId'
+
   const firepadTimeOut=setTimeout(function () {
       pastebinResponse.error='[Server Error]: Timeout getting pastebin data after ' + REQUEST_TIMEOUT_MS + 'ms';
       console.log(pastebinResponse.error, pastebinResponse);
@@ -136,18 +166,7 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
     },
     REQUEST_TIMEOUT_MS);
   
-  function setPastebinContent() { //firepadsEditorIds, pastebinResponse
-    const firebasePastebinRef=admin.database().ref(`${dataBaseRoot}/${pastebinResponse.pastebinId}`);
-    for (const editorId in firepadsEditorIds) {
-      const headlessFirepad=new Firepad.Headless(firebasePastebinRef.child(`firecos/${editorId}`));
-      headlessFirepad.setText(pastebinResponse.initialEditorsTexts[editorId], function (error, committed) {
-        if (error || !committed) {
-          console.log(`[Server Error]: Firepad setText on ${editorId} Failed. Firepad error:${error || 'none'}, committed:${committed} `, pastebinResponse);
-        }
-        headlessFirepad.dispose();
-      });
-    }
-  }
+
   
   function sendExistingContent(firebasePastebinRef) { //firepadsEditorIds, pastebinResponse, firepadTimeOut
     let attemptResponse=function attemptResponse(doneEditorId, text) {
@@ -197,7 +216,7 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
       }
       res.status(200).send(pastebinResponse);
       clearTimeout(firepadTimeOut);
-      setPastebinContent();
+      setPastebinContent(pastebinResponse);
     }
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';

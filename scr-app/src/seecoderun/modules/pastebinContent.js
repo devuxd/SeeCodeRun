@@ -1,3 +1,10 @@
+export function getDefaultPastebinContent(){
+  return {
+    'html': getDefaultTextForLanguage('html'),
+    'css': getDefaultTextForLanguage('css'),
+    'js': getDefaultTextForLanguage('js'),
+  };
+}
 export function getDefaultTextForLanguage(language) {
   switch (language) {
     case 'javascript':

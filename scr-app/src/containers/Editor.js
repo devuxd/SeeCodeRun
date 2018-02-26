@@ -5,6 +5,7 @@ import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import ExpressionPopover from "./ExpressionPopover";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
 import {updatePlayground} from "../redux/modules/playground";
+import {ACTIVATE_FIREPAD_FULFILLED} from '../redux/modules/fireco'
 
 const styles = () => ({
   container: {
@@ -58,17 +59,21 @@ class Editor extends Component {
     this.unsubscribes.push(unsubscribe2);
   }
   
-  dispatchFirecoActions = (monacoEditorOnDidChangeModelContentSubject, configureGetTextListener, configureSetTextListener, firecoObservable, setEditorText) => {
+  dispatchFirecoActions = (monacoEditorOnDidChangeModelContentSubject, configureSetTextListener, setEditorText) => {
     const {store } =this.context;
-    const unsubscribe0= firecoObservable.subscribe(payload => {
+
+    const unsubscribe0= store.subscribe(payload => {
+      if(!payload){
+        return
+      }
       switch (payload.type) {
-        case 'FIRECO_WORKER_READY':// happens to all editor instances
-          configureGetTextListener();
+        case ACTIVATE_FIREPAD_FULFILLED:// happens to all editor instances
           configureSetTextListener();
           this.dispatchModelChanges(monacoEditorOnDidChangeModelContentSubject, store);
           break;
         case 'FIRECO_GET_TEXT_FULFILLED': // this is a class observer now
           setEditorText(payload.editorId, payload.text);
+          console.log(store.getState().pastebinReducer.isNew, payload.editorId, payload.text);
          monacoEditorOnDidChangeModelContentSubject.next(updatePlayground(payload.editorId, payload.text));
           break;
         default:

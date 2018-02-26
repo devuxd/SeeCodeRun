@@ -4,19 +4,17 @@ import {
   disposePastebinEpic,
   pastebinEpic,
   pastebinTokenEpic,
-  authPastebinEpic,
-  pastebinReducer, pastebinContentEpic
+  pastebinReducer,
+  pastebinContentEpic
 } from './pastebin';
-import {
-  firepadsEpic,
-  firepadReducer
-} from './firepad';
 import {
   firecoEpic,
   firecoSetTextEpic,
   firecoGetTextEpic,
   firecoReducer,
-  firecosEpic
+  firecoEditorsEpic,
+  firecoActivateEpic,
+  firecoEditorEpic
 }
   from './fireco';
 import {
@@ -41,22 +39,21 @@ export const rootEpic = combineEpics(
   pastebinEpic,
   pastebinContentEpic,
   pastebinTokenEpic,
-  authPastebinEpic,
-  firepadsEpic,
   mountedEditorEpic,
   monacoEpic,
   monacoEditorsEpic,
   monacoEditorEpic,
   updatePlaygroundEpic,
   firecoEpic,
-  firecosEpic,
+  firecoEditorsEpic,
+  firecoActivateEpic,
+  firecoEditorEpic,
   firecoSetTextEpic,
   firecoGetTextEpic,
 );
 
 export const rootReducer = combineReducers({
   pastebinReducer,
-  firepadReducer,
   monacoReducer,
   monacoEditorsReducer,
   firecoReducer,

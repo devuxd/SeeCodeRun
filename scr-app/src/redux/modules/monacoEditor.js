@@ -15,8 +15,9 @@ const LOAD_MONACO_EDITORS_REJECTED='LOAD_MONACO_EDITORS_REJECTED';
 
 
 const MOUNT_EDITOR_FULFILLED='MOUNT_EDITOR_FULFILLED';
-const CONFIGURE_FIRECO_ACTIONS_FULFILLED='CONFIGURE_FIRECO_ACTIONS_FULFILLED';
-const CONFIGURE_FIRECO_ACTIONS_REJECTED='CONFIGURE_FIRECO_ACTIONS_REJECTED';
+
+const CONFIGURE_FIRECO_BINDS_FULFILLED='CONFIGURE_FIRECO_BINDS_FULFILLED';
+const CONFIGURE_FIRECO_BINDS_REJECTED='CONFIGURE_FIRECO_BINDS_REJECTED';
 
 const LOAD_MONACO_EDITOR='LOAD_MONACO_EDITOR';
 export const LOAD_MONACO_EDITOR_FULFILLED='LOAD_MONACO_EDITOR_FULFILLED';
@@ -53,13 +54,13 @@ export const mountEditorFulfilled=(editorId, editorDiv, dispatchFirecoActions, d
   dispatchMouseEvents: dispatchMouseEvents
 });
 
-export const configureFirecoActionsFulfilled=(editorId) => ({
-  type: CONFIGURE_FIRECO_ACTIONS_FULFILLED,
+export const configureFirecoBindsFulfilled=(editorId) => ({
+  type: CONFIGURE_FIRECO_BINDS_FULFILLED,
   editorId: editorId
 });
 
-export const configureFirecoActionsRejected=(editorId, error) => ({
-  type: CONFIGURE_FIRECO_ACTIONS_REJECTED,
+export const configureFirecoBindsRejected=(editorId, error) => ({
+  type: CONFIGURE_FIRECO_BINDS_REJECTED,
   editorId: editorId,
   error: error
 });
@@ -182,24 +183,25 @@ export const monacoEditorsReducer=
 
 export const monacoEditorsEpic=(action$, store) =>
   action$.ofType(LOAD_MONACO_EDITOR_FULFILLED)
-    .filter(() => (store.getState().monacoEditorsReducer.monacoEditorsLoaded === store.getState().monacoEditorsReducer.monacoEditorsToLoad))
-    .mapTo(loadMonacoEditorsFulfilled()).startWith(loadMonacoEditors());
+    .filter(() =>
+      (store.getState().monacoEditorsReducer.monacoEditorsLoaded ===
+        store.getState().monacoEditorsReducer.monacoEditorsToLoad))
+    .mapTo(loadMonacoEditorsFulfilled())
+    .startWith(loadMonacoEditors())
+;
 
 export const mountedEditorEpic=(action$, store, {appManager}) =>
-  action$.ofType(CONFIGURE_MONACO_FULFILLED).zip(action$.ofType(MOUNT_EDITOR_FULFILLED).bufferCount(store.getState().monacoEditorsReducer.monacoEditorsToLoad))
+  action$.ofType(MOUNT_EDITOR_FULFILLED)
+    .zip(action$.ofType(CONFIGURE_MONACO_FULFILLED, CONFIGURE_FIRECO_BINDS_FULFILLED))
     .concatMap(actions => {
-        const mounts=actions[1];
-        const observables=[];
-        for (let i=0; i < mounts.length; i++) {
-          const action=mounts[i];
-          observables.push(Observable.concat(
-            appManager.observeConfigureDispatchActions(action.editorId, action.dispatchFirecoActions),
-            appManager.observeConfigureMonacoEditor(action.editorId, action.editorDiv, action.dispatchMouseEvents)
-          ))
-        }
-        return Observable.merge(...observables);
+        const action=actions[0];
+        return Observable.concat(
+          appManager.observeConfigureBinds(action.editorId, action.dispatchFirecoActions),
+          appManager.observeConfigureMonacoEditor(action.editorId, action.editorDiv, action.dispatchMouseEvents)
+        );
       }
-    );
+    )
+;
 
 export const monacoEditorEpic=(action$, store, {appManager}) =>
   action$.ofType(FETCH_PASTEBIN_CONTENT_FULFILLED).zip(action$.ofType(LOAD_MONACO_EDITORS_FULFILLED))

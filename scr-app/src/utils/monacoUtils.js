@@ -10,7 +10,7 @@ import {Observable} from "rxjs";
 
 
 export const monacoEditorDefaultOptions={
-  model: null,  // handled in Fireco
+  model: null,  // handled in FirecoObservable
   glyphMargin: false,
   selectOnLineNumbers: true,
   nativeContextMenu: true,
