@@ -4,8 +4,6 @@ import {withStyles} from 'material-ui/styles';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import ExpressionPopover from "./ExpressionPopover";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
-import {updatePlayground} from "../redux/modules/playground";
-import {ACTIVATE_FIREPAD_FULFILLED} from '../redux/modules/fireco'
 
 const styles = () => ({
   container: {
@@ -34,7 +32,7 @@ class Editor extends Component {
 
   componentDidMount() {
     this.unsubscribes = [];
-    this.context.store.dispatch(mountEditorFulfilled(this.props.editorId, this.editorDiv, this.dispatchFirecoActions, this.dispatchMouseEvents));
+    this.context.store.dispatch(mountEditorFulfilled(this.props.editorId, this.editorDiv, this.dispatchMouseEvents));
   }
   
   componentWillUnmount(){
@@ -43,44 +41,6 @@ class Editor extends Component {
     }
   }
   
-  dispatchModelChanges (monacoEditorOnDidChangeModelContentSubject, store){
-    const unsubscribe1= monacoEditorOnDidChangeModelContentSubject
-      .throttleTime(1000)
-      .subscribe(action =>{
-        store.dispatch({...action, type: 'EDITOR_CHANGE'});
-      });
-  
-    const unsubscribe2 = monacoEditorOnDidChangeModelContentSubject
-      .debounceTime(2000)
-      .subscribe(action =>{
-       store.dispatch(action);
-      });
-    this.unsubscribes.push(unsubscribe1);
-    this.unsubscribes.push(unsubscribe2);
-  }
-  
-  dispatchFirecoActions = (monacoEditorOnDidChangeModelContentSubject, configureSetTextListener, setEditorText) => {
-    const {store } =this.context;
-
-    const unsubscribe0= store.subscribe(payload => {
-      if(!payload){
-        return
-      }
-      switch (payload.type) {
-        case ACTIVATE_FIREPAD_FULFILLED:// happens to all editor instances
-          configureSetTextListener();
-          this.dispatchModelChanges(monacoEditorOnDidChangeModelContentSubject, store);
-          break;
-        case 'FIRECO_GET_TEXT_FULFILLED': // this is a class observer now
-          setEditorText(payload.editorId, payload.text);
-          console.log(store.getState().pastebinReducer.isNew, payload.editorId, payload.text);
-         monacoEditorOnDidChangeModelContentSubject.next(updatePlayground(payload.editorId, payload.text));
-          break;
-        default:
-      }
-    });
-    this.unsubscribes.push(unsubscribe0);
-  };
   
   dispatchMouseEvents = monacoEditorMouseEventsObservable => {
     const unsubscribe4 =

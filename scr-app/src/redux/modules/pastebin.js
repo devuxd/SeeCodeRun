@@ -1,75 +1,80 @@
-import {Observable} from "rxjs";
+import {Observable} from 'rxjs';
 import {ajax} from 'rxjs/observable/dom/ajax';
 
 import localStorage from 'store';
-import {getDefaultPastebinContent} from "../../seecoderun/modules/pastebinContent";
-import {ACTIVATE_FIREPAD_EXPIRED} from "./fireco";
+import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
+import {
+  ACTIVATE_FIREPAD_EXPIRED,
+} from './fireco';
+import {MONACO_EDITOR_CONTENT_CHANGED} from "./monacoEditor";
+
+const cloudFunctionsUrl=process.env.PUBLIC_URL ? 'https://us-central1-firebase-seecoderun.cloudfunctions.net' : '/firebase-seecoderun/us-central1';
+const getPasteBinIdUrl=`${cloudFunctionsUrl}/getPastebinId`;
+const getPasteBinUrl=`${cloudFunctionsUrl}/getPastebin`;
+const getPasteBinTokenUrl=`${cloudFunctionsUrl}/getPastebinToken`;
+
+export const PASTEBIN_CONFIGURE_LAYOUT='PASTEBIN_CONFIGURE_LAYOUT';
+const PASTEBIN_CONFIGURE_LAYOUT_FULFILLED='PASTEBIN_CONFIGURE_LAYOUT_FULFILLED';
+const PASTEBIN_CONFIGURE_LAYOUT_REJECTED='PASTEBIN_CONFIGURE_LAYOUT_REJECTED';
 
 const DISPOSE_PASTEBIN='DISPOSE_PASTEBIN';
 
 const FETCH_PASTEBIN='FETCH_PASTEBIN';
 export const FETCH_PASTEBIN_FULFILLED='FETCH_PASTEBIN_FULFILLED';
-export const FETCH_PASTEBIN_CONTENT_FULFILLED='FETCH_PASTEBIN_CONTENT_FULFILLED';
 const FETCH_PASTEBIN_REJECTED='FETCH_PASTEBIN_REJECTED';
+export const FETCH_PASTEBIN_CONTENT_FULFILLED='FETCH_PASTEBIN_CONTENT_FULFILLED';
+export const FETCH_PASTEBIN_CONTENT_REJECTED='FETCH_PASTEBIN_CONTENT_REJECTED';
 
 const FETCH_PASTEBIN_TOKEN='FETCH_PASTEBIN_TOKEN';
 export const FETCH_PASTEBIN_TOKEN_FULFILLED='FETCH_PASTEBIN_TOKEN_FULFILLED';
 const FETCH_PASTEBIN_TOKEN_REJECTED='FETCH_PASTEBIN_TOKEN_REJECTED';
 
-const AUTH_PASTEBIN='AUTH_PASTEBIN';
-export const AUTH_PASTEBIN_FULFILLED='AUTH_PASTEBIN_FULFILLED';
-const AUTH_PASTEBIN_REJECTED='AUTH_PASTEBIN_REJECTED';
-
 const defaultPasteBinState={
   pastebinId: null,
+  currentGridLayouts: null,
   isNew: false,
-  pastebinServerAction: null, // created, copied, recovered
-  initialEditorsTexts: null,
+  editorsTexts: null,
   pastebinToken: null,
-  authUser: null,
-  authUserActionCount: 0
+  contentChangeEditorId: null
 };
 
-export const fetchPastebin=() => {
-  try {
-    const pastebinId=window.location.hash.replace(/#/g, '') || '';
-    // session='' creates a new session
-    let session=(pastebinId && localStorage.get(`scr_session#${pastebinId}`)) ? localStorage.get(`scr_session#${pastebinId}`) : '';
-    return {
-      type: FETCH_PASTEBIN,
-      pastebinId: pastebinId,
-      session: session,
-      isNew: !pastebinId,
-    };
-  } catch (e) {
-    return {type: FETCH_PASTEBIN, e: e};
-  }
-  
+export const pastebinConfigureLayout=(restoreGridLayouts, getCurrentGridLayouts) => {
+  return {
+    type: PASTEBIN_CONFIGURE_LAYOUT,
+    restoreGridLayouts: restoreGridLayouts,
+    getCurrentGridLayouts: getCurrentGridLayouts,
+  };
 };
 
-const fetchPastebinFulfilled=(pastebinId, session) => {
-  localStorage.set(`scr_session#${pastebinId}`, session ||localStorage.get(`scr_session#${pastebinId}`));
-  window.location.hash=pastebinId;
+export const fetchPastebin=(pastebinId) => {
+  return {
+    type: FETCH_PASTEBIN,
+    pastebinId: pastebinId,
+    isNew: !pastebinId,
+  };
+};
+
+const fetchPastebinFulfilled=(pastebinId, initialEditorsTexts) => {
   return {
     type: FETCH_PASTEBIN_FULFILLED,
     pastebinId: pastebinId,
-    session: session,
+    editorsTexts: initialEditorsTexts,
   }
 };
 
 const fetchPastebinContentFulfilled=(initialEditorsTexts) => {
   return {
     type: FETCH_PASTEBIN_CONTENT_FULFILLED,
-    initialEditorsTexts: initialEditorsTexts
+    editorsTexts: initialEditorsTexts
   }
+};
+
+const fetchPastebinContentRejected=error => {
+  return {type: FETCH_PASTEBIN_CONTENT_REJECTED, error: error}
 };
 
 const fetchPastebinRejected=error => {
   return {type: FETCH_PASTEBIN_REJECTED, error: error}
-};
-
-export const fetchPastebinToken=pastebinId => {
-  return {type: FETCH_PASTEBIN_TOKEN, pastebinId: pastebinId};
 };
 
 const fetchPastebinTokenFulfilled=pastebinToken => {
@@ -80,42 +85,52 @@ const fetchPastebinTokenRejected=error => {
   return {type: FETCH_PASTEBIN_TOKEN_REJECTED, error: error}
 };
 
-export const authPastebin=pastebinToken => ({
-  type: AUTH_PASTEBIN,
-  pastebinToken: pastebinToken
-});
-export const authPastebinFulfilled=authUser => ({
-  type: AUTH_PASTEBIN_FULFILLED,
-  authUser: authUser
-});
-export const authPastebinRejected=error => ({
-  type: AUTH_PASTEBIN_REJECTED,
-  error: error
-});
-
-const cloudFunctionsUrl='https://us-central1-firebase-seecoderun.cloudfunctions.net';
-const getPasteBinIdUrl=`${cloudFunctionsUrl}/getPastebinId`;
-const getPasteBinUrl=`${cloudFunctionsUrl}/getPastebin`;
-const getPasteBinTokenUrl=`${cloudFunctionsUrl}/getPastebinToken`;
-
 export const pastebinReducer=(state=defaultPasteBinState, action) => {
+  let initialEditorsTexts=null;
   switch (action.type) {
     case FETCH_PASTEBIN:
       return {
         ...state,
         pastebinId: action.pastebinId,
-        initialEditorsTexts: {},
-        isNew: action.isNew
+        isNew: action.isNew,
+        editorsTexts: null,
       };
+    
+    case MONACO_EDITOR_CONTENT_CHANGED:
+      let editorsTexts=state.editorsTexts || {};
+      editorsTexts={...editorsTexts, [action.editorId]: action.text};
+      return {
+        ...state,
+        editorsTexts: editorsTexts,
+        contentChangeEditorId: action.editorId
+      };
+    
     case FETCH_PASTEBIN_FULFILLED:
+      initialEditorsTexts=
+        action.editorsTexts ? {...action.editorsTexts} : null;
+      initialEditorsTexts=
+        initialEditorsTexts && state.contentChangeEditorId ?
+          {...initialEditorsTexts, ...state.editorsTexts}
+          : initialEditorsTexts;
       return {
         ...state,
         pastebinId: action.pastebinId,
+        editorsTexts: initialEditorsTexts || state.editorsTexts
       };
     case FETCH_PASTEBIN_CONTENT_FULFILLED:
+      initialEditorsTexts=
+        action.editorsTexts ? {...action.editorsTexts} : null;
+      initialEditorsTexts=
+        initialEditorsTexts && state.editorsTexts ?
+          {...state.editorsTexts, ...initialEditorsTexts}
+          : initialEditorsTexts;
+      initialEditorsTexts=
+        initialEditorsTexts && state.contentChangeEditorId ?
+          {...initialEditorsTexts, ...state.editorsTexts}
+          : initialEditorsTexts;
       return {
         ...state,
-        initialEditorsTexts: action.initialEditorsTexts
+        editorsTexts: initialEditorsTexts || state.editorsTexts
       };
     case FETCH_PASTEBIN_REJECTED:
       return {
@@ -137,72 +152,88 @@ export const pastebinReducer=(state=defaultPasteBinState, action) => {
         ...state,
         error: action.error
       };
-    case AUTH_PASTEBIN:
-      return {
-        ...state,
-        authUser: null,
-        authUserActionCount: 0
-      };
-    case AUTH_PASTEBIN_FULFILLED:
-      return {
-        ...state,
-        authUser: action.authUser,
-        authUserActionCount: state.authUserActionCount + 1
-      };
-    case AUTH_PASTEBIN_REJECTED:
-      return {
-        ...state,
-        error: action.error
-      };
     default:
       return state;
   }
 };
 
 
-
 export const disposePastebinEpic=(action$, store, {appManager}) =>
   action$.ofType(DISPOSE_PASTEBIN)
-    .mergeMap(() =>
-      appManager.observeDispose()
+    .mergeMap(() => {
+        localStorage.set(
+          `scr_monacoEditorsSavedStates#${
+            store.getState().pastebinReducer.pastebinId
+            }`,
+          appManager.getEditorsStates()
+        );
+        localStorage.set(`scr_layoutSavedState#${
+            store.getState().pastebinReducer.pastebinId
+            }`,
+          appManager.getCurrentGridLayouts());
+        return appManager.observeDispose();
+      }
     );
+
+export const pastebinLayoutEpic=(action$, store, {appManager}) =>
+  action$.ofType(FETCH_PASTEBIN_FULFILLED)
+    .zip(action$.ofType(PASTEBIN_CONFIGURE_LAYOUT))
+    .mergeMap(actions => {
+      if (actions[1].restoreGridLayouts && actions[1].getCurrentGridLayouts) {
+        appManager.setPastebinLayout(actions[1].restoreGridLayouts, actions[1].getCurrentGridLayouts);
+        appManager.restoreGridLayouts(
+          localStorage.get(`scr_layoutSavedState#${
+            store.getState().pastebinReducer.pastebinId
+            }`));
+        return Observable.of({type: PASTEBIN_CONFIGURE_LAYOUT_FULFILLED});
+      } else {
+        return Observable.of({type: PASTEBIN_CONFIGURE_LAYOUT_REJECTED});
+      }
+    });
+;
 
 export const pastebinEpic=(action$, store, {appManager}) =>
   action$.ofType(FETCH_PASTEBIN)
-    // .switchMap(action=>Observable.of({type:'LOG', action:action}))
     .mergeMap(action => {
-      if (action.session) {
-        appManager.setPastebinId(action.pastebinId);
-        appManager.restoreEditorsStates(true);
-        return Observable.of(fetchPastebinFulfilled(action.pastebinId, action.session));
-      } else {
-        const url=`${getPasteBinIdUrl}?pastebinId=${action.pastebinId || ''}&session=${action.session || ''}`;
-        const getPastebinIdRequest= ()=>ajax({
+      if (action.isNew) {
+        const url=getPasteBinIdUrl;
+        const getPastebinIdRequest=() => ajax({
           crossDomain: true,
           url: url,
         })
           .map(result => {
             appManager.setPastebinId(result.response.pastebinId);
-            appManager.restoreEditorsStates(true);
-            return fetchPastebinFulfilled(result.response.pastebinId, result.response.session);
+            return fetchPastebinFulfilled(
+              result.response.pastebinId,
+              null,
+            );
           })
-          // .takeUntil(action$.ofType(FETCH_PASTEBIN_FULFILLED))
           .catch(error => Observable.of(fetchPastebinRejected(error)));
-  
-        if(action.pastebinId) {
-          return getPastebinIdRequest();
-        }else{
-          return Observable.merge(
+        
+          return Observable.concat(
             Observable.of(fetchPastebinContentFulfilled(
               getDefaultPastebinContent()
-              )),
-            getPastebinIdRequest());
-        }
+            )),
+            getPastebinIdRequest()
+          );
+      } else {
+        appManager.setPastebinId(action.pastebinId);
+        //todo: needs validation when user edited from a different machine
+        appManager.restoreEditorsStates(
+          localStorage.get(`scr_monacoEditorsSavedStates#${
+            action.pastebinId
+            }`)
+        );
+        return Observable.of(fetchPastebinFulfilled(
+          action.pastebinId,
+          appManager.getInitialEditorsTextsFromRestoreEditorsStates()
+          )
+        );
       }
     })
 ;
 
-export const pastebinTokenEpic=(action$, store, {appManager}) =>
+export const pastebinTokenEpic=(action$, store) =>
   action$.ofType(FETCH_PASTEBIN_FULFILLED, ACTIVATE_FIREPAD_EXPIRED)
     .mergeMap(() => {
       const url=`${getPasteBinTokenUrl}?pastebinId=${store.getState().pastebinReducer.pastebinId}`;
@@ -211,30 +242,33 @@ export const pastebinTokenEpic=(action$, store, {appManager}) =>
         url: url,
       })
         .map(result => {
-          console.log("T");
           return fetchPastebinTokenFulfilled(result.response.pastebinToken)
         })
-        // .takeUntil(action$.ofType(FETCH_PASTEBIN_TOKEN_FULFILLED))
         .catch(error => Observable.of(fetchPastebinTokenRejected(error)));
     })
 ;
 
 
-export const pastebinContentEpic=(action$, store, {appManager}) =>
+export const pastebinContentEpic=(action$, store) =>
   action$.ofType(FETCH_PASTEBIN_FULFILLED)
-    .filter(()=>!store.getState().pastebinReducer.isNew)
+    .filter(() => !store.getState().pastebinReducer.isNew)
     .mergeMap(() => {
-      // console.log("TOOOOOO");
       const url=`${getPasteBinUrl}?pastebinId=${store.getState().pastebinReducer.pastebinId}`;
       return ajax({
         crossDomain: true,
         url: url,
       })
-        .map(result => {
-          console.log("C");
-          return fetchPastebinContentFulfilled(result.response.initialEditorsTexts)
-        })
-        .takeUntil(action$.ofType(FETCH_PASTEBIN_CONTENT_FULFILLED))
-        .catch(error => Observable.of(fetchPastebinRejected(error)));
+        .map(result => fetchPastebinContentFulfilled(result.response.initialEditorsTexts)
+          // {
+          // if(result.response && result.response.initialEditorsTexts && result.response.initialEditorsTexts && Object.keys(result.response.initialEditorsTexts).length===3){
+          //   return fetchPastebinContentFulfilled(result.response.initialEditorsTexts);
+          // }else{
+          //   return fetchPastebinContentRejected('Malformed Server Response.');
+          // }
+          // }
+        
+        )
+        // .takeUntil(action$.ofType(CONFIGURE_FIRECO_EDITORS_FULFILLED))
+        .catch(error => Observable.of(fetchPastebinContentRejected(error)));
     })
 ;

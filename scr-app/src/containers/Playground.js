@@ -2,14 +2,11 @@ import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import {withStyles} from 'material-ui/styles';
 import _ from 'lodash';
-import localStorage from 'store';
 import {Subject} from "rxjs";
 
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updatePlaygroundInstrumentationSuccess} from "../redux/modules/playground";
 import {updatePlaygroundInstrumentationFailure} from "../redux/modules/playground";
-
-// import {loadMonacoSucceded} from '../redux/modules/monaco'
 
 const styles=() => ({
   playground: {
@@ -25,22 +22,9 @@ const styles=() => ({
 
 
 class Playground extends Component {
-  // constructor(props) {
-  //   super(props);
-  //   this.state={
-  //     isFirstRun: true,
-  //     isUpdated: false,
-  //     isBundled: false,
-  //     isLoaded: false,
-  //     isRunning: false,
-  //     errors: null,
-  //     editorsTexts: null
-  //   };
-  // }
   playgroundDOMNode=null;
-  isFirstRun=true;
   isBundling=false;
-  currentEditorsTexts={};
+  currentEditorsTexts=null;
   unsubscribes=[];
   
   render() {
@@ -56,6 +40,7 @@ class Playground extends Component {
       .debounceTime(1000)
       .subscribe(currentEditorsTexts => {
         this.isBundling=true;
+        // console.log("B", currentEditorsTexts);
         this.bundle(currentEditorsTexts);
         this.isBundling=false;
       })
@@ -67,30 +52,15 @@ class Playground extends Component {
     const {store}=this.context;
     this.bundlingSubject=new Subject();
     const unsubscribe0=store.subscribe(() => {
-      if (this.isFirstRun && store.getState().pastebinReducer.pastebinId) {
-        const localEditorsTexts=localStorage.get(`scr_monacoEditorsSavedStates#${store.getState().pastebinReducer.pastebinId}`);
-        if (localEditorsTexts) {
-          this.currentEditorsTexts={
-            js: localEditorsTexts.js.text,
-            html: localEditorsTexts.html.text,
-            css: localEditorsTexts.css.text,
-          };
-          this.isFirstRun=false;
-          this.bundlingSubject.next(this.currentEditorsTexts);
-          return;
+      // if(!store.getState().firecoReducer.areFirecoEditorsConfigured){
+      //   return;
+      // }
+      if (!_.isEqual(this.currentEditorsTexts, store.getState().pastebinReducer.editorsTexts)) {
+        this.currentEditorsTexts = store.getState().pastebinReducer.editorsTexts;
+        if (this.runIframe) {
+          this.playgroundDOMNode.removeChild(this.runIframe);
+          this.runIframe = null;
         }
-      }
-      
-      if (this.isFirstRun && store.getState().pastebinReducer.isPastebinFetched) {
-        this.currentEditorsTexts=store.getState().pastebinReducer.initialEditorsTexts;
-        this.isFirstRun=false;
-        this.bundlingSubject.next(this.currentEditorsTexts);
-        return;
-      }
-      
-      const newCurrentEditorsTexts={...this.currentEditorsTexts, ...store.getState().updatePlaygroundReducer.editorsTexts};
-      if (newCurrentEditorsTexts.js && newCurrentEditorsTexts.html && newCurrentEditorsTexts.css && !_.isEqual(newCurrentEditorsTexts, this.currentEditorsTexts)) {
-        this.currentEditorsTexts=newCurrentEditorsTexts;
         this.bundlingSubject.next(this.currentEditorsTexts);
       }
     });
@@ -145,9 +115,9 @@ class Playground extends Component {
 
     autoLog.configureIframe(runIframe, store, al, html, css, js, alJs);
     
-    if (this.runIframe) {
-      playgroundDOMNode.removeChild(this.runIframe);
-    }
+    // if (this.runIframe) {
+    //   playgroundDOMNode.removeChild(this.runIframe);
+    // }
     
     playgroundDOMNode.appendChild(runIframe);
     this.runIframe=runIframe;

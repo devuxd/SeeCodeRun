@@ -1,46 +1,40 @@
-import {Observable, Subject} from "rxjs";
-import localStorage from 'store';
+import {Observable} from "rxjs";
+import firebase from 'firebase';
+import Firepad from 'firepad';
+import _ from 'lodash';
 
 import {
-  fetchPastebinToken,
-  authPastebinFulfilled,
-  authPastebinRejected
-} from '../redux/modules/pastebin';
-
-import {
-  configureMonacoFulfilled,
-  configureMonacoRejected
-} from "../redux/modules/monaco";
-import {
-  configureFirecoBindsFulfilled,
-  configureFirecoBindsRejected,
   configureMonacoModelsFulfilled,
   configureMonacoModelsRejected,
-  loadMonacoEditorFulfilled,
-  loadMonacoEditorRejected
-} from "../redux/modules/monacoEditor";
+  updateMonacoModelsFulfilled,
+  updateMonacoModelsRejected
+} from "../redux/modules/monaco";
 import {
-  configureFirecoInitFulfilled,
-  configureFirecoInitRejected,
+  // configureMonacoModelsFulfilled,
+  // configureMonacoModelsRejected,
+  loadMonacoEditorFulfilled,
+  loadMonacoEditorRejected, monacoEditorContentChanged
+} from "../redux/modules/monacoEditor";
+
+import {
   configureFirecoEditorFulfilled,
   configureFirecoEditorRejected,
   activateFirepadFulfilled,
-  activateFirepadRejected, activateFirepad, firecoSetText,
+  activateFirepadRejected, onConnectionChanged,
 } from "../redux/modules/fireco";
 
 import {
-  configureMonaco,
   configureMonacoModel,
   configureMonacoEditor,
-  configureMonacoEditorWidgets, configureMonacoEditorMouseEventsObservable
+  configureMonacoEditorWidgets,
+  configureMonacoEditorMouseEventsObservable
 } from "../utils/monacoUtils";
-import {getDefaultTextForLanguage} from "./modules/pastebinContent";
-import {updatePlayground} from "../redux/modules/playground";
+import {getDefaultTextForLanguage} from '../common/pastebinContent';
 import JSXColoringProvider from "../utils/JSXColoringProvider";
 import LiveExpressionStore from "./modules/LiveExpressionStore";
 
 const dataBaseRoot='/scr2';
-const config={
+const firebaseConfig={
   apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
   authDomain: "seecoderun.firebaseapp.com",
   databaseURL: "https://seecoderun.firebaseio.com",
@@ -49,7 +43,14 @@ const config={
   messagingSenderId: "147785767581"
 };
 
-const defaultFireco={
+const fireco={
+  isInit: false,
+  connectedRef: null,
+  isAuth: false,
+  unsubscribeOnIdTokenChanged: null,
+};
+
+const defaultFirecoPad={
   language: 'html',
   monacoEditor: null,
   monacoEditorModel: null,
@@ -59,31 +60,28 @@ const defaultFireco={
   dispatchMouseEvents: null,
   monacoEditorMouseEventsObservable: null,
   dispatchFirecoActions: null,
-  firebasePath: null
+  firebasePath: null,
+  firebaseRef: null,
+  headlessFirepad: null,
+  isNew: false,
+  isInit: false,
+  ignoreContentChange: false,
+  mutex: false,
+  nextSetFirecoTexts: [],
+  text: null,// value obtained by firepad or set via scr
 };
+// const firebase = null;
+// const Firepad=firebase;
 
 class AppManager {
   constructor() {
-    this.isOnline$=
-      Observable.of(window.navigator.onLine);
-    this.goesOffline$=
-      Observable.fromEvent(window, 'offline').mapTo(false);
-    this.goesOnline$=
-      Observable.fromEvent(window, 'online').mapTo(true);
-    
-    this.online$=Observable.merge(
-      this.isOnline$,
-      this.goesOffline$,
-      this.goesOnline$
-    );
+    this.pastebinLayout=null;
     this.pastebinId=null;
     this.monaco=null;
-    this.isFetchPastebinRestored=false;
     this.hasSavedEditorsStates=false;
-    this.fireco = null;
-    this.firecos={ // editorIds as in Firebase: pastebinId/content/editorId (e.g. js)
+    this.firecoPads={ // editorIds as in Firebase: pastebinId/content/editorId (e.g. js)
       'js': {
-        ...defaultFireco,
+        ...defaultFirecoPad,
         language: 'javascript',
         editorOptions: {
           glyphMargin: true,
@@ -93,9 +91,9 @@ class AppManager {
         observeMonacoEditorMouseEvents: true
       },
       'html': {
-        ...defaultFireco
+        ...defaultFirecoPad
       }, 'css': {
-        ...defaultFireco,
+        ...defaultFirecoPad,
         language: 'css'
       }
     };
@@ -105,160 +103,169 @@ class AppManager {
   observeDispose() {
     try {
       this.dispose();
-      this.saveEditorsStates();
       return Observable.of({type: 'DISPOSE_FULFILLED'});
     } catch (error) {
-      
+      console.log("SHIT");
       return Observable.of({type: 'DISPOSE_REJECTED', error: error});
     }
   }
   
   setPastebinId(pastebinId, shouldReplace=false) {
     if (pastebinId && (!this.pastebinId || shouldReplace)) {
+      window.location.hash=pastebinId;
       this.pastebinId=pastebinId;
     }
   }
   
-  saveEditorsStates() {
-    if (!this.pastebinId) {
-      return;
-    }
+  getEditorsStates() {
     const editorsStates={};
-    for (const editorId in this.firecos) {
-      // console.log("save", editorId, this.firecos[editorId].monacoEditor.getValue());
-      editorsStates[editorId]={
-        text: this.firecos[editorId].monacoEditor.getValue(),
-        viewState: this.firecos[editorId].monacoEditor.saveViewState()
-      };
+    for (const editorId in this.firecoPads) {
+      const monacoEditor=this.firecoPads[editorId].monacoEditor;
+      if (monacoEditor) {
+        editorsStates[editorId]={
+          text: monacoEditor.getValue(),
+          viewState: monacoEditor.saveViewState(),
+        };
+      } else {
+        return null;
+      }
     }
-    localStorage.set(`scr_monacoEditorsSavedStates#${this.pastebinId}`, editorsStates);
+    return editorsStates;
     //  console.log("save", JSON.stringify(localStorage.get(`scr_monacoEditorsSavedStates#${this.pastebinId}`)));
   }
   
-  restoreEditorsStates(isFetchPastebinRestoration) {
-    if (!this.pastebinId) {
-      return;
-    }
-    if (isFetchPastebinRestoration && this.isFetchPastebinRestored) {
+  restoreEditorsStates(editorsStates) {
+    if (this.hasSavedEditorsStates || !editorsStates) {
       return;
     }
     
-    const editorsStates=localStorage.get(`scr_monacoEditorsSavedStates#${this.pastebinId}`);
-    if (!editorsStates) {
-      return;
-    }
-    
-    this.hasSavedEditorsStates=true;
-    
-    for (const editorId in this.firecos) {
+    for (const editorId in this.firecoPads) {
       if (editorsStates[editorId]) {
-        this.firecos[editorId].monacoEditorSavedState=editorsStates[editorId];
+        this.firecoPads[editorId].monacoEditorSavedState=editorsStates[editorId];
+      } else {
+        return;
       }
     }
-    
-    this.isFetchPastebinRestored=isFetchPastebinRestoration ? isFetchPastebinRestoration : this.isFetchPastebinRestored;
+    this.hasSavedEditorsStates=true;
+  }
+  
+  getInitialEditorsTextsFromRestoreEditorsStates() {
+    if (!this.hasSavedEditorsStates) {
+      return null;
+    }
+    const initialEditorsTexts={};
+    for (const editorId in this.firecoPads) {
+      if (this.firecoPads[editorId].monacoEditorSavedState) {
+        initialEditorsTexts[editorId]=this.firecoPads[editorId].monacoEditorSavedState.text;
+      } else {
+        return null;
+      }
+    }
+    return initialEditorsTexts;
+  }
+  
+  getCurrentGridLayouts() {
+    if (this.pastebinLayout && this.pastebinLayout.getCurrentGridLayouts) {
+      return this.pastebinLayout.getCurrentGridLayouts();
+    }
+    return null;
+  }
+  
+  restoreGridLayouts(gridLayouts) {
+    if (gridLayouts && this.pastebinLayout && this.pastebinLayout.restoreGridLayouts) {
+      this.pastebinLayout.restoreGridLayouts(gridLayouts);
+    }
+  }
+  
+  setPastebinLayout(restoreGridLayouts, getCurrentGridLayouts) {
+    this.pastebinLayout={
+      restoreGridLayouts: restoreGridLayouts,
+      getCurrentGridLayouts: getCurrentGridLayouts
+    }
   }
   
   dispose() {
-  
+    this.disposeFireco();
   }
   
-  //todo editor.restoreViewState
-  observeConfigureBinds(editorId, dispatchFirecoActions/*, editorDiv,
-   dispatchMouseEvents*/) {
-    try {
-      this.configureDispatchFirecoBinds(editorId, dispatchFirecoActions);
-      // this.configureEditorBinds(editorId, editorDiv, dispatchMouseEvents);
-      return Observable.of(configureFirecoBindsFulfilled(editorId));
-    } catch (error) {
-      return Observable.of(configureFirecoBindsRejected(editorId, error));
+  configureFirepadPaths(pastebinId, isNew) {
+    for (const editorId in this.firecoPads) {
+      this.firecoPads[editorId].firebasePath=`${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
+      this.firecoPads[editorId].isNew=isNew;
     }
   }
   
-  configureDispatchFirecoBinds(editorId, dispatchFirecoActions) {
-    this.firecos[editorId].dispatchFirecoActions=dispatchFirecoActions;
-  }
-  
-  // configureEditorBinds(editorId, editorDiv, dispatchMouseEvents) {
-  //   this.firecos[editorId].editorDiv=editorDiv;
-  //   this.firecos[editorId].dispatchMouseEvents=dispatchMouseEvents;
-  // }
-  
-  
-  configureFirepadPaths(pastebinId) {
-    const firepadPaths={};
-    for (const editorId in this.firecos) {
-
-      const firebasePath=`${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
-      firepadPaths[editorId]=firebasePath;
-      this.firecos[editorId].firebasePath=firebasePath;
-    }
-    return firepadPaths;
-  }
-  
-  observeConfigureMonaco(monaco) {
+  observeConfigureMonacoModels() {
     try {
-      if (monaco) {
-        this.monaco=monaco;
-        configureMonaco(monaco);
-        for (const editorId in this.firecos) {
-          let text=this.pastebinId ? '//...loading your code =]' : getDefaultTextForLanguage(editorId);
-          //    console.log("this.hasSavedEditorsStates",this.hasSavedEditorsStates);
-          if (this.hasSavedEditorsStates && this.firecos[editorId].monacoEditorSavedState.text) {
-            text=this.firecos[editorId].monacoEditorSavedState.text;
+      if (window.monaco) {
+        this.monaco=window.monaco;
+        for (const editorId in this.firecoPads) {
+          let text='';
+          if (this.hasSavedEditorsStates &&
+            this.firecoPads[editorId].monacoEditorSavedState) {
+            text=_.isString(
+              this.firecoPads[editorId].monacoEditorSavedState.text
+            ) ? this.firecoPads[editorId].monacoEditorSavedState.text : '';
           }
-          this.firecos[editorId].monacoEditorModel=configureMonacoModel(this.monaco, editorId, text, this.firecos[editorId].language);
+          this.firecoPads[editorId].monacoEditorModel=
+            configureMonacoModel(this.monaco,
+              editorId,
+              text,
+              this.firecoPads[editorId].language);
         }
-        this.jsxColoringProvider=new JSXColoringProvider(monaco);
-        return Observable.of(configureMonacoFulfilled());
+        this.jsxColoringProvider=new JSXColoringProvider(this.monaco);
+        return Observable.of(configureMonacoModelsFulfilled());
       } else {
-        return Observable.of(configureMonacoRejected('Error: Provide a monaco library reference'));
+        return Observable.of(configureMonacoModelsRejected('Error: Monaco is not' +
+          ' loaded'));
       }
     } catch (e) {
-      return Observable.of(configureMonacoRejected(e));
+      return Observable.of(configureMonacoModelsRejected(e));
     }
   }
   
   observeUpdateMonacoModels(initialEditorsTexts) {
     try {
-       console.log("here !", initialEditorsTexts);
       if (initialEditorsTexts) {
-        for (const editorId in this.firecos) {
-          if (!this.hasSavedEditorsStates
-            || this.firecos[editorId].monacoEditorSavedState.text !== initialEditorsTexts[editorId]) {
-            this.setEditorText(editorId, initialEditorsTexts[editorId]);
+        for (const editorId in this.firecoPads) {
+          const firecoPad=this.firecoPads[editorId];
+          if (!firecoPad.isInit && _.isString(initialEditorsTexts[editorId])) {
+            //  console.log('U', editorId, initialEditorsTexts[editorId]);
+            firecoPad.monacoEditorModel.setValue(initialEditorsTexts[editorId]);
           }
         }
-        return Observable.of(configureMonacoModelsFulfilled());
+        return Observable.of(updateMonacoModelsFulfilled());
       } else {
-        return Observable.of(configureMonacoModelsRejected('Error: no editors texts was provided'));
+        return Observable.of(updateMonacoModelsRejected('Error: no editors' +
+          ' texts was provided'));
       }
     } catch (e) {
-      return Observable.of(configureMonacoModelsRejected(e));
+      return Observable.of(updateMonacoModelsRejected(e));
     }
     
   }
   
   observeConfigureMonacoEditor(editorId, editorDiv, dispatchMouseEvents) {
     if (this.monaco) {
-      this.firecos[editorId].dispatchMouseEvents=dispatchMouseEvents;
+      const firecoPad=this.firecoPads[editorId];
+      firecoPad.dispatchMouseEvents=dispatchMouseEvents;
       try {
-        let model=this.firecos[editorId].monacoEditorModel;
         const editorOptions={
-          ...this.firecos[editorId].editorOptions
+          ...firecoPad.editorOptions,
+          model: firecoPad.monacoEditorModel
         };
-        this.firecos[editorId].monacoEditor=configureMonacoEditor(this.monaco, editorDiv, editorOptions);
-        if (this.firecos[editorId].monacoEditorSavedState) {
-          this.firecos[editorId].monacoEditor.restoreViewState(this.firecos[editorId].monacoEditorSavedState.viewState);
-          this.firecos[editorId].monacoEditorModel.setValue(this.firecos[editorId].monacoEditorSavedState.text);
+        firecoPad.monacoEditor=configureMonacoEditor(this.monaco, editorDiv, editorOptions);
+        if (firecoPad.monacoEditorSavedState && _.isString(firecoPad.monacoEditorSavedState.text)) {
+          firecoPad.monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
+          firecoPad.monacoEditor.restoreViewState(firecoPad.monacoEditorSavedState.viewState);
         }
-        this.firecos[editorId].monacoEditor.setModel(model);
         
-        // if (this.firecos[editorId].observeMonacoEditorMouseEvents) {
-        //   this.firecos[editorId].monacoEditorMouseEventsObservable=configureMonacoEditorMouseEventsObservable(this.firecos[editorId].monacoEditor);
-        //   this.firecos[editorId].dispatchMouseEvents(this.firecos[editorId].monacoEditorMouseEventsObservable);
-        // }
+        if (firecoPad.observeMonacoEditorMouseEvents) {
+          firecoPad.monacoEditorMouseEventsObservable=configureMonacoEditorMouseEventsObservable(firecoPad.monacoEditor);
+          firecoPad.dispatchMouseEvents(firecoPad.monacoEditorMouseEventsObservable);
+        }
         
+        configureMonacoEditorWidgets(this.monaco, editorId, firecoPad.monacoEditor);
         return Observable.of(loadMonacoEditorFulfilled(editorId));
       } catch (error) {
         return Observable.of(loadMonacoEditorRejected(editorId, error));
@@ -269,77 +276,153 @@ class AppManager {
     }
   }
   
-  observeConfigureFirecoInit(fireco) {
-    if (fireco){
-      this.fireco = fireco;
-      return Observable.of(configureFirecoInitFulfilled(this.fireco));
-    } else{
-      return Observable.of(configureFirecoInitRejected('Fireco reference is' +
-        ' not' +
-        ' defined'));
-    }
-  }
-  
-  observeActivateFirepad(pastebinId, pastebinToken) {
-    if (pastebinId && pastebinToken && this.fireco && this.fireco.firecoWorker){
-      const firepadPaths = this.configureFirepadPaths(pastebinId);
-      this.activateFirepad(pastebinToken, firepadPaths);
-      return Observable.of(activateFirepad(pastebinToken, firepadPaths));
-    } else{
+  observeActivateFireco(pastebinId, pastebinToken, isNew) {
+    if (pastebinId && pastebinToken) {
+      this.configureFirepadPaths(pastebinId, isNew);
+      fireco.isAuth=false;
+      return Observable.create(observer => {
+        
+        if (fireco.unsubscribeOnIdTokenChanged) {
+          fireco.unsubscribeOnIdTokenChanged();
+        }
+        
+        if (!fireco.isInit) {
+          fireco.isInit=true;
+          firebase.initializeApp(firebaseConfig);
+          fireco.connectedRef=firebase.database().ref(".info/connected");
+          fireco.connectedRef.on("value", snap =>
+            observer.next(onConnectionChanged(snap.val()))
+          );
+        } else {
+          fireco.connectedRef.off("value");
+          fireco.connectedRef.on("value", snap =>
+            observer.next(onConnectionChanged(snap.val()))
+          );
+        }
+        
+        fireco.unsubscribeOnIdTokenChanged=firebase.auth().onIdTokenChanged(
+          user => {
+            if (user) {
+              if (!fireco.isAuth) {
+                fireco.isAuth=true;
+                observer.next(activateFirepadFulfilled(user));
+              }
+              // ignore non-token events
+            }
+          },
+          error => {
+            fireco.isAuth=false;
+            observer.next(activateFirepadRejected(error));
+          }
+        );
+        
+        firebase.auth().signInWithCustomToken(pastebinToken)
+          .catch((error) => {
+            fireco.isAuth=false;
+            observer.next(activateFirepadRejected(error));
+          });
+        
+      });
+    } else {
       return Observable.of(activateFirepadRejected('Values missing:' +
         ' pastebinToken, firepadPaths; or Fireco is not configured.'));
     }
   }
   
-  activateFirepad(pastebinToken, firepadPaths) {
-    this.fireco.firecoWorker.postMessage(activateFirepad(pastebinToken, firepadPaths));
+  disposeFireco() {
+    for (const editorId in this.firecoPads) {
+      if (this.firecoPads[editorId].headlessFirepad) {
+        this.firecoPads[editorId].headlessFirepad.dispose();
+      }
+    }
+    
+    if (fireco.unsubscribeOnIdTokenChanged) {
+      fireco.unsubscribeOnIdTokenChanged();
+    }
   }
   
   observeConfigureFirecoEditor(editorId) {
-    console.log(editorId);
-    if (this.monaco) {
-      try {
-        const monacoEditor=this.firecos[editorId].monacoEditor;
-        const dispatchFirecoActions=this.firecos[editorId].dispatchFirecoActions;
-        configureMonacoEditorWidgets(this.monaco, editorId, monacoEditor);
-
-        const monacoEditorOnDidChangeModelContentSubject=new Subject();
-        // const configureSetTextListener=() => {
-          const onContentChanged=changes => { //changes object ignored
-            monacoEditorOnDidChangeModelContentSubject.next(updatePlayground(editorId, monacoEditor.getValue(), changes));
-            const setTextDelay=this.firecos[editorId].ignoreContentChange ? 1000 : 0;
-            clearTimeout(this.firecos[editorId].postMessageSetEditorTextTimeout);
-            this.firecos[editorId].postMessageSetEditorTextTimeout=
-              setTimeout(() => {
-                if (this.firecos[editorId].ignoreContentChange) {
-                  return;
-                }
-                this.fireco.firecoWorker.postMessage(firecoSetText(editorId, monacoEditor.getValue()));
-              }, setTextDelay);
-            
-            setTimeout(() => {
-              this.jsxColoringProvider.colorize(monacoEditor);
-            }, 0);
-          };
-          monacoEditor.onDidChangeModelContent(onContentChanged);
-          
-          setTimeout(() => {
-            this.jsxColoringProvider.colorize(monacoEditor);
-          }, 0);
-        // };
-       // dispatchFirecoActions(monacoEditorOnDidChangeModelContentSubject,
-        // configureSetTextListener, this.setEditorText);
-        return Observable.of(configureFirecoEditorFulfilled(editorId));
-      } catch (error) {
-        return Observable.of(configureFirecoEditorRejected(editorId, error));
-      }
-    } else {
+    if (!fireco.isAuth) {
+      return Observable.of(configureFirecoEditorRejected(editorId, 'Error:' +
+        ' Fireco' +
+        ' is not' +
+        ' authenticated. Execute activateFireco(pastebinToken) first,' +
+        ' providing a' +
+        ' a valid token'));
+    }
+    if (!this.monaco) {
       return Observable.of(configureFirecoEditorRejected(editorId, 'Error:' +
         ' monaco' +
         ' is not' +
         ' configured. Execute configureMonaco(monaco) first, providing a' +
         ' monaco library reference'));
     }
+    return Observable.create(observer => {
+      try {
+        const firecoPad=this.firecoPads[editorId];
+        const monacoEditor=firecoPad.monacoEditor;
+        firecoPad.firebaseRef=firebase.database().ref(firecoPad.firebasePath);
+        firecoPad.headlessFirepad=new Firepad.Headless(firecoPad.firebaseRef);
+        let jsxColoringProviderTimeout=null;
+        
+        const getFirecoText=() => {
+          firecoPad.headlessFirepad.getText((text) => {
+            if (!firecoPad.mutex) {
+              firecoPad.isInit=true;
+              this.setEditorText(editorId, text);
+            }
+          });
+        };
+        
+        const setFirecoText=(text) => {
+          firecoPad.mutex=true;
+          firecoPad.headlessFirepad.setText(text, (/*error, committed*/) => {
+            console.log("sr", editorId, text);
+            if (firecoPad.nextSetFirecoTexts.length) {
+              // chains all editor changes
+              firecoPad.nextSetFirecoTexts.pop()();
+            } else {
+              firecoPad.mutex=false;
+            }
+          });
+        };
+        if (firecoPad.isNew) {
+          setFirecoText(getDefaultTextForLanguage(editorId));
+        } else {
+          getFirecoText();
+        }
+        
+        firecoPad.firebaseRef.on('value', snapshot => {
+          if (snapshot.exists()) {
+            getFirecoText();
+          }
+        });
+        
+        const onContentChanged=changes => {
+          const text=monacoEditor.getValue();
+          observer.next(monacoEditorContentChanged(editorId, text, changes, !firecoPad.ignoreContentChange));
+          if (!firecoPad.ignoreContentChange) {
+            //    console.log("f", text);
+            if (firecoPad.mutex) {
+              firecoPad.nextSetFirecoTexts.unshift(() => setFirecoText(text));
+            } else {
+              setFirecoText(text);
+            }
+          }
+          clearTimeout(jsxColoringProviderTimeout);
+          jsxColoringProviderTimeout=setTimeout(() => {
+            this.jsxColoringProvider.colorize(monacoEditor);
+          }, 50);
+        };
+        monacoEditor.onDidChangeModelContent(onContentChanged);
+        setTimeout(() => {
+          this.jsxColoringProvider.colorize(monacoEditor);
+        }, 0);
+        observer.next(configureFirecoEditorFulfilled(editorId));
+      } catch (error) {
+        observer.next(configureFirecoEditorRejected(editorId, error));
+      }
+    });
   }
   
   observeConfigureLiveExpressionStore(editorId, autoLog) {
@@ -348,106 +431,112 @@ class AppManager {
     
   }
   
-  setEditorText=(editorId, text) => {
-    if (text === this.firecos[editorId].monacoEditor.getValue()) {
+  setEditorText(editorId, text) {
+    const firecoPad=this.firecoPads[editorId];
+    firecoPad.text=text;
+    if (!firecoPad.monacoEditor || text === firecoPad.monacoEditor.getValue()) {
       return;
     }
-    // console.log("here?", text);
-    this.firecos[editorId].ignoreContentChange=true;
-    const viewState=this.firecos[editorId].monacoEditor.saveViewState();
-    this.firecos[editorId].monacoEditor.setValue(text);
-    this.firecos[editorId].monacoEditor.restoreViewState(viewState);
-    this.firecos[editorId].ignoreContentChange=false;
+    // console.log("b set", editorId, text);
+    firecoPad.ignoreContentChange=true;
+    const viewState=firecoPad.monacoEditor.saveViewState();
+    firecoPad.monacoEditor.setValue(text);
+    firecoPad.monacoEditor.restoreViewState(viewState);
+    firecoPad.ignoreContentChange=false;
     
-  };
+  }
   
+  observeUpdatePlayground() {
   
-  //
-  // makePastebinFirebaseReference(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/`);
-  // }
-  //
-  // makeTraceSearchHistoryFirebase(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/content/search`);
-  // }
-  //
-  // makeChatFirebase(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/content/chat`);
-  // }
-  //
-  // makeShareEventsFirebase(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/content/share/events`);
-  // }
-  //
-  // makeShareChildrenFirebase(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/content/share/children`);
-  // }
-  //
-  // makeMetagsURLFirebaseVote(metagURLKey, pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls/${metagURLKey}`);
-  // }
-  //
-  //
-  // makePastebinMetagsURLsFirebase(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls`);
-  // }
-  //
-  // makeGlobalMetagsURLsFirebase(pastebinId = this.pastebinId) {
-  //   return new Firebase(`${this.baseURL}/metags/urls`);
-  // }
-  //
-  // makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey) {
-  //   return new Firebase(`${this.baseURL}/metags/urls/${metagGlobalURLKey}`);
-  // }
-  //
-  // makeHistoryViewerFirepad(subject, editor, context) {
-  //   let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
-  //   let subjectFirebase = new Firebase(subjectURL);
-  //
-  //   let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/historyViewer/${subject}`;
-  //   let historyFirebase = new Firebase(subjectHistoryURL);
-  //
-  //   // Copy the entire firebase to the history firebase
-  //   subjectFirebase.once("value", function (snapshot) {
-  //     historyFirebase.set(snapshot.val());
-  //   });
-  //
-  //
-  //   subjectFirebase.child('history').once("value", function (snapshot) {
-  //     let sliderMaxValue = snapshot.numChildren();
-  //     context.updateSliderMaxValue(sliderMaxValue);
-  //   });
-  //
-  //   let headless = Firepad.Headless(historyFirebase);
-  //   headless.getText(function (text) {
-  //     editor.setValue(text);
-  //   });
-  //   return {
-  //     subjectFirebase: subjectFirebase,
-  //     historyFirebase: historyFirebase,
-  //     historyFirepadHeadless: headless
-  //   };
-  // }
-  //
-  // slideHistoryViewerFirepad(subjectFirebase, historyFirebase, sliderValue, activeHistoryEditor, context) {
-  //   context.historyFirepadHeadless.dispose();
-  //   // Copy history from the firebase to the history firebase to display values till a specific point in history.
-  //   subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snapshot) {
-  //     historyFirebase.child('history').set(snapshot.val());
-  //     context.historyFirepadHeadless = Firepad.Headless(historyFirebase);
-  //     context.historyFirepadHeadless.getText(function (text) {
-  //       activeHistoryEditor.setValue(text);
-  //     });
-  //
-  //   });
-  // }
-  //
-  // stopReceivingHistoryUpdates(firebaseRef) {
-  //   if (!firebaseRef) {
-  //     return;
-  //   }
-  //   firebaseRef.child('history').off("child_added");
-  // }
+  }
+
+
+//
+// makePastebinFirebaseReference(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/`);
+// }
+//
+// makeTraceSearchHistoryFirebase(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/content/search`);
+// }
+//
+// makeChatFirebase(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/content/chat`);
+// }
+//
+// makeShareEventsFirebase(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/content/share/events`);
+// }
+//
+// makeShareChildrenFirebase(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/content/share/children`);
+// }
+//
+// makeMetagsURLFirebaseVote(metagURLKey, pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls/${metagURLKey}`);
+// }
+//
+//
+// makePastebinMetagsURLsFirebase(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/${pastebinId}/metags/urls`);
+// }
+//
+// makeGlobalMetagsURLsFirebase(pastebinId = this.pastebinId) {
+//   return new Firebase(`${this.baseURL}/metags/urls`);
+// }
+//
+// makeGlobalMetagsURLsFirebaseByKey(metagGlobalURLKey) {
+//   return new Firebase(`${this.baseURL}/metags/urls/${metagGlobalURLKey}`);
+// }
+//
+// makeHistoryViewerFirepad(subject, editor, context) {
+//   let subjectURL = `${this.baseURL}/${this.pastebinId}/content/${subject}`;
+//   let subjectFirebase = new Firebase(subjectURL);
+//
+//   let subjectHistoryURL = `${this.baseURL}/${this.pastebinId}/historyViewer/${subject}`;
+//   let historyFirebase = new Firebase(subjectHistoryURL);
+//
+//   // Copy the entire firebase to the history firebase
+//   subjectFirebase.once("value", function (snapshot) {
+//     historyFirebase.set(snapshot.val());
+//   });
+//
+//
+//   subjectFirebase.child('history').once("value", function (snapshot) {
+//     let sliderMaxValue = snapshot.numChildren();
+//     context.updateSliderMaxValue(sliderMaxValue);
+//   });
+//
+//   let headless = Firepad.Headless(historyFirebase);
+//   headless.getText(function (text) {
+//     editor.setValue(text);
+//   });
+//   return {
+//     subjectFirebase: subjectFirebase,
+//     historyFirebase: historyFirebase,
+//     historyFirepadHeadless: headless
+//   };
+// }
+//
+// slideHistoryViewerFirepad(subjectFirebase, historyFirebase, sliderValue, activeHistoryEditor, context) {
+//   context.historyFirepadHeadless.dispose();
+//   // Copy history from the firebase to the history firebase to display values till a specific point in history.
+//   subjectFirebase.child('history').limitToFirst(sliderValue).once("value", function (snapshot) {
+//     historyFirebase.child('history').set(snapshot.val());
+//     context.historyFirepadHeadless = Firepad.Headless(historyFirebase);
+//     context.historyFirepadHeadless.getText(function (text) {
+//       activeHistoryEditor.setValue(text);
+//     });
+//
+//   });
+// }
+//
+// stopReceivingHistoryUpdates(firebaseRef) {
+//   if (!firebaseRef) {
+//     return;
+//   }
+//   firebaseRef.child('history').off("child_added");
+// }
   
 }
 

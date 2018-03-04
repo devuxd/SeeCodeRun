@@ -1,5 +1,5 @@
 // import NavigationBar from './components/navigationBar';
-import TopNavigationBar from '../components/topNavigationBar';
+import TopNavigationBar from '../components/TopNavigationBar';
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
 

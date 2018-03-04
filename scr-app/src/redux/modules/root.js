@@ -2,15 +2,13 @@ import {combineEpics} from 'redux-observable';
 import {combineReducers} from 'redux';
 import {
   disposePastebinEpic,
+  pastebinLayoutEpic,
   pastebinEpic,
   pastebinTokenEpic,
   pastebinReducer,
   pastebinContentEpic
 } from './pastebin';
 import {
-  firecoEpic,
-  firecoSetTextEpic,
-  firecoGetTextEpic,
   firecoReducer,
   firecoEditorsEpic,
   firecoActivateEpic,
@@ -18,41 +16,41 @@ import {
 }
   from './fireco';
 import {
-  monacoEpic,
+  configureMonacoModelsEpic,
+  updateMonacoModelsEpic,
   monacoReducer
 }
   from './monaco';
 import {
   monacoEditorsEpic,
-  monacoEditorEpic,
   monacoEditorsReducer,
   mountedEditorEpic
 } from './monacoEditor'
 import {
   updatePlaygroundEpic,
+  updatePlaygroundInstrumentationEpic,
   updatePlaygroundReducer
 }
   from './playground';
 
-export const rootEpic = combineEpics(
+export const rootEpic=combineEpics(
   disposePastebinEpic,
+  pastebinLayoutEpic,
   pastebinEpic,
   pastebinContentEpic,
   pastebinTokenEpic,
   mountedEditorEpic,
-  monacoEpic,
+  configureMonacoModelsEpic,
+  updateMonacoModelsEpic,
   monacoEditorsEpic,
-  monacoEditorEpic,
   updatePlaygroundEpic,
-  firecoEpic,
+  updatePlaygroundInstrumentationEpic,
   firecoEditorsEpic,
   firecoActivateEpic,
   firecoEditorEpic,
-  firecoSetTextEpic,
-  firecoGetTextEpic,
 );
 
-export const rootReducer = combineReducers({
+export const rootReducer=combineReducers({
   pastebinReducer,
   monacoReducer,
   monacoEditorsReducer,

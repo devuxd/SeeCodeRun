@@ -1,9 +1,10 @@
 const functions=require('firebase-functions');
-global.window={}; // fixes firepad 1.4.0 infamous line with window.firebase in Node.
-const Firepad=require('firepad');
 const admin=require('firebase-admin');
+// Fixes firepad 1.4.0 infamous line with window.firebase in Node.
+global.window={};
+const Firepad=require('firepad');
+
 const serviceAccount=require("./serviceAccountKey.json");
-const getDefaultTextForLanguage=require('./pastebinContent');
 
 const REQUEST_TIMEOUT_MS=5000;
 const SERVER_TIMESTAMP=admin.database.ServerValue.TIMESTAMP;
@@ -12,7 +13,7 @@ const dataBaseUrl='https://seecoderun.firebaseio.com';
 const dataBaseRoot='/scr2'; //todo change to scr2/test when testing locally
 const defaultPastebinScheme={
   creationTimestamp: SERVER_TIMESTAMP,
-  firecos: 0, //history on each child  handled with Firepad
+  firecos: 0, //history on each child  handled by Firepad: html, js, css
   search: 0,
   chat: 0,
   shares: {
@@ -23,92 +24,6 @@ const defaultPastebinScheme={
   users: 0
 };
 
-
-function makeNewPastebinId() {
-  return admin.database().ref(dataBaseRoot).push(defaultPastebinScheme).key;
-}
-
-function makeNewPastebinSession(pastebinId) {
-  return admin.database().ref(`${dataBaseRoot}/${pastebinId}/users`).push({firstVisited: SERVER_TIMESTAMP}).key;
-}
-
-function makeFirebaseReferenceCopy(source, destination, dataChanger) {
-  source.once("value").then(snapshot => {
-    let data=snapshot.val();
-    if (data) {
-      data=dataChanger.changeData(data);
-      destination.set(data, function (error) {
-        if (error && typeof(console) !== 'undefined' && console.error) {
-          console.error(error);
-        }
-      });
-    } else {
-      console.log("[Client Error]: Client copied unset references (source, destination)", source.key, destination.key);
-    }
-  }).catch(error =>
-    console.log("[Server Error]: Error copying ", error)
-  );
-}
-
-/**
- * Copies a pastebin cont-ent to a new one. It associates them as parent and child, once the copy is created. In Firebase, reference "parentPastebinId/content/share/children" will get childPastebinId pushed and "childPastebinId/share/parent" will be set to parentPastebinId.
- * @param {String} parentPastebinId - the paste-bin id to be copied.
- * @param {Boolean} copyChat - the pastebin's should be copied or not. It will not copy the chat content by default(false).
- * @return {String} childPastebinId, the pastebin id of the newly created copy.
- */
-function copyPastebinById(parentPastebinId, copyChat=false) {
-  let childPastebinId=makeNewPastebinId();
-  
-  admin.database().ref(`${dataBaseRoot}/${parentPastebinId}/shares/children`)
-    .push({childPastebinId: childPastebinId, timestamp: SERVER_TIMESTAMP});
-  
-  let sourceReference=admin.database().ref(`${dataBaseRoot}/${parentPastebinId}/`);
-  let destinationReference=admin.database().ref(`${dataBaseRoot}/${childPastebinId}/`);
-  
-  let dataChanger={
-    changeData: data => {
-      data.creationTimestamp=SERVER_TIMESTAMP;
-      
-      if (!copyChat) {
-        data.chat={};
-      }
-      
-      data.shares={
-        currentEvent: 0,
-        parentPastebinId: parentPastebinId,
-        children: 0
-      };
-      return data;
-    }
-  };
-  
-  makeFirebaseReferenceCopy(sourceReference, destinationReference, dataChanger);
-  
-  return childPastebinId;
-}
-
-const firepadsEditorIds={
-  'js': {isFulfilled: false},
-  'html': {isFulfilled: false},
-  'css': {isFulfilled: false}
-}; // keys are editorIds in firebase path 'pastebinId/content/editorId'
-
-function setPastebinContent(pastebinResponse) { //firepadsEditorIds, pastebinResponse
-  // console.log(pastebinResponse);
-  const firebasePastebinRef=admin.database().ref(`${dataBaseRoot}/${pastebinResponse.pastebinId}`);
-  for (const editorId in firepadsEditorIds) {
-    const headlessFirepad=new Firepad.Headless(firebasePastebinRef.child(`firecos/${editorId}`));
-    headlessFirepad.setText(pastebinResponse.initialEditorsTexts[editorId], function (error, committed) {
-      if (error || !committed) {
-        console.log(`[Server Error]: Firepad setText on ${editorId} Failed. Firepad error:${error || 'none'}, committed:${committed} `, pastebinResponse);
-      }else{
-        console.log(pastebinResponse.pastebinId, pastebinResponse.initialEditorsTexts[editorId]);
-      }
-      headlessFirepad.dispose();
-    });
-  }
-}
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: dataBaseUrl,
@@ -118,33 +33,169 @@ admin.initializeApp({
   }
 });
 
+const databaseRef=admin.database();
+// Provide custom logger which prefixes log statements with "[FIREBASE]"
+// Disable logging across page refreshes
+//   databaseRef.enableLogging(function (message) {
+//       console.log("[FIREBASE]", message);
+//     },
+//     false);
+const databaseRootRef=admin.database().ref(dataBaseRoot);
+let isConnectedToFirebase=true;
+databaseRef.ref(".info/connected")
+  .on("value", snapshot => {
+    isConnectedToFirebase=snapshot.val();
+  });
+
+// Data functions
+const makeNewPastebin=onComplete => {
+  return databaseRootRef
+    .push(defaultPastebinScheme, onComplete);
+};
+
+const makeNewPastebinId=() => {
+  return databaseRootRef.push(0).key;
+};
+
+const attemptResponse=(
+  res,
+  pastebinResponse, firepadTimeOut, firepadsEditorIds, doneEditorId, text) => {
+  firepadsEditorIds[doneEditorId].isFulfilled=true;
+  pastebinResponse.initialEditorsTexts[doneEditorId]=text;
+  for (const editorId in firepadsEditorIds) {
+    if (!firepadsEditorIds[editorId].isFulfilled) {
+      return;
+    }
+  }
+  res.status(200).send(pastebinResponse);
+  clearTimeout(firepadTimeOut);
+};
+
+const sendExistingContent=(res, pastebinResponse, firebasePastebinRef) => {
+  const firepadsEditorIds={
+    'js': {isFulfilled: false},
+    'html': {isFulfilled: false},
+    'css': {isFulfilled: false}
+  };
+  const firepadTimeOut=setTimeout(() => {
+      pastebinResponse.error='[Server Error]:' +
+        ' Timeout getting pastebin data after ' + REQUEST_TIMEOUT_MS + 'ms';
+      res.status(500).send(pastebinResponse);
+      console.log(pastebinResponse.error, pastebinResponse);
+    },
+    REQUEST_TIMEOUT_MS);
+  for (const editorId in firepadsEditorIds) {
+    const headlessFirepad=
+      new Firepad.Headless(firebasePastebinRef.child(`firecos/${editorId}`));
+    headlessFirepad.getText(text => {
+      attemptResponse(
+        res,
+        pastebinResponse, firepadTimeOut, firepadsEditorIds, editorId, text);
+      headlessFirepad.dispose();
+    });
+  }
+};
+
+const makeFirebaseReferenceCopy=(
+  source, destination, changeData, onComplete, onError) => {
+  source.once("value").then(snapshot => {
+    if (snapshot.exists()) {
+      destination.set(changeData(snapshot.val()), onComplete);
+    } else {
+      onError({
+        type: '[Client Error]',
+        details: 'Provided pastebinId does not exist.',
+        message: null
+      });
+    }
+  }).catch(error =>
+    onError({
+      type: "[Server Error]",
+      details: 'Error copying pastebin.',
+      message: error
+    })
+  );
+};
+
+const copyPastebinById=(res, pastebinResponse, copyChat=false) => {
+  const parentPastebinId=pastebinResponse.pastebinId;
+  const childPastebinId=makeNewPastebinId();
+  let sourceReference=
+    databaseRootRef.child(`${parentPastebinId}/`);
+  let destinationReference=
+    databaseRootRef.child(`${childPastebinId}/`);
+  
+  const changeData=data => {
+    data.creationTimestamp=SERVER_TIMESTAMP;
+    if (!copyChat) {
+      data.chat={};
+    }
+    data.shares={
+      currentEvent: 0,
+      parentPastebinId: parentPastebinId,
+      children: 0
+    };
+    return data;
+  };
+  
+  const onError=error => {
+    pastebinResponse.error=`${error.type}: ${error.details}`;
+    res.status('[Server Error]' ? 500 : 400).send(pastebinResponse);
+    destinationReference.remove(e => {
+      console.log(error.type, error.details, error.message, e);
+    });
+  };
+  
+  const onComplete=error => {
+    if (error) {
+      onError({
+        type: '[Server Error]',
+        details: 'Could not update new copy of ' +
+        ' provided pastebin.',
+        message: error
+      });
+    } else {
+      sourceReference.child('shares/children')
+        .push({childPastebinId: childPastebinId, timestamp: SERVER_TIMESTAMP},
+          error => {
+            if (error) {
+              onError({
+                type: '[Server Error]',
+                details: 'Could not update parent\'s children data during' +
+                ' pastebin copy.',
+                message: error
+              });
+            } else {
+              pastebinResponse.pastebinCopyId=childPastebinId;
+              res.status(200).send(pastebinResponse);
+            }
+          });
+    }
+  };
+  makeFirebaseReferenceCopy(
+    sourceReference, destinationReference, changeData, onComplete, onError);
+};
+
+// Cloud Functions:
 exports.getPastebinId=functions.https.onRequest((req, res) => {
   const pastebinResponse={
-    pastebinId: req.query.pastebinId,
-    session: req.query.session,
+    pastebinId: null,
     error: null
   };
   
+  if (!isConnectedToFirebase) {
+    pastebinResponse.error='[Server Error]: Internal error.';
+    res.status(500).send(pastebinResponse);
+    console.log(pastebinResponse.error, '[FIREBASE] Not connected to' +
+      ' Firebase.');
+    return;
+  }
+  
   try {
-    let isNew = false;
-    if(!pastebinResponse.pastebinId){
-      pastebinResponse.pastebinId=makeNewPastebinId();
-      isNew = true;
-    }
-    if (!pastebinResponse.session) {
-      pastebinResponse.session=makeNewPastebinSession(pastebinResponse.pastebinId);
-    }
-    if(isNew){
-      pastebinResponse.initialEditorsTexts = {};
-      for (const editorId in firepadsEditorIds) {
-        pastebinResponse.initialEditorsTexts[editorId]=getDefaultTextForLanguage(editorId);
-      }
-      setPastebinContent(pastebinResponse);
-    }
-    res.status(200).send(pastebinResponse);
-    
-    
-    // console.log(pastebinResponse);
+    const pastebinRef=makeNewPastebin(() => {
+      pastebinResponse.pastebinId=pastebinRef.key;
+      res.status(200).send(pastebinResponse);
+    });
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';
     res.status(500).send(pastebinResponse);
@@ -158,71 +209,43 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
     initialEditorsTexts: {},
     error: null
   };
-
-  const firepadTimeOut=setTimeout(function () {
-      pastebinResponse.error='[Server Error]: Timeout getting pastebin data after ' + REQUEST_TIMEOUT_MS + 'ms';
-      console.log(pastebinResponse.error, pastebinResponse);
-      res.status(500).send(pastebinResponse);
-    },
-    REQUEST_TIMEOUT_MS);
   
-
-  
-  function sendExistingContent(firebasePastebinRef) { //firepadsEditorIds, pastebinResponse, firepadTimeOut
-    let attemptResponse=function attemptResponse(doneEditorId, text) {
-      firepadsEditorIds[doneEditorId].isFulfilled=true;
-      pastebinResponse.initialEditorsTexts[doneEditorId]=text;
-      for (const editorId in firepadsEditorIds) {
-        if (!firepadsEditorIds[editorId].isFulfilled) {
-          return;
-        }
-      }
-      res.status(200).send(pastebinResponse);
-      console.log(pastebinResponse);
-      clearTimeout(firepadTimeOut);
-    };
-    for (const editorId in firepadsEditorIds) {
-      const headlessFirepad=new Firepad.Headless(firebasePastebinRef.child(`firecos/${editorId}`));
-      headlessFirepad.getText(function (text) {
-        headlessFirepad.dispose();
-        attemptResponse(editorId, text);
-      });
-    }
+  if (!isConnectedToFirebase) {
+    pastebinResponse.error='[Server Error]: Internal error.';
+    res.status(500).send(pastebinResponse);
+    console.log(pastebinResponse.error, '[FIREBASE] Not connected to' +
+      ' Firebase.');
+    return;
   }
   
+  
   try {
-    
     if (pastebinResponse.pastebinId) {
-      const firebasePastebinRef=admin.database().ref(`${dataBaseRoot}/${pastebinResponse.pastebinId}`);
+      const firebasePastebinRef=
+        databaseRootRef.child(`${pastebinResponse.pastebinId}`);
       firebasePastebinRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
-          sendExistingContent(firebasePastebinRef);
+          sendExistingContent(res, pastebinResponse, firebasePastebinRef);
         } else {
-          pastebinResponse.error='[Client Error]: Pastebin does not exist. Custom pastebinIds are not allowed.';
+          pastebinResponse.error='[Client Error]: Pastebin does not exist.' +
+            ' Custom pastebinIds are not allowed.';
           res.status(400).send(pastebinResponse);
-          clearTimeout(firepadTimeOut);
           console.log(pastebinResponse.error, pastebinResponse);
         }
       }).catch(error => {
-        pastebinResponse.error='[Server Error]: Authentication failed while accessing pastebin. Please inform admin to get renew Firebase service account.';
+        pastebinResponse.error='[Server Error]: Internal error.';
         res.status(500).send(pastebinResponse);
         console.log(pastebinResponse.error, error);
       });
-      
     } else {
-      pastebinResponse.pastebinId=makeNewPastebinId();
-      for (const editorId in firepadsEditorIds) {
-        pastebinResponse.initialEditorsTexts[editorId]=getDefaultTextForLanguage(editorId);
-      }
-      res.status(200).send(pastebinResponse);
-      clearTimeout(firepadTimeOut);
-      setPastebinContent(pastebinResponse);
+      pastebinResponse.error='[Client Error]: PastebinId was not provided.';
+      res.status(400).send(pastebinResponse);
+      console.log(pastebinResponse.error, pastebinResponse);
     }
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';
-    res.status(500).send(pastebinResponse);
-    clearTimeout(firepadTimeOut);
-    console.log(pastebinResponse.error, error);
+    res.status(400).send(pastebinResponse);
+    console.log(pastebinResponse.error, pastebinResponse, error);
   }
 });
 
@@ -232,23 +255,24 @@ exports.copyPastebin=functions.https.onRequest((req, res) => {
     pastebinCopyId: null,
     error: null
   };
+  
+  if (!isConnectedToFirebase) {
+    pastebinResponse.error='[Server Error]: Internal error.';
+    res.status(500).send(pastebinResponse);
+    console.log(pastebinResponse.error, '[FIREBASE] Not connected to' +
+      ' Firebase.');
+    return;
+  }
+  
   try {
     if (pastebinResponse.pastebinId) {
-      pastebinResponse.pastebinCopyId=copyPastebinById(pastebinResponse.pastebinId);
-      if (pastebinResponse.pastebinCopyId) {
-        res.status(200).send(pastebinResponse);
-      } else { //todo not validated for performance
-        pastebinResponse.error='[Client Error]: could not copy pastebin, pastebinId does not exist.';
-        res.status(400).send(pastebinResponse);
-        console.log(pastebinResponse.error, pastebinResponse);
-      }
-      
+      copyPastebinById(res, pastebinResponse, false);
     } else {
-      pastebinResponse.error='[Client Error]: No Pastebin ID was provided. Please add pastebinId="a_value" to the URL.';
+      pastebinResponse.error='[Client Error]: No Pastebin ID was provided.' +
+        ' Please add pastebinId="a_value" to the URL.';
       res.status(400).send(pastebinResponse);
       console.log(pastebinResponse.error, pastebinResponse);
     }
-    
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal Error.';
     res.status(500).send(pastebinResponse);
@@ -257,11 +281,12 @@ exports.copyPastebin=functions.https.onRequest((req, res) => {
 });
 
 exports.getPastebinToken=functions.https.onRequest((req, res) => {
-  const uid=req.query.pastebinId;
   const pastebinResponse={
     pastebinToken: null,
     error: null
   };
+  const uid=req.query.pastebinId;
+  
   if (uid) {
     admin.auth().createCustomToken(uid)
       .then(customToken => {
@@ -269,12 +294,15 @@ exports.getPastebinToken=functions.https.onRequest((req, res) => {
         res.status(200).send(pastebinResponse);
       })
       .catch(error => {
-        pastebinResponse.error='[Server Error]: Authentication failed while accessing pastebin. Please inform admin to get renew Firebase service account.';
+        pastebinResponse.error='[Server Error]: Authentication failed ' +
+          'while accessing pastebin. Please inform admin to get renew ' +
+          'Firebase service account.';
         res.status(500).send(pastebinResponse);
         console.log(pastebinResponse.error, error);
       });
   } else {
-    pastebinResponse.error='[Client Error]: No Pastebin ID was provided. Please add pastebinId="a_value" to the URL';
+    pastebinResponse.error='[Client Error]: No Pastebin ID was provided. ' +
+      'Please add pastebinId="a_value" to the URL';
     res.status(400).send(pastebinResponse);
     console.log(pastebinResponse.error, error);
   }

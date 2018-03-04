@@ -1,7 +1,5 @@
 import {Observable} from 'rxjs';
-const UPDATE_PLAYGROUND='UPDATE_PLAYGROUND';
-// const UPDATE_PLAYGROUND_FULFILLED = 'UPDATE_PLAYGROUND_FULFILLED';
-// const UPDATE_PLAYGROUND_REJECTED = 'UPDATE_PLAYGROUND_REJECTED';
+
 const UPDATE_PLAYGROUND_CANCELED='UPDATE_PLAYGROUND_CANCELED';
 
 const UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS='UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS';
@@ -32,17 +30,9 @@ const defaultUpdatePlaygroundState={
   errorType: null,
   errorMessage: null,
   updatedEditorId: null,
-  editorsTexts: {},
+  editorsTexts: null,
   editorsTextChanges: {}
 };
-
-export const updatePlayground=(editorId, text, changes) => ({
-    type: UPDATE_PLAYGROUND,
-    editorId: editorId,
-    text: text,
-    changes: changes
-  })
-;
 
 export const updatePlaygroundInstrumentationSuccess=(editorId, autoLog) => ({
     type: UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS,
@@ -71,31 +61,10 @@ export const updatePlaygroundLoadFailure=(editorId, error) => ({
   })
 ;
 
-export const cancelUpdatePlayground=() => {
-  return {
-    type: UPDATE_PLAYGROUND_CANCELED
-  }
-};
-
 export const updatePlaygroundReducer=
   (state=defaultUpdatePlaygroundState,
    action) => {
     switch (action.type) {
-      case UPDATE_PLAYGROUND:
-        const editorsTexts={...state.editorsTexts};
-        const editorsTextChanges={...state.editorsTextChanges};
-        const changes=editorsTextChanges[action.editorId] ? editorsTextChanges[action.editorId] : [];
-        editorsTexts[action.editorId]=action.text;
-        editorsTextChanges[action.editorId]=[...changes, action.changes];
-        return {
-          ...state,
-          updatedEditorId: action.editorId,
-          isPlaygroundUpdating: true,
-          isInstrumenting: true,
-          editorsTexts: editorsTexts,
-          editorsTextChanges: editorsTextChanges
-        };
-      
       case UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS:
         return {
           ...state,
@@ -162,9 +131,9 @@ export const updatePlaygroundReducer=
 export const updatePlaygroundEpic=(action$, store, {appManager}) =>
   action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
     .mergeMap(action=>{
-      console.log("ACCCCCC",action);
-      return Observable.of({type:'log', action:action});
-    })
+        return Observable.of({type:UPDATE_PLAYGROUND_BUNDLE_SUCCESS, action:action});
+      }
+      )
     // .do(action => {
     //   console.log("BOMMMMMMMMMMMM", action);
     //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
@@ -173,6 +142,16 @@ export const updatePlaygroundEpic=(action$, store, {appManager}) =>
     // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
 ;
 
-function instrumentCode() {
-  console.log("[UPDATE_PLAYGROUND]", arguments);
-}
+export const updatePlaygroundInstrumentationEpic=(action$, store, {appManager}) =>
+    action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
+      .mergeMap(action=>{
+      //  console.log("ACCCCCC",action);
+        return Observable.of({type:UPDATE_PLAYGROUND_LOAD_SUCCESS, action:action});
+      })
+  // .do(action => {
+  //   console.log("BOMMMMMMMMMMMM", action);
+  //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
+  // })
+  //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
+  // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
+;

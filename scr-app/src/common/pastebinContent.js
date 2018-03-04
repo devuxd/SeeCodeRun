@@ -1,4 +1,5 @@
-module.exports = function getDefaultTextForLanguage(language) {
+// module.exports = function getDefaultTextForLanguage(language) {
+export function getDefaultTextForLanguage(language) {
   switch (language) {
     case 'javascript':
       return javascriptDefaultText;
@@ -11,7 +12,8 @@ module.exports = function getDefaultTextForLanguage(language) {
     default:
       return htmlDefaultText;
   }
-};
+// };
+}
 
 const javascriptDefaultText =
   `function helloWorld(){

@@ -1,0 +1,14 @@
+In head (optional)
+  <!--<link data-name="vs/editor/editor.main" rel="stylesheet"-->
+        <!--href="fireco/monaco-editor/min/vs/editor/editor.main.css">-->
+
+
+In body
+<!--<script>var require = { paths: { 'vs': 'fireco/monaco-editor/min/vs' } };</script>-->
+<!--<script src="fireco/monaco-editor/min/vs/loader.js"></script>-->
+<!--<script src="fireco/monaco-editor/min/vs/editor/editor.main.nls.js"></script>-->
+<!--<script src="fireco/monaco-editor/min/vs/editor/editor.main.js"></script>-->
+
+for CDN (configureMonaco.js: isCdn=true)
+
+

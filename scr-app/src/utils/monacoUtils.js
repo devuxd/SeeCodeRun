@@ -66,24 +66,14 @@ export function getTokensAtLine(model, lineNumber) {
   // return model._tokenizationSupport.tokenize(model.getLineContent(lineNumber), freshState, 0).tokens;
 }
 
-export function configureMonaco(monaco) {
-  configureMonacoDefaults(monaco);
-  // setupMonacoTypecript(monaco);
-}
 
 export function configureMonacoModel(monaco, editorId, text, language='js') {
   let extension=language;
   
-  if (language.indexOf('js') >= 0 || language.indexOf('script') >= 0) {
+  if (language.indexOf('js') >= 0 || language.indexOf('cript') >= 0) {
     extension='jsx';
-    
   }
-  // else{
-  //   const tokens= monaco.editor.tokenize(text, language);
-  //   for(const i in tokens){
-  //     console.log(tokens[i]);
-  //   }
-  // }
+
   return monaco.editor.createModel(text, language,
     isApplePlatfom() ?
       new monaco.Uri.file(`./${editorId}.${extension}`)
@@ -158,7 +148,7 @@ function observeAddViewZone(monacoEditor, afterLineNumber) {
   });
 }
 
-function viewZoneChangeAccesorObservable(monacoEditor) {
+function viewZoneChangeAccessorObservable(monacoEditor) {
   return Observable.create(observer => {
     monacoEditor.changeViewZones(function (changeAccessor) {
       // console.log("CAAAa", changeAccessor);
@@ -234,7 +224,7 @@ export function configureMonacoEditorWidgets(monaco, editorId, monacoEditor) {
     });
   });
   
-  viewZoneChangeAccesorObservable(monacoEditor).subscribe(changeAccessor => {
+  viewZoneChangeAccessorObservable(monacoEditor).subscribe(changeAccessor => {
     lineNumberUpdateSubject.subscribe(lineNumber => {
       if (viewZones[lineNumber]) {
         console.log(viewZones[lineNumber]);
@@ -270,30 +260,6 @@ export function configureMonacoEditorWidgets(monaco, editorId, monacoEditor) {
     }
   };
   monacoEditor.addOverlayWidget(overlayWidget2);
-  // let decorations = monacoEditor.deltaDecorations([], [
-  //   {
-  //     range: new monaco.Range(1, 1, 1, 6),
-  //     options: {
-  //       isWholeLine: false,
-  //       className: 'myContentClass',
-  //       glyphMarginClassName: 'myGlyphMarginClass',
-  //       glyphMarginHoverMessage: '<button>tong</button>',
-  //       beforeContentClassName: 'myGlyphMarginClass',
-  //       afterContentClassName: 'myGlyphMarginClass',
-  //       marginClassName: 'myContentClass'
-  //     }
-  //   },
-  //
-  //   {
-  //     range: new monaco.Range(1, 10, 3, 1),
-  //     options: {
-  //       isWholeLine: false,
-  //       className: 'myContentClass',
-  //       hoverMessage: '<button>boing</button>'
-  //     }
-  //   }
-  // ]);
-  
 }
 
 
@@ -395,70 +361,4 @@ function addCompletionProviders() {
   
 }
 
-function configureMonacoDefaults(monaco) {
-  const hasNativeTypescript=false;//this.hasNativeTypescript();
-  
-  const compilerDefaults={
-    jsxFactory: 'React.createElement',
-    reactNamespace: 'React',
-    jsx: monaco.languages.typescript.JsxEmit.React,
-    target: monaco.languages.typescript.ScriptTarget.ES2016,
-    allowNonTsExtensions: !hasNativeTypescript,
-    moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-    module: hasNativeTypescript
-      ? monaco.languages.typescript.ModuleKind.ES2015
-      : monaco.languages.typescript.ModuleKind.System,
-    experimentalDecorators: true,
-    noEmit: true,
-    allowJs: true,
-    typeRoots: ['node_modules/@types'],
-    
-    forceConsistentCasingInFileNames: hasNativeTypescript,
-    noImplicitReturns: hasNativeTypescript,
-    noImplicitThis: hasNativeTypescript,
-    noImplicitAny: hasNativeTypescript,
-    strictNullChecks: hasNativeTypescript,
-    suppressImplicitAnyIndexErrors: hasNativeTypescript,
-    noUnusedLocals: hasNativeTypescript,
-  };
-  
-  monaco.languages.typescript.typescriptDefaults.setMaximunWorkerIdleTime(-1);
-  monaco.languages.typescript.javascriptDefaults.setMaximunWorkerIdleTime(-1);
-  monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
-    compilerDefaults
-  );
-  monaco.languages.typescript.javascriptDefaults.setCompilerOptions(
-    compilerDefaults
-  );
-  
-  monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
-  monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-  
-  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-    noSemanticValidation: !hasNativeTypescript,
-    noSyntaxValidation: !hasNativeTypescript,
-  });
-  
-  // monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-  //   noSemanticValidation: false,
-  //   noSyntaxValidation: false
-  // });
 
-// compiler options
-//   monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-//     target: monaco.languages.typescript.ScriptTarget.ES2017,
-//     allowNonTsExtensions: true,
-//     jsx: "react"
-//   });
-
-// extra libraries
-//   monaco.languages.typescript.javascriptDefaults.addExtraLib([
-//     'declare class Facts {',
-//     '    /**',
-//     '     * Returns the next fact',
-//     '     */',
-//     '    static next():string',
-//     '}',
-//   ].join('\n'), 'filename/facts.d.ts');
-
-}

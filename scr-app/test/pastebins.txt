@@ -1,5 +1,4 @@
 React Example:
-http://localhost:3000/#-L47Rqjr2omyzIenzT0s
 
 Monaco example:
 http://localhost:3000/#-L4TbUtS8jV7iyYoSS8C

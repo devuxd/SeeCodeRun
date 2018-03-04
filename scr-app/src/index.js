@@ -5,46 +5,37 @@ import {Provider} from 'react-redux';
 import configureStore from './redux/configureStore';
 
 import registerServiceWorker from './registerServiceWorker';
-import configureFireco from './configureFireco';
+import configureMonaco from './configureMonaco';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 
 import Index from './pages/Index';
-// import {rootSubscriber} from "./redux/modules/root";
 import {fetchPastebin} from './redux/modules/pastebin';
-import {
-  firecoRuntimeError
-} from "./redux/modules/fireco";
-import {loadMonacoFulfilled} from "./redux/modules/monaco";
-
+import {loadMonacoFulfilled, loadMonacoRejected} from "./redux/modules/monaco";
 
 const store=configureStore();
-store.dispatch(fetchPastebin());
+store.dispatch(
+  fetchPastebin(
+    window.location.hash.replace(/#/g, '') || ''
+  )
+);
 
-const onFirecoError = error=> store.dispatch(firecoRuntimeError(error));
-
-const onMonacoLoaded=() => {
+const onConfigureError=error => store.dispatch(loadMonacoRejected(error));
+const onMonacoConfigured=() => {
   if (window.monaco) { // window.monaco is loaded
-    store.dispatch(loadMonacoFulfilled(window.monaco));
+    store.dispatch(loadMonacoFulfilled());
   } else {
-    onFirecoError('Monaco failed to load. Try refreshing' +
+    onConfigureError('Monaco failed to load. Try refreshing' +
       ' page and/or cache.');
   }
 };
 
-//will be called only once configuration finishes. An observable fo webWorker
-// messages is set in FirecoStore.
-const onFirecoWebWorkerMessage=action => {
-  store.dispatch(action);
-};
-
-configureFireco(onMonacoLoaded, onFirecoWebWorkerMessage, onFirecoError);
-
 window.addEventListener("beforeunload", function () {
   store.dispatch({type: 'DISPOSE_PASTEBIN'});
-
 }, false);
+
+configureMonaco(onMonacoConfigured, onConfigureError);
 
 ReactDOM.render(
   <Provider store={store}>

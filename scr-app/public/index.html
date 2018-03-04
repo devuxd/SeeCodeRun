@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta charset="utf-8">
-  <meta name="viewport" content="user-scalable=0, initial-scale=1, minimum-scale=1, width=device-width, height=device-height">
+  <meta name="viewport"
+        content="user-scalable=0, initial-scale=1, minimum-scale=1, width=device-width, height=device-height">
   <!-- PWA primary color -->
   <meta name="theme-color" content="#000000">
-  <!--
-    manifest.json provides metadata used when your web app is added to the
-    homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
-  -->
+  <title>seeCode.run</title>
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
   <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
   <!--
@@ -21,17 +21,25 @@
     Learn how to configure a non-root public URL by running `npm run build`.
   -->
   <script>
-    if (window.location.host === 'seecode.run') {
+    if ('%PUBLIC_URL%') {
       if (window.location.protocol !== 'https:') {
-        window.location.protocol = 'https';
+       window.location.protocol='https';
       }
     }
-    window.scrPublicURL = '%PUBLIC_URL%';
   </script>
-  <title>seeCode.run</title>
 </head>
 <body>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+<!--<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.10.1/min/vs/loader.js"></script>-->
+<!--<script src="%PUBLIC_URL%/fireco/monaco-editor/min/vs/loader.js"></script>-->
+<script>var require = { paths: { 'vs':
+      '%PUBLIC_URL%/fireco/monaco-editor/min/vs' } };</script>
+<script src="%PUBLIC_URL%/fireco/monaco-editor/min/vs/loader.js"></script>
+<script
+  src="%PUBLIC_URL%/fireco/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
+<script
+  src="%PUBLIC_URL%/fireco/monaco-editor/min/vs/editor/editor.main.js"></script>
 <noscript>
   You need to enable JavaScript to run this app.
 </noscript>
@@ -46,8 +54,5 @@
   To begin the development, run `npm start` or `yarn start`.
   To create a production bundle, use `npm run build` or `yarn build`.
 -->
-<!--Cannot use this version, since local monaco version has bug fixes yet to
-be corrected in repo[v0.10.1]-->
-<!--<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.10.1/min/vs/loader.js"></script>-->
 </body>
 </html>

@@ -1,0 +1,5 @@
+The first time:
+chmod +x runChromeCanaryInsecure.sh
+
+Then:
+ ./runChromeCanaryInsecure.sh
