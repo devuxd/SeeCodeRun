@@ -40,12 +40,28 @@ const databaseRef=admin.database();
 //       console.log("[FIREBASE]", message);
 //     },
 //     false);
-const databaseRootRef=admin.database().ref(dataBaseRoot);
+let databaseRootRef=databaseRef.ref(dataBaseRoot);
 let isConnectedToFirebase=true;
-databaseRef.ref(".info/connected")
-  .on("value", snapshot => {
-    isConnectedToFirebase=snapshot.val();
-  });
+// let connectToFirebaseTimeout = 1;
+// let connectToFirebaseTimeoutMs = 0;
+// databaseRef.ref(".info/connected")
+//   .on("value", snapshot => {
+//
+//     isConnectedToFirebase=snapshot.val();
+//
+//     console.log('isConnectedToFirebase', isConnectedToFirebase);
+//     clearTimeout(connectToFirebaseTimeout);
+//     if(!connectToFirebaseTimeout && !isConnectedToFirebase){
+//       connectToFirebaseTimeout =setTimeout(()=>{
+//         databaseRootRef=admin.database().ref(dataBaseRoot);
+//         connectToFirebaseTimeout = null;
+//       }, connectToFirebaseTimeoutMs);
+//       connectToFirebaseTimeoutMs = 1000;
+//     }else{
+//       connectToFirebaseTimeout = null;
+//       connectToFirebaseTimeoutMs = 0;
+//     }
+//   });
 
 // Data functions
 const makeNewPastebin=onComplete => {
