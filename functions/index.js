@@ -62,12 +62,7 @@ const attemptResponse=(
       return;
     }
   }
-  
-  if (!pastebinResponse.isSent) {
-    res.status(200).send(pastebinResponse);
-    pastebinResponse.isSent=true;
-  }
-  
+  res.status(200).send(pastebinResponse);
   clearTimeout(firepadTimeOut);
 };
 
@@ -80,10 +75,7 @@ const sendExistingContent=(res, pastebinResponse, firebasePastebinRef) => {
   const firepadTimeOut=setTimeout(() => {
       pastebinResponse.error='[Server Error]:' +
         ' Timeout getting pastebin data after ' + REQUEST_TIMEOUT_MS + 'ms';
-      if (!pastebinResponse.isSent) {
-        res.status(500).send(pastebinResponse);
-        pastebinResponse.isSent=true;
-      }
+      res.status(500).send(pastebinResponse);
       console.log(pastebinResponse.error, pastebinResponse);
     },
     REQUEST_TIMEOUT_MS);
@@ -227,34 +219,22 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
         } else {
           pastebinResponse.error='[Client Error]: Pastebin does not exist.' +
             ' Custom pastebinIds are not allowed.';
-          if (!pastebinResponse.isSent) {
-            res.status(400).send(pastebinResponse);
-            pastebinResponse.isSent=true;
-          }
+          res.status(400).send(pastebinResponse);
           console.log(pastebinResponse.error, pastebinResponse);
         }
       }).catch(error => {
         pastebinResponse.error='[Server Error]: Internal error.';
-        if (!pastebinResponse.isSent) {
-          res.status(500).send(pastebinResponse);
-          pastebinResponse.isSent=true;
-        }
+        res.status(500).send(pastebinResponse);
         console.log(pastebinResponse.error, error);
       });
     } else {
       pastebinResponse.error='[Client Error]: PastebinId was not provided.';
-      if (!pastebinResponse.isSent) {
-        res.status(400).send(pastebinResponse);
-        pastebinResponse.isSent=true;
-      }
+      res.status(400).send(pastebinResponse);
       console.log(pastebinResponse.error, pastebinResponse);
     }
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';
-    if (!pastebinResponse.isSent) {
-      res.status(400).send(pastebinResponse);
-      pastebinResponse.isSent=true;
-    }
+    res.status(400).send(pastebinResponse);
     console.log(pastebinResponse.error, pastebinResponse, error);
   }
 });
@@ -272,18 +252,12 @@ exports.copyPastebin=functions.https.onRequest((req, res) => {
     } else {
       pastebinResponse.error='[Client Error]: No Pastebin ID was provided.' +
         ' Please add pastebinId="a_value" to the URL.';
-      if (!pastebinResponse.isSent) {
-        res.status(400).send(pastebinResponse);
-        pastebinResponse.isSent=true;
-      }
+      res.status(400).send(pastebinResponse);
       console.log(pastebinResponse.error, pastebinResponse);
     }
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal Error.';
-    if (!pastebinResponse.isSent) {
-      res.status(500).send(pastebinResponse);
-      pastebinResponse.isSent=true;
-    }
+    res.status(500).send(pastebinResponse);
     console.log(pastebinResponse.error, pastebinResponse);
   }
 });
@@ -299,28 +273,19 @@ exports.getPastebinToken=functions.https.onRequest((req, res) => {
     admin.auth().createCustomToken(uid)
       .then(customToken => {
         pastebinResponse.pastebinToken=customToken;
-        if (!pastebinResponse.isSent) {
-          res.status(200).send(pastebinResponse);
-          pastebinResponse.isSent=true;
-        }
+        res.status(200).send(pastebinResponse);
       })
       .catch(error => {
         pastebinResponse.error='[Server Error]: Authentication failed ' +
           'while accessing pastebin. Please inform admin to get renew ' +
           'Firebase service account.';
-        if (!pastebinResponse.isSent) {
-          res.status(500).send(pastebinResponse);
-          pastebinResponse.isSent=true;
-        }
+        res.status(500).send(pastebinResponse);
         console.log(pastebinResponse.error, error);
       });
   } else {
     pastebinResponse.error='[Client Error]: No Pastebin ID was provided. ' +
       'Please add pastebinId="a_value" to the URL';
-    if (!pastebinResponse.isSent) {
-      res.status(400).send(pastebinResponse);
-      pastebinResponse.isSent=true;
-    }
+    res.status(400).send(pastebinResponse);
     console.log(pastebinResponse.error, error);
   }
 });
