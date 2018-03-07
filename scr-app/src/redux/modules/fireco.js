@@ -153,7 +153,6 @@ export const firecoReducer=
     }
   };
 
-
 export const firecoActivateEpic=(action$, store, {appManager}) =>
   action$.ofType(FETCH_PASTEBIN_TOKEN_FULFILLED)
     .zip(
@@ -180,7 +179,12 @@ export const firecoEditorEpic=(action$, store, {appManager}) =>
       )
     )
     .mergeMap(actions =>
-      appManager.observeConfigureFirecoEditor(actions[0].editorId)
+      appManager.observeConfigureFirecoEditor(
+        actions[0].editorId,
+        store.getState().pastebinReducer.editorsTexts?
+          store.getState().pastebinReducer.editorsTexts[actions[0].editorId]
+          :null
+        )
     )
 ;
 
