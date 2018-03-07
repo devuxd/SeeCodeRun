@@ -29,7 +29,6 @@ import {
   configureMonacoEditorWidgets,
   configureMonacoEditorMouseEventsObservable
 } from "../utils/monacoUtils";
-import {getDefaultTextForLanguage} from '../common/pastebinContent';
 import JSXColoringProvider from "../utils/JSXColoringProvider";
 import LiveExpressionStore from "./modules/LiveExpressionStore";
 
@@ -44,7 +43,9 @@ const firebaseConfig={
 };
 
 const fireco={
-  isInit: false,
+  app: null,
+  database: null,
+  auth: null,
   connectedRef: null,
   isAuth: false,
   unsubscribeOnIdTokenChanged: null,
@@ -57,8 +58,10 @@ const defaultFirecoPad={
   monacoEditorModel: null,
   monacoEditorSavedState: null, //{text: null, viewState: null}
   editorOptions: {},
-  onContentChanged: () => {},
-  colorizeJsx: ()=>{},
+  onContentChanged: () => {
+  },
+  colorizeJsx: () => {
+  },
   firebasePath: null,
   firebaseRef: null,
   headlessFirepad: null,
@@ -249,6 +252,10 @@ class AppManager {
           const firecoPad=this.firecoPads[editorId];
           if (!firecoPad.isInit && _.isString(initialEditorsTexts[editorId])) {
             firecoPad.monacoEditorModel.setValue(initialEditorsTexts[editorId]);
+          }else{
+            return Observable.of(updateMonacoModelsRejected('Error: no ' +
+              ' text was provided for editor with id: '+editorId+', or' +
+              ' Fireco set it first.'));
           }
         }
         return Observable.of(updateMonacoModelsFulfilled());
@@ -310,15 +317,15 @@ class AppManager {
       this.configureFirepadPaths(pastebinId, isNew);
       fireco.isAuth=false;
       return Observable.create(observer => {
-        
         if (fireco.unsubscribeOnIdTokenChanged) {
           fireco.unsubscribeOnIdTokenChanged();
         }
         
-        if (!fireco.isInit) {
-          fireco.isInit=true;
-          firebase.initializeApp(firebaseConfig);
-          fireco.connectedRef=firebase.database().ref(".info/connected");
+        if (!fireco.app) {
+          fireco.app=firebase.initializeApp(firebaseConfig, pastebinId);
+          fireco.database=firebase.database(fireco.app);
+          fireco.auth=firebase.auth(fireco.app);
+          fireco.connectedRef=fireco.database.ref(".info/connected");
           fireco.connectedRef.on("value", snap =>
             observer.next(onConnectionChanged(snap.val()))
           );
@@ -329,7 +336,7 @@ class AppManager {
           );
         }
         
-        fireco.unsubscribeOnIdTokenChanged=firebase.auth().onIdTokenChanged(
+        fireco.unsubscribeOnIdTokenChanged=fireco.auth.onIdTokenChanged(
           user => {
             if (user) {
               if (!fireco.isAuth) {
@@ -345,7 +352,7 @@ class AppManager {
           }
         );
         
-        firebase.auth().signInWithCustomToken(pastebinToken)
+        fireco.auth.signInWithCustomToken(pastebinToken)
           .catch((error) => {
             fireco.isAuth=false;
             observer.next(activateFirepadRejected(error));
@@ -358,66 +365,6 @@ class AppManager {
     }
   }
   
-  // observeActivateFirecoDinammically(pastebinId, pastebinToken, isNew) {
-  //   if (pastebinId && pastebinToken) {
-  //     this.configureFirepadPaths(pastebinId, isNew);
-  //     fireco.isAuth=false;
-  //     return Observable.create(observer => {
-  //
-  //       if (fireco.unsubscribeOnIdTokenChanged) {
-  //         fireco.unsubscribeOnIdTokenChanged();
-  //       }
-  //
-  //       const activateFirepad = ()=>{
-  //         fireco.connectedRef.on("value", snap =>
-  //           observer.next(onConnectionChanged(snap.val()))
-  //         );
-  //
-  //         fireco.unsubscribeOnIdTokenChanged=firebase.auth().onIdTokenChanged(
-  //           user => {
-  //             if (user) {
-  //               if (!fireco.isAuth) {
-  //                 fireco.isAuth=true;
-  //                 observer.next(activateFirepadFulfilled(user));
-  //               }// ignore non-token events
-  //             }
-  //           },
-  //           error => {
-  //             fireco.isAuth=false;
-  //             observer.next(activateFirepadRejected(error));
-  //           }
-  //         );
-  //
-  //         firebase.auth().signInWithCustomToken(pastebinToken)
-  //           .catch((error) => {
-  //             fireco.isAuth=false;
-  //             observer.next(activateFirepadRejected(error));
-  //           });
-  //       };
-  //
-  //       if (!fireco.isInit) {
-  //         fireco.isInit=true;
-  //         import('firebase')
-  //           .then((Firebase) => {
-  //             firebase = Firebase;
-  //             firebase.initializeApp(firebaseConfig);
-  //             fireco.connectedRef=firebase.database().ref(".info/connected");
-  //             activateFirepad();
-  //           })
-  //           .catch(err => {
-  //             observer.next(activateFirepadRejected(err));
-  //           });
-  //       } else {
-  //         fireco.connectedRef.off("value");
-  //         activateFirepad();
-  //       }
-  //     });
-  //   } else {
-  //     return Observable.of(activateFirepadRejected('Values missing:' +
-  //       ' pastebinToken, firepadPaths; or Fireco is not configured.'));
-  //   }
-  // }
-  //
   disposeFireco() {
     for (const editorId in this.firecoPads) {
       if (this.firecoPads[editorId].headlessFirepad) {
@@ -430,7 +377,7 @@ class AppManager {
     }
   }
   
-  observeConfigureFirecoEditor(editorId) {
+  observeConfigureFirecoEditor(editorId, editorText) {
     if (!fireco.isAuth) {
       return Observable.of(configureFirecoEditorRejected(editorId, 'Error:' +
         ' Fireco' +
@@ -449,7 +396,7 @@ class AppManager {
     
     try {
       const firecoPad=this.firecoPads[editorId];
-      firecoPad.firebaseRef=firebase.database().ref(firecoPad.firebasePath);
+      firecoPad.firebaseRef=fireco.database.ref(firecoPad.firebasePath);
       firecoPad.headlessFirepad=new Firepad.Headless(firecoPad.firebaseRef);
       
       firecoPad.starvationTimeout=null;
@@ -463,25 +410,30 @@ class AppManager {
       };
       
       firecoPad.setFirecoText=(text) => {
-        clearTimeout(firecoPad.starvationTimeout);
-        // Prevents Firepad mutex starvation when Firebase is not connected.
-        firecoPad.starvationTimeout=setTimeout(() => {
-          firecoPad.mutex=false;
-        }, 10000);
+        if (firecoPad.mutex) {
+          firecoPad.nextSetFirecoTexts.unshift(() => firecoPad.setFirecoText(text));
+          clearTimeout(firecoPad.starvationTimeout);
+          // Prevents Firepad mutex starvation when Firebase is not connected.
+          firecoPad.starvationTimeout=setTimeout(() => {
+            firecoPad.mutex=false;
+          }, 5000);
+          return;
+        }
         
         firecoPad.mutex=true;
         firecoPad.headlessFirepad.setText(text, (/*error, committed*/) => {
-          clearTimeout(firecoPad.starvationTimeout);
           if (firecoPad.nextSetFirecoTexts.length) {
             // chains all editor changes
             firecoPad.nextSetFirecoTexts.pop()();
           } else {
             firecoPad.mutex=false;
+            clearTimeout(firecoPad.starvationTimeout);
           }
         });
       };
-      if (firecoPad.isNew) {
-        firecoPad.setFirecoText(getDefaultTextForLanguage(editorId));
+      
+      if (firecoPad.isNew && _.isString(editorText)) {
+        firecoPad.setFirecoText(editorText);
       } else {
         firecoPad.getFirecoText();
       }
@@ -494,11 +446,7 @@ class AppManager {
       
       firecoPad.onContentChanged=text => {
         if (!firecoPad.ignoreContentChange) {
-          if (firecoPad.mutex) {
-            firecoPad.nextSetFirecoTexts.unshift(() => firecoPad.setFirecoText(text));
-          } else {
-            firecoPad.setFirecoText(text);
-          }
+          firecoPad.setFirecoText(text);
         }
       };
       return Observable.of(configureFirecoEditorFulfilled(editorId));
