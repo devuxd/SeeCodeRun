@@ -18,17 +18,21 @@ class AutoLog {
     this.autoLogShift=new AutoLogShift(autoLogName, preAutoLogName, postAutoLogName);
   }
   
-  
-  transform(text) {
+  toAst(text){
     const locationMap=[];
-    const ast=this.autoLogShift.autoLogSource(text, locationMap);
-    const trace=new Trace(locationMap);
+    const ast= this.autoLogShift.autoLogSource(text, locationMap);
     return {
       source: text,
       ast: ast,
-      code: ast.toSource(),
       locationMap: locationMap,
-      trace: trace
+    };
+  }
+  
+  transform(ast) {
+    return{
+      ...ast,
+      trace: new Trace(ast.locationMap),
+      code: ast.ast.toSource()
     };
   }
   

@@ -27,9 +27,10 @@ const goesOffline$=
 const goesOnline$=
   Observable.fromEvent(window, 'online').mapTo(true);
 
-export const online$=Observable.merge(
-  isOnline$,
-  goesOffline$,
-  goesOnline$
-);
+export const online$=() =>
+  Observable.merge(
+    isOnline$,
+    goesOffline$,
+    goesOnline$
+  );
 

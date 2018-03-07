@@ -67,11 +67,14 @@ export function getTokensAtLine(model, lineNumber) {
 }
 
 
-export function configureMonacoModel(monaco, editorId, text, language='js') {
+export function configureMonacoModel(monaco, editorId, text, language='js', onJsx) {
   let extension=language;
   
   if (language.indexOf('js') >= 0 || language.indexOf('cript') >= 0) {
     extension='jsx';
+    if(onJsx){
+      onJsx();
+    }
   }
 
   return monaco.editor.createModel(text, language,

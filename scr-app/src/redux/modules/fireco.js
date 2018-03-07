@@ -4,7 +4,10 @@ import {
 } from "./monacoEditor";
 
 
-import {FETCH_PASTEBIN_TOKEN_FULFILLED} from "./pastebin";
+import {
+  FETCH_PASTEBIN_TOKEN_FULFILLED,
+  FETCH_PASTEBIN_TOKEN_REJECTED
+} from "./pastebin";
 
 const ON_CONNECTION_CHANGED = 'ON_CONNECTION_CHANGED';
 const CONFIGURE_FIRECO_EDITOR='CONFIGURE_FIRECO_EDITOR';
@@ -22,7 +25,7 @@ const ACTIVATE_FIREPAD_REJECTED='ACTIVATE_FIREPAD_REJECTED';
 
 const defaultState={
   error: null,
-  isConnected: true, // Uses Firebase's connected info
+  isConnected: false, // Uses Firebase's connected info
   authUser: null,
   areFirecosEditorsConfiguring: false,
   areFirecosEditorsConfigured: false,

@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import ReactDom from 'react-dom';
 import PropTypes from "prop-types";
 import {Responsive, WidthProvider} from 'react-grid-layout';
 import Paper from 'material-ui/Paper';
@@ -10,7 +11,8 @@ import '../styles/Pastebin.css';
 import Editor from './Editor';
 import Playground from './Playground';
 import {pastebinConfigureLayout} from "../redux/modules/pastebin";
-
+import {getEditorIds} from "../seecoderun/AppManager";
+import ReactDOM from "react-dom";
 
 const gridBreakpoints={lg: 1200};
 const gridCols={lg: 120};
@@ -98,27 +100,24 @@ const styles=theme => ({
 });
 
 class PasteBin extends Component {
-  constructor(props) {
-    super(props);
-    this.state={
-      gridLayouts: currentGridLayouts,
-      monaco: null,
-      editors: {
-        scriptEditor: null,
-        documentEditor: null,
-        styleEditor: null
-      },
-      navigatorDecorations: {
-        scriptEditor: null,
-        documentEditor: null,
-        styleEditor: null
-      }
-      
+  state={
+    height: 1200,
+    gridLayouts: currentGridLayouts,
+    monaco: null,
+    editors: {
+      scriptEditor: null,
+      documentEditor: null,
+      styleEditor: null
+    },
+    navigatorDecorations: {
+      scriptEditor: null,
+      documentEditor: null,
+      styleEditor: null
     }
-  }
+  };
   
   restoreGridLayouts=gridLayouts => {
-    currentGridLayouts = gridLayouts;
+    currentGridLayouts=gridLayouts;
     this.setState({
       gridLayouts: currentGridLayouts
     });
@@ -129,10 +128,15 @@ class PasteBin extends Component {
   };
   
   componentWillMount() {
-    this.context.store.dispatch(pastebinConfigureLayout(this.restoreGridLayouts, this.getCurrentGridLayouts));
+    this.context.store.dispatch(
+      pastebinConfigureLayout(
+        this.restoreGridLayouts,
+        this.getCurrentGridLayouts)
+    );
   }
   
-  //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,placeholder: LayoutItem, e: MouseEvent, element: HTMLElement
+  //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,
+  // placeholder: LayoutItem, e: MouseEvent, element: HTMLElement
   onResizeStart(layout, oldItem, newItem,
                 placeholder, e, element) {
     // console.log("onResizeStart", oldItem, newItem, layout);
@@ -141,7 +145,8 @@ class PasteBin extends Component {
   
   resizeEditorsAndDebugCells(layout, oldItem, newItem) {
     
-    if (newItem.i === "scriptContainer" && (oldItem.w !== newItem.w || oldItem.h !== newItem.h)) {
+    if (newItem.i === "scriptContainer"
+      && (oldItem.w !== newItem.w || oldItem.h !== newItem.h)) {
       layout[1].x=layout[0].x + layout[0].w;
       layout[2].x=layout[0].x + layout[0].w;
       
@@ -162,53 +167,77 @@ class PasteBin extends Component {
     
   }
   
-  onResize(layout, oldItem, newItem,
-           placeholder, e, element) {
-    // console.log("onResizeStop", oldItem, newItem, layout);
+  onResize(layout, oldItem, newItem
+           /*, placeholder, e, element*/) {
     this.resizeEditorsAndDebugCells(layout, oldItem, newItem);
   }
   
-  onResizeStop(layout, oldItem, newItem,
-               placeholder, e, element) {
-    
+  onResizeStop(layout, oldItem, newItem
+               /*, placeholder, e, element*/) {
     this.resizeEditorsAndDebugCells(layout, oldItem, newItem);
-    
   }
   
   onLayoutChange=(newLayout, newGridLayouts) => {
-    // const layout = this.context.store.getState().pastebinReducer.layout;
-    // if (_.isEqual(layout, newLayout)) {
-    //   //this.context.store.dispatch(layoutChange(layout));
-    // }
-    // this.setState({gridLayouts: c})
     currentGridLayouts=newGridLayouts;
   };
   
+  mounted=false;
+  
+  componentDidMount() {
+    this.mounted=true;
+    
+    window.addEventListener("resize", this.onWindowResize);
+    // Call to properly set the breakpoint and resize the elements.
+    // Note that if you're doing a full-width element, this can get a little wonky if a scrollbar
+    // appears because of the grid. In that case, fire your own resize event, or set `overflow: scroll` on your body.
+    this.onWindowResize();
+  }
+  
+  componentWillUnmount() {
+    this.mounted=false;
+    window.removeEventListener("resize", this.onWindowResize);
+  }
+  
+  onWindowResize=() => {
+    if (!this.mounted) return;
+    // eslint-disable-next-line
+    const node=ReactDOM.findDOMNode(this); // Flow casts this to Text | Element
+    if (node instanceof HTMLElement)
+      this.setState({height: node.offsetHeight});
+  };
+  
   render() {
+    const editorIds=getEditorIds();
     const classes=this.props.classes;
-    const {gridLayouts}=this.state;
+    const {gridLayouts, height}=this.state;
+    const heightChanges={
+      height: height + 'px'
+    };
+    console.log(heightChanges);
     return (
-      <ResponsiveReactGridLayout className={classes.layout}
-                                 layouts={gridLayouts}
-                                 breakpoints={gridBreakpoints}
-                                 cols={gridCols}
-                                 compactType={'vertical'}
-                                 measureBeforeMount={true}
-                                 autoSize={true}
-                                 rowHeight={151}
-                                 onResizeStart={this.onResizeStart.bind(this)}
-                                 onResize={this.onResize.bind(this)}
-                                 onResizeStop={this.onResizeStop.bind(this)}
-                                 onLayoutChange={this.onLayoutChange}
+      <ResponsiveReactGridLayout
+       // className={classes.layout}
+        styles={heightChanges}
+        layouts={gridLayouts}
+        breakpoints={gridBreakpoints}
+        cols={gridCols}
+        compactType={'vertical'}
+        measureBeforeMount={true}
+        autoSize={true}
+        rowHeight={151}
+        onResizeStart={this.onResizeStart.bind(this)}
+        onResize={this.onResize.bind(this)}
+        onResizeStop={this.onResizeStop.bind(this)}
+        onLayoutChange={this.onLayoutChange}
       >
         <Paper key="scriptContainer">
-          <Editor editorId={'js'}/>
+          <Editor editorId={editorIds['js']} observeMouseEvents={true}/>
         </Paper>
         <Paper key="htmlContainer">
-          <Editor editorId={'html'}/>
+          <Editor editorId={editorIds['html']}/>
         </Paper>
         <Paper key="cssContainer">
-          <Editor editorId={'css'}/>
+          <Editor editorId={editorIds['css']}/>
         </Paper>
         <Paper key="debugContainer">
           DEBUG
@@ -221,7 +250,7 @@ class PasteBin extends Component {
           CONSOLE
         </Paper>
         <Paper key="outputContainer">
-          <Playground/>
+          <Playground editorIds={editorIds}/>
         </Paper>
       </ResponsiveReactGridLayout>
     );

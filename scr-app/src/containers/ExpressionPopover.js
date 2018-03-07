@@ -84,7 +84,7 @@ class ExpressionPopover extends React.Component {
   render() {
     const {classes, data} = this.props;
     let {anchorEl} = this.state;
-    const open = !!anchorEl;
+    const open = !!anchorEl;//false;//
     return (
       <Popover
         className={classes.popover}

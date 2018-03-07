@@ -27,6 +27,8 @@ const defaultUpdatePlaygroundState={
   isPlaygroundLoading: false,
   isPlaygroundUpdated: false,
   isPlaygroundCorrupted: false,
+  runtimeErrors:null,
+  errors: null,
   errorType: null,
   errorMessage: null,
   updatedEditorId: null,
@@ -70,14 +72,18 @@ export const updatePlaygroundReducer=
           ...state,
           isInstrumenting: false,
           isInstrumented: true,
-          isBundling: true
+          isBundling: true,
+          errors: null,
         };
       
       case UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE:
+        const errors=state.errors ? {...state.errors} : {};
+        errors[action.editorId]=action.error;
         return {
           ...state,
           isInstrumenting: false,
           isPlaygroundCorrupted: true,
+          errors: errors,
           errorType: UpdatePlaygroundErrorTypes.INSTRUMENTATION_ERROR,
           errorMessage: "An instrumentation error"
         };
@@ -129,24 +135,30 @@ export const updatePlaygroundReducer=
   };
 
 export const updatePlaygroundEpic=(action$, store, {appManager}) =>
-  action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
-    .mergeMap(action=>{
-        return Observable.of({type:UPDATE_PLAYGROUND_BUNDLE_SUCCESS, action:action});
-      }
+    action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
+      .mergeMap(action => {
+          return Observable.of({
+            type: UPDATE_PLAYGROUND_BUNDLE_SUCCESS,
+            action: action
+          });
+        }
       )
-    // .do(action => {
-    //   console.log("BOMMMMMMMMMMMM", action);
-    //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
-    // })
-    //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
-    // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
+  // .do(action => {
+  //   console.log("BOMMMMMMMMMMMM", action);
+  //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
+  // })
+  //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
+  // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
 ;
 
 export const updatePlaygroundInstrumentationEpic=(action$, store, {appManager}) =>
     action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
-      .mergeMap(action=>{
-      //  console.log("ACCCCCC",action);
-        return Observable.of({type:UPDATE_PLAYGROUND_LOAD_SUCCESS, action:action});
+      .mergeMap(action => {
+        //  console.log("ACCCCCC",action);
+        return Observable.of({
+          type: UPDATE_PLAYGROUND_LOAD_SUCCESS,
+          action: action
+        });
       })
   // .do(action => {
   //   console.log("BOMMMMMMMMMMMM", action);

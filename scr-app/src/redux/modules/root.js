@@ -5,8 +5,10 @@ import {
   pastebinLayoutEpic,
   pastebinEpic,
   pastebinTokenEpic,
+  pastebinTokenRejectedEpic,
   pastebinReducer,
-  pastebinContentEpic
+  pastebinContentEpic,
+  pastebinContentRejectedEpic,
 } from './pastebin';
 import {
   firecoReducer,
@@ -38,7 +40,9 @@ export const rootEpic=combineEpics(
   pastebinLayoutEpic,
   pastebinEpic,
   pastebinContentEpic,
+  pastebinContentRejectedEpic,
   pastebinTokenEpic,
+  pastebinTokenRejectedEpic,
   mountedEditorEpic,
   configureMonacoModelsEpic,
   updateMonacoModelsEpic,
@@ -57,26 +61,3 @@ export const rootReducer=combineReducers({
   firecoReducer,
   updatePlaygroundReducer
 });
-
-// export const rootSubscriber = store => combineSubscribers(store, {
-//
-// });
-
-// export function combineSubscribers(store, subscribers) {
-//   const unsubscribes = {};
-//   for (const moduleName in subscribers) {
-//     if (subscribers.hasOwnProperty(moduleName)) {
-//       unsubscribes[moduleName] = subscribers[moduleName](store);
-//     }
-//   }
-//   return function combinedUnsubscribe() {
-//     for (const moduleName in unsubscribes) {
-//       unsubscribes[moduleName]();
-//     }
-//   }
-// }
-
-
-
-
-

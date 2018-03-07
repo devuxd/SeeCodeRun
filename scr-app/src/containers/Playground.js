@@ -28,7 +28,7 @@ class Playground extends Component {
   unsubscribes=[];
   
   render() {
-    const classes=this.props.classes;
+    const {classes}=this.props;
     return (<div className={classes.playground} ref={(DOMNode) => {
       this.playgroundDOMNode=DOMNode;
     }}></div>);
@@ -52,14 +52,11 @@ class Playground extends Component {
     const {store}=this.context;
     this.bundlingSubject=new Subject();
     const unsubscribe0=store.subscribe(() => {
-      // if(!store.getState().firecoReducer.areFirecoEditorsConfigured){
-      //   return;
-      // }
       if (!_.isEqual(this.currentEditorsTexts, store.getState().pastebinReducer.editorsTexts)) {
-        this.currentEditorsTexts = store.getState().pastebinReducer.editorsTexts;
+        this.currentEditorsTexts=store.getState().pastebinReducer.editorsTexts;
         if (this.runIframe) {
           this.playgroundDOMNode.removeChild(this.runIframe);
-          this.runIframe = null;
+          this.runIframe=null;
         }
         this.bundlingSubject.next(this.currentEditorsTexts);
       }
@@ -82,51 +79,62 @@ class Playground extends Component {
    * editorsTexts.css and editorsTexts.js to contain text.
    */
   bundle(editorsTexts) {
-    
     const playgroundDOMNode=this.playgroundDOMNode;
     if (!playgroundDOMNode) {
       return;
     }
-    
+    const {editorIds}=this.props;
     const {store}=this.context;
     
-    const html=editorsTexts.html;
-    const css=editorsTexts.css;
-    const js=editorsTexts.js;
-    let alJs=js;
+    const html=editorsTexts[editorIds['html']];
+    const css=editorsTexts[editorIds['css']];
+    const js=editorsTexts[editorIds['js']];
+    
+    if(!_.isString(html)||!_.isString(css)||!_.isString(js)){
+      console.log("[CRITICAL ERROR]: editor[s] text[s] missing", html, css, js);
+    }
+    let alJs=js;// Auto-logged script.
     
     const autoLog=this.autoLog;
-    let al = null;
-    
-    try {
-      al = autoLog.transform(js);
-      alJs= al.code;
-      // store.dispatch({type: 'INST', al:al});
-      // console.log('js', al);
-      store.dispatch(updatePlaygroundInstrumentationSuccess('js',al));
-    } catch (e) {
-      // console.log("error", e);
-      //store.dispatch();
   
-      store.dispatch(updatePlaygroundInstrumentationFailure('js', e));
+    let ast = null;
+    let al=null;
+    try {
+      ast = autoLog.toAst(js);
+      al=autoLog.transform(ast);
+      alJs=al.code;
+      store.dispatch(updatePlaygroundInstrumentationSuccess('js', al));
+    } catch (error) {
+      store.dispatch(updatePlaygroundInstrumentationFailure('js', error));
+    }
+    if(al){
+      console.log("al");
+      const runIframe=document.createElement('iframe');
+      autoLog.configureIframe(runIframe, store, al, html, css, js, alJs);
+      playgroundDOMNode.appendChild(runIframe);
+      this.runIframe=runIframe;
+    }else{
+      if(ast){
+        console.log("ast");
+        const runIframe=document.createElement('iframe');
+        autoLog.configureIframe(runIframe, store, al, html, css, js, js);
+        playgroundDOMNode.appendChild(runIframe);
+        this.runIframe=runIframe;
+      }
+      
     }
     
-    const runIframe=document.createElement('iframe');
 
-    autoLog.configureIframe(runIframe, store, al, html, css, js, alJs);
-    
-    // if (this.runIframe) {
-    //   playgroundDOMNode.removeChild(this.runIframe);
-    // }
-    
-    playgroundDOMNode.appendChild(runIframe);
-    this.runIframe=runIframe;
   }
   
 }
 
 Playground.contextTypes={
   store: PropTypes.object.isRequired
+};
+
+Playground.propTypes={
+  editorIds: PropTypes.object.isRequired,
 };
 
 Playground.propTypes={

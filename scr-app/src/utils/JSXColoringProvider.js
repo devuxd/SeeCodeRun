@@ -29,7 +29,7 @@ class JSXColoringProvider {
     try {
       ast=j(code);
     } catch (e) {
-      //todo: needs to be smart and
+      //todo: needs to be smart and remove errors, then try again.
       return;
     }
     const decorators=this.createJSXElementDecorators(ast);

@@ -11,31 +11,29 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import Index from './pages/Index';
-import {fetchPastebin} from './redux/modules/pastebin';
+import {disposePastebin, fetchPastebin} from './redux/modules/pastebin';
 import {loadMonacoFulfilled, loadMonacoRejected} from "./redux/modules/monaco";
 
 const store=configureStore();
 store.dispatch(
-  fetchPastebin(
-    window.location.hash.replace(/#/g, '') || ''
-  )
+  fetchPastebin(window.location.hash.replace(/#/g, '') || '')
 );
 
-const onConfigureError=error => store.dispatch(loadMonacoRejected(error));
+const onConfigureMonacoError=error => store.dispatch(loadMonacoRejected(error));
 const onMonacoConfigured=() => {
-  if (window.monaco) { // window.monaco is loaded
+  if (window.monaco) {
     store.dispatch(loadMonacoFulfilled());
   } else {
-    onConfigureError('Monaco failed to load. Try refreshing' +
+    onConfigureMonacoError('Monaco failed to load. Try refreshing' +
       ' page and/or cache.');
   }
 };
 
 window.addEventListener("beforeunload", function () {
-  store.dispatch({type: 'DISPOSE_PASTEBIN'});
+  store.dispatch(disposePastebin());
 }, false);
 
-configureMonaco(onMonacoConfigured, onConfigureError);
+configureMonaco(onMonacoConfigured, onConfigureMonacoError);
 
 ReactDOM.render(
   <Provider store={store}>

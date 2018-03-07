@@ -41,27 +41,6 @@ const databaseRef=admin.database();
 //     },
 //     false);
 let databaseRootRef=databaseRef.ref(dataBaseRoot);
-let isConnectedToFirebase=true;
-// let connectToFirebaseTimeout = 1;
-// let connectToFirebaseTimeoutMs = 0;
-// databaseRef.ref(".info/connected")
-//   .on("value", snapshot => {
-//
-//     isConnectedToFirebase=snapshot.val();
-//
-//     console.log('isConnectedToFirebase', isConnectedToFirebase);
-//     clearTimeout(connectToFirebaseTimeout);
-//     if(!connectToFirebaseTimeout && !isConnectedToFirebase){
-//       connectToFirebaseTimeout =setTimeout(()=>{
-//         databaseRootRef=admin.database().ref(dataBaseRoot);
-//         connectToFirebaseTimeout = null;
-//       }, connectToFirebaseTimeoutMs);
-//       connectToFirebaseTimeoutMs = 1000;
-//     }else{
-//       connectToFirebaseTimeout = null;
-//       connectToFirebaseTimeoutMs = 0;
-//     }
-//   });
 
 // Data functions
 const makeNewPastebin=onComplete => {
@@ -83,7 +62,12 @@ const attemptResponse=(
       return;
     }
   }
-  res.status(200).send(pastebinResponse);
+  
+  if (!pastebinResponse.isSent) {
+    res.status(200).send(pastebinResponse);
+    pastebinResponse.isSent=true;
+  }
+  
   clearTimeout(firepadTimeOut);
 };
 
@@ -96,7 +80,10 @@ const sendExistingContent=(res, pastebinResponse, firebasePastebinRef) => {
   const firepadTimeOut=setTimeout(() => {
       pastebinResponse.error='[Server Error]:' +
         ' Timeout getting pastebin data after ' + REQUEST_TIMEOUT_MS + 'ms';
-      res.status(500).send(pastebinResponse);
+      if (!pastebinResponse.isSent) {
+        res.status(500).send(pastebinResponse);
+        pastebinResponse.isSent=true;
+      }
       console.log(pastebinResponse.error, pastebinResponse);
     },
     REQUEST_TIMEOUT_MS);
@@ -156,7 +143,10 @@ const copyPastebinById=(res, pastebinResponse, copyChat=false) => {
   
   const onError=error => {
     pastebinResponse.error=`${error.type}: ${error.details}`;
-    res.status('[Server Error]' ? 500 : 400).send(pastebinResponse);
+    if (!pastebinResponse.isSent) {
+      res.status('[Server Error]' ? 500 : 400).send(pastebinResponse);
+      pastebinResponse.isSent=true;
+    }
     destinationReference.remove(e => {
       console.log(error.type, error.details, error.message, e);
     });
@@ -183,7 +173,10 @@ const copyPastebinById=(res, pastebinResponse, copyChat=false) => {
               });
             } else {
               pastebinResponse.pastebinCopyId=childPastebinId;
-              res.status(200).send(pastebinResponse);
+              if (!pastebinResponse.isSent) {
+                res.status(200).send(pastebinResponse);
+                pastebinResponse.isSent=true;
+              }
             }
           });
     }
@@ -199,22 +192,20 @@ exports.getPastebinId=functions.https.onRequest((req, res) => {
     error: null
   };
   
-  if (!isConnectedToFirebase) {
-    pastebinResponse.error='[Server Error]: Internal error.';
-    res.status(500).send(pastebinResponse);
-    console.log(pastebinResponse.error, '[FIREBASE] Not connected to' +
-      ' Firebase.');
-    return;
-  }
-  
   try {
     const pastebinRef=makeNewPastebin(() => {
       pastebinResponse.pastebinId=pastebinRef.key;
-      res.status(200).send(pastebinResponse);
+      if (!pastebinResponse.isSent) {
+        res.status(200).send(pastebinResponse);
+        pastebinResponse.isSent=true;
+      }
     });
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';
-    res.status(500).send(pastebinResponse);
+    if (!pastebinResponse.isSent) {
+      res.status(500).send(pastebinResponse);
+      pastebinResponse.isSent=true;
+    }
     console.log(pastebinResponse.error, error);
   }
 });
@@ -226,15 +217,6 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
     error: null
   };
   
-  if (!isConnectedToFirebase) {
-    pastebinResponse.error='[Server Error]: Internal error.';
-    res.status(500).send(pastebinResponse);
-    console.log(pastebinResponse.error, '[FIREBASE] Not connected to' +
-      ' Firebase.');
-    return;
-  }
-  
-  
   try {
     if (pastebinResponse.pastebinId) {
       const firebasePastebinRef=
@@ -245,22 +227,34 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
         } else {
           pastebinResponse.error='[Client Error]: Pastebin does not exist.' +
             ' Custom pastebinIds are not allowed.';
-          res.status(400).send(pastebinResponse);
+          if (!pastebinResponse.isSent) {
+            res.status(400).send(pastebinResponse);
+            pastebinResponse.isSent=true;
+          }
           console.log(pastebinResponse.error, pastebinResponse);
         }
       }).catch(error => {
         pastebinResponse.error='[Server Error]: Internal error.';
-        res.status(500).send(pastebinResponse);
+        if (!pastebinResponse.isSent) {
+          res.status(500).send(pastebinResponse);
+          pastebinResponse.isSent=true;
+        }
         console.log(pastebinResponse.error, error);
       });
     } else {
       pastebinResponse.error='[Client Error]: PastebinId was not provided.';
-      res.status(400).send(pastebinResponse);
+      if (!pastebinResponse.isSent) {
+        res.status(400).send(pastebinResponse);
+        pastebinResponse.isSent=true;
+      }
       console.log(pastebinResponse.error, pastebinResponse);
     }
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal error.';
-    res.status(400).send(pastebinResponse);
+    if (!pastebinResponse.isSent) {
+      res.status(400).send(pastebinResponse);
+      pastebinResponse.isSent=true;
+    }
     console.log(pastebinResponse.error, pastebinResponse, error);
   }
 });
@@ -272,26 +266,24 @@ exports.copyPastebin=functions.https.onRequest((req, res) => {
     error: null
   };
   
-  if (!isConnectedToFirebase) {
-    pastebinResponse.error='[Server Error]: Internal error.';
-    res.status(500).send(pastebinResponse);
-    console.log(pastebinResponse.error, '[FIREBASE] Not connected to' +
-      ' Firebase.');
-    return;
-  }
-  
   try {
     if (pastebinResponse.pastebinId) {
       copyPastebinById(res, pastebinResponse, false);
     } else {
       pastebinResponse.error='[Client Error]: No Pastebin ID was provided.' +
         ' Please add pastebinId="a_value" to the URL.';
-      res.status(400).send(pastebinResponse);
+      if (!pastebinResponse.isSent) {
+        res.status(400).send(pastebinResponse);
+        pastebinResponse.isSent=true;
+      }
       console.log(pastebinResponse.error, pastebinResponse);
     }
   } catch (error) {
     pastebinResponse.error='[Server Error]: Internal Error.';
-    res.status(500).send(pastebinResponse);
+    if (!pastebinResponse.isSent) {
+      res.status(500).send(pastebinResponse);
+      pastebinResponse.isSent=true;
+    }
     console.log(pastebinResponse.error, pastebinResponse);
   }
 });
@@ -307,19 +299,28 @@ exports.getPastebinToken=functions.https.onRequest((req, res) => {
     admin.auth().createCustomToken(uid)
       .then(customToken => {
         pastebinResponse.pastebinToken=customToken;
-        res.status(200).send(pastebinResponse);
+        if (!pastebinResponse.isSent) {
+          res.status(200).send(pastebinResponse);
+          pastebinResponse.isSent=true;
+        }
       })
       .catch(error => {
         pastebinResponse.error='[Server Error]: Authentication failed ' +
           'while accessing pastebin. Please inform admin to get renew ' +
           'Firebase service account.';
-        res.status(500).send(pastebinResponse);
+        if (!pastebinResponse.isSent) {
+          res.status(500).send(pastebinResponse);
+          pastebinResponse.isSent=true;
+        }
         console.log(pastebinResponse.error, error);
       });
   } else {
     pastebinResponse.error='[Client Error]: No Pastebin ID was provided. ' +
       'Please add pastebinId="a_value" to the URL';
-    res.status(400).send(pastebinResponse);
+    if (!pastebinResponse.isSent) {
+      res.status(400).send(pastebinResponse);
+      pastebinResponse.isSent=true;
+    }
     console.log(pastebinResponse.error, error);
   }
 });

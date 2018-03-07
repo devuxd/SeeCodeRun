@@ -26,11 +26,10 @@ const defaultState={
   monacoEditorsStates: null
 };
 
-export const mountEditorFulfilled=(editorId, editorDiv, dispatchMouseEvents) => ({
+export const mountEditorFulfilled=(editorId, editorContainer) => ({
   type: MOUNT_EDITOR_FULFILLED,
   editorId: editorId,
-  editorDiv: editorDiv,
-  dispatchMouseEvents: dispatchMouseEvents
+  editorContainer: editorContainer,
 });
 
 const loadMonacoEditors=() => ({
@@ -143,7 +142,7 @@ export const mountedEditorEpic=(action$, store, {appManager}) =>
     .zip(action$.ofType(CONFIGURE_MONACO_MODELS_FULFILLED, LOAD_MONACO_EDITOR_FULFILLED))
     .concatMap(actions => {
         const action=actions[0];
-        return appManager.observeConfigureMonacoEditor(action.editorId, action.editorDiv, action.dispatchMouseEvents)
+        return appManager.observeConfigureMonacoEditor(action.editorId, action.editorContainer)
       }
     )
 ;
