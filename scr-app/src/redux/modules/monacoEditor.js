@@ -40,11 +40,6 @@ const loadMonacoEditorsFulfilled=() => ({
   type: LOAD_MONACO_EDITORS_FULFILLED
 });
 
-// export const loadMonacoEditor=(editorId) => ({
-//   type: LOAD_MONACO_EDITOR,
-//   editorId: editorId
-// });
-
 export const loadMonacoEditorFulfilled=(editorId, isUpdate) => ({
   type: LOAD_MONACO_EDITOR_FULFILLED,
   editorId: editorId,
@@ -58,7 +53,8 @@ export const loadMonacoEditorRejected=(editorId, error) => ({
 });
 
 
-export const monacoEditorContentChanged=(editorId, text, changes, isLocal) => ({
+export const monacoEditorContentChanged=
+  (editorId, text, changes, isLocal) => ({
     type: MONACO_EDITOR_CONTENT_CHANGED,
     editorId: editorId,
     text: text,
@@ -139,10 +135,12 @@ export const monacoEditorsEpic=(action$, store) =>
 
 export const mountedEditorEpic=(action$, store, {appManager}) =>
   action$.ofType(MOUNT_EDITOR_FULFILLED)
-    .zip(action$.ofType(CONFIGURE_MONACO_MODELS_FULFILLED, LOAD_MONACO_EDITOR_FULFILLED))
+    .zip(action$
+      .ofType(CONFIGURE_MONACO_MODELS_FULFILLED, LOAD_MONACO_EDITOR_FULFILLED))
     .concatMap(actions => {
         const action=actions[0];
-        return appManager.observeConfigureMonacoEditor(action.editorId, action.editorContainer)
+        return appManager
+          .observeConfigureMonacoEditor(action.editorId, action.editorContainer)
       }
     )
 ;

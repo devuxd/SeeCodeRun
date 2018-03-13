@@ -13,11 +13,12 @@ import ReactDOM from 'react-dom';
 import Index from './pages/Index';
 import {disposePastebin, fetchPastebin} from './redux/modules/pastebin';
 import {loadMonacoFulfilled, loadMonacoRejected} from "./redux/modules/monaco";
+import {getLocationUrlData} from "./utils/scrUtils";
+
+const urlData = getLocationUrlData();
 
 const store=configureStore();
-store.dispatch(
-  fetchPastebin(window.location.hash.replace(/#/g, '') || '')
-);
+store.dispatch(fetchPastebin(urlData.hash));
 
 const onConfigureMonacoError=error => store.dispatch(loadMonacoRejected(error));
 const onMonacoConfigured=() => {
@@ -36,8 +37,8 @@ window.addEventListener("beforeunload", function () {
 configureMonaco(onMonacoConfigured, onConfigureMonacoError);
 
 ReactDOM.render(
-  <Provider store={store}>
-    <Index/>
+  <Provider store={store} >
+    <Index url={urlData.url}/>
   </Provider>,
   document.querySelector('#root'));
 

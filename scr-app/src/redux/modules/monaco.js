@@ -10,6 +10,10 @@ const CONFIGURE_MONACO_MODELS_REJECTED='CONFIGURE_MONACO_MODELS_REJECTED';
 export const UPDATE_MONACO_MODELS_FULFILLED='UPDATE_MONACO_MODELS_FULFILLED';
 const UPDATE_MONACO_MODELS_REJECTED='UPDATE_MONACO_MODELS_REJECTED';
 
+const SWITCH_MONACO_THEME='SWITCH_MONACO_THEME';
+const SWITCH_MONACO_THEME_FULFILLED='SWITCH_MONACO_THEME_FULFILLED';
+const SWITCH_MONACO_THEME_REJECTED='SWITCH_MONACO_THEME_REJECTED';
+
 const defaultState={
   error: null,
   isMonacoLoading: false,
@@ -36,6 +40,17 @@ export const configureMonacoModelsRejected=error => ({
 export const updateMonacoModelsFulfilled=() => ({type: UPDATE_MONACO_MODELS_FULFILLED});
 export const updateMonacoModelsRejected=error => ({
   type: UPDATE_MONACO_MODELS_REJECTED,
+  error: error
+});
+
+export const switchMonacoTheme=previousThemeType => ({
+  type: SWITCH_MONACO_THEME,
+  previousThemeType: previousThemeType
+});
+
+export const switchMonacoThemeFulfilled=() => ({type: SWITCH_MONACO_THEME_FULFILLED});
+export const switchMonacoThemeRejected=error => ({
+  type: SWITCH_MONACO_THEME_REJECTED,
   error: error
 });
 
@@ -101,5 +116,12 @@ export const updateMonacoModelsEpic=(action$, store, {appManager}) =>
       }
     )
 ;
+
+export const configureMonacoThemeSwitchEpic=(action$, store, {appManager}) => {
+  return action$.ofType(SWITCH_MONACO_THEME)
+    .mergeMap(action =>
+      appManager.observeSwitchMonacoTheme(action.previousThemeType)
+    ).startWith(loadMonaco());
+};
 
 

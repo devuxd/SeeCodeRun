@@ -1,19 +1,19 @@
 
 .glyph.Identifier.JsxElement {
-  background: royalblue;
+  background: lightsalmon;
   opacity: 0.2;
 }
 
 .mtk12.Identifier.JsxElement.Bracket {
-  color: royalblue;
+  color: darkorange;
 }
 
 .mtk12.Identifier.JsxOpeningElement.Identifier {
-  color: midnightblue;
+  color: royalblue;
 }
 
 .mtk12.Identifier.JsxClosingElement.Identifier {
-  color: midnightblue;
+  color: royalblue;
 }
 
 .mtk12.Identifier.JsxAttribute.Identifier {

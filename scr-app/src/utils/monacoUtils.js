@@ -45,6 +45,8 @@ export const monacoEditorDefaultOptions={
 };
 
 export const monacoEditorMouseEventTypes={
+  blurEditor:'blurEditor',
+  focusEditor:'focusEditor',
   mouseMove: 'mouseMove',
   mouseLeave: 'mouseLeave',
   mouseDown: 'mouseDown',
@@ -91,6 +93,19 @@ export function configureMonacoEditor(monaco, editorDiv, customEditorOptions) {
 
 export function configureMonacoEditorMouseEventsObservable(editor) {
   return Observable.create(observer => {
+    editor.onDidFocusEditor(() => {
+      observer.next({
+        type: monacoEditorMouseEventTypes.focusEditor,
+        event: null
+      });
+    });
+    editor.onDidBlurEditor(() => {
+      observer.next({
+        type: monacoEditorMouseEventTypes.blurEditor,
+        event: null
+      });
+    });
+    
     editor.onMouseMove(event => {
       observer.next({
         type: monacoEditorMouseEventTypes.mouseMove,

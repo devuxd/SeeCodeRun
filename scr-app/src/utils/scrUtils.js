@@ -1,5 +1,14 @@
 import {Observable} from "rxjs/Rx";
 
+export const getLocationUrlData=() => {
+  return {
+    url:
+    process.env.PUBLIC_URL ||
+    `${window.location.origin}`,
+    hash: `${window.location.hash}`
+  };
+};
+
 export const configureToMonacoRange=(monaco, parser) => {
   switch (parser) {
     case 'babylon':
@@ -16,7 +25,11 @@ export const configureToMonacoRange=(monaco, parser) => {
 
 export const configureMonacoRangeToClassname=(prefix='r') => {
   return (monacoRange, postfix='') => {
-    return `${prefix}-${monacoRange.startLineNumber}-${monacoRange.startColumn}-${monacoRange.endLineNumber}-${monacoRange.endColumn}-${postfix}`;
+    return `${prefix}-${
+      monacoRange.startLineNumber
+    }-${
+      monacoRange.startColumn
+    }-${monacoRange.endLineNumber}-${monacoRange.endColumn}-${postfix}`;
   };
 };
 
@@ -33,4 +46,5 @@ export const online$=() =>
     goesOffline$,
     goesOnline$
   );
+export const end$= ()=>Observable.of(true);
 

@@ -11,6 +11,7 @@ import Snackbar from 'material-ui/Snackbar';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import ExpressionPopover from "./ExpressionPopover";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
+import {end$} from "../utils/scrUtils";
 
 const styles=theme => ({
   container: {
@@ -58,6 +59,7 @@ const styles=theme => ({
 
 class Editor extends Component {
   state={
+    focused: false,
     settingsOpen: false,
     errorSnackbarOpen: false,
     anchorEl: null,
@@ -65,6 +67,8 @@ class Editor extends Component {
     ignoreFirstEvent: false,
     errors: null,
   };
+  monacoEditorMouseEventsObservable=null;
+  dispatchMouseEventsActive=false;
   monacoEditor=null;
   maxLineNumber=-1;
   
@@ -78,11 +82,12 @@ class Editor extends Component {
     this.setState({errorSnackbarOpen: false});
   };
   
-  setMonacoEditor= monacoEditor =>{
-    this.monacoEditor = monacoEditor;
+  setMonacoEditor=monacoEditor => {
+    this.monacoEditor=monacoEditor;
   };
   
-  onContentChangedAction =()=>{};
+  onContentChangedAction=() => {
+  };
   
   lineNumbers=lineNumber => {
     //observer.next(lineNumber);
@@ -99,24 +104,29 @@ ${lineNumber}</div></div>`;
   };
   
   
-  getElementbyLineNumber =lineNumber =>{
-    if(!lineNumber ||lineNumber>this.maxLineNumber){
+  getElementbyLineNumber=lineNumber => {
+    if (!lineNumber || lineNumber > this.maxLineNumber) {
       return null;
     }
     return document.getElementById(`.line-number-${lineNumber}`);
   };
   
-  addBranchNavigator=(expression, lineNumber)=>{
-    const el = this.getElementbyLineNumber(lineNumber);
-    if(el){
+  addBranchNavigator=(expression, lineNumber) => {
+    const el=this.getElementbyLineNumber(lineNumber);
+    if (el) {
     
     }
   };
   
   render() {
     const {editorId, classes}=this.props;
-    const {settingsOpen, errorSnackbarOpen, anchorEl, mouseEvent, errors}=this.state;
-    const fabClassName=classNames(classes.fab, errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown);
+    const {
+      settingsOpen, errorSnackbarOpen, anchorEl, mouseEvent, errors
+    }=this.state;
+    const fabClassName=
+      classNames(
+        classes.fab, errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown
+      );
     
     // console.log(this.state);
     return (<div className={classes.container}>
@@ -156,12 +166,15 @@ ${lineNumber}</div></div>`;
     this.unsubscribes=[];
     const {editorId}=this.props;
     const {store}=this.context;
-    this.onContentChangedAction =action =>{
+    this.onContentChangedAction=action => {
       store.dispatch(action);
     };
     store.dispatch(mountEditorFulfilled(this.props.editorId, this));
     const unsubscribe0=store.subscribe(() => {
-      const currentErrors=store.getState().updatePlaygroundReducer.runtimeErrors ? store.getState().updatePlaygroundReducer.runtimeErrors[editorId] : null;
+      const currentErrors=
+        store.getState().updatePlaygroundReducer.runtimeErrors ?
+          store.getState().updatePlaygroundReducer.runtimeErrors[editorId]
+          : null;
       if (currentErrors !== this.state.errors) {
         if (currentErrors) {
           console.log("rrrrrrr", currentErrors.loc, currentErrors.stack);
@@ -180,52 +193,82 @@ ${lineNumber}</div></div>`;
   
   componentWillUnmount() {
     for (const i in this.unsubscribes) {
-      this.unsubscribes[i]();
+      console.log(i, this.unsubscribes[i]);
+      this.unsubscribes[i] && this.unsubscribes[i]();
     }
+    this.monacoEditorMouseEventsObservable && this.monacoEditorMouseEventsObservable.takeUntil(end$);
   }
   
   
   dispatchMouseEvents=monacoEditorMouseEventsObservable => {
     const {observeMouseEvents}=this.props;
-    if(monacoEditorMouseEventsObservable){
-      this.monacoEditorMouseEventsObservable =monacoEditorMouseEventsObservable;
+    if (monacoEditorMouseEventsObservable) {
+      this.monacoEditorMouseEventsObservable=monacoEditorMouseEventsObservable;
     }
     
-    if(!observeMouseEvents||!this.monacoEditorMouseEventsObservable){
+    if (!observeMouseEvents
+      || !this.monacoEditorMouseEventsObservable
+      || this.dispatchMouseEventsActive) {
       return;
     }
-   
-    const unsubscribe4=
-      this.monacoEditorMouseEventsObservable
-        .debounceTime(500)
-        .subscribe(mouseEvent => {
-          switch (mouseEvent.type) {
-            case monacoEditorMouseEventTypes.mouseMove:
-              this.setState({
-                anchorEl: mouseEvent.event.target.element,
-                mouseEvent: mouseEvent,
-                ignoreFirstEvent: true
-              });
-              break;
-            case monacoEditorMouseEventTypes.mouseDown:
-              this.setState({anchorEl: null, mouseEvent: null});
-              break;
-            case monacoEditorMouseEventTypes.contextMenu:
-              this.setState({anchorEl: null, mouseEvent: null});
-              break;
-            case monacoEditorMouseEventTypes.mouseLeave:
-              // avoids popover's enter-leave events on open
-              const {ignoreFirstEvent}=this.state;
-              if (ignoreFirstEvent) {
-                this.setState({ignoreFirstEvent: false});
-              } else {
-                this.setState({anchorEl: null, mouseEvent: null});
+    this.monacoEditorMouseEventsObservable
+      // .debounceTime(500)
+      .subscribe(mouseEvent => {
+        //console.log('f', mouseEvent.type, this.state.focused);
+        switch (mouseEvent.type) {
+          case monacoEditorMouseEventTypes.focusEditor:
+            this.setState({
+              mouseEvent: mouseEvent,
+              focused: true,
+            });
+            return;
+          case monacoEditorMouseEventTypes.blurEditor:
+            this.setState({
+              anchorEl: null,
+              mouseEvent: mouseEvent,
+              focused: false,
+            });
+            return;
+          case monacoEditorMouseEventTypes.mouseMove:
+            if(!this.state.focused){
+              return;
+            }
+            this.setState({
+              anchorEl: mouseEvent.event.target.element,
+              mouseEvent: mouseEvent,
+              ignoreFirstEvent: true
+            });
+            return;
+          case monacoEditorMouseEventTypes.mouseDown:
+            if(!this.state.focused){
+              return;
+            }
+            this.setState({anchorEl: null, mouseEvent: null});
+            break;
+          case monacoEditorMouseEventTypes.contextMenu:
+            if(!this.state.focused){
+              return;
+            }
+            this.setState({anchorEl: null, mouseEvent: null});
+            break;
+          case monacoEditorMouseEventTypes.mouseLeave:
+
+            // avoids popover's enter-leave events on open
+            // console.log(mouseEvent);
+            const {ignoreFirstEvent}=this.state;
+            if (ignoreFirstEvent) {
+              this.setState({ignoreFirstEvent: false});
+            } else {
+              if(!this.state.focused){
+                return;
               }
-              break;
-            default:
-          }
-        });
-    this.unsubscribes.push(unsubscribe4);
+              this.setState({anchorEl: null, mouseEvent: null});
+            }
+            break;
+          default:
+        }
+      });
+    this.dispatchMouseEventsActive=true;
   };
 }
 

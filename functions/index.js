@@ -112,8 +112,7 @@ const makeFirebaseReferenceCopy=(
   );
 };
 
-const copyPastebinById=(res, pastebinResponse, copyChat=false) => {
-  const parentPastebinId=pastebinResponse.pastebinId;
+const copyPastebinById=(parentPastebinId, res, pastebinResponse, copyChat=false) => {
   const childPastebinId=makeNewPastebinId();
   let sourceReference=
     databaseRootRef.child(`${parentPastebinId}/`);
@@ -164,7 +163,7 @@ const copyPastebinById=(res, pastebinResponse, copyChat=false) => {
                 message: error
               });
             } else {
-              pastebinResponse.pastebinCopyId=childPastebinId;
+              pastebinResponse.pastebinId=childPastebinId;
               if (!pastebinResponse.isSent) {
                 res.status(200).send(pastebinResponse);
                 pastebinResponse.isSent=true;
@@ -241,14 +240,14 @@ exports.getPastebin=functions.https.onRequest((req, res) => {
 
 exports.copyPastebin=functions.https.onRequest((req, res) => {
   const pastebinResponse={
-    pastebinId: req.query.pastebinId,
-    pastebinCopyId: null,
+    sourcePastebinId: req.query.sourcePastebinId,
+    pastebinId: null,
     error: null
   };
   
   try {
-    if (pastebinResponse.pastebinId) {
-      copyPastebinById(res, pastebinResponse, false);
+    if (pastebinResponse.sourcePastebinId) {
+      copyPastebinById(pastebinResponse.sourcePastebinId, res, pastebinResponse, false);
     } else {
       pastebinResponse.error='[Client Error]: No Pastebin ID was provided.' +
         ' Please add pastebinId="a_value" to the URL.';

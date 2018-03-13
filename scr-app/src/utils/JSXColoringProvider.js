@@ -1,5 +1,5 @@
 import j from "jscodeshift";
-
+import './JSXColoringProvider.css';
 export const JSXTypes={
   JSXOpeningElement: {
     options: {

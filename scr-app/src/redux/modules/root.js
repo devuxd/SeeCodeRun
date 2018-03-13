@@ -14,12 +14,14 @@ import {
   firecoReducer,
   firecoEditorsEpic,
   firecoActivateEpic,
-  firecoEditorEpic
+  firecoEditorEpic,
+  firecoChatEpic
 }
   from './fireco';
 import {
   configureMonacoModelsEpic,
   updateMonacoModelsEpic,
+  configureMonacoThemeSwitchEpic,
   monacoReducer
 }
   from './monaco';
@@ -46,12 +48,14 @@ export const rootEpic=combineEpics(
   mountedEditorEpic,
   configureMonacoModelsEpic,
   updateMonacoModelsEpic,
+  configureMonacoThemeSwitchEpic,
   monacoEditorsEpic,
   updatePlaygroundEpic,
   updatePlaygroundInstrumentationEpic,
   firecoEditorsEpic,
   firecoActivateEpic,
   firecoEditorEpic,
+  firecoChatEpic,
 );
 
 export const rootReducer=combineReducers({

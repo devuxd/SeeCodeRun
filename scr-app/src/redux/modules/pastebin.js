@@ -10,6 +10,7 @@ const cloudFunctionsUrl=
     'https://us-central1-firebase-seecoderun.cloudfunctions.net'
     : '/firebase-seecoderun/us-central1';
 const getPasteBinIdUrl=`${cloudFunctionsUrl}/getPastebinId`;
+const getPasteBinCopyUrl=`${cloudFunctionsUrl}/copyPastebin`;
 const getPasteBinUrl=`${cloudFunctionsUrl}/getPastebin`;
 const getPasteBinTokenUrl=`${cloudFunctionsUrl}/getPastebinToken`;
 
@@ -57,11 +58,20 @@ export const pastebinConfigureLayout=
     };
   };
 
-export const fetchPastebin=(pastebinId) => {
+export const getShareUrl=(url, pastebinId) => {
+  return pastebinId ? `${url}/#:${pastebinId}` : null;
+};
+
+export const fetchPastebin=(locationHash='') => {
+  const pastebinId=locationHash.replace(/#/, '');
+  const isCopy=pastebinId.indexOf(':') === 0;
+  const sourcePastebinId=isCopy ? pastebinId.replace(/:/, '') : null;
   return {
     type: FETCH_PASTEBIN,
-    pastebinId: pastebinId,
-    isNew: !pastebinId,
+    pastebinId: isCopy ? null : pastebinId,
+    isNew: isCopy ? true : !pastebinId,
+    isCopy: isCopy,
+    sourcePastebinId: sourcePastebinId
   };
 };
 
@@ -118,6 +128,8 @@ export const pastebinReducer=(state=defaultPasteBinState, action) => {
         ...state,
         pastebinId: action.pastebinId,
         isNew: action.isNew,
+        isCopy: action.isCopy,
+        sourcePastebinId: action.sourcePastebinId,
         editorsTexts: null,
         error: null,
       };
@@ -234,7 +246,9 @@ export const pastebinEpic=(action$, store, {appManager}) =>
   action$.ofType(FETCH_PASTEBIN)
     .mergeMap(action => {
       if (action.isNew) {
-        const url=getPasteBinIdUrl;
+        const url=action.isCopy ?
+          `${getPasteBinCopyUrl}?sourcePastebinId=${action.sourcePastebinId}`
+          : getPasteBinIdUrl;
         const getPastebinIdRequest=() => ajax({
           crossDomain: true,
           url: url,
@@ -248,12 +262,17 @@ export const pastebinEpic=(action$, store, {appManager}) =>
           })
           .catch(error => Observable.of(fetchPastebinRejected(error)));
         
-        return Observable.concat(
-          Observable.of(fetchPastebinContentFulfilled(
-            getDefaultPastebinContent()
-          )),
-          getPastebinIdRequest()
-        );
+        if (action.isCopy) {
+          return getPastebinIdRequest();
+        } else {
+          return Observable.concat(
+            Observable.of(fetchPastebinContentFulfilled(
+              getDefaultPastebinContent()
+            )),
+            getPastebinIdRequest()
+          );
+        }
+        
       } else {
         appManager.setPastebinId(action.pastebinId);
         //todo: needs validation when user edited from a different machine

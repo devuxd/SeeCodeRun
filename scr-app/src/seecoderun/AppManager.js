@@ -6,6 +6,8 @@ import _ from 'lodash';
 import {
   configureMonacoModelsFulfilled,
   configureMonacoModelsRejected,
+  switchMonacoThemeFulfilled,
+  switchMonacoThemeRejected,
   updateMonacoModelsFulfilled,
   updateMonacoModelsRejected
 } from "../redux/modules/monaco";
@@ -20,7 +22,10 @@ import {
   configureFirecoEditorFulfilled,
   configureFirecoEditorRejected,
   activateFirepadFulfilled,
-  activateFirepadRejected, onConnectionChanged,
+  activateFirepadRejected,
+  onConnectionChanged,
+  configureFirecoChatRejected,
+  configureFirecoChatFulfilled,
 } from "../redux/modules/fireco";
 
 import {
@@ -31,6 +36,7 @@ import {
 } from "../utils/monacoUtils";
 import JSXColoringProvider from "../utils/JSXColoringProvider";
 import LiveExpressionStore from "./modules/LiveExpressionStore";
+import {themeTypes} from "../components/withRoot";
 
 const dataBaseRoot='/scr2';
 const firebaseConfig={
@@ -43,10 +49,13 @@ const firebaseConfig={
 };
 
 const fireco={
+  TIMESTAMP: firebase.database.ServerValue.TIMESTAMP,
   app: null,
   database: null,
   auth: null,
   connectedRef: null,
+  chatPath: null,
+  chatRef: null,
   isAuth: false,
   unsubscribeOnIdTokenChanged: null,
 };
@@ -109,6 +118,7 @@ class AppManager {
       }
     };
     this.jsxColoringProvider=null;
+    this.chatOnDispose=null;
   }
   
   observeDispose() {
@@ -194,10 +204,12 @@ class AppManager {
   }
   
   dispose() {
+    this.chatOnDispose && this.chatOnDispose();
     this.disposeFireco();
   }
   
-  configureFirepadPaths(pastebinId, isNew) {
+  configureFirecoPaths(pastebinId, isNew) {
+    fireco.chatPath=`${dataBaseRoot}/${pastebinId}/chat`;
     for (const editorId in this.firecoPads) {
       this.firecoPads[editorId].firebasePath=`${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
       this.firecoPads[editorId].isNew=isNew;
@@ -252,9 +264,9 @@ class AppManager {
           const firecoPad=this.firecoPads[editorId];
           if (!firecoPad.isInit && _.isString(initialEditorsTexts[editorId])) {
             firecoPad.monacoEditorModel.setValue(initialEditorsTexts[editorId]);
-          }else{
+          } else {
             return Observable.of(updateMonacoModelsRejected('Error: no ' +
-              ' text was provided for editor with id: '+editorId+', or' +
+              ' text was provided for editor with id: ' + editorId + ', or' +
               ' Fireco set it first.'));
           }
         }
@@ -312,9 +324,32 @@ class AppManager {
     }
   }
   
+  observeSwitchMonacoTheme(previousThemeType) {
+    let monacoTheme='vs-light';
+    switch (previousThemeType) {
+      case themeTypes.lightTheme:
+        monacoTheme='vs-dark';
+        break;
+      case themeTypes.darkTheme:
+        monacoTheme='vs-light';
+        break;
+      default:
+        return Observable.of(switchMonacoThemeRejected('Unknown theme type'));
+    }
+    
+    if (this.monaco) {
+      this.monaco.editor.setTheme(monacoTheme);
+      return Observable.of(switchMonacoThemeFulfilled(monacoTheme));
+    }
+    
+    return Observable.of(loadMonacoEditorRejected('Attempting to switch' +
+      ' Monaco theme without loading Monaco.'));
+    
+  }
+  
   observeActivateFireco(pastebinId, pastebinToken, isNew) {
     if (pastebinId && pastebinToken) {
-      this.configureFirepadPaths(pastebinId, isNew);
+      this.configureFirecoPaths(pastebinId, isNew);
       fireco.isAuth=false;
       return Observable.create(observer => {
         if (fireco.unsubscribeOnIdTokenChanged) {
@@ -453,6 +488,19 @@ class AppManager {
     } catch (error) {
       return Observable.of(configureFirecoEditorRejected(editorId, error));
     }
+  }
+  
+  observeConfigureFirecoChat(onFirecoActive, onDispose, chatUserIdLocalStoragePath) {
+    try {
+      fireco.chatRef=fireco.chatRef || fireco.database.ref(fireco.chatPath);
+      onFirecoActive(fireco.chatRef, fireco.TIMESTAMP, chatUserIdLocalStoragePath);
+      this.chatOnDispose=onDispose;
+      return Observable.of(configureFirecoChatFulfilled());
+    } catch (error) {
+      return Observable.of(configureFirecoChatRejected(error));
+    }
+    ;
+    
   }
   
   observeConfigureLiveExpressionStore(editorId, autoLog) {
