@@ -1,8 +1,6 @@
 import React, {Component} from 'react';
-import sizeMe from 'react-sizeme';
 import classnames from 'classnames';
 import PropTypes from "prop-types";
-import Paper from 'material-ui/Paper';
 import {withStyles} from 'material-ui/styles';
 import _ from 'lodash';
 import {Subject} from "rxjs";
@@ -12,30 +10,16 @@ import {updatePlaygroundInstrumentationSuccess} from "../redux/modules/playgroun
 import {updatePlaygroundInstrumentationFailure} from "../redux/modules/playground";
 
 
-const styles=theme => {
+const styles=() => {
   return {
-    playgroundContainer: {
-      marginTop: 0,
-      paddingTop:0,
-      // overflow: 'hidden',
-    },
     playground: {
-      margin:0,
-      padding:0,
-      // width: '100%',
-      // height: '100%',
-      overflow: 'auto',
-      '-webkit-font-smoothing': 'unset',
+      margin: 0,
+      padding: 0,
     }
   }
 };
 
-
 class Playground extends Component {
-  state={
-    height: 1200
-  };
-  
   mounted=false;
   playgroundDOMNode=null;
   isBundling=false;
@@ -44,28 +28,12 @@ class Playground extends Component {
   
   render() {
     const {classes, appClasses}=this.props;
-    const {height}=this.state;
-    
-    const heightChanges={
-      height: height
-    };
     return (
-      <div className={classes.playgroundContainer}
+      <div className={classnames(classes.playground, appClasses.content)}
            ref={(DOMNode) => {
-             this.playgroundContainerDOMNode=DOMNode;
+             this.playgroundDOMNode=DOMNode;
            }}
-           style={heightChanges}
-      >
-        <Paper className={appClasses.playgroundPaper}>
-          <div className={classes.playground}
-               ref={(DOMNode) => {
-                 this.playgroundDOMNode=DOMNode;
-               }}
-               style={heightChanges}
-          >
-          </div>
-        </Paper>
-      </div>
+      ></div>
     );
   }
   
@@ -95,30 +63,7 @@ class Playground extends Component {
       })
   };
   
-  resize=() => {
-    // clearTimeout(this.timeout);
-    if (!this.mounted) return;
-    this.timeout=setTimeout(() => {
-      const height=window.innerHeight;
-      if (!this.playgroundContainerDOMNode || !height) {
-        return;
-      }
-      const offset=this.playgroundContainerDOMNode.getBoundingClientRect().top-80;
-      console.log('of', height, offset,height - offset /*-
-       this.props.appStyle.margin * 4*/);
-      this.setState({height: height - offset});
-    }, 60);
-  };
-  
-  onWindowResize=() => {
-    this.resize();
-  };
-  
   componentDidMount() {
-    this.mounted=true;
-    const {getResize}=this.props;
-    getResize && getResize(this.resize);
-    
     this.autoLog=new AutoLog();
     this.unsubscribes=[];
     const {store}=this.context;
@@ -138,13 +83,10 @@ class Playground extends Component {
     this.unsubscribes.push(unsubscribe0);
     this.observeBundling(this.bundlingSubject);
     
-    window.addEventListener("resize", this.onWindowResize);
-    this.onWindowResize();
   }
   
   componentWillUnmount() {
     this.mounted=false;
-    window.removeEventListener("resize", this.onWindowResize);
     this.bundlingSubject.complete();
     for (const i in this.unsubscribes) {
       this.unsubscribes[i]();

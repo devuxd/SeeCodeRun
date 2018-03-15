@@ -10,19 +10,16 @@ import classnames from 'classnames';
 import React, {Component} from 'react';
 import localStorage from 'store';
 import {withStyles} from 'material-ui/styles';
-import ListSubheader from 'material-ui/List/ListSubheader';
-import List, {ListItem, ListItemSecondaryAction, ListItemText} from 'material-ui/List';
-import {CardHeader} from 'material-ui/Card';
+import Card, {CardHeader, CardContent} from 'material-ui/Card';
 import Avatar from 'material-ui/Avatar';
 import IconButton from 'material-ui/IconButton';
-import Menu from 'material-ui/Menu';
+import Menu, {MenuItem} from 'material-ui/Menu';
 import ChatIcon from 'material-ui-icons/Chat';
 import TextField from 'material-ui/TextField';
-import randomColor from "randomcolor";
 
-import {configureFirecoChat} from '../redux/modules/fireco';
-import AutoComplete from '../components/AutoComplete';
-
+import {configureFirecoChat} from "../redux/modules/fireco";
+import AutoComplete from "../components/AutoComplete";
+import {List, ListItem} from "material-ui";
 
 const defaultChatStyle = {
   minWidth: 300,
@@ -43,11 +40,59 @@ const styles = theme => ({
     minWidth: defaultChatStyle.minWidth,
     minHeight: defaultChatStyle.minHeight,
   },
+  chatContent: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column-reverse',
+  },
   hidden: {
     display: 'none',
   },
   avatarMenu: {
     overflow: 'auto',
+  },
+  input: {
+    // margin: 'auto',
+  },
+  messageChatIcon: {
+    // margin: 'auto',
+  },
+  messageTextField: {
+    // margin: 'auto',
+  },
+  subHeader: {
+    color: 'blue',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+  },
+  actions: {
+    order: 1,
+    flexDirection: 'row',
+    flexGrow: 0,
+    height: defaultChatStyle.minHeight,
+    marginTop: theme.spacing.unit,
+    marginBottom: theme.spacing.unit,
+  },
+  expand: {
+    display: 'block',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    transform: 'rotate(0deg)',
+    transition: theme.transitions.create('transform', {
+      duration: theme.transitions.duration.shortest,
+    }),
+  },
+  chatMessages: {
+    order: 2,
+    flexBasis: 'fit-content',
+    overflow: 'auto',
+  },
+  expandOpen: {
+    transform: 'rotate(180deg)',
   },
   avatar: {
     backgroundColor: theme.palette.grey[400],
@@ -55,23 +100,6 @@ const styles = theme => ({
   avatarSet: {
     backgroundColor: theme.palette.primary.main,
   },
-  root: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: theme.palette.background.paper,
-    position: 'relative',
-    overflow: 'auto',
-    padding: theme.spacing.unit * 1.2,
-    paddingTop: 0,
-  },
-  chatMessageSticky: {
-    paddingTop: theme.spacing.unit,
-    paddingLeft: 0,
-    paddingRight: theme.spacing.unit,
-  },
-  chatMessageCardHeader: {
-    padding: 0,
-  }
 });
 
 class Chat extends Component {
@@ -190,6 +218,24 @@ class Chat extends Component {
     this.listenToChatUsersData();
   };
 
+  // handleExpandClick=() => {
+  //   let {expanded, restoreHeight, height}=this.state;
+  //
+  //   if (expanded) {
+  //     restoreHeight=this.chatEl.getBoundingClientRect().height;
+  //     height=defaultChatStyle.minHeight;
+  //   } else {
+  //     height=restoreHeight;
+  //   }
+  //
+  //   this.setState({
+  //     expanded: !expanded,
+  //     restoreHeight: restoreHeight,
+  //     height: height,
+  //     // width: offsetWidth,
+  //   });
+  // };
+
   setUserId = (chatUserId, saveLocally = true) => {
     saveLocally && localStorage.set(this.chatUserIdLocalStoragePath, chatUserId);
     this.setState({
@@ -286,7 +332,6 @@ class Chat extends Component {
 
     const pushUser = (users, snapshot) => {
       const data = snapshot.val();
-      data.color = randomColor();
       users[snapshot.key] = data;
       if (this.state.chatUserId === snapshot.key) {
         this.setState({
@@ -326,7 +371,7 @@ class Chat extends Component {
       .limitToLast(100)
       .on('child_added', snapshot => {
         const chatMessage = snapshot.val();
-        this.setState((prevState) => ({
+        this.setState((prevState)=>({
           lastMessageReceivedOwnerId: chatMessage.chatUserId,
           lastMessageReceivedTimestamp: chatMessage.timestamp,
           messages: [...prevState.messages, {
@@ -440,16 +485,6 @@ class Chat extends Component {
     return '';
   };
 
-  getUserColor = chatUserId => {
-    if (chatUserId) {
-      const {users} = this.state;
-      if (users && users[chatUserId]) {
-        return users[chatUserId].color;
-      }
-    }
-    return 'grey';
-  };
-
   getLastActivityMessage = () => {
     const {
       chatUserId,
@@ -487,7 +522,7 @@ class Chat extends Component {
     return !!(!chatUserId || chatAvatarWarning || chatError || chatMessageWarning);
   };
 
-  chatPreHideLayout = (isChatToggled) => {
+  chatPreHideLayout = (isChatToggled/*, expanded*/) => {
     if (isChatToggled || !this.chatEl) {
       return;
     }
@@ -500,15 +535,21 @@ class Chat extends Component {
       bottom: elBoundingClientRect.bottom,
       width: elBoundingClientRect.width,
       height: elBoundingClientRect.height,
+      // expanded: expanded,
     };
   };
 
   render() {
+    // clearTimeout(this.lt);
+    // this.lt=setTimeout(()=>{
+    //   this.onDispose();
+    // },1000);
     const {classes, isChatToggled, chatClick, chatTitle} = this.props;
 
     const {
       left, right, top, bottom, height, width,
-      chatUserId, chatUserName, chatMessageText, avatarAnchorEl, users, messages
+      chatUserName, chatMessageText,
+      /*expanded,*/ avatarAnchorEl, users, messages
     } = this.state;
 
     const errors = this.hasErrors();
@@ -562,120 +603,97 @@ class Chat extends Component {
            ref={ref => this.makeDraggableAndResizable(ref)}>
         {
           this.firecoChat &&
-          <List className={classes.root}
-                subheader={<li/>}
-                dense={true}
-          >
-            <ListSubheader className={classes.chatMessageSticky}>
-              <CardHeader className={classes.chatMessageCardHeader}
-                          avatar={
-                            <div>
-                              <Avatar
-                                aria-label="name"
-                                className={
-                                  classnames(classes.avatar, {
-                                    [classes.avatarSet]: !!chatUserName,
-                                  })
-                                }
-                                onClick={this.handleAvatarMenu}
-
-                                aria-owns={avatarMenuOpen ? 'menu-avatar' : null}
-                                aria-haspopup="true"
-                                title={chatUserName || "click to type you user name"}
-                              >
-                                {chatUserName ? chatUserName[0].toUpperCase() : '?'}
-                              </Avatar>
-                              <Menu
-                                id="menu-avatar"
-                                className={classes.avatarMenu}
-                                anchorEl={avatarAnchorEl}
-                                anchorOrigin={{
-                                  vertical: 'top',
-                                  horizontal: 'right',
-                                }}
-                                transformOrigin={{
-                                  vertical: 'top',
-                                  horizontal: 'right',
-                                }}
-                                open={avatarMenuOpen}
-                                onClose={this.handleAvatarClose}
-                              >
-                                <AutoComplete
-                                  renderInputComponent={renderChatUserNameInput}
-                                  inputProps={chatUserNameInputProps}
-                                  getSuggestions={this.getChatUserSuggestions}
-                                  getSuggestionValue={this.getChatUserSuggestion}
-                                />
-                              </Menu>
-                            </div>
-                          }
-                          action={
-                            <IconButton title={chatTitle} onClick={chatClick}
-                                        className={classes.messageChatIcon}
-                                        color={isChatToggled ? "secondary" : "default"}>
-                              <ChatIcon/>
-                            </IconButton>
-                          }
-                          title={
-                            <TextField
-                              fullWidth
-                              error={errors}
-                              placeholder="type message..."
-                              value={chatMessageText}
-                              className={classes.messageTextField}
-                              onChange={this.handleMessageTextChange}
-                              onKeyUp={this.handleMessageInputEnter}
-                            />
-                          }
-                          subheader={this.getLastActivityMessage()}
-              />
-            </ListSubheader>
-            {messages.map((message, i, array) => {
-                const skipInfo = i && message.chatUserId === array[i - 1].chatUserId;
-                const skipTime = i && ((new Date(message.timestamp)).getTime() - (new Date(array[i - 1].timestamp).getTime())) < 30000;
-                const messageOwner = this.getMessageOwner(message.chatUserId);
-                return <div key={message.key}
-                            ref={ref => {
-                              this.chatListEl = ref
-                            }}
-                            onMouseEnter={() => this.ignoreChatListElScroll = true}
-                            onMouseLeave={() => this.ignoreChatListElScroll = false}
-                >
-                  <ListItem button={true}
-                            disableGutters={true}
-                  >
-                    {chatUserId === message.chatUserId || skipInfo ?
-                      <Avatar/>
-                      : <Avatar
-                        title={messageOwner}
-                        style={{backgroundColor: this.getUserColor(message.chatUserId)}}
-                      >
-                        {messageOwner ? messageOwner[0].toUpperCase() : '?'}
-                      </Avatar>
-                    }
-                    {chatUserId === message.chatUserId ?
-                      <ListItemSecondaryAction>
-                        <ListItemText primary={message.text}
-                                      secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
-                        />
-                      </ListItemSecondaryAction>
-                      : <ListItemText primary={message.text}
-                                      secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
-                      />
-                    }
-                  </ListItem>
-                </div>;
+          <Card className={classes.chatContent}>
+            {/*<IconButton*/}
+            {/*className={classnames(classes.expand, {*/}
+            {/*[classes.expandOpen]: expanded,*/}
+            {/*})}*/}
+            {/*onClick={this.handleExpandClick}*/}
+            {/*aria-expanded={expanded}*/}
+            {/*aria-label="Show Messages"*/}
+            {/*>*/}
+            {/*<ExpandMoreIcon/>*/}
+            {/*</IconButton>*/}
+            {/*<Collapse in={expanded} timeout="auto" unmountOnExit>*/}
+            <CardContent className={classes.chatMessages}>
+              <List>
+              {
+                messages.map(message => <ListItem key={message.key}>{message.text}</ListItem>)
               }
-            )}
-          </List>
-        }
+              </List>
+            </CardContent>
+            {/*</Collapse>*/}
+            <CardHeader
+              className={classes.actions}
+              avatar={
+                <div>
+                  <Avatar
+                    aria-label="name"
+                    className={
+                      classnames(classes.avatar, {
+                        [classes.avatarSet]: !!chatUserName,
+                      })
+                    }
+                    onClick={this.handleAvatarMenu}
+
+                    aria-owns={avatarMenuOpen ? 'menu-avatar' : null}
+                    aria-haspopup="true"
+                    title={chatUserName || "click to type you user name"}
+                  >
+                    {chatUserName ? chatUserName[0].toUpperCase() : '?'}
+                  </Avatar>
+                  <Menu
+                    id="menu-avatar"
+                    className={classes.avatarMenu}
+                    anchorEl={avatarAnchorEl}
+                    anchorOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    open={avatarMenuOpen}
+                    onClose={this.handleAvatarClose}
+                  >
+                    <AutoComplete
+                      renderInputComponent={renderChatUserNameInput}
+                      inputProps={chatUserNameInputProps}
+                      getSuggestions={this.getChatUserSuggestions}
+                      getSuggestionValue={this.getChatUserSuggestion}
+                    />
+                  </Menu>
+                </div>
+              }
+              action={
+                <IconButton title={chatTitle} onClick={chatClick}
+                            className={classes.messageChatIcon}
+                            color={isChatToggled ? "secondary" : "default"}>
+                  <ChatIcon/>
+                </IconButton>
+              }
+              title={
+                <TextField
+                  fullWidth
+                  error={errors}
+                  placeholder="type message..."
+                  value={chatMessageText}
+                  className={classes.messageTextField}
+                  onChange={this.handleMessageTextChange}
+                  onKeyUp={this.handleMessageInputEnter}
+                />
+              }
+              subheader={this.getLastActivityMessage()}
+            />
+          </Card>}
       </div>
     );
   }
 
   onDispose = () => {
     const {isChatToggled} = this.props;
-    const {chatUserId} = this.state;
+    const {chatUserId/*, expanded, restoreHeight*/} = this.state;
     if (chatUserId && this.firecoChat && this.chatEl) {
       let elBoundingClientRect = this.preHideChatEl;
       if (isChatToggled) {
@@ -688,6 +706,8 @@ class Chat extends Component {
         bottom: elBoundingClientRect.bottom,
         width: elBoundingClientRect.width,
         height: elBoundingClientRect.height,
+        //height: expanded ? elBoundingClientRect.height : restoreHeight,
+        //expanded: expanded,
       };
 
       //never used case
@@ -713,15 +733,6 @@ class Chat extends Component {
     const {dispatch} = this.props;
     dispatch(configureFirecoChat(this.onFirecoActive, this.onDispose));
   }
-
-  componentDidUpdate() {
-    this.scrollToBottom();
-  }
-
-  scrollToBottom() {
-    (!this.ignoreChatListElScroll) && this.chatListEl && this.chatListEl.scrollIntoView({behavior: 'smooth'});
-  }
-
 }
 
 export default withStyles(styles)(Chat);

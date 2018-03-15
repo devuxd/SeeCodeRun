@@ -5,37 +5,78 @@ import withRoot from '../components/withRoot';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
-import Playground from '../containers/Playground';
 
-import {getEditorIds} from "../seecoderun/AppManager";
-import {getShareUrl} from "../redux/modules/pastebin";
+import {getEditorIds} from '../seecoderun/AppManager';
+import {getShareUrl} from '../redux/modules/pastebin';
 import {online$, end$} from '../utils/scrUtils';
-import Chat from "../containers/Chat";
-import {switchMonacoTheme} from "../redux/modules/monaco";
+import Chat from '../containers/Chat';
+import {switchMonacoTheme} from '../redux/modules/monaco';
 
-let appStyle={margin: 0};
-const styles=theme => {
-  appStyle={margin: theme.spacing.unit * 1.25};
+let appStyle = {margin: 0};
+const styles = theme => {
+  appStyle = {
+    margin: theme.spacing.unit * 1.25,
+    rowHeightSmall: theme
+      .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
+      .minHeight,
+    rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
+  };
   return {
-    appMargin: {
+    root: {
+      display: 'block',
+      position: 'fixed',
+      height: '100%',
+      width: '100%',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      overflow: 'hidden',
+    },
+    rootContainer: {
+      overflow: 'auto',
+      height: '100%',
+      width: '100%',
+      paddingBottom: appStyle.rowHeight
+    },
+    rootContainerSmall: {
+      overflow: 'auto',
+      height: '100%',
+      width: '100%',
+      paddingBottom: appStyle.rowHeightSmall
+    },
+    rootContainerNavigationToggled: {
+      overflow: 'auto',
+      height: '100%',
+      width: '100%',
+      bottom: 0,
+    },
+    margin: {
       margin: appStyle.margin,
     },
-    playgroundPaper: {
-      margin: appStyle.margin,
-      marginTop:0,
-      marginBottom: appStyle.margin*10,
+    container: {
+      overflow: 'hidden',
+      height: '100%',
+      width: '100%',
     },
-    // padding: {
-    //   padding: `0 ${theme.spacing.unit * 2}px`,
-    // },
+    scroller: {
+      overflow: 'scroll',
+      height: '100%',
+      width: '100%',
+    },
+    content: {
+      overflow: 'visible',
+      height: '100%',
+      width: '100%',
+    }
   }
 };
 
 class Index extends Component {
-  editorIds=getEditorIds();
-  storeUnsubscribe=null;
-  
-  sendNotification=(message, autoHideDuration) => {
+  editorIds = getEditorIds();
+  storeUnsubscribe = null;
+
+  sendNotification = (message, autoHideDuration) => {
     this.setState({
       notification: {
         message: message,
@@ -43,57 +84,57 @@ class Index extends Component {
       }
     });
   };
-  logoClick=() => {
+  logoClick = () => {
     this.setState({
       isTopNavigationToggled: !this.state.isTopNavigationToggled,
     });
   };
-  
-  changeShowNetworkState=showNetworkState => {
+
+  changeShowNetworkState = showNetworkState => {
     this.setState({
       showNetworkState: showNetworkState
     });
   };
-  
-  handleShareMenu=event => {
+
+  handleShareMenu = event => {
     this.setState({
       shareAnchorEl: event.currentTarget,
     });
   };
-  
-  handleShareClose=() => {
+
+  handleShareClose = () => {
     this.setState({shareAnchorEl: null});
   };
-  
-  shareClick=e => {
+
+  shareClick = e => {
     e.preventDefault();
     //todo log in firebase
-    const {shareUrl}=this.state;
+    const {shareUrl} = this.state;
     shareUrl && window.open(shareUrl, '_blank');
     this.handleShareClose();
   };
-  
-  shareClipboardClick=(/*link*/) => {
+
+  shareClipboardClick = (/*link*/) => {
     this.sendNotification('Pastebin URL for sharing has been copied' +
       ' to your clipboard.');
     this.handleShareClose();
   };
-  
-  chatClick=() => {
+
+  chatClick = () => {
     this.setState((prevState) => ({
         isChatToggled: !prevState.isChatToggled,
         chatTitle: prevState.isChatToggled ? 'Open Chat' : 'Close Chat',
       })
     );
   };
-  
-  isNetworkOk=() => {
-    const {isConnected, isOnline}=this.state;
+
+  isNetworkOk = () => {
+    const {isConnected, isOnline} = this.state;
     return isConnected && isOnline;
   };
-  
-  getNetworkStateMessage=() => {
-    const {isConnected, isOnline}=this.state;
+
+  getNetworkStateMessage = () => {
+    const {isConnected, isOnline} = this.state;
     return `${
       isOnline && isConnected ? 'Update' : 'Error'
       }: ${
@@ -101,28 +142,28 @@ class Index extends Component {
       } ${
       isConnected ? 'Pastebin in sync.' : 'Pastebin not in sync.'}`;
   };
-  
-  onCopy=() => {
+
+  onCopy = () => {
     this.setState({copied: true});
   };
-  
-  switchThemeDispatch=(store, themeType, switchTheme) => {
+
+  switchThemeDispatch = (store, themeType, switchTheme) => {
     return () => {
       switchTheme();
       store.dispatch(switchMonacoTheme(themeType))
     };
   };
-  
-  resetGridLayout=() => {
+
+  resetGridLayout = () => {
   };
-  setResetGridLayout=resetGridLayout => {
-    this.resetGridLayout=resetGridLayout;
+  setResetGridLayout = resetGridLayout => {
+    this.resetGridLayout = resetGridLayout;
   };
-  resetLayoutClick=() => {
+  resetLayoutClick = () => {
     this.resetGridLayout();
   };
-  
-  state={
+
+  state = {
     isTopNavigationToggled: false,
     copied: false,
     onCopy: this.onCopy,
@@ -146,52 +187,57 @@ class Index extends Component {
     chatClick: this.chatClick,
     resetLayoutClick: this.resetLayoutClick,
   };
-  
-  resize=() => {
-  };
-  
-  resizePlayground=() => {
-    this.resize();
-  };
-  
-  getResizePlayground=() => {
-    return this.resizePlayground;
-  };
-  setResizePlayground=resize => {
-    this.resize=resize || this.resize;
-  };
-  
+
   render() {
-    const {store}=this.context;
+    const {store} = this.context;
     const {
       classes,
-      url, isSwitchThemeToggled, themeType, switchTheme
-    }=this.props;
+      url, isSwitchThemeToggled, themeType, switchTheme, minPastebinHeight
+    } = this.props;
     const {
+      isTopNavigationToggled,
       authUser, isChatToggled, chatClick, chatTitle, isNetworkOk
-    }=this.state;
-    const activateChat=!!authUser;
-    const switchThemeDispatcher=
+    } = this.state;
+    const activateChat = !!authUser;
+    const switchThemeDispatcher =
       this.switchThemeDispatch(store, themeType, switchTheme);
+
+    const rootContainerClassname = isTopNavigationToggled ?
+      classes.rootContainerNavigationToggled :
+      window.innerWidth > 600 ? classes.rootContainer
+        : classes.rootContainerSmall;
+
+    const rootContainerBottomMargin = isTopNavigationToggled ? 0 :
+      window.innerWidth > 600 ? appStyle.rowHeight
+        : appStyle.rowHeightSmall;
+
+    const heightAdjust = isTopNavigationToggled ? 0 : rootContainerBottomMargin - appStyle.margin * 2;
+
+    const onHeight = (node, heightAdjust) => {
+      const minHeight = minPastebinHeight || 600;
+      const newHeight = window.innerHeight - heightAdjust;
+      return Math.max(minHeight, newHeight);
+    };
     return (
-      <div style={{heigth:'100%', overflow: 'hidden'}}>
+      <div className={classes.root}>
         <NotificationCenter {...this.state}/>
-        <TopNavigationBar url={url} {...this.state}
+        <TopNavigationBar {...this.state}
+                          url={url}
                           switchTheme={switchThemeDispatcher}
                           isSwitchThemeToggled={isSwitchThemeToggled}
-                          getResizePlayground={this.getResizePlayground}
         />
-        <Pastebin editorIds={this.editorIds}
-                  setResetGridLayout={this.setResetGridLayout}
-                  getResizePlayground={this.getResizePlayground}
-                  appClasses={classes}
-                  appStyle={{...appStyle}}
-        />
-        <Playground editorIds={this.editorIds}
-                    getResize={this.setResizePlayground}
-                    appClasses={classes}
-                    appStyle={{...appStyle}}
-        />
+        <div className={rootContainerClassname}>
+          <div className={classes.scroller}>
+            <Pastebin editorIds={this.editorIds}
+                      setResetGridLayout={this.setResetGridLayout}
+                      appClasses={classes}
+                      appStyle={{...appStyle}}
+                      measureBeforeMount={true}
+                      onHeight={onHeight}
+                      heightAdjust={heightAdjust}
+            />
+          </div>
+        </div>
         {
           activateChat &&
           <Chat dispatch={store.dispatch} isChatToggled={isChatToggled}
@@ -202,40 +248,40 @@ class Index extends Component {
       </div>
     );
   }
-  
+
   componentDidMount() {
-    const {store}=this.context;
-    this.storeUnsubscribe=store.subscribe(() => {
-      const isConnected=store.getState().firecoReducer.isConnected;
+    const {store} = this.context;
+    this.storeUnsubscribe = store.subscribe(() => {
+      const isConnected = store.getState().firecoReducer.isConnected;
       if (this.state.isConnected !== isConnected) {
         this.setState({isConnected: isConnected});
       }
-      
-      const pastebinId=store.getState().pastebinReducer.pastebinId;
+
+      const pastebinId = store.getState().pastebinReducer.pastebinId;
       if (this.state.pastebinId !== pastebinId) {
-        const {url}=this.props;
+        const {url} = this.props;
         this.setState({
           pastebinId: pastebinId,
           shareUrl: getShareUrl(url, pastebinId)
         });
       }
-      
-      const authUser=store.getState().firecoReducer.authUser;
+
+      const authUser = store.getState().firecoReducer.authUser;
       if (this.state.authUser !== authUser) {
         this.setState({
           authUser: authUser,
         });
       }
     });
-    
-    this.online$=online$();
+
+    this.online$ = online$();
     this.online$.subscribe(isOnline => {
       if (this.state.isOnline !== isOnline) {
         this.setState({isOnline: isOnline});
       }
     });
   }
-  
+
   componentWillUnmount() {
     if (this.storeUnsubscribe) {
       this.storeUnsubscribe();
@@ -244,13 +290,13 @@ class Index extends Component {
   }
 }
 
-Index.propTypes={
+Index.propTypes = {
   url: PropTypes.string.isRequired,
   classes: PropTypes.object.isRequired,
   switchTheme: PropTypes.func.isRequired,
   themeType: PropTypes.string.isRequired,
 };
-Index.contextTypes={
+Index.contextTypes = {
   store: PropTypes.object.isRequired
 };
 

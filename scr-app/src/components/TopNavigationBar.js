@@ -1,4 +1,3 @@
-// @flow weak
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import {withStyles} from 'material-ui/styles';
@@ -16,35 +15,35 @@ import MoreVertIcon from 'material-ui-icons/MoreVert';
 import Menu, {MenuItem} from 'material-ui/Menu';
 import {CopyToClipboard} from "react-copy-to-clipboard";
 
-let iconStyle={};
-const lightBulbIconStyle={};
-const scrSvg={};
+let iconStyle = {};
+const lightBulbIconStyle = {};
+const scrSvg = {};
 
-const styles=(theme) => {
-    iconStyle={
-      fontSize: parseInt(`${theme.typography.fontSize * 1.75}`)
+const styles = (theme) => {
+    iconStyle = {
+      fontSize: Math.floor(theme.typography.fontSize * 1.75)
     };
-    
-    lightBulbIconStyle.light={
+
+    lightBulbIconStyle.light = {
       color: theme.palette.action.active,
       fontSize: iconStyle.fontSize,
     };
-    lightBulbIconStyle.dark={
+    lightBulbIconStyle.dark = {
       color: theme.palette.secondary.main,
       fontSize: iconStyle.fontSize,
     };
-    
-    scrSvg.sticky={
+
+    scrSvg.sticky = {
       color: theme.palette.secondary.main,
       secondaryColor: theme.palette.background.paper,
       fontSize: theme.typography.fontSize * 2,
     };
-    scrSvg.logo={
+    scrSvg.logo = {
       color: theme.palette.action.active,
       secondaryColor: theme.palette.background.default,
       fontSize: theme.typography.fontSize * 3,
     };
-    
+
     return {
       scrIconSticky: {
         position: 'absolute',
@@ -66,41 +65,41 @@ const styles=(theme) => {
 ;
 
 class TopNavigationBar extends Component {
-  state={infoAnchorEl: null};
-  
-  handleInfoMenu=event => {
+  state = {infoAnchorEl: null};
+
+  handleInfoMenu = event => {
     this.setState({infoAnchorEl: event.currentTarget});
   };
-  
-  handleInfoClose=() => {
+
+  handleInfoClose = () => {
     this.setState({infoAnchorEl: null});
   };
-  
-  helpClick=() => {
+
+  helpClick = () => {
     window.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');
   };
-  
-  contactUsClick=() => {
+
+  contactUsClick = () => {
     window.open('mailto:contact@seecode.run', '_blank');
   };
-  
-  aboutClick=() => {
+
+  aboutClick = () => {
     window.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');
   };
-  
-  repoClick=() => {
+
+  repoClick = () => {
     window.open('https://github.com/devuxd/SeeCodeRun', '_blank');
   };
-  
-  onClick=callback => {
+
+  onClick = callback => {
     return () => {
       callback && callback();
       this.handleInfoClose();
     };
   };
-  resizePlayground=() => {
+  resizePlayground = () => {
   };
-  
+
   render() {
     const {
       classes, isSwitchThemeToggled, switchTheme,
@@ -110,24 +109,24 @@ class TopNavigationBar extends Component {
       shareAnchorEl, handleShareMenu, handleShareClose,
       shareUrl, shareClick, shareClipboardClick,
       resetLayoutClick,
-    }=this.props;
-    const shareOpen=!!shareAnchorEl;
-    const {infoAnchorEl}=this.state;
-    const infoOpen=!!infoAnchorEl;
-    
-    let networkStateIcon=null;
+    } = this.props;
+    const shareOpen = !!shareAnchorEl;
+    const {infoAnchorEl} = this.state;
+    const infoOpen = !!infoAnchorEl;
+
+    let networkStateIcon = null;
     if (showNetworkState) {
-      const networkOk=isNetworkOk();
-      const networkMessage=getNetworkStateMessage();
+      const networkOk = isNetworkOk();
+      const networkMessage = getNetworkStateMessage();
       if (!networkOk) {
-        networkStateIcon=(
+        networkStateIcon = (
           <IconButton title={networkMessage} aria-label="Network State"
                       color="secondary">
             <CloudOffIcon style={iconStyle}/>
           </IconButton>);
       }
     }
-    
+
     return (isTopNavigationToggled ?
         <AppBar position="sticky" color="default">
           <IconButton title={"Show toolbar"}
@@ -250,19 +249,19 @@ class TopNavigationBar extends Component {
         </AppBar>
     );
   }
-  
-  componentDidMount() {
-    const {getResizePlayground}=this.props;
-    this.resizePlayground=getResizePlayground();
-    this.resizePlayground();
-  }
-  
-  componentDidUpdate() {
-    this.resizePlayground();
-  }
+
+  // componentDidMount() {
+  //   const {getResizePlayground}=this.props;
+  //   this.resizePlayground=getResizePlayground();
+  //   this.resizePlayground();
+  // }
+  //
+  // componentDidUpdate() {
+  //   this.resizePlayground();
+  // }
 }
 
-TopNavigationBar.propTypes={
+TopNavigationBar.propTypes = {
   isNetworkOk: PropTypes.func.isRequired,
   getNetworkStateMessage: PropTypes.func.isRequired,
   classes: PropTypes.object.isRequired,
