@@ -13,6 +13,8 @@ import LightbulbOutlineIcon from 'material-ui-icons/LightbulbOutline';
 import LightbulbIcon from './icons/Lightbulb';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 import Menu, {MenuItem} from 'material-ui/Menu';
+import { FormGroup, FormControlLabel } from 'material-ui/Form';
+import Checkbox from 'material-ui/Checkbox';
 import {CopyToClipboard} from "react-copy-to-clipboard";
 
 let iconStyle = {};
@@ -65,7 +67,15 @@ const styles = (theme) => {
 ;
 
 class TopNavigationBar extends Component {
-  state = {infoAnchorEl: null};
+  state = {
+    infoAnchorEl: null,
+    checkedLocked: false,
+    checkedJS: false,
+    checkedHTML: false,
+    checkedCSS: false,
+    checkedConsole: false,
+    checkedOutput: false,
+  };
 
   handleInfoMenu = event => {
     this.setState({infoAnchorEl: event.currentTarget});
@@ -98,20 +108,41 @@ class TopNavigationBar extends Component {
     };
   };
 
+  handleChange = name => event => {
+    this.setState({ [name]: event.target.checked });
+  };
+
+  getFinalUrl=shareUrl=>{
+    const {checkedLocked, checkedJS, checkedHTML, checkedCSS, checkedConsole, checkedOutput} =this.state;
+    if(shareUrl){
+      let query = `${
+        checkedLocked?'&locked':''
+      }${
+        checkedJS?'&js':''
+      }${checkedHTML?'&html':''}${checkedCSS?'&css':''}${checkedConsole?'&console':''}${checkedOutput?'&output':''}`;
+
+      if(query){
+        query=`?custom${query}`;
+      }
+
+      return shareUrl + query;
+    }
+    return null;
+  };
   render() {
     const {
       classes, themeType, switchTheme,
       isChatToggled, isTopNavigationToggled,
       logoClick, chatClick, chatTitle,
       showNetworkState, isNetworkOk, getNetworkStateMessage,
-      shareAnchorEl, handleShareMenu, handleShareClose,
-      shareUrl, shareClick, shareClipboardClick,
+      shareAnchorEl, shareUrl, handleShareMenu, handleShareClose,
+      shareClick, shareClipboardClick,
       resetLayoutClick,
     } = this.props;
     const shareOpen = !!shareAnchorEl;
     const {infoAnchorEl} = this.state;
     const infoOpen = !!infoAnchorEl;
-
+    const finalUrl= this.getFinalUrl(shareUrl);
     let networkStateIcon = null;
     if (showNetworkState) {
       const networkOk = isNetworkOk();
@@ -173,19 +204,96 @@ class TopNavigationBar extends Component {
                 open={shareOpen}
                 onClose={handleShareClose}
               >
-                <MenuItem onClick={shareClick}>{
-                  shareUrl ? <a href={shareUrl} target="_blank"
+                <MenuItem className={classes.centered}
+                          onClick={finalUrl &&shareClick}
+                >{
+                  finalUrl ? <a href={finalUrl} target="_blank"
                                 onClick={e => e.preventDefault()}
                   >
-                    {shareUrl}
+                    {finalUrl}
                   </a> : 'No Pastebin to Share'
                 }
+
                 </MenuItem>
                 {
-                  shareUrl &&
+                  finalUrl &&
+                  <MenuItem className={classes.centered}>
+                    <FormGroup row>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={this.state.checkedLocked}
+                            onChange={this.handleChange('checkedLocked')}
+                            value="checkedLocked"
+                            color="primary"
+                          />
+                        }
+                        label="Locked"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={this.state.checkedJS}
+                            onChange={this.handleChange('checkedJS')}
+                            value="checkedJS"
+                            color="primary"
+                          />
+                        }
+                        label="JS"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={this.state.checkedHTML}
+                            onChange={this.handleChange('checkedHTML')}
+                            value="checkedHTML"
+                            color="primary"
+                          />
+                        }
+                        label="HTML"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={this.state.checkedCSS}
+                            onChange={this.handleChange('checkedCSS')}
+                            value="checkedCSS"
+                            color="primary"
+                          />
+                        }
+                        label="CSS"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={this.state.checkedConsole}
+                            onChange={this.handleChange('checkedConsole')}
+                            value="checkedConsole"
+                            color="primary"
+                          />
+                        }
+                        label="Console"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={this.state.checkedOutput}
+                            onChange={this.handleChange('checkedOutput')}
+                            value="checkedOutput"
+                            color="primary"
+                          />
+                        }
+                        label="Output"
+                      />
+                    </FormGroup>
+                  </MenuItem>
+              }
+
+                {
+                  finalUrl &&
                   <CopyToClipboard
-                    onCopy={() => shareClipboardClick(shareUrl)}
-                    text={shareUrl}>
+                    onCopy={() => shareClipboardClick(finalUrl)}
+                    text={finalUrl}>
                     <MenuItem className={classes.centered}>
                       Copy to Clipboard
                     </MenuItem>
