@@ -4,6 +4,7 @@ import {Responsive} from 'react-grid-layout';
 import Paper from 'material-ui/Paper';
 import Button from 'material-ui/Button';
 import AddIcon from 'material-ui-icons/Add';
+import DragHandleIcon from 'material-ui-icons/DragHandle'
 import {withStyles} from 'material-ui/styles';
 import Editor from './Editor';
 import Playground from './Playground';
@@ -96,22 +97,23 @@ const styles = theme => ({
     float: 'right',
     margin: theme.spacing.unit,
   },
+  draggable: {
+    position: 'absolute',
+    zIndex: theme.zIndex.snackbar,
+    right: 3,
+    top: 3,
+    color: 'rgba(30, 144, 255, 0.7)', // same as utils/react-grid-layout-scr-theme.css
+    fontSize: theme.spacing.unit * 2,
+    cursor: 'grab',
+    active: {
+      cursor: 'grabbing',
+    }
+  }
 });
 
 class Pastebin extends Component {
   state = {
-    gridLayouts: {...defaultGridLayouts},
-    monaco: null,
-    editors: {
-      scriptEditor: null,
-      documentEditor: null,
-      styleEditor: null
-    },
-    navigatorDecorations: {
-      scriptEditor: null,
-      documentEditor: null,
-      styleEditor: null
-    }
+    gridLayouts: _.cloneDeep(defaultGridLayouts),
   };
 
   getCurrentGridLayouts = () => {
@@ -125,7 +127,8 @@ class Pastebin extends Component {
     currentGridLayouts = gridLayouts;
   };
 
-  resetGridLayout = () => {
+
+  resetGridLayout = layout => {
     const hack = {...defaultGridLayouts};
     hack[currentBreakPoint] = [...hack[currentBreakPoint], {
       i: 'dummy',
@@ -136,7 +139,7 @@ class Pastebin extends Component {
     }];
     this.restoreGridLayouts(hack);
     setTimeout(() => {
-      this.restoreGridLayouts({...defaultGridLayouts});
+      this.restoreGridLayouts(layout || {...defaultGridLayouts});
     }, 0);
 
   };
@@ -152,12 +155,31 @@ class Pastebin extends Component {
 
     layout[C2I.scriptContainer].minH = 2;
     layout[C2I.debugContainer].minH = 2;
+    layout[C2I.consoleContainer].minH = 2;
+    layout[C2I.playgroundContainer].minH = 2;
 
     layout[C2I.consoleContainer].minW = layout[C2I.consoleContainer].w;
     layout[C2I.playgroundContainer].minW = layout[C2I.playgroundContainer].w;
 
     layout[C2I.scriptContainer].maxW = layout[C2I.debugContainer].x - 1;
     layout[C2I.cssContainer].y = layout[C2I.htmlContainer].y + layout[C2I.htmlContainer].h;
+  };
+
+  formatLayoutHeight = (layout, sourceIndex) => {
+    if (layout[sourceIndex].h
+      + layout[C2I.consoleContainer].h
+      + layout[C2I.playgroundContainer].h > grid.rows[currentBreakPoint]) {
+      if (layout[C2I.consoleContainer].h < 3) {
+        layout[sourceIndex].h =
+          grid.rows[currentBreakPoint] - layout[C2I.consoleContainer].h - layout[C2I.debugContainer].h;
+      } else {
+        layout[C2I.consoleContainer].h =
+          grid.rows[currentBreakPoint] - layout[sourceIndex].h - layout[C2I.playgroundContainer].h;
+      }
+    } else {
+      layout[C2I.consoleContainer].h =
+        grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - layout[C2I.playgroundContainer].h;
+    }
   };
 
   formatLayout = (layout, oldItem, newItem) => {
@@ -170,6 +192,7 @@ class Pastebin extends Component {
       layout[C2I.htmlContainer].w = newW;
       layout[C2I.cssContainer].w = newW;
 
+      this.formatLayoutHeight(layout, C2I.scriptContainer);
       if (layout[C2I.scriptContainer].h > layout[C2I.htmlContainer].h) {
         layout[C2I.cssContainer].h = layout[C2I.scriptContainer].h - layout[C2I.htmlContainer].h;
       } else {
@@ -182,17 +205,30 @@ class Pastebin extends Component {
     }
 
     if (newItem.i === 'htmlContainer' || newItem.i === 'cssContainer') {
+
       if (newItem.i === 'cssContainer') {
-        const newH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
+        let newH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
+        if (newH + layout[C2I.consoleContainer].h + layout[C2I.playgroundContainer].h > grid.rows[currentBreakPoint]) {
+          if (layout[C2I.consoleContainer].h < 3) {
+            layout[C2I.cssContainer].h = layout[C2I.scriptContainer].h - layout[C2I.htmlContainer].h;
+            newH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
+          }
+        }
         layout[C2I.scriptContainer].h = newH;
         layout[C2I.debugContainer].h = newH;
-        // layout[C2I.cssContainer].w = Math.min(layout[C2I.cssContainer].w, grid.cols[currentBreakPoint]- layout[C2I.scriptContainer].w - layout[C2I.debugContainer].w)
+        this.formatLayoutHeight(layout, C2I.scriptContainer);
         layout[C2I.htmlContainer].w = layout[C2I.cssContainer].w;
 
       } else {
-        const newH = layout[C2I.scriptContainer].h - layout[C2I.htmlContainer].h || 1;
-        layout[C2I.cssContainer].h = newH;
         layout[C2I.cssContainer].w = layout[C2I.htmlContainer].w;
+
+        const newH = layout[C2I.scriptContainer].h - layout[C2I.htmlContainer].h;
+        if (newH > 0) {
+          layout[C2I.cssContainer].h = newH;
+        } else {
+          layout[C2I.htmlContainer].h = layout[C2I.scriptContainer].h - layout[C2I.cssContainer].h;
+        }
+
       }
       layout[C2I.cssContainer].y = layout[C2I.htmlContainer].y + layout[C2I.htmlContainer].h;
       layout[C2I.scriptContainer].h = layout[C2I.cssContainer].h + layout[C2I.htmlContainer].h;
@@ -217,14 +253,16 @@ class Pastebin extends Component {
       layout[C2I.debugContainer].w =
         grid.cols[currentBreakPoint] - (layout[C2I.scriptContainer].w + layout[C2I.htmlContainer].w);
 
+      layout[C2I.scriptContainer].h = layout[C2I.debugContainer].h;
+      this.formatLayoutHeight(layout, C2I.scriptContainer);
+      layout[C2I.debugContainer].h = layout[C2I.scriptContainer].h;
+
       if (layout[C2I.debugContainer].h > layout[C2I.htmlContainer].h) {
         layout[C2I.cssContainer].h = layout[C2I.debugContainer].h - layout[C2I.htmlContainer].h;
       } else {
         layout[C2I.htmlContainer].h = layout[C2I.htmlContainer].h - 1;
         layout[C2I.cssContainer].h = 1;
       }
-
-      layout[C2I.scriptContainer].h = layout[C2I.debugContainer].h;
 
     }
 
@@ -237,16 +275,12 @@ class Pastebin extends Component {
         sourceContainer = layout[C2I.consoleContainer];
         targetContainer = layout[C2I.playgroundContainer];
       }
-      if (newH) {
+      if (newH > 1) {
         targetContainer.h = newH;
       } else {
         sourceContainer.h = grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - targetContainer.h;
       }
-
-    } else {
-      layout[C2I.playgroundContainer].h = grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - layout[C2I.consoleContainer].h;
     }
-
     this.layoutFormatInvariant(layout);
   };
 
@@ -268,7 +302,6 @@ class Pastebin extends Component {
   };
 
   formatDrag = layout => {
-    // console.log('itemCallback', itemCallback);
     this.layoutFormatInvariant(layout);
   };
 
@@ -284,20 +317,23 @@ class Pastebin extends Component {
 
   onLayoutChange = (newLayout, newGridLayouts) => {
     currentGridLayouts = newGridLayouts;
-    this.resizePlayground();
   };
 
-  resizePlayground = () => {
+  onBreakpointChange = (newBreakpoint /*, newCols*/) => {
+    currentBreakPoint = newBreakpoint;
   };
 
   render() {
     const {appClasses, classes, appStyle, editorIds, width, height} = this.props;
-    const rowHeight = Math.floor(height / grid.rows.lg);
+    const rowHeight = Math.floor(height / grid.rows[currentBreakPoint]);
     const {gridLayouts} = this.state;
     const rowHeights = {
-      lg: rowHeight - appStyle.margin
+      [currentBreakPoint]: rowHeight - appStyle.margin
     };
-
+    // console.log(document.querySelectorAll('.react-grid-item .react-resizable-handle').forEach(handle=>{
+    //   console.log(handle);
+    //   handle.style.innerHTML ='';
+    // }));
     return (
       <div className={appClasses.content}>
         <Responsive
@@ -309,14 +345,16 @@ class Pastebin extends Component {
           autoSize={true}
           margin={[appStyle.margin, appStyle.margin]}
           containerPadding={[appStyle.margin, appStyle.margin]}
-          rowHeight={rowHeights.lg}
+          rowHeight={rowHeights[currentBreakPoint]}
           onResizeStart={this.onResizeStart}
           onResize={this.onResize}
           onResizeStop={this.onResizeStop}
+          draggableHandle={`.${classes.draggable}`}
           onDragStart={this.onDragStart}
           onDrag={this.onDrag}
           onDragStop={this.onDragStop}
           onLayoutChange={this.onLayoutChange}
+          onBreakpointChange={this.onBreakpointChange}
         >
           <Paper key="scriptContainer">
             <Editor editorId={editorIds['js']} observeMouseEvents/>
@@ -328,183 +366,45 @@ class Pastebin extends Component {
             <Editor editorId={editorIds['css']}/>
           </Paper>
           <Paper key="debugContainer" className={appClasses.container}>
-            DEBUG
             <Button variant="fab" color="primary" aria-label="add"
                     className={classes.button}>
               <AddIcon/>
             </Button>
           </Paper>
           <Paper key="consoleContainer" className={appClasses.container}>
+            <DragHandleIcon className={classes.draggable}/>
             <div className={appClasses.scroller}>
               <div className={appClasses.content}>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <br/> <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <br/> <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <br/> <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <br/> <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <br/> <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <br/> <span>CONSOLE</span> <span>CONSOLE</span>
-                <br/>
-                <br/>
-                <br/>
-                <br/> <span>CONSOLE</span>
-                <br/>
-                <br/>
-                <br/>
-                <br/> <span>CONSOLE</span>
-                <br/>
-                <br/>
-                <br/>
-                <br/> <span>CONSOLE</span>
-                <br/>
-                <br/>
-                <br/>
-                <br/> <span>CONSOLE</span>
-                <br/>
-                <br/>
-                <br/>
-                <br/>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-                <span>CONSOLE</span>
-
               </div>
             </div>
+
           </Paper>
           <Paper key="playgroundContainer"
                  className={appClasses.container}
           >
+            <DragHandleIcon className={classes.draggable}/>
             <div className={appClasses.scroller}>
               <Playground editorIds={editorIds}
-                          appClasses={classes}
+                          appClasses={appClasses}
                           appStyle={appStyle}
               />
             </div>
           </Paper>
+
         </Responsive>
       </div>
     );
   }
 
   componentDidMount() {
-    const {setResetGridLayout, getResizePlayground} = this.props;
-    setResetGridLayout(this.resetGridLayout);
+    const {setGridLayoutCallbacks} = this.props;
+    setGridLayoutCallbacks(this.resetGridLayout, this.getCurrentGridLayouts);
     this.context.store.dispatch(
       pastebinConfigureLayout(
         this.restoreGridLayouts,
         this.getCurrentGridLayouts
       )
     );
-    // this.resizePlayground=getResizePlayground();
-    // this.resizePlayground();
   }
 }
 
@@ -515,7 +415,7 @@ Pastebin.contextTypes = {
 Pastebin.propTypes = {
   classes: PropTypes.object.isRequired,
   editorIds: PropTypes.object.isRequired,
-  setResetGridLayout: PropTypes.func.isRequired,
+  setGridLayoutCallbacks: PropTypes.func.isRequired,
 };
 
 export default withStyles(styles)(SizeProvider(Pastebin));

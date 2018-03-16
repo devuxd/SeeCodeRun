@@ -62,19 +62,24 @@ const MuiThemeProviderComponent=class extends Component {
     isSwitchThemeToggled: false,
   };
   
-  switchTheme=() => {
+  switchTheme=(aThemeType) => {
+    if(aThemeType && themeTypes[aThemeType]){
+      this.setState({
+        themeType: themeTypes[aThemeType],
+      });
+      return;
+    }
+
     const {themeType}=this.state;
     switch (themeType) {
       case themeTypes.lightTheme:
         this.setState({
           themeType: themeTypes.darkTheme,
-          isSwitchThemeToggled: true,
         });
         break;
       case themeTypes.darkTheme:
         this.setState({
           themeType: themeTypes.lightTheme,
-          isSwitchThemeToggled: false,
         });
         break;
       default:
@@ -84,13 +89,12 @@ const MuiThemeProviderComponent=class extends Component {
   
   render() {
     const {ComponentProps, Component}=this.props;
-    const {isSwitchThemeToggled, themeType}=this.state;
+    const {themeType}=this.state;
     return (
       <MuiThemeProvider theme={themes[themeType]}>
         <Reboot/>
         <Component
           {...ComponentProps}
-          isSwitchThemeToggled={isSwitchThemeToggled}
           themeType={themeType}
           switchTheme={this.switchTheme}
         />

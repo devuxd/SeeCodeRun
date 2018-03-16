@@ -9,6 +9,7 @@ import 'jquery-ui/ui/widgets/resizable';
 import classnames from 'classnames';
 import React, {Component} from 'react';
 import localStorage from 'store';
+import _ from 'lodash';
 import {withStyles} from 'material-ui/styles';
 import ListSubheader from 'material-ui/List/ListSubheader';
 import List, {ListItem, ListItemSecondaryAction, ListItemText} from 'material-ui/List';
@@ -91,6 +92,7 @@ class Chat extends Component {
 
   prevUsers = null;
   userSuggestions = null;
+  userColors = {};
 
   firecoChat = null;
   SERVER_TIMESTAMP = null;
@@ -175,6 +177,8 @@ class Chat extends Component {
         } else {
           if (elapsedTimeInMs < 600000) {//tenMinInMs
             formattedTime = 'some minutes ago...'
+          } else {
+            formattedTime = `today ${formattedTime}`;
           }
         }
       }
@@ -183,8 +187,9 @@ class Chat extends Component {
     return formattedTime;
   }
 
-  onFirecoActive = (firecoChat, SERVER_TIMESTAMP, chatUserIdLocalStoragePath) => {
+  onFirecoActive = (firecoChat, firecoUsers, SERVER_TIMESTAMP, chatUserIdLocalStoragePath) => {
     this.firecoChat = firecoChat;
+    this.firecoUsers = firecoUsers;
     this.SERVER_TIMESTAMP = SERVER_TIMESTAMP;
     this.chatUserIdLocalStoragePath = chatUserIdLocalStoragePath;
     this.listenToChatUsersData();
@@ -222,7 +227,9 @@ class Chat extends Component {
     } else {
       if (chatUserId) {
         if (users[chatUserId].chatUserName !== chatUserName) {
-          this.firecoChat.child(`users/${chatUserId}`).set({chatUserName: chatUserName}, error => {
+          this.firecoUsers.child(`${chatUserId}`).update({
+            chatUserName: chatUserName,
+          }, error => {
             this.setState({
               chatAvatarWarning: null,
               chatMessageWarning: null,
@@ -231,7 +238,13 @@ class Chat extends Component {
           });
         }
       } else {
-        const firecoChatUserPushPromise = this.firecoChat.child('users').push({chatUserName: chatUserName});
+        const firecoChatUserPushPromise = this.firecoUsers.push({
+          chatUserName: chatUserName,
+          color: this.getValidColor(),
+          layout: {
+            creationTimestamp: this.SERVER_TIMESTAMP,
+          }
+        });
         this.setUserId(firecoChatUserPushPromise.key);
         firecoChatUserPushPromise.catch(error => {
           this.setUserId(null);
@@ -251,44 +264,75 @@ class Chat extends Component {
     }
   };
 
+  getValidColor = (color = randomColor()) => {
+    let tries = 100;
+    while (--tries && this.userColors[color]) {
+      color = randomColor();
+    }
+    return color;
+  };
+
+  updateLayout = (layout) => {
+    if (layout) {
+      const {
+        themeType, switchTheme,
+        isChatToggled, chatClick, isTopNavigationToggled, logoClick, currentLayout, resetLayoutClick
+      } = this.props;
+      if (chatClick && layout.isChatToggled !== isChatToggled) {
+        chatClick();
+      }
+      if (logoClick && layout.isTopNavigationToggled !== isTopNavigationToggled) {
+        logoClick();
+      }
+      const grid = currentLayout && currentLayout();
+      if (resetLayoutClick && grid && !_.isEqual(layout.grid, grid)) {
+        //todo is still having an outdated version
+        // resetLayoutClick(layout.grid);
+      }
+
+      if (switchTheme && layout.themeType && layout.themeType !== themeType) {
+        switchTheme(layout.themeType);
+      }
+
+      if (this.chatEl && layout.chatBoundingClientRect) {
+        if (layout.chatBoundingClientRect.left > window.innerWidth
+          || layout.chatBoundingClientRect.top > window.innerHeight) {
+          layout.chatBoundingClientRect.left = defaultChatStyle.left;
+          layout.chatBoundingClientRect.top = defaultChatStyle.top;
+          layout.chatBoundingClientRect.bottom = defaultChatStyle.bottom;
+        }
+        this.setState({
+          ...layout.chatBoundingClientRect
+        });
+      }
+    }
+  };
+
   listenToChatUsersData = () => {
-    if (!this.firecoChat) {
-      console.log('this.firecoChat must be set');
+    if (!this.firecoChat || !this.firecoUsers) {
+      console.log('this.firecoChat and this.firecoUsers must be set');
       return;
     }
 
     const chatUserId = localStorage.get(this.chatUserIdLocalStoragePath);
     if (chatUserId) {
       this.setUserId(chatUserId, false);
-      this.firecoChat
-        .child(`users/${chatUserId}/layout`)
-        .once('value', snapshot => {
-          if (snapshot.exists()) {
-            const layout = snapshot.val();
-            const {isChatToggled, chatClick} = this.props;
-            if (chatClick && layout.isChatToggled !== isChatToggled) {
-              chatClick();
-            }
-            if (this.chatEl && layout.chatBoundingClientRect) {
-              if (layout.chatBoundingClientRect.left > window.innerWidth
-                || layout.chatBoundingClientRect.top > window.innerHeight) {
-                layout.chatBoundingClientRect.left = defaultChatStyle.left;
-                layout.chatBoundingClientRect.top = defaultChatStyle.top;
-                layout.chatBoundingClientRect.bottom = defaultChatStyle.bottom;
-              }
-              this.setState({
-                ...layout.chatBoundingClientRect
-              });
-            }
-          }
-        });
     }
 
     const pushUser = (users, snapshot) => {
       const data = snapshot.val();
-      data.color = randomColor();
       users[snapshot.key] = data;
+      if (this.userColors[data.color]) {
+        if (this.userColors[data.color] !== snapshot.key) {
+          this.firecoUsers.child(`${snapshot.key}`).update({color: this.getValidColor()});
+        }
+      } else {
+        this.userColors[data.color] = snapshot.key;
+      }
+
       if (this.state.chatUserId === snapshot.key) {
+        console.log('f', data.layout);
+        this.updateLayout(data.layout);
         this.setState({
           chatUserName: data.chatUserName || '',
         });
@@ -302,8 +346,7 @@ class Chat extends Component {
       this.setState({users: users});
     };
 
-    this.firecoChat
-      .child('users')
+    this.firecoUsers
       .once('value', snapshot => {
         let {users} = this.state;
         users = users ? {...users} : {};
@@ -313,11 +356,9 @@ class Chat extends Component {
         this.setState({users: users});
       });
 
-    this.firecoChat
-      .child('users')
+    this.firecoUsers
       .on('child_added', onChildData);
-    this.firecoChat
-      .child('users')
+    this.firecoUsers
       .on('child_changed', onChildData);
     //so far, users cannot be deleted
 
@@ -333,7 +374,8 @@ class Chat extends Component {
             key: snapshot.key,
             chatUserId: chatMessage.chatUserId,
             text: chatMessage.text,
-            timestamp: chatMessage.timestamp
+            timestamp: chatMessage.timestamp,
+            color: chatMessage.color
           }]
         }));
       });
@@ -362,7 +404,7 @@ class Chat extends Component {
     const inputLength = inputValue.length;
     let count = 0;
 
-    return inputLength === 0
+    const suggestions = inputLength === 0
       ? [...this.userSuggestions]
       : this.userSuggestions.filter(suggestion => {
         const keep =
@@ -373,6 +415,8 @@ class Chat extends Component {
         }
         return keep;
       });
+
+    return {suggestions: suggestions, isShowAll: !inputLength};
   };
 
   getChatUserSuggestion = suggestion => suggestion;
@@ -418,10 +462,10 @@ class Chat extends Component {
         this.drt = setTimeout(() => {
           $(this.chatEl).draggable();
           $(this.chatEl).resizable({
-            handles: "n, e, s, w, sw"
+            handles: "e, se, s, sw, w"
           });
           this.isDraggableAndResizable = true;
-        }, 2000);
+        }, 1500);
       }
     }
   };
@@ -553,6 +597,7 @@ class Chat extends Component {
     };
 
     this.chatPreHideLayout(isChatToggled/*, expanded*/);
+    isChatToggled && this.scrollToBottom();
 
     return (
       <div id="chatDiv" className={classnames(classes.chat, {
@@ -561,7 +606,7 @@ class Chat extends Component {
            style={chatCurrentStyle}
            ref={ref => this.makeDraggableAndResizable(ref)}>
         {
-          this.firecoChat &&
+          (this.firecoChat && this.firecoUsers) &&
           <List className={classes.root}
                 subheader={<li/>}
                 dense={true}
@@ -674,7 +719,7 @@ class Chat extends Component {
   }
 
   onDispose = () => {
-    const {isChatToggled} = this.props;
+    const {isTopNavigationToggled, themeType, isChatToggled, currentLayout} = this.props;
     const {chatUserId} = this.state;
     if (chatUserId && this.firecoChat && this.chatEl) {
       let elBoundingClientRect = this.preHideChatEl;
@@ -690,19 +735,24 @@ class Chat extends Component {
         height: elBoundingClientRect.height,
       };
 
-      //never used case
+      const newLayout = {
+        grid: currentLayout(),
+        isTopNavigationToggled: isTopNavigationToggled,
+        themeType: themeType,
+        isChatToggled: isChatToggled,
+      };
+
       if (!chatBoundingClientRect.left
         && !chatBoundingClientRect.right
         && !chatBoundingClientRect.top
         && !chatBoundingClientRect.height) {
-        return;
+        //never used case
+      } else {
+        newLayout.chatBoundingClientRect = chatBoundingClientRect;
       }
-      this.firecoChat
-        .child(`users/${chatUserId}/layout`)
-        .set({
-          isChatToggled: isChatToggled,
-          chatBoundingClientRect: chatBoundingClientRect,
-        }, error => {
+      this.firecoUsers
+        .child(`${chatUserId}/layout`)
+        .update(newLayout, error => {
           console.log(error);
         });
     }
@@ -719,7 +769,10 @@ class Chat extends Component {
   }
 
   scrollToBottom() {
-    (!this.ignoreChatListElScroll) && this.chatListEl && this.chatListEl.scrollIntoView({behavior: 'smooth'});
+    clearTimeout(this.scrollToBottomTimeout);
+    this.scrollToBottomTimeout = setTimeout(() => {
+      (!this.ignoreChatListElScroll) && this.chatListEl && this.chatListEl.scrollIntoView({behavior: 'smooth'});
+    }, 500);
   }
 
 }

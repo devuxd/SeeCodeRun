@@ -97,12 +97,10 @@ class TopNavigationBar extends Component {
       this.handleInfoClose();
     };
   };
-  resizePlayground = () => {
-  };
 
   render() {
     const {
-      classes, isSwitchThemeToggled, switchTheme,
+      classes, themeType, switchTheme,
       isChatToggled, isTopNavigationToggled,
       logoClick, chatClick, chatTitle,
       showNetworkState, isNetworkOk, getNetworkStateMessage,
@@ -205,7 +203,7 @@ class TopNavigationBar extends Component {
               onClick={switchTheme}
               title={"Switch light/dark theme"}
             >
-              {isSwitchThemeToggled ?
+              {themeType === 'darkTheme' ?
                 <LightbulbIcon {...lightBulbIconStyle.light}/>
                 : <LightbulbOutlineIcon style={iconStyle}/>
               }
@@ -249,16 +247,6 @@ class TopNavigationBar extends Component {
         </AppBar>
     );
   }
-
-  // componentDidMount() {
-  //   const {getResizePlayground}=this.props;
-  //   this.resizePlayground=getResizePlayground();
-  //   this.resizePlayground();
-  // }
-  //
-  // componentDidUpdate() {
-  //   this.resizePlayground();
-  // }
 }
 
 TopNavigationBar.propTypes = {

@@ -208,7 +208,8 @@ export const firecoChatEpic=(action$, store, {appManager}) =>
   action$.ofType(CHAT_MOUNTED)
     .zip(
       action$.ofType(
-        ACTIVATE_FIREPAD_FULFILLED
+        CONFIGURE_FIRECO_EDITORS_FULFILLED
+        //ACTIVATE_FIREPAD_FULFILLED // too early
       )
     )
     .mergeMap(actions =>{

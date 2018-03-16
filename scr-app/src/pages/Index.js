@@ -58,21 +58,28 @@ const styles = theme => {
       overflow: 'hidden',
       height: '100%',
       width: '100%',
+      margin: 0,
+      padding: 0,
     },
     scroller: {
       overflow: 'scroll',
       height: '100%',
       width: '100%',
+      margin: 0,
+      padding: 0,
     },
     content: {
       overflow: 'visible',
       height: '100%',
       width: '100%',
+      margin: 0,
+      padding: 0,
     }
   }
 };
 
 class Index extends Component {
+  prevThemeType = 'lightTheme';
   editorIds = getEditorIds();
   storeUnsubscribe = null;
 
@@ -108,7 +115,6 @@ class Index extends Component {
 
   shareClick = e => {
     e.preventDefault();
-    //todo log in firebase
     const {shareUrl} = this.state;
     shareUrl && window.open(shareUrl, '_blank');
     this.handleShareClose();
@@ -147,20 +153,29 @@ class Index extends Component {
     this.setState({copied: true});
   };
 
-  switchThemeDispatch = (store, themeType, switchTheme) => {
-    return () => {
-      switchTheme();
-      store.dispatch(switchMonacoTheme(themeType))
-    };
-  };
+  // switchThemeDispatch = (store, themeType, switchTheme) => {
+  //   return () => {
+  //     switchTheme();
+  //
+  //   };
+  // };
 
   resetGridLayout = () => {
   };
-  setResetGridLayout = resetGridLayout => {
-    this.resetGridLayout = resetGridLayout;
+  getCurrentGridLayout = () => {
   };
-  resetLayoutClick = () => {
-    this.resetGridLayout();
+
+  setGridLayoutCallbacks = (resetGridLayout, getCurrentGridLayout) => {
+    this.resetGridLayout = resetGridLayout;
+    this.getCurrentGridLayout = getCurrentGridLayout;
+  };
+
+  currentLayout = () => {
+    return this.getCurrentGridLayout();
+  };
+
+  resetLayoutClick = (layout) => {
+    this.resetGridLayout(layout);
   };
 
   state = {
@@ -188,19 +203,26 @@ class Index extends Component {
     resetLayoutClick: this.resetLayoutClick,
   };
 
+  componentWillReceiveProps(nextProps) {
+    const {themeType} = nextProps;
+    if (this.prevThemeType !== themeType) {
+      this.prevThemeType = themeType;
+      const {store} = this.context;
+      store.dispatch(switchMonacoTheme(themeType));
+    }
+  }
+
   render() {
     const {store} = this.context;
     const {
       classes,
-      url, isSwitchThemeToggled, themeType, switchTheme, minPastebinHeight
+      url, themeType, switchTheme, minPastebinHeight
     } = this.props;
     const {
       isTopNavigationToggled,
       authUser, isChatToggled, chatClick, chatTitle, isNetworkOk
     } = this.state;
     const activateChat = !!authUser;
-    const switchThemeDispatcher =
-      this.switchThemeDispatch(store, themeType, switchTheme);
 
     const rootContainerClassname = isTopNavigationToggled ?
       classes.rootContainerNavigationToggled :
@@ -223,26 +245,36 @@ class Index extends Component {
         <NotificationCenter {...this.state}/>
         <TopNavigationBar {...this.state}
                           url={url}
-                          switchTheme={switchThemeDispatcher}
-                          isSwitchThemeToggled={isSwitchThemeToggled}
+                          themeType={themeType}
+                          switchTheme={switchTheme}
+
         />
         <div className={rootContainerClassname}>
           <div className={classes.scroller}>
-            <Pastebin editorIds={this.editorIds}
-                      setResetGridLayout={this.setResetGridLayout}
-                      appClasses={classes}
-                      appStyle={{...appStyle}}
-                      measureBeforeMount={true}
-                      onHeight={onHeight}
-                      heightAdjust={heightAdjust}
+            <Pastebin
+              editorIds={this.editorIds}
+              setGridLayoutCallbacks={this.setGridLayoutCallbacks}
+              appClasses={classes}
+              appStyle={{...appStyle}}
+              measureBeforeMount={true}
+              onHeight={onHeight}
+              heightAdjust={heightAdjust}
             />
           </div>
         </div>
         {
           activateChat &&
-          <Chat dispatch={store.dispatch} isChatToggled={isChatToggled}
-                chatClick={chatClick} chatTitle={chatTitle}
+          <Chat dispatch={store.dispatch}
+                isTopNavigationToggled={isTopNavigationToggled}
+                logoClick={this.logoClick}
+                isChatToggled={isChatToggled}
+                chatClick={chatClick}
+                chatTitle={chatTitle}
                 isNetworkOk={isNetworkOk}
+                currentLayout={this.currentLayout}
+                resetLayoutClick={this.resetLayoutClick}
+                themeType={themeType}
+                switchTheme={switchTheme}
           />
         }
       </div>

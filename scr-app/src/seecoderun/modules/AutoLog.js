@@ -49,10 +49,11 @@ class AutoLog {
       ' margin: 0;' +
       ' padding: 0;' +
       ' border: 0;';
-    
-    runIframe.addEventListener('error', (e) => {
+    runIframe.onerror= (e) => {
       console.log("error ifr", e);
-    });
+    };
+    
+
     
     runIframe.addEventListener('load', () => {
       if(al && al.trace){
@@ -60,6 +61,9 @@ class AutoLog {
         runIframe.contentWindow[autoLogName]=al.trace.autoLog;
         runIframe.contentWindow[preAutoLogName]=al.trace.preAutoLog;
         runIframe.contentWindow[postAutoLogName]=al.trace.postAutoLog;
+        runIframe.contentWindow.onerror= (e) => {
+          console.log("error ifr win", e);
+        };
   
         const log=runIframe.contentWindow.console.log;
         runIframe.contentWindow.console.log=function (type, info={}, params=[]) {
@@ -109,8 +113,7 @@ class AutoLog {
           script.onerror = e=>{
             store.dispatch(updatePlaygroundLoadFailure('js', e));
           };
-          doc.body.appendChild(script);
-          
+            doc.body.appendChild(script);
         } catch (e) {
           //console.log("e", e);
   

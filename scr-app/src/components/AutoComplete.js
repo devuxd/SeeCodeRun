@@ -8,32 +8,9 @@ import Paper from 'material-ui/Paper';
 import {MenuItem} from 'material-ui/Menu';
 import {withStyles} from 'material-ui/styles';
 
-const renderSuggestion=(suggestion, {query, isHighlighted}) => {
-  const matches=match(suggestion.label, query);
-  const parts=parse(suggestion.label, matches);
-  
-  return (
-    <MenuItem selected={isHighlighted} component="div">
-      <div>
-        {parts.map((part, index) => {
-          return part.highlight ? (
-            <span key={String(index)} style={{fontWeight: 300}}>
-              {part.text}
-            </span>
-          ) : (
-            <strong key={String(index)} style={{fontWeight: 500}}>
-              {part.text}
-            </strong>
-          );
-        })}
-      </div>
-    </MenuItem>
-  );
-};
+const renderSuggestionsContainer = options => {
+  const {containerProps, children} = options;
 
-const renderSuggestionsContainer=options => {
-  const {containerProps, children}=options;
-  
   return (
     <Paper {...containerProps} square>
       {children}
@@ -41,7 +18,7 @@ const renderSuggestionsContainer=options => {
   );
 };
 
-const styles=(/*theme*/) => ({
+const styles = (/*theme*/) => ({
   container: {
     flexGrow: 1,
     position: 'relative',
@@ -69,31 +46,69 @@ const styles=(/*theme*/) => ({
 });
 
 class AutoComplete extends React.Component {
-  state={
+  state = {
     suggestions: [],
+    isShowAll: true,
   };
-  
-  handleSuggestionsFetchRequested=({value}) => {
-    const suggestions=this.props.getSuggestions(value);
+
+  renderSuggestion = (suggestion, {query, isHighlighted}) => {
+    const {isShowAll} = this.state;
+
+    if (isShowAll) {
+      return (
+        <MenuItem selected={isHighlighted} component="div">
+          <div>
+            <span style={{fontWeight: 300}}>{suggestion.label}</span>
+          </div>
+        </MenuItem>
+      );
+    }
+    const matches = match(suggestion.label, query);
+    const parts = parse(suggestion.label, matches);
+
+    return (
+      <MenuItem selected={isHighlighted} component="div">
+        <div>
+          {parts.map((part, index) => {
+            return part.highlight ? (
+              <span key={String(index)} style={{fontWeight: 300}}>
+              {part.text}
+            </span>
+            ) : (
+              <strong key={String(index)} style={{fontWeight: 500}}>
+                {part.text}
+              </strong>
+            );
+          })}
+        </div>
+      </MenuItem>
+    );
+  };
+
+  handleSuggestionsFetchRequested = ({value}) => {
+    const suggestionsResult = this.props.getSuggestions(value);
     this.setState({
-      suggestions: suggestions,
+      suggestions: suggestionsResult.suggestions,
+      isShowAll: suggestionsResult.isShowAll
     });
   };
-  
-  handleSuggestionsClearRequested=() => {
+
+  handleSuggestionsClearRequested = () => {
+    const suggestionsResult = this.props.getSuggestions('');
     this.setState({
-      suggestions: [],
+      suggestions: suggestionsResult.suggestions,
+      isShowAll: suggestionsResult.isShowAll
     });
   };
-  
+
   render() {
     const {
       classes,
       renderInputComponent,
       inputProps,
       getSuggestionValue
-    }=this.props;
-    
+    } = this.props;
+
     return (
       <Autosuggest
         theme={{
@@ -109,13 +124,13 @@ class AutoComplete extends React.Component {
         onSuggestionsClearRequested={this.handleSuggestionsClearRequested}
         renderSuggestionsContainer={renderSuggestionsContainer}
         getSuggestionValue={getSuggestionValue}
-        renderSuggestion={renderSuggestion}
+        renderSuggestion={this.renderSuggestion}
       />
     );
   }
 }
 
-AutoComplete.propTypes={
+AutoComplete.propTypes = {
   classes: PropTypes.object.isRequired,
   renderInputComponent: PropTypes.func.isRequired,
   inputProps: PropTypes.object.isRequired,
