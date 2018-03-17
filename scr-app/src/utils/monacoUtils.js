@@ -9,7 +9,7 @@ import {Observable} from "rxjs";
 // import {setupMonacoTypecript} from '../utils/alm/monacoTypeScript';
 
 
-export const monacoEditorDefaultOptions={
+export const monacoEditorDefaultOptions = {
   model: null,  // handled in FirecoObservable
   glyphMargin: false,
   selectOnLineNumbers: true,
@@ -44,9 +44,9 @@ export const monacoEditorDefaultOptions={
   lineHeight: 18 + 10
 };
 
-export const monacoEditorMouseEventTypes={
-  blurEditor:'blurEditor',
-  focusEditor:'focusEditor',
+export const monacoEditorMouseEventTypes = {
+  blurEditor: 'blurEditor',
+  focusEditor: 'focusEditor',
   mouseMove: 'mouseMove',
   mouseLeave: 'mouseLeave',
   mouseDown: 'mouseDown',
@@ -63,18 +63,51 @@ export function getTokensAtLine(model, lineNumber) {
   // Force line's state to be accurate
   model.getLineTokens(lineNumber, /*inaccurateTokensAcceptable*/false);
   // Get the tokenization state at the beginning of this line
-  const freshState=model._lines[lineNumber - 1].getState().clone();
+  const freshState = model._lines[lineNumber - 1].getState().clone();
   // Get the human readable tokens on this line
   // return model._tokenizationSupport.tokenize(model.getLineContent(lineNumber), freshState, 0).tokens;
 }
 
+export function configureLineNumbersProvider(editorId, doc) {
+  //lineNumberProvider
+  const lnp = {
+    onLineNumbersChanged: null,
+    debounceTime: 100,
+    maxLineNumber: 0,
+    timeout: null,
+    lineNumbersChanged: () => {
+      clearTimeout(lnp.timeout);
+      lnp.timeout = setTimeout(() => {
+        lnp.onLineNumbersChanged(configureLineNumbersProvider.maxLineNumber);
+      }, lnp.debounceTime);
+    },
+    lineNumbers: lineNumber => {
+      if (lineNumber === 1) { // is refresh
+        lnp.maxLineNumber = 0;
+      }
+      if (lineNumber > lnp.maxLineNumber) {
+        lnp.maxLineNumber = lineNumber;
+        lnp.onLineNumbersChanged && lnp.lineNumbersChanged();
+      }
+      return `<div class="${editorId}-line-number-${lineNumber}">${lineNumber}</div>`;
+    },
+    getElementByLineNumber: lineNumber => {
+      if (!lineNumber || lineNumber > lnp.maxLineNumber) {
+        return null;
+      }
+      return doc.querySelector(`.${editorId}-line-number-${lineNumber}`);
+    }
+  };
+  return lnp;
+}
 
-export function configureMonacoModel(monaco, editorId, text, language='js', onJsx) {
-  let extension=language;
-  
+
+export function configureMonacoModel(monaco, editorId, text, language = 'js', onJsx) {
+  let extension = language;
+
   if (language.indexOf('js') >= 0 || language.indexOf('cript') >= 0) {
-    extension='jsx';
-    if(onJsx){
+    extension = 'jsx';
+    if (onJsx) {
       onJsx();
     }
   }
@@ -87,7 +120,7 @@ export function configureMonacoModel(monaco, editorId, text, language='js', onJs
 }
 
 export function configureMonacoEditor(monaco, editorDiv, customEditorOptions) {
-  const options={...monacoEditorDefaultOptions, ...customEditorOptions};
+  const options = {...monacoEditorDefaultOptions, ...customEditorOptions};
   return monaco.editor.create(editorDiv, options);
 }
 
@@ -105,7 +138,7 @@ export function configureMonacoEditorMouseEventsObservable(editor) {
         event: null
       });
     });
-    
+
     editor.onMouseMove(event => {
       observer.next({
         type: monacoEditorMouseEventTypes.mouseMove,
@@ -133,35 +166,35 @@ export function configureMonacoEditorMouseEventsObservable(editor) {
   });
 }
 
-let once=false;
+let once = false;
 
 function observeAddViewZone(monacoEditor, afterLineNumber) {
   return Observable.create(observer => {
-    const viewZone={};
+    const viewZone = {};
     monacoEditor.changeViewZones(function (changeAccessor) {
       console.log(changeAccessor);
-      
-      viewZone.domNode=document.createElement('div');
+
+      viewZone.domNode = document.createElement('div');
       // viewZone.domNode.style.background = 'lightgreen';
       // viewZone.domNode.style['z-index'] = 300;
       //   viewZone.domNode.innerText=JSON.stringify(changeAccessor);
-      
-      viewZone.domNode.innerText=afterLineNumber;
-      const viewZoneConf={
+
+      viewZone.domNode.innerText = afterLineNumber;
+      const viewZoneConf = {
         afterLineNumber: afterLineNumber,
         heightInLines: 0.5,
         // height: '50px',
         domNode: viewZone.domNode
       };
-      viewZone.viewZoneId=changeAccessor.addZone(viewZoneConf);
+      viewZone.viewZoneId = changeAccessor.addZone(viewZoneConf);
       // render(<Inspector data={viewZoneConf}/>, viewZone.domNode);
       observer.next(viewZone);
       observer.complete();
       if (!once) {
         console.log("CA", changeAccessor);
-        once=true;
+        once = true;
       }
-      
+
     });
   });
 }
@@ -181,103 +214,39 @@ function viewZoneChangeAccessorObservable(monacoEditor) {
 }
 
 function addLiveLine(changeAccessor, afterLineNumber) {
-  const viewZone={};
-  viewZone.domNode=document.createElement('div');
-  viewZone.domNode.style="font-size:10px;";
-  viewZone.domNode.innerText=afterLineNumber;
-  const viewZoneConf={
+  const viewZone = {};
+  viewZone.domNode = document.createElement('div');
+  viewZone.domNode.style = "font-size:10px;";
+  viewZone.domNode.innerText = afterLineNumber;
+  const viewZoneConf = {
     afterLineNumber: afterLineNumber,
     heightInLines: 0.5,
     domNode: viewZone.domNode
   };
-  viewZone.viewZoneId=changeAccessor.addZone(viewZoneConf);
+  viewZone.viewZoneId = changeAccessor.addZone(viewZoneConf);
   setTimeout(() => changeAccessor.layoutZone(viewZone.viewZoneId), 100);
   return viewZone;
 }
 
-export function configureMonacoEditorWidgets(monaco, editorId, monacoEditor) {
-  const lineNumberThreshold=10;
-  let maxLineNumber=0;
-  let lineNumberDomSelectors={};
-  let viewZones=[];
-  
-  const resetViewZones=() => {
-    lineNumberDomSelectors={};
-    // if ( viewZones.length > maxLineNumber + lineNumberThreshold) {
-    //   const newViewZones=[];
-    //   for (let i=0; i < maxLineNumber; i++) {
-    //     newViewZones[i]=viewZones[i];
-    //   }
-    //   for (let i=maxLineNumber; i < viewZones.length; i++) {
-    //     viewZones[i] && viewZones[i].domNode && viewZones[i].domNode.remove();
-    //   }
-    //   viewZones=newViewZones;
-    // }
-    maxLineNumber=0;
-  };
-  
-  let viewZonesUpdaterTimeout=null;
-  const viewZonesUpdater=viewZone => {
-    viewZones[0]=viewZone;
-    clearTimeout(viewZonesUpdaterTimeout);
-    setTimeout(() => monacoEditor.layout(true), 100);
-  };
-  // observeAddViewZone(monacoEditor, 0).subscribe(viewZonesUpdater);
-  
-  const lineNumberUpdateSubject=Observable.create(observer => {
-    monacoEditor.updateOptions({
-      lineNumbers: lineNumber => {
-        //observer.next(lineNumber);
-        // console.log("l", lineNumber);
-        if (lineNumber === 1) { // is refresh
-          resetViewZones();
-        }
-        if (lineNumber > maxLineNumber) {
-          maxLineNumber=lineNumber;
-        }
-        
-        lineNumberDomSelectors[lineNumber]={selector: `#${editorId} .line-number-${lineNumber}`};
-        return `<div><div class="line-number-${lineNumber}">${lineNumber}</div></div>`;
-      }
-    });
-  });
-  
-  viewZoneChangeAccessorObservable(monacoEditor).subscribe(changeAccessor => {
-    lineNumberUpdateSubject.subscribe(lineNumber => {
-      if (viewZones[lineNumber]) {
-        console.log(viewZones[lineNumber]);
-        changeAccessor.removeZone(viewZones[lineNumber].viewZoneId);
-      }
-      // setTimeout(()=>{
-      viewZones[lineNumber]=addLiveLine(changeAccessor, lineNumber);
-      // },200);
-      
-    });
-  });
-  
-  
-  var overlayWidget2={
+//monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER
+export function addOverlayWidget(monacoEditor, getDomNode, overlayId, overlayWidgetPositionPreference){
+  const overlayWidget = {
     domNode: null,
-    getId: function () {
-      return 'my.overlay.widget2';
+    getId: () =>{
+      return overlayId;
     },
-    getDomNode: function () {
-      if (!this.domNode) {
-        this.domNode=document.createElement('div');
-        render(<Button variant="fab" color="primary"
-                       aria-label="add"><Settings/></Button>, this.domNode);
-        
-      }
-      return this.domNode;
+    getDomNode: () =>{
+        overlayWidget.domNode = getDomNode();
     },
     getPosition: function () {
       return {
-        preference: monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER
+        preference: overlayWidgetPositionPreference
       };
-      
+
     }
   };
-  monacoEditor.addOverlayWidget(overlayWidget2);
+  monacoEditor.addOverlayWidget(overlayWidget);
+  return overlayWidget;
 }
 
 
@@ -288,7 +257,7 @@ export function configureMonacoEditorWidgets(monaco, editorId, monacoEditor) {
 //   className: 'myContentClass',
 //   glyphMarginClassName: 'myGlyphMarginClass'
 // }
-export function addNavigators(editor, previousState=[], range, options) {
+export function addNavigators(editor, previousState = [], range, options) {
   return editor.deltaDecorations(previousState, [
     {
       range: range,
@@ -298,12 +267,12 @@ export function addNavigators(editor, previousState=[], range, options) {
 }
 
 function addCodeLens(monaco, editor) {
-  let commandId=editor.addCommand(0, function () {
+  let commandId = editor.addCommand(0, function () {
     // services available in `ctx`
     // console.log("c", arguments);
-    
+
   }, '');
-  
+
   monaco.languages.registerCodeLensProvider('javascript', {
     provideCodeLenses: function (model, token) {
       return [
@@ -331,8 +300,8 @@ function addCodeLens(monaco, editor) {
 }
 
 function addCompletionProviders() {
-  let monaco=this.state.monaco;
-  
+  let monaco = this.state.monaco;
+
   function createDependencyProposals() {
     // returning a static list of proposals, not even looking at the prefix (filtering is done by the Monaco editor),
     // here you could do a server side lookup
@@ -357,18 +326,18 @@ function addCompletionProviders() {
       }
     ];
   }
-  
-  
+
+
   monaco.languages.registerCompletionItemProvider('javascript', {
     provideCompletionItems: function (model, position) {
       // find out if we are completing a property in the 'dependencies' object.
-      var textUntilPosition=model.getValueInRange({
+      var textUntilPosition = model.getValueInRange({
         startLineNumber: 1,
         startColumn: 1,
         endLineNumber: position.lineNumber,
         endColumn: position.column
       });
-      var match=textUntilPosition.match(/"dependencies"\s*:\s*{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*("[^"]*)?$/);
+      var match = textUntilPosition.match(/"dependencies"\s*:\s*{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*("[^"]*)?$/);
       // console.log(match);
       if (match) {
         return createDependencyProposals();
@@ -376,7 +345,7 @@ function addCompletionProviders() {
       return [];
     }
   });
-  
+
 }
 
 

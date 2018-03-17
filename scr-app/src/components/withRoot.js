@@ -11,7 +11,7 @@ import primary from 'material-ui/colors/blue';
 import secondary from 'material-ui/colors/deepOrange';
 import Reboot from 'material-ui/Reboot';
 
-const lightTheme=createMuiTheme({
+const lightTheme = createMuiTheme({
   palette: {
     primary: {
       light: primary[300],
@@ -26,7 +26,7 @@ const lightTheme=createMuiTheme({
   }
 });
 
-const darkTheme=createMuiTheme({
+const darkTheme = createMuiTheme({
   palette: {
     type: 'dark',
     primary: {
@@ -42,35 +42,35 @@ const darkTheme=createMuiTheme({
   },
 });
 
-export const themeTypes={
+export const themeTypes = {
   lightTheme: 'lightTheme',
   darkTheme: 'darkTheme',
 };
 
-const themes={
+const themes = {
   [themeTypes.lightTheme]: lightTheme,
   [themeTypes.darkTheme]: darkTheme,
 };
 
-const jss=create(jssPreset());
+const jss = create(jssPreset());
 
-const generateClassName=createGenerateClassName();
+const generateClassName = createGenerateClassName();
 
-const MuiThemeProviderComponent=class extends Component {
-  state={
+const MuiThemeProviderComponent = class extends Component {
+  state = {
     themeType: themeTypes.lightTheme,
     isSwitchThemeToggled: false,
   };
-  
-  switchTheme=(aThemeType) => {
-    if(aThemeType && themeTypes[aThemeType]){
+
+  switchTheme = (aThemeType) => {
+    if (aThemeType && themeTypes[aThemeType]) {
       this.setState({
         themeType: themeTypes[aThemeType],
       });
       return;
     }
 
-    const {themeType}=this.state;
+    const {themeType} = this.state;
     switch (themeType) {
       case themeTypes.lightTheme:
         this.setState({
@@ -86,10 +86,10 @@ const MuiThemeProviderComponent=class extends Component {
         console.log('Error: unknown theme type');
     }
   };
-  
+
   render() {
-    const {ComponentProps, Component}=this.props;
-    const {themeType}=this.state;
+    const {ComponentProps, Component} = this.props;
+    const {themeType} = this.state;
     return (
       <MuiThemeProvider theme={themes[themeType]}>
         <Reboot/>
@@ -112,7 +112,7 @@ function withRoot(Component) {
       </JssProvider>
     );
   }
-  
+
   return WithRoot;
 }
 

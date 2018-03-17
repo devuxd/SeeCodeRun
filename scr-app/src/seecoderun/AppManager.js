@@ -31,12 +31,9 @@ import {
 import {
   configureMonacoModel,
   configureMonacoEditor,
-  configureMonacoEditorWidgets,
-  configureMonacoEditorMouseEventsObservable
+  configureMonacoEditorMouseEventsObservable, configureLineNumbersProvider
 } from "../utils/monacoUtils";
 import JSXColoringProvider from "../utils/JSXColoringProvider";
-import LiveExpressionStore from "./modules/LiveExpressionStore";
-import {themeTypes} from "../components/withRoot";
 
 const dataBaseRoot = '/scr2';
 const firebaseConfig = {
@@ -65,6 +62,7 @@ const fireco = {
 const defaultFirecoPad = {
   language: 'html',
   isJsx: false,
+  editorComponent: null,
   monacoEditor: null,
   monacoEditorModel: null,
   monacoEditorSavedState: null, //{text: null, viewState: null}
@@ -289,15 +287,17 @@ class AppManager {
     }
   }
 
-  observeConfigureMonacoEditor(editorId, editorContainer) {
-    const {editorDiv, dispatchMouseEvents, lineNumbers, setMonacoEditor, onContentChangedAction} = editorContainer;
+  observeConfigureMonacoEditor(editorId, editorComponent) {
+    const {editorDiv, dispatchMouseEvents, onContentChangedAction} = editorComponent;
     if (this.monaco) {
       const firecoPad = this.firecoPads[editorId];
+      firecoPad.editorComponent = editorComponent;
       try {
+        firecoPad.lineNumbersProvider = configureLineNumbersProvider(editorId, document);
         const editorOptions = {
           ...firecoPad.editorOptions,
           model: firecoPad.monacoEditorModel,
-          lineNumbers: lineNumbers
+          lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
         };
         const monacoEditor = configureMonacoEditor(this.monaco, editorDiv, editorOptions);
 
@@ -306,7 +306,6 @@ class AppManager {
           monacoEditor.restoreViewState(firecoPad.monacoEditorSavedState.viewState);
         }
 
-        setMonacoEditor(firecoPad.monacoEditor);
         dispatchMouseEvents(configureMonacoEditorMouseEventsObservable(monacoEditor));
         firecoPad.monacoEditor = monacoEditor;
 
@@ -319,10 +318,6 @@ class AppManager {
         monacoEditor.onDidChangeModelContent(onContentChanged);
         firecoPad.colorizeJsx(monacoEditor, 0);
 
-        const falsy = false;
-        if (falsy) {
-          configureMonacoEditorWidgets(this.monaco, editorId, monacoEditor);
-        }
         return Observable.of(loadMonacoEditorFulfilled(editorId));
       } catch (error) {
         return Observable.of(loadMonacoEditorRejected(editorId, error));
@@ -505,12 +500,6 @@ class AppManager {
     }
   }
 
-  observeConfigureLiveExpressionStore(editorId, autoLog) {
-    const monacoEditor = this.firecos[editorId].monacoEditor;
-    this.firecos[editorId].liveExpressionStore = new LiveExpressionStore(this.monaco, editorId, monacoEditor, autoLog);
-
-  }
-
   setEditorText(editorId, text) {
     const firecoPad = this.firecoPads[editorId];
     firecoPad.text = text;
@@ -522,10 +511,6 @@ class AppManager {
     firecoPad.monacoEditor.setValue(text);
     firecoPad.monacoEditor.restoreViewState(viewState);
     firecoPad.ignoreContentChange = false;
-  }
-
-  observeUpdatePlayground() {
-
   }
 
 //

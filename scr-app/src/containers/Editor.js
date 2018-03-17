@@ -49,7 +49,7 @@ const styles = theme => ({
     }),
   },
   snackbar: {
-    position: 'absolute',
+    //position: 'absolute',
   },
   snackbarContent: {
     maxWidth: 'inherit',
@@ -69,7 +69,6 @@ class Editor extends Component {
   };
   monacoEditorMouseEventsObservable = null;
   dispatchMouseEventsActive = false;
-  monacoEditor = null;
   maxLineNumber = -1;
 
   handleClick = () => {
@@ -82,40 +81,7 @@ class Editor extends Component {
     this.setState({errorSnackbarOpen: false});
   };
 
-  setMonacoEditor = monacoEditor => {
-    this.monacoEditor = monacoEditor;
-  };
-
   onContentChangedAction = () => {
-  };
-
-  lineNumbers = lineNumber => {
-    //observer.next(lineNumber);
-    // console.log("l", lineNumber);
-    if (lineNumber === 1) { // is refresh
-      this.maxLineNumber = 1;
-    }
-    if (lineNumber > this.maxLineNumber) {
-      this.maxLineNumber = lineNumber;
-    }
-
-    return `<div><div class="line-number-${lineNumber}"></div><div>
-${lineNumber}</div></div>`;
-  };
-
-
-  getElementbyLineNumber = lineNumber => {
-    if (!lineNumber || lineNumber > this.maxLineNumber) {
-      return null;
-    }
-    return document.getElementById(`.line-number-${lineNumber}`);
-  };
-
-  addBranchNavigator = (expression, lineNumber) => {
-    const el = this.getElementbyLineNumber(lineNumber);
-    if (el) {
-
-    }
   };
 
   render() {
@@ -213,6 +179,10 @@ ${lineNumber}</div></div>`;
     // .debounceTime(500)
       .subscribe(mouseEvent => {
         //console.log('f', mouseEvent.type, this.state.focused);
+        if(this.props.mouseEventsDisabled){
+          return;
+        }
+
         switch (mouseEvent.type) {
           case monacoEditorMouseEventTypes.focusEditor:
             this.setState({
@@ -277,6 +247,7 @@ Editor.contextTypes = {
 Editor.propTypes = {
   editorId: PropTypes.string.isRequired,
   classes: PropTypes.object.isRequired,
+  mouseEventsDisabled: PropTypes.bool,
 };
 
 export default withStyles(styles)(Editor);

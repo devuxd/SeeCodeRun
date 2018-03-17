@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
-import {withStyles} from 'material-ui/styles';
 import _ from 'lodash';
 import {Subject} from "rxjs";
 

@@ -331,11 +331,12 @@ class Chat extends Component {
       }
 
       if (this.state.chatUserId === snapshot.key) {
-        console.log('f', data.layout);
         this.updateLayout(data.layout);
-        this.setState({
-          chatUserName: data.chatUserName || '',
-        });
+        if (this.state.chatUserName !== data.chatUserName) {
+          this.setState({
+            chatUserName: data.chatUserName || '',
+          });
+        }
       }
     };
 
