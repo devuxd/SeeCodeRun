@@ -5,8 +5,8 @@ import {Inspector} from 'react-inspector';
 class ObjectExplorer extends React.Component {
 
   render() {
-    const {data} = this.props;
-    return <Inspector  data={data}/>;
+    const {theme, data, ...rest} = this.props;
+    return <Inspector  theme={theme} data={data} {...rest} />;
   }
 }
 

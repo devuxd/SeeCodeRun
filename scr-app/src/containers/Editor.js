@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
+import {Subject} from 'rxjs';
 import classNames from 'classnames';
 import {withStyles} from 'material-ui/styles';
 import Button from 'material-ui/Button';
@@ -9,9 +10,9 @@ import ErrorOutlineIcon from 'material-ui-icons/ErrorOutline';
 import SettingsIcon from 'material-ui-icons/Settings';
 import Snackbar from 'material-ui/Snackbar';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
-import ExpressionPopover from "./ExpressionPopover";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
 import {end$} from "../utils/scrUtils";
+import LiveExpressionStore from './LiveExpressionStore';
 
 const styles = theme => ({
   container: {
@@ -64,8 +65,9 @@ class Editor extends Component {
     errorSnackbarOpen: false,
     anchorEl: null,
     mouseEvent: null,
-    ignoreFirstEvent: false,
     errors: null,
+    currentContentWidgetId: null,
+    forceHideWidgets: false,
   };
   monacoEditorMouseEventsObservable = null;
   dispatchMouseEventsActive = false;
@@ -84,46 +86,74 @@ class Editor extends Component {
   onContentChangedAction = () => {
   };
 
+  componentWillReceiveProps(nextProps) {
+    clearTimeout(this.tmw);
+    const delay = this.editorWidth || !this.wt ? 0 : 100;
+    this.wt = this.wt ? this.wt - 1 : 5;
+    this.tmw = setTimeout(() => {
+      if (this.editorDiv) {
+        this.editorWidth = this.editorDiv.offsetWidth;
+        this.editorHeight = this.editorDiv.offsetHeight;
+      }
+    }, delay);
+  }
+
   render() {
-    const {editorId, classes} = this.props;
+    const {classes, observeLiveExpressions, editorId, themeType} = this.props;
     const {
-      settingsOpen, errorSnackbarOpen, anchorEl, mouseEvent, errors
+      settingsOpen, errorSnackbarOpen, anchorEl, mouseEvent, errors,
+      currentContentWidgetId,// forceHideWidgets
     } = this.state;
     const fabClassName =
       classNames(
         classes.fab, errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown
       );
+
     return (<div className={classes.container}>
-      <div id={editorId} ref={el => {
-        this.editorDiv = el || this.editorDiv;
-      }} className={classes.editor}></div>
-      <ExpressionPopover anchorEl={anchorEl} mouseEvent={mouseEvent}/>
-      <Snackbar
-        open={errorSnackbarOpen}
-        onClose={this.handleClose}
-        SnackbarContentProps={{
-          'aria-describedby': 'snackbar-fab-message-id',
-          className: classes.snackbarContent,
-        }}
-        message={<span id="snackbar-fab-message-id"><ErrorOutlineIcon
-          color="error"/><span>{JSON.stringify(errors)}</span></span>}
-        action={
-          <Button size="small" color="inherit" onClick={this.handleClose}>
-            <CloseIcon/>
-          </Button>
+        <div id={editorId}
+             ref={el => {
+               this.editorDiv = el || this.editorDiv;
+             }}
+             className={classes.editor}
+        />
+        {observeLiveExpressions &&
+        <LiveExpressionStore
+          // container={this}
+          editorId={editorId}
+          editorWidth={this.editorWidth}
+          editorHeight={this.editorHeight}
+          themeType={themeType}
+          currentContentWidgetId={currentContentWidgetId}
+          // forceHideWidgets={forceHideWidgets}
+        />
         }
-        className={classes.snackbar}
-      />
-      {settingsOpen ?
-        (
-          <Button variant="fab" mini color="secondary" aria-label="settings"
-                  className={fabClassName}
-                  onClick={this.handleClick}>
-            <SettingsIcon/>
-          </Button>)
-        : null
-      }
-    </div>);
+        <Snackbar
+          open={errorSnackbarOpen}
+          onClose={this.handleClose}
+          SnackbarContentProps={{
+            'aria-describedby': 'snackbar-fab-message-id',
+            className: classes.snackbarContent,
+          }}
+          message={<span id="snackbar-fab-message-id"><ErrorOutlineIcon
+            color="error"/><span>{JSON.stringify(errors)}</span></span>}
+          action={
+            <Button size="small" color="inherit" onClick={this.handleClose}>
+              <CloseIcon/>
+            </Button>
+          }
+          className={classes.snackbar}
+        />
+        {settingsOpen ?
+          (
+            <Button variant="fab" mini color="secondary" aria-label="settings"
+                    className={fabClassName}
+                    onClick={this.handleClick}>
+              <SettingsIcon/>
+            </Button>)
+          : null
+        }
+      </div>
+    );
   }
 
   componentDidMount() {
@@ -161,6 +191,9 @@ class Editor extends Component {
       this.unsubscribes[i] && this.unsubscribes[i]();
     }
     this.monacoEditorMouseEventsObservable && this.monacoEditorMouseEventsObservable.takeUntil(end$);
+    const {contentWidgetMouseEventSubjects} = this;
+    contentWidgetMouseEventSubjects &&
+    (contentWidgetMouseEventSubjects.mouseMove.complete() || contentWidgetMouseEventSubjects.mouseLeave.complete());
   }
 
 
@@ -175,19 +208,42 @@ class Editor extends Component {
       || this.dispatchMouseEventsActive) {
       return;
     }
-    this.monacoEditorMouseEventsObservable
-    // .debounceTime(500)
+    let contentWidgetMouseEventSubjects = {
+      mouseMove: new Subject(),
+      mouseLeave: new Subject(),
+    };
+
+    contentWidgetMouseEventSubjects.mouseMove
+      .throttleTime(100)
+      .debounceTime(500)
+      .subscribe(payload => {
+        this.setState({currentContentWidgetId: null});
+        setTimeout(() => {
+          this.setState(payload);
+        }, 0);
+      });
+
+    contentWidgetMouseEventSubjects.mouseLeave
+      .throttleTime(50)
+      .debounceTime(100)
+      .subscribe(payload => {
+        this.setState(payload);
+      });
+
+    this.contentWidgetMouseEventSubjects = contentWidgetMouseEventSubjects;
+
+    this.monacoEditorMouseEventsObservable // debounce or throttle will mess mouseleave, blue, and focus
       .subscribe(mouseEvent => {
-        //console.log('f', mouseEvent.type, this.state.focused);
-        if(this.props.mouseEventsDisabled){
+        if (this.props.mouseEventsDisabled) {
           return;
         }
-
         switch (mouseEvent.type) {
           case monacoEditorMouseEventTypes.focusEditor:
             this.setState({
               mouseEvent: mouseEvent,
               focused: true,
+              currentContentWidgetId: null,
+              forceHideWidgets: true,
             });
             return;
           case monacoEditorMouseEventTypes.blurEditor:
@@ -198,13 +254,26 @@ class Editor extends Component {
             });
             return;
           case monacoEditorMouseEventTypes.mouseMove:
+            if (mouseEvent.event.target.type ===
+              window.monaco.editor.MouseTargetType.CONTENT_WIDGET) {
+              // console.log('m', 'CONTENT_WIDGET',
+              //   mouseEvent.event.target.detail
+              // );
+              contentWidgetMouseEventSubjects.mouseMove.next({
+                currentContentWidgetId: mouseEvent.event.target.detail,
+                forceHideWidgets: false
+              });
+            } else {
+              contentWidgetMouseEventSubjects.mouseLeave.next({currentContentWidgetId: null, forceHideWidgets: false});
+            }
+
             if (!this.state.focused) {
               return;
             }
+
             this.setState({
               anchorEl: mouseEvent.event.target.element,
               mouseEvent: mouseEvent,
-              ignoreFirstEvent: true
             });
             return;
           case monacoEditorMouseEventTypes.mouseDown:
@@ -220,18 +289,11 @@ class Editor extends Component {
             this.setState({anchorEl: null, mouseEvent: null});
             break;
           case monacoEditorMouseEventTypes.mouseLeave:
-
-            // avoids popover's enter-leave events on open
-            // console.log(mouseEvent);
-            const {ignoreFirstEvent} = this.state;
-            if (ignoreFirstEvent) {
-              this.setState({ignoreFirstEvent: false});
-            } else {
-              if (!this.state.focused) {
-                return;
-              }
-              this.setState({anchorEl: null, mouseEvent: null});
+            contentWidgetMouseEventSubjects.mouseLeave.next({currentContentWidgetId: null, forceHideWidgets: false});
+            if (!this.state.focused) {
+              return;
             }
+            this.setState({anchorEl: null, mouseEvent: null});
             break;
           default:
         }
@@ -247,7 +309,9 @@ Editor.contextTypes = {
 Editor.propTypes = {
   editorId: PropTypes.string.isRequired,
   classes: PropTypes.object.isRequired,
+  observeMouseEvents: PropTypes.bool,
   mouseEventsDisabled: PropTypes.bool,
+  observeLiveExpressions: PropTypes.bool,
 };
 
 export default withStyles(styles)(Editor);

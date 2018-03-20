@@ -1,8 +1,8 @@
 import JSAN from 'jsan';
 import {Subject} from "rxjs";
 
-class Scope{
-  constructor(parent, id){
+class Scope {
+  constructor(parent, id) {
     this.parent = parent;
     this.id = id;
     this.state = 'entered';
@@ -10,73 +10,78 @@ class Scope{
     this.isLocal = false;
     this.localId = null;
   }
-  
-  enterScope(id){
+
+  enterScope(id) {
     const newScope = new Scope(this, id);
     this.scopes.push(newScope);
     return newScope;
   }
-  
-  exitScope(id){
-    if(this.id !== id){
-     // console.log("errrror", id);
+
+  exitScope(id) {
+    if (this.id !== id) {
+      // console.log("errrror", id);
     }
-    if(!this.scopes.length){
+    if (!this.scopes.length) {
       this.state = 'exited';
       return this.parent;
     }
     return this.scopes.pop();
   }
-  
+
 }
 
 class Trace {
-  constructor(locationMap){
+  constructor(locationMap) {
     this.locationMap = locationMap;
     this.currentScope = null;
     this.rootScope = null;
     this.subject = new Subject();
+    this.currentExpressionId = null; // program
   }
-  
-  subscribe(callback){
-    this.unsubsubscribe =this.subject.subscribe(callback);
+
+  getData(id) {
+    return {id: id};
   }
-  
-  unsubscribe(){
-    if(this.unsubscribe){
-      this.unsubscribe();
+
+  subscribe(callback) {
+    this.unsubsubscribe = this.subject.subscribe(callback);
+  }
+
+  unsubscribe() {
+    if (this.subject) {
+      this.subject.complete();
     }
   }
-  
-  getCurrentStackIds(){
+
+  getCurrentStackIds() {
     const stack = [];
     let current = this.currentScope;
-    
-    do{
+
+    do {
       stack.unshift(current.id);
       current = current.parent;
-    }while(current);
-    
+    } while (current);
+
     return stack;
   }
-  
-  locateStack(stack){
+
+  locateStack(stack) {
     console.log('>>>>>>>>>>>>>');//, this.locationMap, stack);
-    for(const i in stack){
-      if(stack[i]>=0){
+    for (const i in stack) {
+      if (stack[i] >= 0) {
         console.log(i, this.locationMap[stack[i]].loc);
-      }else{
+      } else {
         console.log(i, 'root');
       }
     }
-    
+
   }
-  
-  startStack(){
+
+  startStack() {
     this.rootScope = this.currentScope = new Scope(null, -1);
   }
-  
-  autoLog=(pre, value, post) =>{
+
+  autoLog = (pre, value, post) => {
     // console.log({
     //   type: 'TRACE',
     //   action: {
@@ -85,11 +90,12 @@ class Trace {
     //     data: JSAN.stringify(value)
     //   }
     // });
-    this.subject.next({id:pre.id, loc: this.locationMap[pre.id].loc, data:JSAN.stringify(value)});
+    this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, data: JSAN.stringify(value)});
     return value;
   };
-  
-  preAutoLog=(id) =>{
+
+  preAutoLog = (id) => {
+    this.currentExpressionId = id;
     this.currentScope = this.currentScope.enterScope(id);
     // console.log({
     //   type: 'PRE-TRACE',
@@ -99,11 +105,11 @@ class Trace {
     // });
     return {id: id};
   };
-  
-  postAutoLog=(id) =>{
+
+  postAutoLog = (id) => {
     //console.log(id, JSAN.parse(JSAN.stringify(this.rootScope)));
     //this.locateStack(this.getCurrentStackIds());
-    this.currentScope =this.currentScope.exitScope(id);
+    this.currentScope = this.currentScope.exitScope(id);
     console.log({
       type: 'POST-TRACE',
       action: {
@@ -113,5 +119,26 @@ class Trace {
     return {id: id};
   };
 
+  onError = error => {
+    this.subject.next({
+      id: this.currentExpressionId,
+      loc: this.locationMap[this.currentExpressionId].loc,
+      data: JSAN.stringify(error),
+      isError: true
+    });
+  };
+
+  setConsoleLog = log => {
+    this.consoleLog = function (type, info = {}, params = []) {
+      if (type === 'SCR_LOG' && info.location) {
+        // store.dispatch();
+      } else {
+        log(["clg", ...arguments]);
+      }
+
+    };
+    return this.consoleLog;
+  }
 }
+
 export default Trace;

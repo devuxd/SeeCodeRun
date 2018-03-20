@@ -1,6 +1,6 @@
 import {Observable} from "rxjs/Rx";
 
-export const getLocationUrlData=() => {
+export const getLocationUrlData = () => {
   return {
     url:
     process.env.PUBLIC_URL ||
@@ -9,42 +9,42 @@ export const getLocationUrlData=() => {
   };
 };
 
-export const configureToMonacoRange=(monaco, parser) => {
+export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
   switch (parser) {
     case 'babylon':
     default:
-      return range => {
-        return new monaco.Range(range.start.line
-          , range.start.column + 1
-          , range.end ? range.end.line : range.start.line
-          , range.end ? range.end.column + 1 : range.start.column + 1,
+      return loc => {
+        return new monaco.Range(loc.start.line
+          , loc.start.column + 1
+          , loc.end ? loc.end.line : loc.start.line
+          , loc.end ? loc.end.column + 1 : loc.start.column + 1,
         );
       };
   }
 };
 
-export const configureMonacoRangeToClassname=(prefix='r') => {
-  return (monacoRange, postfix='') => {
+export const configureMonacoRangeToClassName = (prefix = 'r') => {
+  return (monacoRange) => {
     return `${prefix}-${
       monacoRange.startLineNumber
-    }-${
+      }-${
       monacoRange.startColumn
-    }-${monacoRange.endLineNumber}-${monacoRange.endColumn}-${postfix}`;
+      }-${monacoRange.endLineNumber}-${monacoRange.endColumn}`;
   };
 };
 
-const isOnline$=
+const isOnline$ =
   Observable.of(window.navigator.onLine);
-const goesOffline$=
+const goesOffline$ =
   Observable.fromEvent(window, 'offline').mapTo(false);
-const goesOnline$=
+const goesOnline$ =
   Observable.fromEvent(window, 'online').mapTo(true);
 
-export const online$=() =>
+export const online$ = () =>
   Observable.merge(
     isOnline$,
     goesOffline$,
     goesOnline$
   );
-export const end$= ()=>Observable.of(true);
+export const end$ = () => Observable.of(true);
 

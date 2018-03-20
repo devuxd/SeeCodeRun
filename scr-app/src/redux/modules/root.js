@@ -37,7 +37,9 @@ import {
 }
   from './playground';
 
-export const rootEpic=combineEpics(
+import {updateBundleReducer} from './liveExpressionStore';
+
+export const rootEpic = combineEpics(
   disposePastebinEpic,
   pastebinLayoutEpic,
   pastebinEpic,
@@ -58,10 +60,11 @@ export const rootEpic=combineEpics(
   firecoChatEpic,
 );
 
-export const rootReducer=combineReducers({
+export const rootReducer = combineReducers({
   pastebinReducer,
   monacoReducer,
   monacoEditorsReducer,
   firecoReducer,
+  updateBundleReducer,
   updatePlaygroundReducer
 });

@@ -9,7 +9,7 @@ import {
 } from 'material-ui/styles';
 import primary from 'material-ui/colors/blue';
 import secondary from 'material-ui/colors/deepOrange';
-import Reboot from 'material-ui/Reboot';
+import CssBaseline from 'material-ui/CssBaseline';
 
 const lightTheme = createMuiTheme({
   palette: {
@@ -92,7 +92,7 @@ const MuiThemeProviderComponent = class extends Component {
     const {themeType} = this.state;
     return (
       <MuiThemeProvider theme={themes[themeType]}>
-        <Reboot/>
+        <CssBaseline/>
         <Component
           {...ComponentProps}
           themeType={themeType}

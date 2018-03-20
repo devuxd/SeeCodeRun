@@ -7,7 +7,6 @@ import AddIcon from 'material-ui-icons/Add';
 import DragHandleIcon from 'material-ui-icons/DragHandle'
 import {withStyles} from 'material-ui/styles';
 import Editor from './Editor';
-import LiveExpressionStore from './LiveExpressionStore';
 import Playground from './Playground';
 import {pastebinConfigureLayout} from "../redux/modules/pastebin";
 import SizeProvider from '../utils/SizeProvider';
@@ -45,7 +44,6 @@ const styles = theme => ({
 class Pastebin extends Component {
   state = {
     gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
-    monacoEditors: {},
   };
 
   getCurrentGridLayouts = () => {
@@ -107,21 +105,10 @@ class Pastebin extends Component {
     gridLayoutFormatter.onBreakpointChange(newBreakpoint);
   };
 
-  onMonacoEditorReady = editorId => {
-    return (monacoEditor) => {
-      this.setState(prevState => ({
-        monacoEditors: {
-          ...prevState.monacoEditors,
-          [editorId]: monacoEditor,
-        }
-      }));
-    };
-  };
-
   render() {
-    const {appClasses, classes, appStyle, editorIds, width, height} = this.props;
+    const {themeType, appClasses, classes, appStyle, editorIds, width, height} = this.props;
     const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
-    const {gridLayouts, monacoEditors} = this.state;
+    const {gridLayouts} = this.state;
     gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;
 
     return (
@@ -148,12 +135,9 @@ class Pastebin extends Component {
         >
           <Paper key="scriptContainer">
             <Editor editorId={editorIds['js']}
-                    onMonacoEditorReady={this.onMonacoEditorReady(editorIds['js'])}
-              // observeMouseEvents
-            />
-            <LiveExpressionStore
-              editorId={editorIds['js']}
-              monacoEditor={monacoEditors[editorIds['js']]}
+                    themeType={themeType}
+                    observeMouseEvents
+                    observeLiveExpressions={true}
             />
           </Paper>
           <Paper key="htmlContainer">

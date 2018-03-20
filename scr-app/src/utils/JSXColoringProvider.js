@@ -1,6 +1,8 @@
 import j from "jscodeshift";
 import './JSXColoringProvider.css';
-export const JSXTypes={
+import {configureLocToMonacoRange} from './scrUtils'
+
+export const JSXTypes = {
   JSXOpeningElement: {
     options: {
       inlineClassName: 'mtk12.Identifier.JsxOpeningElement.Identifier',
@@ -19,38 +21,40 @@ export const JSXTypes={
 };
 
 class JSXColoringProvider {
-  constructor(monaco) {
-    this.monaco=monaco;
+  constructor(monaco, editorId, monacoEditor) {
+    this.monaco = monaco;
+    this.locToMonacoRange = configureLocToMonacoRange(this.monaco);
+    this.editorId = editorId;
+    this.monacoEditor = monacoEditor;
   }
-  
-  colorize(monacoEditor) {
-    const code=monacoEditor.getValue();
-    let ast=null;
-    try {
-      ast=j(code);
-    } catch (e) {
-      //todo: needs to be smart and remove errors, then try again.
-      return;
-    }
-    const decorators=this.createJSXElementDecorators(ast);
-    for (const jsxType in JSXTypes) {
-      this.createDecoratorsByType(ast, jsxType, JSXTypes[jsxType].options, decorators);
-    }
-    this.JSXDecoratorIds=monacoEditor
-      .deltaDecorations(this.JSXDecoratorIds || [], decorators
-      );
+
+  afterColorize(callback){
+    this.afterColorizeCallback = callback;
   }
-  
-  createJSXElementDecorators(ast, decorators=[]) {
+
+  colorize(ast) {
+    if (ast) {
+      const decorators = this.createJSXElementDecorators(ast);
+      for (const jsxType in JSXTypes) {
+        this.createDecoratorsByType(ast, jsxType, JSXTypes[jsxType].options, decorators);
+      }
+      this.JSXDecoratorIds = this.monacoEditor
+        .deltaDecorations(this.JSXDecoratorIds || [], decorators
+        );
+      this.afterColorizeCallback && this.afterColorizeCallback([...this.JSXDecoratorIds]);
+    }
+  }
+
+  createJSXElementDecorators(ast, decorators = []) {
     ast
       .findJSXElements()
       .forEach(p => {
-        const loc=p.value.loc;
-        const openingElement=p.value.openingElement;
-        let elementName=null;
+        const loc = p.value.loc;
+        const openingElement = p.value.openingElement;
+        let elementName = null;
         if (openingElement) {
-          const oLoc=openingElement.loc;
-          elementName=openingElement.name.name;
+          const oLoc = openingElement.loc;
+          elementName = openingElement.name.name;
           decorators.push({
             range: new this.monaco.Range(
               oLoc.start.line,
@@ -74,9 +78,9 @@ class JSXColoringProvider {
             }
           });
         }
-        const closingElement=p.value.closingElement;
+        const closingElement = p.value.closingElement;
         if (closingElement) {
-          const cLoc=closingElement.loc;
+          const cLoc = closingElement.loc;
           decorators.push({
             range: new this.monaco.Range(
               cLoc.start.line,
@@ -100,14 +104,9 @@ class JSXColoringProvider {
             }
           });
         }
-        
+
         decorators.push({
-          range: new this.monaco.Range(
-            loc.start.line,
-            loc.start.column + 1,
-            loc.end.line,
-            loc.end.column + 1
-          ),
+          range: this.locToMonacoRange(loc),
           options: {
             glyphMarginClassName: 'glyph.Identifier.JsxElement',
             glyphMarginHoverMessage: `JSX Element${elementName ? ': ' + elementName : ''}`
@@ -116,27 +115,22 @@ class JSXColoringProvider {
       });
     return decorators;
   }
-  
-  createDecoratorsByType(ast, jsxType, options, decorators=[]) {
+
+  createDecoratorsByType(ast, jsxType, options, decorators = []) {
     ast
       .find(j[jsxType])
       .find(j.JSXIdentifier)
       .forEach(p => {
-        const loc=p.value.loc;
-       // const opts = {...options, ...{hoverMessage: `(${jsxType})`}};
+        const loc = p.value.loc;
+        // const opts = {...options, ...{hoverMessage: `(${jsxType})`}};
         decorators.push({
-          range: new this.monaco.Range(
-            loc.start.line,
-            loc.start.column + 1,
-            loc.end.line,
-            loc.end.column + 1
-          ),
+          range: this.locToMonacoRange(loc),
           options: options
         });
       });
     return decorators;
   }
-  
+
 }
 
 export default JSXColoringProvider;

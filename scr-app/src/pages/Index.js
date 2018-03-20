@@ -15,7 +15,7 @@ import {switchMonacoTheme} from '../redux/modules/monaco';
 let appStyle = {margin: 0};
 const styles = theme => {
   appStyle = {
-    margin: theme.spacing.unit * 1.25,
+    margin: theme.spacing.unit,
     rowHeightSmall: theme
       .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
       .minHeight,
@@ -252,6 +252,7 @@ class Index extends Component {
         <div className={rootContainerClassname}>
           <div className={classes.scroller}>
             <Pastebin
+              themeType={themeType}
               editorIds={this.editorIds}
               setGridLayoutCallbacks={this.setGridLayoutCallbacks}
               appClasses={classes}

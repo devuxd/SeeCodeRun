@@ -21,6 +21,9 @@ export const addCssAnJs = (doc, store, alJs, css) => {
     style.onload = () => {
       store.dispatch(updatePlaygroundLoadSuccess('css'));
     };
+    style.onerror = e => {
+      store.dispatch(updatePlaygroundLoadFailure('ccs', e)); // do happens?
+    };
     doc.body.appendChild(style);
 
     const script = doc.createElement("script");
@@ -52,12 +55,22 @@ class AutoLog {
   }
 
   toAst(text) {
-    const locationMap = [];
+    const locationMap = {};
     const ast = this.autoLogShift.autoLogSource(text, locationMap);
     return {
       source: text,
       ast: ast,
       locationMap: locationMap,
+    };
+  }
+
+  transformWithLocationIds(ast, getLocationId){
+    const locationMap = {};
+    this.autoLogShift.autoLogAst(ast, locationMap,getLocationId);
+    return {
+      locationMap: locationMap,
+      trace: new Trace(locationMap),
+      code: ast.toSource()
     };
   }
 
@@ -93,19 +106,8 @@ class AutoLog {
         runIframe.contentWindow[autoLogName] = al.trace.autoLog;
         runIframe.contentWindow[preAutoLogName] = al.trace.preAutoLog;
         runIframe.contentWindow[postAutoLogName] = al.trace.postAutoLog;
-        runIframe.contentWindow.onerror = (e) => {
-          console.log("error ifr win", e);
-        };
-
-        const log = runIframe.contentWindow.console.log;
-        runIframe.contentWindow.console.log = function (type, info = {}, params = []) {
-          if (type === 'SCR_LOG' && info.location) {
-            // store.dispatch();
-          } else {
-            log(["c", ...arguments]);
-          }
-
-        };
+        runIframe.contentWindow.onerror = al.trace.onError;
+        runIframe.contentWindow.console.log = al.trace.setConsoleLog(runIframe.contentWindow.console.log) ;
 
         addCssAnJs(runIframe.contentDocument, store, alJs, css);
       } else {

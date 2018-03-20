@@ -74,6 +74,8 @@ export const updatePlaygroundReducer=
           isInstrumented: true,
           isBundling: true,
           errors: null,
+          editorId: action.editorId,
+          autoLog: action.autoLog,
         };
       
       case UPDATE_PLAYGROUND_INSTRUMENTATION_FAILURE:

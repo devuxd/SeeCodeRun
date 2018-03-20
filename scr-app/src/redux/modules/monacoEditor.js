@@ -40,10 +40,10 @@ const loadMonacoEditorsFulfilled=() => ({
   type: LOAD_MONACO_EDITORS_FULFILLED
 });
 
-export const loadMonacoEditorFulfilled=(editorId, isUpdate) => ({
+export const loadMonacoEditorFulfilled=(editorId, firecoPad) => ({
   type: LOAD_MONACO_EDITOR_FULFILLED,
   editorId: editorId,
-  isUpdate: isUpdate
+  firecoPad: firecoPad
 });
 
 export const loadMonacoEditorRejected=(editorId, error) => ({
@@ -103,7 +103,11 @@ export const monacoEditorsReducer=
         };
       case LOAD_MONACO_EDITOR_FULFILLED:
         const monacoEditorsLoadedFulfilled={...state.monacoEditorsStates};
-        monacoEditorsLoadedFulfilled[action.editorId]={isFulfilled: true};
+        monacoEditorsLoadedFulfilled[action.editorId]=
+          {
+            isFulfilled: true,
+            firecoPad: action.firecoPad
+        };
         return {
           ...state,
           monacoEditorsStates: monacoEditorsLoadedFulfilled,

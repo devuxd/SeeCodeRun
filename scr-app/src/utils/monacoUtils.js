@@ -1,14 +1,12 @@
 import React from 'react';
-import {render} from 'react-dom';
-import {Inspector} from 'react-inspector';
-
-import Button from 'material-ui/Button';
-import Settings from 'material-ui-icons/Settings';
 import {Observable} from "rxjs";
 
-// import {setupMonacoTypecript} from '../utils/alm/monacoTypeScript';
-
-
+export const monacoProps = {
+  widgetOffsetHeight: 7,
+  widgetVerticalHeight: 14,
+  lineOffSetHeight: 14,
+  widgetBackgroundColor: 'transparent',
+};
 export const monacoEditorDefaultOptions = {
   model: null,  // handled in FirecoObservable
   glyphMargin: false,
@@ -41,7 +39,7 @@ export const monacoEditorDefaultOptions = {
     arrowSize: 4
   },
   quickSuggestionsDelay: 750,
-  lineHeight: 18 + 10
+  lineHeight: 18 + monacoProps.lineOffSetHeight // 18 is the default
 };
 
 export const monacoEditorMouseEventTypes = {
@@ -53,7 +51,7 @@ export const monacoEditorMouseEventTypes = {
   contextMenu: 'contextMenu'
 };
 
-export function isApplePlatfom() {
+export function isApplePlatform() {
   return (window && window.navigator && window.navigator.platform) ?
     window.navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) ? true : false
     : true;
@@ -71,28 +69,35 @@ export function getTokensAtLine(model, lineNumber) {
 export function configureLineNumbersProvider(editorId, doc) {
   //lineNumberProvider
   const lnp = {
-    onLineNumbersChanged: null,
+    onLineNumbersUpdate: null,
+    onVisibleLineNumbersChanged: null,//(maxVisibleLineNumber) => console.log("afterRender", editorId, maxVisibleLineNumber),
+    preOnLineNumbersChanged: null,
     debounceTime: 100,
-    maxLineNumber: 0,
+    maxVisibleLineNumber: 0,
+    prevMaxVisibleLineNumber: 0,
     timeout: null,
     lineNumbersChanged: () => {
       clearTimeout(lnp.timeout);
       lnp.timeout = setTimeout(() => {
-        lnp.onLineNumbersChanged(configureLineNumbersProvider.maxLineNumber);
+        lnp.onLineNumbersUpdate && lnp.onLineNumbersUpdate(lnp.maxVisibleLineNumber);
+        const diff = lnp.maxVisibleLineNumber - lnp.prevMaxVisibleLineNumber;
+        lnp.onVisibleLineNumbersChanged && diff && lnp.onVisibleLineNumbersChanged(lnp.maxVisibleLineNumber, diff);
       }, lnp.debounceTime);
     },
     lineNumbers: lineNumber => {
-      if (lineNumber === 1) { // is refresh
-        lnp.maxLineNumber = 0;
+      if (lineNumber < lnp.maxVisibleLineNumber) { // is refresh
+        lnp.prevMaxVisibleLineNumber = lnp.maxVisibleLineNumber;
+        lnp.preOnLineNumbersChanged && lnp.preOnLineNumbersChanged(lnp.prevMaxVisibleLineNumber);
+        lnp.maxVisibleLineNumber = 0;
       }
-      if (lineNumber > lnp.maxLineNumber) {
-        lnp.maxLineNumber = lineNumber;
-        lnp.onLineNumbersChanged && lnp.lineNumbersChanged();
+      if (lineNumber > lnp.maxVisibleLineNumber) {
+        lnp.maxVisibleLineNumber = lineNumber;
+        (lnp.onLineNumbersUpdate || lnp.onVisibleLineNumbersChanged) && lnp.lineNumbersChanged();
       }
-      return `<div class="${editorId}-line-number-${lineNumber}">${lineNumber}</div>`;
+      return `<div class="${editorId}-line-number-${lineNumber}" >${lineNumber}</div>`;
     },
     getElementByLineNumber: lineNumber => {
-      if (!lineNumber || lineNumber > lnp.maxLineNumber) {
+      if (!lineNumber || lineNumber > lnp.maxVisibleLineNumber) {
         return null;
       }
       return doc.querySelector(`.${editorId}-line-number-${lineNumber}`);
@@ -113,7 +118,7 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
   }
 
   return monaco.editor.createModel(text, language,
-    isApplePlatfom() ?
+    isApplePlatform() ?
       new monaco.Uri.file(`./${editorId}.${extension}`)
       : new monaco.Uri(`./${editorId}.${extension}`)
   );
@@ -229,14 +234,14 @@ function addLiveLine(changeAccessor, afterLineNumber) {
 }
 
 //monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER
-export function addOverlayWidget(monacoEditor, getDomNode, overlayId, overlayWidgetPositionPreference){
+export function addOverlayWidget(monacoEditor, getDomNode, overlayId, overlayWidgetPositionPreference) {
   const overlayWidget = {
     domNode: null,
-    getId: () =>{
+    getId: () => {
       return overlayId;
     },
-    getDomNode: () =>{
-        overlayWidget.domNode = getDomNode();
+    getDomNode: () => {
+      overlayWidget.domNode = getDomNode();
     },
     getPosition: function () {
       return {

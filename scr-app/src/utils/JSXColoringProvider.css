@@ -19,6 +19,11 @@
 .mtk12.Identifier.JsxAttribute.Identifier {
   color: steelblue;
 }
+
+.liveExpressionWidget{
+  background-color: transparent;
+  border: 1px solid orangered;
+}
 /*.mtk12.Identifier.JsxExpression.JsxClosingElement {*/
   /*color: #ec5f67;*/
 /*}*/
