@@ -1,5 +1,7 @@
 import JSAN from 'jsan';
 import {Subject} from "rxjs";
+import {autoLogName, postAutoLogName, preAutoLogName} from "./AutoLog";
+import _ from "lodash";
 
 class Scope {
   constructor(parent, id) {
@@ -37,7 +39,30 @@ class Trace {
     this.rootScope = null;
     this.subject = new Subject();
     this.currentExpressionId = null; // program
+    this.windowRoots = null;
+    this.startTimestamp = null;
   }
+
+  configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
+    this.startTimestamp = Date.now();
+    this.startStack();
+    this.setWindowRoots(runIframe.contentWindow);
+    runIframe.contentWindow[autoLogName] = this.autoLog;
+    runIframe.contentWindow[preAutoLogName] = this.preAutoLog;
+    runIframe.contentWindow[postAutoLogName] = this.postAutoLog;
+    runIframe.contentWindow.onerror = this.onError;
+    runIframe.contentWindow.console.log = this.consoleLog;
+  }
+
+  setWindowRoots(contentWindow) {
+    this.windowRoots = {};
+    this.windowRoots.consoleLog = contentWindow.console.log;
+    this.setConsoleLog(contentWindow.console.log);
+    this.windowRoots.window = contentWindow;
+    this.windowRoots.document = contentWindow.document;
+    this.windowRoots.documentBody = contentWindow.document.body;
+  }
+
 
   getData(id) {
     return {id: id};
@@ -81,6 +106,19 @@ class Trace {
     this.rootScope = this.currentScope = new Scope(null, -1);
   }
 
+  replacer = (key, value) => {
+    const i = Object.values(this.windowRoots).indexOf(value);
+    if (i > -1) {
+      return `<<[[{{||}}]]>>${Object.keys(this.windowRoots)[i]}`;
+    }
+    return value;
+  };
+
+  getLiveRef=(data)=>{
+    const windowRoot = _.isString(data) && data.startsWith('<<[[{{||}}]]>>') ? data.replace('<<[[{{||}}]]>>', '') : null;
+    return this.windowRoots[windowRoot];
+  };
+
   autoLog = (pre, value, post) => {
     // console.log({
     //   type: 'TRACE',
@@ -90,7 +128,9 @@ class Trace {
     //     data: JSAN.stringify(value)
     //   }
     // });
-    this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, data: JSAN.stringify(value)});
+    let dataType = 'jsan';
+    const data = JSAN.stringify(value, this.replacer, null, true);
+    this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, dataType: dataType, data: data});
     return value;
   };
 
@@ -110,12 +150,6 @@ class Trace {
     //console.log(id, JSAN.parse(JSAN.stringify(this.rootScope)));
     //this.locateStack(this.getCurrentStackIds());
     this.currentScope = this.currentScope.exitScope(id);
-    console.log({
-      type: 'POST-TRACE',
-      action: {
-        id: id,
-      }
-    });
     return {id: id};
   };
 
@@ -123,7 +157,7 @@ class Trace {
     this.subject.next({
       id: this.currentExpressionId,
       loc: this.locationMap[this.currentExpressionId].loc,
-      data: JSAN.stringify(error),
+      data: JSAN.stringify(error, null, null, true),
       isError: true
     });
   };
@@ -137,7 +171,6 @@ class Trace {
       }
 
     };
-    return this.consoleLog;
   }
 }
 

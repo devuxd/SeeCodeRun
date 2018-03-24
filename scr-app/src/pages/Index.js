@@ -4,6 +4,7 @@ import {withStyles} from 'material-ui/styles';
 import withRoot from '../components/withRoot';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar from '../components/TopNavigationBar';
+import TraceControls from '../components/TraceControls';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
@@ -180,6 +181,7 @@ class Index extends Component {
 
   state = {
     isTopNavigationToggled: false,
+    traceAvailable: true,
     copied: false,
     onCopy: this.onCopy,
     pastebinId: null,
@@ -219,7 +221,7 @@ class Index extends Component {
       url, themeType, switchTheme, minPastebinHeight
     } = this.props;
     const {
-      isTopNavigationToggled,
+      isTopNavigationToggled, traceAvailable,
       authUser, isChatToggled, chatClick, chatTitle, isNetworkOk
     } = this.state;
     const activateChat = !!authUser;
@@ -278,6 +280,7 @@ class Index extends Component {
                 switchTheme={switchTheme}
           />
         }
+        {traceAvailable && <TraceControls/>}
       </div>
     );
   }

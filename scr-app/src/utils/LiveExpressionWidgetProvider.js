@@ -1,9 +1,9 @@
 import j from "jscodeshift";
 import _ from 'lodash';
-import './JSXColoringProvider.css';
 import {monacoProps} from "./monacoUtils";
 import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
 
+import './LiveExpressionWidgetProvider.css';
 
 export const jExpressions = [];
 const jIgnoreExpressions =
@@ -50,6 +50,9 @@ class LiveExpressionWidgetProvider {
     }
   }
 
+  colorizeElement(domNode) {
+    this.monaco.editor.colorizeElement(domNode);
+  }
 
   afterRender(ignoreDisplayChange) {
     for (const id in this.contentWidgets) {
@@ -160,6 +163,7 @@ class LiveExpressionWidgetProvider {
             range: range,
             options: {
               className: `${className}`,
+              inlineClassName: 'monaco-editor-decoration-lwp-expression'
               //hoverMessage: expressionType,
             }
           });

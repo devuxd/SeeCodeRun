@@ -13,6 +13,7 @@ import SizeProvider from '../utils/SizeProvider';
 import {
   configureDefaultGridLayoutFormatter
 } from '../utils/reactGridLayoutUtils';
+import DebugContainer from "../components/DebugContainer";
 
 let gridLayoutFormatter = configureDefaultGridLayoutFormatter();
 
@@ -44,6 +45,7 @@ const styles = theme => ({
 class Pastebin extends Component {
   state = {
     gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
+    liveExpressionStoreChange: ()=>{},
   };
 
   getCurrentGridLayouts = () => {
@@ -59,7 +61,7 @@ class Pastebin extends Component {
 
 
   resetGridLayout = layout => {
-    this.restoreGridLayouts(gridLayoutFormatter.getLayoutDummy());
+    this.restoreGridLayouts(gridLayoutFormatter.getLayoutDummy(layout));
     setTimeout(() => {
       this.restoreGridLayouts(layout || gridLayoutFormatter.getDefaultGridLayouts());
     }, 0);
@@ -105,10 +107,14 @@ class Pastebin extends Component {
     gridLayoutFormatter.onBreakpointChange(newBreakpoint);
   };
 
+  setLiveExpressionStoreChange=(callback)=>{
+    this.setState({liveExpressionStoreChange:callback});
+  };
+
   render() {
     const {themeType, appClasses, classes, appStyle, editorIds, width, height} = this.props;
     const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
-    const {gridLayouts} = this.state;
+    const {gridLayouts, liveExpressionStoreChange} = this.state;
     gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;
 
     return (
@@ -138,6 +144,7 @@ class Pastebin extends Component {
                     themeType={themeType}
                     observeMouseEvents
                     observeLiveExpressions={true}
+                    liveExpressionStoreChange={liveExpressionStoreChange}
             />
           </Paper>
           <Paper key="htmlContainer">
@@ -147,10 +154,14 @@ class Pastebin extends Component {
             <Editor editorId={editorIds['css']}/>
           </Paper>
           <Paper key="debugContainer" className={appClasses.container}>
-            <Button variant="fab" color="primary" aria-label="add"
-                    className={classes.button}>
-              <AddIcon/>
-            </Button>
+            <div className={appClasses.scroller}>
+              <div className={appClasses.content}>
+                <DebugContainer appClasses={appClasses}
+                                appStyle={appStyle}
+                                setLiveExpressionStoreChange={this.setLiveExpressionStoreChange}
+                />
+              </div>
+            </div>
           </Paper>
           <Paper key="consoleContainer" className={appClasses.container}>
             <DragHandleIcon className={classes.draggable}/>
@@ -158,7 +169,10 @@ class Pastebin extends Component {
               <div className={appClasses.content}>
               </div>
             </div>
-
+            <Button variant="fab" color="primary" aria-label="add"
+                    className={classes.button}>
+              <AddIcon/>
+            </Button>
           </Paper>
           <Paper key="playgroundContainer"
                  className={appClasses.container}

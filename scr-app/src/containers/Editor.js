@@ -99,7 +99,7 @@ class Editor extends Component {
   }
 
   render() {
-    const {classes, observeLiveExpressions, editorId, themeType} = this.props;
+    const {classes, observeLiveExpressions, editorId, themeType, liveExpressionStoreChange} = this.props;
     const {
       settingsOpen, errorSnackbarOpen, anchorEl, mouseEvent, errors,
       currentContentWidgetId,// forceHideWidgets
@@ -125,6 +125,7 @@ class Editor extends Component {
           themeType={themeType}
           currentContentWidgetId={currentContentWidgetId}
           // forceHideWidgets={forceHideWidgets}
+          liveExpressionStoreChange={liveExpressionStoreChange}
         />
         }
         <Snackbar
@@ -312,6 +313,7 @@ Editor.propTypes = {
   observeMouseEvents: PropTypes.bool,
   mouseEventsDisabled: PropTypes.bool,
   observeLiveExpressions: PropTypes.bool,
+  setLiveExpressionStoreChange: PropTypes.func,
 };
 
 export default withStyles(styles)(Editor);

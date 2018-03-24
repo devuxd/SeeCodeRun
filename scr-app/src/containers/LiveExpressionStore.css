@@ -1,0 +1,8 @@
+.monaco-editor-decoration-les-expressionLive {
+  opacity: 1;
+  filter: unset !important;
+}
+
+.monaco-editor-decoration-les-textHighlight {
+  background: rgba(30, 144, 255, 0.2);
+}

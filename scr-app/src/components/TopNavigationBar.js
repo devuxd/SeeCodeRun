@@ -13,13 +13,14 @@ import LightbulbOutlineIcon from 'material-ui-icons/LightbulbOutline';
 import LightbulbIcon from './icons/Lightbulb';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 import Menu, {MenuItem} from 'material-ui/Menu';
-import { FormGroup, FormControlLabel } from 'material-ui/Form';
+import {FormGroup, FormControlLabel} from 'material-ui/Form';
 import Checkbox from 'material-ui/Checkbox';
 import {CopyToClipboard} from "react-copy-to-clipboard";
 
 let iconStyle = {};
 const lightBulbIconStyle = {};
 const scrSvg = {};
+const aStyle = {};
 
 const styles = (theme) => {
     iconStyle = {
@@ -44,6 +45,10 @@ const styles = (theme) => {
       color: theme.palette.action.active,
       secondaryColor: theme.palette.background.default,
       fontSize: theme.typography.fontSize * 3,
+    };
+
+    aStyle.link = {
+      color: theme.palette.action.active,
     };
 
     return {
@@ -109,26 +114,27 @@ class TopNavigationBar extends Component {
   };
 
   handleChange = name => event => {
-    this.setState({ [name]: event.target.checked });
+    this.setState({[name]: event.target.checked});
   };
 
-  getFinalUrl=shareUrl=>{
-    const {checkedLocked, checkedJS, checkedHTML, checkedCSS, checkedConsole, checkedOutput} =this.state;
-    if(shareUrl){
+  getFinalUrl = shareUrl => {
+    const {checkedLocked, checkedJS, checkedHTML, checkedCSS, checkedConsole, checkedOutput} = this.state;
+    if (shareUrl) {
       let query = `${
-        checkedLocked?'&locked':''
-      }${
-        checkedJS?'&js':''
-      }${checkedHTML?'&html':''}${checkedCSS?'&css':''}${checkedConsole?'&console':''}${checkedOutput?'&output':''}`;
+        checkedLocked ? '&locked' : ''
+        }${
+        checkedJS ? '&js' : ''
+        }${checkedHTML ? '&html' : ''}${checkedCSS ? '&css' : ''}${checkedConsole ? '&console' : ''}${checkedOutput ? '&output' : ''}`;
 
-      if(query){
-        query=`?custom${query}`;
+      if (query) {
+        query = `?custom${query}`;
       }
 
       return shareUrl + query;
     }
     return null;
   };
+
   render() {
     const {
       classes, themeType, switchTheme,
@@ -142,7 +148,7 @@ class TopNavigationBar extends Component {
     const shareOpen = !!shareAnchorEl;
     const {infoAnchorEl} = this.state;
     const infoOpen = !!infoAnchorEl;
-    const finalUrl= this.getFinalUrl(shareUrl);
+    const finalUrl = this.getFinalUrl(shareUrl);
     let networkStateIcon = null;
     if (showNetworkState) {
       const networkOk = isNetworkOk();
@@ -205,9 +211,9 @@ class TopNavigationBar extends Component {
                 onClose={handleShareClose}
               >
                 <MenuItem className={classes.centered}
-                          onClick={finalUrl &&shareClick}
+                          onClick={finalUrl && shareClick}
                 >{
-                  finalUrl ? <a href={finalUrl} target="_blank"
+                  finalUrl ? <a href={finalUrl} target="_blank" style={aStyle.link}
                                 onClick={e => e.preventDefault()}
                   >
                     {finalUrl}
@@ -287,7 +293,7 @@ class TopNavigationBar extends Component {
                       />
                     </FormGroup>
                   </MenuItem>
-              }
+                }
 
                 {
                   finalUrl &&

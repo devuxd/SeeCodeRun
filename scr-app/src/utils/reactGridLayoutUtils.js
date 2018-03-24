@@ -13,7 +13,7 @@ export const getDefaultGrid = () => ({
   rows: {lg: 50},
 });
 
-export const getDefaultGridUnits =(grid)=>( (cl, bk, prop) => {
+export const getDefaultGridUnits = (grid) => ((cl, bk, prop) => {
   return Math.floor(grid[cl][bk] * (prop / 100));
 });
 
@@ -220,7 +220,7 @@ export const getDefaultLayoutFormatter = (C2I, grid, currentBreakPoint, formatLa
   };
 };
 
-export const configureDefaultGridLayoutFormatter=(currentBreakPoint = getDefaultBreakPoint())=>{
+export const configureDefaultGridLayoutFormatter = (currentBreakPoint = getDefaultBreakPoint()) => {
   const gl = {currentBreakPoint: currentBreakPoint};
   gl.gridBreakpoints = getDefaultGridBreakpoints();
   gl.grid = getDefaultGrid();
@@ -232,8 +232,8 @@ export const configureDefaultGridLayoutFormatter=(currentBreakPoint = getDefault
   gl.formatLayoutHeight = getDefaultFormatLayoutHeight(gl.C2I, gl.grid, currentBreakPoint);
   gl.layoutFormatInvariant = getDefaultlayoutFormatInvariant(gl.C2I);
   gl.formatLayout = getDefaultLayoutFormatter(gl.C2I, gl.grid, currentBreakPoint, gl.formatLayoutHeight, gl.layoutFormatInvariant);
-  gl.getLayoutDummy = ()=>{ // required to force RGL render on reset layout
-    const hack = gl.getDefaultGridLayouts();
+  gl.getLayoutDummy = (layout) => { // required to force RGL render on reset layout
+    const hack = layout ? {...layout} : gl.getDefaultGridLayouts();
     hack[gl.currentBreakPoint] = [...hack[gl.currentBreakPoint], {
       i: 'dummy',
       x: 0,
@@ -243,7 +243,7 @@ export const configureDefaultGridLayoutFormatter=(currentBreakPoint = getDefault
     }];
     return hack;
   };
-  gl.onBreakpointChange= bk=>{
+  gl.onBreakpointChange = bk => {
     gl.currentBreakPoint = bk;
     gl.C2I = getCellToIndex(gl.currentGridLayouts, bk);
     gl.formatLayoutHeight = getDefaultFormatLayoutHeight(gl.C2I, gl.grid, bk);

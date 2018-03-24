@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import {withStyles} from 'material-ui/styles';
 import {chromeDark, chromeLight} from "react-inspector";
+import {ObjectRootLabel} from 'react-inspector'
+import {ObjectLabel} from 'react-inspector'
 import _ from "lodash";
 import {Subject} from 'rxjs';
 // import {Observable} from "rxjs";
@@ -10,8 +12,12 @@ import {themeTypes} from '../components/withRoot';
 import LiveExpression from '../components/LiveExpression';
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updateBundle, updateBundleFailure, updateBundleSuccess} from "../redux/modules/liveExpressionStore";
+import './LiveExpressionStore.css';
 // import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "../utils/scrUtils";
 
+
+const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
+const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
 const styles = (theme) => ({
   popoverPaper: {
     // padding: theme.spacing.unit,
@@ -23,7 +29,7 @@ const styles = (theme) => ({
     // pointerEvents: 'none',
   },
   objectExplorer: {
-    padding: theme.spacing.unit,
+    margin: theme.spacing.unit / 4,
   },
   rangeSlider: {
     padding: theme.spacing.unit,
@@ -42,10 +48,13 @@ class LiveExpressionStore extends Component {
   rt = 100;
   currentEditorsTexts = null;
   t = false;
+  didUpdate = true;
+  refreshRate = 1000 / 6;
+  refreshInterval = null;
 
   render() {
     const {classes, themeType, currentContentWidgetId, editorWidth, editorHeight} = this.props;
-    const theme = themeType === themeTypes.darkTheme ? chromeDark : chromeLight;
+    this.theme = themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight;
     const {decorators, autoLogger, timeline} = this.state;
 
     const style = {
@@ -56,32 +65,35 @@ class LiveExpressionStore extends Component {
       style.maxHeight = `${Math.ceil(editorHeight / 2)}px`;
     }
     // this.t = this.t || forceHideWidgets;
-    return (<div>
-      {
-        (decorators || []).map(widget => {
-          // console.log(widget.id, autoLog);
-          let data = (timeline || []).filter(entry => {
-            return entry.id === widget.id;
-          });//autoLogger.trace.getData(widget.id);
+    const liveRanges = [];
+    const liveExpressions = (decorators || []).map(widget => {
+      // console.log(widget.id, autoLog);
+      let data = (timeline || []).filter(entry => {
+        return entry.id === widget.id;
+      });//autoLogger.trace.getData(widget.id);
 
-          if (data.length) {
-            widget.contentWidget.domNode.style.backgroundColor = 'orange';
-          } else {
-            widget.contentWidget.domNode.style.backgroundColor = 'transparent';
-          }
-          // widget.contentWidget.domNode.style.borderTop = '2px solid blue';
-
-          return (<LiveExpression
-            style={style}
-            key={widget.id}
-            theme={theme}
-            classes={classes}
-            widget={widget}
-            data={data}
-            isOpen={data.length > 0 && currentContentWidgetId === widget.id}
-          />);
-        })
+      if (data.length) {
+        widget.contentWidget.domNode.style.backgroundColor = 'orange';
+        widget.range && liveRanges.push(widget.range);
+      } else {
+        widget.contentWidget.domNode.style.backgroundColor = 'transparent';
       }
+      // widget.contentWidget.domNode.style.borderTop = '2px solid blue';
+
+      return (<LiveExpression
+        style={style}
+        key={widget.id}
+        theme={this.theme}
+        classes={classes}
+        widget={widget}
+        data={data}
+        isOpen={data.length > 0 && currentContentWidgetId === widget.id}
+        objectNodeRenderer={this.objectNodeRenderer}
+      />);
+    });
+    this.highlightLiveExpressions(liveRanges);
+    return (<div>
+      {liveExpressions}
     </div>);
 
   }
@@ -120,7 +132,8 @@ class LiveExpressionStore extends Component {
     this.bundlingSubject = new Subject();
     this.observeBundling(this.bundlingSubject);
     const {store} = this.context;
-    const {editorId} = this.props;
+    const {editorId, setLiveExpressionStoreChange} = this.props;
+    setLiveExpressionStoreChange && setLiveExpressionStoreChange(this.liveExpressionStoreChange);
     this.unsubscribe = store.subscribe(() => {
       monaco = monaco || window.monaco;
       const state = store.getState();
@@ -137,10 +150,24 @@ class LiveExpressionStore extends Component {
       const editorsTexts = store.getState().pastebinReducer.editorsTexts;
       if (this.shouldBundle(editorsTexts)) {
         this.currentEditorsTexts = editorsTexts;
+        clearInterval(this.refreshInterval);
+        this.timeline = [];
+        this.unHighlightLiveExpressions();
         store.dispatch(updateBundle(Date.now()));
         this.bundlingSubject.next(this.currentEditorsTexts);
       }
     })
+  }
+
+  componentWillReceiveProps(nextProps) {
+    const {liveExpressionStoreChange} = nextProps;
+    if (this.liveExpressionStoreChange !== liveExpressionStoreChange) {
+      this.liveExpressionStoreChange = liveExpressionStoreChange;
+    }
+  }
+
+  componentDidUpdate() {
+    this.didUpdate = true;
   }
 
   componentWillUnmount() {
@@ -179,8 +206,19 @@ class LiveExpressionStore extends Component {
 
     if (this.traceSubscriber) {
       this.traceSubscriber.unsubscribe();
-      this.setState({timeline: []});
     }
+
+    this.objectNodeRenderer = ({depth, name, data, isNonenumerable, expanded}) => {
+      //todo handle array and obj
+      const liveRef=autoLogger.trace.getLiveRef(data);
+      return depth === 0
+        ? <ObjectRootLabel name={name} data={liveRef || data}/>
+        : <ObjectLabel name={name} data={liveRef || data} isNonenumerable={isNonenumerable}/>;
+    };
+
+    this.setState({timeline: []});
+    this.unHighlightLiveExpressions();
+    this.refreshInterval = setInterval(this.refreshTimeline, this.refreshRate);
     this.traceSubscriber = autoLogger.trace;
     this.traceSubscriber.subscribe(this.handleTraceChange);
 
@@ -188,37 +226,101 @@ class LiveExpressionStore extends Component {
   };
 
   handleTraceChange = (payload) => {
-    setTimeout(() => {
-      this.setState(prevState => ({timeline: prevState.timeline ? [...prevState.timeline, payload] : [payload]}));
-    }, 0);
+    this.timeline = this.timeline ? [...this.timeline, payload] : [payload];
+    this.refreshTimeline();
   };
 
-  configureLiveExpressions(locationMap) {
-    // const {classes} = this.props;
-    const liveExpressions = [];
-    for (const i in locationMap) {
-      // const monacoRange = this.locToMonacoRange(locationMap[i].loc);
-      // const className = this.monacoRangeToClassname(monacoRange);
-      // liveExpressions.push(this.configureLiveExpressionDecorator(monacoRange, className, classes));
+  highlightLiveExpressions = (liveRanges, isReveal = false) => {
+    this.prevDecorationIds = this.highlightTexts(
+      liveRanges,
+      {
+        inlineClassName: 'monaco-editor-decoration-les-expressionLive'
+      },
+      this.prevDecorationIds,
+      isReveal,
+      true
+    );
+  };
+
+  unHighlightLiveExpressions = () => {
+    if (this.prevDecorationIds && this.prevDecorationIds.length) {
+      const {firecoPad} = this.state;
+      this.prevDecorationIds = firecoPad.monacoEditor.deltaDecorations(this.prevDecorationIds, []);
     }
-    return liveExpressions;
-  }
+  };
+
+  highlightSingleText = (loc, isReveal = true) => {
+    if (!loc) {
+      this.unHighlightSingleText();
+      return;
+    }
+
+    this.prevSingleTextDecorationId = this.highlightTexts(
+      [loc],
+      {
+        className: 'monaco-editor-decoration-les-textHighlight'
+      }, this.prevSingleTextDecorationId, isReveal);
+
+  };
+
+  unHighlightSingleText = () => {
+    if (this.prevSingleTextDecorationId && this.prevSingleTextDecorationId.length) {
+      const {firecoPad} = this.state;
+      this.prevSingleTextDecorationId = firecoPad.monacoEditor.deltaDecorations(this.prevSingleTextDecorationId, []);
+    }
+  };
+
+  highlightTexts = (locs, options, prevDecorationIds, isReveal = false, areRanges = false) => {
+    const {firecoPad} = this.state;
+
+    if (!firecoPad || !locs) {
+      return;
+    }
+
+    const decorations = locs.map(loc => ({
+      range: areRanges ? loc : firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc),
+      options: options
+    }));
+
+    isReveal && decorations.length && this.revealText(firecoPad.monacoEditor, decorations[decorations.length - 1].range);
+
+    return firecoPad.monacoEditor.deltaDecorations(prevDecorationIds || [], decorations);
+  };
+
+  revealText = (monacoEditor, range, ifOutsideViewport) => {
+    ifOutsideViewport ?
+      monacoEditor.revealRangeInCenterIfOutsideViewport(range)
+      : monacoEditor.revealRangeInCenter(range);
+  };
+
+  getEditorTextInLoc = (loc) => {
+    const {firecoPad} = this.state;
+
+    if (!firecoPad || !loc) {
+      return;
+    }
+
+    return firecoPad.monacoEditor.getModel().getValueInRange(firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc));
+  };
+
+  colorizeDomElement=(ref)=>{
+    const {firecoPad} = this.state;
+    return firecoPad.liveExpressionWidgetProvider.colorizeElement(ref);
+  };
+
+  refreshTimeline = () => {
+    if (this.timeline !== this.state.timeline) {
+      if (this.didUpdate) {
+        this.didUpdate = false;
+        this.setState({timeline: this.timeline});
+        this.liveExpressionStoreChange && this.liveExpressionStoreChange(this.timeline, this.theme, this.highlightSingleText, this.getEditorTextInLoc, this.colorizeDomElement, this.objectNodeRenderer);//set via props
+      }
+    }
+  };
 
   afterWidgetize = (payload) => {//decorators
     this.setState({...payload});
   };
-
-  updateAutolog() {
-    // const autoLog = this.autoLog;
-    // try {
-    //   ast = autoLog.toAst(js);
-    //   al = autoLog.transform(ast);
-    //   alJs = al.code;
-    //   store.dispatch(updatePlaygroundInstrumentationSuccess('js', al));
-    // } catch (error) {
-    //   store.dispatch(updatePlaygroundInstrumentationFailure('js', error));
-    // }
-  }
 
   updateLiveExpressions(liveExpressionWidgetProvider) {
     if (!liveExpressionWidgetProvider) {
@@ -240,6 +342,7 @@ LiveExpressionStore.contextTypes = {
 LiveExpressionStore.propTypes = {
   classes: PropTypes.object.isRequired,
   editorId: PropTypes.string.isRequired,
+  liveExpressionStoreChange: PropTypes.func,
 };
 
 export default withStyles(styles)(LiveExpressionStore);

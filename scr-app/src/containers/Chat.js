@@ -98,7 +98,7 @@ class Chat extends Component {
   SERVER_TIMESTAMP = null;
   chatUserIdLocalStoragePath = null;
   updateMessagesInterval = null;
-  updateMessagesIntervalTime = 86400000;
+  updateMessagesIntervalTime = 300000;//fiveMins
   dayOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 
@@ -165,7 +165,6 @@ class Chat extends Component {
     const hours = date.getHours() > 9 ? date.getHours() : `0${date.getHours()}`;
     const minutes = date.getMinutes() > 9 ? date.getMinutes() : `0${date.getMinutes()}`;
     let formattedTime = `at ${hours}:${minutes}`;
-
     if (elapsedTimeInMs > 86400000 * 7) {//WeekInMs
       formattedTime = `${date.getMonth()}/${date.getDay()}${date.getFullYear() === currentTime.getFullYear() ? '' : '/' + date.getFullYear()} ${formattedTime}`;
     } else {
@@ -175,7 +174,7 @@ class Chat extends Component {
         if (elapsedTimeInMs < 60000) {//minuteInMs
           formattedTime = 'some seconds ago...'
         } else {
-          if (elapsedTimeInMs < 600000) {//tenMinInMs
+          if (elapsedTimeInMs < 300000) {//fiveMinInMs
             formattedTime = 'some minutes ago...'
           } else {
             formattedTime = `today ${formattedTime}`;
@@ -278,16 +277,16 @@ class Chat extends Component {
         themeType, switchTheme,
         isChatToggled, chatClick, isTopNavigationToggled, logoClick, currentLayout, resetLayoutClick
       } = this.props;
-      if (chatClick && layout.isChatToggled !== isChatToggled) {
+      if (chatClick && layout.isChatToggled && !isChatToggled) {
         chatClick();
       }
-      if (logoClick && layout.isTopNavigationToggled !== isTopNavigationToggled) {
+      if (logoClick && layout.isTopNavigationToggled && !isTopNavigationToggled) {
         logoClick();
       }
       const grid = currentLayout && currentLayout();
-      if (resetLayoutClick && grid && !_.isEqual(layout.grid, grid)) {
-        //todo is still having an outdated version
-        // resetLayoutClick(layout.grid);
+      const layoutGrid = layout.gridString ? JSON.parse(layout.gridString) : null;
+      if (resetLayoutClick && grid && layoutGrid && !_.isEqual(layoutGrid, grid)) {
+        resetLayoutClick(layoutGrid);
       }
 
       if (switchTheme && layout.themeType && layout.themeType !== themeType) {
@@ -463,7 +462,8 @@ class Chat extends Component {
         this.drt = setTimeout(() => {
           $(this.chatEl).draggable();
           $(this.chatEl).resizable({
-            handles: "e, se, s, sw, w"
+            containment: false,
+            handles: "w, s, e",
           });
           this.isDraggableAndResizable = true;
         }, 1500);
@@ -547,6 +547,17 @@ class Chat extends Component {
       height: elBoundingClientRect.height,
     };
   };
+
+  componentWillReceiveProps(nextProps) {
+    clearInterval(this.updateMessagesInterval);
+    if (nextProps.isChatToggled) {
+      this.updateMessagesInterval = setInterval(() => {
+        this.setState(prevState => ({
+          messages: prevState.messages
+        }));
+      }, this.updateMessagesIntervalTime);
+    }
+  }
 
   render() {
     const {classes, isChatToggled, chatClick, chatTitle} = this.props;
@@ -729,15 +740,15 @@ class Chat extends Component {
       }
       const chatBoundingClientRect = {
         left: elBoundingClientRect.left,
-        right: elBoundingClientRect.right,
+        // right: elBoundingClientRect.right,
         top: elBoundingClientRect.top,
-        bottom: elBoundingClientRect.bottom,
+        // bottom: elBoundingClientRect.bottom,
         width: elBoundingClientRect.width,
         height: elBoundingClientRect.height,
       };
 
       const newLayout = {
-        grid: currentLayout(),
+        gridString: JSON.stringify(currentLayout()),
         isTopNavigationToggled: isTopNavigationToggled,
         themeType: themeType,
         isChatToggled: isChatToggled,
@@ -751,9 +762,10 @@ class Chat extends Component {
       } else {
         newLayout.chatBoundingClientRect = chatBoundingClientRect;
       }
+
       this.firecoUsers
         .child(`${chatUserId}/layout`)
-        .update(newLayout, error => {
+        .update({...newLayout}, error => {
           console.log(error);
         });
     }

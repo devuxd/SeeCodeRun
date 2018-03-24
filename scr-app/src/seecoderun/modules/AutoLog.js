@@ -102,16 +102,9 @@ class AutoLog {
 
     runIframe.addEventListener('load', () => {
       if (al && al.trace && runIframe.contentWindow) {
-        al.trace.startStack();
-        runIframe.contentWindow[autoLogName] = al.trace.autoLog;
-        runIframe.contentWindow[preAutoLogName] = al.trace.preAutoLog;
-        runIframe.contentWindow[postAutoLogName] = al.trace.postAutoLog;
-        runIframe.contentWindow.onerror = al.trace.onError;
-        runIframe.contentWindow.console.log = al.trace.setConsoleLog(runIframe.contentWindow.console.log) ;
-
+        al.trace.configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName);
         addCssAnJs(runIframe.contentDocument, store, alJs, css);
       } else {
-
 
       }
 

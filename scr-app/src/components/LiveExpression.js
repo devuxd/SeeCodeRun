@@ -15,7 +15,7 @@ class LiveExpression extends Component {
     anchorEl: null,
     wasHovered: false, // at least once
     isHovered: false,
-    sliderRange: [0, Infinity],
+    sliderRange: [1],
   };
 
   toClosedState = () => ({
@@ -23,7 +23,7 @@ class LiveExpression extends Component {
     anchorEl: null,
     wasHovered: false, // at least once
     isHovered: false,
-    sliderRange: this.state.sliderRange || [0, Infinity],
+    sliderRange: this.state.sliderRange || [1],
   });
 
 
@@ -88,33 +88,32 @@ class LiveExpression extends Component {
     };
   };
 
-  handleSliderChange = (change, bla) => {
-    // console.log('slider', change, bla);
-    this.setState({sliderRange: change});
+  handleSliderChange = (change) => { // slider
+    this.setState({sliderRange: [change]});
   };
 
   render() {
-    const {classes, /*container,*/ style, theme, data} = this.props;
+    const {classes, /*container,*/ style, theme, data, objectNodeRenderer} = this.props;
     const {anchorEl, sliderRange} = this.state;
     const isActive = !!anchorEl;
     let datum;
-    let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0], rangeEnd = sliderRange[1];
+    let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];//, rangeEnd = sliderRange[1];
 
     if (data) {
       if (data.length) {
+        sliderMin = 1;
         sliderMax = data.length;
-        rangeStart = Math.min(rangeStart, sliderMax - 1);
-        rangeEnd = Math.min(rangeEnd, sliderMax);
-        datum = data[rangeStart].data ? JSAN.parse(data[rangeStart].data) : datum;
+        // rangeStart=sliderMax-1;
+        rangeStart = Math.min(rangeStart, sliderMax);
+        // rangeStart = Math.min(rangeStart, sliderMax);
+     //   rangeEnd = Math.min(rangeEnd, sliderMax);
+        datum = data[rangeStart-1].data ? JSAN.parse(data[rangeStart-1].data) : datum;
       }
     } else {
       datum = data;
     }
 
-    const defaultValue = [
-      rangeStart,
-      rangeEnd,
-    ];
+    const defaultValue = rangeStart;//[rangeStart, rangeEnd,];
     const showSlider = sliderMin > 1 || sliderMax > 1;
     return (
       <Popover
@@ -147,15 +146,16 @@ class LiveExpression extends Component {
         >
 
           {showSlider &&
-          <div className={classes.rangeSlider}><RangeSlider
+          <RangeSlider
             min={sliderMin}
             max={sliderMax}
             defaultValue={defaultValue}
             handleSliderChange={this.handleSliderChange}
-          /></div>
+          />
           }
           <div className={classes.objectExplorer}>
             <ObjectExplorer
+              objectNodeRenderer={objectNodeRenderer}
               theme={theme}
               data={datum}
             />
