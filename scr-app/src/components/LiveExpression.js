@@ -93,7 +93,7 @@ class LiveExpression extends Component {
   };
 
   render() {
-    const {classes, /*container,*/ style, theme, data, objectNodeRenderer} = this.props;
+    const {classes, /*container,*/ style, theme, data, objectNodeRenderer, expressionId, handleChange} = this.props;
     const {anchorEl, sliderRange} = this.state;
     const isActive = !!anchorEl;
     let datum;
@@ -155,9 +155,12 @@ class LiveExpression extends Component {
           }
           <div className={classes.objectExplorer}>
             <ObjectExplorer
+              // key={expressionId}
+              expressionId={expressionId}
               objectNodeRenderer={objectNodeRenderer}
               theme={theme}
               data={datum}
+              handleChange={handleChange}
             />
           </div>
         </div>

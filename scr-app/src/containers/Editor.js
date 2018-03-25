@@ -101,7 +101,7 @@ class Editor extends Component {
   render() {
     const {classes, observeLiveExpressions, editorId, themeType, liveExpressionStoreChange} = this.props;
     const {
-      settingsOpen, errorSnackbarOpen, anchorEl, mouseEvent, errors,
+      settingsOpen, errorSnackbarOpen, errors,
       currentContentWidgetId,// forceHideWidgets
     } = this.state;
     const fabClassName =

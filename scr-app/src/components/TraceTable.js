@@ -381,7 +381,7 @@ class TraceTable extends React.Component {
     const {classes} = this.props;
     const {
       data, order, orderBy, selected, rowsPerPage, page,
-      theme, highlightSingleText, objectNodeRenderer,
+      theme, highlightSingleText, objectNodeRenderer, handleChange,
     } = this.state;
     const emptyRows = rowsPerPage - Math.min(rowsPerPage, data.length - page * rowsPerPage);
 
@@ -423,9 +423,12 @@ class TraceTable extends React.Component {
                     </TableCell>
                     <TableCell padding="none">
                       <ObjectExplorer
+                        expressionId={n.expressionId}
                         objectNodeRenderer={objectNodeRenderer}
                         theme={theme}
-                        data={_.isString(n.value) ? JSAN.parse(n.value) : n.value}/>
+                        data={_.isString(n.value) ? JSAN.parse(n.value) : n.value}
+                        handleChange={handleChange}
+                      />
                     </TableCell>
                   </TableRow>
                 );
@@ -467,7 +470,7 @@ class TraceTable extends React.Component {
     setLiveExpressionStoreChange(this.liveExpressionStoreChange);
   }
 
-  liveExpressionStoreChange = (timeline, theme, highlightSingleText, getEditorTextInLoc, colorizeDomElement, objectNodeRenderer) => {
+  liveExpressionStoreChange = (timeline, theme, highlightSingleText, getEditorTextInLoc, colorizeDomElement, objectNodeRenderer, handleChange) => {
     const {orderBy, order} = this.state;
     const data = (timeline || []).map((entry, i) => ({
       id: i, // todo entry.timestamp
@@ -475,6 +478,7 @@ class TraceTable extends React.Component {
       expression: getEditorTextInLoc(entry.loc),
       value: entry.data,
       loc: {...entry.loc},
+      expressionId: entry.id,
     }));
 
     const sortedData = this.sortData(data, orderBy, order);
@@ -487,6 +491,7 @@ class TraceTable extends React.Component {
       getEditorTextInLoc: getEditorTextInLoc,
       colorizeDomElement: colorizeDomElement,
       objectNodeRenderer: objectNodeRenderer,
+      handleChange: handleChange,
     });
   };
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 import {Observable} from "rxjs";
 
 export const monacoProps = {
@@ -38,8 +37,9 @@ export const monacoEditorDefaultOptions = {
     horizontalScrollbarSize: 4,
     arrowSize: 4
   },
-  quickSuggestionsDelay: 750,
-  lineHeight: 18 + monacoProps.lineOffSetHeight // 18 is the default
+  quickSuggestionsDelay: 1250,
+  lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default
+  lineNumbersMinChars: 3, //5 is default
 };
 
 export const monacoEditorMouseEventTypes = {
@@ -55,15 +55,6 @@ export function isApplePlatform() {
   return (window && window.navigator && window.navigator.platform) ?
     window.navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) ? true : false
     : true;
-}
-
-export function getTokensAtLine(model, lineNumber) {
-  // Force line's state to be accurate
-  model.getLineTokens(lineNumber, /*inaccurateTokensAcceptable*/false);
-  // Get the tokenization state at the beginning of this line
-  const freshState = model._lines[lineNumber - 1].getState().clone();
-  // Get the human readable tokens on this line
-  // return model._tokenizationSupport.tokenize(model.getLineContent(lineNumber), freshState, 0).tokens;
 }
 
 export function configureLineNumbersProvider(editorId, doc) {

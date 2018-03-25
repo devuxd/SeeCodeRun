@@ -7,9 +7,9 @@ export const toAst=(source, options) => {
   return j(source);
 };
 
-const getFirstNode=(jPath, j) => {
-  return j(jPath).get('body', 0).node;
-};
+// const getFirstNode=(jPath, j) => {
+//   return j(jPath).get('body', 0).node;
+// };
 
 
 //

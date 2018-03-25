@@ -1,5 +1,15 @@
 import {Observable} from "rxjs/Rx";
 
+// from is-dom
+export const isNode= (val, win=window) =>{
+  return (!val || typeof val !== 'object')
+    ? false
+    : (typeof win === 'object' && typeof win.Node === 'object')
+      ? (val instanceof win.Node)
+      : (typeof val.nodeType === 'number') &&
+      (typeof val.nodeName === 'string')
+};
+
 export const getLocationUrlData = () => {
   return {
     url:

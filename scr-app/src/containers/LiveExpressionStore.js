@@ -1,20 +1,19 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import {withStyles} from 'material-ui/styles';
+import {Badge} from "material-ui";
+import FiberManualRecordIcon from 'material-ui-icons/FiberManualRecord'
 import {chromeDark, chromeLight} from "react-inspector";
 import {ObjectRootLabel} from 'react-inspector'
 import {ObjectLabel} from 'react-inspector'
 import _ from "lodash";
 import {Subject} from 'rxjs';
-// import {Observable} from "rxjs";
 
 import {themeTypes} from '../components/withRoot';
 import LiveExpression from '../components/LiveExpression';
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updateBundle, updateBundleFailure, updateBundleSuccess} from "../redux/modules/liveExpressionStore";
 import './LiveExpressionStore.css';
-// import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "../utils/scrUtils";
-
 
 const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
 const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
@@ -33,7 +32,21 @@ const styles = (theme) => ({
   },
   rangeSlider: {
     padding: theme.spacing.unit,
-  }
+  },
+  badgeRoot: {
+    position: 'relative',
+    display: 'inline-flex',
+    // For correct alignment with the text.
+    verticalAlign: 'middle',
+  },
+  liveBadge: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    position: 'absolute', zIndex: 10, bottom: 0, left: 0, background: 'red', margin: 0, padding: 0,
+    width: 2,
+    height: 2,
+  },
 });
 
 let monaco = null;
@@ -51,6 +64,7 @@ class LiveExpressionStore extends Component {
   didUpdate = true;
   refreshRate = 1000 / 6;
   refreshInterval = null;
+  leto = null;
 
   render() {
     const {classes, themeType, currentContentWidgetId, editorWidth, editorHeight} = this.props;
@@ -83,12 +97,14 @@ class LiveExpressionStore extends Component {
       return (<LiveExpression
         style={style}
         key={widget.id}
+        expressionId={widget.id}
         theme={this.theme}
         classes={classes}
         widget={widget}
         data={data}
         isOpen={data.length > 0 && currentContentWidgetId === widget.id}
         objectNodeRenderer={this.objectNodeRenderer}
+        handleChange={this.handleObjectExplorerExpand}
       />);
     });
     this.highlightLiveExpressions(liveRanges);
@@ -208,12 +224,46 @@ class LiveExpressionStore extends Component {
       this.traceSubscriber.unsubscribe();
     }
 
-    this.objectNodeRenderer = ({depth, name, data, isNonenumerable, expanded}) => {
-      //todo handle array and obj
-      const liveRef=autoLogger.trace.getLiveRef(data);
-      return depth === 0
-        ? <ObjectRootLabel name={name} data={liveRef || data}/>
-        : <ObjectLabel name={name} data={liveRef || data} isNonenumerable={isNonenumerable}/>;
+    this.objectNodeRenderer = {
+      getWindowRef: ()=>autoLogger.trace.windowRoots.window,
+      handleChange: null,
+      expandPathsState: null,
+      getExpandedPaths: (expandPathsState) => {
+        if (expandPathsState) {
+          return Object.keys(expandPathsState).filter(path => expandPathsState[path]);
+        } else {
+          return [];
+        }
+      },
+      hideLiveRefs: false,
+      render: (props) => {
+        const {depth, name, data, isNonenumerable, expanded, path} = props;
+        const paths = this.objectNodeRenderer.expandPathsState || {};
+        paths[path] = expanded;
+        if (expanded) {
+          clearTimeout(this.leto);
+          this.leto = setTimeout(() => {
+            this.objectNodeRenderer.handleChange && this.objectNodeRenderer.handleChange();
+          }, 500);
+        }
+        //todo handle array and obj
+        const liveRef = autoLogger.trace.parseLiveRefs(data, this.objectNodeRenderer.hideLiveRefs);
+        const isRoot = depth === 0;
+        // const objectLabel =
+          return isRoot ?
+          <ObjectRootLabel name={name} data={liveRef.data}/>
+          : <ObjectLabel name={name} data={liveRef.data} isNonenumerable={isNonenumerable}/>;
+
+        // return liveRef.isLive ?
+        //   isRoot ?
+        //     <span className={this.props.classes.badgeRoot}>{objectLabel}</span>
+        //     : <div className={this.props.classes.badgeRoot}>
+        //       {objectLabel}
+        //       <span className={this.props.classes.liveBadge}/>
+        //     </div>
+        //   : objectLabel;
+      },
+      parseLiveRefs: autoLogger.trace.parseLiveRefs,
     };
 
     this.setState({timeline: []});
@@ -303,17 +353,35 @@ class LiveExpressionStore extends Component {
     return firecoPad.monacoEditor.getModel().getValueInRange(firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc));
   };
 
-  colorizeDomElement=(ref)=>{
+  colorizeDomElement = (ref) => {
     const {firecoPad} = this.state;
     return firecoPad.liveExpressionWidgetProvider.colorizeElement(ref);
   };
+
+  // lecto=null;
+  // handleObjectExplorerExpand = () => {
+  //   clearTimeout(this.lecto);
+  //   this.lecto= setTimeout(()=>{
+  //     //console.log("");
+  //    this.setState({timeline: this.state.timeline});
+  //   }, 250);
+  // };
 
   refreshTimeline = () => {
     if (this.timeline !== this.state.timeline) {
       if (this.didUpdate) {
         this.didUpdate = false;
         this.setState({timeline: this.timeline});
-        this.liveExpressionStoreChange && this.liveExpressionStoreChange(this.timeline, this.theme, this.highlightSingleText, this.getEditorTextInLoc, this.colorizeDomElement, this.objectNodeRenderer);//set via props
+        this.liveExpressionStoreChange &&
+        this.liveExpressionStoreChange(
+          this.timeline,
+          this.theme,
+          this.highlightSingleText,
+          this.getEditorTextInLoc,
+          this.colorizeDomElement,
+          this.objectNodeRenderer,
+          // this.handleObjectExplorerExpand
+        );//set via props
       }
     }
   };

@@ -41,10 +41,12 @@ class Trace {
     this.currentExpressionId = null; // program
     this.windowRoots = null;
     this.startTimestamp = null;
+    this.magicTag = null;
   }
 
   configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
     this.startTimestamp = Date.now();
+    this.magicTag = `<<[[{{|${this.startTimestamp}|}}]]>>`;
     this.startStack();
     this.setWindowRoots(runIframe.contentWindow);
     runIframe.contentWindow[autoLogName] = this.autoLog;
@@ -109,14 +111,42 @@ class Trace {
   replacer = (key, value) => {
     const i = Object.values(this.windowRoots).indexOf(value);
     if (i > -1) {
-      return `<<[[{{||}}]]>>${Object.keys(this.windowRoots)[i]}`;
+      return `${this.magicTag}${Object.keys(this.windowRoots)[i]}`;
     }
     return value;
   };
 
-  getLiveRef=(data)=>{
-    const windowRoot = _.isString(data) && data.startsWith('<<[[{{||}}]]>>') ? data.replace('<<[[{{||}}]]>>', '') : null;
-    return this.windowRoots[windowRoot];
+  parseLiveRefs = (data, hideLiveRefs) => {
+    let liveRef = this.reinstateLiveRef(data);
+    if ((!liveRef.isReinstate) && _.isObjectLike(data)) {
+      if (_.isArrayLike(data)) {
+        for (const i in data) {
+          const aLiveRef = this.reinstateLiveRef(data[i]);
+          (aLiveRef.isReinstate) && (data[i] = (hideLiveRefs ? aLiveRef.hiddenMessage : aLiveRef.ref));
+        }
+      } else {
+        for (const i in Object.values(data)) {
+          const aLiveRef = this.reinstateLiveRef(data[i]);
+          (aLiveRef.isReinstate) && (data[Object.keys(data)[i]] = (hideLiveRefs ? aLiveRef.hiddenMessage : aLiveRef.ref));
+        }
+      }
+    }
+    return {
+      isLive: liveRef.isLive || liveRef.isReinstate,
+      data: liveRef.isReinstate ? (hideLiveRefs ? liveRef.hiddenMessage : liveRef.ref) : data,
+    };
+  };
+
+  reinstateLiveRef = (data) => {
+    const index = Object.values(this.windowRoots).indexOf(data);
+    const windowRoot = index < 0 && _.isString(data) && data.startsWith(this.magicTag) ? data.replace(this.magicTag, '') : null;
+    return {
+      isLive: index > -1,
+      isReinstate: !!windowRoot,
+      refId: windowRoot,
+      hiddenMessage: `[${windowRoot}]:live expression disabled`,
+      ref: this.windowRoots[windowRoot],
+    };
   };
 
   autoLog = (pre, value, post) => {

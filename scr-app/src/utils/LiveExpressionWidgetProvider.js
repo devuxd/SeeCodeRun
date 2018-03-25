@@ -182,7 +182,6 @@ class LiveExpressionWidgetProvider {
       getDomNode: function () {
         if (this.domNode) {
           return this.domNode;
-          this.domNode.style.display = 'block';
         }
         this.domNode = document.createElement('div');
         this.domNode.style.marginTop = `-${monacoProps.widgetOffsetHeight}px`;
