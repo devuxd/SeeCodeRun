@@ -1,73 +1,24 @@
-This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
+This project uses Cloud Functions to authenticate users and perform admin-level operations on a [Firebase](https://firebase.google.com) database.
+
 Below you will find some information on how to perform common tasks.<br>
-You can find the most recent version of this guide
- [here](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md).
-  <br>Also, follow such guide for troubleshooting or obtaining more information about the default behavior of React apps.
 
 ## Table of Contents
-
-- [Updating to New Releases](#updating-to-new-releases)
-- [Sending Feedback](#sending-feedback)
 - [Folder Structure](#folder-structure)
 - [Available Scripts](#available-scripts)
-    - [npm run install-app](#npm-run-install-app)
     - [npm start](#npm-start)
     - [npm test](#npm-test)
     - [npm run build](#npm-run-build)
-    - [npm run eject](#npm-run-eject)
 - [Deployment](#deployment)
-
-
-## Updating to New Releases
-
-Create React App is divided into two packages:
-
-* `create-react-app` is a global command-line utility that you use to create new projects.
-* `react-scripts` is a development dependency in the generated projects (including this one).
-
-You almost never need to update `create-react-app` itself: it delegates all the setup to `react-scripts`.
-
-When you run `create-react-app`, it always creates the project with the latest version of `react-scripts` so you’ll get all the new features and improvements in newly created apps automatically.
-
-To update an existing project to a new version of `react-scripts`, [open the changelog](https://github.com/facebookincubator/create-react-app/blob/master/CHANGELOG.md), find the version you’re currently on (check `package.json` in this folder if you’re not sure), and apply the migration instructions for the newer versions.
-
-In most cases bumping the `react-scripts` version in `package.json` and running `npm install` in this folder should be enough, but it’s good to consult the [changelog](https://github.com/facebookincubator/create-react-app/blob/master/CHANGELOG.md) for potential breaking changes.
-
-We commit to keeping the breaking changes minimal so you can upgrade `react-scripts` painlessly.
-
-## Sending Feedback
-
-We are always open to [your feedback](https://github.com/facebookincubator/create-react-app/issues).
 
 ## Folder Structure
 
 After creation, your project should look like this:
 
 ```
-scr-app/
+functions/
   README.md
   node_modules/
-  package.json
-  public/
-    fireco/
-      monaco-editor/
-    index.html
-    favicon.ico
-    manifest.json
-  src/
-    components/
-    containers/
-    pages/
-      Index.js
-      Index.test.js
-    redux/
-      modules/
-    seecoderun/
-      modules/
-    styles/
-      Pastebin.css
-    index.js
-    logo.svg
+  index.js
 ```
 
 For the project to build, **these files must exist with exact filenames**:
@@ -86,6 +37,7 @@ Read instructions below for using assets from JavaScript and HTML.
 You can, however, create more top-level directories.<br>
 They will not be included in the production build so you can use them for things like documentation.
 
+# Client
 ## Available Scripts
 
 In the project directory, you can run:
@@ -127,6 +79,3 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-
-## Deployment
-todo...

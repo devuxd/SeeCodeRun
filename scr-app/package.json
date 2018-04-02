@@ -59,6 +59,7 @@
     "redux-devtools-log-monitor": "^1.4.0"
   },
   "scripts": {
+    "install-app": "(npm install) && (rm -rf ./public/fireco/monaco-editor/; cp -r ./node_modules/monaco-editor/ ./public/fireco/monaco-editor/)",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",

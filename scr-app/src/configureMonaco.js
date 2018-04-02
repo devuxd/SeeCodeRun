@@ -4,7 +4,7 @@ const defaultMonacoConf={
   isCdn: false,// load from external site, uncomment script in index.html
   builtType: process.env.PUBLIC_URL ? 'min' : 'dev',
   monacoUrl: null,
-  monacoBuild: '0.10.1',
+  monacoBuild: '0.11.1',
 };
 
 const errorCauseMessages={
@@ -48,9 +48,9 @@ const initMonacoLoader=(onMonacoLoaded, onError, monacoConf=defaultMonacoConf) =
     window.MonacoEnvironment={
       getWorkerUrl: function (/* workerId, label */) {
         if (monacoConf.builtType === 'min') {
-          return `${monacoConf.publicURL + monacoConf.basePath}/monaco-editor-worker-loader-proxy.js`;
+          return `${monacoConf.publicURL + monacoConf.basePath}/monaco-worker-loader-proxy.js`;
         } else {
-          return `${monacoConf.publicURL + monacoConf.basePath}/monaco-editor-worker-loader-proxy.dev.js`;
+          return `${monacoConf.publicURL + monacoConf.basePath}/monaco-worker-loader-proxy.dev.js`;
         }
       }
     };
