@@ -1,7 +1,8 @@
-import React, {Component} from 'react';
+import React, {Component, createContext, /*, StrictMode*/} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from 'material-ui/styles';
-import withRoot from '../components/withRoot';
+import {chromeDark, chromeLight} from "react-inspector";
+import withRoot, {themeTypes} from '../components/withRoot';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar from '../components/TopNavigationBar';
 import TraceControls from '../components/TraceControls';
@@ -12,6 +13,13 @@ import {getShareUrl} from '../redux/modules/pastebin';
 import {online$, end$} from '../utils/scrUtils';
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
+
+const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
+const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
+
+export const ThemeContext = createContext({
+
+});
 
 let appStyle = {margin: 0};
 const styles = theme => {
@@ -154,13 +162,6 @@ class Index extends Component {
     this.setState({copied: true});
   };
 
-  // switchThemeDispatch = (store, themeType, switchTheme) => {
-  //   return () => {
-  //     switchTheme();
-  //
-  //   };
-  // };
-
   resetGridLayout = () => {
   };
   getCurrentGridLayout = () => {
@@ -205,15 +206,6 @@ class Index extends Component {
     resetLayoutClick: this.resetLayoutClick,
   };
 
-  componentWillReceiveProps(nextProps) {
-    const {themeType} = nextProps;
-    if (this.prevThemeType !== themeType) {
-      this.prevThemeType = themeType;
-      const {store} = this.context;
-      store.dispatch(switchMonacoTheme(themeType));
-    }
-  }
-
   render() {
     const {store} = this.context;
     const {
@@ -243,45 +235,53 @@ class Index extends Component {
       return Math.max(minHeight, newHeight);
     };
     return (
-      <div className={classes.root}>
-        <NotificationCenter {...this.state}/>
-        <TopNavigationBar {...this.state}
-                          url={url}
-                          themeType={themeType}
-                          switchTheme={switchTheme}
+      //<StrictMode>
+           <ThemeContext.Provider  value={{
+            themeType: themeType,
+             inspectorTheme: themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
+           }}
+           >
+             <div className={classes.root}>
+               <NotificationCenter {...this.state}/>
+               <TopNavigationBar {...this.state}
+                                 url={url}
+                                 themeType={themeType}
+                                 switchTheme={switchTheme}
 
-        />
-        <div className={rootContainerClassname}>
-          <div className={classes.scroller}>
-            <Pastebin
-              themeType={themeType}
-              editorIds={this.editorIds}
-              setGridLayoutCallbacks={this.setGridLayoutCallbacks}
-              appClasses={classes}
-              appStyle={{...appStyle}}
-              measureBeforeMount={true}
-              onHeight={onHeight}
-              heightAdjust={heightAdjust}
-            />
-          </div>
-        </div>
-        {
-          activateChat &&
-          <Chat dispatch={store.dispatch}
-                isTopNavigationToggled={isTopNavigationToggled}
-                logoClick={this.logoClick}
-                isChatToggled={isChatToggled}
-                chatClick={chatClick}
-                chatTitle={chatTitle}
-                isNetworkOk={isNetworkOk}
-                currentLayout={this.currentLayout}
-                resetLayoutClick={this.resetLayoutClick}
-                themeType={themeType}
-                switchTheme={switchTheme}
-          />
-        }
-        {traceAvailable && <TraceControls/>}
-      </div>
+               />
+               <div className={rootContainerClassname}>
+                 <div className={classes.scroller}>
+                   <Pastebin
+                     themeType={themeType}
+                     editorIds={this.editorIds}
+                     setGridLayoutCallbacks={this.setGridLayoutCallbacks}
+                     appClasses={classes}
+                     appStyle={{...appStyle}}
+                     measureBeforeMount={true}
+                     onHeight={onHeight}
+                     heightAdjust={heightAdjust}
+                   />
+                 </div>
+               </div>
+               {
+                 activateChat &&
+                 <Chat dispatch={store.dispatch}
+                       isTopNavigationToggled={isTopNavigationToggled}
+                       logoClick={this.logoClick}
+                       isChatToggled={isChatToggled}
+                       chatClick={chatClick}
+                       chatTitle={chatTitle}
+                       isNetworkOk={isNetworkOk}
+                       currentLayout={this.currentLayout}
+                       resetLayoutClick={this.resetLayoutClick}
+                       themeType={themeType}
+                       switchTheme={switchTheme}
+                 />
+               }
+               {traceAvailable && <TraceControls/>}
+             </div>
+           </ThemeContext.Provider>
+      // </StrictMode>
     );
   }
 
@@ -316,6 +316,15 @@ class Index extends Component {
         this.setState({isOnline: isOnline});
       }
     });
+  }
+
+  componentDidUpdate() {
+    const {themeType} = this.props;
+    if (this.prevThemeType !== themeType) {
+      this.prevThemeType = themeType;
+      const {store} = this.context;
+      store.dispatch(switchMonacoTheme(themeType));
+    }
   }
 
   componentWillUnmount() {

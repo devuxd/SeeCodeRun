@@ -86,8 +86,9 @@ class Chat extends Component {
     chatMessageWarning: null,
     chatError: null,
     users: null,
-    messages: []
+    messages: [],
     // restoreHeight: defaultChatStyle.height,
+    self: this,
   };
 
   prevUsers = null;
@@ -548,17 +549,6 @@ class Chat extends Component {
     };
   };
 
-  componentWillReceiveProps(nextProps) {
-    clearInterval(this.updateMessagesInterval);
-    if (nextProps.isChatToggled) {
-      this.updateMessagesInterval = setInterval(() => {
-        this.setState(prevState => ({
-          messages: prevState.messages
-        }));
-      }, this.updateMessagesIntervalTime);
-    }
-  }
-
   render() {
     const {classes, isChatToggled, chatClick, chatTitle} = this.props;
 
@@ -778,6 +768,18 @@ class Chat extends Component {
   }
 
   componentDidUpdate() {
+    const {isChatToggled} = this.props;
+    if (this.isChatToggled !== isChatToggled) {
+      this.isChatToggled = isChatToggled;
+      clearInterval(this.updateMessagesInterval);
+      if (isChatToggled) {
+        this.updateMessagesInterval = setInterval(() => {
+          this.setState(prevState => ({
+            messages: prevState.messages
+          }));
+        }, this.updateMessagesIntervalTime);
+      }
+    }
     this.scrollToBottom();
   }
 

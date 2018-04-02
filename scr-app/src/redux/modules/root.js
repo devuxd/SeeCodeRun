@@ -31,8 +31,8 @@ import {
   mountedEditorEpic
 } from './monacoEditor'
 import {
-  updatePlaygroundEpic,
-  updatePlaygroundInstrumentationEpic,
+  // updatePlaygroundEpic,
+  // updatePlaygroundInstrumentationEpic,
   updatePlaygroundReducer
 }
   from './playground';
@@ -52,8 +52,8 @@ export const rootEpic = combineEpics(
   updateMonacoModelsEpic,
   configureMonacoThemeSwitchEpic,
   monacoEditorsEpic,
-  updatePlaygroundEpic,
-  updatePlaygroundInstrumentationEpic,
+  // updatePlaygroundEpic,
+  // updatePlaygroundInstrumentationEpic,
   firecoEditorsEpic,
   firecoActivateEpic,
   firecoEditorEpic,

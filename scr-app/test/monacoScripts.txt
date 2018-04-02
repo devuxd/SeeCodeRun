@@ -7,3 +7,6 @@
   <!--src="%PUBLIC_URL%/fireco/monaco-editor/min/vs/editor/editor.main.nls.js"></script>-->
 <!--<script-->
   <!--src="%PUBLIC_URL%/fireco/monaco-editor/min/vs/editor/editor.main.js"></script>-->
+    <!-- PWA primary color -->
+  <!--<link href="https://fonts.googleapis.com/icon?family=Material+Icons"-->
+        <!--rel="stylesheet">-->

@@ -86,18 +86,6 @@ class Editor extends Component {
   onContentChangedAction = () => {
   };
 
-  componentWillReceiveProps(nextProps) {
-    clearTimeout(this.tmw);
-    const delay = this.editorWidth || !this.wt ? 0 : 100;
-    this.wt = this.wt ? this.wt - 1 : 5;
-    this.tmw = setTimeout(() => {
-      if (this.editorDiv) {
-        this.editorWidth = this.editorDiv.offsetWidth;
-        this.editorHeight = this.editorDiv.offsetHeight;
-      }
-    }, delay);
-  }
-
   render() {
     const {classes, observeLiveExpressions, editorId, themeType, liveExpressionStoreChange} = this.props;
     const {
@@ -184,6 +172,18 @@ class Editor extends Component {
       }
     });
     this.unsubscribes.push(unsubscribe0);
+  }
+
+  componentDidUpdate(){
+    clearTimeout(this.tmw);
+    const delay = this.editorWidth || !this.wt ? 0 : 100;
+    this.wt = this.wt ? this.wt - 1 : 5;
+    this.tmw = setTimeout(() => {
+      if (this.editorDiv) {
+        this.editorWidth = this.editorDiv.offsetWidth;
+        this.editorHeight = this.editorDiv.offsetHeight;
+      }
+    }, delay);
   }
 
   componentWillUnmount() {

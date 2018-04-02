@@ -1,5 +1,6 @@
 // import {TraceTypes, setAutoLogNames, toAst, wrapCallExpressions, wrapFunctionExpressions} from "../../utils/JsCodeShiftUtils";
 import AutoLogShift from './AutoLogShift';
+// import AutoLogShift from 'jscodetracker';
 import Trace from './Trace';
 import * as Babel from "babel-standalone";
 import {
@@ -22,7 +23,7 @@ export const addCssAnJs = (doc, store, alJs, css) => {
       store.dispatch(updatePlaygroundLoadSuccess('css'));
     };
     style.onerror = e => {
-      store.dispatch(updatePlaygroundLoadFailure('ccs', e)); // do happens?
+      store.dispatch(updatePlaygroundLoadFailure('css', e)); // do happens?
     };
     doc.body.appendChild(style);
 
@@ -56,6 +57,7 @@ class AutoLog {
 
   toAst(text) {
     const locationMap = {};
+
     const ast = this.autoLogShift.autoLogSource(text, locationMap);
     return {
       source: text,
@@ -64,13 +66,15 @@ class AutoLog {
     };
   }
 
-  transformWithLocationIds(ast, getLocationId){
+  transformWithLocationIds(ast, getLocationId) {
     const locationMap = {};
-    this.autoLogShift.autoLogAst(ast, locationMap,getLocationId);
+    this.autoLogShift.autoLogAst(ast, locationMap, getLocationId);
+    const code = ast.toSource();
+   console.log(code);
     return {
       locationMap: locationMap,
       trace: new Trace(locationMap),
-      code: ast.toSource()
+      code: code
     };
   }
 

@@ -1,7 +1,7 @@
 {
   "hosting": {
     "firebase": "seecoderun",
-    "public": "export",
+    "public": "build",
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -1,4 +1,4 @@
-const latest = '0.10.1';
+const latest = '0.11.1';
 self.MonacoEnvironment = {
   baseUrl: 'https://cdn.jsdelivr.net/npm/monaco-editor@'+latest+'/min/',
 };

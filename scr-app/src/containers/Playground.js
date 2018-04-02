@@ -38,8 +38,8 @@ class Playground extends Component {
           this.currentBundle = bundle;
           this.updateIframe(this.currentBundle);
         } else {
-          this.currentBundle = bundle;
-          console.log('ERROR');
+          // this.currentBundle = bundle;
+          //  console.log('ERROR');
         }
       }
     });
@@ -77,7 +77,7 @@ class Playground extends Component {
     }
 
     if (alJs) {
-      console.log("AL");
+      // console.log("AL");
       const runIframe = document.createElement('iframe');
       autoLog.configureIframe(runIframe, store, autoLogger, html, css, js, alJs);
       playgroundEl.appendChild(runIframe);

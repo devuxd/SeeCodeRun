@@ -136,36 +136,36 @@ export const updatePlaygroundReducer=
     }
   };
 
-export const updatePlaygroundEpic=(action$, store, {appManager}) =>
-    action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
-      .mergeMap(action => {
-          return Observable.of({
-            type: UPDATE_PLAYGROUND_BUNDLE_SUCCESS,
-            action: action
-          });
-        }
-      )
-  // .do(action => {
-  //   console.log("BOMMMMMMMMMMMM", action);
-  //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
-  // })
-  //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
-  // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
-;
-
-export const updatePlaygroundInstrumentationEpic=(action$, store, {appManager}) =>
-    action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
-      .mergeMap(action => {
-        //  console.log("ACCCCCC",action);
-        return Observable.of({
-          type: UPDATE_PLAYGROUND_LOAD_SUCCESS,
-          action: action
-        });
-      })
-  // .do(action => {
-  //   console.log("BOMMMMMMMMMMMM", action);
-  //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
-  // })
-  //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
-  // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
-;
+// export const updatePlaygroundEpic=(action$, store, {appManager}) =>
+//     action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
+//       .mergeMap(action => {
+//           return Observable.of({
+//             type: UPDATE_PLAYGROUND_BUNDLE_SUCCESS,
+//             action: action
+//           });
+//         }
+//       )
+//   // .do(action => {
+//   //   console.log("BOMMMMMMMMMMMM", action);
+//   //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
+//   // })
+//   //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
+//   // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
+// ;
+//
+// export const updatePlaygroundInstrumentationEpic=(action$, store, {appManager}) =>
+//     action$.ofType(UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS)
+//       .mergeMap(action => {
+//         //  console.log("ACCCCCC",action);
+//         return Observable.of({
+//           type: UPDATE_PLAYGROUND_LOAD_SUCCESS,
+//           action: action
+//         });
+//       })
+//   // .do(action => {
+//   //   console.log("BOMMMMMMMMMMMM", action);
+//   //   appManager.observeConfigureLiveExpressionStore(action.editorId, action.autoLog);
+//   // })
+//   //.mapTo({type: UPDATE_PLAYGROUND_LOAD_SUCCESS})
+//   // .takeUntil(action$.ofType(UPDATE_PLAYGROUND_CANCELED))
+// ;

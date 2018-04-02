@@ -1,9 +1,13 @@
 import {Observable} from "rxjs";
 
+import './monacoUtils.css';
+
 export const monacoProps = {
+  fontSize: 12,
+  widgetFontSize: 9,
   widgetOffsetHeight: 7,
   widgetVerticalHeight: 14,
-  lineOffSetHeight: 14,
+  lineOffSetHeight: 14, //sync with css padding-top: lineOffSetHeight/2
   widgetBackgroundColor: 'transparent',
 };
 export const monacoEditorDefaultOptions = {
@@ -35,10 +39,12 @@ export const monacoEditorDefaultOptions = {
     horizontal: 'auto',
     verticalScrollbarSize: 4,
     horizontalScrollbarSize: 4,
-    arrowSize: 4
+    arrowSize: 4,
+    cursorWidth: 6,
   },
+  fontSize: monacoProps.fontSize,
   quickSuggestionsDelay: 1250,
-  lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default
+  lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default, sync with css: max-height:18px; and padding-top
   lineNumbersMinChars: 3, //5 is default
 };
 
@@ -85,7 +91,7 @@ export function configureLineNumbersProvider(editorId, doc) {
         lnp.maxVisibleLineNumber = lineNumber;
         (lnp.onLineNumbersUpdate || lnp.onVisibleLineNumbersChanged) && lnp.lineNumbersChanged();
       }
-      return `<div class="${editorId}-line-number-${lineNumber}" >${lineNumber}</div>`;
+      return `<span class="${editorId}-line-number-${lineNumber}">${lineNumber}</span>`;
     },
     getElementByLineNumber: lineNumber => {
       if (!lineNumber || lineNumber > lnp.maxVisibleLineNumber) {

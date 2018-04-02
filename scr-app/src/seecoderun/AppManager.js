@@ -1,6 +1,7 @@
-import {Observable} from "rxjs";
+import {Observable} from 'rxjs';
 import firebase from 'firebase';
 import Firepad from 'firepad';
+import j from 'jscodeshift';
 import _ from 'lodash';
 
 import {
@@ -9,14 +10,14 @@ import {
   switchMonacoThemeFulfilled,
   switchMonacoThemeRejected,
   updateMonacoModelsFulfilled,
-  updateMonacoModelsRejected
-} from "../redux/modules/monaco";
+  updateMonacoModelsRejected,
+} from '../redux/modules/monaco';
+
 import {
-  // configureMonacoModelsFulfilled,
-  // configureMonacoModelsRejected,
   loadMonacoEditorFulfilled,
-  loadMonacoEditorRejected, monacoEditorContentChanged
-} from "../redux/modules/monacoEditor";
+  loadMonacoEditorRejected,
+  monacoEditorContentChanged,
+} from '../redux/modules/monacoEditor';
 
 import {
   configureFirecoEditorFulfilled,
@@ -26,16 +27,17 @@ import {
   onConnectionChanged,
   configureFirecoChatRejected,
   configureFirecoChatFulfilled,
-} from "../redux/modules/fireco";
+} from '../redux/modules/fireco';
 
 import {
   configureMonacoModel,
   configureMonacoEditor,
-  configureMonacoEditorMouseEventsObservable, configureLineNumbersProvider
-} from "../utils/monacoUtils";
-import JSXColoringProvider from "../utils/JSXColoringProvider";
-import j from "jscodeshift";
-import LiveExpressionWidgetProvider from "../utils/LiveExpressionWidgetProvider";
+  configureMonacoEditorMouseEventsObservable,
+  configureLineNumbersProvider,
+} from '../utils/monacoUtils';
+
+import JSXColoringProvider from '../utils/JSXColoringProvider';
+import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider';
 
 const dataBaseRoot = '/scr2';
 const firebaseConfig = {
@@ -70,10 +72,8 @@ const defaultFirecoPad = {
   monacoEditorModel: null,
   monacoEditorSavedState: null, //{text: null, viewState: null}
   editorOptions: {},
-  onContentChanged: () => {
-  },
-  buildAst: () => { // only populated if isJsx is true
-  },
+  onContentChanged: null,
+  buildAst: null, // only populated if isJsx is true
   onAstBuilt: null,
   firebasePath: null,
   firebaseRef: null,
@@ -295,42 +295,85 @@ class AppManager {
     }
 
 
-    firecoPad.ast = null;
-    firecoPad.astBeforeError = null;
-    firecoPad.astError = null;
-    firecoPad.parseAst = () => {
+    firecoPad.astResult = {};
+    firecoPad.getAst = () => {
       const code = firecoPad.monacoEditor.getValue();
-      firecoPad.astBeforeError = firecoPad.ast || firecoPad.astBeforeError;
+      const astBeforeError = firecoPad.astResult.ast || firecoPad.astResult.astBeforeError;
+      let ast = null, astError = null;
       try {
-        firecoPad.ast = j(code);
-        firecoPad.astError = null;
+        ast = j(code);
+        astError = null;
 
       } catch (error) {
-        firecoPad.ast = null;
-        firecoPad.astError = error;
+        ast = null;
+        astError = error;
         //todo: needs to be smart and remove errors, then try again.
       }
-      firecoPad.onAstBuilt && firecoPad.onAstBuilt(firecoPad.ast, firecoPad.astError, firecoPad.astBeforeError);
+      return {code, ast, astError, astBeforeError};
+    };
+    firecoPad.parseAst = () => {
+      firecoPad.astResult = firecoPad.getAst();
+      firecoPad.onAstBuilt && firecoPad.onAstBuilt(firecoPad.astResult.ast, firecoPad.astResult.astError, firecoPad.astResult.astBeforeError);
     };
     let getAstTimeout = null;
     firecoPad.astDebounceTime = 50;
-    firecoPad.buildAst = (debounceTime, colorizeJsxDebounceTime) => {
+    firecoPad.buildAst = (debounceTime, enhanceDebounceTime) => {
       clearTimeout(getAstTimeout);
       getAstTimeout = setTimeout(() => {
         firecoPad.parseAst();
-        firecoPad.colorizeJsx(colorizeJsxDebounceTime);
+        firecoPad.enhanceCode(enhanceDebounceTime);
       }, debounceTime || (debounceTime === 0 ? 0 : firecoPad.astDebounceTime));
     };
 
-    let jsxColoringProviderTimeout = null;
-    firecoPad.colorizeJsxDebounceTime = 300;
-    firecoPad.colorizeJsx = (debounceTime) => {
-      clearTimeout(jsxColoringProviderTimeout);
-      jsxColoringProviderTimeout = setTimeout(() => {
-        firecoPad.jsxColoringProvider.colorize(firecoPad.ast);
-        firecoPad.liveExpressionWidgetProvider.widgetize(firecoPad.ast);
-      }, debounceTime || (debounceTime === 0 ? 0 : firecoPad.colorizeJsxDebounceTime));
+    let enhanceTimeout = null;
+    firecoPad.enhanceDebounceTime = 300;
+    firecoPad.enhanceCode = (debounceTime) => {
+      clearTimeout(enhanceTimeout);
+      enhanceTimeout = setTimeout(() => {
+        firecoPad.liveExpressionWidgetProvider.widgetize(firecoPad.astResult);
+        firecoPad.jsxColoringProvider.colorize(firecoPad.astResult.ast);
+      }, debounceTime || (debounceTime === 0 ? 0 : firecoPad.enhanceDebounceTime));
     };
+  }
+
+  configureLiveExpressionWidgetsLayoutChange(firecoPad) {
+    const {monacoEditor} = firecoPad;
+    let isChange = false;
+    let isCursorPositionInColumnZero = false;
+
+    let prevKey = null;
+    let currentKey = null;
+
+    let tm = null;
+    const widgetLayoutChange = () => {
+      isChange && firecoPad.liveExpressionWidgetProvider && firecoPad.liveExpressionWidgetProvider.beforeRender();
+      isChange = false;
+      clearTimeout(tm);
+      tm = setTimeout(() => {
+        firecoPad.liveExpressionWidgetProvider && firecoPad.liveExpressionWidgetProvider.afterRender();
+      }, 500);
+    };
+
+    monacoEditor.onKeyDown((event) => {
+      prevKey = currentKey;
+      currentKey = event.browserEvent.keyCode;
+      isChange = currentKey === 13; // enter
+      isChange = // backspace or delete and rightmost
+        isChange || ((currentKey === 8 || currentKey === 46) && isCursorPositionInColumnZero);
+      isChange = // paste or cut := ctrl||command + V||C english only =[
+        isChange || ((prevKey === 17 || prevKey === 91) && (currentKey === 86 || currentKey === 88));
+      widgetLayoutChange();
+    });
+
+    let currentCursorEvent = {};
+    let prevCursorEvent = {};
+    monacoEditor.onDidChangeCursorPosition((event) => {
+      prevCursorEvent = currentCursorEvent;
+      currentCursorEvent = event;
+      isCursorPositionInColumnZero = currentCursorEvent.position.column === 1; // monaco 0.11.1 column-min:0=>1
+    });
+
+    monacoEditor.onDidScrollChange(widgetLayoutChange);
   }
 
   observeConfigureMonacoEditor(editorId, editorComponent) {
@@ -356,44 +399,21 @@ class AppManager {
         firecoPad.monacoEditor = monacoEditor;
         if (firecoPad.isJsx) {
           this.addEnhancers(this.monaco, editorId, firecoPad); //  populates buildAst +
+          this.configureLiveExpressionWidgetsLayoutChange(firecoPad);
         }
 
         const onContentChanged = changes => {
           const text = monacoEditor.getValue();
-          onContentChangedAction(monacoEditorContentChanged(editorId, text, changes, !firecoPad.ignoreContentChange));
-          firecoPad.buildAst(); // internally triggers JSX Coloring and LiveExpressions
-          firecoPad.onContentChanged(text);
+          onContentChangedAction && onContentChangedAction(
+            monacoEditorContentChanged(editorId, text, changes, !firecoPad.ignoreContentChange)
+          );
+          firecoPad.buildAst && firecoPad.buildAst(); // internally triggers JSX Coloring and LiveExpressions
+          firecoPad.onContentChanged && firecoPad.onContentChanged(text);
         };
+
         monacoEditor.onDidChangeModelContent(onContentChanged);
-        let isKey= false;
-        monacoEditor.onKeyDown((event) => {
-          isKey = event.browserEvent.keyCode === 13 || event.browserEvent.keyCode === 8;
-        });
-        let tm = null;
-        monacoEditor.onDidScrollChange(() => {
-          isKey && firecoPad.liveExpressionWidgetProvider && firecoPad.liveExpressionWidgetProvider.beforeRender();
-          isKey=false;
-          clearTimeout(tm);
-          tm = setTimeout(() => {
-            firecoPad.liveExpressionWidgetProvider && firecoPad.liveExpressionWidgetProvider.afterRender();
-          }, 500);
-        });
 
-        // monacoEditor.onDidScrollChange(() => {
-        //   console.log("ccc")
-        // });
-
-        // firecoPad.lineNumbersProvider.preOnLineNumbersChanged = ()=>{
-        //   console.log('now');
-        //   //firecoPad.liveExpressionWidgetProvider && firecoPad.liveExpressionWidgetProvider.beforeRender();
-        // };
-        // firecoPad.lineNumbersProvider.onVisibleLineNumbersChanged = ()=>{
-        //   console.log('now');
-        //   //firecoPad.liveExpressionWidgetProvider && firecoPad.liveExpressionWidgetProvider.beforeRender();
-        // };
-
-
-        firecoPad.buildAst(0, 0);
+        firecoPad.buildAst && firecoPad.buildAst(0, 0);
 
         return Observable.of(loadMonacoEditorFulfilled(editorId, firecoPad));
       } catch (error) {
@@ -521,7 +541,9 @@ class AppManager {
 
       firecoPad.setFirecoText = (text) => {
         if (firecoPad.mutex) {
+          // chains all pending editor changes
           firecoPad.nextSetFirecoTexts.unshift(() => firecoPad.setFirecoText(text));
+          // firecoPad.nextSetFirecoTexts = [() => firecoPad.setFirecoText(text), ...firecoPad.nextSetFirecoTexts];
           clearTimeout(firecoPad.starvationTimeout);
           // Prevents Firepad mutex starvation when Firebase is not connected.
           firecoPad.starvationTimeout = setTimeout(() => {
@@ -532,12 +554,16 @@ class AppManager {
 
         firecoPad.mutex = true;
         firecoPad.headlessFirepad.setText(text, (/*error, committed*/) => {
+          firecoPad.mutex = false;
+          clearTimeout(firecoPad.starvationTimeout);
           if (firecoPad.nextSetFirecoTexts.length) {
-            // chains all editor changes
-            firecoPad.nextSetFirecoTexts.pop()();
-          } else {
-            firecoPad.mutex = false;
-            clearTimeout(firecoPad.starvationTimeout);
+            // only send the most recent change, discard the rest
+            firecoPad.nextSetFirecoTexts[0]();
+            firecoPad.nextSetFirecoTexts = [];
+            // firecoPad.nextSetFirecoTexts.pop()();
+            // const nextSetFirecoTexts = [...firecoPad.nextSetFirecoTexts];
+            // nextSetFirecoTexts.pop()();
+            // firecoPad.nextSetFirecoTexts = nextSetFirecoTexts;
           }
         });
       };
@@ -588,6 +614,7 @@ class AppManager {
     firecoPad.monacoEditor.setValue(text);
     firecoPad.monacoEditor.restoreViewState(viewState);
     firecoPad.ignoreContentChange = false;
+    setTimeout(() => (firecoPad.buildAst && firecoPad.buildAst()), 0);
   }
 
 //
@@ -613,6 +640,7 @@ class AppManager {
 //   return new Firebase(`${this.baseURL}/metags/urls/${metagGlobalURLKey}`);
 // }
 //
+
 }
 
 export default function configureAppManager() {

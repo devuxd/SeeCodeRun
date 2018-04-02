@@ -16,7 +16,7 @@ for (const k in j) {
   }// else{console.log("FU",  j[k].name);}
 }
 
-// console.log(jExpressions);
+// console.log(jExpressions.reduce((acc='', cur)=>`${acc}\n${cur}`));
 
 
 class LiveExpressionWidgetProvider {
@@ -54,15 +54,17 @@ class LiveExpressionWidgetProvider {
     this.monaco.editor.colorizeElement(domNode);
   }
 
-  afterRender(ignoreDisplayChange) {
+  afterRender(ignoreDisplayChange, ignoreDisplayBlock) {
     for (const id in this.contentWidgets) {
       const contentWidget = this.contentWidgets[id];
-      contentWidget.domNode.style.display = 'block';
       !ignoreDisplayChange && this.monacoEditor.layoutContentWidget(contentWidget);
+      setTimeout(() => {
+        !ignoreDisplayBlock && (contentWidget.domNode.style.display = 'block');
+      }, 50);
     }
   }
 
-  widgetize(ast) {
+  widgetize({ast}) {
     let hasDecoratorIdsChanged = true;
     let success = true;
     try {
@@ -83,6 +85,7 @@ class LiveExpressionWidgetProvider {
 
         const deltaRemove = _.difference(prevDecoratorIds, this.jExpressionDecoratorIds);
         const deltaAdd = _.difference(this.jExpressionDecoratorIds, prevDecoratorIds);
+        console.log(deltaRemove, deltaAdd);
 
         hasDecoratorIdsChanged = deltaRemove.length + deltaAdd.length > 0;
         this.contentWidgets = {...prevContentWidgets};
@@ -96,7 +99,7 @@ class LiveExpressionWidgetProvider {
           const id = deltaAdd[i];
           const decorator = this.decorators[id2i[id]];
           decorator.contentWidget =
-            this.configureLiveExpressionContentWidget(decorator, this.contentWidgetPositionPreference);
+            this.configureLiveExpressionContentWidget(id, this.contentWidgetPositionPreference);
           this.contentWidgets[id] = decorator.contentWidget;
           this.monacoEditor.addContentWidget(decorator.contentWidget);
         }
@@ -107,18 +110,16 @@ class LiveExpressionWidgetProvider {
             const contentWidget = this.contentWidgets[decorator.id];
             if (contentWidget) {
               decorator.contentWidget = contentWidget;
-            } else {
-              console.log("[CRITICAL]");
-              decorator.contentWidget =
-                this.configureLiveExpressionContentWidget(decorator, this.contentWidgetPositionPreference);
-              this.contentWidgets[decorator.id] = decorator.contentWidget;
-              this.monacoEditor.addContentWidget(decorator.contentWidget);
             }
           }
         }
+        setTimeout(() => {
+          this.afterRender(false, true);
+        }, 0);
+
       }
     } catch (error) {
-      console.log("invalidate");
+      console.log("invalidate", error);
       success = false;
     }
     this.afterRender(true);
@@ -154,6 +155,11 @@ class LiveExpressionWidgetProvider {
       ast
         .find(j[expressionType])
         .forEach(p => {
+          if (!p.value.loc) {
+            //  console.log('inv', p.value);
+            return
+          }
+
           const range = this.locToMonacoRange(p.value.loc);
           const className = `${this.monacoRangeToClassName(range)}-${decorators.length}`;
           decorators.push({
@@ -162,9 +168,9 @@ class LiveExpressionWidgetProvider {
             expressionType: expressionType,
             range: range,
             options: {
-              className: `${className}`,
-              inlineClassName: 'monaco-editor-decoration-lwp-expression'
-              //hoverMessage: expressionType,
+              className: `${className} ${expressionType}`,
+              inlineClassName: `monaco-editor-decoration-lwp-expression ${expressionType}`,
+              // hoverMessage: expressionType,
             }
           });
         });
@@ -173,39 +179,49 @@ class LiveExpressionWidgetProvider {
     return decorators;
   }
 
-  configureLiveExpressionContentWidget(decorator, preference) {
+  getDecorator = (decoratorId) => {
+    return (this.decorators || []).find(decorator => decorator.id === decoratorId);
+  };
+
+  configureLiveExpressionContentWidget(decoratorId, preference) {
+    const getDecorator = this.getDecorator;
     return {
       allowEditorOverflow: true,
       suppressMouseDown: true,
-      selector: decorator.selector,
+      selector: null,
       domNode: null,
+      onWidthAdjust: null,
       getDomNode: function () {
         if (this.domNode) {
           return this.domNode;
         }
         this.domNode = document.createElement('div');
+        this.domNode.style.overflow = 'hidden';
+        this.domNode.style.whiteSpace = 'nowrap';
         this.domNode.style.marginTop = `-${monacoProps.widgetOffsetHeight}px`;
         this.domNode.style.height = `${monacoProps.widgetVerticalHeight}px`;
         this.domNode.style.maxHeight = `${monacoProps.widgetVerticalHeight}px`;
         this.domNode.style.backgroundColor = monacoProps.widgetBackgroundColor;
-        // decorator.domNode.style.backgroundColor = 'green'; //this.domNode.style.width = '50px';
+        this.domNode.style.fontSize = `${monacoProps.widgetFontSize}px`;
         this.adjustWidth = () => {
           setTimeout(() => {
-            const el = document.querySelector(this.selector);
+            const el = document.querySelector(getDecorator(decoratorId).selector);
             if (!el || !this.domNode) {
               return;
             }
             this.domNode.style.width = el.style.width;
+            this.onWidthAdjust && this.onWidthAdjust(this.domNode.style.width);
           }, 0);
         };
         this.adjustWidth();
         return this.domNode;
       },
-      getId: () => decorator.id,
+      getId: () => decoratorId,
       getPosition: function () {
+        // console.log(getDecorator(decoratorId).range.getStartPosition());
         this.adjustWidth && this.adjustWidth();
         return {
-          position: decorator.range.getStartPosition(),
+          position: getDecorator(decoratorId).range.getStartPosition(),
           preference: preference,
         }
       },

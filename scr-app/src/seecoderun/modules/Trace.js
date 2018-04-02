@@ -1,7 +1,25 @@
 import JSAN from 'jsan';
 import {Subject} from "rxjs";
-import {autoLogName, postAutoLogName, preAutoLogName} from "./AutoLog";
 import _ from "lodash";
+import {isNode, createObjectIterator, hasChildNodes, copifyDOMNode} from '../../utils/scrUtils';
+
+
+const obsConfig = {attributes: true, childList: true};
+
+// Callback function to execute when mutations are observed
+const obsCallback = function (mutationsList) {
+  for (var mutation of mutationsList) {
+    if (mutation.type == 'childList') {
+      console.log('A child node has been added or removed.');
+    }
+    else if (mutation.type == 'attributes') {
+      console.log('The ' + mutation.attributeName + ' attribute was modified.');
+    }
+  }
+};
+
+
+const objectIterator = createObjectIterator();
 
 class Scope {
   constructor(parent, id) {
@@ -39,9 +57,13 @@ class Trace {
     this.rootScope = null;
     this.subject = new Subject();
     this.currentExpressionId = null; // program
-    this.windowRoots = null;
     this.startTimestamp = null;
     this.magicTag = null;
+    this.window = null;
+    this.consoleLog = null;
+    this.realConsoleLog = null;
+    this.timeline = [];
+    this.isValid= false;
   }
 
   configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
@@ -54,15 +76,26 @@ class Trace {
     runIframe.contentWindow[postAutoLogName] = this.postAutoLog;
     runIframe.contentWindow.onerror = this.onError;
     runIframe.contentWindow.console.log = this.consoleLog;
+    this.domNodesObs = [];
+    this.domNodes = [];
+    //todo save before dispose
+    this.timeline = [];
+    this.timelineLength = 0;
+    this.subject.next(this.timeline);
+    clearInterval(this.tli);
+    this.tli = setInterval(() => {
+      if (this.timelineLength !== this.timeline.length) {
+        this.timelineLength = this.timeline.length;
+        this.subject.next([...this.timeline]);
+      }
+    }, 1000);
+    this.isValid= true;
   }
 
   setWindowRoots(contentWindow) {
-    this.windowRoots = {};
-    this.windowRoots.consoleLog = contentWindow.console.log;
+    this.realConsoleLog = contentWindow.console.log;
     this.setConsoleLog(contentWindow.console.log);
-    this.windowRoots.window = contentWindow;
-    this.windowRoots.document = contentWindow.document;
-    this.windowRoots.documentBody = contentWindow.document.body;
+    this.window = contentWindow;
   }
 
 
@@ -108,12 +141,51 @@ class Trace {
     this.rootScope = this.currentScope = new Scope(null, -1);
   }
 
-  replacer = (key, value) => {
-    const i = Object.values(this.windowRoots).indexOf(value);
-    if (i > -1) {
-      return `${this.magicTag}${Object.keys(this.windowRoots)[i]}`;
+  getWindowRoots = () => {
+    let windowRoots = {};
+    try {
+      windowRoots = {
+        window: this.window,
+        document: this.window.document,
+        body: this.window.document.body,
+        log: this.consoleLog,
+      };
+    } catch (e) {
     }
-    return value;
+    return windowRoots;
+  };
+
+  getReactKey(i) {
+    return `${this.startTimestamp};${i}`;
+  }
+
+
+  getReplacer = (res = {isDOM: false}) => {
+    const windowRoots = this.getWindowRoots();
+    return (key, value) => {
+      const i = Object.values(windowRoots).indexOf(value);
+      if (i > -1) {
+        return `${this.magicTag}${Object.keys(windowRoots)[i]}`;
+      }
+      if (isNode(value)) {
+        const val = copifyDOMNode(value);
+        const domId = this.domNodes.indexOf(value);
+        if (domId >= 0) {
+          val.liveRef = `${this.magicTag}${domId}`;
+        } else {
+          this.domNodes.push(value);
+          val.liveRef = `${this.magicTag}${this.domNodes.length - 1}`;
+          // Create an observer instance linked to the callback function
+          const observer = new MutationObserver(obsCallback);
+          // Start observing the target node for configured mutations
+          observer.observe(value, obsConfig);
+          this.domNodesObs.push(observer);
+        }
+        res.isDOM = true;
+        return val;
+      }
+      return value;
+    };
   };
 
   parseLiveRefs = (data, hideLiveRefs) => {
@@ -138,42 +210,86 @@ class Trace {
   };
 
   reinstateLiveRef = (data) => {
-    const index = Object.values(this.windowRoots).indexOf(data);
-    const windowRoot = index < 0 && _.isString(data) && data.startsWith(this.magicTag) ? data.replace(this.magicTag, '') : null;
+    const windowRoots = this.getWindowRoots();
+
+    let liveRefId = _.isString(data) && data.startsWith(this.magicTag) ? data.replace(this.magicTag, '') : null;
+
+    let index = Object.values(windowRoots).indexOf(data);
+    const windowRoot = index < 0 && liveRefId ? liveRefId : null;
+    let liveRef = windowRoots[windowRoot];
+
+    if (!liveRef && this.domNodes) {
+      index = this.domNodes.indexOf(data);
+      if (index < 0 && liveRefId) {
+        const domId = parseInt(liveRefId);
+        liveRef = this.domNodes[domId];
+      }
+    } else {
+      liveRefId = windowRoot;
+    }
+
     return {
       isLive: index > -1,
-      isReinstate: !!windowRoot,
-      refId: windowRoot,
-      hiddenMessage: `[${windowRoot}]:live expression disabled`,
-      ref: this.windowRoots[windowRoot],
+      isReinstate: !!liveRef,
+      refId: liveRefId,
+      hiddenMessage: `[${liveRefId}]:live expression disabled`,
+      ref: liveRef,
     };
   };
 
-  autoLog = (pre, value, post) => {
-    // console.log({
-    //   type: 'TRACE',
-    //   action: {
-    //     loc: this.locationMap[pre.id].loc,
-    //     id: pre.id,
-    //     data: JSAN.stringify(value)
-    //   }
-    // });
+  pushEntry = (pre, value, post, type, extra, extraIds) => {
     let dataType = 'jsan';
-    const data = JSAN.stringify(value, this.replacer, null, true);
-    this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, dataType: dataType, data: data});
-    return value;
+    let res = {};
+    const data = JSAN.stringify(value, this.getReplacer(res), null, true);
+    let objectClassName = value && value.constructor && value.constructor.name;
+    //this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, dataType: dataType, data: data});
+    const i = this.timeline.length;
+    const expression = this.locationMap[pre.id];
+    this.timeline.unshift({
+      ...pre,
+      i: i,
+      reactKey: this.getReactKey(i),
+      loc: expression.loc,
+      expressionType: expression.expressionType,
+      dataType: dataType,
+      data: data,
+      isDOM: res.isDOM,
+      objectClassName: objectClassName,
+      timestamp: Date.now()
+    });
+  };
+
+  composedExpressions = {
+    MemberExpression: (pre, value, post, type, extra, extraIds) => {
+      this.pushEntry({id: extraIds[0]}, value, post, type, extra);
+      this.pushEntry({id: extraIds[1]}, extra, post, type, extra);
+      return value[extra];
+    },
+    // BinaryExpression: (ast, locationMap, getLocationId, path) => {
+    // },
+    // CallExpression: (ast, locationMap, getLocationId, path) => {
+    // },
+    // NewExpression: (ast, locationMap, getLocationId, path) => {
+    // },
+    // FunctionExpression: (ast, locationMap, getLocationId, path) => {
+    // },
+  };
+
+  autoLog = (pre, value, post, type, extra, extraIds) => {
+    //console.log(pre, value, post, type, extra, extraIds);
+    if (this.composedExpressions[type]) {
+      value = Trace.ComposedExpressions[type](pre, value, post, type, extra, extraIds);
+    } else {
+      //blocks
+    }
+    this.pushEntry(pre, value, post, type, extra);
+    return {_: value};
   };
 
   preAutoLog = (id) => {
     this.currentExpressionId = id;
     this.currentScope = this.currentScope.enterScope(id);
-    // console.log({
-    //   type: 'PRE-TRACE',
-    //   action: {
-    //     id: id,
-    //   }
-    // });
-    return {id: id};
+    return {id};
   };
 
   postAutoLog = (id) => {
@@ -184,11 +300,17 @@ class Trace {
   };
 
   onError = error => {
-    this.subject.next({
+    let i = this.timeline.length;
+    const expression = this.locationMap[this.currentExpressionId];
+    this.timeline.unshift({
+      i: i,
+      reactKey: this.getReactKey(i),
+      isError: true,
       id: this.currentExpressionId,
-      loc: this.locationMap[this.currentExpressionId].loc,
+      loc: expression.loc,
+      expressionType: expression.expressionType,
       data: JSAN.stringify(error, null, null, true),
-      isError: true
+      timestamp: Date.now(),
     });
   };
 

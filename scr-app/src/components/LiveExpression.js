@@ -7,6 +7,41 @@ import RangeSlider from "./RangeSlider";
 
 const defaultCloseDelay = 1000;
 
+const toClosedState = () => ({
+  timeout: null,
+  anchorEl: null,
+  wasHovered: false, // at least once
+  isHovered: false,
+});
+
+const handleOpen = (anchorEl, prevState) => {
+  const {timeout} = prevState;
+  clearTimeout(timeout);
+  if (anchorEl) {
+    return {
+      anchorEl: anchorEl,
+      timeout: null,
+    };
+  } else {
+    return {timeout: null};
+  }
+};
+
+const handleClose = (nextProps, prevState) => {
+  const {isOpen} = nextProps;
+  let {timeout, wasHovered, isHovered} = prevState;
+  clearTimeout(timeout);
+
+  if (isHovered) {
+    return null;
+  }
+
+  if (!wasHovered && isOpen) {
+    return null;
+  }
+
+  return toClosedState();
+};
 
 class LiveExpression extends Component {
 
@@ -18,61 +53,13 @@ class LiveExpression extends Component {
     sliderRange: [1],
   };
 
-  toClosedState = () => ({
-    timeout: null,
-    anchorEl: null,
-    wasHovered: false, // at least once
-    isHovered: false,
-    sliderRange: this.state.sliderRange || [1],
-  });
-
-
-  handleOpen = (anchorEl) => {
-    const {timeout} = this.state;
-    clearTimeout(timeout);
-    if (anchorEl) {
-      this.setState({
-        anchorEl: anchorEl,
-        timeout: null,
-      });
-    } else {
-      this.setState({timeout: null});
-    }
-  };
-
-  handleClose = event => {
-    const {closeDelay, isOpen} = this.props;
-    let {timeout, wasHovered, isHovered} = this.state;
-    clearTimeout(timeout);
-
-    if (isHovered) {
-      return;
-    }
-
-    if (!wasHovered && isOpen) {
-      return;
-    }
-
-    if (!event) {
-      this.setState(this.toClosedState());
-      return;
-    }
-
-    timeout = setTimeout(() => {
-        this.setState(this.toClosedState());
-      },
-      isNaN(closeDelay) ? defaultCloseDelay : closeDelay
-    );
-    this.setState({timeout: timeout});
-  };
-
-  componentWillReceiveProps(nextProps/*, nextContext*/) {
+  static getDerivedStateFromProps(nextProps, prevState) {
     const {widget, isOpen} = nextProps;
-    const anchorEl = widget.contentWidget.getDomNode();
+    const anchorEl = widget && widget.contentWidget.getDomNode();
     if (anchorEl && isOpen) {
-      this.handleOpen(anchorEl);
+      return handleOpen(anchorEl, prevState);
     } else {
-      this.handleClose();
+      return handleClose(nextProps, prevState);
     }
   }
 
@@ -86,6 +73,31 @@ class LiveExpression extends Component {
       });
       (!isHovered) && setTimeout(() => this.handleClose(event), 0);
     };
+  };
+
+  handleClose = event => {
+    const {closeDelay, isOpen} = this.props;
+    let {timeout, wasHovered, isHovered} = this.state;
+    clearTimeout(timeout);
+
+    if (isHovered) {
+      return null;
+    }
+
+    if (!wasHovered && isOpen) {
+      return null;
+    }
+
+    if (!event) {
+      return toClosedState();
+    }
+
+    timeout = setTimeout(() => {
+        this.setState(toClosedState());
+      },
+      isNaN(closeDelay) ? defaultCloseDelay : closeDelay
+    );
+    this.setState({timeout: timeout});
   };
 
   handleSliderChange = (change) => { // slider
@@ -106,8 +118,8 @@ class LiveExpression extends Component {
         // rangeStart=sliderMax-1;
         rangeStart = Math.min(rangeStart, sliderMax);
         // rangeStart = Math.min(rangeStart, sliderMax);
-     //   rangeEnd = Math.min(rangeEnd, sliderMax);
-        datum = data[rangeStart-1].data ? JSAN.parse(data[rangeStart-1].data) : datum;
+        //   rangeEnd = Math.min(rangeEnd, sliderMax);
+        datum = data[rangeStart - 1].data ? JSAN.parse(data[rangeStart - 1].data) : datum;
       }
     } else {
       datum = data;
@@ -144,7 +156,6 @@ class LiveExpression extends Component {
              onMouseLeave={this.handleChange(false)}
              style={{...style, overflow: 'auto',}}
         >
-
           {showSlider &&
           <RangeSlider
             min={sliderMin}
@@ -155,10 +166,8 @@ class LiveExpression extends Component {
           }
           <div className={classes.objectExplorer}>
             <ObjectExplorer
-              // key={expressionId}
               expressionId={expressionId}
               objectNodeRenderer={objectNodeRenderer}
-              theme={theme}
               data={datum}
               handleChange={handleChange}
             />
@@ -171,7 +180,6 @@ class LiveExpression extends Component {
 
 LiveExpression.propTypes = {
   classes: PropTypes.object.isRequired,
-  theme: PropTypes.object.isRequired,
   widget: PropTypes.object.isRequired,
 };
 

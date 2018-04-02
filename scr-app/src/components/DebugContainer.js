@@ -7,10 +7,11 @@ import Tabs, {Tab} from 'material-ui/Tabs';
 import Typography from 'material-ui/Typography';
 
 import TraceTable from './TraceTable';
+import TraceToolbar from './TraceToolbar';
 
 function TabContainer({children, dir}) {
   return (
-    <Typography component="div" dir={dir} >
+    <Typography component="div" dir={dir}>
       {children}
     </Typography>
   );
@@ -28,53 +29,44 @@ const styles = theme => ({
 });
 
 class DebugContainer extends React.Component {
-  state = {
-    value: 0,
-  };
-
-  handleChange = (event, value) => {
-    this.setState({value});
-  };
-
-  handleChangeIndex = index => {
-    this.setState({value: index});
-  };
 
   render() {
-    const {classes, appClasses, theme, setLiveExpressionStoreChange} = this.props;
+    const {classes, appClasses, theme, tabIndex, handleChangeTab, handleChangeTabIndex} = this.props;
 
     return (
-      <div className={classes.root}>
+      <div style={{minWidth:500}}>
         <AppBar position="sticky" color="default">
+          <TraceToolbar/>
           <Tabs
-            value={this.state.value}
-            onChange={this.handleChange}
+            value={tabIndex}
+            onChange={handleChangeTab}
             indicatorColor="primary"
             textColor="primary"
             fullWidth
             centered
           >
             <Tab label="Trace"/>
-            <Tab label="Visualizations"/>
-            <Tab label="History"/>
+            <Tab label="Streams"/>
+            {/*<Tab label="Visualizations"/>*/}
           </Tabs>
         </AppBar>
+
         <SwipeableViews
           axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-          index={this.state.value}
-          onChangeIndex={this.handleChangeIndex}
+          index={tabIndex}
+          onChangeIndex={handleChangeTabIndex}
         >
-          <TabContainer dir={theme.direction}>
-                <TraceTable setLiveExpressionStoreChange={setLiveExpressionStoreChange} />
+          <TabContainer dir={theme.direction} >
+            <TraceTable/>
           </TabContainer>
           <TabContainer dir={theme.direction} >
-
-                D3 soon...
-
-          </TabContainer>
-          <TabContainer dir={theme.direction} className={appClasses.container}>
             Code edit history and dumped traces
           </TabContainer>
+          {/*<TabContainer dir={theme.direction}>*/}
+
+          {/*D3 soon...*/}
+
+          {/*</TabContainer>*/}
         </SwipeableViews>
       </div>
     );

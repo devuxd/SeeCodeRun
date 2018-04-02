@@ -34,7 +34,7 @@ export const updateBundleReducer =
         return {
           ...state,
           errors: null,
-          bundle: null,
+        //  bundle: null,
           timestamp: action.timestamp,
         };
       case UPDATE_BUNDLE_SUCCESS:
