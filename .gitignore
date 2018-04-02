@@ -1,6 +1,5 @@
 # dependencies
 *node_modules
-scr-app/public/fireco/monaco-editor*
 # testing
 /coverage
 
