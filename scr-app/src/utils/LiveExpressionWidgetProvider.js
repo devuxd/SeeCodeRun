@@ -85,7 +85,6 @@ class LiveExpressionWidgetProvider {
 
         const deltaRemove = _.difference(prevDecoratorIds, this.jExpressionDecoratorIds);
         const deltaAdd = _.difference(this.jExpressionDecoratorIds, prevDecoratorIds);
-        console.log(deltaRemove, deltaAdd);
 
         hasDecoratorIdsChanged = deltaRemove.length + deltaAdd.length > 0;
         this.contentWidgets = {...prevContentWidgets};
