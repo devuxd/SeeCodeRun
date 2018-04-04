@@ -451,6 +451,7 @@ class LiveExpressionStore extends Component {
                 // this.setState({timeline: this.timeline});
                 this.liveExpressionStoreChange &&
                 this.liveExpressionStoreChange(
+                    this.traceSubscriber,
                     this.timeline,
                     this.isNew,
                     HighlightTypes,

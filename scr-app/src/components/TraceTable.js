@@ -207,7 +207,7 @@ class TraceTable extends React.Component {
             const {
                 data, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
                 handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
-                HighlightTypes, highlightSingleText, setCursorToLocation,
+                HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber,
             } = context;
 
             const emptyRows = rowsPerPage - Math.min(rowsPerPage, data.length - page * rowsPerPage);
@@ -244,7 +244,9 @@ class TraceTable extends React.Component {
                                             onMouseEnter={() =>
                                                 highlightSingleText(
                                                     n.loc, n.isError ? HighlightTypes.error
-                                                        : n.isGraphical ? HighlightTypes.graphical : HighlightTypes.text)}
+                                                        : n.isGraphical ?
+                                                            HighlightTypes.graphical : HighlightTypes.text,
+                                                    traceSubscriber.getMatches(n.funcRefId, n.dataRefId))}
                                             onMouseLeave={() => highlightSingleText()}
                                             role="checkbox"
                                             aria-checked={isSelected}

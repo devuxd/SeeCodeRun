@@ -246,7 +246,7 @@ class Trace {
         };
     };
 
-    pushEntry = (pre, value, post, type, extra, extraIds) => {
+    pushEntry = (pre, value, post, type, refId) => {
         let dataType = 'jsan';
         let res = {};
         const data = JSAN.stringify(value, this.getReplacer(res), null, true);
@@ -278,8 +278,23 @@ class Trace {
             objectClassName: objectClassName,
             timestamp: Date.now(),
             dataRefId: dataRefId,
+            funcRefId: refId,
             value: value
         });
+    };
+
+    getMatches=(funcRefId, dataRefId)=>{
+        const funcMatches= Object.keys(this.funcRefMatches[funcRefId]||{}).map(key=>this.locationMap[key].loc);
+        if(funcMatches.length){
+            return funcMatches;
+        }else{
+            const dataMatches= Object.keys(this.dataRefMatches[dataRefId]||{}).map(key=>this.locationMap[key].loc);
+            if(dataMatches.length){
+                return dataMatches;
+            }else{
+                return null;
+            }
+        }
     };
 
     findPreviousOccurrence = (id) => {
@@ -330,14 +345,15 @@ class Trace {
         },
         CallExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
             //console.log(pre, value, post, type, extraIds, areNew, extraValues);
-            const funcRefId = this.funcRefs.indexOf(extraValues[0]);
+            let funcRefId = this.funcRefs.indexOf(extraValues[0]);
             if (funcRefId < 0) {
+                funcRefId = this.funcRefs.length;
                 this.funcRefs.push(extraValues[0]);
                 this.funcRefMatches.push({[pre.id]:1});
             } else {
                 this.funcRefMatches[funcRefId][pre.id] = (this.funcRefMatches[funcRefId][pre.id]||0) +1;
             }
-           // return value;
+           return funcRefId;
         },
         // NewExpression: (ast, locationMap, getLocationId, path) => {
         // },
@@ -349,14 +365,15 @@ class Trace {
         // let c = this.checkNonHaltingLoop(this.timeline.length>10);
         //  console.log(pre.id, value);
         console.log(pre, value, post, type, extraIds, areNew, extraValues);
+        let refId= null;
         if (this.composedExpressions[type]) {
-            this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
+            refId=this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
         } else {
             //blocks
             // console.log(pre.id, value);
         }
         // console.log(value);
-        this.pushEntry(pre, value, post, type);
+        this.pushEntry(pre, value, post, type, refId);
         // console.log(val, val("x"));
         return {_: value};
     };
