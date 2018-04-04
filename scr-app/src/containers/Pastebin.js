@@ -236,10 +236,12 @@ class Pastebin extends Component {
       loc: {...entry.loc},
       expressionId: entry.id,
       entry: entry,
+      isError: entry.isError,
+      isGraphical: entry.isDOM,
     }));
   }
 
-  liveExpressionStoreChange = (timeline, isNew, highlightSingleText, getEditorTextInLoc, colorizeDomElement, objectNodeRenderer, handleChange) => {
+  liveExpressionStoreChange = (timeline, isNew, HighlightTypes, highlightSingleText, setCursorToLocation, getEditorTextInLoc, colorizeDomElement, objectNodeRenderer, handleChange) => {
     const {orderBy, order, isPlaying} = this.state;
     isPlaying && this.handleChangeDebugLoading(true);
     setTimeout(() => {
@@ -254,7 +256,9 @@ class Pastebin extends Component {
           liveTimeline: timeline,
           rowsPerPage: prevState.rowsPerPage === prevState.minRows ? prevState.defaultRowsPerPage : prevState.rowsPerPage,
           data: sortedData,
+          HighlightTypes: HighlightTypes,
           highlightSingleText: highlightSingleText,
+          setCursorToLocation: setCursorToLocation,
           getEditorTextInLoc: getEditorTextInLoc,
           colorizeDomElement: colorizeDomElement,
           objectNodeRenderer: objectNodeRenderer,
@@ -325,6 +329,7 @@ class Pastebin extends Component {
     gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
     liveExpressionStoreChange: this.liveExpressionStoreChange,
     isDebugLoading: false,
+    isSelectable: false,
     tabIndex: 0,
     order: 'desc',
     orderBy: 'time',

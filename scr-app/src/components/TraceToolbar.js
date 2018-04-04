@@ -206,7 +206,7 @@ const EnhancedToolbar = props => {
     {(context) => {
       const {
         selected, orderBy, timeFlow, isPlaying, handleChangePlaying, handleChangeTimeFlow, timeline, liveTimeline,
-        searchState
+        searchState, isSelectable
       } = context;
       const numSelected = selected.length;
       const newEntries = liveTimeline.length - timeline.length;
@@ -287,12 +287,12 @@ const EnhancedToolbar = props => {
                 </Tooltip>
 
               </React.Fragment>
-            ) : (
+            ) : (isSelectable?
               <Tooltip title="Filter list">
                 <IconButton aria-label="Filter list">
                   <FilterListIcon/>
                 </IconButton>
-              </Tooltip>
+              </Tooltip>: null
             )}
           </div>
         </Toolbar>

@@ -294,7 +294,6 @@ class AppManager {
         new LiveExpressionWidgetProvider(monaco, editorId, firecoPad.monacoEditor);
     }
 
-
     firecoPad.astResult = {};
     firecoPad.getAst = () => {
       const code = firecoPad.monacoEditor.getValue();

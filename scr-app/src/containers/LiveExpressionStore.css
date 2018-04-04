@@ -5,6 +5,22 @@
   /*font-size-adjust: 1.5;*/
 }
 
-.monaco-editor-decoration-les-textHighlight {
-  background: rgba(30, 144, 255, 0.2);
+.monaco-editor-decoration-les-textHighlight-text {
+  background: rgb(216, 236, 252);
+}
+
+.monaco-editor-decoration-les-textHighlight-text-match {
+  background: rgba(231, 243, 253, 0.75);
+}
+
+.monaco-editor-decoration-les-textHighlight-error {
+  background: rgb(248, 220, 220);
+}
+
+.monaco-editor-decoration-les-textHighlight-graphical {
+  background: rgb(255, 225, 216);
+}
+
+.monaco-editor-decoration-les-textHighlight-graphical-match {
+  background: rgba(255, 225, 216, 0.75);
 }

@@ -105,7 +105,7 @@ class LiveExpression extends Component {
   };
 
   render() {
-    const {classes, /*container,*/ style, theme, data, objectNodeRenderer, expressionId, handleChange} = this.props;
+    const {classes, style, data, objectNodeRenderer, expressionId, handleChange} = this.props;
     const {anchorEl, sliderRange} = this.state;
     const isActive = !!anchorEl;
     let datum;
@@ -129,7 +129,6 @@ class LiveExpression extends Component {
     const showSlider = sliderMin > 1 || sliderMax > 1;
     return (
       <Popover
-        // container={container}
         className={classes.popover}
         classes={{
           paper: classes.popoverPaper,
