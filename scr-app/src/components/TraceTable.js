@@ -2,9 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import _ from 'lodash';
 import {withStyles} from 'material-ui/styles';
-import {lighten} from 'material-ui/styles/colorManipulator';
 import ButtonBase from 'material-ui/ButtonBase';
 import Typography from 'material-ui/Typography';
+import {fade, lighten, darken} from 'material-ui/styles/colorManipulator';
 
 import Table, {
     TableBody,
@@ -26,6 +26,8 @@ import JSAN from "jsan";
 import ObjectExplorer from "./ObjectExplorer";
 
 import {PastebinContext} from "../containers/Pastebin";
+import {HighlightPalette} from '../containers/LiveExpressionStore';
+import OverflowComponent from "./OverflowComponent";
 
 const columnData = [
     {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1},
@@ -96,6 +98,8 @@ TraceTableHead.propTypes = {
     rowCount: PropTypes.number.isRequired,
 };
 
+let expressionCellMaxWidth = 300;
+
 const styles = theme => ({
     root: {
         width: '100%',
@@ -109,43 +113,51 @@ const styles = theme => ({
     },
     tableRow: {
         '&:hover': {
-            // matches .monaco-editor-decoration-les-textHighlight
-            backgroundColor: lighten(theme.palette.primary.light, 0.75),
-            // backgroundColor: lighten('rgba(30, 144, 255, 0.2)', 0),
-        }
-        // display: 'flex',
-        // flexFlow: 'row no-wrap',
-        // alignItems: 'stretch',
+            backgroundColor: HighlightPalette.text,
+        },
     },
     tableRowError: {
-        backgroundColor: lighten(theme.palette.error.light, 0.85),
+        backgroundColor: fade(HighlightPalette.error, 0.25),
         '&:hover': {
-            // matches .monaco-editor-decoration-les-textHighlight-error
-            backgroundColor: lighten(theme.palette.error.light, 0.75),
-        }
-        // display: 'flex',
-        // flexFlow: 'row no-wrap',
-        // alignItems: 'stretch',
+            backgroundColor: HighlightPalette.error,
+        },
     },
     tableRowGraphical: {
-        backgroundColor: lighten(theme.palette.secondary.light, 0.95),
+        backgroundColor: fade(HighlightPalette.graphical, 0.25),
         '&:hover': {
-            // matches .monaco-editor-decoration-les-textHighlight-graphical
-            backgroundColor: lighten(theme.palette.secondary.light, 0.85),
+            backgroundColor: HighlightPalette.graphical,
         }
-        // display: 'flex',
-        // flexFlow: 'row no-wrap',
-        // alignItems: 'stretch',
     },
-    expressionCell: {
-        paddingLeft: 'none',
-        paddingRight: theme.spacing.unit,
-        overflowX: 'auto',
-        maxWidth: 300,
+    expressionCellRoot: {
+        overflow: 'hidden',
+        display: 'table-cell',
+        verticalAlign: 'inherit',
+        // Workaround for a rendering bug with spanned columns in Chrome 62.0.
+        // Removes the alpha (sets it to 1), and lightens or darkens the theme color.
+        borderBottom: `1px solid ${
+            theme.palette.type === 'light'
+                ? lighten(fade(theme.palette.divider, 1), 0.88)
+                : darken(fade(theme.palette.divider, 1), 0.8)
+            }`,
+        textAlign: 'left',
+        padding: 0,
+        paddingLeft: theme.spacing.unit * 2,
+        paddingRight: 0,
+    },
+    expressionCellContent: {
+        overflow: 'auto',
+        position: 'relative',
+        maxWidth: expressionCellMaxWidth,
+        paddingTop: theme.spacing.unit,
+        paddingBottom: theme.spacing.unit * 2,
+        marginBottom: -theme.spacing.unit,
     },
     valueCell: {
-        paddingLeft: 'none',
+        paddingLeft: theme.spacing.unit,
         paddingRight: theme.spacing.unit,
+        '&:last-child': {
+            paddingRight: theme.spacing.unit * 2,
+        },
     },
     bottomAction: {
         margin: theme.spacing.unit * 4
@@ -262,16 +274,26 @@ class TraceTable extends React.Component {
                                                 <Checkbox checked={isSelected} padding={'none'}/>
                                             </TableCell>
                                             }
-                                            <TableCell className={classes.expressionCell}>
-                                                <ButtonBase onClick={() => setCursorToLocation(n.loc)}>
-                                                    <Typography align={"left"} noWrap>
-                                                        <Highlighter
-                                                            searchWords={[searchState.value]}
-                                                            textToHighlight={n.expression}
-                                                            findChunks={() => result.expressions}
-                                                        />
-                                                    </Typography>
-                                                </ButtonBase>
+                                            <TableCell
+                                                classes={{root: classes.expressionCellRoot}}
+                                            >
+                                                <OverflowComponent
+                                                    contentClassName={classes.expressionCellContent}
+                                                    disableOverflowDetectionY={true}
+                                                   //  placeholder={<Typography>Yo</Typography>}
+                                                   //  placeholderClassName={classes.expressionCellContent}
+                                                   // placeholderDisableGutters={true}
+                                                >
+                                                    <ButtonBase onClick={() => setCursorToLocation(n.loc)}>
+                                                        <Typography align={"left"} noWrap>
+                                                            <Highlighter
+                                                                searchWords={[searchState.value]}
+                                                                textToHighlight={n.expression}
+                                                                findChunks={() => result.expressions}
+                                                            />
+                                                        </Typography>
+                                                    </ButtonBase>
+                                                </OverflowComponent>
                                             </TableCell>
                                             <TableCell className={classes.valueCell}>
                                                 <ObjectExplorer

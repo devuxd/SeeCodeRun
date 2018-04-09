@@ -17,7 +17,7 @@ import {CardHeader} from 'material-ui/Card';
 import Avatar from 'material-ui/Avatar';
 import IconButton from 'material-ui/IconButton';
 import Menu from 'material-ui/Menu';
-import ChatIcon from 'material-ui-icons/Chat';
+import ChatIcon from '@material-ui/icons/Chat';
 import TextField from 'material-ui/TextField';
 import randomColor from "randomcolor";
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import MyLocationIcon from 'material-ui-icons/MyLocation'
+import MyLocationIcon from '@material-ui/icons/MyLocation'
 import {ObjectInspector, TableInspector, DOMInspector} from 'react-inspector';
 import {Tooltip} from 'material-ui';
 import deepDiff from 'deep-diff';
