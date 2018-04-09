@@ -1,4 +1,4 @@
-import j from "jscodeshift";
+import j from 'jscodeshift';
 import './JSXColoringProvider.css';
 import {configureLocToMonacoRange} from './scrUtils'
 

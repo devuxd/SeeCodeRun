@@ -3,23 +3,19 @@ import PropTypes from "prop-types";
 import _ from 'lodash';
 import {Subject} from 'rxjs';
 import JSAN from 'jsan';
-// import {Badge} from "material-
-import {withStyles} from 'material-ui/styles';
-import MyLocationIcon from 'material-ui-icons/MyLocation'
-import FiberManualRecordIcon from 'material-ui-icons/FiberManualRecord'
-import {ObjectRootLabel} from 'react-inspector'
-import {ObjectLabel} from 'react-inspector'
-import {Tooltip} from 'material-ui';
 
+import {withStyles} from 'material-ui/styles';
+import {lighten, fade} from 'material-ui/styles/colorManipulator';
+import {ObjectRootLabel, ObjectLabel} from 'react-inspector';
 
 import LiveExpression from '../components/LiveExpression';
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updateBundle, updateBundleFailure, updateBundleSuccess} from "../redux/modules/liveExpressionStore";
-import './LiveExpressionStore.css';
-import {createObjectIterator, hasChildNodes} from "../utils/scrUtils";
+import {createObjectIterator, end$} from "../utils/scrUtils";
 
-import ObjectExplorer, {Inspector} from "../components/ObjectExplorer";
+import {Inspector} from "../components/ObjectExplorer";
 import DOMPortal from "../components/DOMPortal";
+import debounce from 'lodash.debounce';
 
 import {PastebinContext} from './Pastebin';
 
@@ -28,38 +24,81 @@ export const HighlightTypes = {
     error: 'monaco-editor-decoration-les-textHighlight-error',
     graphical: 'monaco-editor-decoration-les-textHighlight-graphical',
 };
-const styles = (theme) => ({
-    popoverPaper: {
-        // padding: theme.spacing.unit,
-        overflow: 'auto',
-    },
-    popover: { // restricts backdrop from being modal
-        width: 0,
-        height: 0
-        // pointerEvents: 'none',
-    },
-    objectExplorer: {
-        minWidth: 200,
-        margin: theme.spacing.unit / 4,
-    },
-    rangeSlider: {
-        padding: theme.spacing.unit,
-    },
-    badgeRoot: {
-        position: 'relative',
-        display: 'inline-flex',
-        // For correct alignment with the text.
-        verticalAlign: 'middle',
-    },
-    liveBadge: {
-        display: 'flex',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        position: 'absolute', zIndex: 10, bottom: 0, left: 0, background: 'red', margin: 0, padding: 0,
-        width: 2,
-        height: 2,
-    },
-});
+
+export const defaultExpressionClassName = 'monaco-editor-decoration-les-expression';
+export const liveExpressionClassName = 'monaco-editor-decoration-les-expressionLive';
+
+export let HighlightPalette = {
+    text: 'transparent',
+    error: 'transparent',
+    graphical: 'transparent',
+};
+
+const styles = (theme) => {
+    HighlightPalette = {
+        text: fade(lighten(theme.palette.primary.light, 0.25), 0.25),
+        error: fade(lighten(theme.palette.error.light, 0.65), 0.75),
+        graphical: fade(lighten(theme.palette.secondary.light, 0.65), 0.75),
+    };
+
+    return {
+        '@global': {
+            [`.${defaultExpressionClassName}`]: {
+                opacity: 0.70,
+                filter: 'grayscale(30%)',
+                fontWeight: 100,
+            },
+            [`.${liveExpressionClassName}`]: {
+                opacity: 1,
+                filter: 'unset !important',
+                fontWeight: 600,
+            },
+            [`.${HighlightTypes.text}`]: {
+                backgroundColor: HighlightPalette.text,
+            },
+            [`.${HighlightTypes.text}-match`]: {
+                backgroundColor: fade(lighten(theme.palette.primary.light, 0.1), 0.2),
+            },
+            [`.${HighlightTypes.error}`]: {
+                backgroundColor: HighlightPalette.error,
+            },
+            [`.${HighlightTypes.graphical}`]: {
+                backgroundColor: HighlightPalette.graphical,
+            },
+            [`.${HighlightTypes.graphical}-match`]: {
+                backgroundColor: fade(lighten(theme.palette.secondary.light, 0.1), 0.2),
+            }
+        },
+        popoverPaper: {
+            overflow: 'auto',
+        },
+        popover: { // restricts backdrop from being modal
+            width: 0,
+            height: 0,
+        },
+        objectExplorer: {
+            minWidth: 200,
+            margin: theme.spacing.unit / 4,
+        },
+        rangeSlider: {
+            padding: theme.spacing.unit,
+        },
+        badgeRoot: {
+            position: 'relative',
+            display: 'inline-flex',
+            // For correct alignment with the text.
+            verticalAlign: 'middle',
+        },
+        liveBadge: {
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            position: 'absolute', zIndex: 10, bottom: 0, left: 0, background: 'red', margin: 0, padding: 0,
+            width: 2,
+            height: 2,
+        },
+    }
+};
 
 let monaco = null;
 
@@ -86,97 +125,84 @@ class LiveExpressionStore extends Component {
     liveExpressionWidgets = {};
 
     render() {
-        const {classes, currentContentWidgetId, editorWidth, editorHeight} = this.props;
+        const {classes, currentContentWidgetId, editorWidth, editorHeight, timeline} = this.props;
         const {decorators} = this.state;
-        return (
-            <PastebinContext.Consumer>
-                {(context) => {
-                    const {liveExpressionStoreChange, timeline} = context;
-                    this.liveExpressionStoreChange = liveExpressionStoreChange;
 
-                    // const liveExpressionWidgetProvider = firecoPad ? firecoPad.liveExpressionWidgetProvider : null;
+        const style = {
+            width: 'calc(100%)',
+        };
 
-                    const style = {
-                        width: 'calc(100%)',
-                    };
-                    if (editorHeight && editorWidth) {
-                        style.maxWidth = `${editorWidth}px`;
-                        style.maxHeight = `${Math.ceil(editorHeight / 2)}px`;
-                    }
-                    // this.t = this.t || forceHideWidgets;
-                    const liveRanges = [];
-                    this.prevLiveExpressionWidgets = this.liveExpressionWidgets;
-                    this.liveExpressionWidgets = {};
-                    const liveExpressions = (decorators || []).map(widget => {
-                        // console.log(widget.id, autoLog);
-                        let data = [];
-                        (timeline || []).forEach(entry => {
-                            (entry.id === widget.id) && data.unshift(entry);
-                        });//autoLogger.trace.getData(widget.id);
+        if (editorHeight && editorWidth) {
+            style.maxWidth = `${editorWidth}px`;
+            style.maxHeight = `${Math.ceil(editorHeight / 2)}px`;
+        }
 
-                        if (data.length) {
-                            // widget.contentWidget.domNode.style.backgroundColor = 'orange';
-                            // widget.contentWidget.domNode.style.fontSize = '8px';
-                            widget.range && liveRanges.push(widget.range);
-                            let datum = JSAN.parse(data[data.length - 1].data);
-                            this.liveExpressionWidgets[widget.id] = {datum, widget};
-                            //  if (hasChildNodes(datum, objectIterator)) {
-                            //    // let text = '';
-                            //    // for (let {name, data, ...props} of objectIterator(datum)) {
-                            //    //   text = `${text}, ${name}`;
-                            //    // }
-                            //    const val = objectIterator(datum).next().value;
-                            //    console.log(val);
-                            //    widget.contentWidget.getElement().innerText = `{${val ? val.name : val}}`;
-                            //    // console.log(objectIterator(datum).next().value)
-                            //  } else {
-                            //    const val = objectIterator(datum).next().value;
-                            //    widget.contentWidget.getElement().innerText = `${val ? val.name : val}`;
-                            //  }
-                            //  widget.contentWidget.getElement().className='';
-                            // liveExpressionWidgetProvider.colorizeElement(widget.contentWidget.getElement());
+        const liveRanges = [];
+        this.prevLiveExpressionWidgets = this.liveExpressionWidgets;
+        this.liveExpressionWidgets = {};
+        const liveExpressions = (decorators || []).map(widget => {
+            // console.log(widget.id, autoLog);
+            let data = [];
+            (timeline || []).forEach(entry => {
+                (entry.id === widget.id) && data.unshift(entry);
+            });//autoLogger.trace.getData(widget.id);
 
-                        } else {
-                            // widget.contentWidget.getElement().innerText = '';
-                            //  widget.contentWidget.domNode.style.backgroundColor = 'transparent';
-                        }
-                        //  liveExpressionWidgetProvider.colorizeElement(widget.contentWidget.getElement());
-                        // widget.contentWidget.domNode.style.borderTop = '2px solid blue';
+            if (data.length) {
+                // widget.contentWidget.domNode.style.backgroundColor = 'orange';
+                // widget.contentWidget.domNode.style.fontSize = '8px';
+                widget.range && liveRanges.push(widget.range);
+                let datum = JSAN.parse(data[data.length - 1].data);
+                this.liveExpressionWidgets[widget.id] = {datum, widget};
+                //  if (hasChildNodes(datum, objectIterator)) {
+                //    // let text = '';
+                //    // for (let {name, data, ...props} of objectIterator(datum)) {
+                //    //   text = `${text}, ${name}`;
+                //    // }
+                //    const val = objectIterator(datum).next().value;
+                //    console.log(val);
+                //    widget.contentWidget.getElement().innerText = `{${val ? val.name : val}}`;
+                //    // console.log(objectIterator(datum).next().value)
+                //  } else {
+                //    const val = objectIterator(datum).next().value;
+                //    widget.contentWidget.getElement().innerText = `${val ? val.name : val}`;
+                //  }
+                //  widget.contentWidget.getElement().className='';
+                // liveExpressionWidgetProvider.colorizeElement(widget.contentWidget.getElement());
 
-                        return (<LiveExpression
-                            style={style}
-                            key={widget.id}
-                            expressionId={widget.id}
-                            classes={classes}
-                            widget={widget}
-                            data={data}
-                            isOpen={data.length > 0 && currentContentWidgetId === widget.id}
-                            objectNodeRenderer={this.objectNodeRenderer}
-                            //handleChange={this.handleObjectExplorerExpand}
-                        />);
-                    });
-                    this.highlightLiveExpressions(liveRanges);
-                    const liveWidgets = [];
-                    for (const i in this.liveExpressionWidgets) {
-                        if (this.liveExpressionWidgets[i]) {
-                            const {datum, widget} = this.liveExpressionWidgets[i];
-                            liveWidgets.push(<DOMPortal key={widget.id}
-                                                        parentEl={widget.contentWidget.domNode}><ObjectRootLabel
-                                data={datum}/></DOMPortal>);
-                        }
-                    }
+            } else {
+                // widget.contentWidget.getElement().innerText = '';
+                //  widget.contentWidget.domNode.style.backgroundColor = 'transparent';
+            }
+            //  liveExpressionWidgetProvider.colorizeElement(widget.contentWidget.getElement());
+            // widget.contentWidget.domNode.style.borderTop = '2px solid blue';
 
-                    return (
-                        <React.Fragment>
-                            {liveExpressions}
-                            {liveWidgets}
-                        </React.Fragment>
-                    );
-                }}
+            return (<LiveExpression
+                style={style}
+                key={widget.id}
+                expressionId={widget.id}
+                classes={classes}
+                widget={widget}
+                data={data}
+                isOpen={data.length > 0 && currentContentWidgetId === widget.id}
+                objectNodeRenderer={this.objectNodeRenderer}
+                //handleChange={this.handleObjectExplorerExpand}
+            />);
+        });
+        this.highlightLiveExpressions(liveRanges);
+        const liveWidgets = [];
+        for (const i in this.liveExpressionWidgets) {
+            if (this.liveExpressionWidgets[i]) {
+                const {datum, widget} = this.liveExpressionWidgets[i];
+                liveWidgets.push(<DOMPortal key={widget.id}
+                                            parentEl={widget.contentWidget.domNode}><ObjectRootLabel
+                    data={datum}/></DOMPortal>);
+            }
+        }
 
-            </PastebinContext.Consumer>
-        );
-
+        return (<React.Fragment>
+            {liveExpressions}
+            {liveWidgets}
+        </React.Fragment>);
     }
 
     shouldBundle = (editorsTexts) => {
@@ -194,24 +220,37 @@ class LiveExpressionStore extends Component {
         return false;
     };
 
-    observeBundling = bundlingObservable => {
-        return bundlingObservable
-            .throttleTime(500)
-            .debounceTime(1000)
-            .subscribe(currentEditorsTexts => {
-                if (this.isBundling) {
-                    return;
-                }
-                this.isBundling = true;
-                this.updateBundle(currentEditorsTexts);
-                this.isBundling = false;
-            })
+    handleChangeDebounced = (handleChange, debounceTime) => {
+        return debounce(value => handleChange(value), debounceTime);
+    };
+
+    handleBundlingSubscription = () => {
+        if (!this.bundlingSubject) {
+            return;
+        }
+
+        if (this.bundlingSubscription) {
+            this.bundlingSubscription.unsubscribe();
+        }
+
+        this.bundlingSubscription =
+            this.bundlingSubject
+                .debounceTime(this.props.autorunDelay)  // .throttleTime(500)
+                .subscribe(currentEditorsTexts => {
+                    if (this.isBundling) {
+                        return;
+                    }
+                    this.isBundling = true;
+                    this.updateBundle(currentEditorsTexts);
+                    this.isBundling = false;
+                });
     };
 
     componentDidMount() {
         this.autoLog = new AutoLog();
         this.bundlingSubject = new Subject();
-        this.observeBundling(this.bundlingSubject);
+        this.handleBundlingSubscription();
+        this.handleBundlingSubscriptionDebounced = this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
         const {store} = this.context;
         const {editorId} = this.props;
         this.unsubscribe = store.subscribe(() => {
@@ -239,8 +278,11 @@ class LiveExpressionStore extends Component {
         })
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps/*, prevState, snapshot*/) {
         this.didUpdate = true;
+        if (prevProps.autorunDelay !== this.props.autorunDelay) {
+            this.handleBundlingSubscriptionDebounced();
+        }
     }
 
     componentWillUnmount() {
@@ -449,8 +491,8 @@ class LiveExpressionStore extends Component {
                 this.didUpdate = false;
                 this.prevTimeline = this.timeline;
                 // this.setState({timeline: this.timeline});
-                this.liveExpressionStoreChange &&
-                this.liveExpressionStoreChange(
+                this.props.liveExpressionStoreChange &&
+                this.props.liveExpressionStoreChange(
                     this.traceSubscriber,
                     this.timeline,
                     this.isNew,
@@ -490,4 +532,15 @@ LiveExpressionStore.propTypes = {
     liveExpressionStoreChange: PropTypes.func,
 };
 
-export default withStyles(styles)(LiveExpressionStore);
+const LiveExpressionStoreWithContext = props => (
+    <PastebinContext.Consumer>
+        {({liveExpressionStoreChange, timeline, autorunDelay}) => {
+            return <LiveExpressionStore {...props}
+                                        liveExpressionStoreChange={liveExpressionStoreChange}
+                                        timeline={timeline}
+                                        autorunDelay={autorunDelay}
+            />
+        }}
+    </PastebinContext.Consumer>
+);
+export default withStyles(styles)(LiveExpressionStoreWithContext);

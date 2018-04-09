@@ -1,12 +1,10 @@
 import React, {Component, createContext} from 'react';
 import PropTypes from "prop-types";
 import {Responsive} from 'react-grid-layout';
-import Paper from 'material-ui/Paper';
-import Button from 'material-ui/Button';
-import AddIcon from 'material-ui-icons/Add';
-import MoreHorizIcon from 'material-ui-icons/MoreHoriz';
-import DragHandleIcon from 'material-ui-icons/DragHandle';
-import {withStyles} from 'material-ui/styles';
+import {withStyles, Paper, Button} from 'material-ui';
+import AddIcon from '@material-ui/icons/Add';
+import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
+import DragHandleIcon from '@material-ui/icons/DragHandle';
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
@@ -17,6 +15,8 @@ import {
     configureDefaultGridLayoutFormatter
 } from '../utils/reactGridLayoutUtils';
 import DebugContainer from "../components/DebugContainer";
+import ScrollingList from "../components/ScrollingList";
+import TraceControls from '../components/TraceControls';
 
 let gridLayoutFormatter = configureDefaultGridLayoutFormatter();
 
@@ -64,6 +64,10 @@ const styles = theme => ({
 });
 
 class Pastebin extends Component {
+    constructor(props) {
+        super(props);
+        this.debugScrollerRef = React.createRef();
+    }
 
     handleChangeDebugLoading = (isLoading) => {
         this.setState({isDebugLoading: isLoading});
@@ -208,27 +212,10 @@ class Pastebin extends Component {
         }, 0);
     };
 
-    addDebugContainerOnScrollEnd = () => {
-        if (this.debugScrollerRef) {
-            this.debugScrollListener = (e) => {
-                if (this.debugScrollerRef.offsetHeight + this.debugScrollerRef.scrollTop >= this.debugScrollerRef.scrollHeight) {
-                    this.onScrollEnd(e);
-                }
-            };
-            this.debugScrollerRef.addEventListener('scroll', this.debugScrollListener);
-        }
-    };
-
-    removeDebugContainerOnScrollEnd = () => {
-        if (this.debugScrollerRef) {
-            this.debugScrollerRef.removeEventListener('scroll', this.debugScrollListener);
-        }
-    };
-
     createData(timeline, getEditorTextInLoc) {
         let tl = timeline || [];
         return (tl).map((entry, i) => ({
-            id: entry.reactKey, // todo entry.timestamp
+            id: entry.reactKey,
             time: entry.i,
             // time: entry.timestamp,
             expression: getEditorTextInLoc(entry.loc),
@@ -253,13 +240,14 @@ class Pastebin extends Component {
                 //console.log(orderBy, order,orderBy === 'time' && order === 'desc');
                 const sortedData = orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
                 this.setState((prevState) => ({
+                    isNew: isNew,
                     isPlaying: isNew ? true : prevState.isPlaying,
                     traceSubscriber: traceSubscriber,
                     timeline: currentTimeline,
                     liveTimeline: timeline,
                     rowsPerPage: prevState.rowsPerPage === prevState.minRows ? prevState.defaultRowsPerPage : prevState.rowsPerPage,
                     data: sortedData,
-                    HighlightTypes: HighlightTypes,
+                    HighlightTypes: HighlightTypes, // todo move nonserializables out of state
                     highlightSingleText: highlightSingleText,
                     setCursorToLocation: setCursorToLocation,
                     getEditorTextInLoc: getEditorTextInLoc,
@@ -329,6 +317,8 @@ class Pastebin extends Component {
     };
 
     state = {
+        traceAvailable: true,
+        autorunDelay: 2000,
         gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
         liveExpressionStoreChange: this.liveExpressionStoreChange,
         isDebugLoading: false,
@@ -376,12 +366,18 @@ class Pastebin extends Component {
         },
     };
 
+    handleChangeAutorunDelay = autorunDelay => {
+        this.setState({autorunDelay: autorunDelay ? parseInt(autorunDelay) : 0});
+    };
+
     render() {
         const {themeType, appClasses, classes, appStyle, editorIds, width, height} = this.props;
         const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
-        const {gridLayouts, liveExpressionStoreChange, liveState, isDebugLoading, tabIndex} = this.state;
+        const {
+            gridLayouts, liveExpressionStoreChange, liveState, isDebugLoading, tabIndex, data, isNew, traceAvailable,
+            autorunDelay
+        } = this.state;
         gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;
-        //const timeline = isPlaying ? liveTimeline : pausedTimeline;
         return (
             <div className={appClasses.content}>
                 <PastebinContext.Provider value={this.state}>
@@ -410,7 +406,6 @@ class Pastebin extends Component {
                                     themeType={themeType}
                                     observeMouseEvents
                                     observeLiveExpressions={true}
-                                //  liveExpressionStoreChange={liveExpressionStoreChange}
                             />
                         </Paper>
                         <Paper key="htmlContainer">
@@ -420,16 +415,21 @@ class Pastebin extends Component {
                             <Editor editorId={editorIds['css']}/>
                         </Paper>
                         <Paper key="debugContainer" className={appClasses.container}>
-                            <div className={appClasses.scroller} ref={ref => {
-                                this.debugScrollerRef = this.debugScrollerRef || ref;
-                            }}>
+                            <ScrollingList
+                                ScrollingListRef={this.debugScrollerRef}
+                                onScrollEnd={this.onScrollEnd}
+                                classes={appClasses.scroller}
+                                listLength={data.length}
+                                isRememberScrollingDisabled={isNew}
+                            >
                                 <DebugContainer appClasses={appClasses}
                                                 appStyle={appStyle}
                                                 tabIndex={tabIndex}
                                                 handleChangeTab={this.handleChangeTab}
                                                 handleChangeTabIndex={this.handleChangeTabIndex}
                                 />
-                            </div>
+                            </ScrollingList>
+
                             {isDebugLoading ? <span className={classes.loadingFeedback}><MoreHorizIcon/> </span> : null}
                         </Paper>
                         <Paper key="consoleContainer" className={appClasses.container}>
@@ -438,10 +438,6 @@ class Pastebin extends Component {
                                 <div className={appClasses.content}>
                                 </div>
                             </div>
-                            {/*<Button variant="fab" color="primary" aria-label="add"*/}
-                            {/*className={classes.button}>*/}
-                            {/*<AddIcon/>*/}
-                            {/*</Button>*/}
                         </Paper>
                         <Paper key="playgroundContainer"
                                className={appClasses.container}
@@ -456,6 +452,9 @@ class Pastebin extends Component {
                         </Paper>
                     </Responsive>
                 </PastebinContext.Provider>
+                {traceAvailable && <TraceControls
+                    autorunDelay={autorunDelay} handleChangeAutorunDelay={this.handleChangeAutorunDelay}/>
+                }
             </div>
         );
     }
@@ -469,12 +468,11 @@ class Pastebin extends Component {
                 this.getCurrentGridLayouts
             )
         );
-        this.addDebugContainerOnScrollEnd();
     }
 
-    componentWillUnmount() {
-        this.removeDebugContainerOnScrollEnd();
-    }
+    // componentWillUnmount() {
+    //
+    // }
 
 }
 

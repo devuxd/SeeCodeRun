@@ -5,7 +5,6 @@ import {chromeDark, chromeLight} from "react-inspector";
 import withRoot, {themeTypes} from '../components/withRoot';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar from '../components/TopNavigationBar';
-import TraceControls from '../components/TraceControls';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
@@ -71,7 +70,7 @@ const styles = theme => {
       padding: 0,
     },
     scroller: {
-      overflow: 'scroll',
+      overflow: 'auto',
       height: '100%',
       width: '100%',
       margin: 0,
@@ -182,7 +181,6 @@ class Index extends Component {
 
   state = {
     isTopNavigationToggled: false,
-    traceAvailable: true,
     copied: false,
     onCopy: this.onCopy,
     pastebinId: null,
@@ -218,7 +216,7 @@ class Index extends Component {
     } = this.state;
     const activateChat = !!authUser;
 
-    const rootContainerClassname = isTopNavigationToggled ?
+    const rootContainerClassName = isTopNavigationToggled ?
       classes.rootContainerNavigationToggled :
       window.innerWidth > 600 ? classes.rootContainer
         : classes.rootContainerSmall;
@@ -249,7 +247,7 @@ class Index extends Component {
                                  switchTheme={switchTheme}
 
                />
-               <div className={rootContainerClassname}>
+               <div className={rootContainerClassName}>
                  <div className={classes.scroller}>
                    <Pastebin
                      themeType={themeType}
@@ -278,7 +276,6 @@ class Index extends Component {
                        switchTheme={switchTheme}
                  />
                }
-               {traceAvailable && <TraceControls/>}
              </div>
            </ThemeContext.Provider>
       // </StrictMode>

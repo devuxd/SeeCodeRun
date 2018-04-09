@@ -39,6 +39,8 @@ import {
 import JSXColoringProvider from '../utils/JSXColoringProvider';
 import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider';
 
+import {defaultExpressionClassName} from '../containers/LiveExpressionStore';
+
 const dataBaseRoot = '/scr2';
 const firebaseConfig = {
   apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
@@ -291,7 +293,7 @@ class AppManager {
       firecoPad.jsxColoringProvider =
         new JSXColoringProvider(monaco, editorId, firecoPad.monacoEditor);
       firecoPad.liveExpressionWidgetProvider =
-        new LiveExpressionWidgetProvider(monaco, editorId, firecoPad.monacoEditor);
+        new LiveExpressionWidgetProvider(monaco, editorId, firecoPad.monacoEditor, defaultExpressionClassName);
     }
 
     firecoPad.astResult = {};

@@ -1,9 +1,8 @@
-import j from "jscodeshift";
+import j from 'jscodeshift';
 import _ from 'lodash';
 import {monacoProps} from "./monacoUtils";
 import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
 
-import './LiveExpressionWidgetProvider.css';
 
 export const jExpressions = [];
 const jIgnoreExpressions =
@@ -20,7 +19,7 @@ for (const k in j) {
 
 
 class LiveExpressionWidgetProvider {
-  constructor(monaco, editorId, monacoEditor) {
+  constructor(monaco, editorId, monacoEditor, defaultExpressionClassName) {
     this.monaco = monaco;
     this.contentWidgetPositionPreference =
       [this.monaco.editor.ContentWidgetPositionPreference.BELOW];
@@ -28,6 +27,7 @@ class LiveExpressionWidgetProvider {
     this.monacoRangeToClassName = configureMonacoRangeToClassName(`${editorId}-r`);
     this.editorId = editorId;
     this.monacoEditor = monacoEditor;
+    this.defaultExpressionClassName=defaultExpressionClassName;
     this.decorators = [];
     this.contentWidgets = {};
   }
@@ -168,7 +168,7 @@ class LiveExpressionWidgetProvider {
             range: range,
             options: {
               className: `${className} ${expressionType}`,
-              inlineClassName: `monaco-editor-decoration-lwp-expression ${expressionType}`,
+              inlineClassName: `${this.defaultExpressionClassName} ${expressionType}`,
               // hoverMessage: expressionType,
             }
           });
