@@ -1,7 +1,25 @@
 {
-  "hosting":{
+  "hosting": {
     "firebase": "seecoderun",
-    "public": "export",
+    "public": "scr-app/build",
+    "rewrites": [
+      {
+        "source": "/firebase-seecoderun/us-central1/getPastebinId",
+        "function": "getPastebinId"
+      },
+      {
+        "source": "/firebase-seecoderun/us-central1/copyPastebin",
+        "function": "copyPastebin"
+      },
+      {
+        "source": "/firebase-seecoderun/us-central1/getPastebin",
+        "function": "getPastebin"
+      },
+      {
+        "source": "/firebase-seecoderun/us-central1/getPastebinToken",
+        "function": "getPastebinToken"
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",

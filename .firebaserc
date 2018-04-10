@@ -1,5 +1,6 @@
 {
   "projects": {
-    "seecoderun": "firebase-seecoderun"
+    "seecoderun": "firebase-seecoderun",
+    "default": "firebase-seecoderun"
   }
 }
