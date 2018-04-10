@@ -1,4 +1,4 @@
-import j from "jscodeshift";
+// import j from 'jscodeshift';
 import _ from 'lodash';
 
 export const toAst = (source, options) => {
@@ -22,11 +22,14 @@ export const l = {
     postAutoLogId: 'postAutoLog',
 };
 
+let j = null;
+
 class AutoLogShift {
-    constructor(autoLogName, preAutoLogName, postAutoLogName) {
+    constructor(autoLogName, preAutoLogName, postAutoLogName, jRef) {
         this.autoLogName = l.autoLogId = autoLogName;
         this.preAutoLogName = l.preAutoLogId = preAutoLogName;
         this.postAutoLogName = l.postAutoLogId = postAutoLogName;
+        j = jRef;
     }
 
     autoLogSource(text, locationMap, getLocationId) {
@@ -58,7 +61,7 @@ class AutoLogShift {
         //   console.log('j', e)
         // }
 
-        console.log(locationMap);
+        // console.log(locationMap);
         return ast;
     }
 
@@ -154,7 +157,7 @@ class AutoLogShift {
             const object = path.value.object;//node
             // console.log(object)
             const property = path.value ? path.value.property : null;
-            const propertyNode = property && property.computed ? property : j.identifier(`'${j(property).toSource()}'`);
+            //const propertyNode = property && property.computed ? property : j.identifier(`'${j(property).toSource()}'`);
             const objectId = object.loc ? getLocationId(object.loc, object.type) : object.autologId;
             const objectLoc = object.loc || (locationMap[objectId] || {}).loc;
             const propertyId =
@@ -173,8 +176,8 @@ class AutoLogShift {
             // else{
             //     objectValue = `${j(object).toSource()}`;
             // }
-            else{
-                console.log('OBJ', id , object.autologId, locationMap[object.autologId], locationMap);
+            else {
+                //   console.log('OBJ', id, object.autologId, locationMap[object.autologId], locationMap);
             }
 
             if (propertyId && !property.autologId) {
@@ -248,17 +251,34 @@ class AutoLogShift {
         },
         CallExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
-            console.log('c', path.value);
             const callee = path.value ? path.value.callee : null;
             const calleeId = callee.loc ? getLocationId(callee.loc, callee.type) : callee.autologId;
             const calleeLoc = callee.loc || (locationMap[calleeId] || {}).loc;
-            const parameters = path.value ? path.value.parameters : null;
-            const parameterNodes= [];
+            const callArguments = path.value ? path.value.arguments : null;
+            path.value.arguments = callArguments.map(argument => {
+                // const argument = argumentNode.value;
+                const argumentId = argument.loc ? getLocationId(argument.loc, argument.type) : argument.autologId;
+                const argumentLoc = argument.loc || (locationMap[argumentId] || {}).loc;
+                let argumentValue = null;
+                if (argumentId) {
+                    locationMap[argumentId] = {
+                        type: alt.ExpressionIdiom,
+                        expressionType: argument.type,
+                        loc: {...argumentLoc},
+                        parentId: id,
+                        isArgument: true,
+                    };
+                    argumentValue = j(argument).toSource();
+                    // console.log(argumentValue, argument.loc, argument.type, argumentId);
+                    return this.autoLogExpression(argumentValue, argumentId, argument.type, argument);
+                } else {
+                    return argument;
+                }
+            });
 
-            // const parametersId = parameters.loc ? getLocationId(parameters.loc, parameters.type) : parameters.autologId;
-            // const parametersLoc = parameters.loc || (locationMap[parametersId] || {}).loc;
+
             let calleeValue = null;
-            // let parametersValue = null;
+
 
             if (calleeId && !callee.autologId) {
                 locationMap[calleeId] = {
@@ -270,16 +290,7 @@ class AutoLogShift {
                 calleeValue = j(callee).toSource();
             }
 
-            // if (parametersId && !parameters.autologId) {
-            //     locationMap[parametersId] = {
-            //         type: alt.ExpressionIdiom,
-            //         expressionType: parameters.type,
-            //         loc: {...parametersLoc},
-            //         parentId: id,
-            //     };
-            //     parametersValue = j(parameters).toSource();
-            // }
-            const jValue = _.isString(pathSource) ? j.identifier(pathSource) : pathSource;
+            const jValue = j.identifier(j(path.value).toSource());
             const params = [
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
@@ -314,18 +325,71 @@ class AutoLogShift {
         return false;
     };
 
+    static getDependencies = (ast) => {
+        ast.find(j.ImportDeclaration) //source
+        ast.find(j.CallExpression, {callee: {value: 'require'}}) // arguments[0]
+
+    };
+
     composedBlocks = {
         FunctionDeclaration:
             ({ast, locationMap, getLocationId, path}, {id, type}, {parentType, parentLoc, parentId}) => {
-                const jid = j.identifier(`'${parentId}'`);
-                const jValue = j.identifier('arguments');
-                // locationMap[parentId] = {
-                //     type: alt.BlockStart,
-                //     expressionType: parentType,
-                //     loc: {...parentLoc},
-                //     blockId: id,
-                // };
-                // console.log('f', path);
+                // const jid = j.identifier(`'${parentId}'`);
+                // const jValue = j.identifier('arguments');
+                locationMap[parentId] = {
+                    type: alt.BlockStart,
+                    expressionType: parentType,
+                    loc: {...parentLoc},
+                    blockId: id,
+                };
+                // console.log('f', path.parentPath.value);
+                const funcParams = path.parentPath.value ? path.parentPath.value.params : null;
+                let paramIds = '', paramValues = '';
+                funcParams.forEach(param => {
+                    if (param.type === j.Identifier.name) {
+                        const paramType = param.type;
+                        const paramLoc = param.loc;
+                        let paramIdMain = paramLoc ? getLocationId(paramLoc, paramType) : null;
+
+                        if (paramIdMain) {
+                            locationMap[paramIdMain] = {
+                                type: alt.ExpressionIdiom,
+                                expressionType: paramType,
+                                loc: {...paramLoc},
+                                parentId: parentId,
+                                isParam: true,
+                            };
+                            paramIds = `${paramIds}${paramIds ? ',' : ''}'${param.name}'`;
+                            paramValues = `${paramValues}${paramValues ? ',' : ''}${param.name}`;
+                        } else {
+                            console.log('pi', param);
+                        }
+
+                    }
+                    j(param).find(j.Property).forEach(idPath => {
+                        const paramId = idPath.value.key;
+                        const paramIdType = paramId.type;
+                        const paramIdLoc = paramId.loc;
+                        let paramIdId = paramIdLoc ? getLocationId(paramIdLoc, paramIdType) : null;
+
+                        if (paramIdId) {
+                            locationMap[paramIdId] = {
+                                type: alt.ExpressionIdiom,
+                                expressionType: paramIdType,
+                                loc: {...paramIdLoc},
+                                parentId: parentId,
+                                isParam: true,
+                            };
+                            paramIds = `${paramIds}${paramIds ? ',' : ''}'${paramId.name}'`;
+                            paramValues = `${paramValues}${paramValues ? ',' : ''}${paramId.name}`;
+                        } else {
+                            console.log('pi', idPath, idPath.value);
+                        }
+                    });
+                });
+                paramIds = `[${paramIds}]`;
+                paramValues = `[${paramValues}]`;
+                // console.log('PARA', paramIds, paramValues);
                 // const params = [
                 //     j.callExpression(j.identifier(l.preAutoLogId),
                 //         [
@@ -334,11 +398,11 @@ class AutoLogShift {
                 //     jValue,
                 //     j.callExpression(j.identifier(l.postAutoLogId), [jid]),
                 //     j.identifier(`'FunctionDeclaration'`),
-                //     j.identifier(`['${leftId}', '${rightId}']`),
-                //     j.identifier(`[${!left.autologId}, ${!right.autologId}]`),
-                //     j.identifier(`[${leftValue}, ${rightValue}]`),
+                //     j.identifier(paramIds),
+                //     j.identifier(`[]`),
+                //     j.identifier(paramValues),
                 // ];
-                // return this.autoLogExpression(pathSource, id, type, path, p, params);
+                //const enterExpression = this.autoLogExpression(null, id, type, path, p, params);
 
                 // const body = path.value.body;
                 // if (body.length && j(body[0]).toSource().startsWith('super')) {
@@ -406,9 +470,11 @@ class AutoLogShift {
                     }
 
                     if (type === j.Identifier.name
-                        && (AutoLogShift.IdentifierIgnores.includes(parentType)
-                            || (parentPath && parentPath.name === 'params'))) {
+                        && AutoLogShift.IdentifierIgnores.includes(parentType)) {
                         isValid = false; //  x of function x(...) , x of function (x)... => handled in parent
+                    }
+                    if ((parentPath && (parentPath.name === 'params' || parentPath.name === 'arguments'))) {
+                        isValid = false; //  x of function y(x) , x of y(x) => handled in parent
                     }
 
                     if (AutoLogShift.isInPattern(path)) {
@@ -458,13 +524,13 @@ class AutoLogShift {
                             }
                         );
                     } else {
-                            console.log('passing to parent', type, loc, path);
+                        // console.log('passing to parent', type, loc, path);
                     }
                 } else {
                     if (AutoLogShift.SupportedBlocks.includes(type)) {
                         // console.log('block', type, loc, path);
                     } else {
-                        console.log('ignored', type, loc, path);
+                        // console.log('ignored', type, loc, path);
                     }
                 }
             } else {
@@ -483,7 +549,7 @@ class AutoLogShift {
             const type = path.value ? path.value.type : null;
             const loc = type ? path.value.loc : null;
             let id = loc ? getLocationId(loc, type) : null;
-            console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
+//            console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
             if (id) {
                 if (path.parentPath) {
                     const parentType = path.parentPath.value.type;
@@ -492,21 +558,20 @@ class AutoLogShift {
                     if (parentId) {
                         if (AutoLogShift.SupportedBlocks.includes(parentType)) {
                             if (this.composedBlocks[parentType]) {
-                                return this.composedBlocks[parentType]
-                                (
+                                return this.composedBlocks[parentType](
                                     {ast, locationMap, getLocationId, path},
                                     {id, type},
                                     {parentType, parentLoc, parentId}
                                 );
                             }
                         } else {
-                            console.log('critical parent', type, loc, path, parentType, parentLoc);
+                            // console.log('critical parent', type, loc, path, parentType, parentLoc);
                         }
                     } else {
-                        console.log('ignored', path);
+                        // console.log('ignored', path);
                     }
                 } else {
-                    console.log('ignored no parent', path,);
+                    // console.log('ignored no parent', path,);
                 }
             }
             else {

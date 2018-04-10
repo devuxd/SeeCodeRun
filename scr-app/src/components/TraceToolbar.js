@@ -17,8 +17,8 @@ import ChangeHistoryIcon from '@material-ui/icons/ChangeHistory';
 import VerticalAlignBottomIcon from '@material-ui/icons/VerticalAlignBottom';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import PauseIcon from '@material-ui/icons/Pause';
-import SearchIcon from '@material-ui/icons/Search';
-import DeleteIcon from '@material-ui/icons/Delete';
+// import SearchIcon from '@material-ui/icons/Search';
+// import DeleteIcon from '@material-ui/icons/Delete';
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CallMergeIcon from '@material-ui/icons/CallMerge';
@@ -29,10 +29,10 @@ import {InputAdornment, TextField} from 'material-ui';
 
 import {PastebinContext} from '../containers/Pastebin';
 
-const columnTime = [
-  {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
-
-];
+// const columnTime = [
+//   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
+//
+// ];
 
 const toolbarStyles = theme => ({
   root: {

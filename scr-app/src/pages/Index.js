@@ -211,7 +211,7 @@ class Index extends Component {
       url, themeType, switchTheme, minPastebinHeight
     } = this.props;
     const {
-      isTopNavigationToggled, traceAvailable,
+      isTopNavigationToggled,
       authUser, isChatToggled, chatClick, chatTitle, isNetworkOk
     } = this.state;
     const activateChat = !!authUser;

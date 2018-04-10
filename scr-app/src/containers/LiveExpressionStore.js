@@ -6,14 +6,14 @@ import JSAN from 'jsan';
 
 import {withStyles} from 'material-ui/styles';
 import {lighten, fade} from 'material-ui/styles/colorManipulator';
-import {ObjectRootLabel, ObjectLabel} from 'react-inspector';
+import {ObjectRootLabel/*, ObjectLabel*/, createLiveObjectNodeRenderer} from '../components/ObjectExplorer';
 
 import LiveExpression from '../components/LiveExpression';
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updateBundle, updateBundleFailure, updateBundleSuccess} from "../redux/modules/liveExpressionStore";
-import {createObjectIterator, end$} from "../utils/scrUtils";
+// import {createObjectIterator} from "../utils/scrUtils";
 
-import {Inspector} from "../components/ObjectExplorer";
+// import {Inspector} from "../components/ObjectExplorer";
 import DOMPortal from "../components/DOMPortal";
 import debounce from 'lodash.debounce';
 
@@ -102,7 +102,7 @@ const styles = (theme) => {
 
 let monaco = null;
 
-const objectIterator = createObjectIterator();
+// const objectIterator = createObjectIterator();
 
 class LiveExpressionStore extends Component {
     state = {
@@ -114,11 +114,11 @@ class LiveExpressionStore extends Component {
     };
     rt = 100;
     currentEditorsTexts = null;
-    t = false;
+    // t = false;
     didUpdate = true;
     refreshRate = 1000 / 4;
     refreshInterval = null;
-    leto = null;
+    // leto = null;
 
 
     prevLiveExpressionWidgets = {};
@@ -247,7 +247,7 @@ class LiveExpressionStore extends Component {
     };
 
     componentDidMount() {
-        this.autoLog = new AutoLog();
+
         this.bundlingSubject = new Subject();
         this.handleBundlingSubscription();
         this.handleBundlingSubscriptionDebounced = this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
@@ -260,10 +260,9 @@ class LiveExpressionStore extends Component {
                 state.monacoEditorsReducer.monacoEditorsStates && state.monacoEditorsReducer.monacoEditorsStates[editorId] ?
                     state.monacoEditorsReducer.monacoEditorsStates[editorId].firecoPad : null;
 
-            if (firecoPad && firecoPad !== this.state.firecoPad) {
+            if (firecoPad && firecoPad.liveExpressionWidgetProvider && firecoPad !== this.state.firecoPad) {
                 this.setState({firecoPad: firecoPad});
-                const liveExpressionWidgetProvider = firecoPad ? firecoPad.liveExpressionWidgetProvider : null;
-                setTimeout(() => this.updateLiveExpressions(liveExpressionWidgetProvider), 0);
+                setTimeout(() => this.updateLiveExpressions(firecoPad.liveExpressionWidgetProvider), 0);
             }
 
             const editorsTexts = store.getState().pastebinReducer.editorsTexts;
@@ -292,7 +291,7 @@ class LiveExpressionStore extends Component {
 
     updateBundle = (currentEditorsTexts) => {
         const {store} = this.context;
-        const {firecoPad, decorators, getLocationId} = this.state;
+        const {firecoPad/*, decorators*/, getLocationId} = this.state;
         if (!firecoPad || !getLocationId) {
             //console.log('Not ready');
             if (this.rt) {
@@ -309,67 +308,34 @@ class LiveExpressionStore extends Component {
             store.dispatch(updateBundleFailure(firecoPad.astResult.astError));
             return;
         }
-        const astResult = firecoPad.getAst();
-        const autoLogger = this.autoLog.transformWithLocationIds(astResult.ast, getLocationId);
-        const bundle = {
-            editorsTexts: currentEditorsTexts,
-            alJs: autoLogger.code,
-            autoLog: this.autoLog,
-            autoLogger: autoLogger,
-        };
 
-        if (this.traceSubscriber) {
-            this.traceSubscriber.unsubscribe();
-        }
+        firecoPad.getAst().then((astResult) => {
+            if (!this.autoLog) {
+                this.autoLog = new AutoLog(firecoPad.j);
+            }
 
-        this.objectNodeRenderer = {
-            getWindowRef: () => autoLogger.trace.window,
-            handleChange: null,
-            expandPathsState: null,
-            getExpandedPaths: (expandPathsState) => {
-                if (expandPathsState) {
-                    return Object.keys(expandPathsState).filter(path => expandPathsState[path]);
-                } else {
-                    return [];
-                }
-            },
-            hideLiveRefs: false,
-            render: (props) => {
-                const {depth, name, data, isNonenumerable, expanded, path} = props;
-                const paths = this.objectNodeRenderer.expandPathsState || {};
-                // paths[path] = expanded;
-                // if (expanded) {
-                //   clearTimeout(this.leto);
-                //   this.leto = setTimeout(() => {
-                //     this.objectNodeRenderer.handleChange && this.objectNodeRenderer.handleChange();
-                //   }, 500);
-                // }
-                //todo handle array and obj
-                const liveRef = autoLogger.trace.parseLiveRefs(data, this.objectNodeRenderer.hideLiveRefs);
-                const isRoot = depth === 0;
-                const objectLabel = isRoot ?
-                    <ObjectRootLabel name={name} data={liveRef.data}/>
-                    : <ObjectLabel name={name} data={liveRef.data} isNonenumerable={isNonenumerable}/>;
+            const autoLogger = this.autoLog.transformWithLocationIds(astResult.ast, getLocationId);
+            const bundle = {
+                editorsTexts: currentEditorsTexts,
+                alJs: autoLogger.code,
+                autoLog: this.autoLog,
+                autoLogger: autoLogger,
+            };
 
-                return liveRef.isLive ?
-                    isRoot ?
-                        objectLabel :
-                        <ul style={{marginLeft: -12, marginTop: -12}}>
-                            <Inspector data={liveRef.data}/>
-                        </ul>
-                    : objectLabel;
-            },
-            parseLiveRefs: autoLogger.trace.parseLiveRefs,
-        };
+            if (this.traceSubscriber) {
+                this.traceSubscriber.unsubscribe();
+            }
 
-        this.timeline = [];
-        this.isNew = true;
-        this.unHighlightLiveExpressions();
-        this.refreshInterval = setInterval(this.refreshTimeline, this.refreshRate);
-        this.traceSubscriber = autoLogger.trace;
-        this.traceSubscriber.subscribe(this.handleTraceChange);
+            this.objectNodeRenderer = createLiveObjectNodeRenderer(autoLogger);
+            this.timeline = [];
+            this.isNew = true;
+            this.unHighlightLiveExpressions();
+            this.refreshInterval = setInterval(this.refreshTimeline, this.refreshRate);
+            this.traceSubscriber = autoLogger.trace;
+            this.traceSubscriber.subscribe(this.handleTraceChange);
 
-        store.dispatch(updateBundleSuccess(bundle));
+            store.dispatch(updateBundleSuccess(bundle));
+        });
     };
 
     handleTraceChange = (payload) => {

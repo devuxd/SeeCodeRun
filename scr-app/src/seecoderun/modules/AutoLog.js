@@ -7,19 +7,33 @@ import {
     updatePlaygroundLoadSuccess
 } from "../../redux/modules/playground";
 
-let Babel = null;
-export const babelTransform = async (source, tryAppendScript) => {
-    if (!Babel) {// lazy loading Babel to improve boot up
-        Babel = await import('@babel/standalone');
-        Babel.registerPlugin('transform-class-properties', await import('babel-plugin-transform-class-properties'));
-        Babel.registerPlugin('transform-object-rest-spread', await import('babel-plugin-transform-object-rest-spread'));
-    }
+let babel = null;
+export const babelTransformer = {};
+export const babelTransform = async () => {
+    if (!babel) {// lazy loading Babel to improve boot up
+        const presetExcludes =
+            ['flow', 'typescript', 'es2015', 'es2015-loose', 'stage-0', 'stage-1', 'stage-2', 'es2015-no-commonjs'];
+        babel = await import('@babel/standalone');
+        const options = {
+            presets: Object.keys(babel.availablePresets)
+                .filter(key => !presetExcludes.includes(key)),
+            plugins: Object.keys(babel.availablePlugins)
+                .filter(key => !(
+                    key.includes('-flow')
+                    || key.includes('-typescript')
+                    || key.includes('-strict-mode')
+                    || key.includes('-modules')
+                    || key.includes('external-helpers')
+                    || key.includes('transform-runtime')
+                )),
+        };
 
-    const alJsCode = Babel.transform(source, {
-        presets: ['es2015', 'es2016', 'es2017', 'react'],
-        plugins: ['transform-object-rest-spread', 'transform-class-properties']
-    }).code;
-    tryAppendScript(alJsCode);
+        options.presets.push(["es2015", {
+            modules: false,
+        }]);
+
+        babelTransformer.transform = sourceCode => babel.transform(sourceCode, options);
+    }
 };
 
 export const autoLogName = '_$l';
@@ -28,46 +42,45 @@ export const postAutoLogName = '_$o';
 
 // setAutoLogNames(autoLogName, preAutoLogName, postAutoLogName);
 
-export const addCssAnJs = (doc, store, alJs, css) => {
+export const addCssAnJs = (doc, store, css, js, alJs) => {
     if (doc) {
         const style = doc.createElement("style");
         style.type = "text/css";
         style.innerHTML = css;
         style.onload = () => {
-            store.dispatch(updatePlaygroundLoadSuccess('css'));
+            store.dispatch(updatePlaygroundLoadSuccess('css', css));
         };
         style.onerror = e => {
             store.dispatch(updatePlaygroundLoadFailure('css', e)); // do happens?
         };
         doc.body.appendChild(style);
 
-        const script = doc.createElement("script");
-        babelTransform(alJs, tryAppendScript(store, doc, script));
-
+        babelTransform().then(() => tryAppendScript(store, doc, js, alJs));
     }
 };
 
-const tryAppendScript = (store, doc, script) => ((alJsCode) => {
+const tryAppendScript = (store, doc, js, alJs, isJs) => {
+    const id = isJs ? 'js' : 'alJs';
+    const source = isJs ? js : alJs;
     try {
-        script.innerHTML = alJsCode;
-        script.onload = () => {
-            store.dispatch(updatePlaygroundLoadSuccess('js'));
-        };
+        const sourceTransformed = babelTransformer.transform(source).code;
+        // console.log('BC', id, sourceTransformed);
+        const script = doc.createElement("script");
+        // eslint-disable-next-line no-useless-escape
+        script.type = 'text\/javascript';
 
-        script.onerror = e => {
-            store.dispatch(updatePlaygroundLoadFailure('js', e));
-        };
         doc.body.appendChild(script);
+        script.innerHTML = sourceTransformed;
+        store.dispatch(updatePlaygroundLoadSuccess(id, sourceTransformed));
     } catch (e) {
-        store.dispatch(updatePlaygroundLoadFailure('js', e));
-        // script.innerHTML=js;
-        // doc.body.appendChild(script);
+        store.dispatch(updatePlaygroundLoadFailure(id, e));
+        !isJs && tryAppendScript(store, doc, js, alJs, true);
     }
-});
+};
 
 class AutoLog {
-    constructor() {
-        this.autoLogShift = new AutoLogShift(autoLogName, preAutoLogName, postAutoLogName);
+    constructor(jRef) {
+        this.autoLogShift = new AutoLogShift(autoLogName, preAutoLogName, postAutoLogName, jRef);
     }
 
     toAst(text) {
@@ -85,7 +98,7 @@ class AutoLog {
         const locationMap = {};
         this.autoLogShift.autoLogAst(ast, locationMap, getLocationId);
         const code = ast.toSource();
-        console.log(code);
+        // console.log(code);
         return {
             locationMap: locationMap,
             trace: new Trace(locationMap),
@@ -122,7 +135,7 @@ class AutoLog {
         runIframe.addEventListener('load', () => {
             if (al && al.trace && runIframe.contentWindow) {
                 al.trace.configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName);
-                addCssAnJs(runIframe.contentDocument, store, alJs, css);
+                addCssAnJs(runIframe.contentDocument, store, css, js, alJs);
             } else {
 
             }

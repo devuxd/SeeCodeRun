@@ -28,7 +28,7 @@ const styles = theme => ({
 class DebugContainer extends React.Component {
 
     render() {
-        const {classes, appClasses, theme, tabIndex, handleChangeTab, handleChangeTabIndex} = this.props;
+        const {theme, tabIndex, handleChangeTab, handleChangeTabIndex} = this.props;
 
         return (
             <div style={{minWidth: 500}}>

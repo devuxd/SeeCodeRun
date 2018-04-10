@@ -1,7 +1,7 @@
 import JSAN from 'jsan';
 import {Subject} from "rxjs";
 import _ from "lodash";
-import {isNode, createObjectIterator, hasChildNodes, copifyDOMNode} from '../../utils/scrUtils';
+import {isNode, /*createObjectIterator, hasChildNodes,*/ copifyDOMNode} from '../../utils/scrUtils';
 
 
 const obsConfig = {attributes: true, childList: true};
@@ -19,7 +19,7 @@ const obsCallback = function (mutationsList) {
 };
 
 
-const objectIterator = createObjectIterator();
+// const objectIterator = createObjectIterator();
 
 class Scope {
     constructor(parent, id) {
@@ -230,7 +230,7 @@ class Trace {
         if (!liveRef && this.domNodes) {
             index = this.domNodes.indexOf(data);
             if (index < 0 && liveRefId) {
-                const domId = parseInt(liveRefId);
+                const domId = parseInt(liveRefId, 10);
                 liveRef = this.domNodes[domId];
             }
         } else {
@@ -364,7 +364,7 @@ class Trace {
     autoLog = (pre, value, post, type, extraIds, areNew, extraValues) => {
         // let c = this.checkNonHaltingLoop(this.timeline.length>10);
         //  console.log(pre.id, value);
-        console.log(pre, value, post, type, extraIds, areNew, extraValues);
+        // console.log(pre, value, post, type, extraIds, areNew, extraValues);
         let refId= null;
         if (this.composedExpressions[type]) {
             refId=this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
@@ -417,28 +417,28 @@ class Trace {
         };
     };
 
-    resolveAfter2Seconds(x) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve(x);
-            }, 2000);
-        });
-    }
+    // resolveAfter2Seconds(x) {
+    //     return new Promise(resolve => {
+    //         setTimeout(() => {
+    //             resolve(x);
+    //         }, 2000);
+    //     });
+    // }
 
-    checkNonHaltingLoop = async (loopCount) => {
-        console.log(loopCount);
-        if (loopCount) {
-            let cancel = await this.resolveAfter2Seconds(true);
-            if (cancel) {
-                throw 'Boom';
-            }
-        } else {
-            console.log('noy');
-
-            await 0;
-        }
-        await 0;
-    };
+    // checkNonHaltingLoop = async (loopCount) => {
+    //     console.log(loopCount);
+    //     if (loopCount) {
+    //         let cancel = await this.resolveAfter2Seconds(true);
+    //         if (cancel) {
+    //             throw 'Boom';
+    //         }
+    //     } else {
+    //         console.log('noy');
+    //
+    //         await 0;
+    //     }
+    //     await 0;
+    // };
 
 }
 

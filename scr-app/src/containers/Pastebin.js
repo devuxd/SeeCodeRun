@@ -1,8 +1,8 @@
 import React, {Component, createContext} from 'react';
 import PropTypes from "prop-types";
 import {Responsive} from 'react-grid-layout';
-import {withStyles, Paper, Button} from 'material-ui';
-import AddIcon from '@material-ui/icons/Add';
+import {withStyles, Paper} from 'material-ui';
+// import AddIcon from '@material-ui/icons/Add';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
@@ -367,14 +367,14 @@ class Pastebin extends Component {
     };
 
     handleChangeAutorunDelay = autorunDelay => {
-        this.setState({autorunDelay: autorunDelay ? parseInt(autorunDelay) : 0});
+        this.setState({autorunDelay: autorunDelay ? parseInt(autorunDelay, 10) : 0});
     };
 
     render() {
         const {themeType, appClasses, classes, appStyle, editorIds, width, height} = this.props;
         const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
         const {
-            gridLayouts, liveExpressionStoreChange, liveState, isDebugLoading, tabIndex, data, isNew, traceAvailable,
+            gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
             autorunDelay
         } = this.state;
         gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;

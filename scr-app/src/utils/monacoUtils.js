@@ -168,186 +168,186 @@ export function configureMonacoEditorMouseEventsObservable(editor) {
   });
 }
 
-let once = false;
+// let once = false;
 
-function observeAddViewZone(monacoEditor, afterLineNumber) {
-  return Observable.create(observer => {
-    const viewZone = {};
-    monacoEditor.changeViewZones(function (changeAccessor) {
-      console.log(changeAccessor);
-
-      viewZone.domNode = document.createElement('div');
-      // viewZone.domNode.style.background = 'lightgreen';
-      // viewZone.domNode.style['z-index'] = 300;
-      //   viewZone.domNode.innerText=JSON.stringify(changeAccessor);
-
-      viewZone.domNode.innerText = afterLineNumber;
-      const viewZoneConf = {
-        afterLineNumber: afterLineNumber,
-        heightInLines: 0.5,
-        // height: '50px',
-        domNode: viewZone.domNode
-      };
-      viewZone.viewZoneId = changeAccessor.addZone(viewZoneConf);
-      // render(<Inspector data={viewZoneConf}/>, viewZone.domNode);
-      observer.next(viewZone);
-      observer.complete();
-      if (!once) {
-        console.log("CA", changeAccessor);
-        once = true;
-      }
-
-    });
-  });
-}
-
-function viewZoneChangeAccessorObservable(monacoEditor) {
-  return Observable.create(observer => {
-    monacoEditor.changeViewZones(function (changeAccessor) {
-      // console.log("CAAAa", changeAccessor);
-      // changeAccessor.addZone({
-      //   afterlineNumber: 0,
-      //   domNode: document.createElement('div')
-      // });
-      // changeAccessor.addZone= changeAccessor.addZone;
-      observer.next({...changeAccessor});
-    });
-  });
-}
-
-function addLiveLine(changeAccessor, afterLineNumber) {
-  const viewZone = {};
-  viewZone.domNode = document.createElement('div');
-  viewZone.domNode.style = "font-size:10px;";
-  viewZone.domNode.innerText = afterLineNumber;
-  const viewZoneConf = {
-    afterLineNumber: afterLineNumber,
-    heightInLines: 0.5,
-    domNode: viewZone.domNode
-  };
-  viewZone.viewZoneId = changeAccessor.addZone(viewZoneConf);
-  setTimeout(() => changeAccessor.layoutZone(viewZone.viewZoneId), 100);
-  return viewZone;
-}
-
-//monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER
-export function addOverlayWidget(monacoEditor, getDomNode, overlayId, overlayWidgetPositionPreference) {
-  const overlayWidget = {
-    domNode: null,
-    getId: () => {
-      return overlayId;
-    },
-    getDomNode: () => {
-      overlayWidget.domNode = getDomNode();
-    },
-    getPosition: function () {
-      return {
-        preference: overlayWidgetPositionPreference
-      };
-
-    }
-  };
-  monacoEditor.addOverlayWidget(overlayWidget);
-  return overlayWidget;
-}
-
-
-//previousState = []
-//new monaco.Range(3, 1, 3, 1)
-// options: {
-// isWholeLine: true,
-//   className: 'myContentClass',
-//   glyphMarginClassName: 'myGlyphMarginClass'
+// function observeAddViewZone(monacoEditor, afterLineNumber) {
+//   return Observable.create(observer => {
+//     const viewZone = {};
+//     monacoEditor.changeViewZones(function (changeAccessor) {
+//       console.log(changeAccessor);
+//
+//       viewZone.domNode = document.createElement('div');
+//       // viewZone.domNode.style.background = 'lightgreen';
+//       // viewZone.domNode.style['z-index'] = 300;
+//       //   viewZone.domNode.innerText=JSON.stringify(changeAccessor);
+//
+//       viewZone.domNode.innerText = afterLineNumber;
+//       const viewZoneConf = {
+//         afterLineNumber: afterLineNumber,
+//         heightInLines: 0.5,
+//         // height: '50px',
+//         domNode: viewZone.domNode
+//       };
+//       viewZone.viewZoneId = changeAccessor.addZone(viewZoneConf);
+//       // render(<Inspector data={viewZoneConf}/>, viewZone.domNode);
+//       observer.next(viewZone);
+//       observer.complete();
+//       if (!once) {
+//         console.log("CA", changeAccessor);
+//         once = true;
+//       }
+//
+//     });
+//   });
 // }
-export function addNavigators(editor, previousState = [], range, options) {
-  return editor.deltaDecorations(previousState, [
-    {
-      range: range,
-      options: options
-    }
-  ]);
-}
+//
+// function viewZoneChangeAccessorObservable(monacoEditor) {
+//   return Observable.create(observer => {
+//     monacoEditor.changeViewZones(function (changeAccessor) {
+//       // console.log("CAAAa", changeAccessor);
+//       // changeAccessor.addZone({
+//       //   afterlineNumber: 0,
+//       //   domNode: document.createElement('div')
+//       // });
+//       // changeAccessor.addZone= changeAccessor.addZone;
+//       observer.next({...changeAccessor});
+//     });
+//   });
+// }
+//
+// function addLiveLine(changeAccessor, afterLineNumber) {
+//   const viewZone = {};
+//   viewZone.domNode = document.createElement('div');
+//   viewZone.domNode.style = "font-size:10px;";
+//   viewZone.domNode.innerText = afterLineNumber;
+//   const viewZoneConf = {
+//     afterLineNumber: afterLineNumber,
+//     heightInLines: 0.5,
+//     domNode: viewZone.domNode
+//   };
+//   viewZone.viewZoneId = changeAccessor.addZone(viewZoneConf);
+//   setTimeout(() => changeAccessor.layoutZone(viewZone.viewZoneId), 100);
+//   return viewZone;
+// }
+//
+// //monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER
+// export function addOverlayWidget(monacoEditor, getDomNode, overlayId, overlayWidgetPositionPreference) {
+//   const overlayWidget = {
+//     domNode: null,
+//     getId: () => {
+//       return overlayId;
+//     },
+//     getDomNode: () => {
+//       overlayWidget.domNode = getDomNode();
+//     },
+//     getPosition: function () {
+//       return {
+//         preference: overlayWidgetPositionPreference
+//       };
+//
+//     }
+//   };
+//   monacoEditor.addOverlayWidget(overlayWidget);
+//   return overlayWidget;
+// }
+//
+//
+// //previousState = []
+// //new monaco.Range(3, 1, 3, 1)
+// // options: {
+// // isWholeLine: true,
+// //   className: 'myContentClass',
+// //   glyphMarginClassName: 'myGlyphMarginClass'
+// // }
+// export function addNavigators(editor, previousState = [], range, options) {
+//   return editor.deltaDecorations(previousState, [
+//     {
+//       range: range,
+//       options: options
+//     }
+//   ]);
+// }
+//
+// function addCodeLens(monaco, editor) {
+//   let commandId = editor.addCommand(0, function () {
+//     // services available in `ctx`
+//     // console.log("c", arguments);
+//
+//   }, '');
+//
+//   monaco.languages.registerCodeLensProvider('javascript', {
+//     provideCodeLenses: function (model, token) {
+//       return [
+//         {
+//           range: {
+//             startLineNumber: 2,
+//             startColumn: 1,
+//             endLineNumber: 2,
+//             endColumn: 1
+//           },
+//           id: "First Line",
+//           command: {
+//             id: commandId,
+//             title: "First Line: blaaaaaa",
+//             content: "bluuuuuuuuu"
+//           }
+//         }
+//       ];
+//     },
+//     resolveCodeLens: function (model, codeLens, token) {
+//       // console.log(arguments);
+//       return codeLens;
+//     }
+//   });
+// }
+//
+// function addCompletionProviders() {
+//   let monaco = this.state.monaco;
+//
+//   function createDependencyProposals() {
+//     // returning a static list of proposals, not even looking at the prefix (filtering is done by the Monaco editor),
+//     // here you could do a server side lookup
+//     return [
+//       {
+//         label: '"lodash"',
+//         kind: monaco.languages.CompletionItemKind.Function,
+//         documentation: "The Lodash library exported as Node.js modules.",
+//         insertText: '"lodash": "*"'
+//       },
+//       {
+//         label: '"express"',
+//         kind: monaco.languages.CompletionItemKind.Function,
+//         documentation: "Fast, unopinionated, minimalist web framework",
+//         insertText: '"express": "*"'
+//       },
+//       {
+//         label: '"mkdirp"',
+//         kind: monaco.languages.CompletionItemKind.Function,
+//         documentation: "Recursively mkdir, like <code>mkdir -p</code>",
+//         insertText: '"mkdirp": "*"'
+//       }
+//     ];
+//   }
+//
+//
+//   monaco.languages.registerCompletionItemProvider('javascript', {
+//     provideCompletionItems: function (model, position) {
+//       // find out if we are completing a property in the 'dependencies' object.
+//       var textUntilPosition = model.getValueInRange({
+//         startLineNumber: 1,
+//         startColumn: 1,
+//         endLineNumber: position.lineNumber,
+//         endColumn: position.column
+//       });
+//       var match = textUntilPosition.match(/"dependencies"\s*:\s*{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*("[^"]*)?$/);
+//       // console.log(match);
+//       if (match) {
+//         return createDependencyProposals();
+//       }
+//       return [];
+//     }
+//   });
 
-function addCodeLens(monaco, editor) {
-  let commandId = editor.addCommand(0, function () {
-    // services available in `ctx`
-    // console.log("c", arguments);
-
-  }, '');
-
-  monaco.languages.registerCodeLensProvider('javascript', {
-    provideCodeLenses: function (model, token) {
-      return [
-        {
-          range: {
-            startLineNumber: 2,
-            startColumn: 1,
-            endLineNumber: 2,
-            endColumn: 1
-          },
-          id: "First Line",
-          command: {
-            id: commandId,
-            title: "First Line: blaaaaaa",
-            content: "bluuuuuuuuu"
-          }
-        }
-      ];
-    },
-    resolveCodeLens: function (model, codeLens, token) {
-      // console.log(arguments);
-      return codeLens;
-    }
-  });
-}
-
-function addCompletionProviders() {
-  let monaco = this.state.monaco;
-
-  function createDependencyProposals() {
-    // returning a static list of proposals, not even looking at the prefix (filtering is done by the Monaco editor),
-    // here you could do a server side lookup
-    return [
-      {
-        label: '"lodash"',
-        kind: monaco.languages.CompletionItemKind.Function,
-        documentation: "The Lodash library exported as Node.js modules.",
-        insertText: '"lodash": "*"'
-      },
-      {
-        label: '"express"',
-        kind: monaco.languages.CompletionItemKind.Function,
-        documentation: "Fast, unopinionated, minimalist web framework",
-        insertText: '"express": "*"'
-      },
-      {
-        label: '"mkdirp"',
-        kind: monaco.languages.CompletionItemKind.Function,
-        documentation: "Recursively mkdir, like <code>mkdir -p</code>",
-        insertText: '"mkdirp": "*"'
-      }
-    ];
-  }
-
-
-  monaco.languages.registerCompletionItemProvider('javascript', {
-    provideCompletionItems: function (model, position) {
-      // find out if we are completing a property in the 'dependencies' object.
-      var textUntilPosition = model.getValueInRange({
-        startLineNumber: 1,
-        startColumn: 1,
-        endLineNumber: position.lineNumber,
-        endColumn: position.column
-      });
-      var match = textUntilPosition.match(/"dependencies"\s*:\s*{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*("[^"]*)?$/);
-      // console.log(match);
-      if (match) {
-        return createDependencyProposals();
-      }
-      return [];
-    }
-  });
-
-}
+// }
 
 
