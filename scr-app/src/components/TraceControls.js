@@ -1,14 +1,31 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {withStyles, Menu, ListItem, TextField, Button} from 'material-ui';
-import {SpeedDial, SpeedDialIcon, SpeedDialAction} from '@material-ui/lab';
-import {
-    Settings as SettingsIcon,
-    PlayArrow as PlayArrowIcon,
-    PlaylistPlay as PlaylistPlayIcon,
-    Code as CodeIcon,
-    Edit as EditIcon,
-} from '@material-ui/icons';
+// webpack tree shacking is broken for reimports
+// import {withStyles, Menu, ListItem, TextField, Button} from 'material-ui';
+// import {SpeedDial, SpeedDialIcon, SpeedDialAction} from '@material-ui/lab';
+// import {
+//     Settings as SettingsIcon,
+//     PlayArrow as PlayArrowIcon,
+//     PlaylistPlay as PlaylistPlayIcon,
+//     Code as CodeIcon,
+//     Edit as EditIcon,
+// } from '@material-ui/icons';
+
+
+import SpeedDial from '@material-ui/lab/SpeedDial';
+import SpeedDialIcon from '@material-ui/lab/SpeedDialIcon';
+import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
+import SettingsIcon from '@material-ui/icons/Settings';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
+import CodeIcon from '@material-ui/icons/Code';
+import EditIcon from '@material-ui/icons/ModeEdit';
+
+import {withStyles} from 'material-ui/styles';
+import Menu from 'material-ui/Menu';
+import {ListItem} from 'material-ui/List';
+import TextField from 'material-ui/TextField';
+import Button from 'material-ui/Button';
 
 const styles = theme => ({
     speedDialBackdrop: {
@@ -165,7 +182,7 @@ class TraceControls extends React.Component {
                         <TextField
                             label="auto-run delay"
                             value={autorunDelay}
-                            onChange={event=>handleChangeAutorunDelay(event.target.value)}
+                            onChange={event => handleChangeAutorunDelay(event.target.value)}
                             type="number"
                             InputLabelProps={{
                                 shrink: true,

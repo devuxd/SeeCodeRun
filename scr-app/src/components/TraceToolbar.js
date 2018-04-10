@@ -25,7 +25,8 @@ import CallMergeIcon from '@material-ui/icons/CallMerge';
 import CallSplitIcon from '@material-ui/icons/CallSplit';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import {lighten} from 'material-ui/styles/colorManipulator';
-import {InputAdornment, TextField} from 'material-ui';
+import {InputAdornment} from 'material-ui/Input';
+import TextField from 'material-ui/TextField';
 
 import {PastebinContext} from '../containers/Pastebin';
 

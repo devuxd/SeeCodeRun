@@ -1,7 +1,9 @@
 import React, {Component, createContext} from 'react';
 import PropTypes from "prop-types";
 import {Responsive} from 'react-grid-layout';
-import {withStyles, Paper} from 'material-ui';
+// import {withStyles, Paper} from 'material-ui';
+import {withStyles} from 'material-ui/styles';
+import Paper from 'material-ui/Paper';
 // import AddIcon from '@material-ui/icons/Add';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';

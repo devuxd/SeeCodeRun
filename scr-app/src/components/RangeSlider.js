@@ -4,7 +4,9 @@ import React, {Component} from 'react';
 import Range from 'rc-slider';
 // import Range from 'rc-slider/lib/Range';
 import PropTypes from "prop-types";
-import {ListItem, ListItemText, Typography, withStyles} from 'material-ui';
+import {withStyles} from 'material-ui/styles';
+import Typography from 'material-ui/Typography';
+import {ListItem, ListItemText} from 'material-ui/List';
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
   const value = `${'0'.repeat(max.toString().length - aValue.toString().length)}${aValue}`;

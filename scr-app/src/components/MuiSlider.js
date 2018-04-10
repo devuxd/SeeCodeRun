@@ -3,8 +3,10 @@ import 'rc-slider/assets/index.css';
 // import 'rc-tooltip/assets/bootstrap.css';
 import React, {Component} from 'react';
 import Slider, {Range} from 'rc-slider';
-import PropTypes from "prop-types";
-import {Button, Tooltip} from "material-ui";
+import PropTypes from 'prop-types';
+//import {Button, Tooltip} from 'material-ui';
+import Button from 'material-ui/Button';
+import Tooltip from 'material-ui/Tooltip';
 
 const createSliderWithTooltip = Slider.createSliderWithTooltip;
 // const Range = createSliderWithTooltip(Slider.Range);

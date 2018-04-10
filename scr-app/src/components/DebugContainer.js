@@ -1,6 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {withStyles, AppBar, Typography, Tabs, Tab} from 'material-ui';
+// import {withStyles, AppBar, Typography, Tabs, Tab} from 'material-ui';
+import {withStyles} from 'material-ui/styles';
+import AppBar from 'material-ui/AppBar';
+import Typography from 'material-ui/Typography';
+import Tabs, {Tab} from 'material-ui/Tabs';
 import SwipeableViews from 'react-swipeable-views';
 
 import TraceTable from './TraceTable';

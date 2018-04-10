@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import MyLocationIcon from '@material-ui/icons/MyLocation'
+import MyLocationIcon from '@material-ui/icons/MyLocation';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
-import {Tooltip} from 'material-ui';
+import Tooltip from 'material-ui/Tooltip';
 // import deepDiff from 'deep-diff';
 
 import {isNode} from '../utils/scrUtils';
