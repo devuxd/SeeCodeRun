@@ -134,6 +134,7 @@ class AppManager {
         };
         this.jsxColoringProvider = null;
         this.chatOnDispose = null;
+       // this.loadJPromise().then(()=>console.log('j loaded'));
     }
 
     observeDispose() {
@@ -151,6 +152,12 @@ class AppManager {
             this.pastebinId = pastebinId;
         }
     }
+
+    //  async loadJPromise(){
+    //     if (!this.j) {
+    //         this.j = await import('jscodeshift');
+    //     }
+    // }
 
     getEditorsStates() {
         const editorsStates = {};
