@@ -4,7 +4,6 @@
   "private": true,
   "proxy": "http://localhost:5000",
   "homepage": "https://seecode.run",
-  "sideEffects": false,
   "dependencies": {
     "@babel/standalone": "^7.0.0-beta.44",
     "@material-ui/icons": "^1.0.0-beta.42",
@@ -63,6 +62,7 @@
   "scripts": {
     "install-app": "(npm install) && (rm -rf ./public/fireco/monaco-editor/; cp -r ./node_modules/monaco-editor/ ./public/fireco/monaco-editor/)",
     "start": "react-app-rewired start",
+    "start-url": "export PUBLIC_URL='https://seecode.run'; react-app-rewired start",
     "build": "export PUBLIC_URL='https://seecode.run'; react-app-rewired build",
     "analyze": "source-map-explorer build/static/js/main.*",
     "test": "react-app-rewired test --env=jsdom",

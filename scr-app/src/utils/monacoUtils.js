@@ -56,12 +56,12 @@ export const monacoEditorMouseEventTypes = {
   mouseDown: 'mouseDown',
   contextMenu: 'contextMenu'
 };
-
-export function isApplePlatform() {
-  return (window && window.navigator && window.navigator.platform) ?
-    window.navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) ? true : false
-    : true;
-}
+//
+// export function isApplePlatform() {
+//   return (window && window.navigator && window.navigator.platform) ?
+//     window.navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) ? true : false
+//     : true;
+// }
 
 export function configureLineNumbersProvider(editorId, doc) {
   //lineNumberProvider
@@ -115,9 +115,9 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
   }
 
   return monaco.editor.createModel(text, language,
-    isApplePlatform() ?
-      new monaco.Uri.file(`./${editorId}.${extension}`)
-      : new monaco.Uri(`./${editorId}.${extension}`)
+    // isApplePlatform() ?
+      new monaco.Uri.file(`${editorId}.${extension}`)
+      // : new monaco.Uri(`./${editorId}.${extension}`)
   );
 }
 

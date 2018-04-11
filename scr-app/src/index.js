@@ -4,7 +4,7 @@ import './utils/react-grid-layout-scr-theme.css';
 import {Provider} from 'react-redux';
 import configureStore from './redux/configureStore';
 
-import registerServiceWorker from './registerServiceWorker';
+import registerServiceWorker/*,{unregister}*/ from './registerServiceWorker';
 import configureMonaco from './configureMonaco';
 
 import React from 'react';
@@ -22,26 +22,27 @@ store.dispatch(fetchPastebin(urlData.hash));
 
 const onConfigureMonacoError = error => store.dispatch(loadMonacoRejected(error));
 const onMonacoConfigured = () => {
-  if (window.monaco) {
-    store.dispatch(loadMonacoFulfilled());
-  } else {
-    onConfigureMonacoError('Monaco failed to load. Try refreshing' +
-      ' page and/or cache.');
-  }
+    if (window.monaco) {
+        store.dispatch(loadMonacoFulfilled());
+    } else {
+        onConfigureMonacoError('Monaco failed to load. Try refreshing' +
+            ' page and/or cache.');
+    }
 };
 
 window.addEventListener("beforeunload", function () {
-  store.dispatch(disposePastebin());
+    store.dispatch(disposePastebin());
 }, false);
 
 configureMonaco(onMonacoConfigured, onConfigureMonacoError);
 
 ReactDOM.render(
-  <Provider store={store}>
-    <Index url={urlData.url}/>
-  </Provider>,
-  document.querySelector('#root'));
+    <Provider store={store}>
+        <Index url={urlData.url}/>
+    </Provider>,
+    document.querySelector('#root'));
 
 registerServiceWorker();
+// unregister();
 
 

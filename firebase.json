@@ -2,6 +2,17 @@
   "hosting": {
     "firebase": "seecoderun",
     "public": "scr-app/build",
+    "headers": [
+      {
+        "source": "/service-worker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "/firebase-seecoderun/us-central1/getPastebinId",
