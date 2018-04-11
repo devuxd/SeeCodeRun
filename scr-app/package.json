@@ -63,7 +63,7 @@
     "install-app": "(npm install) && (rm -rf ./public/fireco/monaco-editor/; cp -r ./node_modules/monaco-editor/ ./public/fireco/monaco-editor/)",
     "start": "react-app-rewired start",
     "start-url": "export PUBLIC_URL='https://seecode.run'; react-app-rewired start",
-    "build": "export PUBLIC_URL='https://seecode.run'; react-app-rewired build",
+    "build": "export PUBLIC_URL='https://seecode.run'; export GENERATE_SOURCEMAP=false; react-app-rewired build",
     "analyze": "source-map-explorer build/static/js/main.*",
     "test": "react-app-rewired test --env=jsdom",
     "eject": "react-scripts eject"
