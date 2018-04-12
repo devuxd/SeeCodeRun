@@ -323,7 +323,7 @@ class AutoLog {
              <script>window.scrLoader.scriptsLoaded=true; window.scrLoader.onScriptsLoaded()</script>
             ${html.substring(state.bodyOpenTagLocation.endTag.startOffset, html.length)}`;
         }
-        console.log(html);
+        // console.log(html);
         return html;
     }
 }
