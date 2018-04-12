@@ -42,11 +42,12 @@ class AutoLogShift {
         return ast;
     }
 
-    autoLogAst(ast, locationMap, getLocationId) {
+    autoLogAst(ast, getLocationId, locationMap = [], deps = {}) {
         // console.log('al',!!ast, !!locationMap);
         //  wrapFunctionExpressions(ast, locationMap);
         // this.autoLogCallExpressions(ast, locationMap, getLocationId);
         // try {
+        deps = AutoLogShift.getDependencies(ast);
         const expressionPaths = [];
         ast.find(j.Expression).forEach(
             path => expressionPaths.unshift(path)
@@ -62,7 +63,7 @@ class AutoLogShift {
         // }
 
         // console.log(locationMap);
-        return ast;
+        return {ast, locationMap, deps};
     }
 
     autoLogExpression(expression, id, type, path, p, params) {
@@ -149,6 +150,7 @@ class AutoLogShift {
         'ObjectPattern',
         'ArrayPattern',
         'AssignmentPattern',
+        'ImportDeclaration'
     ];
 
     composedExpressions = {
@@ -326,9 +328,38 @@ class AutoLogShift {
     };
 
     static getDependencies = (ast) => {
-        ast.find(j.ImportDeclaration) //source
-        ast.find(j.CallExpression, {callee: {value: 'require'}}) // arguments[0]
+        const dependencies = {};
+        const asyncDependencies = {};
+        const handleImports = path => {
+            const source = j(path.value.source).toSource();
+            dependencies[source] = [...(dependencies[source] || []), path.value.loc];
+        };
+        const handleRequires = path => {
+            const isRequire = path.value.callee.name === 'require' && path.value.arguments.length;
+            if (isRequire) {
+                const arg = path.value.arguments[0];
+                if (arg.type === j.Literal.name) { // todo dynamic resolution
+                    const source = j(path.value.arguments[0]).toSource();
+                    dependencies[source] = [...(dependencies[path.value.arguments[0]] || []), path.value.loc];
+                } else {
+                    if (arg.type === j.ArrayExpression.name) {
+                        arg.elements.forEach(el => {
+                            if (el.type === j.Literal.name) { // same
+                                const source = j(el).toSource();
+                                asyncDependencies[source] = [...(asyncDependencies[path.value.arguments[0]] || []), path.value.loc];
+                            }
+                        });
 
+                    }
+                }
+            }
+        };
+        ast.find(j.ImportDeclaration)
+            .forEach(handleImports);
+        ast.find(j.CallExpression)
+            .forEach(handleRequires);
+        // pending await import
+        return {dependencies, asyncDependencies};
     };
 
     composedBlocks = {

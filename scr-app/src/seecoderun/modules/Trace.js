@@ -75,6 +75,7 @@ class Trace {
         this.magicTag = `<<[[{{|${this.startTimestamp}|}}]]>>`;
         this.startStack();
         this.setWindowRoots(runIframe.contentWindow);
+
         runIframe.contentWindow[autoLogName] = this.autoLog;
         runIframe.contentWindow[preAutoLogName] = this.preAutoLog;
         runIframe.contentWindow[postAutoLogName] = this.postAutoLog;

@@ -24,8 +24,11 @@ import EditIcon from '@material-ui/icons/ModeEdit';
 import {withStyles} from 'material-ui/styles';
 import Menu from 'material-ui/Menu';
 import {ListItem} from 'material-ui/List';
+import {MenuItem} from 'material-ui/Menu';
 import TextField from 'material-ui/TextField';
 import Button from 'material-ui/Button';
+
+import {requireConfig} from '../seecoderun/modules/AutoLog';
 
 const styles = theme => ({
     speedDialBackdrop: {
@@ -48,6 +51,10 @@ const styles = theme => ({
     list: {
         paddingTop: 0,
         paddingBottom: 0,
+    },
+    bundleList: {
+        minWidth: 600,
+        maxHeight: 800,
     }
 });
 
@@ -57,10 +64,10 @@ const actions = [
         icon: <PlayArrowIcon/>, name: 'Autorun delay', id: 'autorunDelay',
     },
     {
-        icon: <PlaylistPlayIcon/>, name: 'Trace history'
+        icon: <CodeIcon/>, name: 'Code bundling', id: 'codeBundling',
     },
     {
-        icon: <CodeIcon/>, name: 'Code bundling'
+        icon: <PlaylistPlayIcon/>, name: 'Trace history'
     },
     {
         icon: <EditIcon/>, name: 'Change history'
@@ -73,6 +80,7 @@ class TraceControls extends React.Component {
         hidden: true,
         anchorEl: null,
         actionId: null,
+        codeBundlingDeps: [],
     };
 
     handleVisibility = (isVisible) => {
@@ -127,14 +135,70 @@ class TraceControls extends React.Component {
             case actions[0].id:
                 this.setState({anchorEl: event.currentTarget, actionId});
                 break;
+            case actions[1].id:
+                this.setState({anchorEl: event.currentTarget, actionId});
+                break;
             default:
         }
         this.handleClick();
     };
+    handleChangeURL = (key, url) => {
+        this.setState(prevState => {
+            const codeBundlingDeps = prevState.codeBundlingDeps.map(dep => {
+                if (dep.key === key && url.startsWith('http')) {
+                    dep.url = url;
+                    requireConfig.dependencyOverrides && (requireConfig.dependencyOverrides[dep.name] = url);
+                }
+                return dep;
+            });
+            return {codeBundlingDeps};
+        });
+    };
 
     render() {
         const {classes, autorunDelay, handleChangeAutorunDelay} = this.props;
-        const {hidden, open, anchorEl, actionId} = this.state;
+        const {hidden, open, anchorEl, actionId, codeBundlingDeps} = this.state;
+        // console.log(codeBundlingDeps);
+        let menuContent;
+        let menuClass = {className: classes.list};
+        switch (actionId) {
+            case actions[0].id:
+                menuContent = <ListItem className={classes.list}>
+                    <TextField
+                        label="auto-run delay"
+                        value={autorunDelay}
+                        onChange={event => handleChangeAutorunDelay(event.target.value)}
+                        type="number"
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                        margin="normal"
+                        fullWidth
+                    />
+                </ListItem>;
+                break;
+            case actions[1].id:
+                menuContent = codeBundlingDeps.length ? codeBundlingDeps.map(dep => {
+                    return <ListItem className={classes.list} key={dep.key}>
+                        <TextField
+                            error={dep.isDuped}
+                            label={dep.name}
+                            helperText={`${dep.isAsync ? 'ASYNC IMPORT' : ''} ${dep.isDuped ? '[ERROR] Loaded synchronously, remove one of them.' : ''}`}
+                            value={dep.url}
+                            onChange={event => this.handleChangeURL(dep.key, event.target.value)}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            margin="normal"
+                            fullWidth
+                        />
+                    </ListItem>;
+                }) : <MenuItem> No dependencies found in code </MenuItem>;
+                menuClass = {className: classes.bundleList};
+                break;
+            default:
+                menuContent = null;
+        }
 
         return (
             <div>
@@ -171,28 +235,54 @@ class TraceControls extends React.Component {
                     ))}
                 </SpeedDial>}
                 <Menu
-                    MenuListProps={{className: classes.list}}
+                    MenuListProps={menuClass}
                     id={`trace-controls-menu-${actionId}`}
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}
                     onClose={this.handleMenuClose}
-
                 >
-                    <ListItem className={classes.list}>
-                        <TextField
-                            label="auto-run delay"
-                            value={autorunDelay}
-                            onChange={event => handleChangeAutorunDelay(event.target.value)}
-                            type="number"
-                            InputLabelProps={{
-                                shrink: true,
-                            }}
-                            margin="normal"
-                        />
-                    </ListItem>
+                    {menuContent}
                 </Menu>
             </div>
         );
+    }
+
+    onDependenciesChange = () => {
+        this.setState(prevState => {
+            const codeBundlingDeps = [];
+            let isAsync = false;
+            Object.keys(requireConfig.dependencies).forEach(dep => {
+                const userOverrides = prevState.codeBundlingDeps.find(d => d.name === dep);
+                if (userOverrides) {
+                    codeBundlingDeps.push({key: `sync:${dep}`, name: dep, url: userOverrides.url, isAsync});
+                } else {
+                    codeBundlingDeps.push({
+                        key: `sync:${dep}`,
+                        name: dep,
+                        url: requireConfig.dependencies[dep],
+                        isAsync
+                    });
+                }
+            });
+            isAsync = true;
+            Object.keys(requireConfig.asyncDependencies).forEach(dep => {
+                const userOverrides = prevState.codeBundlingDeps.find(d => d.name === dep);
+                const isDuped = !!codeBundlingDeps.find(d => d.name === dep);
+                if (userOverrides) {
+                    codeBundlingDeps.push(
+                        {key: `async:${dep}`, name: dep, url: userOverrides.url, isDuped, isAsync});
+                } else {
+                    codeBundlingDeps.push(
+                        {key: `async:${dep}`, name: dep, url: requireConfig.asyncDependencies[dep], isDuped, isAsync});
+                }
+            });
+            return {codeBundlingDeps};
+        });
+    };
+
+    componentDidMount() {
+        requireConfig.on && this.onDependenciesChange();
+        requireConfig.onDependenciesChange = this.onDependenciesChange;
     }
 
     componentDidUpdate(prevProps, prevState/*, snapshot*/) {
@@ -203,6 +293,10 @@ class TraceControls extends React.Component {
                 this.handleVisibility(false)
             }
         }
+    }
+
+    componentWillUnmount() {
+        requireConfig.onDependenciesChange = null;
     }
 }
 
