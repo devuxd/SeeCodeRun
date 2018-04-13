@@ -1,7 +1,8 @@
 {
   "name": "scr-app",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
+  "sideEffects": false,
   "proxy": "http://localhost:5000",
   "homepage": "https://seecode.run",
   "dependencies": {
@@ -11,8 +12,9 @@
     "autosuggest-highlight": "^3.1.1",
     "classnames": "^2.2.5",
     "deep-diff": "^1.0.0-pre.2",
-    "firebase": "^4.13.0-0",
+    "firebase": "^4.12.1",
     "firepad": "^1.4.0",
+    "immutability-helper": "^2.6.6",
     "immutable": "^4.0.0-rc.9",
     "jquery": "^3.3.1",
     "jquery-ui": "^1.12.1",
@@ -24,7 +26,7 @@
     "material-ui": "^1.0.0-beta.41",
     "material-ui-icons": "^1.0.0-beta.36",
     "mdi-material-ui": "^3.2.0",
-    "monaco-editor": "^0.11.1",
+    "monaco-editor": "^0.12.0",
     "parse5": "^4.0.0",
     "prop-types": "^15.6.1",
     "randomcolor": "^0.5.3",
@@ -49,6 +51,9 @@
   },
   "devDependencies": {
     "@types/react": "^16.3.8",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
     "eslint": "^4.16.0",
     "eslint-config-google": "^0.9.1",
     "eslint-plugin-react": "^7.7.0",
@@ -62,11 +67,13 @@
     "source-map-explorer": "^1.5.0"
   },
   "scripts": {
-    "install-app": "(npm install) && (rm -rf ./public/fireco/monaco-editor/; cp -r ./node_modules/monaco-editor/ ./public/fireco/monaco-editor/)",
+    "install-and-monaco": "(npm install) && (rm -rf ./public/fireco/monaco-editor/; cp -r ./node_modules/monaco-editor/ ./public/fireco/monaco-editor/)",
     "start": "react-app-rewired start",
     "start-url": "export PUBLIC_URL='https://seecode.run'; react-app-rewired start",
-    "build": "export PUBLIC_URL='https://seecode.run'; export GENERATE_SOURCEMAP=false; react-app-rewired build",
-    "analyze": "source-map-explorer build/static/js/main.*",
+    "build-with-source-maps": "export PUBLIC_URL='https://seecode.run'; react-app-rewired build; rm -rf ./build/fireco/monaco-editor/dev/; rm -rf ./build/fireco/monaco-editor/esm/",
+    "build": "export PUBLIC_URL='https://seecode.run'; export GENERATE_SOURCEMAP=false; react-app-rewired build; rm -rf ./build/fireco/monaco-editor/dev/;rm -rf ./build/fireco/monaco-editor/esm/;rm -rf ./build/fireco/monaco-editor/min-maps/; ",
+    "analyze-main": "source-map-explorer build/static/js/main.*",
+    "analyze-bundle": "bundle-buddy build/static/*.map build/static/*/*.map",
     "test": "react-app-rewired test --env=jsdom",
     "eject": "react-scripts eject"
   }
