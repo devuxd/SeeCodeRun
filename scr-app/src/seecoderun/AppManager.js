@@ -1,7 +1,7 @@
-import {Observable} from 'rxjs';
+import {Observable} from 'rxjs/Observable';
 
 
-import {isString} from 'lodash';
+import isString from 'lodash/isString';
 
 import {
     configureMonacoModelsFulfilled,
@@ -40,15 +40,9 @@ import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider'
 
 import {defaultExpressionClassName} from '../containers/LiveExpressionStore';
 
-const dataBaseRoot = '/scr2';
-const firebaseConfig = {
-    apiKey: "AIzaSyBmm0n6NgjksFjrM6D5cDX7_zw-QH9xwiI",
-    authDomain: "seecoderun.firebaseapp.com",
-    databaseURL: "https://seecoderun.firebaseio.com",
-    projectId: "firebase-seecoderun",
-    storageBucket: "firebase-seecoderun.appspot.com",
-    messagingSenderId: "147785767581"
-};
+import firebaseConfig from './firebaseConfig';
+
+const {root, config} = firebaseConfig;
 
 const fireco = {
     TIMESTAMP: null,
@@ -134,7 +128,7 @@ class AppManager {
         };
         this.jsxColoringProvider = null;
         this.chatOnDispose = null;
-       // this.loadJPromise().then(()=>console.log('j loaded'));
+        // this.loadJPromise().then(()=>console.log('j loaded'));
     }
 
     observeDispose() {
@@ -231,10 +225,10 @@ class AppManager {
     }
 
     configureFirecoPaths(pastebinId, isNew) {
-        fireco.chatPath = `${dataBaseRoot}/${pastebinId}/chat`;
-        fireco.usersPath = `${dataBaseRoot}/${pastebinId}/users`;
+        fireco.chatPath = `${root}/${pastebinId}/chat`;
+        fireco.usersPath = `${root}/${pastebinId}/users`;
         for (const editorId in this.firecoPads) {
-            this.firecoPads[editorId].firebasePath = `${dataBaseRoot}/${pastebinId}/firecos/${editorId}`;
+            this.firecoPads[editorId].firebasePath = `${root}/${pastebinId}/firecos/${editorId}`;
             this.firecoPads[editorId].isNew = isNew;
         }
     }
@@ -399,18 +393,27 @@ class AppManager {
     }
 
     observeConfigureMonacoEditor(editorId, editorComponent) {
-        const {editorDiv, dispatchMouseEvents, onContentChangedAction} = editorComponent;
+        const {editorDiv, dispatchMouseEvents, onContentChangedAction, isConsole} = editorComponent;
+
         if (this.monaco) {
-            const firecoPad = this.firecoPads[editorId];
-            firecoPad.editorComponent = editorComponent;
             try {
+                if (isConsole) {
+                    this.consoleInputEditor =
+                        configureMonacoEditor(this.monaco, editorDiv.current, editorComponent.monacoOptions);
+                    editorComponent.editorDidMount(this.consoleInputEditor);
+                    return Observable.of(loadMonacoEditorFulfilled(editorId, null));
+                }
+
+                const firecoPad = this.firecoPads[editorId];
+                firecoPad.editorComponent = editorComponent;
+
                 firecoPad.lineNumbersProvider = configureLineNumbersProvider(editorId, document);
                 const editorOptions = {
                     ...firecoPad.editorOptions,
                     model: firecoPad.monacoEditorModel,
                     lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
                 };
-                const monacoEditor = configureMonacoEditor(this.monaco, editorDiv, editorOptions);
+                const monacoEditor = configureMonacoEditor(this.monaco, editorDiv.current, editorOptions);
 
                 if (firecoPad.monacoEditorSavedState && isString(firecoPad.monacoEditorSavedState.text)) {
                     monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
@@ -478,7 +481,7 @@ class AppManager {
                         fireco.firebase = await import('firebase');
                         fireco.Firepad = await import('firepad');
                         fireco.TIMESTAMP = fireco.firebase.database.ServerValue.TIMESTAMP;
-                        fireco.app = fireco.firebase.initializeApp(firebaseConfig, pastebinId);
+                        fireco.app = fireco.firebase.initializeApp(config, pastebinId);
                         fireco.database = fireco.firebase.database(fireco.app);
                         fireco.auth = fireco.firebase.auth(fireco.app);
                         fireco.connectedRef = fireco.database.ref(".info/connected");
@@ -603,7 +606,7 @@ class AppManager {
                 firecoPad.getFirecoText();
             }
 
-            firecoPad.firebaseRef.on('value', snapshot => {
+            firecoPad.firebaseRef.child('history').on('child_added', snapshot => {
                 if (snapshot.exists()) {
                     firecoPad.getFirecoText();
                 }

@@ -1,15 +1,18 @@
-import {Observable} from 'rxjs';
+import {Observable} from 'rxjs/Observable';
+// import 'rxjs/add/operator/concat';
 import {ajax} from 'rxjs/observable/dom/ajax';
 import localStorage from 'store';
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
 import {ACTIVATE_FIREPAD_EXPIRED} from './fireco';
 import {MONACO_EDITOR_CONTENT_CHANGED} from "./monacoEditor";
+import firebaseConfig from '../../seecoderun/firebaseConfig';
+const {cloudFunctionsPath} = firebaseConfig;
 
 // const cloudFunctionsUrl=
 //   process.env.PUBLIC_URL ?
 //     'https://us-central1-firebase-seecoderun.cloudfunctions.net'
 //     : '/firebase-seecoderun/us-central1';
-const cloudFunctionsUrl = `${process.env.PUBLIC_URL}/firebase-seecoderun/us-central1`;
+const cloudFunctionsUrl = `${process.env.PUBLIC_URL}/${cloudFunctionsPath}`;
 const getPasteBinIdUrl = `${cloudFunctionsUrl}/getPastebinId`;
 const getPasteBinCopyUrl = `${cloudFunctionsUrl}/copyPastebin`;
 const getPasteBinUrl = `${cloudFunctionsUrl}/getPastebin`;

@@ -2,16 +2,22 @@
   "name": "functions",
   "description": "Cloud Functions for seeCode.run: adds, copies and authenticate pastebins. Also does backups",
   "scripts": {
-    "serve": "firebase serve --only functions",
-    "shell": "firebase experimental:functions:shell",
-    "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "serve": "firebase use development; cross-env NODE_ENV=development firebase serve --only functions",
+    "serve-prod": "firebase use production; cross-env NODE_ENV=development firebase serve --only functions",
+    "shell": "cross-env NODE_ENV=development firebase experimental:functions:shell",
+    "start": "cross-env NODE_ENV=development npm run shell",
+    "deploy": "firebase use production; firebase deploy --only functions; firebase use default",
+    "deploy-dev": "firebase use development; cross-env NODE_ENV=development firebase deploy --only functions; firebase use default",
+    "logs": "firebase use production firebase functions:log; firebase use default",
+    "logs-dev": "firebase use development; cross-env NODE_ENV=development firebase functions:log; firebase use default"
   },
   "dependencies": {
     "firebase-admin": "^5.12.0",
     "firebase-functions": "^1.0.1",
     "firepad": "^1.4.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "cross-env": "^5.1.4"
+  }
 }
