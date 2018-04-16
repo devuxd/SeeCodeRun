@@ -1,7 +1,0 @@
-{
-  "projects": {
-    "development": "seecoderun-2",
-    "production": "firebase-seecoderun",
-    "default": "firebase-seecoderun"
-  }
-}
