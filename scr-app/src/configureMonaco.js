@@ -2,9 +2,9 @@ const defaultMonacoConf = {
     publicURL: process.env.PUBLIC_URL,// set in index.html's head
     basePath: '/fireco', // path within web page's root to the fireco folder
     isCdn: false,// load from external site, uncomment script in index.html
-    builtType: process.env.PUBLIC_URL ? 'min' : 'dev',
+    builtType: process.env.NODE_ENV === 'production' ? 'min' : 'dev',
     monacoUrl: null,
-    monacoBuild: '0.11.1',
+    monacoBuild: '0.12.0',
 };
 
 const errorCauseMessages = {
@@ -101,8 +101,8 @@ const configureMonacoDefaults = (monaco) => {
         noUnusedLocals: hasNativeTypescript,
     };
 
-    monaco.languages.typescript.typescriptDefaults.setMaximunWorkerIdleTime(-1);
-    monaco.languages.typescript.javascriptDefaults.setMaximunWorkerIdleTime(-1);
+    // monaco.languages.typescript.typescriptDefaults.setMaximunWorkerIdleTime(-1);
+    // monaco.languages.typescript.javascriptDefaults.setMaximunWorkerIdleTime(-1);
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
         compilerDefaults
     );
