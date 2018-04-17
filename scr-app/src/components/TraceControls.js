@@ -30,6 +30,27 @@ import Button from 'material-ui/Button';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
 
+const onDependenciesChange = () => {
+    requireConfig.configureDependencies(requireConfig);
+    const codeBundlingDeps = [];
+    let isAsync = false;
+    Object.keys(requireConfig.dependencies).forEach(dep => {
+        codeBundlingDeps.push({
+            key: `sync:${dep}`,
+            name: dep,
+            url: requireConfig.dependencies[dep],
+            isAsync
+        });
+    });
+    isAsync = true;
+    Object.keys(requireConfig.asyncDependencies).forEach(dep => {
+        const isDuped = !!codeBundlingDeps.find(d => d.name === dep);
+        codeBundlingDeps.push(
+            {key: `async:${dep}`, name: dep, url: requireConfig.asyncDependencies[dep], isDuped, isAsync});
+    });
+    return codeBundlingDeps;
+};
+
 const styles = theme => ({
     speedDialBackdrop: {
         // backgroundColor: 'transparent',
@@ -80,11 +101,70 @@ class TraceControls extends React.Component {
         hidden: true,
         anchorEl: null,
         actionId: null,
+        autorunDelay: null,
         codeBundlingDeps: [],
+        handleChangeAutorunDelay: null,
+        isData: false,
     };
 
-    handleVisibility = (isVisible) => {
+    static getDerivedStateFromProps(nextProps, prevState) {
+        let nextState = {};
+        const {data} = nextProps;
 
+        if (nextProps.handleChangeAutorunDelay !== prevState.handleChangeAutorunDelay) {
+            nextState.handleChangeAutorunDelay = nextProps.handleChangeAutorunDelay;
+        }
+
+        if (data.current) {
+            if (isNaN(data.current.autorunDelay) || !data.current.dependencyOverrides) {
+                const autorunDelay =
+                    isNaN(data.current.autorunDelay) ? nextProps.autorunDelay : data.current.autorunDelay;
+                const dependencyOverrides =
+                    data.current.dependencies || {...requireConfig.dependencyOverrides, count:0};
+                nextProps.changeData(
+                    {
+                        ...nextProps.data.current,
+                        autorunDelay,
+                        dependencyOverrides,
+                    });
+                return nextState;
+            }
+
+            if (data.current.autorunDelay !== nextProps.autorunDelay) {
+                if(prevState.isData){
+                    nextProps.changeData(
+                        {
+                            ...nextProps.data.current,
+                            autorunDelay: nextProps.autorunDelay
+                        });
+                }else{
+                    nextProps.handleChangeAutorunDelay(data.current.autorunDelay);
+                    nextState.isData = true;
+                }
+
+                return nextState;
+            } else {
+                if (data.current.autorunDelay !== prevState.autorunDelay) {
+                    nextState.autorunDelay = data.current.autorunDelay;
+                }
+            }
+
+            if (data.current.dependencyOverrides !== requireConfig.dependencyOverrides) {
+                requireConfig.dependencyOverrides = data.current.dependencyOverrides;
+                nextState.codeBundlingDeps = onDependenciesChange();
+            }
+
+            return nextState;
+        }
+
+        if (nextProps.autorunDelay !== prevState.autorunDelay) {
+            nextState.autorunDelay = nextProps.autorunDelay;
+        }
+
+        return nextState;
+    }
+
+    handleVisibility = (isVisible) => {
         if (isVisible) {
             clearTimeout(this.tms);
             this.setState({
@@ -143,21 +223,28 @@ class TraceControls extends React.Component {
         this.handleClick();
     };
     handleChangeURL = (key, url) => {
-        this.setState(prevState => {
-            const codeBundlingDeps = prevState.codeBundlingDeps.map(dep => {
-                if (dep.key === key && url.startsWith('http')) {
-                    dep.url = url;
-                    requireConfig.dependencyOverrides && (requireConfig.dependencyOverrides[dep.name] = url);
-                }
-                return dep;
-            });
-            return {codeBundlingDeps};
-        });
+        const dep = this.state.codeBundlingDeps.find(dep => dep.key === key);
+        if (!dep) {
+            return;
+        }
+        const dependencyOverrides = {...requireConfig.dependencyOverrides};
+        dependencyOverrides[dep.name] = url;
+        if (this.props.changeData && this.props.data.current) {
+            dependencyOverrides.count = Object.keys(dependencyOverrides).length-1;
+            this.props.changeData(
+                {...this.props.data.current, dependencyOverrides: dependencyOverrides}
+            );
+        } else {
+            requireConfig.dependencyOverrides = dependencyOverrides;
+            this.onDependenciesChange();
+        }
     };
 
     render() {
-        const {classes, autorunDelay, handleChangeAutorunDelay} = this.props;
-        const {hidden, open, anchorEl, actionId, codeBundlingDeps} = this.state;
+        const {classes} = this.props;
+        const {
+            hidden, open, anchorEl, actionId, codeBundlingDeps, autorunDelay, handleChangeAutorunDelay
+        } = this.state;
         // console.log(codeBundlingDeps);
         let menuContent;
         let menuClass = {className: classes.list};
@@ -207,6 +294,7 @@ class TraceControls extends React.Component {
                                    color="default"
                                    aria-label="seeCode.run configuration"
                                    className={classes.speedDialBackdrop}
+                                   onClick={() => this.handleVisibility(true)}
                                    onMouseEnter={() => this.handleVisibility(true)}
                                    onMouseLeave={() => this.handleVisibility(false)}
                 > <SettingsIcon/></Button>}
@@ -248,35 +336,8 @@ class TraceControls extends React.Component {
     }
 
     onDependenciesChange = () => {
-        this.setState(prevState => {
-            const codeBundlingDeps = [];
-            let isAsync = false;
-            Object.keys(requireConfig.dependencies).forEach(dep => {
-                const userOverrides = prevState.codeBundlingDeps.find(d => d.name === dep);
-                if (userOverrides) {
-                    codeBundlingDeps.push({key: `sync:${dep}`, name: dep, url: userOverrides.url, isAsync});
-                } else {
-                    codeBundlingDeps.push({
-                        key: `sync:${dep}`,
-                        name: dep,
-                        url: requireConfig.dependencies[dep],
-                        isAsync
-                    });
-                }
-            });
-            isAsync = true;
-            Object.keys(requireConfig.asyncDependencies).forEach(dep => {
-                const userOverrides = prevState.codeBundlingDeps.find(d => d.name === dep);
-                const isDuped = !!codeBundlingDeps.find(d => d.name === dep);
-                if (userOverrides) {
-                    codeBundlingDeps.push(
-                        {key: `async:${dep}`, name: dep, url: userOverrides.url, isDuped, isAsync});
-                } else {
-                    codeBundlingDeps.push(
-                        {key: `async:${dep}`, name: dep, url: requireConfig.asyncDependencies[dep], isDuped, isAsync});
-                }
-            });
-            return {codeBundlingDeps};
+        this.setState({
+            codeBundlingDeps: onDependenciesChange(),
         });
     };
 

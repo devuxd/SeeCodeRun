@@ -1,10 +1,8 @@
 // based on react-grid-layout's WidthProvider
 import React, {Component} from "react";
 import ReactDOM from "react-dom";
+import { fromEvent } from 'rxjs/observable/fromEvent';
 
-/*
- * A simple HOC that provides facility for listening to container resizes.
- */
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends Component {
         static defaultProps = {
@@ -17,16 +15,23 @@ export default function SizeProvider(ComposedComponent) {
         };
 
         mounted = false;
+        onHeight = null;
+        heightAdjust = 0;
+        observable = null;
 
         componentDidMount() {
             this.mounted = true;
-            window.addEventListener("resize", this.onWindowResize);
+            this.observable = fromEvent(window, 'resize');
+            this.observable
+                .throttleTime(100)
+                .debounceTime(250)
+                .subscribe(()=>this.onWindowResize());
             this.onWindowResize();
         }
 
         componentWillUnmount() {
             this.mounted = false;
-            window.removeEventListener("resize", this.onWindowResize);
+            this.observable.complete();
         }
 
         onWindowResize = () => {
@@ -40,15 +45,6 @@ export default function SizeProvider(ComposedComponent) {
             }
         };
 
-        componentWillReceiveProps(newProps) {
-            const {onHeight, heightAdjust} = newProps;
-            if (onHeight && this.onHeight !== onHeight) {
-                this.onHeight = onHeight;
-            }
-            this.heightAdjust = heightAdjust;
-            this.onWindowResize();
-        }
-
         render() {
             const {measureBeforeMount, onHeight, heightAdjust, ...rest} = this.props;
             this.onHeight = onHeight;
@@ -60,5 +56,6 @@ export default function SizeProvider(ComposedComponent) {
             }
             return <ComposedComponent {...rest} {...this.state} />;
         }
+
     };
 }

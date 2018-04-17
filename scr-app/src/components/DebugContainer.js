@@ -9,6 +9,7 @@ import SwipeableViews from 'react-swipeable-views';
 
 import TraceTable from './TraceTable';
 import TraceToolbar from './TraceToolbar';
+import Console from './Console';
 
 function TabContainer({children, dir}) {
     return (
@@ -25,17 +26,18 @@ TabContainer.propTypes = {
 
 const styles = theme => ({
     root: {
-        backgroundColor: theme.palette.background.paper,
+        minWidth: 600,
+      //  backgroundColor: theme.palette.background.paper,
     },
 });
 
 class DebugContainer extends React.Component {
 
     render() {
-        const {theme, tabIndex, handleChangeTab, handleChangeTabIndex} = this.props;
+        const {theme, classes, tabIndex, handleChangeTab, handleChangeTabIndex} = this.props;
 
         return (
-            <div style={{minWidth: 500}}>
+            <div className={classes.root}>
                 <AppBar position="sticky" color="default">
                     <TraceToolbar/>
                     <Tabs
@@ -47,7 +49,8 @@ class DebugContainer extends React.Component {
                         centered
                     >
                         <Tab label="Trace"/>
-                        <Tab label="Streams"/>
+                        <Tab label="Console"/>
+                        {/*<Tab label="Streams"/>*/}
                         {/*<Tab label="Visualizations"/>*/}
                     </Tabs>
                 </AppBar>
@@ -61,7 +64,7 @@ class DebugContainer extends React.Component {
                         <TraceTable/>
                     </TabContainer>
                     <TabContainer dir={theme.direction}>
-                        Code edit history and dumped traces
+                        <Console />
                     </TabContainer>
                     {/*<TabContainer dir={theme.direction}>*/}
 

@@ -13,14 +13,22 @@ import Editor from './Editor';
 import Playground from './Playground';
 import {pastebinConfigureLayout} from "../redux/modules/pastebin";
 import SizeProvider from '../utils/SizeProvider';
+import PersistableContainer from './PersistableContainer';
 import {
     configureDefaultGridLayoutFormatter
 } from '../utils/reactGridLayoutUtils';
+import {
+    configureDefaultGridLayoutFormatter as configureDefaultGridLayoutCompactFormatter
+} from '../utils/reactGridLayoutCompactUtils';
 import DebugContainer from "../components/DebugContainer";
 import ScrollingList from "../components/ScrollingList";
 import TraceControls from '../components/TraceControls';
 
-let gridLayoutFormatter = configureDefaultGridLayoutFormatter();
+const PersistableTraceControls = PersistableContainer(TraceControls);
+
+let isCompact = true;
+let gridLayoutFormatter = isCompact ?
+    configureDefaultGridLayoutCompactFormatter() : configureDefaultGridLayoutFormatter();
 
 export const PastebinContext = createContext({});
 const animationId = `scr-a-id-${Date.now()}`;
@@ -80,6 +88,7 @@ class Pastebin extends Component {
     };
 
     restoreGridLayouts = gridLayouts => {
+        gridLayouts = gridLayoutFormatter.validateLayout(gridLayouts, gridLayoutFormatter.currentBreakPoint);
         this.setState({
             gridLayouts: gridLayouts,
         });
@@ -380,6 +389,85 @@ class Pastebin extends Component {
             autorunDelay
         } = this.state;
         gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;
+
+        if (isCompact) {
+            return (
+                <div className={appClasses.content}>
+                    <PastebinContext.Provider value={this.state}>
+                        <Responsive
+                            width={width}
+                            breakpoints={gridLayoutFormatter.gridBreakpoints}
+                            layouts={gridLayouts}
+                            cols={gridLayoutFormatter.grid.cols}
+                            compactType={'vertical'}
+                            autoSize={true}
+                            margin={[appStyle.margin, appStyle.margin]}
+                            containerPadding={[appStyle.margin, appStyle.margin]}
+                            rowHeight={gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint]}
+                            onResizeStart={this.onResizeStart}
+                            onResize={this.onResize}
+                            onResizeStop={this.onResizeStop}
+                            draggableHandle={`.${classes.draggable}`}
+                            // onDragStart={this.onDragStart}
+                            // onDrag={this.onDrag}
+                            onDragStop={this.onDragStop}
+                            onLayoutChange={this.onLayoutChange}
+                            onBreakpointChange={this.onBreakpointChange}
+                        >
+                            <Paper key="scriptContainer">
+                                <Editor editorId={editorIds['js']}
+                                        themeType={themeType}
+                                        observeMouseEvents
+                                        observeLiveExpressions={true}
+                                />
+                            </Paper>
+                            <Paper key="htmlContainer">
+                                <Editor editorId={editorIds['html']}/>
+                            </Paper>
+                            <Paper key="cssContainer">
+                                <Editor editorId={editorIds['css']}/>
+                            </Paper>
+                            <Paper key="debugContainer" className={appClasses.container}>
+                                <ScrollingList
+                                    ScrollingListRef={this.debugScrollerRef}
+                                    onScrollEnd={this.onScrollEnd}
+                                    classes={appClasses.scroller}
+                                    listLength={data.length}
+                                    isRememberScrollingDisabled={isNew}
+                                >
+                                    <DebugContainer appClasses={appClasses}
+                                                    appStyle={appStyle}
+                                                    tabIndex={tabIndex}
+                                                    handleChangeTab={this.handleChangeTab}
+                                                    handleChangeTabIndex={this.handleChangeTabIndex}
+                                    />
+                                </ScrollingList>
+
+                                {isDebugLoading ?
+                                    <span className={classes.loadingFeedback}><MoreHorizIcon/> </span> : null}
+                            </Paper>
+                            <Paper key="playgroundContainer"
+                                   className={appClasses.container}
+                            >
+                                <DragHandleIcon className={classes.draggable}/>
+                                <div className={appClasses.scroller}>
+                                    <Playground editorIds={editorIds}
+                                                appClasses={appClasses}
+                                                appStyle={appStyle}
+                                    />
+                                </div>
+                            </Paper>
+                        </Responsive>
+                    </PastebinContext.Provider>
+                    {traceAvailable && <PersistableTraceControls
+                        persistablePath={'traceControls'}
+                        autorunDelay={autorunDelay}
+                        handleChangeAutorunDelay={this.handleChangeAutorunDelay}
+                    />}
+                </div>
+            );
+
+        }
         return (
             <div className={appClasses.content}>
                 <PastebinContext.Provider value={this.state}>

@@ -1,6 +1,9 @@
-import _ from 'lodash';
+import difference from 'lodash/difference';
+import {Subject} from 'rxjs/Subject';
 import {monacoProps} from "./monacoUtils";
 import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
+
+import AutoLogShift from '../seecoderun/modules/AutoLogShift';
 
 
 export const jExpressions = [];
@@ -13,7 +16,7 @@ let j = null;
 
 
 class LiveExpressionWidgetProvider {
-    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName) {
+    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 50, debounceTime = 100) {
         this.monaco = monaco;
         j = jRef;
 
@@ -35,6 +38,19 @@ class LiveExpressionWidgetProvider {
         this.defaultExpressionClassName = defaultExpressionClassName;
         this.decorators = [];
         this.contentWidgets = {};
+        this.lineNumbersWitdhUpdates = {};
+        this.debounceTime = debounceTime;
+    }
+
+    getLineNumberSubject(lineNumber) {
+        if (!this.lineNumbersWitdhUpdates[lineNumber]) {
+            this.lineNumbersWitdhUpdates[lineNumber] = new Subject();
+            this.lineNumbersWitdhUpdates[lineNumber]
+                .throttleTime(this.throttleTime)
+                .debounceTime(this.debounceTime)
+                .subscribe(update => update());
+        }
+        return this.lineNumbersWitdhUpdates[lineNumber];
     }
 
     afterWidgetize(callback) {
@@ -88,8 +104,8 @@ class LiveExpressionWidgetProvider {
                     id2i[id] = i;
                 });
 
-                const deltaRemove = _.difference(prevDecoratorIds, this.jExpressionDecoratorIds);
-                const deltaAdd = _.difference(this.jExpressionDecoratorIds, prevDecoratorIds);
+                const deltaRemove = difference(prevDecoratorIds, this.jExpressionDecoratorIds);
+                const deltaAdd = difference(this.jExpressionDecoratorIds, prevDecoratorIds);
 
                 hasDecoratorIdsChanged = deltaRemove.length + deltaAdd.length > 0;
                 this.contentWidgets = {...prevContentWidgets};
@@ -200,11 +216,135 @@ class LiveExpressionWidgetProvider {
     };
 
     getWidgetAvailableWidth = (decoratorId) => {
+        const sourceDecorator = this.getDecorator(decoratorId);
+        if (!sourceDecorator) {
+            return;
+        }
+        const lineNumber = sourceDecorator.range.startLineNumber;
+        const lineNumberDecorators = this.getDecoratorsInLineNumber(lineNumber);
+        const lineNumberSubject = this.getLineNumberSubject(lineNumber);
+        const updates = [];
+        lineNumberDecorators.forEach((decorator) => {
+            if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
+                setTimeout(() => {
+                    const domNode = decorator.contentWidget.domNode;
+                    const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+                    if (!domNode) {
+                        return;
+                    }
+                    domNode.style.maxWidth = '0px';
+                    onWidthAdjust && onWidthAdjust(domNode.style.width);
+                }, 0);
+                return;
+            }
+
+
+            const i = lineNumberDecorators.indexOf(decorator);
+            let hideSib = false;
+            let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
+            rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
+                rightSibling : null;
+            if (rightSibling && rightSibling.range.equalsRange(decorator.range)) {
+                hideSib = true;
+            }
+            // rightSibling =  ? null : rightSibling;
+            // if (decorator.range.startLineNumber !== 4) {
+            //     return;
+            // }
+            // console.log('Deco', decorator.range.startLineNumber, decorator.expressionType, decorator.range, decorator);
+            // if (rightSibling) {
+            //     console.log('a width',
+            //         this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
+            //         this.monacoEditor.getOffsetForColumn(rightSibling.range.startLineNumber, rightSibling.range.startColumn));
+            // } else {
+            //     console.log('free width',
+            //         this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
+            //         this.monacoEditor.getOffsetForColumn(this.monacoEditor.getVisibleColumnFromPosition(decorator.range.getStartPosition()))
+            //     );
+            // }
+            updates.push(() => {
+                const domNode = decorator.contentWidget.domNode;
+                const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+                if (!domNode) {
+                    return;
+                }
+                const el = document.querySelector(decorator.selector);
+                if (!el) {
+                    return;
+                }
+                let width = el.style.width;
+                if (rightSibling) {
+                    const sel = document.querySelector(rightSibling.selector);
+                    if (sel) {
+                        if (hideSib) {
+                            sel.style.maxWidth = '0px';
+                        }
+                        const ll = (el.style.left || '0').replace('px', '');
+                        const lr = (sel.style.left || width).replace('px', '');
+                        width = `${parseInt(lr) - parseInt(ll)}px`;
+                    }
+                }
+                // console.log('w', width);
+                domNode.style.maxWidth = width;
+                onWidthAdjust && onWidthAdjust(domNode.style.width);
+            });
+        });
+
+        lineNumberSubject.next(() => updates.forEach(update => update()));
+        // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
+    };
+
+    getWidgetAvailableWidthLast = (decoratorId) => {
         const decorator = this.getDecorator(decoratorId);
+        if (!decorator) {
+            return;
+        }
+
+        if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
+            return;
+        }
+
         const lineNumberDecorators = this.getDecoratorsInLineNumber(decorator.range.startLineNumber);
         const i = lineNumberDecorators.indexOf(decorator);
-        return i;
-        // const rightSibling = i === lineNumberDecorators.length - 1 ? null : lineNumberDecorators[i + 1];
+        let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
+        rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
+            rightSibling : null;
+        rightSibling = rightSibling && rightSibling.range.equalsRange(decorator.range) ? null : rightSibling;
+        if (decorator.range.startLineNumber !== 4) {
+            return;
+        }
+        console.log('Deco', decorator.range.startLineNumber, decorator.expressionType, decorator.range, decorator);
+        if (rightSibling) {
+            console.log('a width',
+                this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
+                this.monacoEditor.getOffsetForColumn(rightSibling.range.startLineNumber, rightSibling.range.startColumn));
+        } else {
+            console.log('free width',
+                this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
+                this.monacoEditor.getOffsetForColumn(this.monacoEditor.getVisibleColumnFromPosition(decorator.range.getStartPosition()))
+            );
+        }
+        setTimeout(() => {
+            const domNode = decorator.contentWidget.domNode;
+            const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+            if (!domNode) {
+                return;
+            }
+            const el = document.querySelector(decorator.selector);
+            if (!el) {
+                return;
+            }
+            let width = el.style.width;
+            if (rightSibling) {
+                const sel = document.querySelector(rightSibling.selector);
+                if (sel) {
+                    width = sel.style.left - el.style.left;
+                }
+            }
+            domNode.style.width = width;
+            onWidthAdjust && onWidthAdjust(domNode.style.width);
+        }, 0);
+
         // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
     };
 
@@ -218,6 +358,12 @@ class LiveExpressionWidgetProvider {
             selector: null,
             domNode: null,
             onWidthAdjust: null,
+            getId: function () {
+                return decoratorId;
+            },
+            adjustWidth: function () {
+                getWidgetAvailableWidth(decoratorId);
+            },
             getDomNode: function () {
                 if (this.domNode) {
                     return this.domNode;
@@ -230,24 +376,11 @@ class LiveExpressionWidgetProvider {
                 this.domNode.style.maxHeight = `${monacoProps.widgetVerticalHeight}px`;
                 this.domNode.style.backgroundColor = monacoProps.widgetBackgroundColor;
                 this.domNode.style.fontSize = `${monacoProps.widgetFontSize}px`;
-                this.adjustWidth = () => {
-                    setTimeout(() => {
-                        const el = document.querySelector((getDecorator(decoratorId) || {}).selector);
-                        if (!el || !this.domNode) {
-                            return;
-                        }
-                        this.domNode.style.width = el.style.width;
-                        this.onWidthAdjust && this.onWidthAdjust(this.domNode.style.width);
-                    }, 0);
-                };
-                this.adjustWidth();
+                this.domNode.style.maxWidth = `0px`;
                 return this.domNode;
             },
-            getId: () => decoratorId,
             getPosition: function () {
-                getWidgetAvailableWidth(decoratorId);
-                // console.log(getDecorator(decoratorId).range.getStartPosition());
-                this.adjustWidth && this.adjustWidth();
+                this.adjustWidth();
                 return {
                     position: getDecorator(decoratorId).range.getStartPosition(),
                     preference: preference,

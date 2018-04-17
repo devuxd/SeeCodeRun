@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
-import _ from 'lodash';
-import {Subject} from 'rxjs';
+import isString from 'lodash/isString';
+import isEqual from 'lodash/isEqual';
+import {Subject} from 'rxjs/Subject';
 import JSAN from 'jsan';
 
 import {withStyles} from 'material-ui/styles';
@@ -206,11 +207,11 @@ class LiveExpressionStore extends Component {
     }
 
     shouldBundle = (editorsTexts) => {
-        if (!_.isEqual(this.currentEditorsTexts, editorsTexts)) {
+        if (!isEqual(this.currentEditorsTexts, editorsTexts)) {
             if (editorsTexts) {
                 const {editorIds} = this.props;
                 for (const editorId in editorIds) {
-                    if (!_.isString(editorsTexts[editorIds[editorId]])) {
+                    if (!isString(editorsTexts[editorIds[editorId]])) {
                         return false;
                     }
                 }

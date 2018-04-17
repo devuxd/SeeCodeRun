@@ -26,6 +26,8 @@ import {
     onConnectionChanged,
     configureFirecoChatRejected,
     configureFirecoChatFulfilled,
+    configureFirecoPersistableComponentFulfilled,
+    configureFirecoPersistableComponentRejected,
 } from '../redux/modules/fireco';
 
 import {
@@ -56,6 +58,10 @@ const fireco = {
     usersRef: null,
     isAuth: false,
     unsubscribeOnIdTokenChanged: null,
+    chatOnDispose: null,
+    persistablePath: null,
+    persistableComponents: {},
+    persistableComponentsOnDispose: [],
 };
 
 const defaultFirecoPad = {
@@ -127,7 +133,6 @@ class AppManager {
             }
         };
         this.jsxColoringProvider = null;
-        this.chatOnDispose = null;
         // this.loadJPromise().then(()=>console.log('j loaded'));
     }
 
@@ -220,13 +225,13 @@ class AppManager {
     }
 
     dispose() {
-        this.chatOnDispose && this.chatOnDispose();
         this.disposeFireco();
     }
 
     configureFirecoPaths(pastebinId, isNew) {
         fireco.chatPath = `${root}/${pastebinId}/chat`;
         fireco.usersPath = `${root}/${pastebinId}/users`;
+        fireco.persistablePath = `${root}/${pastebinId}/components`;
         for (const editorId in this.firecoPads) {
             this.firecoPads[editorId].firebasePath = `${root}/${pastebinId}/firecos/${editorId}`;
             this.firecoPads[editorId].isNew = isNew;
@@ -528,6 +533,8 @@ class AppManager {
     }
 
     disposeFireco() {
+        fireco.chatOnDispose && fireco.chatOnDispose();
+
         for (const editorId in this.firecoPads) {
             if (this.firecoPads[editorId].headlessFirepad) {
                 this.firecoPads[editorId].headlessFirepad.dispose();
@@ -536,6 +543,27 @@ class AppManager {
 
         if (fireco.unsubscribeOnIdTokenChanged) {
             fireco.unsubscribeOnIdTokenChanged();
+        }
+
+        const errorPaths = [];
+        const errors = [];
+        fireco.persistableComponentsOnDispose.forEach(({onDispose, path}) => {
+            if (!onDispose) {
+                return;
+            }
+            try {
+                onDispose();
+            } catch (e) {
+                errorPaths.push(path);
+                errors.push(e);
+            }
+        });
+        if (errorPaths.length) {
+            const error = {
+                errors
+            };
+            error.message = `Could not perform onDispose of persistent component(s): ${errorPaths.toString()}`;
+            throw error;
         }
     }
 
@@ -628,10 +656,25 @@ class AppManager {
             fireco.chatRef = fireco.chatRef || fireco.database.ref(fireco.chatPath);
             fireco.usersRef = fireco.usersRef || fireco.database.ref(fireco.usersPath);
             onFirecoActive(fireco.chatRef, fireco.usersRef, fireco.TIMESTAMP, chatUserIdLocalStoragePath);
-            this.chatOnDispose = onDispose;
+            fireco.chatOnDispose = onDispose;
             return Observable.of(configureFirecoChatFulfilled());
         } catch (error) {
             return Observable.of(configureFirecoChatRejected(error));
+        }
+    }
+
+    observeConfigureFirecoPersistableComponent(path, onFirecoActive, onDispose) {
+        try {
+            if (!path || path.trim().length === 0 || path.startsWith('/')) {
+                return Observable.of(configureFirecoChatRejected('Empty path string or starts with /'));
+            }
+            fireco.persistableComponents[path] = fireco.persistableComponents[path] ||
+                fireco.database.ref(`${fireco.persistablePath}/${path}`);
+            onFirecoActive(fireco.persistableComponents[path], fireco.TIMESTAMP);
+            fireco.persistableComponentsOnDispose.push({onDispose, path});
+            return Observable.of(configureFirecoPersistableComponentFulfilled());
+        } catch (error) {
+            return Observable.of(configureFirecoPersistableComponentRejected(error));
         }
     }
 
