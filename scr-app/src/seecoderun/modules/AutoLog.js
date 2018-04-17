@@ -53,54 +53,54 @@ export const requireConfig = {
     onDependenciesChange: null,
     on: false,
 };
-// requireConfig.overridesDependencies= (dependencyOverrides)=>{requireConfig.dependencyOverrides = dependencyOverrides};
+
+const configureDependencies=(deps)=>{
+    const newDependencies = {};
+    requireConfig.requireSync = [];
+    Object.keys(deps.dependencies || {}).forEach(dep => {
+        dep = dep.replace(/["' ]/g, '');
+        if (!dep) {
+            return;
+        }
+        // console.log(dep);
+        if (!newDependencies[dep]) {
+            requireConfig.requireSync.push(dep);
+        }
+        if (requireConfig.dependencyOverrides[dep]) {
+            newDependencies[dep] = requireConfig.dependencyOverrides[dep];
+        } else {
+            newDependencies[dep] = requireConfig.cdnResolver(dep);
+        }
+    });
+    requireConfig.dependencies = newDependencies;
+
+    const newAsyncDependencies = {};
+    Object.keys(deps.asyncDependencies || {}).forEach(dep => {
+        dep = dep.replace(/["' ]/g, '');
+        if (!dep) {
+            return;
+        }
+        if (requireConfig.dependencyOverrides[dep]) {
+            newAsyncDependencies[dep] = requireConfig.dependencyOverrides[dep];
+        } else {
+            newAsyncDependencies[dep] = requireConfig.cdnResolver(dep);
+        }
+    });
+    requireConfig.asyncDependencies = newAsyncDependencies;
+    requireConfig.config.paths = {...requireConfig.dependencies, ...requireConfig.asyncDependencies};
+    for (const name in requireConfig.config.paths) {
+        const url = requireConfig.config.paths[name];
+        requireConfig.config.paths[name] = doJsDelivrFallbackPathsOrPassBy(name, url);
+    }
+    // console.log('paths', requireConfig.config.paths);
+};
+
+requireConfig.configureDependencies= configureDependencies;
 
 export const updateDeps = (deps) => {
     requireConfig.on = true;
     if (deps) {
-        const newDependencies = {};
-        requireConfig.requireSync = [];
-        Object.keys(deps.dependencies || {}).forEach(dep => {
-            dep = dep.replace(/["' ]/g, '');
-            if (!dep) {
-                return;
-            }
-            // console.log(dep);
-            if (!newDependencies[dep]) {
-                requireConfig.requireSync.push(dep);
-            }
-            if (requireConfig.dependencyOverrides[dep]) {
-                newDependencies[dep] = requireConfig.dependencyOverrides[dep];
-            } else {
-                newDependencies[dep] = requireConfig.cdnResolver(dep);
-            }
-        });
-        requireConfig.dependencies = newDependencies;
-
-        const newAsyncDependencies = {};
-        Object.keys(deps.asyncDependencies || {}).forEach(dep => {
-            dep = dep.replace(/["' ]/g, '');
-            if (!dep) {
-                return;
-            }
-            // console.log(dep);
-            if (requireConfig.dependencyOverrides[dep]) {
-                newAsyncDependencies[dep] = requireConfig.dependencyOverrides[dep];
-            } else {
-                newAsyncDependencies[dep] = requireConfig.cdnResolver(dep);
-            }
-        });
-        requireConfig.asyncDependencies = newAsyncDependencies;
-        requireConfig.config.paths = {...requireConfig.dependencies, ...requireConfig.asyncDependencies};
-        for (const name in requireConfig.config.paths) {
-            const url = requireConfig.config.paths[name];
-            // if(!url.endsWith('.js')){
-            //if(!url.endsWith('?')){ // validate other cdns?
-            requireConfig.config.paths[name] = doJsDelivrFallbackPathsOrPassBy(name, url);
-            // }
-            // }
-        }
-        // console.log('paths', requireConfig.config.paths);
+        configureDependencies(deps);
         requireConfig.onDependenciesChange && requireConfig.onDependenciesChange();
     }
 };
