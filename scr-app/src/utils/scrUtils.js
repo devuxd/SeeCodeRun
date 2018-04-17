@@ -1,5 +1,5 @@
-import {Observable} from "rxjs/Rx";
-import _ from 'lodash';
+import {Observable} from 'rxjs/Observable';
+import isNumber from 'lodash/isNumber';
 
 // from is-dom
 export const isNode = (val, win = window) => {
@@ -153,7 +153,7 @@ const newDOMElement = (element) => {
     if (style) {
         let styleProps = {};
         for (const prop in style) {
-            (_.isNumber(style[prop]) || style[prop]) && (styleProps[prop] = style[prop]);
+            (isNumber(style[prop]) || style[prop]) && (styleProps[prop] = style[prop]);
         }
         domData.style = styleProps;
     }

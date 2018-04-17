@@ -1,4 +1,4 @@
-import {Observable} from "rxjs";
+import {Observable} from 'rxjs/Observable';
 
 import './monacoUtils.css';
 
@@ -121,9 +121,9 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
   );
 }
 
-export function configureMonacoEditor(monaco, editorDiv, customEditorOptions) {
+export function configureMonacoEditor(monaco, editorEl, customEditorOptions) {
   const options = {...monacoEditorDefaultOptions, ...customEditorOptions};
-  return monaco.editor.create(editorDiv, options);
+  return monaco.editor.create(editorEl, options);
 }
 
 export function configureMonacoEditorMouseEventsObservable(editor) {

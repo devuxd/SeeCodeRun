@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import _ from 'lodash';
+import isString from 'lodash/isString';
 import {withStyles} from 'material-ui/styles';
 import ButtonBase from 'material-ui/ButtonBase';
 import Typography from 'material-ui/Typography';
@@ -299,7 +299,7 @@ class TraceTable extends React.Component {
                                                 <ObjectExplorer
                                                     expressionId={n.expressionId}
                                                     objectNodeRenderer={objectNodeRenderer}
-                                                    data={_.isString(n.value) ? JSAN.parse(n.value) : n.value}
+                                                    data={isString(n.value) ? JSAN.parse(n.value) : n.value}
                                                 />
                                             </TableCell>
                                         </TableRow>

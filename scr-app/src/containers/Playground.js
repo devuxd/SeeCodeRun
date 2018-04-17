@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import _ from 'lodash';
+import isString from 'lodash/isString';
 
 class Playground extends Component {
   playgroundEl = null;
@@ -72,7 +72,7 @@ class Playground extends Component {
     const autoLog = bundle.autoLog; // manager
     const autoLogger = bundle.autoLogger;// Auto-logged  results and bindings
 
-    if (!_.isString(html) || !_.isString(css) || !_.isString(js) || !_.isString(alJs)) {
+    if (!isString(html) || !isString(css) || !isString(js) || !isString(alJs)) {
       // console.log("[CRITICAL ERROR]: editor[s] text[s] missing", html, css, js, alJs);
     }
 
