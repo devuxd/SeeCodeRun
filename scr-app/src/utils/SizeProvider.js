@@ -18,20 +18,20 @@ export default function SizeProvider(ComposedComponent) {
         mounted = false;
         onHeight = null;
         heightAdjust = 0;
-        observable = null;
+        windowResizeSubscription = null;
 
         componentDidMount() {
             this.mounted = true;
-            this.observable = fromEvent(window, 'resize');
-            this.observable
-                .throttle(() => Observable.interval(150), {leading: false, trailing: true})
-                .subscribe(() => this.onWindowResize());
+            this.windowResizeSubscription =
+                fromEvent(window, 'resize')
+                    .throttle(() => Observable.interval(150), {leading: false, trailing: true})
+                    .subscribe(() => this.onWindowResize());
             this.onWindowResize();
         }
 
         componentWillUnmount() {
             this.mounted = false;
-            this.observable.complete();
+            this.windowResizeSubscription.unsubscribe();
         }
 
         onWindowResize = () => {

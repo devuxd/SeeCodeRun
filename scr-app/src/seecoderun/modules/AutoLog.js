@@ -86,7 +86,7 @@ export const doJsDelivrFallbackPaths = (name, url) => {
             `https://cdn.jsdelivr.net/npm/${vName}/${name}.js?`,
             `https://cdn.jsdelivr.net/npm/${vName}/${name}.min.js?`,
         ];
-        const isPure = !(url.endsWith('?') || url.endsWith('/') || matches.length > 1 || !url.endsWith(vName));
+        const isPure = !(url.endsWith('?') || url.endsWith('/') || !matches || (matches && matches.length > 1) || !url.endsWith(vName));
         if (isPure) {
             const prevFallbackPath =
                 isString(requireConfig.fallbackOverrides[name]) ? requireConfig.fallbackOverrides[name] : '';
@@ -382,7 +382,7 @@ class AutoLog {
                     runIframeHandler.setIframe(runIframe);
                     const activeRunIframe = runIframeHandler.getIframe();
                     if (activeRunIframe) {
-                        console.log('appending', runIframe === activeRunIframe, alHTML);
+                        // console.log('appending', runIframe === activeRunIframe, alHTML);
                         addIframeLoadListener(activeRunIframe);
                         activeRunIframe.srcdoc = alHTML;
                     }

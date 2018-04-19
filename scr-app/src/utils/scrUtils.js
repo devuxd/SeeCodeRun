@@ -3,7 +3,7 @@ import isNumber from 'lodash/isNumber';
 
 // from is-dom
 export const isNode = (val, win = window) => {
-    return (!val || typeof val !== 'object')
+    return (!win ||!val || typeof val !== 'object')
         ? false
         : (typeof win === 'object' && typeof win.Node === 'object')
             ? (val instanceof win.Node)

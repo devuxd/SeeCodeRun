@@ -191,7 +191,7 @@ class Editor extends Component {
 
     componentWillUnmount() {
         for (const i in this.unsubscribes) {
-            console.log(i, this.unsubscribes[i]);
+       //     console.log(i, this.unsubscribes[i]);
             this.unsubscribes[i] && this.unsubscribes[i]();
         }
         this.monacoEditorMouseEventsObservable && this.monacoEditorMouseEventsObservable.takeUntil(end$);
@@ -218,7 +218,7 @@ class Editor extends Component {
         };
 
         contentWidgetMouseEventSubjects.mouseMove
-            .throttleTime(100)
+            // .throttleTime(100)
             .debounceTime(500)
             .subscribe(payload => {
                 this.setState({currentContentWidgetId: null});
@@ -229,7 +229,7 @@ class Editor extends Component {
 
         contentWidgetMouseEventSubjects.mouseLeave
             .throttleTime(50)
-            .debounceTime(100)
+            // .debounceTime(100)
             .subscribe(payload => {
                 this.setState(payload);
             });
