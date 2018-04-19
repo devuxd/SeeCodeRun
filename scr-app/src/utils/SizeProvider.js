@@ -1,7 +1,8 @@
 // based on react-grid-layout's WidthProvider
 import React, {Component} from "react";
 import ReactDOM from "react-dom";
-import { fromEvent } from 'rxjs/observable/fromEvent';
+import {fromEvent} from 'rxjs/observable/fromEvent';
+import {Observable} from 'rxjs/Observable';
 
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends Component {
@@ -23,9 +24,8 @@ export default function SizeProvider(ComposedComponent) {
             this.mounted = true;
             this.observable = fromEvent(window, 'resize');
             this.observable
-                .throttleTime(100)
-                .debounceTime(250)
-                .subscribe(()=>this.onWindowResize());
+                .throttle(() => Observable.interval(150), {leading: false, trailing: true})
+                .subscribe(() => this.onWindowResize());
             this.onWindowResize();
         }
 

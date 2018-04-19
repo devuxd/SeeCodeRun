@@ -1,5 +1,5 @@
 // import j from 'jscodeshift';
-import _ from 'lodash';
+import isString from 'lodash/isString';
 
 export const toAst = (source, options) => {
     if (options) {
@@ -68,7 +68,7 @@ class AutoLogShift {
 
     autoLogExpression(expression, id, type, path, p, params) {
         const jid = j.identifier(`'${id}'`);
-        const jValue = _.isString(expression) ? j.identifier(expression) : expression;
+        const jValue = isString(expression) ? j.identifier(expression) : expression;
         params = params || [
             j.callExpression(j.identifier(l.preAutoLogId),
                 [
@@ -153,6 +153,12 @@ class AutoLogShift {
         'ImportDeclaration'
     ];
 
+    static supportedLiveExpressions =
+        [...AutoLogShift.SupportedExpressions,
+            ...AutoLogShift.SupportedBlockExpressions,
+            ...AutoLogShift.SupportedBlocks
+        ];
+
     composedExpressions = {
         MemberExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
@@ -191,7 +197,7 @@ class AutoLogShift {
                 };
                 propertyValue = property.computed ? j(property).toSource() : `'${j(property).toSource()}'`;
             }
-            const jValue = _.isString(pathSource) ? j.identifier(pathSource) : pathSource;
+            const jValue = isString(pathSource) ? j.identifier(pathSource) : pathSource;
             const params = [
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
@@ -236,7 +242,7 @@ class AutoLogShift {
                 };
                 rightValue = j(right).toSource();
             }
-            const jValue = _.isString(pathSource) ? j.identifier(pathSource) : pathSource;
+            const jValue = isString(pathSource) ? j.identifier(pathSource) : pathSource;
             const params = [
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
@@ -291,6 +297,7 @@ class AutoLogShift {
                 };
                 calleeValue = j(callee).toSource();
             }
+            calleeValue = calleeValue === 'import' ? `'import'` : calleeValue;
 
             const jValue = j.identifier(j(path.value).toSource());
             const params = [
@@ -334,13 +341,18 @@ class AutoLogShift {
             const source = j(path.value.source).toSource();
             dependencies[source] = [...(dependencies[source] || []), path.value.loc];
         };
-        const handleRequires = path => {
-            const isRequire = path.value.callee.name === 'require' && path.value.arguments.length;
+        const handleAsyncImports = path => {
+            const isRequire = (path.value.callee.name === 'require' || path.value.callee.type === 'Import') && path.value.arguments.length;
             if (isRequire) {
                 const arg = path.value.arguments[0];
-                if (arg.type === j.Literal.name) { // todo dynamic resolution
+                if (arg.type === j.Literal.name) {
                     const source = j(path.value.arguments[0]).toSource();
+                    //threats dynamic imports as static
+                    // if(path.value.callee.type === 'Import'){
+                    //     asyncDependencies[source] = [...(dependencies[path.value.arguments[0]] || []), path.value.loc];
+                    // }else{
                     dependencies[source] = [...(dependencies[path.value.arguments[0]] || []), path.value.loc];
+                    // }
                 } else {
                     if (arg.type === j.ArrayExpression.name) {
                         arg.elements.forEach(el => {
@@ -357,7 +369,7 @@ class AutoLogShift {
         ast.find(j.ImportDeclaration)
             .forEach(handleImports);
         ast.find(j.CallExpression)
-            .forEach(handleRequires);
+            .forEach(handleAsyncImports);
         // pending await import
         return {dependencies, asyncDependencies};
     };

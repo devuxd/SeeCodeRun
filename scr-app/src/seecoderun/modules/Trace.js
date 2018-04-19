@@ -1,7 +1,19 @@
 import JSAN from 'jsan';
-import {Subject} from "rxjs";
-import _ from "lodash";
+import {Subject} from 'rxjs/Subject';
+import isString from 'lodash/isString';
+import isObjectLike from 'lodash/isObjectLike';
+import isArrayLike from 'lodash/isArrayLike';
 import {isNode, /*createObjectIterator, hasChildNodes,*/ copifyDOMNode} from '../../utils/scrUtils';
+
+let listener = null;
+export const listen =(lis)=>{
+    listener = lis;
+};
+
+let dispatcher = null;
+export const dispatch =(action)=>{
+    dispatcher && dispatcher(action);
+};
 
 
 const obsConfig = {attributes: true, childList: true};
@@ -200,8 +212,8 @@ class Trace {
 
     parseLiveRefs = (data, hideLiveRefs) => {
         let liveRef = this.reinstateLiveRef(data);
-        if ((!liveRef.isReinstate) && _.isObjectLike(data)) {
-            if (_.isArrayLike(data)) {
+        if ((!liveRef.isReinstate) && isObjectLike(data)) {
+            if (isArrayLike(data)) {
                 for (const i in data) {
                     const aLiveRef = this.reinstateLiveRef(data[i]);
                     (aLiveRef.isReinstate) && (data[i] = (hideLiveRefs ? aLiveRef.hiddenMessage : aLiveRef.ref));
@@ -222,7 +234,7 @@ class Trace {
     reinstateLiveRef = (data) => {
         const windowRoots = this.getWindowRoots();
 
-        let liveRefId = _.isString(data) && data.startsWith(this.magicTag) ? data.replace(this.magicTag, '') : null;
+        let liveRefId = isString(data) && data.startsWith(this.magicTag) ? data.replace(this.magicTag, '') : null;
 
         let index = Object.values(windowRoots).indexOf(data);
         const windowRoot = index < 0 && liveRefId ? liveRefId : null;
@@ -313,7 +325,7 @@ class Trace {
             const propertyData = areNew[1] ? extraValues[1] : this.findPreviousOccurrence(extraIds[1]).value;
             // console.log(pre, value, post, type, extraIds, areNew, extraValues);
             areNew[0] && this.pushEntry({id: extraIds[0]}, objectData, post, type);
-            areNew[1]  && !_.isString(propertyData) && this.pushEntry({id: extraIds[1]}, propertyData, post, type);
+            areNew[1]  && !isString(propertyData) && this.pushEntry({id: extraIds[1]}, propertyData, post, type);
             if (objectData === undefined || objectData === null) {
                 const errorMessage = `: accessing property of invalid reference: ${objectData}`;
                 this.pushEntry({
@@ -346,6 +358,7 @@ class Trace {
         },
         CallExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
             //console.log(pre, value, post, type, extraIds, areNew, extraValues);
+
             let funcRefId = this.funcRefs.indexOf(extraValues[0]);
             if (funcRefId < 0) {
                 funcRefId = this.funcRefs.length;
@@ -394,7 +407,7 @@ class Trace {
 
     onError = error => {
         let i = this.timeline.length;
-        const expression = this.locationMap[this.currentExpressionId];
+        const expression = this.locationMap[this.currentExpressionId]||{};
         this.timeline.unshift({
             i: i,
             reactKey: this.getReactKey(i),
@@ -411,6 +424,7 @@ class Trace {
         this.consoleLog = function (type, info = {}, params = []) {
             if (type === 'SCR_LOG' && info.location) {
                 // store.dispatch();
+                log(["SCR", ...arguments]);
             } else {
                 log(["clg", ...arguments]);
             }
