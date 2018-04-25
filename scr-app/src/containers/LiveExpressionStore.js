@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
+import debounce from 'lodash.debounce';
 import isString from 'lodash/isString';
 import isEqual from 'lodash/isEqual';
 import {Subject} from 'rxjs/Subject';
@@ -12,13 +13,12 @@ import {ObjectRootLabel/*, ObjectLabel*/, createLiveObjectNodeRenderer} from '..
 import LiveExpression from '../components/LiveExpression';
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updateBundle, updateBundleFailure, updateBundleSuccess} from "../redux/modules/liveExpressionStore";
-// import {createObjectIterator} from "../utils/scrUtils";
 
-// import {Inspector} from "../components/ObjectExplorer";
 import DOMPortal from "../components/DOMPortal";
-import debounce from 'lodash.debounce';
 
 import {PastebinContext} from './Pastebin';
+import OverflowComponent from "../components/OverflowComponent";
+
 
 export const HighlightTypes = {
     text: 'monaco-editor-decoration-les-textHighlight-text',
@@ -37,9 +37,9 @@ export let HighlightPalette = {
 
 const styles = (theme) => {
     HighlightPalette = {
-        text: fade(lighten(theme.palette.primary.light, 0.25), 0.25),
-        error: fade(lighten(theme.palette.error.light, 0.65), 0.75),
-        graphical: fade(lighten(theme.palette.secondary.light, 0.65), 0.75),
+        text: fade(lighten(theme.palette.primary.light, 0.25), 0.35),
+        error: fade(lighten(theme.palette.error.light, 0.65), 0.35),
+        graphical: fade(lighten(theme.palette.secondary.light, 0.65), 0.35),
     };
 
     return {
@@ -58,7 +58,7 @@ const styles = (theme) => {
                 backgroundColor: HighlightPalette.text,
             },
             [`.${HighlightTypes.text}-match`]: {
-                backgroundColor: fade(lighten(theme.palette.primary.light, 0.1), 0.2),
+                backgroundColor: fade(lighten(theme.palette.primary.light, 0.1), 0.5),
             },
             [`.${HighlightTypes.error}`]: {
                 backgroundColor: HighlightPalette.error,
@@ -67,7 +67,7 @@ const styles = (theme) => {
                 backgroundColor: HighlightPalette.graphical,
             },
             [`.${HighlightTypes.graphical}-match`]: {
-                backgroundColor: fade(lighten(theme.palette.secondary.light, 0.1), 0.2),
+                backgroundColor: fade(lighten(theme.palette.secondary.light, 0.1), 0.5),
             }
         },
         popoverPaper: {
@@ -98,6 +98,14 @@ const styles = (theme) => {
             width: 2,
             height: 2,
         },
+        liveExpressionContent: {
+            overflow: 'auto',
+            position: 'relative',
+            maxWidth: 'inherit',
+            // paddingTop: theme.spacing.unit,
+            // paddingBottom: theme.spacing.unit * 2,
+            // marginBottom: -theme.spacing.unit,
+        },
     }
 };
 
@@ -112,23 +120,58 @@ class LiveExpressionStore extends Component {
         decorators: [],
         hasDecoratorIdsChanged: false,
         timeline: [],
+        currentContentWidgetId: null,
+        currentBranchId: null,
+        currentBranchTimelineId: null,
     };
     rt = 100;
     currentEditorsTexts = null;
-    // t = false;
     didUpdate = true;
     refreshRate = 1000 / 4;
     refreshInterval = null;
-    // leto = null;
+    isBundling = false;
+    bundlingError = null;
 
 
     prevLiveExpressionWidgets = {};
     liveExpressionWidgets = {};
 
-    render() {
-        const {classes, currentContentWidgetId, editorWidth, editorHeight, timeline} = this.props;
-        const {decorators} = this.state;
+    handleCloseContentWidget = (ignore) => {
+        if (ignore) {
+            return;
+        }
+        this.setState({currentContentWidgetId: null});
+    };
+    handleCloseContentWidgetDebounced = debounce(this.handleCloseContentWidget, 1000);
 
+    handleOpenContentWidget = (currentContentWidgetId) => {
+        this.setState({currentContentWidgetId});
+    };
+    handleOpenContentWidgetDebounced = debounce(this.handleOpenContentWidget, 1000);
+
+    handleCurrentContentWidgetId = (currentContentWidgetId) => {
+        if (currentContentWidgetId) {
+            this.handleCloseContentWidgetDebounced(true);
+            if (this.state.currentContentWidgetId) {
+                if (currentContentWidgetId !== this.state.currentContentWidgetId) {
+                    this.handleOpenContentWidget(currentContentWidgetId);
+                }
+            } else {
+                this.handleOpenContentWidgetDebounced(currentContentWidgetId);
+            }
+        } else {
+            // if (this.state.currentContentWidgetId) {
+            this.handleCloseContentWidgetDebounced();
+            // } else {
+            //     this.handleCloseContentWidget();
+            // }
+        }
+    };
+
+    render() {
+        const {classes, editorWidth, editorHeight, timeline} = this.props;
+        const {decorators, currentContentWidgetId, currentBranchId, currentBranchTimelineId} = this.state;
+        let currentTimeline = timeline;
         const style = {
             width: 'calc(100%)',
         };
@@ -138,13 +181,70 @@ class LiveExpressionStore extends Component {
             style.maxHeight = `${Math.ceil(editorHeight / 2)}px`;
         }
 
-        const liveRanges = [];
+        const branches = this.traceSubscriber ? this.traceSubscriber.branches || [] : [];
+
+        // console.log(branches);
+        const branched = {};
+        branches.forEach(branch => {
+            const {id, timelineI} = branch;
+            branched[id] = branched[id] || [];
+            branched[id].push(timelineI);
+        });
+        // console.log(branched);
+
         this.prevLiveExpressionWidgets = this.liveExpressionWidgets;
+        const branchNavigators = [];
+        for (const id in branched) {
+            const decorator = (decorators || []).find(dec => dec.id === id);
+            if (decorator) {
+                //  const {datum, widget} = this.prevLiveExpressionWidgets[i];
+                //   console.log('bn', decorator);
+                if (decorator && decorator.contentWidget) {
+                    decorator.contentWidget.adjustWidth(true);
+                    branchNavigators.push(
+                        <React.Fragment key={`${id}:nav`}>
+                            <DOMPortal
+                                parentEl={decorator.contentWidget.domNode}>
+                                <div onMouseEnter={() => this.handleCurrentContentWidgetId(id)}
+                                     onMouseLeave={() => this.handleCurrentContentWidgetId()}
+                                >
+                                    <OverflowComponent
+                                        contentClassName={classes.liveExpressionContent}
+                                        disableOverflowDetectionY={true}
+                                        //  placeholder={<Typography>Yo</Typography>}
+                                        //  placeholderClassName={classes.expressionCellContent}
+                                        // placeholderDisableGutters={true}
+                                    >
+                                        {`${branched[id].length}/${branched[id].length}`}
+                                        {/*<ObjectRootLabel data={branched[id]}/>*/}
+                                    </OverflowComponent>
+
+                                </div>
+                            </DOMPortal>
+                            <LiveExpression
+                                style={style}
+
+                                expressionId={id}
+                                classes={classes}
+                                widget={decorator}
+                                data={branched[id]}
+                                isOpen={branched[id].length > 0 && currentContentWidgetId === id}
+                                objectNodeRenderer={this.objectNodeRenderer}
+                                //handleChange={this.handleObjectExplorerExpand}
+                            />
+                        </React.Fragment>);
+                }
+
+            }
+        }
+
+
+        const liveRanges = [];
         this.liveExpressionWidgets = {};
         const liveExpressions = (decorators || []).map(widget => {
             // console.log(widget.id, autoLog);
             let data = [];
-            (timeline || []).forEach(entry => {
+            (currentTimeline || []).forEach(entry => {
                 (entry.id === widget.id) && data.unshift(entry);
             });//autoLogger.trace.getData(widget.id);
 
@@ -152,7 +252,15 @@ class LiveExpressionStore extends Component {
                 // widget.contentWidget.domNode.style.backgroundColor = 'orange';
                 // widget.contentWidget.domNode.style.fontSize = '8px';
                 widget.range && liveRanges.push(widget.range);
-                let datum = JSAN.parse(data[data.length - 1].data);
+                let datum = null;
+                try {
+                    datum = data[data.length - 1].isError ? data[data.length - 1].data : JSAN.parse(data[data.length - 1].data);
+                    // datum = isString(data[data.length - 1].data) ?
+                    //     JSAN.parse(data[data.length - 1].data) : data[data.length - 1].data;
+                } catch (e) {
+                    console.log(data[data.length - 1], e)
+                }
+
                 this.liveExpressionWidgets[widget.id] = {datum, widget};
                 //  if (hasChildNodes(datum, objectIterator)) {
                 //    // let text = '';
@@ -190,21 +298,55 @@ class LiveExpressionStore extends Component {
             />);
         });
         this.highlightLiveExpressions(liveRanges);
+
         const liveWidgets = [];
         for (const i in this.liveExpressionWidgets) {
             if (this.liveExpressionWidgets[i]) {
                 const {datum, widget} = this.liveExpressionWidgets[i];
-                liveWidgets.push(<DOMPortal key={widget.id}
-                                            parentEl={widget.contentWidget.domNode}><ObjectRootLabel
-                    data={datum}/></DOMPortal>);
+                if (widget.contentWidget) {
+                    widget.contentWidget.adjustWidth(true);
+                    liveWidgets.push(
+                        <DOMPortal key={widget.id}
+                                   parentEl={widget.contentWidget.domNode}>
+                            <div onMouseEnter={() => this.handleCurrentContentWidgetId(widget.id)}
+                                 onMouseLeave={() => this.handleCurrentContentWidgetId()}
+                            >
+                                <OverflowComponent
+                                    contentClassName={classes.liveExpressionContent}
+                                    disableOverflowDetectionY={true}
+                                    //  placeholder={<Typography>Yo</Typography>}
+                                    //  placeholderClassName={classes.expressionCellContent}
+                                    // placeholderDisableGutters={true}
+                                >
+                                    <ObjectRootLabel data={datum}/>
+                                </OverflowComponent>
+
+                            </div>
+                        </DOMPortal>);
+                }
+
             }
         }
-
         return (<React.Fragment>
             {liveExpressions}
             {liveWidgets}
+            {branchNavigators}
         </React.Fragment>);
     }
+
+    updateLiveExpressionWidgetWidths = () => {
+        if (!this.liveExpressionWidgets) {
+            return;
+        }
+        for (const i in this.liveExpressionWidgets) {
+            if (this.liveExpressionWidgets[i]) {
+                const {widget} = this.liveExpressionWidgets[i];
+                if (widget.contentWidget) {
+                    widget.contentWidget.adjustWidth(true);
+                }
+            }
+        }
+    };
 
     shouldBundle = (editorsTexts) => {
         if (!isEqual(this.currentEditorsTexts, editorsTexts)) {
@@ -225,6 +367,19 @@ class LiveExpressionStore extends Component {
         return debounce(value => handleChange(value), debounceTime);
     };
 
+    onBundlingEnd = (err) => {
+        this.isBundling = false;
+        this.bundlingError = err;
+    };
+
+    handleBundle = currentEditorsTexts => {
+        this.isBundling = true;
+        this.updateBundle(currentEditorsTexts)
+            .then(this.onBundlingEnd)
+            .catch(this.onBundlingEnd);
+    };
+    handleBundleDebounced = debounce(this.handleBundle, 100);
+
     handleBundlingSubscription = () => {
         if (!this.bundlingSubject) {
             return;
@@ -236,20 +391,16 @@ class LiveExpressionStore extends Component {
 
         this.bundlingSubscription =
             this.bundlingSubject
-                .debounceTime(this.props.autorunDelay)  // .throttleTime(500)
-                .subscribe(currentEditorsTexts => {
-                    if (this.isBundling) {
-                        return;
-                    }
-                    this.isBundling = true;
-                    this.updateBundle(currentEditorsTexts);
-                    this.isBundling = false;
-                });
+                .debounceTime(this.props.autorunDelay)
+                .subscribe(this.handleBundle);
     };
 
-    componentDidMount() {
 
+    componentDidMount() {
         this.bundlingSubject = new Subject();
+        if (this.props.exports) {
+            this.props.exports.updateLiveExpressionWidgetWidths = this.updateLiveExpressionWidgetWidths;
+        }
         this.handleBundlingSubscription();
         this.handleBundlingSubscriptionDebounced = this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
         const {store} = this.context;
@@ -290,21 +441,14 @@ class LiveExpressionStore extends Component {
         this.bundlingSubject && this.bundlingSubject.complete();
     }
 
-    updateBundle = (currentEditorsTexts) => {
+    updateBundle = async (currentEditorsTexts) => {
         const {store} = this.context;
         const {firecoPad/*, decorators*/, getLocationId} = this.state;
-        if (!firecoPad || !getLocationId) {
-            //console.log('Not ready');
-            if (this.rt) {
-                clearTimeout(this.tm);
-                this.tm = setTimeout(() => {
-                    this.rt--;
-                    this.updateBundle(currentEditorsTexts)
-                }, 100);
-            }
+
+        if (!firecoPad || !firecoPad.astResult || !getLocationId) {
+            this.handleBundleDebounced(currentEditorsTexts);
             return;
         }
-
         if (!firecoPad.astResult.ast) {
             store.dispatch(updateBundleFailure(firecoPad.astResult.astError));
             return;
@@ -339,8 +483,9 @@ class LiveExpressionStore extends Component {
         });
     };
 
-    handleTraceChange = (payload) => {
-        this.timeline = payload;
+    handleTraceChange = ({timeline, logs}) => {
+        this.timeline = timeline;
+        this.logs = logs;
         this.refreshTimeline();
     };
 
@@ -453,15 +598,22 @@ class LiveExpressionStore extends Component {
 
 
     refreshTimeline = () => {
-        if (this.timeline !== this.prevTimeline) {
+        const isRefresh = this.timeline !== this.prevTimeline || this.logs !== this.prevLogs;
+        if (isRefresh) {
             if (this.didUpdate) {
                 this.didUpdate = false;
-                this.prevTimeline = this.timeline;
+                if (this.timeline !== this.prevTimeline) {
+                    this.prevTimeline = this.timeline;
+                }
+                if (this.logs !== this.prevLogs) {
+                    this.prevLogs = this.logs;
+                }
                 // this.setState({timeline: this.timeline});
                 this.props.liveExpressionStoreChange &&
                 this.props.liveExpressionStoreChange(
                     this.traceSubscriber,
                     this.timeline,
+                    this.logs,
                     this.isNew,
                     HighlightTypes,
                     this.highlightSingleText,
@@ -497,15 +649,17 @@ LiveExpressionStore.propTypes = {
     classes: PropTypes.object.isRequired,
     editorId: PropTypes.string.isRequired,
     liveExpressionStoreChange: PropTypes.func,
+    exports: PropTypes.object,
 };
 
 const LiveExpressionStoreWithContext = props => (
     <PastebinContext.Consumer>
-        {({liveExpressionStoreChange, timeline, autorunDelay}) => {
+        {({liveExpressionStoreChange, timeline, autorunDelay, handleChangePlaying}) => {
             return <LiveExpressionStore {...props}
                                         liveExpressionStoreChange={liveExpressionStoreChange}
                                         timeline={timeline}
                                         autorunDelay={autorunDelay}
+                                        handleChangePlaying={handleChangePlaying}
             />
         }}
     </PastebinContext.Consumer>

@@ -9,8 +9,8 @@ export const getDefaultGridBreakpoints = () => ({
 });
 
 export const getDefaultGrid = () => ({
-    cols: {lg: 100},
-    rows: {lg: 50},
+    cols: {lg: 50},
+    rows: {lg: 20},
 });
 
 export const getDefaultGridUnits = (grid) => ((cl, bk, prop) => {
@@ -70,8 +70,20 @@ export const configureGetDefaultGridLayouts = (grid, getGridUnits) => () => (({
         ]
 }));
 
+const getDefaultLayoutDragPositionInvariant =(C2I) => ((layout) => {
+    layout[C2I.scriptContainer].x = 0;
+    layout[C2I.htmlContainer].y = layout[C2I.scriptContainer].y;
+    layout[C2I.debugContainer].y = layout[C2I.scriptContainer].y;
 
-export const getDefaultlayoutFormatInvariant = (C2I) => ((layout, sourceI, maxRows, maxCols) => {
+
+    layout[C2I.htmlContainer].x = layout[C2I.scriptContainer].w;
+    layout[C2I.cssContainer].x = layout[C2I.htmlContainer].x;
+
+
+    layout[C2I.cssContainer].y = layout[C2I.htmlContainer].y + layout[C2I.htmlContainer].h;
+});
+
+const getDefaultLayoutPositionInvariant =(C2I) => ((layout) => {
     layout[C2I.scriptContainer].x = 0;
     layout[C2I.htmlContainer].y = layout[C2I.scriptContainer].y;
     layout[C2I.debugContainer].y = layout[C2I.scriptContainer].y;
@@ -90,7 +102,10 @@ export const getDefaultlayoutFormatInvariant = (C2I) => ((layout, sourceI, maxRo
 
     layout[C2I.scriptContainer].maxW = layout[C2I.debugContainer].x - 1;
     layout[C2I.cssContainer].y = layout[C2I.htmlContainer].y + layout[C2I.htmlContainer].h;
+});
 
+export const getDefaultLayoutFormatInvariant = (C2I, layoutPositionInvariant) => ((layout, sourceI, maxRows/*, maxCols*/) => {
+    layoutPositionInvariant(layout);
     let finalH = 0;
     switch (sourceI) {
         case 'debugContainer':
@@ -264,7 +279,9 @@ export const configureDefaultGridLayoutFormatter = (currentBreakPoint = getDefau
     gl.currentGridLayouts = gl.getDefaultGridLayouts();
     gl.C2I = getCellToIndex(gl.currentGridLayouts, currentBreakPoint);
     gl.formatLayoutHeight = getDefaultFormatLayoutHeight(gl.C2I, gl.grid, currentBreakPoint);
-    gl.layoutFormatInvariant = getDefaultlayoutFormatInvariant(gl.C2I);
+    gl.layoutPositionInvariant = getDefaultLayoutPositionInvariant(gl.C2I);
+    gl.layoutDragPositionInvariant = getDefaultLayoutDragPositionInvariant(gl.C2I);
+    gl.layoutFormatInvariant = getDefaultLayoutFormatInvariant(gl.C2I, gl.layoutPositionInvariant);
     gl.formatLayout = getDefaultLayoutFormatter(gl.C2I, gl.grid, currentBreakPoint, gl.formatLayoutHeight, gl.layoutFormatInvariant);
     gl.getLayoutDummy = (layout) => { // required to force RGL render on reset layout
         const hack = layout ? {...layout} : gl.getDefaultGridLayouts();
@@ -281,7 +298,8 @@ export const configureDefaultGridLayoutFormatter = (currentBreakPoint = getDefau
         gl.currentBreakPoint = bk;
         gl.C2I = getCellToIndex(gl.currentGridLayouts, bk);
         gl.formatLayoutHeight = getDefaultFormatLayoutHeight(gl.C2I, gl.grid, bk);
-        gl.layoutFormatInvariant = getDefaultlayoutFormatInvariant(gl.C2I);
+        gl.layoutPositionInvariant = getDefaultLayoutPositionInvariant(gl.C2I);
+        gl.layoutFormatInvariant = getDefaultLayoutFormatInvariant(gl.C2I, gl.layoutPositionInvariant);
         gl.formatLayout = getDefaultLayoutFormatter(gl.C2I, gl.grid, bk, gl.formatLayoutHeight, gl.layoutFormatInvariant);
     };
     gl.validateLayout = geDefaultValidateLayout(/*gl.C2I*/);

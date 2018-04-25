@@ -118,7 +118,7 @@ export const requireConfig = {
     requireSync: [],
     config: {
         waitSeconds: 7,
-        catchError: true,
+        catchError: false,
         enforceDefine: true,
         baseUrl: "/scripts",
         // urlArgs: "",
@@ -327,7 +327,8 @@ class AutoLog {
                     ' allow-same-origin' +
                     ' allow-modals';
                 runIframe.style =
-                    'height: 100%;' +
+                    'overflow: auto;' +
+                    ' height: 100%;' +
                     ' width: 100%;' +
                     ' margin: 0;' +
                     ' padding: 0;' +
@@ -350,6 +351,7 @@ class AutoLog {
                                     }
                                 } else {
                                     console.log('load errors', errors);
+                                    autoLogger.trace.onError(errors);
                                 }
                             };
                             appendScript(runIframe.contentDocument, state.transformed.code);
@@ -379,9 +381,9 @@ class AutoLog {
                 if (state.getHTML) {
                     const runIframe = sandboxIframe();
                     const alHTML = state.getHTML();
-                    runIframeHandler.setIframe(runIframe);
+                    const isAppended = runIframeHandler.appendIframe(runIframe);
                     const activeRunIframe = runIframeHandler.getIframe();
-                    if (activeRunIframe) {
+                    if (isAppended && activeRunIframe) {
                         // console.log('appending', runIframe === activeRunIframe, alHTML);
                         addIframeLoadListener(activeRunIframe);
                         activeRunIframe.srcdoc = alHTML;

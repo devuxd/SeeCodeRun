@@ -7,6 +7,7 @@ import Tooltip from 'material-ui/Tooltip';
 
 import {isNode} from '../utils/scrUtils';
 import {ThemeContext} from '../pages/Index';
+import {HighlightPalette} from '../containers/LiveExpressionStore';
 
 const noop = () => {
 };
@@ -80,8 +81,8 @@ export const ObjectPreview = ({data, maxProperties}) => {
         return (
             <span style={styles.preview}>
         {`${object.constructor.name} {`}
-        {intersperse(propertyNodes, ', ')}
-        {'}'}
+                {intersperse(propertyNodes, ', ')}
+                {'}'}
       </span>
         );
     }
@@ -137,7 +138,7 @@ ObjectLabel.defaultProps = {
 
 
 export const createLiveObjectNodeRenderer = (traceProvider) => {
-    const liveObjectNodeRenderer ={
+    const liveObjectNodeRenderer = {
         getWindowRef: () => traceProvider.trace.window,
         handleChange: null,
         expandPathsState: null,
@@ -152,9 +153,9 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
         parseLiveRefs: traceProvider.trace.parseLiveRefs,
     };
 
-    liveObjectNodeRenderer.render= (props) =>{
+    liveObjectNodeRenderer.render = (props) => {
         const {depth, name, data, isNonenumerable/*, expanded, path*/} = props;
-       // const paths = liveObjectNodeRenderer.expandPathsState || {};
+        // const paths = liveObjectNodeRenderer.expandPathsState || {};
         // paths[path] = expanded;
         // if (expanded) {
         //   clearTimeout(this.leto);
@@ -173,7 +174,10 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
             isRoot ?
                 objectLabel :
                 <ul style={{marginLeft: -12, marginTop: -12}}>
-                    <Inspector data={liveRef.data}/>
+                    <Inspector data={liveRef.data}
+                               nodeRenderer={liveObjectNodeRenderer.render}
+                               windowRef={liveObjectNodeRenderer.getWindowRef()}
+                    />
                 </ul>
             : objectLabel;
     };
@@ -182,43 +186,133 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
 
 class OutputElementHover extends React.Component {
     state = {
-        originalStyle: null,
-        style: null,
+        // originalStyle: null,
+        // style: null,
+        open: false,
     };
     handleEnter = el => {
-        if (el.style) {
-            return () => {
-                this.setState({
-                    style: {
-                        border: '1px solid orange'
-                    },
-                    originalStyle: this.state.originalStyle || {
-                        border: el.style.border
-                    }
-                });
-            };
-        } else {
-            return noop;
-        }
+        // if (el.style) {
+        //     return () => {
+        //         this.setState({
+        //             style: {
+        //                 border: '1px solid orange'
+        //             },
+        //             originalStyle: this.state.originalStyle || {
+        //                 border: el.style.border
+        //             }
+        //         });
+        //     };
+        // } else {
+        //     return noop;
+        // }
+
+        return () => {
+            this.setState({
+                // style: {
+                //     border: '1px solid orange'
+                // },
+                // originalStyle: this.state.originalStyle || {
+                //     border: el.style.border
+                // }
+                open: true
+            });
+        };
     };
 
     handleLeave = el => {
-        if (el.style) {
-            return () => {
-                this.setState({
-                    style: this.state.originalStyle,
-                });
-            };
-        } else {
-            return noop;
-        }
+        // if (el.style) {
+        //     return () => {
+        //         this.setState({
+        //             style: this.state.originalStyle,
+        //         });
+        //     };
+        // } else {
+        //     return noop;
+        // }
+        return () => {
+            this.setState({
+                // style: {
+                //     border: '1px solid orange'
+                // },
+                // originalStyle: this.state.originalStyle || {
+                //     border: el.style.border
+                // }
+                open: false
+            });
+        };
     };
 
     render() {
         const {el, children} = this.props;
-        const {style} = this.state;
-        style && (el.style.border = style.border);
-        return <div onMouseEnter={this.handleEnter(el)} onMouseLeave={this.handleLeave(el)}>{children}</div>;
+        return <div onMouseEnter={this.handleEnter(el)} onMouseLeave={this.handleLeave(el)} children={children}/>;
+    }
+
+    componentDidUpdate() {
+        const {el} = this.props;
+        if (el) {
+
+            // console.log('el', el);
+            const clientRect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+            if (this.state.open) {
+                if (clientRect) {
+                    if (!this.locator) {
+                        this.locator = document.createElement('div');
+                        this.locator.style.position = 'absolute';
+                        this.locator.style.backgroundColor = HighlightPalette.graphical;
+                        this.locator.style.zIndex = '99999';
+
+                        if (el.parentElement) {
+                            el.parentElement.appendChild && el.parentElement.appendChild(this.locator);
+                        } else {
+                            try {
+                                el.appendChild && el.appendChild(this.locator);
+                            } catch (e) {
+                                try {
+                                    el.body.appendChild && el.body.appendChild(this.locator);
+                                } catch (e) {
+                                    this.locator = null;
+                                }
+                            }
+                        }
+                    }
+
+                    if (this.locator) {
+                        this.locator.style.display = 'block';
+                        this.locator.style.top = `${clientRect.top}px`;
+                        this.locator.style.left = `${clientRect.left}px`;
+                        this.locator.style.height = `${clientRect.height}px`;
+                        this.locator.style.width = `${clientRect.width}px`;
+                    }
+                }
+            } else {
+                if (this.locator) {
+                    if (el.parentElement) {
+                        el.parentElement.removeChild && el.parentElement.removeChild(this.locator);
+                    } else {
+                        try {
+                            el.removeChild && el.removeChild(this.locator);
+                        } catch (e) {
+                            try {
+                                el.body.removeChild && el.body.removeChild(this.locator);
+                            } catch (e) {
+                                this.locator = null;
+                            }
+                        }
+                    }
+                    this.locator = null;
+                }
+
+
+                // this.locator.style.display= 'none';
+                // this.locator.style.top = '0px';
+                // this.locator.style.left = '0px';
+                // this.locator.style.height = '0px';
+                // this.locator.style.width = '0px';
+            }
+
+        }
+        // const {style} = this.state;
+        // style && (el.style.border = style.border);
     }
 }
 
@@ -238,14 +332,12 @@ export const Inspector = ({table = false, data, windowRef, nodeRenderer, ...rest
 
             if (isNode(data, windowRef)) {
                 return <OutputElementHover el={data}>
-                    <Tooltip title="Locating in Browser" placement="right">
-                        <div style={{position: 'relative'}}>
-        <span style={{position: 'absolute', top: 0, color: 'grey', marginLeft: -15}}>
-          <MyLocationIcon style={{fontSize: 15}}/>
-        </span>
-                            <DOMInspector theme={inspectorTheme} data={data} {...rest} />
-                        </div>
-                    </Tooltip>
+                    <div style={{position: 'relative'}}>
+                        <span style={{position: 'absolute', top: 0, color: 'grey', marginLeft: -15}}>
+                          <MyLocationIcon style={{fontSize: 15}}/>
+                        </span>
+                        <DOMInspector theme={inspectorTheme} data={data} {...rest} />
+                    </div>
                 </OutputElementHover>;
             }
 
@@ -285,7 +377,7 @@ class ObjectExplorer extends React.Component {
         return {
             isInit: true,
             prevData: data,
-           // expandPaths: prevState.isInit ? /*diffToExpandPaths(prevData, data) : []
+            // expandPaths: prevState.isInit ? /*diffToExpandPaths(prevData, data) : []
         };
     }
 

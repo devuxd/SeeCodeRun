@@ -68,11 +68,13 @@ class AutoLogShift {
 
     autoLogExpression(expression, id, type, path, p, params) {
         const jid = j.identifier(`'${id}'`);
+        const jtype = j.identifier(`'${type}'`);
         const jValue = isString(expression) ? j.identifier(expression) : expression;
         params = params || [
             j.callExpression(j.identifier(l.preAutoLogId),
                 [
                     jid,
+                    jtype,
                 ]),
             jValue,
             j.callExpression(j.identifier(l.postAutoLogId), [jid]),
@@ -162,6 +164,7 @@ class AutoLogShift {
     composedExpressions = {
         MemberExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
+            const jtype = j.identifier(`'${type}'`);
             const object = path.value.object;//node
             // console.log(object)
             const property = path.value ? path.value.property : null;
@@ -202,6 +205,7 @@ class AutoLogShift {
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
                         jid,
+                        jtype,
                     ]),
                 jValue,
                 j.callExpression(j.identifier(l.postAutoLogId), [jid]),
@@ -214,6 +218,7 @@ class AutoLogShift {
         },
         BinaryExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
+            const jtype = j.identifier(`'${type}'`);
             const left = path.value ? path.value.left : null;
             const leftId = left.loc ? getLocationId(left.loc, left.type) : left.autologId;
             const leftLoc = left.loc || (locationMap[leftId] || {}).loc;
@@ -247,6 +252,7 @@ class AutoLogShift {
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
                         jid,
+                        jtype
                     ]),
                 jValue,
                 j.callExpression(j.identifier(l.postAutoLogId), [jid]),
@@ -259,6 +265,7 @@ class AutoLogShift {
         },
         CallExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
+            const jtype = j.identifier(`'${type}'`);
             const callee = path.value ? path.value.callee : null;
             const calleeId = callee.loc ? getLocationId(callee.loc, callee.type) : callee.autologId;
             const calleeLoc = callee.loc || (locationMap[calleeId] || {}).loc;
@@ -304,6 +311,7 @@ class AutoLogShift {
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
                         jid,
+                        jtype,
                     ]),
                 jValue,
                 j.callExpression(j.identifier(l.postAutoLogId), [jid]),
@@ -592,24 +600,55 @@ class AutoLogShift {
             const type = path.value ? path.value.type : null;
             const loc = type ? path.value.loc : null;
             let id = loc ? getLocationId(loc, type) : null;
-//            console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
+
             if (id) {
                 if (path.parentPath) {
-                    const parentType = path.parentPath.value.type;
-                    const parentLoc = parentType ? path.parentPath.value.loc : null;
+                    let parentType = path.parentPath.value.type;
+                    let parentLoc = parentType ? path.parentPath.value.loc : null;
                     let parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
+                    if(!parentId && parentType === j.FunctionExpression.name){
+                        parentType = path.parentPath.parentPath? path.parentPath.parentPath.value.type: null;
+                        parentLoc = parentType ? path.parentPath.parentPath.value.loc : null;
+                        parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
+                    }
                     if (parentId) {
-                        if (AutoLogShift.SupportedBlocks.includes(parentType)) {
-                            if (this.composedBlocks[parentType]) {
-                                return this.composedBlocks[parentType](
-                                    {ast, locationMap, getLocationId, path},
-                                    {id, type},
-                                    {parentType, parentLoc, parentId}
-                                );
-                            }
+                        const jid = j.identifier(`'${parentId}'`);
+                        const params = [
+                            j.callExpression(j.identifier(l.preAutoLogId),
+                                [
+                                    jid,
+                                ]),
+                            j.identifier('this'),
+                            j.callExpression(j.identifier(l.postAutoLogId), [jid]),
+                            j.identifier(`'${j.BlockStatement.name}'`),
+                            // j.identifier(`'${parentType}'`),
+                            j.identifier(`[]`),
+                            j.identifier(`[]`),
+                            j.identifier(`[]`),
+                        ];
+                        const enterExpression = this.autoLogExpression(null, id, type, path, null, params);
+
+                        const body = path.value.body;
+                      //  console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
+                        if (body.length && j(body[0]).toSource().startsWith('super')) {
+                            const superS = body[0];
+                            body.unshift(j.expressionStatement(enterExpression));
+                            body[1] = body[0];
+                            body[0] = superS;
                         } else {
-                            // console.log('critical parent', type, loc, path, parentType, parentLoc);
+                            body.unshift(j.expressionStatement(enterExpression));
                         }
+                        // if (AutoLogShift.SupportedBlocks.includes(parentType)) {
+                        //     if (this.composedBlocks[parentType]) {
+                        //         return this.composedBlocks[parentType](
+                        //             {ast, locationMap, getLocationId, path},
+                        //             {id, type},
+                        //             {parentType, parentLoc, parentId}
+                        //         );
+                        //     }
+                        // } else {
+                        //     // console.log('critical parent', type, loc, path, parentType, parentLoc);
+                        // }
                     } else {
                         // console.log('ignored', path);
                     }

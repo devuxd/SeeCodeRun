@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
+import debounce from 'lodash.debounce';
 import {Subject} from 'rxjs/Subject';
 import classNames from 'classnames';
 import {withStyles} from 'material-ui/styles';
@@ -59,6 +60,7 @@ const styles = theme => ({
 });
 
 class Editor extends Component {
+
     constructor(props) {
         super(props);
         this.editorDiv = React.createRef();
@@ -71,10 +73,13 @@ class Editor extends Component {
             errors: null,
             currentContentWidgetId: null,
             forceHideWidgets: false,
+            automaticLayout: false,
         };
         this.monacoEditorMouseEventsObservable = null;
         this.dispatchMouseEventsActive = false;
         this.maxLineNumber = -1;
+        this.firecoPad = null;
+        this.exports = {};
     }
 
 
@@ -95,7 +100,7 @@ class Editor extends Component {
         const {classes, observeLiveExpressions, editorId, themeType, liveExpressionStoreChange} = this.props;
         const {
             settingsOpen, errorSnackbarOpen, errors,
-            currentContentWidgetId,// forceHideWidgets
+            //currentContentWidgetId,// forceHideWidgets
         } = this.state;
         const fabClassName =
             classNames(
@@ -103,8 +108,7 @@ class Editor extends Component {
             );
 
         return (<div className={classes.container}>
-                <div id={editorId}
-                     ref={this.editorDiv}
+                <div ref={this.editorDiv}
                      className={classes.editor}
                 />
                 {observeLiveExpressions &&
@@ -114,7 +118,8 @@ class Editor extends Component {
                     editorWidth={this.editorWidth}
                     editorHeight={this.editorHeight}
                     themeType={themeType}
-                    currentContentWidgetId={currentContentWidgetId}
+                    exports={this.exports}
+                    //currentContentWidgetId={currentContentWidgetId}
                     // forceHideWidgets={forceHideWidgets}
                     liveExpressionStoreChange={liveExpressionStoreChange}
                 />
@@ -148,6 +153,22 @@ class Editor extends Component {
         );
     }
 
+    firecoPadDidMount = (firecoPad) => {
+        this.firecoPad = firecoPad;
+        const {updateMonacoEditorLayout} = this.props;
+        updateMonacoEditorLayout && updateMonacoEditorLayout(() => {
+            if (this.firecoPad && this.firecoPad.monacoEditor) {
+                this.firecoPad.monacoEditor.layout();
+            }
+        });
+
+        if (this.exports.updateLiveExpressionWidgetWidths) {
+            if (this.firecoPad.monacoEditor) {
+                this.firecoPad.monacoEditor.onDidScrollChange(this.exports.updateLiveExpressionWidgetWidths);
+            }
+        }
+    };
+
     componentDidMount() {
         this.unsubscribes = [];
         const {editorId} = this.props;
@@ -175,29 +196,32 @@ class Editor extends Component {
             }
         });
         this.unsubscribes.push(unsubscribe0);
+        this.updateEditorDimensions();
     }
 
+    updateEditorDimensions = debounce(() => {
+        if (this.editorDiv.current) {
+            this.editorWidth = this.editorDiv.current.offsetWidth;
+            this.editorHeight = this.editorDiv.current.offsetHeight;
+        }
+    }, 100);
+
     componentDidUpdate() {
-        clearTimeout(this.tmw);
-        const delay = this.editorWidth || !this.wt ? 0 : 100;
-        this.wt = this.wt ? this.wt - 1 : 5;
-        this.tmw = setTimeout(() => {
-            if (this.editorDiv.current) {
-                this.editorWidth = this.editorDiv.current.offsetWidth;
-                this.editorHeight = this.editorDiv.current.offsetHeight;
-            }
-        }, delay);
+        this.updateEditorDimensions();
     }
 
     componentWillUnmount() {
         for (const i in this.unsubscribes) {
-       //     console.log(i, this.unsubscribes[i]);
+            //     console.log(i, this.unsubscribes[i]);
             this.unsubscribes[i] && this.unsubscribes[i]();
         }
         this.monacoEditorMouseEventsObservable && this.monacoEditorMouseEventsObservable.takeUntil(end$);
         const {contentWidgetMouseEventSubjects} = this;
         contentWidgetMouseEventSubjects &&
         (contentWidgetMouseEventSubjects.mouseMove.complete() || contentWidgetMouseEventSubjects.mouseLeave.complete());
+
+        const {updateMonacoEditorLayout} = this.props;
+        updateMonacoEditorLayout && updateMonacoEditorLayout(null);
     }
 
 
@@ -218,7 +242,7 @@ class Editor extends Component {
         };
 
         contentWidgetMouseEventSubjects.mouseMove
-            // .throttleTime(100)
+        // .throttleTime(100)
             .debounceTime(500)
             .subscribe(payload => {
                 this.setState({currentContentWidgetId: null});
@@ -319,6 +343,7 @@ Editor.contextTypes = {
 Editor.propTypes = {
     editorId: PropTypes.string.isRequired,
     classes: PropTypes.object.isRequired,
+    updateMonacoEditorLayout: PropTypes.func,
     observeMouseEvents: PropTypes.bool,
     mouseEventsDisabled: PropTypes.bool,
     observeLiveExpressions: PropTypes.bool,

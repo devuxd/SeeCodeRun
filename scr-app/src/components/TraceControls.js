@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 // webpack tree shacking is broken for reimports
 // import {withStyles, Menu, ListItem, TextField, Button} from 'material-ui';
 // import {SpeedDial, SpeedDialIcon, SpeedDialAction} from '@material-ui/lab';
@@ -27,6 +28,7 @@ import {ListItem} from 'material-ui/List';
 import {MenuItem} from 'material-ui/Menu';
 import TextField from 'material-ui/TextField';
 import Button from 'material-ui/Button';
+import {Subject} from 'rxjs/Subject';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
 
@@ -120,7 +122,7 @@ class TraceControls extends React.Component {
                 const autorunDelay =
                     isNaN(data.current.autorunDelay) ? nextProps.autorunDelay : data.current.autorunDelay;
                 const dependencyOverrides =
-                    data.current.dependencies || {...requireConfig.dependencyOverrides, count:0};
+                    data.current.dependencies || {...requireConfig.dependencyOverrides, count: 0};
                 nextProps.changeData(
                     {
                         ...nextProps.data.current,
@@ -131,13 +133,13 @@ class TraceControls extends React.Component {
             }
 
             if (data.current.autorunDelay !== nextProps.autorunDelay) {
-                if(prevState.isData){
+                if (prevState.isData) {
                     nextProps.changeData(
                         {
                             ...nextProps.data.current,
                             autorunDelay: nextProps.autorunDelay
                         });
-                }else{
+                } else {
                     nextProps.handleChangeAutorunDelay(data.current.autorunDelay);
                     nextState.isData = true;
                 }
@@ -230,7 +232,7 @@ class TraceControls extends React.Component {
         const dependencyOverrides = {...requireConfig.dependencyOverrides};
         dependencyOverrides[dep.name] = url;
         if (this.props.changeData && this.props.data.current) {
-            dependencyOverrides.count = Object.keys(dependencyOverrides).length-1;
+            dependencyOverrides.count = Object.keys(dependencyOverrides).length - 1;
             this.props.changeData(
                 {...this.props.data.current, dependencyOverrides: dependencyOverrides}
             );
@@ -238,6 +240,7 @@ class TraceControls extends React.Component {
             requireConfig.dependencyOverrides = dependencyOverrides;
             this.onDependenciesChange();
         }
+        this.subject.next({});
     };
 
     render() {
@@ -344,6 +347,10 @@ class TraceControls extends React.Component {
     componentDidMount() {
         requireConfig.on && this.onDependenciesChange();
         requireConfig.onDependenciesChange = this.onDependenciesChange;
+        this.subject = new Subject();
+        this.subject
+            .debounceTime(1000)
+            .subscribe(() => (requireConfig.triggerChange && requireConfig.triggerChange()));
     }
 
     componentDidUpdate(prevProps, prevState/*, snapshot*/) {
@@ -358,6 +365,7 @@ class TraceControls extends React.Component {
 
     componentWillUnmount() {
         requireConfig.onDependenciesChange = null;
+        this.subject.complete();
     }
 }
 

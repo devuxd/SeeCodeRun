@@ -2,17 +2,22 @@
 // Preview/DevTools/Console/index.js
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {listen, dispatch} from '../seecoderun/modules/Trace';
+import {listen, dispatch, configureHookConsole} from '../seecoderun/modules/Trace';
+import {Hook, Console as ConsoleFeed, Decode} from 'console-feed';
 import debounce from 'lodash.debounce';
 import update from 'immutability-helper';
-import List from 'material-ui/List'
+// import List from 'material-ui/List';
+// import Paper from 'material-ui/Paper';
+
 
 import {withStyles} from 'material-ui/styles';
+import {withTheme} from 'material-ui/styles';
 
 import ClearIcon from '@material-ui/icons/Clear';
-// import {Decode, Console as ConsoleFeed} from 'console-feed';
 
-import ConsoleInput from './ConsoleInput';
+import {PastebinContext} from '../containers/Pastebin';
+import ConsoleTable from "./ConsoleTable";
+
 
 // import {Container, Messages, inspectorTheme} from './elements';
 
@@ -24,66 +29,23 @@ import ConsoleInput from './ConsoleInput';
 //     arguments: any[],
 // };
 
+const Methods = [
+    'log'
+    , 'warn'
+    , 'error'
+    , 'info'
+    , 'debug'
+    , 'command'
+    , 'result'
+];
+
 const styles = (theme) => ({
-    container: {
-        display: 'flex',
-        flexDirection: 'column',
+    consoleContainer: {
+        paddingTop: theme.spacing.unit * 8,
         width: '100%',
         height: '100%',
-        maxHeight: 'calc(100% - 2rem)',
-        // backgroundColor: '${props => props.theme.background4}',
     },
-    header: {
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        fontSize: '0.875rem',
-        height: '2rem',
-        minHeight: '2rem',
-        // backgroundColor: '${props => props.theme.background4}',
-        color: 'rgba(255, 255, 255, 0.8)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.3)',
-        boxShadow: '0 0 3px rgba(0, 0, 0, 0.3)',
-        cursor: 'row-resize',
-        flexDirection: 'row'
-    },
-    tab: {
-        display: 'flex',
-        alignItems: 'center',
-        height: 'calc(2rem - 1px)',
-        padding: '0 1rem',
-        borderRight: '1px solid rgba(0, 0, 0, 0.3)',
-        borderBottom: '1px solid transparent',
-        cursor: 'pointer',
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontWeight: 600,
-        backgroundColor: props => (props.active ? theme.palette.primary.main : 'transparent'),
-        borderBottomColor: props => (props.active ? `1px solid ${theme.palette.primary.main}` : '1px solid transparent'),
-    },
-    actions: {
-        position: 'absolute',
-        right: '1rem',
-        fontSize: '1.125rem',
-        svg: {
-            margin: '0 0.5rem',
-            transition: '0.3s ease all',
-            cursor: 'pointer',
-            color: 'rgba(255, 255, 255, 0.7)',
-            '&:hover': {
-                color: theme.palette.action.active,
-            }
-        }
-    },
-    messages: {
-        flexGrow: 1,
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        whiteSpace: 'pre-wrap',
-// > div {
-//     overflow-y: auto;
-//     overflow-x: hidden;
-// }
-    },
+    consoleInput: {},
     iconContainer: {
         display: 'inline-flex',
         padding: '0.5rem 0',
@@ -103,39 +65,28 @@ const actions = [
     },
 ];
 
-export const decodeLog =(data)=>{
-
-};
 
 class Console extends Component {
-    state = {
-        messages: [],
-        scrollToBottom: true,
-        initialClear: true,
-    };
-
-    listener;
-
-    constructor(props) {
+    constructor(props){
         super(props);
+        this.containerRef = React.createRef();
         this.list = React.createRef();
-        this.scrollToBottom = debounce(this.scrollToBottom, 1 / 60);
-    }
+        this.scrollToBottom = debounce(this.scrollToBottom, 1000 / 24);
 
-    componentDidMount() {
-        this.listener = listen(this.handleMessage);
-    }
+        this.state = {
+            logs: [],
+            messages: [],
+            scrollToBottom: true,
+            initialClear: true,
+        };
 
-    componentWillUnmount() {
-        if (this.listener) {
-            this.listener();
-        }
+        this.listener = null;
     }
 
     handleMessage = data => {
         switch (data.type) {
             case 'console': {
-                const message = decodeLog(data.log);
+                const message = Decode(data.log);
                 const {method, data: args} = message;
 
                 switch (method) {
@@ -166,7 +117,7 @@ class Console extends Component {
             case 'eval-result': {
                 const {result, error} = data;
 
-                const decoded = decodeLog(result);
+                const decoded = Decode(result);
 
                 if (!error) {
                     this.addMessage('result', [decoded]);
@@ -178,7 +129,7 @@ class Console extends Component {
             case 'test-result': {
                 const {result, error} = data;
 
-                const aggregatedResults = decodeLog(result);
+                const aggregatedResults = Decode(result);
                 if (!error) {
                     if (aggregatedResults) {
                         const {summaryMessage, failedMessages} = aggregatedResults;
@@ -199,8 +150,8 @@ class Console extends Component {
             }
         }
     };
-
-    getType = (message: 'info' | 'log' | 'warn' | 'error') => {
+//: 'info' | 'log' | 'warn' | 'error'
+    getType = (message) => {
         if (message === 'log' || message === 'info') {
             return 'info';
         }
@@ -261,10 +212,6 @@ class Console extends Component {
         });
     };
 
-    componentDidUpdate() {
-        this.scrollToBottom();
-    }
-
     scrollToBottom = () => {
         if (this.list.current) {
             this.list.current.scrollTop = this.list.current.scrollHeight;
@@ -272,9 +219,8 @@ class Console extends Component {
     };
 
     evaluateConsole = (command) => { //string
-        this.addMessage('command', [command]);
-
-        // TODO move everything of frames to store and this command too
+        // this.addMessage('command', [command]);
+        // console.log('f', command);
         dispatch({type: 'evaluate', command});
     };
 
@@ -282,17 +228,63 @@ class Console extends Component {
         if (this.props.hidden) {
             return null;
         }
-        const {classes} = this.props;
+        const {classes, theme, handleTotalChange, index, ScrollingListContainers} = this.props;
         return (
-            <List className={classes.container}>
-                <div className={classes.messages}
-                    ref={this.list}
-                >
-                {/*this.state.messages*/}
-                </div>
-                <ConsoleInput evaluateConsole={this.evaluateConsole}/>
-            </List>
+           // <div ref={this.containerRef} className={classes.consoleContainer}>
+                <ConsoleTable handleTotalChange={handleTotalChange}
+                            index={index}
+                            ScrollingListContainers={ScrollingListContainers}
+                />
+          //      {/*<ConsoleFeed logs={this.state.logs} filter={Methods} variant={"light"}/>*/}
+           // </div>
         );
+    }
+
+    hookConsole = (console = window.console) => {
+        Hook(console, (log) => {
+            this.setState((prevState) => {
+                    //preservelog
+                    const nextState = update(prevState, {logs: {$push: [Decode(log)]}});
+                    this.totalMatches = nextState.logs.length;
+                    return nextState;
+                }
+            )
+        });
+
+
+        this.listener = listen(this.handleMessage);
+    };
+
+    componentDidMount(){
+        if (this.props.exports) {
+            this.props.exports.evaluateConsole = this.evaluateConsole;
+        }
+       // configureHookConsole(this.hookConsole);
+        // const {index, ScrollingListContainers}= this.props;
+        // if(ScrollingListContainers){
+        //     ScrollingListContainers[index] = this.containerRef;
+        // }
+    }
+
+    // componentDidUpdate() {
+    //     const {handleTotalChange} = this.props;
+    //     if (handleTotalChange && this.consoleTotal !== this.totalMatches) {
+    //         this.consoleTotal = this.totalMatches;
+    //         handleTotalChange(this.consoleTotal);
+    //     }
+    //     //this.scrollToBottom();
+    // }
+
+    componentDidCatch(error){
+        console.log("fffff")
+    }
+
+
+    componentWillUnmount() {
+        if (this.listener) {
+            this.listener();
+        }
+        configureHookConsole(null);
     }
 }
 
@@ -307,4 +299,12 @@ Console.defaultProps = {
     hidden: false
 };
 
-export default withStyles(styles)(Console);
+// const ConsoleWithContext = props => (
+//     <PastebinContext.Consumer>
+//         {(context) => {
+//             return <Console {...context} {...props} />
+//         }}
+//     </PastebinContext.Consumer>
+// );
+
+export default withStyles(styles)(withTheme()((Console)));

@@ -3,41 +3,70 @@ import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
 
 class Playground extends Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         this.playgroundEl = React.createRef();
         this.currentBundle = null;
         this.unsubscribes = [];
+        this.state = {
+            isResizing: false
+        };
     }
 
     runIframeHandler = {
-        removeIframe:()=>{
+        removeIframe: () => {
             if (this.playgroundEl.current && this.runIframe) {
                 this.playgroundEl.current.removeChild(this.runIframe);
                 this.runIframe = null;
+                return true;
             }
+            return false;
         },
-        createIframe :()=>{
+        createIframe: () => {
             this.runIframeHandler.removeIframe();
             return document.createElement('iframe');
         },
-        setIframe: (runIframe) => {
-            if(!this.playgroundEl.current || ! runIframe){
-                return
+        appendIframe: (runIframe) => {
+            if (!this.playgroundEl.current || !runIframe) {
+                return false;
             }
             this.playgroundEl.current.appendChild(runIframe);
             this.runIframe = runIframe;
+            return true;
         },
         getIframe: () => {
             return this.runIframe;
         },
     };
 
+    onResize = (isResizing) => {
+        this.setState({isResizing});
+    };
+
     render() {
-        return <div  ref={this.playgroundEl} className={this.props.appClasses.content} />;
+        return <React.Fragment>
+            <div ref={this.playgroundEl}
+                 style={{
+                     height: '100%',
+                     width: '100%',
+                 }}
+            />
+            {this.state.isResizing &&
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
+                width: '100%',
+                backgroundColor: 'transparent',
+            }} onClick={() => this.onResize(false)}/>}
+        </React.Fragment>;
     }
 
     componentDidMount() {
+        if (this.props.exports) {
+            this.props.exports.onResize = this.onResize;
+        }
         this.unsubscribes = [];
         const {store} = this.context;
         const unsubscribe0 = store.subscribe(() => {
@@ -113,7 +142,6 @@ Playground.contextTypes = {
 
 Playground.propTypes = {
     editorIds: PropTypes.object.isRequired,
-    appClasses: PropTypes.object.isRequired,
 };
 
 export default Playground;

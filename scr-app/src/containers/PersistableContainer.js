@@ -17,11 +17,12 @@ export default function PersistableContainer(DataComponent) {
 
         static defaultProps = {};
 
-        data = {current: null};
-        firebaseRef = null;
         state = {
             data: null
         };
+
+        data = {current: null};
+        firebaseRef = null;
 
         render() {
             this.data.current = this.state.data;

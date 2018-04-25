@@ -1,8 +1,8 @@
 // based on react-grid-layout's WidthProvider
 import React, {Component} from "react";
+import PropTypes from 'prop-types';
 import ReactDOM from "react-dom";
 import {fromEvent} from 'rxjs/observable/fromEvent';
-import {Observable} from 'rxjs/Observable';
 
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends Component {
@@ -10,21 +10,25 @@ export default function SizeProvider(ComposedComponent) {
             measureBeforeMount: false
         };
 
+        static propTypes = {
+            onHeight: PropTypes.func,
+            heightAdjust: PropTypes.number,
+        };
+
+
         state = {
+            domNode: null,
             width: 1280,
             height: 1024,
         };
 
         mounted = false;
-        onHeight = null;
-        heightAdjust = 0;
         windowResizeSubscription = null;
 
         componentDidMount() {
             this.mounted = true;
             this.windowResizeSubscription =
                 fromEvent(window, 'resize')
-                    .throttle(() => Observable.interval(150), {leading: false, trailing: true})
                     .subscribe(() => this.onWindowResize());
             this.onWindowResize();
         }
@@ -38,17 +42,25 @@ export default function SizeProvider(ComposedComponent) {
             if (!this.mounted) return;
             const node = ReactDOM.findDOMNode(this);
             if (node instanceof HTMLElement) {
+                const {onHeight, heightAdjust} = this.props;
                 this.setState({
+                    domNode: node,
                     width: node.offsetWidth,
-                    height: this.onHeight ? this.onHeight(node, this.heightAdjust) : window.innerHeight
+                    height: onHeight ? onHeight(node, heightAdjust || 0) : window.innerHeight
                 });
             }
         };
 
+        static getDerivedStateFromProps(nextProps, prevState) {
+            if (nextProps.onHeight && prevState.domNode) {
+                const height = nextProps.onHeight(prevState.domNode, nextProps.heightAdjust || 0);
+                return {height};
+            }
+            return null
+        }
+
         render() {
-            const {measureBeforeMount, onHeight, heightAdjust, ...rest} = this.props;
-            this.onHeight = onHeight;
-            this.heightAdjust = heightAdjust || 0;
+            const {measureBeforeMount, ...rest} = this.props;
             if (measureBeforeMount && !this.mounted) {
                 return (
                     <div className={this.props.className} style={this.props.style}/>

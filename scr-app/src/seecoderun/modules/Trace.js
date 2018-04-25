@@ -4,15 +4,44 @@ import isString from 'lodash/isString';
 import isObjectLike from 'lodash/isObjectLike';
 import isArrayLike from 'lodash/isArrayLike';
 import {isNode, /*createObjectIterator, hasChildNodes,*/ copifyDOMNode} from '../../utils/scrUtils';
+import isArray from 'lodash/isArray';
+import ClassFactory from "./ClassFactory";
 
 let listener = null;
-export const listen =(lis)=>{
+export const listen = (lis) => {
     listener = lis;
 };
 
 let dispatcher = null;
-export const dispatch =(action)=>{
-    dispatcher && dispatcher(action);
+
+export const TraceActions = {
+    log: 'log',
+    evaluate: 'evaluate',
+    evaluateCommand: 'evaluateCommand',
+    evaluateResult: 'evaluateResult',
+    evaluateError: 'evaluateError'
+};
+export const dispatch = (action = {}) => {
+    switch (action.type) {
+        case TraceActions.evaluate:
+            // console.log(listener, dispatcher, action);
+            try {
+                listener && listener(TraceActions.evaluateCommand, action.command);
+                listener && dispatcher && listener(TraceActions.evaluateResult, dispatcher(action.command));
+            } catch (e) {
+                listener && listener(TraceActions.evaluateError, e);
+            }
+
+            break;
+        default:
+            console.log('No action type');
+    }
+};
+
+let hookConsole = null;
+
+export const configureHookConsole = (hook) => {
+    hookConsole = hook;
 };
 
 
@@ -22,10 +51,10 @@ const obsConfig = {attributes: true, childList: true};
 const obsCallback = function (mutationsList) {
     for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
-         //   console.log('A child node has been added or removed.');
+            //   console.log('A child node has been added or removed.');
         }
         else if (mutation.type === 'attributes') {
-       //     console.log('The ' + mutation.attributeName + ' attribute was modified.');
+            //     console.log('The ' + mutation.attributeName + ' attribute was modified.');
         }
     }
 };
@@ -69,12 +98,15 @@ class Trace {
         this.rootScope = null;
         this.subject = new Subject();
         this.currentExpressionId = null; // program
+        this.currentCallExpressionId = null; // program
         this.startTimestamp = null;
         this.magicTag = null;
         this.window = null;
         this.consoleLog = null;
         this.realConsoleLog = null;
         this.timeline = [];
+        this.logs = [];
+        this.branches = [];
         this.dataRefs = [];
         this.dataRefMatches = [];
         this.funcRefs = [];
@@ -97,21 +129,46 @@ class Trace {
         this.domNodes = [];
         //todo save before dispose
         this.timeline = [];
+        this.logs = [];
         this.timelineLength = 0;
         this.timeline = [];
+        this.branches = [];
         this.dataRefs = [];
         this.dataRefMatches = [];
         this.funcRefs = [];
         this.funcRefMatches = [];
-        this.subject.next(this.timeline);
+        this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
         clearInterval(this.tli);
         this.tli = setInterval(() => {
-            if (this.timelineLength !== this.timeline.length) {
+            if (this.timelineLength !== this.timeline.length || this.logsLength !== this.logs.length) {
                 this.timelineLength = this.timeline.length;
-                this.subject.next([...this.timeline]);
+                this.logsLength = this.logs.length;
+                this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
             }
         }, 1000);
         this.isValid = true;
+        hookConsole && hookConsole(runIframe.contentWindow.console);
+        dispatcher = runIframe.contentWindow.eval;
+        const context = this;
+        listener = function (actionType, ...params) {
+            let i = context.logs.length;
+            const isError = actionType === TraceActions.evaluateError;
+            const isResult = actionType === TraceActions.evaluateResult;
+
+            params = isError ? [ClassFactory.fromErrorClassName(params[0].name, params[0].message)] : params;
+
+            context.logs.push({
+                i: i,
+                reactKey: context.getReactKey(i),
+                traceAction: actionType,
+                isLog: false,
+                isError,
+                isResult,
+                data: params,
+                timestamp: Date.now(),
+            });
+        };
+
     }
 
     setWindowRoots(contentWindow) {
@@ -260,6 +317,9 @@ class Trace {
     };
 
     pushEntry = (pre, value, post, type, refId) => {
+        if (this.funcRefs && this.funcRefs[refId] === this.consoleLog) {
+            return;
+        }
         let dataType = 'jsan';
         let res = {};
         const data = JSAN.stringify(value, this.getReplacer(res), null, true);
@@ -274,9 +334,9 @@ class Trace {
         const dataRefId = this.funcRefs.indexOf(data);
         if (dataRefId < 0) {
             this.dataRefs.push(data);
-            this.dataRefMatches.push({[pre.id]:1});
+            this.dataRefMatches.push({[pre.id]: 1});
         } else {
-            this.dataRefMatches[dataRefId][pre.id] = (this.dataRefMatches[dataRefId][pre.id]||0) +1;
+            this.dataRefMatches[dataRefId][pre.id] = (this.dataRefMatches[dataRefId][pre.id] || 0) + 1;
         }
 
         this.timeline.unshift({
@@ -296,15 +356,15 @@ class Trace {
         });
     };
 
-    getMatches=(funcRefId, dataRefId)=>{
-        const funcMatches= Object.keys(this.funcRefMatches[funcRefId]||{}).map(key=>this.locationMap[key].loc);
-        if(funcMatches.length){
+    getMatches = (funcRefId, dataRefId) => {
+        const funcMatches = Object.keys(this.funcRefMatches[funcRefId] || {}).map(key => this.locationMap[key].loc);
+        if (funcMatches.length) {
             return funcMatches;
-        }else{
-            const dataMatches= Object.keys(this.dataRefMatches[dataRefId]||{}).map(key=>this.locationMap[key].loc);
-            if(dataMatches.length){
+        } else {
+            const dataMatches = Object.keys(this.dataRefMatches[dataRefId] || {}).map(key => this.locationMap[key].loc);
+            if (dataMatches.length) {
                 return dataMatches;
-            }else{
+            } else {
                 return null;
             }
         }
@@ -325,7 +385,7 @@ class Trace {
             const propertyData = areNew[1] ? extraValues[1] : this.findPreviousOccurrence(extraIds[1]).value;
             // console.log(pre, value, post, type, extraIds, areNew, extraValues);
             areNew[0] && this.pushEntry({id: extraIds[0]}, objectData, post, type);
-            areNew[1]  && !isString(propertyData) && this.pushEntry({id: extraIds[1]}, propertyData, post, type);
+            areNew[1] && !isString(propertyData) && this.pushEntry({id: extraIds[1]}, propertyData, post, type);
             if (objectData === undefined || objectData === null) {
                 const errorMessage = `: accessing property of invalid reference: ${objectData}`;
                 this.pushEntry({
@@ -346,7 +406,7 @@ class Trace {
                 throw errorMessage;
             }
             //console.log(objectData[propertyData]("x"));
-           // return objectData[propertyData];
+            // return objectData[propertyData];
             // value;
         },
         BinaryExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
@@ -354,20 +414,19 @@ class Trace {
             const rightData = areNew[1] ? extraValues[1] : this.findPreviousOccurrence(extraIds[1]).value;
             areNew[0] && this.pushEntry({id: extraIds[0]}, leftData, post, type);
             areNew[1] && this.pushEntry({id: extraIds[1]}, rightData, post, type);
-          //  return value;
+            //  return value;
         },
         CallExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
             //console.log(pre, value, post, type, extraIds, areNew, extraValues);
-
             let funcRefId = this.funcRefs.indexOf(extraValues[0]);
             if (funcRefId < 0) {
                 funcRefId = this.funcRefs.length;
                 this.funcRefs.push(extraValues[0]);
-                this.funcRefMatches.push({[pre.id]:1});
+                this.funcRefMatches.push({[pre.id]: 1});
             } else {
-                this.funcRefMatches[funcRefId][pre.id] = (this.funcRefMatches[funcRefId][pre.id]||0) +1;
+                this.funcRefMatches[funcRefId][pre.id] = (this.funcRefMatches[funcRefId][pre.id] || 0) + 1;
             }
-           return funcRefId;
+            return funcRefId;
         },
         // NewExpression: (ast, locationMap, getLocationId, path) => {
         // },
@@ -379,20 +438,34 @@ class Trace {
         // let c = this.checkNonHaltingLoop(this.timeline.length>10);
         //  console.log(pre.id, value);
         // console.log(pre, value, post, type, extraIds, areNew, extraValues);
-        let refId= null;
+        let refId = null;
+        let push = true;
         if (this.composedExpressions[type]) {
-            refId=this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
+            refId = this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
         } else {
+            if (type === 'BlockStatement') {
+                //   console.log(pre, value);
+                this.branches.push({
+                    id: pre.id,
+                    timelineI: this.timeline.length,
+                });
+                push = false;
+            }
             //blocks
             // console.log(pre.id, value);
         }
         // console.log(value);
-        this.pushEntry(pre, value, post, type, refId);
+        push && this.pushEntry(pre, value, post, type, refId);
         // console.log(val, val("x"));
         return {_: value};
     };
 
-    preAutoLog = (id) => {
+    preAutoLog = (id, type) => {
+        //  console.log(id, type);
+        if (type === 'CallExpression') {
+            this.currentCallExpressionId = id;
+        }
+
         this.currentExpressionId = id;
         this.currentScope = this.currentScope.enterScope(id);
         return {id};
@@ -405,9 +478,31 @@ class Trace {
         return {id: id};
     };
 
-    onError = error => {
+    onError = errors => {
         let i = this.timeline.length;
-        const expression = this.locationMap[this.currentExpressionId]||{};
+        const expression = this.locationMap[this.currentExpressionId] || {};
+        if (!isArray(errors)) {
+            errors = [errors];
+        }
+        errors = errors.map(error => {
+          //  console.log(error);
+            switch (error.requireType) {
+                case 'require':
+                    return ClassFactory.fromErrorClassName(error.name, error.message);
+                default:
+                    if (error.requireModules && error.requireModules.length) {
+                        ClassFactory.fromErrorClassName('DependencyError',
+                            `The following dependencies were not found online:
+                                                     ${error.requireModules.toString()}.
+                                                      Please check your code bundling configuration.`);
+                    } else {
+                        return ClassFactory.fromErrorClassName('undefined', JSON.stringify(error));
+                    }
+            }
+        });
+
+        errors = errors.length === 1 ? errors[0] : errors;
+
         this.timeline.unshift({
             i: i,
             reactKey: this.getReactKey(i),
@@ -415,30 +510,36 @@ class Trace {
             id: this.currentExpressionId,
             loc: expression.loc,
             expressionType: expression.expressionType,
-            data: JSAN.stringify(error, null, null, true),
+            data: errors,
             timestamp: Date.now(),
         });
     };
 
-    setConsoleLog = log => {
-        this.consoleLog = function (type, info = {}, params = []) {
-            if (type === 'SCR_LOG' && info.location) {
-                // store.dispatch();
-                log(["SCR", ...arguments]);
-            } else {
-                log(["clg", ...arguments]);
-            }
-
+    setConsoleLog = (/*log*/) => {
+        let context = this;
+        this.consoleLog = function (...params) {//type, info = {}, params = []
+            let i = context.logs.length;
+            const expression = context.locationMap[context.currentCallExpressionId] || {};
+            context.logs.push({
+                i: i,
+                traceAction: TraceActions.log,
+                isLog: true,
+                reactKey: context.getReactKey(i),
+                id: context.currentCallExpressionId,
+                loc: expression.loc,
+                expressionType: expression.expressionType,
+                data: params,
+                timestamp: Date.now(),
+            });
+            // log(...params);
+            // if (type === 'SCR_LOG' && info.location) {
+            //     // store.dispatch();
+            //     log(["SCR", ...arguments]);
+            // } else {
+            //     log(["clg", ...arguments]);
+            // }
         };
     };
-
-    // resolveAfter2Seconds(x) {
-    //     return new Promise(resolve => {
-    //         setTimeout(() => {
-    //             resolve(x);
-    //         }, 2000);
-    //     });
-    // }
 
     // checkNonHaltingLoop = async (loopCount) => {
     //     console.log(loopCount);

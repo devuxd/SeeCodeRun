@@ -1,5 +1,6 @@
 import difference from 'lodash/difference';
 import {Subject} from 'rxjs/Subject';
+import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";
 import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
 
@@ -16,7 +17,7 @@ let j = null;
 
 
 class LiveExpressionWidgetProvider {
-    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 50, debounceTime = 100) {
+    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 50) {
         this.monaco = monaco;
         j = jRef;
 
@@ -39,16 +40,17 @@ class LiveExpressionWidgetProvider {
         this.decorators = [];
         this.contentWidgets = {};
         this.lineNumbersWitdhUpdates = {};
-        this.debounceTime = debounceTime;
+        this.throttleTime = throttleTime;
     }
 
     getLineNumberSubject(lineNumber) {
         if (!this.lineNumbersWitdhUpdates[lineNumber]) {
             this.lineNumbersWitdhUpdates[lineNumber] = new Subject();
             this.lineNumbersWitdhUpdates[lineNumber]
-                .throttleTime(this.throttleTime)
-                .debounceTime(this.debounceTime)
+                .throttle(() => Observable.interval(this.throttleTime), {leading: true, trailing: false})
+                .debounceTime(100)
                 .subscribe(update => update());
+
         }
         return this.lineNumbersWitdhUpdates[lineNumber];
     }
@@ -215,7 +217,7 @@ class LiveExpressionWidgetProvider {
             });
     };
 
-    getWidgetAvailableWidth = (decoratorId) => {
+    getWidgetAvailableWidth = (decoratorId, ignoreVisible) => {
         const sourceDecorator = this.getDecorator(decoratorId);
         if (!sourceDecorator) {
             return;
@@ -226,7 +228,8 @@ class LiveExpressionWidgetProvider {
         const updates = [];
         lineNumberDecorators.forEach((decorator) => {
             if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
-                setTimeout(() => {
+                // setTimeout(() => {
+                if (decorator.contentWidget && !ignoreVisible) {
                     const domNode = decorator.contentWidget.domNode;
                     const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
                     if (!domNode) {
@@ -234,7 +237,9 @@ class LiveExpressionWidgetProvider {
                     }
                     domNode.style.maxWidth = '0px';
                     onWidthAdjust && onWidthAdjust(domNode.style.width);
-                }, 0);
+                }
+
+                //}, 0);
                 return;
             }
 
@@ -247,22 +252,11 @@ class LiveExpressionWidgetProvider {
             if (rightSibling && rightSibling.range.equalsRange(decorator.range)) {
                 hideSib = true;
             }
-            // rightSibling =  ? null : rightSibling;
-            // if (decorator.range.startLineNumber !== 4) {
-            //     return;
-            // }
-            // console.log('Deco', decorator.range.startLineNumber, decorator.expressionType, decorator.range, decorator);
-            // if (rightSibling) {
-            //     console.log('a width',
-            //         this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
-            //         this.monacoEditor.getOffsetForColumn(rightSibling.range.startLineNumber, rightSibling.range.startColumn));
-            // } else {
-            //     console.log('free width',
-            //         this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
-            //         this.monacoEditor.getOffsetForColumn(this.monacoEditor.getVisibleColumnFromPosition(decorator.range.getStartPosition()))
-            //     );
-            // }
+
             updates.push(() => {
+                if (!decorator.contentWidget) {
+                    return;
+                }
                 const domNode = decorator.contentWidget.domNode;
                 const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
                 if (!domNode) {
@@ -294,60 +288,6 @@ class LiveExpressionWidgetProvider {
         // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
     };
 
-    getWidgetAvailableWidthLast = (decoratorId) => {
-        const decorator = this.getDecorator(decoratorId);
-        if (!decorator) {
-            return;
-        }
-
-        if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
-            return;
-        }
-
-        const lineNumberDecorators = this.getDecoratorsInLineNumber(decorator.range.startLineNumber);
-        const i = lineNumberDecorators.indexOf(decorator);
-        let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
-        rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
-            rightSibling : null;
-        rightSibling = rightSibling && rightSibling.range.equalsRange(decorator.range) ? null : rightSibling;
-        if (decorator.range.startLineNumber !== 4) {
-            return;
-        }
-        console.log('Deco', decorator.range.startLineNumber, decorator.expressionType, decorator.range, decorator);
-        if (rightSibling) {
-            console.log('a width',
-                this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
-                this.monacoEditor.getOffsetForColumn(rightSibling.range.startLineNumber, rightSibling.range.startColumn));
-        } else {
-            console.log('free width',
-                this.monacoEditor.getOffsetForColumn(decorator.range.startLineNumber, decorator.range.startColumn),
-                this.monacoEditor.getOffsetForColumn(this.monacoEditor.getVisibleColumnFromPosition(decorator.range.getStartPosition()))
-            );
-        }
-        setTimeout(() => {
-            const domNode = decorator.contentWidget.domNode;
-            const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
-            if (!domNode) {
-                return;
-            }
-            const el = document.querySelector(decorator.selector);
-            if (!el) {
-                return;
-            }
-            let width = el.style.width;
-            if (rightSibling) {
-                const sel = document.querySelector(rightSibling.selector);
-                if (sel) {
-                    width = sel.style.left - el.style.left;
-                }
-            }
-            domNode.style.width = width;
-            onWidthAdjust && onWidthAdjust(domNode.style.width);
-        }, 0);
-
-        // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
-    };
-
     configureLiveExpressionContentWidget(decoratorId, preference) {
         //const getDecorators = this.getDecorators;
         const getDecorator = this.getDecorator;
@@ -361,11 +301,12 @@ class LiveExpressionWidgetProvider {
             getId: function () {
                 return decoratorId;
             },
-            adjustWidth: function () {
-                getWidgetAvailableWidth(decoratorId);
+            adjustWidth: function (ignoreVisible) {
+                getWidgetAvailableWidth(decoratorId, ignoreVisible);
             },
             getDomNode: function () {
                 if (this.domNode) {
+                    // this.adjustWidth(false);
                     return this.domNode;
                 }
                 this.domNode = document.createElement('div');
@@ -380,7 +321,7 @@ class LiveExpressionWidgetProvider {
                 return this.domNode;
             },
             getPosition: function () {
-                this.adjustWidth();
+                // this.adjustWidth(false);
                 return {
                     position: getDecorator(decoratorId).range.getStartPosition(),
                     preference: preference,
