@@ -217,9 +217,22 @@ class LiveExpressionWidgetProvider {
             });
     };
 
-    getWidgetAvailableWidth = (decoratorId, ignoreVisible) => {
+    getWidgetAvailableWidth = (decoratorId, ignoreVisible, isBranchNavigator) => {
         const sourceDecorator = this.getDecorator(decoratorId);
         if (!sourceDecorator) {
+            return;
+        }
+        if (isBranchNavigator) {
+            if (sourceDecorator.contentWidget && !ignoreVisible) {
+                const domNode = sourceDecorator.contentWidget.domNode;
+                const onWidthAdjust = sourceDecorator.contentWidget.onWidthAdjust;
+                if (!domNode) {
+                    return;
+                }
+                domNode.style.maxWidth = '100%';
+                domNode.style.zIndex = '1000';
+                onWidthAdjust && onWidthAdjust(domNode.style.width);
+            }
             return;
         }
         const lineNumber = sourceDecorator.range.startLineNumber;
@@ -301,8 +314,8 @@ class LiveExpressionWidgetProvider {
             getId: function () {
                 return decoratorId;
             },
-            adjustWidth: function (ignoreVisible) {
-                getWidgetAvailableWidth(decoratorId, ignoreVisible);
+            adjustWidth: function (ignoreVisible, isBranchNavigator) {
+                getWidgetAvailableWidth(decoratorId, ignoreVisible, isBranchNavigator);
             },
             getDomNode: function () {
                 if (this.domNode) {

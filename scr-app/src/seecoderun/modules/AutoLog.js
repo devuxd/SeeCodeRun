@@ -11,7 +11,9 @@ import {
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
-             onRequireSyncLoaded:function(errors, fallbackOverrides){},fallbackOverrides:{},
+             onRequireSyncLoaded:function(errors, fallbackOverrides){},
+             onUserScriptLoaded:function(errors){},
+             fallbackOverrides:{},
              errors:null,onErrTimeout:null};</script>`,
     bodyScript: `<script>scrLoader.scriptsLoaded=true; scrLoader.onScriptsLoaded()</script>`,
 };
@@ -354,6 +356,7 @@ class AutoLog {
                                     autoLogger.trace.onError(errors);
                                 }
                             };
+                            runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
                             appendScript(runIframe.contentDocument, state.transformed.code);
                         } else {
                             runIframe.contentWindow.scrLoader.onRequireSyncLoaded = (errors, fallbackOverrides) => {
@@ -366,6 +369,7 @@ class AutoLog {
                                     console.log('load errors', errors);
                                 }
                             };
+                            runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
                             runIframe.contentWindow.scrLoader.onScriptsLoaded = () => {
                                 // console.log('appending', state.transformed.code, state.criticalError, state.transformed.error);
                                 appendScript(runIframe.contentDocument, state.transformed.code);
@@ -424,6 +428,7 @@ class AutoLog {
         requirejs(${JSON.stringify(requireConfig.requireSync)}, function(){
         scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
         ${state.transformed.code}
+        scrLoader.onUserScriptLoaded();
         });`;
 
         const cssString = `<style>${css}</style>`;

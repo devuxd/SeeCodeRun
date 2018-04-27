@@ -9,6 +9,7 @@ const ErrorClasses={
     URIError: class URIError{},
     DependencyError: class DependencyError{},
     undefined: class UnknownError{},
+    HaltingError: class HaltingError{},
 };
 class ClassFactory {
     static fromErrorClassName(className, message){

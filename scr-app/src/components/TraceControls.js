@@ -17,7 +17,7 @@ import SpeedDial from '@material-ui/lab/SpeedDial';
 import SpeedDialIcon from '@material-ui/lab/SpeedDialIcon';
 import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
 import SettingsIcon from '@material-ui/icons/Settings';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import TimerIcon from '@material-ui/icons/Timer';
 import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CodeIcon from '@material-ui/icons/Code';
 import EditIcon from '@material-ui/icons/ModeEdit';
@@ -84,7 +84,7 @@ const styles = theme => ({
 
 const actions = [
     {
-        icon: <PlayArrowIcon/>, name: 'Autorun delay', id: 'autorunDelay',
+        icon: <TimerIcon/>, name: 'Autorun delay', id: 'autorunDelay',
     },
     {
         icon: <CodeIcon/>, name: 'Code bundling', id: 'codeBundling',

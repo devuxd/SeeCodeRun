@@ -6,6 +6,7 @@ import isArrayLike from 'lodash/isArrayLike';
 import {isNode, /*createObjectIterator, hasChildNodes,*/ copifyDOMNode} from '../../utils/scrUtils';
 import isArray from 'lodash/isArray';
 import ClassFactory from "./ClassFactory";
+import {NavigationTypes} from "./AutoLogShift";
 
 let listener = null;
 export const listen = (lis) => {
@@ -44,6 +45,11 @@ export const configureHookConsole = (hook) => {
     hookConsole = hook;
 };
 
+let haltingTimeout = 5000;
+
+export const configurehaltingTimeout = (haltingTimeoutInMs) => {
+    haltingTimeout = haltingTimeoutInMs;
+};
 
 const obsConfig = {attributes: true, childList: true};
 
@@ -107,6 +113,8 @@ class Trace {
         this.timeline = [];
         this.logs = [];
         this.branches = [];
+        this.haltingCase = null;
+        this.mainLoadedTimelineI = 0;
         this.dataRefs = [];
         this.dataRefMatches = [];
         this.funcRefs = [];
@@ -133,19 +141,41 @@ class Trace {
         this.timelineLength = 0;
         this.timeline = [];
         this.branches = [];
+        this.mainLoadedTimelineI = 0;
         this.dataRefs = [];
         this.dataRefMatches = [];
         this.funcRefs = [];
         this.funcRefMatches = [];
         this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
         clearInterval(this.tli);
+        this.lastTickTimestamp = Date.now();
         this.tli = setInterval(() => {
+            this.lastTickTimestamp = Date.now();
             if (this.timelineLength !== this.timeline.length || this.logsLength !== this.logs.length) {
                 this.timelineLength = this.timeline.length;
                 this.logsLength = this.logs.length;
                 this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
             }
         }, 1000);
+
+        const wAlert = runIframe.contentWindow.alert;
+        runIframe.contentWindow.alert = (...params) => {
+            const r = wAlert(...params);
+            this.lastTickTimestamp = Date.now();
+            return r;
+        };
+        const wConfirm = runIframe.contentWindow.confirm;
+        runIframe.contentWindow.confirm = (...params) => {
+            const r = wConfirm(...params);
+            this.lastTickTimestamp = Date.now();
+            return r;
+        };
+        const wPrompt = runIframe.contentWindow.prompt;
+        runIframe.contentWindow.prompt = (...params) => {
+            const r = wPrompt(...params);
+            this.lastTickTimestamp = Date.now();
+            return r;
+        };
         this.isValid = true;
         hookConsole && hookConsole(runIframe.contentWindow.console);
         dispatcher = runIframe.contentWindow.eval;
@@ -444,15 +474,34 @@ class Trace {
             refId = this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
         } else {
             if (type === 'BlockStatement') {
-                //   console.log(pre, value);
+                // console.log('b', pre, value, post, type, extraIds, areNew, extraValues);
                 this.branches.push({
-                    id: pre.id,
+                    ...pre,
                     timelineI: this.timeline.length,
                 });
                 push = false;
+
+                if (pre.navigationType === NavigationTypes.Local) {
+
+                    if (pre.startTimestamp - this.lastTickTimestamp > haltingTimeout) {
+                        const confirmed =
+                            window
+                                .confirm(
+                                    `The script spent more than ${haltingTimeout} ms within a loop.
+                                 Do you want to stop it?`
+                                );
+                        if (confirmed) {
+                            throw  ClassFactory
+                                .fromErrorClassName(
+                                    'HaltingError',
+                                    `The script spent more than ${haltingTimeout} ms within a loop.`,
+                                );
+                        } else {
+                            this.lastTickTimestamp = Date.now();
+                        }
+                    }
+                }
             }
-            //blocks
-            // console.log(pre.id, value);
         }
         // console.log(value);
         push && this.pushEntry(pre, value, post, type, refId);
@@ -460,7 +509,7 @@ class Trace {
         return {_: value};
     };
 
-    preAutoLog = (id, type) => {
+    preAutoLog = (id, type, secondaryId, navigationType) => {
         //  console.log(id, type);
         if (type === 'CallExpression') {
             this.currentCallExpressionId = id;
@@ -468,7 +517,7 @@ class Trace {
 
         this.currentExpressionId = id;
         this.currentScope = this.currentScope.enterScope(id);
-        return {id};
+        return {id, type, secondaryId, navigationType, startTimestamp: Date.now()};
     };
 
     postAutoLog = (id) => {
@@ -478,6 +527,14 @@ class Trace {
         return {id: id};
     };
 
+    onMainLoaded = () => {
+        this.mainLoadedTimelineI = this.timeline.length;
+        this.haltingCase.timestamp = Date.now();
+        // if(this.branches.length){
+        //
+        // }
+    };
+
     onError = errors => {
         let i = this.timeline.length;
         const expression = this.locationMap[this.currentExpressionId] || {};
@@ -485,10 +542,10 @@ class Trace {
             errors = [errors];
         }
         errors = errors.map(error => {
-          //  console.log(error);
+            //  console.log(error);
             switch (error.requireType) {
                 case 'require':
-                    return ClassFactory.fromErrorClassName(error.name, error.message);
+                    return ClassFactory.fromErrorClassName(error.name || error.constructor.name, error.message);
                 default:
                     if (error.requireModules && error.requireModules.length) {
                         ClassFactory.fromErrorClassName('DependencyError',

@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import Popover from 'material-ui/Popover';
 import JSAN from 'jsan';
 import isString from 'lodash/isString';
+import debounce from 'lodash.debounce';
+
 import ObjectExplorer from './ObjectExplorer';
 import RangeSlider from "./RangeSlider";
 
@@ -44,6 +46,28 @@ const handleClose = (nextProps, prevState) => {
     return toClosedState();
 };
 
+const popoverOrigin = {
+    anchorOrigin: {
+        vertical: 'bottom',
+        horizontal: 'left',
+    },
+    transformOrigin: {
+        vertical: 'top',
+        horizontal: 'left',
+    }
+};
+
+const branchPopoverOrigin = {
+    anchorOrigin: {
+        vertical: 'top',
+        horizontal: 'left',
+    },
+    transformOrigin: {
+        vertical: 'bottom',
+        horizontal: 'left',
+    }
+};
+
 class LiveExpression extends Component {
 
     state = {
@@ -52,11 +76,13 @@ class LiveExpression extends Component {
         wasHovered: false, // at least once
         isHovered: false,
         sliderRange: [1],
+        navigated: false,
     };
 
     static getDerivedStateFromProps(nextProps, prevState) {
         const {widget, isOpen} = nextProps;
         const anchorEl = widget && widget.contentWidget.getDomNode();
+
         if (anchorEl && isOpen) {
             return handleOpen(anchorEl, prevState);
         } else {
@@ -102,13 +128,11 @@ class LiveExpression extends Component {
     };
 
     handleSliderChange = (change) => { // slider
-        this.setState({sliderRange: [change]});
+        this.setState({sliderRange: [change], navigated: true,});
     };
 
-    render() {
-        const {classes, style, data, objectNodeRenderer, expressionId, handleChange} = this.props;
-        const {anchorEl, sliderRange} = this.state;
-        const isActive = !!anchorEl;
+    getDatum = (data) => {
+        const {sliderRange} = this.state;
         let datum;
         let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];//, rangeEnd = sliderRange[1];
 
@@ -125,7 +149,67 @@ class LiveExpression extends Component {
         } else {
             datum = data;
         }
+        return {datum, sliderMin, sliderMax, rangeStart}
+    };
 
+    getBranchDatum = (data) => {
+        const {sliderRange} = this.state;
+        let datum;
+        let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];//, rangeEnd = sliderRange[1];
+
+        if (data) {
+            if (data.length) {
+                sliderMin = 1;
+                sliderMax = data.length;
+                // rangeStart=sliderMax-1;
+                rangeStart = Math.min(rangeStart, sliderMax);
+                // rangeStart = Math.min(rangeStart, sliderMax);
+                //   rangeEnd = Math.min(rangeEnd, sliderMax);
+                datum = data[rangeStart - 1];
+            }
+        } else {
+            datum = data;
+        }
+        return {datum, sliderMin, sliderMax, rangeStart}
+    };
+
+    updateSliderMax = debounce((sliderMax) => {
+        if (this.state.navigated && this.state.data && sliderMax <= this.state.data.length) {
+            return;
+        }
+        this.setState({sliderRange: [sliderMax+1]});
+    }, 250);
+
+    configureHandleSliderChange = (branchNavigatorChange) => {
+        const {data} = this.props;
+        return (change) => {
+            if (data && data.length) {
+                // console.log(data, change);
+                branchNavigatorChange(data[change], change, change-1 > -1?data[change-1]: 0);
+                this.handleSliderChange(change);
+            }
+        };
+    };
+
+    render() {
+        const {classes, style, data, objectNodeRenderer, expressionId, handleChange, branchNavigatorChange, color} = this.props;
+        const {anchorEl} = this.state;
+        const isActive = !!anchorEl;
+        const {datum, sliderMin, sliderMax, rangeStart} = branchNavigatorChange ?
+            this.getBranchDatum(data) : this.getDatum(data);
+        const handleSliderChange = branchNavigatorChange ?
+            this.configureHandleSliderChange(branchNavigatorChange) : this.handleSliderChange;
+        const origin = branchNavigatorChange ? branchPopoverOrigin : popoverOrigin;
+        const explorer = branchNavigatorChange ? null // todo function params vs arguments + return explorer
+            : (<div className={classes.objectExplorer}>
+                <ObjectExplorer
+                    expressionId={expressionId}
+                    objectNodeRenderer={objectNodeRenderer}
+                    data={datum}
+                    handleChange={handleChange}
+                />
+            </div>);
+        let navigatorStyle = {...style, overflow: 'auto', minWidth: branchNavigatorChange ? 200 : 50};
         const defaultValue = rangeStart;//[rangeStart, rangeEnd,];
         const showSlider = sliderMin > 1 || sliderMax > 1;
         return (
@@ -142,45 +226,41 @@ class LiveExpression extends Component {
                 disableEnforceFocus={true}
                 open={isActive}
                 anchorEl={anchorEl}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
-                }}
+                {...origin}
                 onClose={this.handleClose}
             >
                 <div onMouseEnter={this.handleChange(true)}
                      onMouseLeave={this.handleChange(false)}
-                     style={{...style, overflow: 'auto',}}
+                     style={navigatorStyle}
                 >
                     {showSlider &&
                     <RangeSlider
                         min={sliderMin}
                         max={sliderMax}
                         defaultValue={defaultValue}
-                        handleSliderChange={this.handleSliderChange}
+                        handleSliderChange={handleSliderChange}
+                        color={color}
                     />
                     }
-                    <div className={classes.objectExplorer}>
-                        <ObjectExplorer
-                            expressionId={expressionId}
-                            objectNodeRenderer={objectNodeRenderer}
-                            data={datum}
-                            handleChange={handleChange}
-                        />
-                    </div>
+                    {explorer}
                 </div>
             </Popover>
         );
+    }
+
+    componentDidUpdate() {
+        const {data} = this.props;
+        if (data && data.length !== this.sliderMax) {
+            this.sliderMax = data.length;
+            this.updateSliderMax(this.sliderMax);
+        }
     }
 }
 
 LiveExpression.propTypes = {
     classes: PropTypes.object.isRequired,
     widget: PropTypes.object.isRequired,
+    data: PropTypes.any,
 };
 
 export default LiveExpression;

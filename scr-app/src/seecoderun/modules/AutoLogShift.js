@@ -22,6 +22,11 @@ export const l = {
     postAutoLogId: 'postAutoLog',
 };
 
+export const NavigationTypes = {
+    Global: 'Global',
+    Local: 'Local',
+};
+
 let j = null;
 
 class AutoLogShift {
@@ -58,6 +63,7 @@ class AutoLogShift {
         );
         this.autoLogExpressions(ast, expressionPaths, locationMap, getLocationId);
         this.autoLogBlocks(ast, blockPaths, locationMap, getLocationId);
+        //todo autologBlock expressions
         // } catch (e) {
         //   console.log('j', e)
         // }
@@ -155,8 +161,24 @@ class AutoLogShift {
         'ImportDeclaration'
     ];
 
+    static BranchNavigation = [
+        'FunctionExpression', // x= function (...){...}
+        'ArrowFunctionExpression', // (...)=>{...},..., x=>y
+        'FunctionDeclaration', // function x(...){...}
+        'MethodDefinition', // Class X{ x(...){...} x=(...)=>{...}},
+    ];
+
+    static getBlockNavigationType = (type) => {
+        if (AutoLogShift.BranchNavigation.includes(type)) {
+            return NavigationTypes.Global;
+        } else {
+            return NavigationTypes.Local;
+        }
+    };
+
     static supportedLiveExpressions =
-        [...AutoLogShift.SupportedExpressions,
+        [
+            ...AutoLogShift.SupportedExpressions,
             ...AutoLogShift.SupportedBlockExpressions,
             ...AutoLogShift.SupportedBlocks
         ];
@@ -606,8 +628,8 @@ class AutoLogShift {
                     let parentType = path.parentPath.value.type;
                     let parentLoc = parentType ? path.parentPath.value.loc : null;
                     let parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
-                    if(!parentId && parentType === j.FunctionExpression.name){
-                        parentType = path.parentPath.parentPath? path.parentPath.parentPath.value.type: null;
+                    if (!parentId && parentType === j.FunctionExpression.name) {
+                        parentType = path.parentPath.parentPath ? path.parentPath.parentPath.value.type : null;
                         parentLoc = parentType ? path.parentPath.parentPath.value.loc : null;
                         parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
                     }
@@ -617,6 +639,9 @@ class AutoLogShift {
                             j.callExpression(j.identifier(l.preAutoLogId),
                                 [
                                     jid,
+                                    j.identifier(`'${parentType}'`),
+                                    j.identifier(`'${id}'`),
+                                    j.identifier(`'${AutoLogShift.getBlockNavigationType(parentType)}'`),
                                 ]),
                             j.identifier('this'),
                             j.callExpression(j.identifier(l.postAutoLogId), [jid]),
@@ -629,7 +654,7 @@ class AutoLogShift {
                         const enterExpression = this.autoLogExpression(null, id, type, path, null, params);
 
                         const body = path.value.body;
-                      //  console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
+                        //  console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
                         if (body.length && j(body[0]).toSource().startsWith('super')) {
                             const superS = body[0];
                             body.unshift(j.expressionStatement(enterExpression));
@@ -650,10 +675,10 @@ class AutoLogShift {
                         //     // console.log('critical parent', type, loc, path, parentType, parentLoc);
                         // }
                     } else {
-                        // console.log('ignored', path);
+                        console.log('ignored', path);
                     }
                 } else {
-                    // console.log('ignored no parent', path,);
+                    console.log('ignored no parent', path,);
                 }
             }
             else {
