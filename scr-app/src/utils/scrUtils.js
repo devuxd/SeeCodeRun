@@ -362,6 +362,36 @@ export const mapUIconFromExpressionType = (expressionType) => {
             return UIcons.FuncExec;
         case 'ArrowFunctionExpression':
             return UIcons.FuncExec;
+        default:
+            return null;
     }
+};
+
+export const decodeBabelError = (babelError = '', offsetAfterDivider =2) => {
+    const lines = babelError.message.split('\n');
+    const errorInfo = lines.reduce((location, line, i) => {
+        if (location.found) {
+            return location;
+        }
+        const indicatorColumn = line.indexOf('>');
+        if (indicatorColumn > -1) {
+            const dividerColumn = line.indexOf('|');
+            if (dividerColumn > -1 && indicatorColumn < dividerColumn) {
+                const lineNumber = parseInt(line.substring(indicatorColumn + 1, dividerColumn).trim(), 10);
+                if (!isNaN(lineNumber)) {
+                    location.lineNumber = lineNumber;
+                    const nextLineDividerColumn = lines[i + 1].indexOf('|');
+                    const rawColumn = lines[i + 1].indexOf('^');
+                    if (nextLineDividerColumn < rawColumn) {
+                        location.column = rawColumn - nextLineDividerColumn - offsetAfterDivider; //-#-|--code
+                        location.found = true;
+                    }
+                }
+            }
+        }
+        return location;
+    }, {found: false});
+    errorInfo.message = lines[0];
+    return errorInfo;
 };
 

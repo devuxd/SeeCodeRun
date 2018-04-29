@@ -30,12 +30,17 @@ const defaultChatStyle = {
 };
 
 const styles = theme => ({
+    backdrop: {
+        position: 'absolute',
+        top:0,
+        left:0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: theme.palette.action.disabledBackground,
+    },
     chat: {
-        boxShadow: '0px 5px 50px rgba(0, 0, 0, .4)',
+        boxShadow: theme.shadows[7],
         overflow: 'hidden',
-        position: 'fixed',
-        minWidth: defaultChatStyle.minWidth,
-        minHeight: defaultChatStyle.minHeight,
     },
     hidden: {
         display: 'none',
@@ -87,6 +92,7 @@ class Chat extends Component {
             messages: [],
             // restoreHeight: defaultChatStyle.height,
             self: this,
+            backdrop: false,
         };
 
         this.prevUsers = null;
@@ -276,8 +282,9 @@ class Chat extends Component {
                 themeType, switchTheme,
                 isChatToggled, chatClick, isTopNavigationToggled, logoClick, currentLayout, resetLayoutClick
             } = this.props;
+
             if (chatClick && layout.isChatToggled && !isChatToggled) {
-                chatClick();
+                chatClick(null, true);
             }
             if (logoClick && layout.isTopNavigationToggled && !isTopNavigationToggled) {
                 logoClick();
@@ -449,24 +456,32 @@ class Chat extends Component {
         });
     };
 
+    showBackdrop=()=>{this.setState({backdrop:true})};
+    hideBackdrop=()=>{this.setState({backdrop:false})};
+
     makeDraggableAndResizable = async () => {
-        if(!$){
+        if (!$) { //todo jquery chunks is severely duplicated
             $ = await import('jquery');
+            await import( 'jquery-ui/ui/core');
+            await import( 'jquery-ui/ui/widgets/draggable');
+            await import( 'jquery-ui/ui/widgets/resizable');
             await import('jquery-ui/themes/base/core.css');
             await import( 'jquery-ui/themes/base/theme.css');
             await import( 'jquery-ui/themes/base/draggable.css');
             await import( 'jquery-ui/themes/base/resizable.css');
-            await import( 'jquery-ui/ui/core');
-            await import( 'jquery-ui/ui/widgets/draggable');
-            await import( 'jquery-ui/ui/widgets/resizable');
         }
 
         if (!this.isDraggableAndResizable || !this.chatEl.current) {
             setTimeout(() => {
-                $(this.chatEl.current).draggable();
+                $(this.chatEl.current).draggable({
+                    start: this.showBackdrop,
+                    stop: this.hideBackdrop,
+                });
                 $(this.chatEl.current).resizable({
                     containment: false,
                     handles: "w, s, e",
+                    start: this.showBackdrop,
+                    stop: this.hideBackdrop,
                 });
                 this.isDraggableAndResizable = true;
             }, 500);
@@ -554,7 +569,7 @@ class Chat extends Component {
         const {classes, isChatToggled, chatClick, chatTitle} = this.props;
 
         const {
-            left, right, top, bottom, height, width,
+            left, right, top, bottom, height, width, backdrop,
             chatUserId, chatUserName, chatMessageText, avatarAnchorEl, users, messages
         } = this.state;
 
@@ -563,6 +578,7 @@ class Chat extends Component {
         const avatarMenuOpen = !!avatarAnchorEl;
 
         const chatCurrentStyle = {
+            position:'fixed',
             left: left,
             right: right,
             top: top,
@@ -601,123 +617,123 @@ class Chat extends Component {
 
         this.chatPreHideLayout(isChatToggled/*, expanded*/);
         isChatToggled && this.scrollToBottom();
-
         return (
-            <div id="chatDiv" className={classnames(classes.chat, {
-                [classes.hidden]: !isChatToggled,
-            })}
-                 style={chatCurrentStyle}
-                 ref={this.chatEl}>
-                {
-                    (this.firecoChat && this.firecoUsers) &&
-                    <List className={classes.root}
-                          subheader={<li/>}
-                          dense={true}
-                    >
-                        <ListSubheader className={classes.chatMessageSticky}>
-                            <CardHeader className={classes.chatMessageCardHeader}
-                                        avatar={
-                                            <div>
-                                                <Avatar
-                                                    aria-label="name"
-                                                    className={
-                                                        classnames(classes.avatar, {
-                                                            [classes.avatarSet]: !!chatUserName,
-                                                        })
-                                                    }
-                                                    onClick={this.handleAvatarMenu}
+            <React.Fragment>
+                {backdrop && <div className={classes.backdrop} onClick={this.hideBackdrop}/>}
+                <div className={isChatToggled?classes.chat: classes.hidden}
+                     style={chatCurrentStyle}
+                     ref={this.chatEl}>
+                    {
+                        (this.firecoChat && this.firecoUsers) &&
+                        <List className={classes.root}
+                              subheader={<li/>}
+                              dense={true}
+                        >
+                            <ListSubheader className={classes.chatMessageSticky}>
+                                <CardHeader className={classes.chatMessageCardHeader}
+                                            avatar={
+                                                <div>
+                                                    <Avatar
+                                                        aria-label="name"
+                                                        className={
+                                                            classnames(classes.avatar, {
+                                                                [classes.avatarSet]: !!chatUserName,
+                                                            })
+                                                        }
+                                                        onClick={this.handleAvatarMenu}
 
-                                                    aria-owns={avatarMenuOpen ? 'menu-avatar' : null}
-                                                    aria-haspopup="true"
-                                                    title={chatUserName || "click to type you user name"}
-                                                >
-                                                    {chatUserName ? chatUserName[0].toUpperCase() : '?'}
-                                                </Avatar>
-                                                <Menu
-                                                    id="menu-avatar"
-                                                    className={classes.avatarMenu}
-                                                    anchorEl={avatarAnchorEl}
-                                                    anchorOrigin={{
-                                                        vertical: 'top',
-                                                        horizontal: 'right',
-                                                    }}
-                                                    transformOrigin={{
-                                                        vertical: 'top',
-                                                        horizontal: 'right',
-                                                    }}
-                                                    open={avatarMenuOpen}
-                                                    onClose={this.handleAvatarClose}
-                                                >
-                                                    <AutoComplete
-                                                        renderInputComponent={renderChatUserNameInput}
-                                                        inputProps={chatUserNameInputProps}
-                                                        getSuggestions={this.getChatUserSuggestions}
-                                                        getSuggestionValue={this.getChatUserSuggestion}
-                                                    />
-                                                </Menu>
-                                            </div>
-                                        }
-                                        action={
-                                            <IconButton title={chatTitle} onClick={chatClick}
-                                                        className={classes.messageChatIcon}
-                                                        color={isChatToggled ? "secondary" : "default"}>
-                                                <ChatIcon/>
-                                            </IconButton>
-                                        }
-                                        title={
-                                            <TextField
-                                                fullWidth
-                                                error={errors}
-                                                placeholder="type message..."
-                                                value={chatMessageText}
-                                                className={classes.messageTextField}
-                                                onChange={this.handleMessageTextChange}
-                                                onKeyUp={this.handleMessageInputEnter}
-                                            />
-                                        }
-                                        subheader={this.getLastActivityMessage()}
-                            />
-                        </ListSubheader>
-                        {messages.map((message, i, array) => {
-                                const skipInfo = i && message.chatUserId === array[i - 1].chatUserId;
-                                const skipTime = i && ((new Date(message.timestamp)).getTime() - (new Date(array[i - 1].timestamp).getTime())) < 30000;
-                                const messageOwner = this.getMessageOwner(message.chatUserId);
-                                return <div key={message.key}
-                                            ref={ref => {
-                                                this.chatListEl = ref
-                                            }}
-                                            onMouseEnter={() => this.ignoreChatListElScroll = true}
-                                            onMouseLeave={() => this.ignoreChatListElScroll = false}
-                                >
-                                    <ListItem button={true}
-                                              disableGutters={true}
-                                    >
-                                        {chatUserId === message.chatUserId || skipInfo ?
-                                            <Avatar/>
-                                            : <Avatar
-                                                title={messageOwner}
-                                                style={{backgroundColor: this.getUserColor(message.chatUserId)}}
-                                            >
-                                                {messageOwner ? messageOwner[0].toUpperCase() : '?'}
-                                            </Avatar>
-                                        }
-                                        {chatUserId === message.chatUserId ?
-                                            <ListItemSecondaryAction>
-                                                <ListItemText primary={message.text}
-                                                              secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
+                                                        aria-owns={avatarMenuOpen ? 'menu-avatar' : null}
+                                                        aria-haspopup="true"
+                                                        title={chatUserName || "click to type you user name"}
+                                                    >
+                                                        {chatUserName ? chatUserName[0].toUpperCase() : '?'}
+                                                    </Avatar>
+                                                    <Menu
+                                                        id="menu-avatar"
+                                                        className={classes.avatarMenu}
+                                                        anchorEl={avatarAnchorEl}
+                                                        anchorOrigin={{
+                                                            vertical: 'top',
+                                                            horizontal: 'right',
+                                                        }}
+                                                        transformOrigin={{
+                                                            vertical: 'top',
+                                                            horizontal: 'right',
+                                                        }}
+                                                        open={avatarMenuOpen}
+                                                        onClose={this.handleAvatarClose}
+                                                    >
+                                                        <AutoComplete
+                                                            renderInputComponent={renderChatUserNameInput}
+                                                            inputProps={chatUserNameInputProps}
+                                                            getSuggestions={this.getChatUserSuggestions}
+                                                            getSuggestionValue={this.getChatUserSuggestion}
+                                                        />
+                                                    </Menu>
+                                                </div>
+                                            }
+                                            action={
+                                                <IconButton title={chatTitle} onClick={chatClick}
+                                                            className={classes.messageChatIcon}
+                                                            color={isChatToggled ? "secondary" : "default"}>
+                                                    <ChatIcon/>
+                                                </IconButton>
+                                            }
+                                            title={
+                                                <TextField
+                                                    fullWidth
+                                                    error={errors}
+                                                    placeholder="type message..."
+                                                    value={chatMessageText}
+                                                    className={classes.messageTextField}
+                                                    onChange={this.handleMessageTextChange}
+                                                    onKeyUp={this.handleMessageInputEnter}
                                                 />
-                                            </ListItemSecondaryAction>
-                                            : <ListItemText primary={message.text}
-                                                            secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
-                                            />
-                                        }
-                                    </ListItem>
-                                </div>;
-                            }
-                        )}
-                    </List>
-                }
-            </div>
+                                            }
+                                            subheader={this.getLastActivityMessage()}
+                                />
+                            </ListSubheader>
+                            {messages.map((message, i, array) => {
+                                    const skipInfo = i && message.chatUserId === array[i - 1].chatUserId;
+                                    const skipTime = i && ((new Date(message.timestamp)).getTime() - (new Date(array[i - 1].timestamp).getTime())) < 30000;
+                                    const messageOwner = this.getMessageOwner(message.chatUserId);
+                                    return <div key={message.key}
+                                                ref={ref => {
+                                                    this.chatListEl = ref
+                                                }}
+                                                onMouseEnter={() => this.ignoreChatListElScroll = true}
+                                                onMouseLeave={() => this.ignoreChatListElScroll = false}
+                                    >
+                                        <ListItem button={true}
+                                                  disableGutters={true}
+                                        >
+                                            {chatUserId === message.chatUserId || skipInfo ?
+                                                <Avatar/>
+                                                : <Avatar
+                                                    title={messageOwner}
+                                                    style={{backgroundColor: this.getUserColor(message.chatUserId)}}
+                                                >
+                                                    {messageOwner ? messageOwner[0].toUpperCase() : '?'}
+                                                </Avatar>
+                                            }
+                                            {chatUserId === message.chatUserId ?
+                                                <ListItemSecondaryAction>
+                                                    <ListItemText primary={message.text}
+                                                                  secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
+                                                    />
+                                                </ListItemSecondaryAction>
+                                                : <ListItemText primary={message.text}
+                                                                secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
+                                                />
+                                            }
+                                        </ListItem>
+                                    </div>;
+                                }
+                            )}
+                        </List>
+                    }
+                </div>
+            </React.Fragment>
         );
     }
 

@@ -22,6 +22,20 @@ export const TraceActions = {
     evaluateResult: 'evaluateResult',
     evaluateError: 'evaluateError'
 };
+
+let consoleClear= null;
+export const clearConsole = ()=>{
+    consoleClear && consoleClear();
+};
+
+let isPreserveLogs= false;
+let preservedLogs = [];
+export const preserveLogs = (shouldPreserve)=>{
+    isPreserveLogs = shouldPreserve;
+};
+
+export const canDispatch=()=>!!dispatcher;
+
 export const dispatch = (action = {}) => {
     switch (action.type) {
         case TraceActions.evaluate:
@@ -37,12 +51,6 @@ export const dispatch = (action = {}) => {
         default:
             console.log('No action type');
     }
-};
-
-let hookConsole = null;
-
-export const configureHookConsole = (hook) => {
-    hookConsole = hook;
 };
 
 let haltingTimeout = 5000;
@@ -111,7 +119,13 @@ class Trace {
         this.consoleLog = null;
         this.realConsoleLog = null;
         this.timeline = [];
-        this.logs = [];
+        if(isPreserveLogs){
+            this.logs = preservedLogs;
+        }else{
+            this.logs = [];
+            preservedLogs = this.logs;
+        }
+
         this.branches = [];
         this.haltingCase = null;
         this.mainLoadedTimelineI = 0;
@@ -120,6 +134,9 @@ class Trace {
         this.funcRefs = [];
         this.funcRefMatches = [];
         this.isValid = false;
+        listener = null;
+        dispatcher = null;
+        consoleClear = null;
     }
 
     configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
@@ -137,7 +154,12 @@ class Trace {
         this.domNodes = [];
         //todo save before dispose
         this.timeline = [];
-        this.logs = [];
+        if(isPreserveLogs){
+            this.logs = preservedLogs;
+        }else{
+            this.logs = [];
+            preservedLogs = this.logs;
+        }
         this.timelineLength = 0;
         this.timeline = [];
         this.branches = [];
@@ -177,7 +199,6 @@ class Trace {
             return r;
         };
         this.isValid = true;
-        hookConsole && hookConsole(runIframe.contentWindow.console);
         dispatcher = runIframe.contentWindow.eval;
         const context = this;
         listener = function (actionType, ...params) {
@@ -197,6 +218,11 @@ class Trace {
                 data: params,
                 timestamp: Date.now(),
             });
+        };
+
+        consoleClear = ()=>{
+            this.logs =[];
+            preservedLogs = this.logs;
         };
 
     }
@@ -529,13 +555,10 @@ class Trace {
 
     onMainLoaded = () => {
         this.mainLoadedTimelineI = this.timeline.length;
-        this.haltingCase.timestamp = Date.now();
-        // if(this.branches.length){
-        //
-        // }
     };
 
     onError = errors => {
+        //todo runtime errors
         let i = this.timeline.length;
         const expression = this.locationMap[this.currentExpressionId] || {};
         if (!isArray(errors)) {
@@ -548,7 +571,7 @@ class Trace {
                     return ClassFactory.fromErrorClassName(error.name || error.constructor.name, error.message);
                 default:
                     if (error.requireModules && error.requireModules.length) {
-                        ClassFactory.fromErrorClassName('DependencyError',
+                        return ClassFactory.fromErrorClassName('DependencyError',
                             `The following dependencies were not found online:
                                                      ${error.requireModules.toString()}.
                                                       Please check your code bundling configuration.`);

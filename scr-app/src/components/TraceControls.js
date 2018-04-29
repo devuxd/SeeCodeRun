@@ -63,13 +63,15 @@ const styles = theme => ({
         // height: theme.spacing.unit,
         bottom: 0,
         left: 0,
+        marginLeft: -theme.spacing.unit / 2,
+        marginBottom: -theme.spacing.unit / 2,
         fontSize: theme.spacing.unit / 2,
         zIndex: theme.zIndex.snackbar,
     },
     speedDial: {
         position: 'absolute',
-        bottom: theme.spacing.unit * 4,
-        left: theme.spacing.unit * 4,
+        bottom: theme.spacing.unit * 3,
+        left: theme.spacing.unit * 3,
     },
     list: {
         paddingTop: 0,

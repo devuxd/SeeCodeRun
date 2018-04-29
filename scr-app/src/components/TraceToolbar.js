@@ -12,6 +12,7 @@ import Chip from 'material-ui/Chip';
 import Avatar from 'material-ui/Avatar';
 import IconButton from 'material-ui/IconButton';
 
+// import SearchIcon from '@material-ui/icons/Search';
 import TuneIcon from '@material-ui/icons/Tune';
 import VerticalAlignTopIcon from '@material-ui/icons/VerticalAlignTop';
 import ChangeHistoryIcon from '@material-ui/icons/ChangeHistory';
@@ -83,6 +84,10 @@ const toolbarStyles = theme => ({
         // margin: theme.spacing.unit,
         margin: 0,
         backgroundColor: 'transparent',
+        '&:first-child': {
+            marginLeft: theme.spacing.unit,
+        },
+        marginRight: theme.spacing.unit,
     },
     chipAvatar: {
         marginRight: -(theme.typography.fontSize / 2),
@@ -93,13 +98,12 @@ const toolbarStyles = theme => ({
         // margin: theme.spacing.unit / 2,
     },
     chipAvatarChildren: {
-        height: theme.typography.fontSize * 1.25,
+        // height: theme.typography.fontSize * 1.25,
         width: theme.typography.fontSize * 1.25,
     },
     chipLabel: {
-        paddingLeft: theme.spacing.unit * 1.25,
+        paddingLeft: theme.spacing.unit,
         paddingRight: theme.spacing.unit * 0.5,
-        width: theme.spacing.unit * 4,
     },
 });
 
@@ -132,7 +136,7 @@ class InputEndAdornment extends React.Component {
                         : <Paper>
                             <Tooltip title={"Match Case"}>
                                 <Chip
-                                    label="a-A"
+                                    label="Aa"
                                     onClick={() => handleFilterClick('isCase')}
                                     classes={avatarClasses}
                                     avatar={isCase ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
@@ -140,9 +144,9 @@ class InputEndAdornment extends React.Component {
                                 />
                             </Tooltip>
 
-                            <Tooltip title={"Words"}>
+                            <Tooltip title={"Match Whole Word"}>
                                 <Chip
-                                    label="w o"
+                                    label="A a"
                                     onClick={() => handleFilterClick('isWord')}
                                     classes={avatarClasses}
                                     avatar={isWord ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
@@ -150,9 +154,9 @@ class InputEndAdornment extends React.Component {
                                 />
                             </Tooltip>
 
-                            <Tooltip title={"Regular Expression"}>
+                            <Tooltip title={"Use Regular Expressions"}>
                                 <Chip
-                                    label="/.*/"
+                                    label=".*"
                                     onClick={() => handleFilterClick('isRegExp')}
                                     classes={avatarClasses}
                                     avatar={isRegExp ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
@@ -280,6 +284,11 @@ const EnhancedToolbar = props => {
                         margin="normal"
                         fullWidth
                         InputProps={{
+                            // startAdornment: (
+                            //     <InputAdornment position="start">
+                            //         <SearchIcon/>
+                            //     </InputAdornment>
+                            // ),
                             endAdornment: <InputEndAdornment {...{classes, searchState}} />
                         }}
                         FormHelperTextProps={{

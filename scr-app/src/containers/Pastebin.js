@@ -136,7 +136,7 @@ class Pastebin extends Component {
                 (this.debugScrollerRef.current.parentElement.style.height || '0')
                 : (this.debugScrollerRef.current.style.height || '0');
             availableHeight = parseInt(availableHeight.replace('px', ''), 10);
-            const defaultRowsPerPage = (parseInt(availableHeight / TABLE_ROW_HEIGHT) || 0) + 1;
+            const defaultRowsPerPage = (parseInt(availableHeight / TABLE_ROW_HEIGHT, 10) || 0) + 1;
             this.setState((prevState) => {
                 const nextRowsPerPage = isNew ?
                     defaultRowsPerPage : Math.max(
@@ -431,7 +431,7 @@ class Pastebin extends Component {
     };
 
     handleChangePlaying = debounce((id, play) => {
-        let {isPlaying, userIsPlaying, lastHandleChangePlayingId} = this.state;
+        let {isPlaying, lastHandleChangePlayingId} = this.state;
         if (id === 'table') {
             if (!isPlaying && !lastHandleChangePlayingId) {
                 return;

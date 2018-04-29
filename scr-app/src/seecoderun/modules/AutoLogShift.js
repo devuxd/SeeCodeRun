@@ -512,6 +512,47 @@ class AutoLogShift {
     };
 
     autoLogExpressions(ast, paths, locationMap, getLocationId) {
+
+        const getJReplacer = (id, type, path, parentId, parentType, parentPath) => (p => {
+            const pathSource = j(p).toSource();
+            locationMap[id] = {
+                type: alt.Expression,
+                expressionType: type,
+                loc: {...path.value.loc},
+                parentId: parentId,
+            };
+
+            if (this.composedExpressions[type]) {
+                return this.composedExpressions[type]({ast, locationMap, getLocationId, path}, {
+                    pathSource,
+                    id,
+                    type,
+                    p
+                });
+            } else {
+
+                if ((parentType === 'Property' || parentType === 'ClassProperty')
+                    && path.name === 'key') {
+                    if (parentPath.computed) { // logs {[x]:...}
+                        return j.arrayExpression(
+                            [this.autoLogExpression(pathSource, id, type, path, p)]
+                        );
+                    } else { // ignores {d:...}
+                        parentPath.computed = true;
+                        // return j.arrayExpression(
+                        //     [j.identifier(`'${pathSource}'`)]
+                        // );
+                        return j.arrayExpression(
+                            [this.autoLogExpression(`'${pathSource}'`, id, type, path, p)]
+                        );
+                    }
+
+                } else {
+                    return this.autoLogExpression(pathSource, id, type, path, p);
+                }
+            }
+        });
+
         for (const i in paths) {
             const path = paths[i];
             const type = path.value ? path.value.type : null;
@@ -556,46 +597,7 @@ class AutoLogShift {
 
 
                     if (isValid) {
-                        j(path).replaceWith(p => {
-                                const pathSource = j(p).toSource();
-                                locationMap[id] = {
-                                    type: alt.Expression,
-                                    expressionType: type,
-                                    loc: {...path.value.loc},
-                                    parentId: parentId,
-                                };
-
-                                if (this.composedExpressions[type]) {
-                                    return this.composedExpressions[type]({ast, locationMap, getLocationId, path}, {
-                                        pathSource,
-                                        id,
-                                        type,
-                                        p
-                                    });
-                                } else {
-
-                                    if ((parentType === 'Property' || parentType === 'ClassProperty')
-                                        && path.name === 'key') {
-                                        if (parentPath.computed) { // logs {[x]:...}
-                                            return j.arrayExpression(
-                                                [this.autoLogExpression(pathSource, id, type, path, p)]
-                                            );
-                                        } else { // ignores {d:...}
-                                            parentPath.computed = true;
-                                            // return j.arrayExpression(
-                                            //     [j.identifier(`'${pathSource}'`)]
-                                            // );
-                                            return j.arrayExpression(
-                                                [this.autoLogExpression(`'${pathSource}'`, id, type, path, p)]
-                                            );
-                                        }
-
-                                    } else {
-                                        return this.autoLogExpression(pathSource, id, type, path, p);
-                                    }
-                                }
-                            }
-                        );
+                        j(path).replaceWith(getJReplacer(id, type, path, parentId, parentType, parentPath));
                     } else {
                         // console.log('passing to parent', type, loc, path);
                     }

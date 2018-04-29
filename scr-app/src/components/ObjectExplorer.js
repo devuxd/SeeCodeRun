@@ -2,16 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import MyLocationIcon from '@material-ui/icons/MyLocation';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
-import Tooltip from 'material-ui/Tooltip';
+// import Tooltip from 'material-ui/Tooltip';
 // import deepDiff from 'deep-diff';
 
 import {isNode} from '../utils/scrUtils';
 import {ThemeContext} from '../pages/Index';
 import {HighlightPalette} from '../containers/LiveExpressionStore';
 
-const noop = () => {
-};
 
+//start https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 /* NOTE: Chrome console.log is italic */
 const styles = {
     preview: {
@@ -31,7 +30,7 @@ function intersperse(arr, sep) {
 /**
  * A preview of the object
  */
-export const ObjectPreview = ({data, maxProperties}) => {
+export const ObjectPreview = ({data, maxProperties, compact}) => {
     const object = data;
 
     if (
@@ -77,10 +76,11 @@ export const ObjectPreview = ({data, maxProperties}) => {
                 if (ellipsis) break;
             }
         }
-
+        const objectClassName = compact?
+            object.constructor.name === 'Object'? '':object.constructor.name:object.constructor.name;
         return (
             <span style={styles.preview}>
-        {`${object.constructor.name} {`}
+        {`${objectClassName} {`}
                 {intersperse(propertyNodes, ', ')}
                 {'}'}
       </span>
@@ -93,22 +93,23 @@ ObjectPreview.propTypes = {
      * max number of properties shown in the property view
      */
     maxProperties: PropTypes.number,
+    compact: PropTypes.bool,
 };
 ObjectPreview.defaultProps = {
     maxProperties: 5,
 };
 
-export const ObjectRootLabel = ({name, data}) => {
+export const ObjectRootLabel = ({name, data, compact}) => {
     if (typeof name === 'string') {
         return (
             <span>
         <ObjectName name={name}/>
         <span>: </span>
-        <ObjectPreview data={data}/>
+        <ObjectPreview data={data} compact={compact}/>
       </span>
         );
     } else {
-        return <ObjectPreview data={data}/>;
+        return <ObjectPreview data={data} compact={compact}/>;
     }
 };
 
@@ -135,7 +136,7 @@ ObjectLabel.propTypes = {
 ObjectLabel.defaultProps = {
     isNonenumerable: false,
 };
-
+// end https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 
 export const createLiveObjectNodeRenderer = (traceProvider) => {
     const liveObjectNodeRenderer = {

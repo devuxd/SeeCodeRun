@@ -33,7 +33,7 @@ import {
 import {
     configureMonacoModel,
     configureMonacoEditor,
-    configureMonacoEditorMouseEventsObservable,
+    // configureMonacoEditorMouseEventsObservable,
     configureLineNumbersProvider,
 } from '../utils/monacoUtils';
 

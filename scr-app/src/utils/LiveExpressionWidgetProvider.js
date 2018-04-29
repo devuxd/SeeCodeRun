@@ -288,7 +288,7 @@ class LiveExpressionWidgetProvider {
                         }
                         const ll = (el.style.left || '0').replace('px', '');
                         const lr = (sel.style.left || width).replace('px', '');
-                        width = `${parseInt(lr) - parseInt(ll)}px`;
+                        width = `${parseInt(lr, 10) - parseInt(ll, 10)}px`;
                     }
                 }
                 // console.log('w', width);
@@ -326,8 +326,8 @@ class LiveExpressionWidgetProvider {
                 this.domNode.style.overflow = 'hidden';
                 this.domNode.style.whiteSpace = 'nowrap';
                 this.domNode.style.marginTop = `-${monacoProps.widgetOffsetHeight}px`;
-                this.domNode.style.height = `${monacoProps.widgetVerticalHeight}px`;
-                this.domNode.style.maxHeight = `${monacoProps.widgetVerticalHeight}px`;
+                this.domNode.style.height = `${monacoProps.widgetMaxHeight}px`;
+                this.domNode.style.maxHeight = `${monacoProps.widgetMaxHeight}px`;
                 this.domNode.style.backgroundColor = monacoProps.widgetBackgroundColor;
                 this.domNode.style.fontSize = `${monacoProps.widgetFontSize}px`;
                 this.domNode.style.maxWidth = `0px`;

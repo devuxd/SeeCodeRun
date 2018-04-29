@@ -2,8 +2,6 @@ import React, {Component} from 'react'
 import PropTypes from 'prop-types';
 import {configureFirecoPersistableComponent} from '../redux/modules/fireco';
 
-let SERVER_TIMESTAMP = null;
-
 export default function PersistableContainer(DataComponent) {
 
     return class PersistableContainer extends Component {
@@ -16,7 +14,7 @@ export default function PersistableContainer(DataComponent) {
         };
 
         static defaultProps = {};
-
+        SERVER_TIMESTAMP = null;
         state = {
             data: null
         };
@@ -45,7 +43,7 @@ export default function PersistableContainer(DataComponent) {
 
         onFirecoActive = (firebaseRef, TIMESTAMP) => {
             this.firebaseRef = firebaseRef;
-            SERVER_TIMESTAMP = TIMESTAMP;
+            this.SERVER_TIMESTAMP = TIMESTAMP;
             this.firebaseRef.on('value', this.onValue);
         };
 

@@ -5,7 +5,6 @@ import debounce from 'lodash.debounce';
 // import {withStyles, AppBar, Typography, Tabs, Tab} from 'material-ui';
 import {withStyles} from 'material-ui/styles';
 import AppBar from 'material-ui/AppBar';
-import Typography from 'material-ui/Typography';
 import Paper from 'material-ui/Paper';
 import Tabs, {Tab} from 'material-ui/Tabs';
 import SwipeableViews from 'react-swipeable-views';
@@ -19,8 +18,8 @@ import PlayListPlayIcon from '@material-ui/icons/PlaylistPlay';
 import ConsoleIcon from 'mdi-material-ui/ConsoleLine';
 import TraceTable from './TraceTable';
 import TraceToolbar from './TraceToolbar';
-import Console from './Console';
 import ConsoleInput from './ConsoleInput';
+import ConsoleTable from './ConsoleTable';
 
 class TabLabel extends React.Component {
     state = {
@@ -170,9 +169,6 @@ class DebugContainer extends React.Component {
     consoleExports = {};
     traceTabIndex = 0;
     consoleTabIndex = 1;
-    onSwitching = (...args) => {
-        console.log(args);
-    };
 
     render() {
         const {theme, classes, tabIndex, handleChangeTab, handleChangeTabIndex, ScrollingListContainers} = this.props;
@@ -211,8 +207,7 @@ class DebugContainer extends React.Component {
                 </AppBar>
                 <Slide direction="down" in={this.consoleTabIndex === tabIndex}>
                     <Paper elevation={4} className={classes.paper}>
-                        <ConsoleInput className={classes.consoleInput}
-                                      evaluateConsole={this.consoleExports.evaluateConsole}/>
+                        <ConsoleInput className={classes.consoleInput}/>
                     </Paper>
                 </Slide>
 
@@ -225,14 +220,15 @@ class DebugContainer extends React.Component {
                     animateTransitions={false}
                     // onTransitionEnd={(...p)=>{console.log(p);}}
                 >
-                    <TraceTable handleTotalChange={this.traceExports.handleTotalChange}
-                                index={this.traceTabIndex}
-                                ScrollingListContainers={ScrollingListContainers}
+                    <TraceTable
+                        handleTotalChange={this.traceExports.handleTotalChange}
+                        index={this.traceTabIndex}
+                        ScrollingListContainers={ScrollingListContainers}
                     />
-                    <Console exports={this.consoleExports}
-                             handleTotalChange={this.consoleExports.handleTotalChange}
-                             index={this.consoleTabIndex}
-                             ScrollingListContainers={ScrollingListContainers}
+                    <ConsoleTable
+                        handleTotalChange={this.consoleExports.handleTotalChange}
+                        index={this.consoleTabIndex}
+                        ScrollingListContainers={ScrollingListContainers}
                     />
 
 

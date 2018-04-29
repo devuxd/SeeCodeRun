@@ -132,10 +132,10 @@ class Index extends Component {
         this.handleShareClose();
     };
 
-    chatClick = () => {
+    chatClick = (event, isChatToggled) => {
         this.setState((prevState) => ({
-                isChatToggled: !prevState.isChatToggled,
-                chatTitle: prevState.isChatToggled ? 'Open Chat' : 'Close Chat',
+                isChatToggled: event ? !prevState.isChatToggled : isChatToggled,
+                // chatTitle: prevState.isChatToggled ? 'Open Chat' : 'Close Chat',
             })
         );
     };
@@ -197,7 +197,7 @@ class Index extends Component {
         getNetworkStateMessage: this.getNetworkStateMessage,
         authUser: null,
         isChatToggled: false,
-        chatTitle: 'Close Chat',
+        chatTitle: 'Chat',
         chatClick: this.chatClick,
         resetLayoutClick: this.resetLayoutClick,
     };

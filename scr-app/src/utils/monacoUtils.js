@@ -6,7 +6,7 @@ export const monacoProps = {
     fontSize: 12,
     widgetFontSize: 9,
     widgetOffsetHeight: 7,
-    widgetVerticalHeight: 14,
+    widgetMaxHeight: 14,
     lineOffSetHeight: 14, //sync with css padding-top: lineOffSetHeight/2
     widgetBackgroundColor: 'transparent',
 };
@@ -23,6 +23,8 @@ export const monacoEditorDefaultOptions = {
     minimap: {enabled: false},
     scrollBeyondLastLine: false,
     formatOnPaste: true,
+    cursorStyle: 'line',
+    cursorWidth: 1,
     scrollbar: {
         // Subtle shadows to the left & top. Defaults to true.
         useShadows: true,
@@ -41,8 +43,9 @@ export const monacoEditorDefaultOptions = {
         verticalScrollbarSize: 4,
         horizontalScrollbarSize: 4,
         arrowSize: 4,
-        cursorWidth: 6,
     },
+    renderLineHighlight: 'gutter',
+    // smoothScrolling: true,
     fontSize: monacoProps.fontSize,
     quickSuggestionsDelay: 1250,
     lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default, sync with css: max-height:18px; and padding-top

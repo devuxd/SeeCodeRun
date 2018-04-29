@@ -7,6 +7,7 @@
 /build
 
 # misc
+package-lock.json
 .firebaserc
 .vscode/
 .idea/

@@ -177,7 +177,7 @@ class LiveExpression extends Component {
         if (this.state.navigated && this.state.data && sliderMax <= this.state.data.length) {
             return;
         }
-        this.setState({sliderRange: [sliderMax+1]});
+        this.setState({sliderRange: [sliderMax + 1]});
     }, 250);
 
     configureHandleSliderChange = (branchNavigatorChange) => {
@@ -185,7 +185,7 @@ class LiveExpression extends Component {
         return (change) => {
             if (data && data.length) {
                 // console.log(data, change);
-                branchNavigatorChange(data[change], change, change-1 > -1?data[change-1]: 0);
+                branchNavigatorChange(data[change], change, change - 1 > -1 ? data[change - 1] : 0);
                 this.handleSliderChange(change);
             }
         };
@@ -194,13 +194,14 @@ class LiveExpression extends Component {
     render() {
         const {classes, style, data, objectNodeRenderer, expressionId, handleChange, branchNavigatorChange, color} = this.props;
         const {anchorEl} = this.state;
-        const isActive = !!anchorEl;
-        const {datum, sliderMin, sliderMax, rangeStart} = branchNavigatorChange ?
+        const isBranchNavigator = !!branchNavigatorChange;
+        const isActive = !!anchorEl && (!isBranchNavigator || (isBranchNavigator && data && data.length > 1));
+        const {datum, sliderMin, sliderMax, rangeStart} = isBranchNavigator ?
             this.getBranchDatum(data) : this.getDatum(data);
-        const handleSliderChange = branchNavigatorChange ?
+        const handleSliderChange = isBranchNavigator ?
             this.configureHandleSliderChange(branchNavigatorChange) : this.handleSliderChange;
-        const origin = branchNavigatorChange ? branchPopoverOrigin : popoverOrigin;
-        const explorer = branchNavigatorChange ? null // todo function params vs arguments + return explorer
+        const origin = isBranchNavigator ? branchPopoverOrigin : popoverOrigin;
+        const explorer = isBranchNavigator ? null // todo function params vs arguments + return explorer
             : (<div className={classes.objectExplorer}>
                 <ObjectExplorer
                     expressionId={expressionId}
@@ -228,6 +229,7 @@ class LiveExpression extends Component {
                 anchorEl={anchorEl}
                 {...origin}
                 onClose={this.handleClose}
+                elevation={2}
             >
                 <div onMouseEnter={this.handleChange(true)}
                      onMouseLeave={this.handleChange(false)}
@@ -240,6 +242,7 @@ class LiveExpression extends Component {
                         defaultValue={defaultValue}
                         handleSliderChange={handleSliderChange}
                         color={color}
+                        hideLabel={isBranchNavigator}
                     />
                     }
                     {explorer}

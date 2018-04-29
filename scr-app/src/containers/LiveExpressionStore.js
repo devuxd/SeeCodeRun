@@ -126,7 +126,7 @@ const styles = (theme) => {
             width: '100%',
             height: '100%',
             borderRadius: 0,
-        }
+        },
     }
 };
 
@@ -213,9 +213,10 @@ class LiveExpressionStore extends Component {
         this.setState({currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI, userBranches});
     };
 
-    configureNavigators = (navigationType, branched, absoluteBranched, buttonColor, classes, style) => {
+    configureNavigators = (navigationType, branched, absoluteBranched, color, classes, style) => {
         const {
-            decorators, currentContentWidgetId, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI
+            decorators, currentContentWidgetId, /*currentBranchId,*/ currentBranchTimelineId, navigatorIndex,
+            /*prevTimelineI,*/
         } = this.state;
         const navigators = [];
         for (const id in branched) {
@@ -228,7 +229,8 @@ class LiveExpressionStore extends Component {
                     decorator.contentWidget.adjustWidth(true, true);
 
                     const branchIndex = branched[id].indexOf(currentBranchTimelineId);
-                    const branchSelection = id === currentBranchId ?
+                    const isSelected = currentContentWidgetId === id;
+                    const branchSelection = isSelected ?
                         branchIndex >= 0 ? branchIndex : branched[id].length
                         : branched[id].length;
 
@@ -244,7 +246,8 @@ class LiveExpressionStore extends Component {
                     // absoluteBranchLabel = absoluteBranchLabel ? ` [${absoluteBranchLabel}]` : absoluteBranchLabel;
                     //${absoluteBranchLabel}
                     const branchLabel = `${branchSelection}/${branched[id].length}`;
-                    const sliderRange = id === currentBranchId ? [navigatorIndex] : null;
+                    const sliderRange = isSelected ? [navigatorIndex] : null;
+                    const branchNavigatorWidgetClassName = classes.branchNavigatorWidget;
                     navigators.push(
                         <React.Fragment key={`${id}:${navigationType}`}>
                             <DOMPortal
@@ -259,8 +262,8 @@ class LiveExpressionStore extends Component {
                                         //  placeholderClassName={classes.expressionCellContent}
                                         // placeholderDisableGutters={true}
                                     >
-                                        <Button variant="raised" color={buttonColor}
-                                                className={classes.branchNavigatorWidget}>
+                                        <Button variant="raised" color={color}
+                                                className={branchNavigatorWidgetClassName}>
                                             {branchLabel}</Button>
                                         {/*<ObjectRootLabel data={branched[id]}/>*/}
                                     </OverflowComponent>
@@ -269,12 +272,12 @@ class LiveExpressionStore extends Component {
                             </DOMPortal>
                             <LiveExpression
                                 style={style}
-
+                                color={color}
                                 expressionId={id}
                                 classes={classes}
                                 widget={decorator}
                                 data={[...branched[id]]}
-                                isOpen={branched[id].length > 0 && currentContentWidgetId === id}
+                                isOpen={isSelected && branched[id].length > 0}
                                 objectNodeRenderer={this.objectNodeRenderer}
                                 sliderRange={sliderRange}
                                 branchNavigatorChange={(timelineI, navigatorIndex, prevTimelineI) => this.handleBranchChange(navigationType, id, timelineI, navigatorIndex, prevTimelineI)}
@@ -291,7 +294,8 @@ class LiveExpressionStore extends Component {
     render() {
         const {classes, editorWidth, editorHeight, timeline} = this.props;
         const {
-            decorators, currentContentWidgetId, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI
+            decorators, currentContentWidgetId, currentBranchId, currentBranchTimelineId,
+            /*navigatorIndex,*/ prevTimelineI,
         } = this.state;
 
         const style = {
@@ -304,7 +308,7 @@ class LiveExpressionStore extends Component {
         }
 
         const branches = this.traceSubscriber ? this.traceSubscriber.branches || [] : [];
-        const mainLoadedTimelineI = this.traceSubscriber ? this.traceSubscriber.mainLoadedTimelineI : 0;
+        //const mainLoadedTimelineI = this.traceSubscriber ? this.traceSubscriber.mainLoadedTimelineI : 0;
         const globalBranches = {};
         const absoluteGlobalBranches = {};
         const localBranches = {};
@@ -449,7 +453,7 @@ class LiveExpressionStore extends Component {
                                     //  placeholderClassName={classes.expressionCellContent}
                                     // placeholderDisableGutters={true}
                                 >
-                                    <ObjectRootLabel data={datum}/>
+                                    <ObjectRootLabel data={datum} compact={true}/>
                                 </OverflowComponent>
 
                             </div>

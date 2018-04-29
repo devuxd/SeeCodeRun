@@ -2,9 +2,14 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import debounce from 'lodash.debounce';
 import {withStyles} from 'material-ui/styles';
+import Tooltip from 'material-ui/Tooltip';
+import IconButton from 'material-ui/IconButton';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import DoNotDisturbIcon from '@material-ui/icons/DoNotDisturb';
+import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
+import {canDispatch, dispatch, clearConsole, preserveLogs} from "../seecoderun/modules/Trace";
 
 const CONSOLE_INPUT_TOP_PADDING = 6;
 const CONSOLE_INPUT_BOTTOM_PADDING = 6;
@@ -55,7 +60,7 @@ const styles = theme => ({
         top: 0,
         left: theme.spacing.unit * 3,
         height: `calc(100%)`,
-        width: `calc(100% - ${theme.spacing.unit * 3}px)`
+        width: `calc(100% - ${theme.spacing.unit * 10}px)`
     },
     iconContainer: {
         display: 'inline-flex',
@@ -68,6 +73,33 @@ const styles = theme => ({
         color: theme.palette.primary.main,
         fontSize: theme.spacing.unit * 2,
     },
+    actionContainer: {
+        position: 'absolute',
+        display: 'inline-flex',
+        flexDirection: 'row',
+        right: 0,
+        // marginRight: -theme.spacing.unit * 3,
+        margin: theme.spacing.unit/2,
+        width: theme.spacing.unit * 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    actionIconContainer: {
+        color: theme.palette.primary.main,
+        width: theme.spacing.unit * 3,
+        height: theme.spacing.unit * 3,
+    },
+    actionIcon: {
+        color: theme.palette.primary.main,
+        width: theme.spacing.unit * 2,
+        height: theme.spacing.unit * 2,
+
+    },
+    actionIconInactive: {
+        color: theme.palette.action.active,
+        width: theme.spacing.unit * 2,
+        height: theme.spacing.unit * 2,
+    },
 });
 
 const defaultMonacoOptions = {
@@ -79,7 +111,8 @@ const defaultMonacoOptions = {
     folding: false,
     selectOnLineNumbers: false,
     selectionHighlight: false,
-    cursorStyle: 'line-thin',
+    cursorStyle: 'line',
+    cursorWidth: 1,
     scrollbar: {
         useShadows: false,
         horizontal: 'hidden',
@@ -106,10 +139,18 @@ class ConsoleInput extends Component {
             commandHistory: [],
             commandCursor: -1,
             editorHeight: CONSOLE_INPUT_LINE_HEIGHT,
+            isPreserveLogs: false,
         };
         this.editor = null;
     }
 
+    preserveLogs = () => {
+        this.setState(prevState => {
+            const isPreserveLogs = !prevState.isPreserveLogs;
+            preserveLogs(isPreserveLogs);
+            return {isPreserveLogs};
+        })
+    };
 
     resizeEditor = (ignore) => {
         if (ignore) {
@@ -140,7 +181,6 @@ class ConsoleInput extends Component {
 
         editor.onKeyDown(event => {
             const e = event.browserEvent;
-            const {evaluateConsole} = this.props;
 
             if (e.keyCode === 13) {
                 // Enter
@@ -150,11 +190,11 @@ class ConsoleInput extends Component {
                 e.preventDefault();
                 e.stopPropagation();
                 const command = editor.getModel().getValue();
-                if (!command || !evaluateConsole) {
+                if (!command || !canDispatch()) {
                     return;
                 }
                 editor.setValue('');
-                evaluateConsole && evaluateConsole(command);
+                this.evaluateConsole(command);
                 if (this.state.commandHistory[0] === command) {
                     return;
                 }
@@ -202,18 +242,42 @@ class ConsoleInput extends Component {
         }
     }
 
+    evaluateConsole = (command) => {
+        dispatch({type: 'evaluate', command});
+    };
+
     render() {
         const {classes} = this.props;
+        const {isPreserveLogs} = this.state;
         return (
             <div style={{height: `${this.state.editorHeight + CONSOLE_INPUT_PADDING}px`}}>
                 <span className={classes.iconContainer}>
                     <ChevronRightIcon className={classes.icon}/>
                 </span>
+
                 <span className={classes.editor}>
                     <div
                         ref={this.editorDiv}
                         className={classes.editorDiv}
                     />
+                </span>
+                <span className={classes.actionContainer}>
+                    <Tooltip title="Clear Console">
+                        <IconButton aria-label="Clear Console" className={classes.actionIconContainer}>
+                            <DoNotDisturbIcon
+                                onClick={clearConsole}
+                                className={classes.actionIcon}
+                            />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Preserve Logs">
+                        <IconButton aria-label="Preserve Logs" className={classes.actionIconContainer}>
+                            <DeleteSweepIcon
+                                className={isPreserveLogs ? classes.actionIcon : classes.actionIconInactive}
+                                onClick={this.preserveLogs}
+                            />
+                         </IconButton>
+                    </Tooltip>
                 </span>
             </div>
         );
@@ -235,7 +299,6 @@ class ConsoleInput extends Component {
 
 ConsoleInput.propTypes = {
     classes: PropTypes.object.isRequired,
-    evaluateConsole: PropTypes.func,
 };
 
 ConsoleInput.contextTypes = {

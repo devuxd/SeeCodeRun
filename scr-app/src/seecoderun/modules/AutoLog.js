@@ -8,6 +8,7 @@ import {
     updatePlaygroundLoadFailure,
     updatePlaygroundLoadSuccess
 } from "../../redux/modules/playground";
+import {decodeBabelError} from "../../utils/scrUtils";
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
@@ -47,33 +48,18 @@ const defaultRequireOnLoadString = `scrLoader.requirejsLoad = requirejs.load;
             return scrLoader.requirejsLoad(context, moduleName, url);
           };`;
 
-export const jsDelivrResolver = (depName) => {
+export const jsDelivrResolver = (depName) => { //similar: unpkg, cdnjs
     switch (depName) {
         default:
             return `https://cdn.jsdelivr.net/npm/${depName}`; //todo find version obtained
     }
 };
 
-// export const unpkgResolver = (depName) => {
-//     switch (depName) {
-//         default:
-//             return `https://cdn.jsdelivr.net/npm/${depName}`; //todo find version obtained
-//     }
-// };
-//
-//
-// export const cdnjsResolver = (depName) => {
-//     switch (depName) {
-//         default:
-//             return `https://cdn.jsdelivr.net/npm/${depName}`; //todo find version obtained
-//     }
-// };
-
 const appendTrailingInterrogation = (text) => (text ? text.endsWith('?') ? text : `${text}?` : text);
 export const doJsDelivrFallbackPaths = (name, url) => {
     if (url.includes('//cdn.jsdelivr.net/')) {
         let fUrl = appendTrailingInterrogation(url);
-        const matches = url.match(new RegExp(`${name}[^\/]*`));
+        const matches = url.match(new RegExp(`${name}[^/]*`));
         let vName = name;
         if (matches && matches.length) {
             vName = matches[0];
@@ -92,7 +78,7 @@ export const doJsDelivrFallbackPaths = (name, url) => {
         if (isPure) {
             const prevFallbackPath =
                 isString(requireConfig.fallbackOverrides[name]) ? requireConfig.fallbackOverrides[name] : '';
-            const fbMatches = prevFallbackPath.match(new RegExp(`${name}[^\/]*`));
+            const fbMatches = prevFallbackPath.match(new RegExp(`${name}[^/]*`));
             let fbVName = name;
             if (fbMatches && fbMatches.length) {
                 fbVName = fbMatches[0];
@@ -131,6 +117,13 @@ export const requireConfig = {
     onDependenciesChange: null,
     triggerChange: null,
     on: false,
+};
+
+export const AutoLogErrors = {
+    init: 'init',
+    babel: 'babel',
+    parse5: 'parse5',
+    require: 'require'
 };
 
 const configureDependencies = (deps) => {
@@ -216,18 +209,8 @@ export const importLoaders = async () => {
         };
 
         options.presets.push(['es2015', {
-            modules: "commonjs",//false,//
+            modules: "commonjs",
         }]);
-        // console
-        // options.plugins.push('dynamic-import-webpack');
-        // console.log('d', Object.keys(Babel.availablePlugins));
-        // options.plugins.push(
-        // ["transform-runtime", {
-        //     // "helpers": true,
-        //     "polyfill": true,
-        //    "regenerator": true,
-        //   //  "moduleName": "babel-runtime"
-        // }]);
 
         BabelSCR.transform = sourceCode => Babel.transform(sourceCode, options);
     }
@@ -239,25 +222,9 @@ export const postAutoLogName = '_$o';
 
 // setAutoLogNames(autoLogName, preAutoLogName, postAutoLogName);
 
-export const appendCss = (doc, store, css) => {
-    if (doc) {
-        const style = doc.createElement("style");
-        style.type = "text/css";
-        style.innerHTML = css;
-        style.onload = () => {
-            store.dispatch(updatePlaygroundLoadSuccess('css', css));
-        };
-        style.onerror = e => {
-            store.dispatch(updatePlaygroundLoadFailure('css', e)); // do happens?
-        };
-        doc.body.appendChild(style);
-    }
-};
-
 const appendScript = (doc, script) => {
     const scriptEl = doc.createElement("script");
-    // eslint-disable-next-line no-useless-escape
-    scriptEl.type = 'text\/javascript';
+    scriptEl.type = 'text/javascript';
     doc.body.appendChild(scriptEl);
     scriptEl.innerHTML = script;
 };
@@ -353,6 +320,7 @@ class AutoLog {
                                     }
                                 } else {
                                     console.log('load errors', errors);
+                                    //todo handle bundling/dependency error
                                     autoLogger.trace.onError(errors);
                                 }
                             };
@@ -397,24 +365,86 @@ class AutoLog {
             requireConfig.triggerChange = this.appendIframe;
             this.appendIframe();
         }).catch(error => {
-            console.log('append html error', error);
-            // store.dispatch(updatePlaygroundLoadSuccess(id, sourceTransformed));
-        });
+            // todo [semantic] errors
+                const {humanUnderstandableError} = state;
+                if (humanUnderstandableError) {
+                    switch (humanUnderstandableError.type) {
+                        case AutoLogErrors.babel:
+                            const errorInfo = decodeBabelError(error);
+                            console.log('Semantic error', errorInfo, humanUnderstandableError);
+                            break;
+                        default:
+                            console.log('humanUnderstandableError', humanUnderstandableError, error);
+                    }
+                } else {
+                    console.log('Unknown error', error);
+                }
+
+
+                // store.dispatch(updatePlaygroundLoadSuccess(id, sourceTransformed));
+            }
+        )
+        ;
     }
 
 
     async appendHtml(state, html, css, js, alJs) {
+        state.humanUnderstandableError = {
+            type: AutoLogErrors.init,
+            message: 'Could not download files from server. Please check your Internet access and refresh this page.'
+        };
         if (!parsersLoaded) {
-            await importLoaders();
+            await
+                importLoaders();
             //post: parse5 and BabelSCR.transform ready
             parsersLoaded = true;
         }
         state.parsersLoaded = parsersLoaded;
+        state.humanUnderstandableError = {
+            type: AutoLogErrors.parse5,
+            message: 'The HTML file contains errors.'
+        };
         state.parsed = parse5.parse(html, {locationInfo: true});
-        state.headOpenTagLocation = state.parsed.childNodes.find(node => node.nodeName === 'html').childNodes.find(node => node.nodeName === 'head').__location;
+        state.humanUnderstandableError.message = 'HTML Element not found.';
+        const htmlElementChildNodes = state.parsed.childNodes.find(node => node.nodeName === 'html').childNodes;
 
-        state.bodyOpenTagLocation = state.parsed.childNodes.find(node => node.nodeName === 'html').childNodes.find(node => node.nodeName === 'body').__location;
-        state.bodyEndTagLocation = state.parsed.childNodes.find(node => node.nodeName === 'html').childNodes;
+        state.humanUnderstandableError.message = 'Head Element not found.';
+        state.headTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'head').__location;
+
+        state.humanUnderstandableError.message = 'Body Element not found.';
+        state.bodyTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'body').__location;
+
+        state.humanUnderstandableError.message = 'Head opening tag not found.';
+        const defaultHeadTagLocation = {
+            startTag: {
+                startOffset: state.headTagLocation.startTag.startOffset,
+                endOffset: state.headTagLocation.startTag.endOffset,
+                _: !(state.humanUnderstandableError.message = 'Head closing tag not found.'),
+            },
+            endTag: {
+                startOffset: state.headTagLocation.endTag.startOffset,
+                endOffset: state.headTagLocation.endTag.endOffset,
+                _: !(state.humanUnderstandableError.message = 'Body opening tag not found.'),
+            }
+        };
+
+        const defaultBodyTagLocation = {
+            startTag: {
+                startOffset: state.bodyTagLocation.startTag.startOffset,
+                endOffset: state.bodyTagLocation.startTag.endOffset,
+                _: !(state.humanUnderstandableError.message = 'Body closing tag not found.'),
+            },
+            endTag: {
+                startOffset: state.bodyTagLocation.endTag.startOffset,
+                endOffset: state.bodyTagLocation.endTag.endOffset,
+            }
+        };
+
+        state.humanUnderstandableError = {
+            type: AutoLogErrors.babel,
+            message: 'The JS file contains errors.',
+        };
+
         state.transformed = tryTransformScript(alJs);
         if (state.transformed.error) {
             state.criticalError = state.transformed.error;
@@ -423,55 +453,39 @@ class AutoLog {
 
         state.transformed.source = state.transformed.code;
 
-        state.transformed.code = requireConfig.isDisabled ? state.transformed.code : `${requireConfig.requireOnLoadString}
-        ${requireConfig.requireEnsureString}
-        requirejs(${JSON.stringify(requireConfig.requireSync)}, function(){
-        scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
-        ${state.transformed.code}
-        scrLoader.onUserScriptLoaded();
-        });`;
+        state.transformed.code = requireConfig.isDisabled ?
+            state.transformed.code
+            : `${requireConfig.requireOnLoadString}
+                ${requireConfig.requireEnsureString}
+                requirejs(${JSON.stringify(requireConfig.requireSync)}, function(){
+                scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
+                ${state.transformed.code}
+                scrLoader.onUserScriptLoaded();
+                });`;
 
         const cssString = `<style>${css}</style>`;
 
-        const defaultHeadOpenTagLocation = {
-            startTag: {
-                startOffset: state.headOpenTagLocation.endTag.startOffset,
-                endOffset: state.headOpenTagLocation.startTag.endOffset,
-            },
-            endTag: {
-                startOffset: state.headOpenTagLocation.endTag.startOffset,
-                endOffset: state.headOpenTagLocation.endTag.endOffset,
-            }
-        };
+        state.humanUnderstandableError = null;
 
-        const defaultBodyOpenTagLocation = {
-            startTag: {
-                startOffset: state.bodyOpenTagLocation.endTag.startOffset,
-                endOffset: state.bodyOpenTagLocation.startTag.endOffset,
-            },
-            endTag: {
-                startOffset: state.bodyOpenTagLocation.endTag.startOffset,
-                endOffset: state.bodyOpenTagLocation.endTag.endOffset,
-            }
-        };
         state.getHTML = (config = requireConfig.config,
-                         headOpenTagLocation = defaultHeadOpenTagLocation,
-                         bodyOpenTagLocation = defaultBodyOpenTagLocation) => {
-            const requireScriptsString = requireConfig.isDisabled ? '<-- NO REQUIRE-CONFIG -->' : `${requireConfig.requireString}
-<script>
-${requireConfig.requireOnErrorString}
-requirejs.config(${JSON.stringify(config)});
-</script>`;
-//todo missing tag errors UI feedback
-            if (bodyOpenTagLocation) {
-                return `${html.substring(0, headOpenTagLocation.endTag.startOffset)}
-            ${SCRLoader.headScript}
-            ${html.substring(headOpenTagLocation.endTag.startOffset, bodyOpenTagLocation.startTag.endOffset)}
-             ${cssString}
-            ${html.substring(bodyOpenTagLocation.startTag.endOffset, bodyOpenTagLocation.endTag.startOffset)}
-             ${requireScriptsString}
-             ${SCRLoader.bodyScript}
-            ${html.substring(bodyOpenTagLocation.endTag.startOffset, html.length)}`;
+                         headTagLocation = defaultHeadTagLocation,
+                         bodyTagLocation = defaultBodyTagLocation) => {
+            const requireScriptsString = requireConfig.isDisabled ?
+                '<-- NO REQUIRE-CONFIG -->' :
+                `${requireConfig.requireString}
+                <script>
+                ${requireConfig.requireOnErrorString}
+                requirejs.config(${JSON.stringify(config)});
+                </script>`;
+            if (!state.humanUnderstandableError) {
+                return `${html.substring(0, headTagLocation.endTag.startOffset)}
+                    ${SCRLoader.headScript}
+                    ${html.substring(headTagLocation.endTag.startOffset, bodyTagLocation.startTag.endOffset)}
+                     ${cssString}
+                    ${html.substring(bodyTagLocation.startTag.endOffset, bodyTagLocation.endTag.startOffset)}
+                     ${requireScriptsString}
+                     ${SCRLoader.bodyScript}
+                    ${html.substring(bodyTagLocation.endTag.startOffset, html.length)}`;
             } else {
                 return null;
             }
