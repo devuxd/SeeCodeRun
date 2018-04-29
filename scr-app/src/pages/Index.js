@@ -97,9 +97,9 @@ class Index extends Component {
             }
         });
     };
-    logoClick = () => {
+    logoClick = (event, isTopNavigationToggled) => {
         this.setState({
-            isTopNavigationToggled: !this.state.isTopNavigationToggled,
+            isTopNavigationToggled:event? !this.state.isTopNavigationToggled: isTopNavigationToggled,
         });
     };
 

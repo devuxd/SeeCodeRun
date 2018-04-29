@@ -32,8 +32,8 @@ const defaultChatStyle = {
 const styles = theme => ({
     backdrop: {
         position: 'absolute',
-        top:0,
-        left:0,
+        top: 0,
+        left: 0,
         width: '100%',
         height: '100%',
         backgroundColor: theme.palette.action.disabledBackground,
@@ -287,7 +287,7 @@ class Chat extends Component {
                 chatClick(null, true);
             }
             if (logoClick && layout.isTopNavigationToggled && !isTopNavigationToggled) {
-                logoClick();
+                logoClick(null, true);
             }
             const grid = currentLayout && currentLayout();
             const layoutGrid = layout.gridString ? JSON.parse(layout.gridString) : null;
@@ -456,19 +456,25 @@ class Chat extends Component {
         });
     };
 
-    showBackdrop=()=>{this.setState({backdrop:true})};
-    hideBackdrop=()=>{this.setState({backdrop:false})};
+    showBackdrop = () => {
+        this.setState({backdrop: true})
+    };
+    hideBackdrop = () => {
+        this.setState({backdrop: false})
+    };
 
     makeDraggableAndResizable = async () => {
         if (!$) { //todo jquery chunks is severely duplicated
             $ = await import('jquery');
             await import( 'jquery-ui/ui/core');
-            await import( 'jquery-ui/ui/widgets/draggable');
-            await import( 'jquery-ui/ui/widgets/resizable');
-            await import('jquery-ui/themes/base/core.css');
-            await import( 'jquery-ui/themes/base/theme.css');
-            await import( 'jquery-ui/themes/base/draggable.css');
-            await import( 'jquery-ui/themes/base/resizable.css');
+            await Promise.all([
+                import('jquery-ui/ui/widgets/draggable'),
+                import('jquery-ui/ui/widgets/resizable'),
+                import('jquery-ui/themes/base/core.css'),
+                import('jquery-ui/themes/base/theme.css'),
+                import('jquery-ui/themes/base/draggable.css'),
+                import('jquery-ui/themes/base/resizable.css')
+            ]);
         }
 
         if (!this.isDraggableAndResizable || !this.chatEl.current) {
@@ -578,7 +584,7 @@ class Chat extends Component {
         const avatarMenuOpen = !!avatarAnchorEl;
 
         const chatCurrentStyle = {
-            position:'fixed',
+            position: 'fixed',
             left: left,
             right: right,
             top: top,
@@ -620,7 +626,7 @@ class Chat extends Component {
         return (
             <React.Fragment>
                 {backdrop && <div className={classes.backdrop} onClick={this.hideBackdrop}/>}
-                <div className={isChatToggled?classes.chat: classes.hidden}
+                <div className={isChatToggled ? classes.chat : classes.hidden}
                      style={chatCurrentStyle}
                      ref={this.chatEl}>
                     {
