@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {withStyles} from 'material-ui/styles';
 import MyLocationIcon from '@material-ui/icons/MyLocation';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
 // import Tooltip from 'material-ui/Tooltip';
@@ -12,11 +13,42 @@ import {HighlightPalette} from '../containers/LiveExpressionStore';
 
 //start https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 /* NOTE: Chrome console.log is italic */
-const styles = {
+const styles = theme => ({
     preview: {
         fontStyle: 'italic',
     },
-};
+    objectClassName: {
+        fontSize: '80%',
+    },
+    objectBraces: {
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+        fontSize: '110%',
+    },
+    arrayBrackets: {
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+        fontSize: '110%',
+    },
+    stringQuote: {
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        fontSize: '110%',
+        color: theme.palette.type !== 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    stringValue: {
+        color: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    booleanValue: {
+        fontSize: '90%',
+        fontWeight: 'bold',
+    },
+    numberValue: {},
+});
+
+let currentLiveObjectNodeRenderer = null;
 
 /* intersperse arr with separator */
 function intersperse(arr, sep) {
@@ -30,7 +62,7 @@ function intersperse(arr, sep) {
 /**
  * A preview of the object
  */
-export const ObjectPreview = ({data, maxProperties, compact}) => {
+export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, compact}) => {
     const object = data;
 
     if (
@@ -39,20 +71,29 @@ export const ObjectPreview = ({data, maxProperties, compact}) => {
         object instanceof Date ||
         object instanceof RegExp
     ) {
-        return <ObjectValue object={object}/>;
+        if (typeof object === 'string') {
+            return (<span className={classes.preview}>
+                <span className={classes.stringQuote}>"</span>
+                <span className={classes.stringValue}>{object}</span>
+                <span className={classes.stringQuote}>"</span>
+            </span>);
+        } else {
+            return <ObjectValue object={object}/>;
+        }
+
     }
 
     if (Array.isArray(object)) {
-        return (
-            <span style={styles.preview}>
-        [
+        return (<span className={classes.preview}>
+                <span className={classes.arrayBrackets}>{'['}</span>
+                <span>
                 {intersperse(
                     object.map((element, index) => <ObjectValue key={index} object={element}/>),
                     ', ',
                 )}
-                ]
-      </span>
-        );
+                </span>
+                <span className={classes.arrayBrackets}>{']'}</span>
+        </span>);
     } else {
         let propertyNodes = [];
         for (let propertyName in object) {
@@ -76,17 +117,18 @@ export const ObjectPreview = ({data, maxProperties, compact}) => {
                 if (ellipsis) break;
             }
         }
-        const objectClassName = compact?
-            object.constructor.name === 'Object'? '':object.constructor.name:object.constructor.name;
+        const objectClassName = compact ?
+            object.constructor.name === 'Object' ? '' : object.constructor.name : object.constructor.name;
         return (
-            <span style={styles.preview}>
-        {`${objectClassName} {`}
-                {intersperse(propertyNodes, ', ')}
-                {'}'}
-      </span>
+            <span className={classes.preview}>
+                <span className={classes.objectClassName}>{`${objectClassName} `}</span>
+                <span className={classes.objectBraces}>{'{'}</span>
+                <span>{intersperse(propertyNodes, ', ')}</span>
+                <span className={classes.objectBraces}>{'}'}</span>
+            </span>
         );
     }
-};
+});
 
 ObjectPreview.propTypes = {
     /**
@@ -155,7 +197,7 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
     };
 
     liveObjectNodeRenderer.render = (props) => {
-        const {depth, name, data, isNonenumerable/*, expanded, path*/} = props;
+        const {depth, data, ...rest} = props;
         // const paths = liveObjectNodeRenderer.expandPathsState || {};
         // paths[path] = expanded;
         // if (expanded) {
@@ -168,8 +210,8 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
         const liveRef = traceProvider.trace.parseLiveRefs(data, liveObjectNodeRenderer.hideLiveRefs);
         const isRoot = depth === 0;
         const objectLabel = isRoot ?
-            <ObjectRootLabel name={name} data={liveRef.data}/>
-            : <ObjectLabel name={name} data={liveRef.data} isNonenumerable={isNonenumerable}/>;
+            <ObjectRootLabel data={liveRef.data} {...rest}/>
+            : <ObjectLabel data={liveRef.data} {...rest}/>;
 
         return liveRef.isLive ?
             isRoot ?
@@ -178,11 +220,13 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
                     <Inspector data={liveRef.data}
                                nodeRenderer={liveObjectNodeRenderer.render}
                                windowRef={liveObjectNodeRenderer.getWindowRef()}
+                               {...rest}
                     />
                 </ul>
             : objectLabel;
     };
-    return liveObjectNodeRenderer;
+    currentLiveObjectNodeRenderer = liveObjectNodeRenderer;
+    return currentLiveObjectNodeRenderer;
 };
 
 class OutputElementHover extends React.Component {

@@ -211,7 +211,10 @@ class OverflowComponent extends React.Component {
     };
 
     render() {
-        const {classes, contentClassName, children, placeholder, placeholderClassName, placeholderDisableGutters, ...rest} = this.props;
+        const {
+            classes, overflowXClassName, contentClassName, children, placeholder, placeholderClassName, placeholderDisableGutters,
+            overflowXAdornment, overflowYAdornment, ...rest
+        } = this.props;
 
         const {
             currentScrollLeft, currentScrollTop, isOverflowed, isOverflowedX, isOverflowedY,
@@ -220,19 +223,21 @@ class OverflowComponent extends React.Component {
         const showOverflowX = !currentScrollLeft && isOverflowedX;
         const showOverflowY = !currentScrollTop && isOverflowedY;
 
-        const rootClassName = placeholderDisableGutters ? classes.root :
+        const rClassName = placeholderDisableGutters ? classes.root :
             showOverflowX && showOverflowY ?
-                classes.rootBoth : showOverflowX ? classes.rootX : showOverflowY ? classes.rootY : classes.root;
-        const content = (!!this.isPlaceHolder || (isOverflowed && !!placeholder ))? placeholder : children;
+                classes.rootBoth : showOverflowX ? (overflowXClassName||classes.rootX) : showOverflowY ? classes.rootY : classes.root;
+        const content = (!!this.isPlaceHolder || (isOverflowed && !!placeholder)) ? placeholder : children;
         this.isPlaceHolder = content === placeholder;
         const className = this.isPlaceHolder ? placeholderClassName : contentClassName;
+        const overflowXIcon = overflowXAdornment || <MoreHorizIcon className={classes.overflowXIcon}/>;
+        const overflowYIcon = overflowYAdornment || <MoreVertIcon className={classes.overflowYIcon}/>;
         return (
-            <div className={rootClassName}>
+            <div className={rClassName}>
                 {(!placeholderDisableGutters && showOverflowX) &&
-                <MoreHorizIcon className={classes.overflowXIcon}/>
+                overflowXIcon
                 }
                 {(!placeholderDisableGutters && showOverflowY) &&
-                <MoreVertIcon className={classes.overflowYIcon}/>
+                overflowYIcon
                 }
                 <OverflowAndScrollDetector
                     className={className}
@@ -265,6 +270,8 @@ OverflowComponent.propTypes = {
         PropTypes.object,
     ]),
     placeholderDisableGutters: PropTypes.bool,
+    overflowXAdornment: PropTypes.node,
+    overflowYAdornment: PropTypes.node,
 };
 
 OverflowComponent.defaultProps = {

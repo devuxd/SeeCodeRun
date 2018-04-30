@@ -258,6 +258,11 @@ class LiveExpression extends Component {
             this.updateSliderMax(this.sliderMax);
         }
     }
+
+    componentWillUnmount() {
+        this.updateSliderMax.cancel();
+        clearTimeout(this.state.timeout);
+    }
 }
 
 LiveExpression.propTypes = {

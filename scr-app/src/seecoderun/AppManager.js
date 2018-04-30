@@ -88,6 +88,7 @@ const defaultFirecoPad = {
     mutex: false,
     nextSetFirecoTexts: [],
     text: null,// value obtained by firepad or set via scr
+    widgetLayoutChange: null, // handled in LiveExpressionStore
 };
 
 const editorIds = {
@@ -359,7 +360,7 @@ class AppManager {
         };
     }
 
-    configureLiveExpressionWidgetsLayoutChange(firecoPad) {
+    configureLiveExpressionWidgetsLayoutChangePassive(firecoPad) {
         const {monacoEditor} = firecoPad;
         let isChange = false;
         let isCursorPositionInColumnZero = false;
@@ -435,7 +436,6 @@ class AppManager {
                 firecoPad.monacoEditor = monacoEditor;
                 if (firecoPad.isJsx) {
                     this.addEnhancers(this.monaco, editorId, firecoPad); //  populates buildAst +
-                    this.configureLiveExpressionWidgetsLayoutChange(firecoPad);
                 }
 
                 const asyncContentChanged = async (changes) => {
@@ -453,6 +453,7 @@ class AppManager {
 
                 const onContentChanged = changes => {
                     firecoPad.onContentChanged && firecoPad.onContentChanged(monacoEditor.getValue());
+                    firecoPad.widgetLayoutChange && firecoPad.widgetLayoutChange();
                     debouncedAsyncContentChanged(changes);
                 };
 

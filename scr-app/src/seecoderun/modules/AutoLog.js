@@ -4,10 +4,10 @@ import DIBabelPlugin from 'babel-plugin-dynamic-import-webpack';
 // import AutoLogShift from 'jscodetracker';
 import AutoLogShift from './AutoLogShift';
 import Trace from './Trace';
-import {
-    updatePlaygroundLoadFailure,
-    updatePlaygroundLoadSuccess
-} from "../../redux/modules/playground";
+// import {
+//     updatePlaygroundLoadFailure,
+//     updatePlaygroundLoadSuccess
+// } from "../../redux/modules/playground";
 import {decodeBabelError} from "../../utils/scrUtils";
 
 export const SCRLoader = {
@@ -23,24 +23,23 @@ const defaultRequireString =
     `<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.js"></script>`;
 
 const defaultRequireOnErrorString = `requirejs.onError = function (err) {    
-    scrLoader.errors = scrLoader.errors ||[];    
-    scrLoader.errors.push(err);
-    clearTimeout(scrLoader.onErrTimeout);
-    scrLoader.onErrTimeout = setTimeout(function(){
-    scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
-    }, 1000); 
-};`;
+        scrLoader.errors = scrLoader.errors ||[];    
+        scrLoader.errors.push(err);
+        clearTimeout(scrLoader.onErrTimeout);
+        scrLoader.onErrTimeout = setTimeout(function(){
+        scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
+        }, 1000); 
+    };`;
 
 const defaultRequireEnsureMockString = `var proto = Object.getPrototypeOf(requirejs)
-Object.defineProperties(proto, {
-  ensure: {
-    writable: false,
-    value: function ensure (sources, cb) {
-      return cb(requirejs);
-    }
-  }
-})
-`;
+    Object.defineProperties(proto, {
+      ensure: {
+        writable: false,
+        value: function ensure (sources, cb) {
+          return cb(requirejs);
+        }
+      }
+    })`;
 
 const defaultRequireOnLoadString = `scrLoader.requirejsLoad = requirejs.load;
           requirejs.load = function (context, moduleName, url) {

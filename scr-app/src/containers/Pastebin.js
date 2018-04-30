@@ -415,7 +415,7 @@ class Pastebin extends Component {
                     rowsPerPage: prevState.rowsPerPage === prevState.minRows ? prevState.defaultRowsPerPage : prevState.rowsPerPage,
                     data: sortedData,
                     logData,
-                    HighlightTypes: HighlightTypes, // todo move nonserializables out of state
+                    HighlightTypes: HighlightTypes,
                     highlightSingleText: highlightSingleText,
                     setCursorToLocation: setCursorToLocation,
                     getEditorTextInLoc: getEditorTextInLoc,
@@ -425,7 +425,7 @@ class Pastebin extends Component {
                 }));
                 this.handleChangeDebugLoading(false);
             } else {
-                this.setState({liveTimeline: timeline});
+                this.setState({liveTimeline: timeline, liveLogs: logs, isNew});
             }
         }, 0);
     };

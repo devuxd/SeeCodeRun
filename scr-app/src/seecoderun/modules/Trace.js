@@ -23,18 +23,18 @@ export const TraceActions = {
     evaluateError: 'evaluateError'
 };
 
-let consoleClear= null;
-export const clearConsole = ()=>{
+let consoleClear = null;
+export const clearConsole = () => {
     consoleClear && consoleClear();
 };
 
-let isPreserveLogs= false;
+let isPreserveLogs = false;
 let preservedLogs = [];
-export const preserveLogs = (shouldPreserve)=>{
+export const preserveLogs = (shouldPreserve) => {
     isPreserveLogs = shouldPreserve;
 };
 
-export const canDispatch=()=>!!dispatcher;
+export const canDispatch = () => !!dispatcher;
 
 export const dispatch = (action = {}) => {
     switch (action.type) {
@@ -119,9 +119,9 @@ class Trace {
         this.consoleLog = null;
         this.realConsoleLog = null;
         this.timeline = [];
-        if(isPreserveLogs){
+        if (isPreserveLogs) {
             this.logs = preservedLogs;
-        }else{
+        } else {
             this.logs = [];
             preservedLogs = this.logs;
         }
@@ -154,9 +154,9 @@ class Trace {
         this.domNodes = [];
         //todo save before dispose
         this.timeline = [];
-        if(isPreserveLogs){
+        if (isPreserveLogs) {
             this.logs = preservedLogs;
-        }else{
+        } else {
             this.logs = [];
             preservedLogs = this.logs;
         }
@@ -168,12 +168,12 @@ class Trace {
         this.dataRefMatches = [];
         this.funcRefs = [];
         this.funcRefMatches = [];
-        this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
+        // this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
         clearInterval(this.tli);
         this.lastTickTimestamp = Date.now();
         this.tli = setInterval(() => {
             this.lastTickTimestamp = Date.now();
-            if (this.timelineLength !== this.timeline.length || this.logsLength !== this.logs.length) {
+            if ((this.timeline.length || this.logs.length) && (this.timelineLength !== this.timeline.length || this.logsLength !== this.logs.length)) {
                 this.timelineLength = this.timeline.length;
                 this.logsLength = this.logs.length;
                 this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
@@ -220,8 +220,8 @@ class Trace {
             });
         };
 
-        consoleClear = ()=>{
-            this.logs =[];
+        consoleClear = () => {
+            this.logs = [];
             preservedLogs = this.logs;
         };
 
@@ -501,8 +501,12 @@ class Trace {
         } else {
             if (type === 'BlockStatement') {
                 // console.log('b', pre, value, post, type, extraIds, areNew, extraValues);
+                const expression=this.locationMap[pre.id]||{};
+                // console.log('e',expression, pre, this.locationMap[pre.secondaryId]);
                 this.branches.push({
                     ...pre,
+                    loc: expression.loc,
+                    blockLoc: expression.blockLoc,
                     timelineI: this.timeline.length,
                 });
                 push = false;

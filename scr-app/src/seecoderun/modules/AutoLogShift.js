@@ -636,6 +636,14 @@ class AutoLogShift {
                         parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
                     }
                     if (parentId) {
+
+                        locationMap[parentId] = {
+                            type: alt.BlockControl,
+                            expressionType: parentType,
+                            loc: {...parentLoc},
+                            blockId: id,
+                            blockLoc: loc,
+                        };
                         const jid = j.identifier(`'${parentId}'`);
                         const params = [
                             j.callExpression(j.identifier(l.preAutoLogId),
