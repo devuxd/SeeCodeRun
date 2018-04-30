@@ -9,8 +9,8 @@ export const getDefaultGridBreakpoints = () => ({
 });
 
 export const getDefaultGrid = () => ({
-    cols: {lg: 100},
-    rows: {lg: 50},
+    cols: {lg: 50},
+    rows: {lg: 20},
 });
 
 export const getDefaultGridUnits = (grid) => ((cl, bk, prop) => {
@@ -33,7 +33,7 @@ export const configureGetDefaultGridLayouts = (grid, getGridUnits) => () => (({
                 x: 0,
                 y: 0,
                 w: getGridUnits('cols', 'lg', 40),
-                h: getGridUnits('rows', 'lg', 40),
+                h: getGridUnits('rows', 'lg', 60),
                 isDraggable: false
             },
             {
@@ -41,15 +41,15 @@ export const configureGetDefaultGridLayouts = (grid, getGridUnits) => () => (({
                 x: getGridUnits('cols', 'lg', 40),
                 y: 0,
                 w: getGridUnits('cols', 'lg', 20),
-                h: getGridUnits('rows', 'lg', 30),
+                h: getGridUnits('rows', 'lg', 40),
                 isDraggable: false,
             },
             {
                 i: 'cssContainer',
                 x: getGridUnits('cols', 'lg', 40),
-                y: getGridUnits('rows', 'lg', 30),
+                y: getGridUnits('rows', 'lg', 40),
                 w: getGridUnits('cols', 'lg', 20),
-                h: getGridUnits('rows', 'lg', 10),
+                h: getGridUnits('rows', 'lg', 20),
                 isDraggable: false,
             },
             {
@@ -57,28 +57,33 @@ export const configureGetDefaultGridLayouts = (grid, getGridUnits) => () => (({
                 x: getGridUnits('cols', 'lg', 40) + getGridUnits('cols', 'lg', 20),
                 y: 0,
                 w: grid.cols.lg - (getGridUnits('cols', 'lg', 40) + getGridUnits('cols', 'lg', 20)),
-                h: getGridUnits('rows', 'lg', 40),
+                h: getGridUnits('rows', 'lg', 60),
                 isDraggable: false,
-            },
-            {
-                i: 'consoleContainer',
-                x: 0,
-                y: getGridUnits('rows', 'lg', 40),
-                w: grid.cols.lg,
-                h: getGridUnits('rows', 'lg', 20),
             },
             {
                 i: 'playgroundContainer',
                 x: 0,
-                y: getGridUnits('rows', 'lg', 40) + getGridUnits('rows', 'lg', 20),
+                y: getGridUnits('rows', 'lg', 60),
                 w: grid.cols.lg,
-                h: grid.rows.lg - (getGridUnits('rows', 'lg', 40) + getGridUnits('rows', 'lg', 20)),
+                h: grid.rows.lg - (getGridUnits('rows', 'lg', 60)),
             },
         ]
 }));
 
+const getDefaultLayoutDragPositionInvariant =(C2I) => ((layout) => {
+    layout[C2I.scriptContainer].x = 0;
+    layout[C2I.htmlContainer].y = layout[C2I.scriptContainer].y;
+    layout[C2I.debugContainer].y = layout[C2I.scriptContainer].y;
 
-export const getDefaultlayoutFormatInvariant = (C2I) => (layout => {
+
+    layout[C2I.htmlContainer].x = layout[C2I.scriptContainer].w;
+    layout[C2I.cssContainer].x = layout[C2I.htmlContainer].x;
+
+
+    layout[C2I.cssContainer].y = layout[C2I.htmlContainer].y + layout[C2I.htmlContainer].h;
+});
+
+const getDefaultLayoutPositionInvariant =(C2I) => ((layout) => {
     layout[C2I.scriptContainer].x = 0;
     layout[C2I.htmlContainer].y = layout[C2I.scriptContainer].y;
     layout[C2I.debugContainer].y = layout[C2I.scriptContainer].y;
@@ -89,30 +94,75 @@ export const getDefaultlayoutFormatInvariant = (C2I) => (layout => {
 
     layout[C2I.scriptContainer].minH = 2;
     layout[C2I.debugContainer].minH = 2;
-    layout[C2I.consoleContainer].minH = 2;
     layout[C2I.playgroundContainer].minH = 2;
+    layout[C2I.htmlContainer].minH = 1;
+    layout[C2I.cssContainer].minH = 1;
 
-    layout[C2I.consoleContainer].minW = layout[C2I.consoleContainer].w;
     layout[C2I.playgroundContainer].minW = layout[C2I.playgroundContainer].w;
 
     layout[C2I.scriptContainer].maxW = layout[C2I.debugContainer].x - 1;
     layout[C2I.cssContainer].y = layout[C2I.htmlContainer].y + layout[C2I.htmlContainer].h;
 });
 
+export const getDefaultLayoutFormatInvariant = (C2I, layoutPositionInvariant) => ((layout, sourceI, maxRows/*, maxCols*/) => {
+    layoutPositionInvariant(layout);
+    let finalH = 0;
+    switch (sourceI) {
+        case 'debugContainer':
+            finalH = layout[C2I.debugContainer].h;
+            break;
+        case 'scriptContainer':
+            finalH = layout[C2I.scriptContainer].h;
+            break;
+        case 'htmlContainer':
+            finalH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
+            layout[C2I.cssContainer].h = finalH - layout[C2I.htmlContainer].h;
+            break;
+        case 'cssContainer':
+            finalH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
+            layout[C2I.htmlContainer].h = finalH - layout[C2I.cssContainer].h;
+            break;
+        default:
+            finalH = maxRows - layout[C2I.playgroundContainer].h;
+            if (finalH < layout[C2I.scriptContainer].minH) {
+                finalH = layout[C2I.scriptContainer].minH;
+                layout[C2I.playgroundContainer].h = maxRows - finalH;
+            }
+    }
+
+    if (sourceI !== 'playgroundContainer') {
+        if (maxRows - finalH < layout[C2I.playgroundContainer].minH) {
+            finalH = maxRows - layout[C2I.playgroundContainer].minH;
+            layout[C2I.playgroundContainer].h = layout[C2I.playgroundContainer].minH;
+        } else {
+            layout[C2I.playgroundContainer].h = maxRows - finalH;
+        }
+    }
+
+    layout[C2I.scriptContainer].h = finalH;
+    layout[C2I.debugContainer].h = finalH;
+
+    layout[C2I.cssContainer].h = finalH - layout[C2I.htmlContainer].h;
+    if (layout[C2I.cssContainer].h < layout[C2I.cssContainer].minH) {
+        layout[C2I.cssContainer].h = layout[C2I.cssContainer].minH;
+    }
+    layout[C2I.htmlContainer].h = finalH - layout[C2I.cssContainer].h;
+});
+
 export const getDefaultFormatLayoutHeight = (C2I, grid, currentBreakPoint) => ((layout, sourceIndex) => {
     if (layout[sourceIndex].h
-        + layout[C2I.consoleContainer].h
         + layout[C2I.playgroundContainer].h > grid.rows[currentBreakPoint]) {
-        if (layout[C2I.consoleContainer].h < 3) {
-            layout[sourceIndex].h =
-                grid.rows[currentBreakPoint] - layout[C2I.consoleContainer].h - layout[C2I.debugContainer].h;
-        } else {
-            layout[C2I.consoleContainer].h =
-                grid.rows[currentBreakPoint] - layout[sourceIndex].h - layout[C2I.playgroundContainer].h;
+        layout[C2I.playgroundContainer].h =
+            grid.rows[currentBreakPoint] - layout[sourceIndex].h;
+
+        if (layout[C2I.playgroundContainer].h < layout[C2I.playgroundContainer].minH) {
+            layout[C2I.playgroundContainer].h = layout[C2I.playgroundContainer].minH;
         }
+        layout[sourceIndex].h =
+            grid.rows[currentBreakPoint] - layout[C2I.playgroundContainer].h;
     } else {
-        layout[C2I.consoleContainer].h =
-            grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - layout[C2I.playgroundContainer].h;
+        layout[C2I.playgroundContainer].h =
+            grid.rows[currentBreakPoint] - layout[sourceIndex].h;
     }
 });
 
@@ -143,11 +193,9 @@ export const getDefaultLayoutFormatter = (C2I, grid, currentBreakPoint, formatLa
 
             if (newItem.i === 'cssContainer') {
                 let newH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
-                if (newH + layout[C2I.consoleContainer].h + layout[C2I.playgroundContainer].h > grid.rows[currentBreakPoint]) {
-                    if (layout[C2I.consoleContainer].h < 3) {
-                        layout[C2I.cssContainer].h = layout[C2I.scriptContainer].h - layout[C2I.htmlContainer].h;
-                        newH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
-                    }
+                if (newH + layout[C2I.playgroundContainer].h > grid.rows[currentBreakPoint]) {
+                    layout[C2I.cssContainer].h = layout[C2I.scriptContainer].h - layout[C2I.htmlContainer].h;
+                    newH = layout[C2I.htmlContainer].h + layout[C2I.cssContainer].h;
                 }
                 layout[C2I.scriptContainer].h = newH;
                 layout[C2I.debugContainer].h = newH;
@@ -201,38 +249,24 @@ export const getDefaultLayoutFormatter = (C2I, grid, currentBreakPoint, formatLa
 
         }
 
-        if (newItem.i === 'consoleContainer' || newItem.i === 'playgroundContainer') {
-            let newH = grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - layout[C2I.playgroundContainer].h;
+        if (newItem.i === 'playgroundContainer') {
+            let newH = grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h;
             let sourceContainer = layout[C2I.playgroundContainer];
-            let targetContainer = layout[C2I.consoleContainer];
-            if (newItem.i === 'consoleContainer') {
-                newH = grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - layout[C2I.consoleContainer].h || 1;
-                sourceContainer = layout[C2I.consoleContainer];
-                targetContainer = layout[C2I.playgroundContainer];
-            }
+            let targetContainer = layout[C2I.scriptContainer];
+
             if (newH > 1) {
                 targetContainer.h = newH;
             } else {
-                sourceContainer.h = grid.rows[currentBreakPoint] - layout[C2I.scriptContainer].h - targetContainer.h;
+                sourceContainer.h = grid.rows[currentBreakPoint] - targetContainer.h;
             }
         }
-        layoutFormatInvariant(layout);
+        layoutFormatInvariant(layout, newItem.i, grid.rows[currentBreakPoint], grid.cols[currentBreakPoint]);
     };
 };
 
-export const geDefaultValidateLayout = (C2I, grid, getGridUnits) => (layout => {
-    if(layout[C2I.consoleContainer].id !=='consoleContainer'){
-        const temp = layout[C2I.consoleContainer];
-        layout[C2I.consoleContainer] =  {
-            i: 'consoleContainer',
-            x: 0,
-            y: getGridUnits('rows', 'lg', 40),
-            w: grid.cols.lg,
-            h: getGridUnits('rows', 'lg', 20),
-        };
-        layout.push(temp); // todo fix pos move to last
-    }
-    return layout;
+export const geDefaultValidateLayout = (/*C2I*/) => ((gridLayouts, currentBreakPoint) => {
+    gridLayouts[currentBreakPoint] = gridLayouts[currentBreakPoint].filter(el => el.id !== 'consoleContainer');
+    return gridLayouts;
 });
 
 export const configureDefaultGridLayoutFormatter = (currentBreakPoint = getDefaultBreakPoint()) => {
@@ -245,7 +279,9 @@ export const configureDefaultGridLayoutFormatter = (currentBreakPoint = getDefau
     gl.currentGridLayouts = gl.getDefaultGridLayouts();
     gl.C2I = getCellToIndex(gl.currentGridLayouts, currentBreakPoint);
     gl.formatLayoutHeight = getDefaultFormatLayoutHeight(gl.C2I, gl.grid, currentBreakPoint);
-    gl.layoutFormatInvariant = getDefaultlayoutFormatInvariant(gl.C2I);
+    gl.layoutPositionInvariant = getDefaultLayoutPositionInvariant(gl.C2I);
+    gl.layoutDragPositionInvariant = getDefaultLayoutDragPositionInvariant(gl.C2I);
+    gl.layoutFormatInvariant = getDefaultLayoutFormatInvariant(gl.C2I, gl.layoutPositionInvariant);
     gl.formatLayout = getDefaultLayoutFormatter(gl.C2I, gl.grid, currentBreakPoint, gl.formatLayoutHeight, gl.layoutFormatInvariant);
     gl.getLayoutDummy = (layout) => { // required to force RGL render on reset layout
         const hack = layout ? {...layout} : gl.getDefaultGridLayouts();
@@ -262,10 +298,11 @@ export const configureDefaultGridLayoutFormatter = (currentBreakPoint = getDefau
         gl.currentBreakPoint = bk;
         gl.C2I = getCellToIndex(gl.currentGridLayouts, bk);
         gl.formatLayoutHeight = getDefaultFormatLayoutHeight(gl.C2I, gl.grid, bk);
-        gl.layoutFormatInvariant = getDefaultlayoutFormatInvariant(gl.C2I);
+        gl.layoutPositionInvariant = getDefaultLayoutPositionInvariant(gl.C2I);
+        gl.layoutFormatInvariant = getDefaultLayoutFormatInvariant(gl.C2I, gl.layoutPositionInvariant);
         gl.formatLayout = getDefaultLayoutFormatter(gl.C2I, gl.grid, bk, gl.formatLayoutHeight, gl.layoutFormatInvariant);
     };
-    gl.validateLayout = geDefaultValidateLayout(gl.C2I, gl.grid, gl.getGridUnits);
+    gl.validateLayout = geDefaultValidateLayout(/*gl.C2I*/);
 
     return gl;
 };

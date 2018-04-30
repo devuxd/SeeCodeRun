@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import isString from 'lodash/isString';
 import {withStyles} from 'material-ui/styles';
-import ButtonBase from 'material-ui/ButtonBase';
-import Typography from 'material-ui/Typography';
 import {fade, lighten, darken} from 'material-ui/styles/colorManipulator';
+import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
 import Table, {
     TableBody,
@@ -19,28 +18,24 @@ import Table, {
 import Paper from 'material-ui/Paper';
 import Checkbox from 'material-ui/Checkbox';
 import Tooltip from 'material-ui/Tooltip';
-import Highlighter from "react-highlight-words";
+// import Highlighter from "react-highlight-words";
 
 
-import JSAN from "jsan";
 import ObjectExplorer from "./ObjectExplorer";
 
 import {PastebinContext} from "../containers/Pastebin";
 import {HighlightPalette} from '../containers/LiveExpressionStore';
-import OverflowComponent from "./OverflowComponent";
 
 const columnData = [
-    {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1},
-    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1},
+    {id: 'value', numeric: false, className: 'cellPadding', label: ''/*'Value'*/, colSpan: 1},
 ];
 
 const createSortHandler = (props, property) => event => {
     props.onRequestSort(event, property);
 };
 
-// const labelDisplayedRows = ({to, count}) => `${to} of ${count}`;
 
-class TraceTableHead extends React.Component {
+class ConsoleTableHead extends React.Component {
     render() {
         const {isSelectable, onSelectAllClick, order, orderBy, numSelected, rowCount, classes} = this.props;
 
@@ -64,7 +59,6 @@ class TraceTableHead extends React.Component {
                                 numeric={column.numeric}
                                 className={classes[column.className]}
                                 sortDirection={orderBy === column.id ? order : false}
-                                // colSpan={column.colSpan}
                             >
                                 <Tooltip
                                     title="Sort"
@@ -88,7 +82,7 @@ class TraceTableHead extends React.Component {
     }
 }
 
-TraceTableHead.propTypes = {
+ConsoleTableHead.propTypes = {
     isSelectable: PropTypes.bool.isRequired,
     numSelected: PropTypes.number.isRequired,
     onRequestSort: PropTypes.func.isRequired,
@@ -98,7 +92,6 @@ TraceTableHead.propTypes = {
     rowCount: PropTypes.number.isRequired,
 };
 
-let expressionCellMaxWidth = 300;
 
 const styles = theme => ({
     root: {
@@ -110,8 +103,6 @@ const styles = theme => ({
     },
     tableWrapper: {
         overflowX: 'auto',
-        // width: '100%',
-        height: '100%',
     },
     tableRow: {
         '&$hover:hover': {
@@ -119,50 +110,60 @@ const styles = theme => ({
         },
     },
     tableRowError: {
-        backgroundColor: fade(HighlightPalette.error, 0.2),
+        backgroundColor: fade(HighlightPalette.error, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.error,
         },
     },
     tableRowGraphical: {
-        backgroundColor: fade(HighlightPalette.graphical, 0.2),
+        backgroundColor: fade(HighlightPalette.graphical, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.graphical,
         }
     },
     hover: {},
-    expressionCellRoot: {
-        borderBottom: 0,
-        overflow: 'hidden',
-        display: 'table-cell',
-        verticalAlign: 'inherit',
-        // Workaround for a rendering bug with spanned columns in Chrome 62.0.
-        // Removes the alpha (sets it to 1), and lightens or darkens the theme color.
-        // borderBottom: `1px solid ${
-        //     theme.palette.type === 'light'
-        //         ? lighten(fade(theme.palette.divider, 1), 0.88)
-        //         : darken(fade(theme.palette.divider, 1), 0.8)
-        //     }`,
-        textAlign: 'left',
-        padding: 0,
-        paddingLeft: theme.spacing.unit * 2,
-        paddingRight: 0,
-    },
-    expressionCellContent: {
-        overflow: 'auto',
-        position: 'relative',
-        maxWidth: expressionCellMaxWidth,
-        paddingTop: theme.spacing.unit,
-        paddingBottom: theme.spacing.unit * 2,
-        marginBottom: -theme.spacing.unit,
-    },
     valueCell: {
         borderBottom: 0,
         paddingLeft: theme.spacing.unit,
-        paddingRight: theme.spacing.unit,
+        '&:first-child': {
+            paddingLeft: theme.spacing.unit * 4,
+        },
         '&:last-child': {
             paddingRight: theme.spacing.unit * 2,
         },
+        overflow: 'hidden',
+        margin: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+    },
+    bottomAction: {
+        margin: theme.spacing.unit * 4
+    },
+    cellParamContainer: {
+        //display: 'box',
+        // display: 'inline-block',
+        position: 'relative',
+        // flexDirection: 'row',
+        // flexWrap: 'wrap',
+        // overflowX: 'auto',
+        // padding: theme.spacing.unit,
+        // paddingBottom: theme.spacing.unit,
+    },
+    cellParam: {
+        display: 'inline-flex',
+        marginLeft: theme.spacing.unit,
+    },
+    iconContainer: {
+        position: 'absolute',
+        left: 0,
+        marginLeft: -theme.spacing.unit * 3,
+        top: 0,
+    },
+    icon: {
+        fontSize: theme.spacing.unit * 2,
+        color: theme.palette.type === 'light'
+            ? lighten(fade(theme.palette.divider, 1), 0.6)
+            : darken(fade(theme.palette.divider, 1), 0.4)
     },
     bottomValueCell: {
         borderTop: `1px solid ${
@@ -171,9 +172,10 @@ const styles = theme => ({
                 : darken(fade(theme.palette.divider, 1), 0.8)
             }`,
     },
-    bottomAction: {
-        margin: theme.spacing.unit * 4
-    },
+    commandText: {
+        fontFamily: 'Menlo, monospace',
+        fontSize: 12,
+    }
 });
 
 const configureMatchesFilter = (searchState) => {
@@ -222,7 +224,7 @@ const configureMatchesFilter = (searchState) => {
     }
 ;
 
-class TraceTable extends React.Component {
+class ConsoleTable extends React.Component {
     constructor(props) {
         super(props);
         this.containerRef = React.createRef();
@@ -234,7 +236,7 @@ class TraceTable extends React.Component {
 
         const {
             classes,
-            data, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
+            logData, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
             HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying
         } = this.props;
@@ -247,10 +249,10 @@ class TraceTable extends React.Component {
         this.totalMatches = 0;
         this.matches = 0;
         // console.log('table');
-
+        const data = logData;
         const matchedData = data.map(n => {
             const newN = {...n, isMatch: true, chunksResult: this.findChuncks(n)};
-            if (!newN.chunksResult.found || !newN.expression) {
+            if (!newN.chunksResult.found || (!newN.isFromInput && !newN.expression)) {
                 newN.isMatch = false;
             } else {
                 this.totalMatches++;
@@ -262,7 +264,7 @@ class TraceTable extends React.Component {
             <Paper className={classes.root}>
                 <div ref={this.containerRef} className={classes.tableWrapper}>
                     <Table className={classes.table}>
-                        <TraceTableHead
+                        <ConsoleTableHead
                             isSelectable={isSelectable}
                             numSelected={selected.length}
                             order={order}
@@ -273,83 +275,86 @@ class TraceTable extends React.Component {
                             classes={classes}
                         />
                         <TableBody onMouseEnter={() => handleChangePlaying('table', false)}
-                                   onMouseLeave={() => handleChangePlaying('table', true)}>
+                                   onMouseLeave={() => handleChangePlaying('table', true)}
+                        >
                             {matchedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(n => {
                                 const isSelected = isRowSelected(n.id);
-                                const result = n.chunksResult;
-                                if (!n.isMatch) {
+                                // const result = n.chunksResult;
+                                if (!n.isFromInput && !n.isMatch) {
                                     return null;
+                                }
+                                let onMouseEnter = null, onMouseLeave = null, onClick = null;
+                                if (!n.isFromInput) {
+
+
+                                    onMouseEnter = () =>
+                                        highlightSingleText(
+                                            n.loc, n.isError ? HighlightTypes.error
+                                                : n.isGraphical ?
+                                                    HighlightTypes.graphical : HighlightTypes.text,
+                                            traceSubscriber.getMatches(n.funcRefId, n.dataRefId))
+                                    onMouseLeave = () => highlightSingleText();
+                                    onClick = () => setCursorToLocation(n.loc)
                                 }
                                 this.matches++;
 
-                                return (
-                                    <TableRow
-                                        hover
-                                        onMouseEnter={() =>
-                                            highlightSingleText(
-                                                n.loc, n.isError ? HighlightTypes.error
-                                                    : n.isGraphical ?
-                                                        HighlightTypes.graphical : HighlightTypes.text,
-                                                traceSubscriber.getMatches(n.funcRefId, n.dataRefId))}
-                                        onMouseLeave={() => highlightSingleText()}
-                                        role="checkbox"
-                                        aria-checked={isSelected}
-                                        tabIndex={-1}
-                                        key={n.id}
-                                        selected={isSelected}
-                                        classes={{
-                                            root: n.isError ? classes.tableRowError
-                                                : n.isGraphical ? classes.tableRowGraphical : classes.tableRow,
-                                            hover: classes.hover
-                                        }}
-                                    >
-                                        {isSelectable &&
-                                        <TableCell padding="checkbox"
-                                                   onClick={event => handleSelectClick(event, n.id)}>
-                                            <Checkbox checked={isSelected} padding={'none'}/>
-                                        </TableCell>
-                                        }
-                                        <TableCell
-                                            classes={{root: classes.expressionCellRoot}}
-                                        >
-                                            <OverflowComponent
-                                                contentClassName={classes.expressionCellContent}
-                                                disableOverflowDetectionY={true}
-                                                //  placeholder={<Typography>Yo</Typography>}
-                                                //  placeholderClassName={classes.expressionCellContent}
-                                                // placeholderDisableGutters={true}
-                                            >
-                                                <ButtonBase onClick={() => setCursorToLocation(n.loc)}>
-                                                    <Typography align={"left"} noWrap>
-                                                        <Highlighter
-                                                            searchWords={[searchState.value]}
-                                                            textToHighlight={n.expression}
-                                                            findChunks={() => result.expressions}
-                                                        />
-                                                    </Typography>
-                                                </ButtonBase>
-                                            </OverflowComponent>
-                                        </TableCell>
-                                        <TableCell className={classes.valueCell}>
-                                            <ObjectExplorer
-                                                expressionId={n.expressionId}
-                                                objectNodeRenderer={objectNodeRenderer}
-                                                data={isString(n.value) ? JSAN.parse(n.value) : n.value}
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                );
+                                return (<TableRow
+                                    hover
+                                    onMouseEnter={onMouseEnter}
+                                    onMouseLeave={onMouseLeave}
+                                    role="checkbox"
+                                    aria-checked={isSelected}
+                                    tabIndex={-1}
+                                    key={n.id}
+                                    selected={isSelected}
+                                    classes={{
+                                        root: n.isError ? classes.tableRowError
+                                            : n.isGraphical ? classes.tableRowGraphical : n.isFromInput ? null : classes.tableRow,
+                                        hover: classes.hover
+                                    }}
+                                >
+                                    {isSelectable &&
+                                    <TableCell padding="checkbox"
+                                               onClick={event => handleSelectClick(event, n.id)}>
+                                        <Checkbox checked={isSelected} padding={'none'}/>
+                                    </TableCell>
+                                    }
+                                    <TableCell classes={{root: classes.valueCell}} onClick={onClick}>
+                                        <div className={classes.cellParamContainer}>
+                                            {n.isFromInput && (<div
+                                                className={classes.iconContainer} key="ChevronLeftIcon">
+                                                {n.isResult ?
+                                                    <ChevronLeftIcon className={classes.icon}/>
+                                                    : <ChevronRightIcon className={classes.icon}/>}
+                                            </div>)}
+                                            {(n.isFromInput && !n.isResult && !n.isError) ?
+                                                <div className={classes.commandText}>{`${n.value[0]}`}</div>
+                                                : (n.value || []).map((param, i) => {
+                                                    return (
+                                                        <div className={classes.cellParam} key={i}>
+                                                            <ObjectExplorer
+                                                                expressionId={n.expressionId}
+                                                                objectNodeRenderer={objectNodeRenderer}
+                                                                data={param}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })
+                                            }
+                                        </div>
+                                    </TableCell>
+                                </TableRow>);
                             })}
                             {emptyRows > 0 && (
                                 <TableRow style={{height: 49 * emptyRows}}>
-                                    <TableCell colSpan={isSelectable ? 3 : 2}/>
+                                    <TableCell colSpan={isSelectable ? 2 : 1}/>
                                 </TableRow>
                             )}
                         </TableBody>
                         <TableFooter>
                             <TableRow>
                                 <TablePagination
-                                    colSpan={isSelectable ? 3 : 2}
+                                    colSpan={isSelectable ? 2 : 1}
                                     count={this.totalMatches}
                                     rowsPerPageOptions={[]}
                                     rowsPerPage={this.matches}
@@ -379,23 +384,23 @@ class TraceTable extends React.Component {
 
     componentDidUpdate() {
         const {handleTotalChange} = this.props;
-        if (handleTotalChange && this.traceTotal !== this.totalMatches) {
-            this.traceTotal = this.totalMatches;
-            handleTotalChange(this.traceTotal);
+        if (handleTotalChange && this.consoleTotal !== this.totalMatches) {
+            this.consoleTotal = this.totalMatches;
+            handleTotalChange(this.consoleTotal);
         }
     }
 }
 
-TraceTable.propTypes = {
+ConsoleTable.propTypes = {
     classes: PropTypes.object.isRequired,
 };
 
-const TraceTableWithContext = props => (
+const ConsoleTableWithContext = props => (
     <PastebinContext.Consumer>
         {(context) => {
-            return <TraceTable {...context} {...props} />
+            return <ConsoleTable {...context} {...props} />
         }}
     </PastebinContext.Consumer>
 );
 
-export default withStyles(styles)(TraceTableWithContext);
+export default withStyles(styles)(ConsoleTableWithContext);//ConsoleTable

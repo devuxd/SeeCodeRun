@@ -1,6 +1,10 @@
-import _ from 'lodash';
+import difference from 'lodash/difference';
+import {Subject} from 'rxjs/Subject';
+import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";
 import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
+
+import AutoLogShift from '../seecoderun/modules/AutoLogShift';
 
 
 export const jExpressions = [];
@@ -13,7 +17,7 @@ let j = null;
 
 
 class LiveExpressionWidgetProvider {
-    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName) {
+    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 50) {
         this.monaco = monaco;
         j = jRef;
 
@@ -35,6 +39,20 @@ class LiveExpressionWidgetProvider {
         this.defaultExpressionClassName = defaultExpressionClassName;
         this.decorators = [];
         this.contentWidgets = {};
+        this.lineNumbersWitdhUpdates = {};
+        this.throttleTime = throttleTime;
+    }
+
+    getLineNumberSubject(lineNumber) {
+        if (!this.lineNumbersWitdhUpdates[lineNumber]) {
+            this.lineNumbersWitdhUpdates[lineNumber] = new Subject();
+            this.lineNumbersWitdhUpdates[lineNumber]
+                .throttle(() => Observable.interval(this.throttleTime), {leading: true, trailing: false})
+                .debounceTime(100)
+                .subscribe(update => update());
+
+        }
+        return this.lineNumbersWitdhUpdates[lineNumber];
     }
 
     afterWidgetize(callback) {
@@ -88,8 +106,8 @@ class LiveExpressionWidgetProvider {
                     id2i[id] = i;
                 });
 
-                const deltaRemove = _.difference(prevDecoratorIds, this.jExpressionDecoratorIds);
-                const deltaAdd = _.difference(this.jExpressionDecoratorIds, prevDecoratorIds);
+                const deltaRemove = difference(prevDecoratorIds, this.jExpressionDecoratorIds);
+                const deltaAdd = difference(this.jExpressionDecoratorIds, prevDecoratorIds);
 
                 hasDecoratorIdsChanged = deltaRemove.length + deltaAdd.length > 0;
                 this.contentWidgets = {...prevContentWidgets};
@@ -199,12 +217,87 @@ class LiveExpressionWidgetProvider {
             });
     };
 
-    getWidgetAvailableWidth = (decoratorId) => {
-        const decorator = this.getDecorator(decoratorId);
-        const lineNumberDecorators = this.getDecoratorsInLineNumber(decorator.range.startLineNumber);
-        const i = lineNumberDecorators.indexOf(decorator);
-        return i;
-        // const rightSibling = i === lineNumberDecorators.length - 1 ? null : lineNumberDecorators[i + 1];
+    getWidgetAvailableWidth = (decoratorId, ignoreVisible, isBranchNavigator) => {
+        const sourceDecorator = this.getDecorator(decoratorId);
+        if (!sourceDecorator) {
+            return;
+        }
+        if (isBranchNavigator) {
+            if (sourceDecorator.contentWidget && !ignoreVisible) {
+                const domNode = sourceDecorator.contentWidget.domNode;
+                const onWidthAdjust = sourceDecorator.contentWidget.onWidthAdjust;
+                if (!domNode) {
+                    return;
+                }
+                domNode.style.maxWidth = '100%';
+                domNode.style.zIndex = '1000';
+                onWidthAdjust && onWidthAdjust(domNode.style.width);
+            }
+            return;
+        }
+        const lineNumber = sourceDecorator.range.startLineNumber;
+        const lineNumberDecorators = this.getDecoratorsInLineNumber(lineNumber);
+        const lineNumberSubject = this.getLineNumberSubject(lineNumber);
+        const updates = [];
+        lineNumberDecorators.forEach((decorator) => {
+            if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
+                // setTimeout(() => {
+                if (decorator.contentWidget && !ignoreVisible) {
+                    const domNode = decorator.contentWidget.domNode;
+                    const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+                    if (!domNode) {
+                        return;
+                    }
+                    domNode.style.maxWidth = '0px';
+                    onWidthAdjust && onWidthAdjust(domNode.style.width);
+                }
+
+                //}, 0);
+                return;
+            }
+
+
+            const i = lineNumberDecorators.indexOf(decorator);
+            let hideSib = false;
+            let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
+            rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
+                rightSibling : null;
+            if (rightSibling && rightSibling.range.equalsRange(decorator.range)) {
+                hideSib = true;
+            }
+
+            updates.push(() => {
+                if (!decorator.contentWidget) {
+                    return;
+                }
+                const domNode = decorator.contentWidget.domNode;
+                const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+                if (!domNode) {
+                    return;
+                }
+                const el = document.querySelector(decorator.selector);
+                if (!el) {
+                    return;
+                }
+                let width = el.style.width;
+                if (rightSibling) {
+                    const sel = document.querySelector(rightSibling.selector);
+                    if (sel) {
+                        if (hideSib) {
+                            sel.style.maxWidth = '0px';
+                        }
+                        const ll = (el.style.left || '0').replace('px', '');
+                        const lr = (sel.style.left || width).replace('px', '');
+                        width = `${parseInt(lr, 10) - parseInt(ll, 10)}px`;
+                    }
+                }
+                // console.log('w', width);
+                domNode.style.maxWidth = width;
+                onWidthAdjust && onWidthAdjust(domNode.style.width);
+            });
+        });
+
+        lineNumberSubject.next(() => updates.forEach(update => update()));
         // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
     };
 
@@ -218,36 +311,30 @@ class LiveExpressionWidgetProvider {
             selector: null,
             domNode: null,
             onWidthAdjust: null,
+            getId: function () {
+                return decoratorId;
+            },
+            adjustWidth: function (ignoreVisible, isBranchNavigator) {
+                getWidgetAvailableWidth(decoratorId, ignoreVisible, isBranchNavigator);
+            },
             getDomNode: function () {
                 if (this.domNode) {
+                    // this.adjustWidth(false);
                     return this.domNode;
                 }
                 this.domNode = document.createElement('div');
                 this.domNode.style.overflow = 'hidden';
                 this.domNode.style.whiteSpace = 'nowrap';
                 this.domNode.style.marginTop = `-${monacoProps.widgetOffsetHeight}px`;
-                this.domNode.style.height = `${monacoProps.widgetVerticalHeight}px`;
-                this.domNode.style.maxHeight = `${monacoProps.widgetVerticalHeight}px`;
+                this.domNode.style.height = `${monacoProps.widgetMaxHeight}px`;
+                this.domNode.style.maxHeight = `${monacoProps.widgetMaxHeight}px`;
                 this.domNode.style.backgroundColor = monacoProps.widgetBackgroundColor;
                 this.domNode.style.fontSize = `${monacoProps.widgetFontSize}px`;
-                this.adjustWidth = () => {
-                    setTimeout(() => {
-                        const el = document.querySelector((getDecorator(decoratorId) || {}).selector);
-                        if (!el || !this.domNode) {
-                            return;
-                        }
-                        this.domNode.style.width = el.style.width;
-                        this.onWidthAdjust && this.onWidthAdjust(this.domNode.style.width);
-                    }, 0);
-                };
-                this.adjustWidth();
+                this.domNode.style.maxWidth = `0px`;
                 return this.domNode;
             },
-            getId: () => decoratorId,
             getPosition: function () {
-                getWidgetAvailableWidth(decoratorId);
-                // console.log(getDecorator(decoratorId).range.getStartPosition());
-                this.adjustWidth && this.adjustWidth();
+                // this.adjustWidth(false);
                 return {
                     position: getDecorator(decoratorId).range.getStartPosition(),
                     preference: preference,

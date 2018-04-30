@@ -1,9 +1,20 @@
-import {Observable} from "rxjs/Rx";
-import _ from 'lodash';
+import {Observable} from 'rxjs/Observable';
+import isNumber from 'lodash/isNumber';
+import AppleKeyboardOptionIcon from 'mdi-material-ui/AppleKeyboardOption';
+import CallMadeIcon from '@material-ui/icons/CallMade';
+import CallReceivedIcon from '@material-ui/icons/CallReceived';
+import CallMergeIcon from '@material-ui/icons/CallMerge';
+import LooksIcon from '@material-ui/icons/Looks';
+import ChevronDoubleLeftIcon from 'mdi-material-ui/ChevronDoubleLeft';
+import ChevronDoubleRightIcon from 'mdi-material-ui/ChevronDoubleRight';
+import JsonIcon from 'mdi-material-ui/Json';
+import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
+import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
+import CodeEqualIcon from 'mdi-material-ui/CodeEqual';
 
 // from is-dom
 export const isNode = (val, win = window) => {
-    return (!val || typeof val !== 'object')
+    return (!win || !val || typeof val !== 'object')
         ? false
         : (typeof win === 'object' && typeof win.Node === 'object')
             ? (val instanceof win.Node)
@@ -153,7 +164,7 @@ const newDOMElement = (element) => {
     if (style) {
         let styleProps = {};
         for (const prop in style) {
-            (_.isNumber(style[prop]) || style[prop]) && (styleProps[prop] = style[prop]);
+            (isNumber(style[prop]) || style[prop]) && (styleProps[prop] = style[prop]);
         }
         domData.style = styleProps;
     }
@@ -330,4 +341,57 @@ export const online$ = () =>
         goesOnline$
     );
 export const end$ = () => Observable.of(true);
+
+export const UIcons = {
+    FuncCall: CallMadeIcon, // callExpression
+    FuncExec: CallReceivedIcon, // [Arrow|Method] Function [Expression] blocks
+    Branch: AppleKeyboardOptionIcon, // Control Flow blocks
+    ForwardFlow: ChevronDoubleRightIcon, // uses from here
+    BackFlow: ChevronDoubleLeftIcon, // uses until here
+    Ripple: LooksIcon, // references
+    Data: CodeEqualIcon, // data structure deep equality
+    FunctionRef: DebugStepOutIcon,
+    ObjectIdiom: JsonIcon,
+    CallbackIdiom: CallMergeIcon,
+    GraphicalIdiom: CubeOutlineIcon,
+};
+
+export const mapUIconFromExpressionType = (expressionType) => {
+    switch (expressionType) {
+        case 'FunctionDeclaration':
+            return UIcons.FuncExec;
+        case 'ArrowFunctionExpression':
+            return UIcons.FuncExec;
+        default:
+            return null;
+    }
+};
+
+export const decodeBabelError = (babelError = '', offsetAfterDivider =2) => {
+    const lines = babelError.message.split('\n');
+    const errorInfo = lines.reduce((location, line, i) => {
+        if (location.found) {
+            return location;
+        }
+        const indicatorColumn = line.indexOf('>');
+        if (indicatorColumn > -1) {
+            const dividerColumn = line.indexOf('|');
+            if (dividerColumn > -1 && indicatorColumn < dividerColumn) {
+                const lineNumber = parseInt(line.substring(indicatorColumn + 1, dividerColumn).trim(), 10);
+                if (!isNaN(lineNumber)) {
+                    location.lineNumber = lineNumber;
+                    const nextLineDividerColumn = lines[i + 1].indexOf('|');
+                    const rawColumn = lines[i + 1].indexOf('^');
+                    if (nextLineDividerColumn < rawColumn) {
+                        location.column = rawColumn - nextLineDividerColumn - offsetAfterDivider; //-#-|--code
+                        location.found = true;
+                    }
+                }
+            }
+        }
+        return location;
+    }, {found: false});
+    errorInfo.message = lines[0];
+    return errorInfo;
+};
 

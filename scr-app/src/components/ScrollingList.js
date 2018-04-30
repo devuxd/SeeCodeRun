@@ -30,11 +30,21 @@ class ScrollingList extends React.Component {
     }
 
     componentDidMount() {
-        const {ScrollingListRef, onScrollEnd} = this.props;
-        if (ScrollingListRef.current && onScrollEnd) {
+        const {ScrollingListRef, onScrollEnd, onScrollChange} = this.props;
+        if (ScrollingListRef.current && (onScrollEnd || onScrollChange)) {
             this.scrollListener = (e) => {
                 if (ScrollingListRef.current.offsetHeight + ScrollingListRef.current.scrollTop >= ScrollingListRef.current.scrollHeight) {
-                    onScrollEnd(e);
+                    onScrollChange && onScrollEnd(e, true);
+                } else {
+                    if (ScrollingListRef.current.scrollTop === 0) {
+                        onScrollEnd && onScrollEnd(e, false);
+                    } else {
+                        onScrollChange && onScrollChange(e, {
+                            scrollHeight: ScrollingListRef.current.scrollHeight,
+                            scrollTop: ScrollingListRef.current.scrollTop,
+                            offsetHeight: ScrollingListRef.current.offsetHeight,
+                        });
+                    }
                 }
             };
             ScrollingListRef.current.addEventListener('scroll', this.scrollListener);
@@ -53,6 +63,7 @@ ScrollingList.propTypes = {
     ScrollingListRef: PropTypes.object.isRequired,
     listLength: PropTypes.number.isRequired,
     onScrollEnd: PropTypes.func,
+    onScrollChange: PropTypes.func,
     classes: PropTypes.string,
     isRememberScrollingDisabled: PropTypes.bool,
 };

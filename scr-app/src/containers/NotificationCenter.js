@@ -4,7 +4,7 @@ import Snackbar from 'material-ui/Snackbar';
 import Slide from 'material-ui/transitions/Slide';
 // import {withStyles} from 'material-ui';
 import {withStyles} from 'material-ui/styles';
-import _ from 'lodash';
+import isString from 'lodash/isString';
 
 const styles = () => ({
     snackbarContentNetWorkStatus: {
@@ -75,7 +75,7 @@ class NotificationCenter extends Component {
                 return {
                     notification: notification,
                     isSnackbarOpen: true,
-                    snackbarMessage: _.isString(notification.message) ?
+                    snackbarMessage: isString(notification.message) ?
                         makeSingleNotification(notification.message, snackbarMessageId)
                         : notification.message,
                     snackbarAutoHideDuration: notification.autoHideDuration ||
@@ -111,7 +111,7 @@ class NotificationCenter extends Component {
     }
 
     componentDidMount() {
-        const {changeShowNetworkState, getNetworkStateMessage} = this.props;
+        const {changeShowNetworkState, getNetworkStateMessage, didMountDisconnectTimeout} = this.props;
         const {snackbarMessageId} = this.state;
 
         const disconnectedTimeout = setTimeout(() => {
@@ -122,7 +122,7 @@ class NotificationCenter extends Component {
                 isSnackbarFirstOnlineConnected: false,
             });
             changeShowNetworkState(true);
-        }, 5000);
+        }, didMountDisconnectTimeout);
         this.setState({disconnectedTimeout});
     }
 }
@@ -131,6 +131,10 @@ NotificationCenter.propTypes = {
     getNetworkStateMessage: PropTypes.func.isRequired,
     changeShowNetworkState: PropTypes.func.isRequired,
     classes: PropTypes.object.isRequired,
+    didMountDisconnectTimeout: PropTypes.number,
+};
+NotificationCenter.defaultProps={
+    didMountDisconnectTimeout: 20000
 };
 
 export default withStyles(styles)(NotificationCenter);

@@ -3,13 +3,24 @@ const admin = require('firebase-admin');
 // Fixes firepad 1.4.0 infamous line with window.firebase in Node.
 global.window = {};
 const Firepad = require('firepad');
+const config = require("./cloud-functions.json");
+const uid = config.uid; // matches the uid used in db rules
+let sAccount = null, dbUrl = null;
+if (process.env.NODE_ENV === 'development') {
+    sAccount = require("./serviceAccountKey.dev.json");
+    dbUrl = config.devDbURL;
+} else {
+    sAccount = require("./serviceAccountKey.prod.json");
+    dbUrl = config.prodDbURL;
+}
 
-const serviceAccount = require("./serviceAccountKey.json");
+const serviceAccount = sAccount;
+const dataBaseUrl = dbUrl;
 
 const REQUEST_TIMEOUT_MS = 5000;
 const SERVER_TIMESTAMP = admin.database.ServerValue.TIMESTAMP;
-const uid = '023CwP2OJ5cMu2wLYPHvHC9qXhC2';
-const dataBaseUrl = 'https://seecoderun.firebaseio.com';
+
+
 const dataBaseRoot = '/scr2'; //todo change to scr2/test when testing locally
 const defaultPastebinScheme = {
     creationTimestamp: SERVER_TIMESTAMP,
@@ -293,3 +304,5 @@ exports.getPastebinToken = functions.https.onRequest((req, res) => {
         console.log(pastebinResponse.error, error);
     }
 });
+
+process.env.NODE_ENV === 'development' && console.log('USING DEVELOPMENT FIREBASE DB FOR FUNCTIONS: ', Object.keys(exports || {}));

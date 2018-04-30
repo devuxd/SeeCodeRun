@@ -1,58 +1,66 @@
 // based on react-grid-layout's WidthProvider
 import React, {Component} from "react";
+import PropTypes from 'prop-types';
 import ReactDOM from "react-dom";
+import {fromEvent} from 'rxjs/observable/fromEvent';
 
-/*
- * A simple HOC that provides facility for listening to container resizes.
- */
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends Component {
         static defaultProps = {
             measureBeforeMount: false
         };
 
+        static propTypes = {
+            onHeight: PropTypes.func,
+            heightAdjust: PropTypes.number,
+        };
+
+
         state = {
+            domNode: null,
             width: 1280,
             height: 1024,
         };
 
         mounted = false;
+        windowResizeSubscription = null;
 
         componentDidMount() {
             this.mounted = true;
-            window.addEventListener("resize", this.onWindowResize);
+            this.windowResizeSubscription =
+                fromEvent(window, 'resize')
+                    .subscribe(() => this.onWindowResize());
             this.onWindowResize();
         }
 
         componentWillUnmount() {
             this.mounted = false;
-            window.removeEventListener("resize", this.onWindowResize);
+            this.windowResizeSubscription.unsubscribe();
         }
 
         onWindowResize = () => {
             if (!this.mounted) return;
             const node = ReactDOM.findDOMNode(this);
             if (node instanceof HTMLElement) {
+                const {onHeight, heightAdjust} = this.props;
                 this.setState({
+                    domNode: node,
                     width: node.offsetWidth,
-                    height: this.onHeight ? this.onHeight(node, this.heightAdjust) : window.innerHeight
+                    height: onHeight ? onHeight(node, heightAdjust || 0) : window.innerHeight
                 });
             }
         };
 
-        componentWillReceiveProps(newProps) {
-            const {onHeight, heightAdjust} = newProps;
-            if (onHeight && this.onHeight !== onHeight) {
-                this.onHeight = onHeight;
+        static getDerivedStateFromProps(nextProps, prevState) {
+            if (nextProps.onHeight && prevState.domNode) {
+                const height = nextProps.onHeight(prevState.domNode, nextProps.heightAdjust || 0);
+                return {height};
             }
-            this.heightAdjust = heightAdjust;
-            this.onWindowResize();
+            return null
         }
 
         render() {
-            const {measureBeforeMount, onHeight, heightAdjust, ...rest} = this.props;
-            this.onHeight = onHeight;
-            this.heightAdjust = heightAdjust || 0;
+            const {measureBeforeMount, ...rest} = this.props;
             if (measureBeforeMount && !this.mounted) {
                 return (
                     <div className={this.props.className} style={this.props.style}/>
@@ -60,5 +68,6 @@ export default function SizeProvider(ComposedComponent) {
             }
             return <ComposedComponent {...rest} {...this.state} />;
         }
+
     };
 }

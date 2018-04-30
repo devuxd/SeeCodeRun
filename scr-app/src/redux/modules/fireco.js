@@ -23,6 +23,10 @@ export const ACTIVATE_FIREPAD_FULFILLED = 'ACTIVATE_FIREPAD_FULFILLED';
 export const ACTIVATE_FIREPAD_EXPIRED = 'ACTIVATE_FIREPAD_EXPIRED';
 const ACTIVATE_FIREPAD_REJECTED = 'ACTIVATE_FIREPAD_REJECTED';
 
+const PERSISTABLE_COMPONENT_MOUNTED = 'PERSISTABLE_COMPONENT_MOUNTED';
+const CONFIGURE_PERSISTABLE_COMPONENT_FULFILLED = 'CONFIGURE_PERSISTABLE_COMPONENT_FULFILLED';
+const CONFIGURE_PERSISTABLE_COMPONENT_REJECTED = 'CONFIGURE_PERSISTABLE_COMPONENT_REJECTED';
+
 const CHAT_MOUNTED = 'CHAT_MOUNTED';
 const CONFIGURE_FIRECO_CHAT_FULFILLED = 'CONFIGURE_FIRECO_CHAT_FULFILLED';
 const CONFIGURE_FIRECO_CHAT_REJECTED = 'CONFIGURE_FIRECO_CHAT_REJECTED';
@@ -83,6 +87,22 @@ export const configureFirecoChatFulfilled = () => ({
 
 export const configureFirecoChatRejected = (error) => ({
     type: CONFIGURE_FIRECO_CHAT_REJECTED,
+    error: error
+});
+
+export const configureFirecoPersistableComponent = (path, onFirecoActive, onDispose) => ({
+    type: PERSISTABLE_COMPONENT_MOUNTED,
+    path:path,
+    onFirecoActive: onFirecoActive,
+    onDispose: onDispose,
+});
+
+export const configureFirecoPersistableComponentFulfilled = () => ({
+    type: CONFIGURE_PERSISTABLE_COMPONENT_FULFILLED,
+});
+
+export const configureFirecoPersistableComponentRejected = (error) => ({
+    type: CONFIGURE_PERSISTABLE_COMPONENT_REJECTED,
     error: error
 });
 
@@ -177,6 +197,7 @@ export const firecoActivateEpic = (action$, store, {appManager}) =>
 
 export const firecoEditorEpic = (action$, store, {appManager}) =>
     action$.ofType(LOAD_MONACO_EDITOR_FULFILLED)
+        .filter(action=>action.editorId !== 'consoleInput') //// ignore consoleInput
         .zip(
             action$.ofType(
                 ACTIVATE_FIREPAD_FULFILLED,
@@ -197,7 +218,7 @@ export const firecoEditorsEpic = (action$, store) =>
     action$.ofType(CONFIGURE_FIRECO_EDITOR_FULFILLED)
         .filter(() =>
             (store.getState().firecoReducer.fulfilledFirecoEditors ===
-                store.getState().monacoEditorsReducer.monacoEditorsToLoad)
+                store.getState().monacoEditorsReducer.monacoEditorsToLoad-1) // ignore consoleInput
         )
         .mapTo(configureFirecoEditorsFulfilled())
         .startWith(configureFirecoEditors())
@@ -212,13 +233,29 @@ export const firecoChatEpic = (action$, store, {appManager}) =>
             )
         )
         .mergeMap(actions => {
-
                 return appManager.observeConfigureFirecoChat(
                     actions[0].onFirecoActive,
                     actions[0].onDispose,
                     `scr_chatUserId#${
                         store.getState().pastebinReducer.pastebinId
                         }`
+                )
+            }
+        )
+;
+
+export const firecoPersistableComponentEpic = (action$, store, {appManager}) =>
+    action$.ofType(PERSISTABLE_COMPONENT_MOUNTED)
+        .zip(
+            action$.ofType(
+                ACTIVATE_FIREPAD_FULFILLED
+            )
+        )
+        .mergeMap(actions => {
+                return appManager.observeConfigureFirecoPersistableComponent(
+                    actions[0].path,
+                    actions[0].onFirecoActive,
+                    actions[0].onDispose
                 )
             }
         )

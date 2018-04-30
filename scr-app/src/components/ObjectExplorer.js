@@ -1,22 +1,54 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {withStyles} from 'material-ui/styles';
 import MyLocationIcon from '@material-ui/icons/MyLocation';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
-import Tooltip from 'material-ui/Tooltip';
+// import Tooltip from 'material-ui/Tooltip';
 // import deepDiff from 'deep-diff';
 
 import {isNode} from '../utils/scrUtils';
 import {ThemeContext} from '../pages/Index';
+import {HighlightPalette} from '../containers/LiveExpressionStore';
 
-const noop = () => {
-};
 
+//start https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 /* NOTE: Chrome console.log is italic */
-const styles = {
+const styles = theme => ({
     preview: {
         fontStyle: 'italic',
     },
-};
+    objectClassName: {
+        fontSize: '80%',
+    },
+    objectBraces: {
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+        fontSize: '110%',
+    },
+    arrayBrackets: {
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+        fontSize: '110%',
+    },
+    stringQuote: {
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        fontSize: '110%',
+        color: theme.palette.type !== 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    stringValue: {
+        color: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    booleanValue: {
+        fontSize: '90%',
+        fontWeight: 'bold',
+    },
+    numberValue: {},
+});
+
+let currentLiveObjectNodeRenderer = null;
 
 /* intersperse arr with separator */
 function intersperse(arr, sep) {
@@ -30,7 +62,7 @@ function intersperse(arr, sep) {
 /**
  * A preview of the object
  */
-export const ObjectPreview = ({data, maxProperties}) => {
+export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, compact}) => {
     const object = data;
 
     if (
@@ -39,20 +71,29 @@ export const ObjectPreview = ({data, maxProperties}) => {
         object instanceof Date ||
         object instanceof RegExp
     ) {
-        return <ObjectValue object={object}/>;
+        if (typeof object === 'string') {
+            return (<span className={classes.preview}>
+                <span className={classes.stringQuote}>"</span>
+                <span className={classes.stringValue}>{object}</span>
+                <span className={classes.stringQuote}>"</span>
+            </span>);
+        } else {
+            return <ObjectValue object={object}/>;
+        }
+
     }
 
     if (Array.isArray(object)) {
-        return (
-            <span style={styles.preview}>
-        [
+        return (<span className={classes.preview}>
+                <span className={classes.arrayBrackets}>{'['}</span>
+                <span>
                 {intersperse(
                     object.map((element, index) => <ObjectValue key={index} object={element}/>),
                     ', ',
                 )}
-                ]
-      </span>
-        );
+                </span>
+                <span className={classes.arrayBrackets}>{']'}</span>
+        </span>);
     } else {
         let propertyNodes = [];
         for (let propertyName in object) {
@@ -76,38 +117,41 @@ export const ObjectPreview = ({data, maxProperties}) => {
                 if (ellipsis) break;
             }
         }
-
+        const objectClassName = compact ?
+            object.constructor.name === 'Object' ? '' : object.constructor.name : object.constructor.name;
         return (
-            <span style={styles.preview}>
-        {`${object.constructor.name} {`}
-        {intersperse(propertyNodes, ', ')}
-        {'}'}
-      </span>
+            <span className={classes.preview}>
+                <span className={classes.objectClassName}>{`${objectClassName} `}</span>
+                <span className={classes.objectBraces}>{'{'}</span>
+                <span>{intersperse(propertyNodes, ', ')}</span>
+                <span className={classes.objectBraces}>{'}'}</span>
+            </span>
         );
     }
-};
+});
 
 ObjectPreview.propTypes = {
     /**
      * max number of properties shown in the property view
      */
     maxProperties: PropTypes.number,
+    compact: PropTypes.bool,
 };
 ObjectPreview.defaultProps = {
     maxProperties: 5,
 };
 
-export const ObjectRootLabel = ({name, data}) => {
+export const ObjectRootLabel = ({name, data, compact}) => {
     if (typeof name === 'string') {
         return (
             <span>
         <ObjectName name={name}/>
         <span>: </span>
-        <ObjectPreview data={data}/>
+        <ObjectPreview data={data} compact={compact}/>
       </span>
         );
     } else {
-        return <ObjectPreview data={data}/>;
+        return <ObjectPreview data={data} compact={compact}/>;
     }
 };
 
@@ -134,10 +178,10 @@ ObjectLabel.propTypes = {
 ObjectLabel.defaultProps = {
     isNonenumerable: false,
 };
-
+// end https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 
 export const createLiveObjectNodeRenderer = (traceProvider) => {
-    const liveObjectNodeRenderer ={
+    const liveObjectNodeRenderer = {
         getWindowRef: () => traceProvider.trace.window,
         handleChange: null,
         expandPathsState: null,
@@ -152,9 +196,9 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
         parseLiveRefs: traceProvider.trace.parseLiveRefs,
     };
 
-    liveObjectNodeRenderer.render= (props) =>{
-        const {depth, name, data, isNonenumerable/*, expanded, path*/} = props;
-       // const paths = liveObjectNodeRenderer.expandPathsState || {};
+    liveObjectNodeRenderer.render = (props) => {
+        const {depth, data, ...rest} = props;
+        // const paths = liveObjectNodeRenderer.expandPathsState || {};
         // paths[path] = expanded;
         // if (expanded) {
         //   clearTimeout(this.leto);
@@ -166,59 +210,154 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
         const liveRef = traceProvider.trace.parseLiveRefs(data, liveObjectNodeRenderer.hideLiveRefs);
         const isRoot = depth === 0;
         const objectLabel = isRoot ?
-            <ObjectRootLabel name={name} data={liveRef.data}/>
-            : <ObjectLabel name={name} data={liveRef.data} isNonenumerable={isNonenumerable}/>;
+            <ObjectRootLabel data={liveRef.data} {...rest}/>
+            : <ObjectLabel data={liveRef.data} {...rest}/>;
 
         return liveRef.isLive ?
             isRoot ?
                 objectLabel :
                 <ul style={{marginLeft: -12, marginTop: -12}}>
-                    <Inspector data={liveRef.data}/>
+                    <Inspector data={liveRef.data}
+                               nodeRenderer={liveObjectNodeRenderer.render}
+                               windowRef={liveObjectNodeRenderer.getWindowRef()}
+                               {...rest}
+                    />
                 </ul>
             : objectLabel;
     };
-    return liveObjectNodeRenderer;
+    currentLiveObjectNodeRenderer = liveObjectNodeRenderer;
+    return currentLiveObjectNodeRenderer;
 };
 
 class OutputElementHover extends React.Component {
     state = {
-        originalStyle: null,
-        style: null,
+        // originalStyle: null,
+        // style: null,
+        open: false,
     };
     handleEnter = el => {
-        if (el.style) {
-            return () => {
-                this.setState({
-                    style: {
-                        border: '1px solid orange'
-                    },
-                    originalStyle: this.state.originalStyle || {
-                        border: el.style.border
-                    }
-                });
-            };
-        } else {
-            return noop;
-        }
+        // if (el.style) {
+        //     return () => {
+        //         this.setState({
+        //             style: {
+        //                 border: '1px solid orange'
+        //             },
+        //             originalStyle: this.state.originalStyle || {
+        //                 border: el.style.border
+        //             }
+        //         });
+        //     };
+        // } else {
+        //     return noop;
+        // }
+
+        return () => {
+            this.setState({
+                // style: {
+                //     border: '1px solid orange'
+                // },
+                // originalStyle: this.state.originalStyle || {
+                //     border: el.style.border
+                // }
+                open: true
+            });
+        };
     };
 
     handleLeave = el => {
-        if (el.style) {
-            return () => {
-                this.setState({
-                    style: this.state.originalStyle,
-                });
-            };
-        } else {
-            return noop;
-        }
+        // if (el.style) {
+        //     return () => {
+        //         this.setState({
+        //             style: this.state.originalStyle,
+        //         });
+        //     };
+        // } else {
+        //     return noop;
+        // }
+        return () => {
+            this.setState({
+                // style: {
+                //     border: '1px solid orange'
+                // },
+                // originalStyle: this.state.originalStyle || {
+                //     border: el.style.border
+                // }
+                open: false
+            });
+        };
     };
 
     render() {
         const {el, children} = this.props;
-        const {style} = this.state;
-        style && (el.style.border = style.border);
-        return <div onMouseEnter={this.handleEnter(el)} onMouseLeave={this.handleLeave(el)}>{children}</div>;
+        return <div onMouseEnter={this.handleEnter(el)} onMouseLeave={this.handleLeave(el)} children={children}/>;
+    }
+
+    componentDidUpdate() {
+        const {el} = this.props;
+        if (el) {
+
+            // console.log('el', el);
+            const clientRect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+            if (this.state.open) {
+                if (clientRect) {
+                    if (!this.locator) {
+                        this.locator = document.createElement('div');
+                        this.locator.style.position = 'absolute';
+                        this.locator.style.backgroundColor = HighlightPalette.graphical;
+                        this.locator.style.zIndex = '99999';
+
+                        if (el.parentElement) {
+                            el.parentElement.appendChild && el.parentElement.appendChild(this.locator);
+                        } else {
+                            try {
+                                el.appendChild && el.appendChild(this.locator);
+                            } catch (e) {
+                                try {
+                                    el.body.appendChild && el.body.appendChild(this.locator);
+                                } catch (e) {
+                                    this.locator = null;
+                                }
+                            }
+                        }
+                    }
+
+                    if (this.locator) {
+                        this.locator.style.display = 'block';
+                        this.locator.style.top = `${clientRect.top}px`;
+                        this.locator.style.left = `${clientRect.left}px`;
+                        this.locator.style.height = `${clientRect.height}px`;
+                        this.locator.style.width = `${clientRect.width}px`;
+                    }
+                }
+            } else {
+                if (this.locator) {
+                    if (el.parentElement) {
+                        el.parentElement.removeChild && el.parentElement.removeChild(this.locator);
+                    } else {
+                        try {
+                            el.removeChild && el.removeChild(this.locator);
+                        } catch (e) {
+                            try {
+                                el.body.removeChild && el.body.removeChild(this.locator);
+                            } catch (e) {
+                                this.locator = null;
+                            }
+                        }
+                    }
+                    this.locator = null;
+                }
+
+
+                // this.locator.style.display= 'none';
+                // this.locator.style.top = '0px';
+                // this.locator.style.left = '0px';
+                // this.locator.style.height = '0px';
+                // this.locator.style.width = '0px';
+            }
+
+        }
+        // const {style} = this.state;
+        // style && (el.style.border = style.border);
     }
 }
 
@@ -238,14 +377,12 @@ export const Inspector = ({table = false, data, windowRef, nodeRenderer, ...rest
 
             if (isNode(data, windowRef)) {
                 return <OutputElementHover el={data}>
-                    <Tooltip title="Locating in Browser" placement="right">
-                        <div style={{position: 'relative'}}>
-        <span style={{position: 'absolute', top: 0, color: 'grey', marginLeft: -15}}>
-          <MyLocationIcon style={{fontSize: 15}}/>
-        </span>
-                            <DOMInspector theme={inspectorTheme} data={data} {...rest} />
-                        </div>
-                    </Tooltip>
+                    <div style={{position: 'relative'}}>
+                        <span style={{position: 'absolute', top: 0, color: 'grey', marginLeft: -15}}>
+                          <MyLocationIcon style={{fontSize: 15}}/>
+                        </span>
+                        <DOMInspector theme={inspectorTheme} data={data} {...rest} />
+                    </div>
                 </OutputElementHover>;
             }
 
@@ -285,7 +422,7 @@ class ObjectExplorer extends React.Component {
         return {
             isInit: true,
             prevData: data,
-           // expandPaths: prevState.isInit ? /*diffToExpandPaths(prevData, data) : []
+            // expandPaths: prevState.isInit ? /*diffToExpandPaths(prevData, data) : []
         };
     }
 

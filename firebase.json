@@ -2,21 +2,32 @@
   "hosting": {
     "firebase": "seecoderun",
     "public": "scr-app/build",
+    "headers": [
+      {
+        "source": "/service-worker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
-        "source": "/firebase-seecoderun/us-central1/getPastebinId",
+        "source": "/cloud-functions/getPastebinId",
         "function": "getPastebinId"
       },
       {
-        "source": "/firebase-seecoderun/us-central1/copyPastebin",
+        "source": "/cloud-functions/copyPastebin",
         "function": "copyPastebin"
       },
       {
-        "source": "/firebase-seecoderun/us-central1/getPastebin",
+        "source": "/cloud-functions/getPastebin",
         "function": "getPastebin"
       },
       {
-        "source": "/firebase-seecoderun/us-central1/getPastebinToken",
+        "source": "/cloud-functions/getPastebinToken",
         "function": "getPastebinToken"
       }
     ],
