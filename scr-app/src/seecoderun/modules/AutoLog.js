@@ -252,7 +252,7 @@ class AutoLog {
         };
     }
 
-    transformWithLocationIds(ast, getLocationId) {
+    async transformWithLocationIds(ast, getLocationId) {
 
         const {locationMap, deps} = this.autoLogShift.autoLogAst(ast, getLocationId);
         const code = ast.toSource();

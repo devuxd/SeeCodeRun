@@ -222,7 +222,7 @@ class LiveExpressionStore extends Component {
     rt = 100;
     currentEditorsTexts = null;
     didUpdate = true;
-    refreshRate = 1000 / 4;
+    refreshRate = 1000 / 10;
     refreshInterval = null;
     isBundling = false;
     bundlingError = null;
@@ -745,28 +745,30 @@ class LiveExpressionStore extends Component {
             if (!this.autoLog) {
                 this.autoLog = new AutoLog(firecoPad.j);
             }
+            this.autoLog.transformWithLocationIds(astResult.ast, getLocationId)
+                .then(autoLogger => {
+                    const bundle = {
+                        editorsTexts: currentEditorsTexts,
+                        alJs: autoLogger.code,
+                        autoLog: this.autoLog,
+                        autoLogger: autoLogger,
+                    };
 
-            const autoLogger = this.autoLog.transformWithLocationIds(astResult.ast, getLocationId);
-            const bundle = {
-                editorsTexts: currentEditorsTexts,
-                alJs: autoLogger.code,
-                autoLog: this.autoLog,
-                autoLogger: autoLogger,
-            };
+                    if (this.traceSubscriber) {
+                        this.traceSubscriber.unsubscribe();
+                    }
 
-            if (this.traceSubscriber) {
-                this.traceSubscriber.unsubscribe();
-            }
+                    this.objectNodeRenderer = createLiveObjectNodeRenderer(autoLogger);
+                    this.timeline = [];
+                    this.isNew = true;
+                    this.unHighlightLiveExpressions();
+                    this.refreshInterval = setInterval(this.refreshTimeline, this.refreshRate);
+                    this.traceSubscriber = autoLogger.trace;
+                    this.traceSubscriber.subscribe(this.handleTraceChange);
 
-            this.objectNodeRenderer = createLiveObjectNodeRenderer(autoLogger);
-            this.timeline = [];
-            this.isNew = true;
-            this.unHighlightLiveExpressions();
-            this.refreshInterval = setInterval(this.refreshTimeline, this.refreshRate);
-            this.traceSubscriber = autoLogger.trace;
-            this.traceSubscriber.subscribe(this.handleTraceChange);
+                    store.dispatch(updateBundleSuccess(bundle));
 
-            store.dispatch(updateBundleSuccess(bundle));
+                }).catch(error => console.log('Invalidated AST', error));
         });
     };
 
