@@ -459,6 +459,9 @@ class AutoLog {
                 requirejs(${JSON.stringify(requireConfig.requireSync)}, function(){
                 scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
                 ${state.transformed.code}
+                scrLoader.moduleEval= function(code){
+                 return eval(code);
+                };
                 scrLoader.onUserScriptLoaded();
                 });`;
 

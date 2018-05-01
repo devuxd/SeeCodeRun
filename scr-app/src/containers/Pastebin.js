@@ -9,7 +9,7 @@ import {darken} from 'material-ui/styles/colorManipulator';
 import Paper from 'material-ui/Paper';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
-import HistoryIcon from '@material-ui/icons/History';
+import SlowMotionVideoIcon from '@material-ui/icons/SlowMotionVideo';
 import WebIcon from '@material-ui/icons/Web';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
@@ -56,7 +56,7 @@ const styles = theme => ({
         position: 'absolute',
         zIndex: theme.zIndex.snackbar,
         right: theme.spacing.unit + 3,
-        top: theme.spacing.unit*2,
+        top: theme.spacing.unit * 2,
         color: darken(theme.palette.action.disabled, 0.5),
         fontSize: theme.spacing.unit * 3,
     },
@@ -771,7 +771,7 @@ class Pastebin extends Component {
                                 {isDebugLoading ?
                                     <span className={classes.loadingFeedback}><MoreHorizIcon/> </span> : null}
                                 {hoveredCellKey === 'debugContainer' ?
-                                    null : <HistoryIcon className={classes.icon}/>}
+                                    null : <SlowMotionVideoIcon className={classes.icon}/>}
                             </Paper>
                             <Paper key="playgroundContainer"
                                    className={appClasses.container}

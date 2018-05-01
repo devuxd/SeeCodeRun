@@ -501,7 +501,7 @@ class Trace {
         } else {
             if (type === 'BlockStatement') {
                 // console.log('b', pre, value, post, type, extraIds, areNew, extraValues);
-                const expression=this.locationMap[pre.id]||{};
+                const expression = this.locationMap[pre.id] || {};
                 // console.log('e',expression, pre, this.locationMap[pre.secondaryId]);
                 this.branches.push({
                     ...pre,
@@ -559,6 +559,9 @@ class Trace {
 
     onMainLoaded = () => {
         this.mainLoadedTimelineI = this.timeline.length;
+        const windowDispatcher = dispatcher;
+        dispatcher = command => windowDispatcher(`window.scrLoader.moduleEval('${command}')`)
+
     };
 
     onError = errors => {

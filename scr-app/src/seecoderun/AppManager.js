@@ -118,7 +118,7 @@ class AppManager {
                 id: editorIds['js'],
                 language: 'javascript',
                 editorOptions: {
-                    glyphMargin: true,
+                    // glyphMargin: true,
                     nativeContextMenu: false,
                     hover: true,
                 },

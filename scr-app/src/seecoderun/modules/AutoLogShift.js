@@ -531,22 +531,31 @@ class AutoLogShift {
                 });
             } else {
 
-                if ((parentType === 'Property' || parentType === 'ClassProperty')
-                    && path.name === 'key') {
-                    if (parentPath.computed) { // logs {[x]:...}
-                        return j.arrayExpression(
-                            [this.autoLogExpression(pathSource, id, type, path, p)]
-                        );
-                    } else { // ignores {d:...}
-                        parentPath.computed = true;
-                        // return j.arrayExpression(
-                        //     [j.identifier(`'${pathSource}'`)]
-                        // );
-                        return j.arrayExpression(
-                            [this.autoLogExpression(`'${pathSource}'`, id, type, path, p)]
-                        );
-                    }
+                if (parentType === 'Property' || parentType === 'ClassProperty') {
 
+                    if(path.name === 'key'){
+
+                        if(path.parentPath.value.kind === 'init' && path.parentPath.value.shorthand){
+                            console.log('case', path.parentPath.value);
+                            path.parentPath.value.shorthand = false;
+                            path.parentPath.value.value = j.identifier(pathSource);
+                        }
+                        if (parentPath.computed) { // logs {[x]:...}
+                            return j.arrayExpression(
+                                [this.autoLogExpression(pathSource, id, type, path, p)]
+                            );
+                        } else { // ignores {d:...}
+                            parentPath.computed = true;
+                            // return j.arrayExpression(
+                            //     [j.identifier(`'${pathSource}'`)]
+                            // );
+                            return j.arrayExpression(
+                                [this.autoLogExpression(`'${pathSource}'`, id, type, path, p)]
+                            );
+                        }
+                    }else{
+                        return this.autoLogExpression(pathSource, id, type, path, p);
+                    }
                 } else {
                     return this.autoLogExpression(pathSource, id, type, path, p);
                 }
@@ -572,7 +581,7 @@ class AutoLogShift {
                     }
 
                     if (type === j.CallExpression.name && path.value.callee.type === 'Super') {
-                        isValid = false; // c of c() => handled in parent
+                        isValid = false; // super call
                     }
 
                     if (path.name === 'left' && parentType === j.AssignmentExpression.name) {
