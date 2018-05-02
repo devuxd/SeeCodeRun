@@ -418,7 +418,7 @@ class LiveExpressionStore extends Component {
         const localBranchSelection = (branchSelections[NavigationTypes.Local] || {});
         const currentLocalBranchId = localBranchSelection.currentBranchId;
         const currentLocalBranchTimelineId = localBranchSelection.currentBranchTimelineId;
-        const prevLocalTimelineI = localBranchSelection.prevTimelineI;
+        //const prevLocalTimelineI = localBranchSelection.prevTimelineI;
 
 
         const liveExpressionContainerClassName = updatingLiveExpressions ?

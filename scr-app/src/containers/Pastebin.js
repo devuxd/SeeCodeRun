@@ -10,7 +10,7 @@ import Paper from 'material-ui/Paper';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
 import SlowMotionVideoIcon from '@material-ui/icons/SlowMotionVideo';
-import WebIcon from '@material-ui/icons/Web';
+import TvIcon from '@material-ui/icons/Tv';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
 import LanguageCss3Icon from 'mdi-material-ui/LanguageCss3';
@@ -785,7 +785,7 @@ class Pastebin extends Component {
                                             exports={this.exports}
                                 />
                                 {hoveredCellKey === 'playgroundContainer' ?
-                                    null : <WebIcon className={classes.icon}/>}
+                                    null : <TvIcon className={classes.icon}/>}
                             </Paper>
                         </Responsive>
                     </PastebinContext.Provider>

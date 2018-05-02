@@ -398,7 +398,7 @@ ConsoleTable.propTypes = {
 const ConsoleTableWithContext = props => (
     <PastebinContext.Consumer>
         {(context) => {
-            return <ConsoleTable {...context} {...props} />
+            return <ConsoleTable {...props} {...context}/>
         }}
     </PastebinContext.Consumer>
 );

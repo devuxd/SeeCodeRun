@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from 'material-ui/styles';
+import Paper from 'material-ui/Paper';
 import MyLocationIcon from '@material-ui/icons/MyLocation';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
 // import Tooltip from 'material-ui/Tooltip';
@@ -16,6 +17,11 @@ import {HighlightPalette} from '../containers/LiveExpressionStore';
 const styles = theme => ({
     preview: {
         fontStyle: 'italic',
+    },
+    previewCompact: {
+        fontStyle: 'italic',
+        backgroundColor: theme.palette.type === 'light' ? '#fffffe' : '#1e1e1e'// monaco bg colors
+        // backgroundColor: theme.palette.type === 'light' ? theme.palette.background.paper : theme.palette.background.default
     },
     objectClassName: {
         fontSize: '80%',
@@ -72,7 +78,12 @@ export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, 
         object instanceof RegExp
     ) {
         if (typeof object === 'string') {
-            return (<span className={classes.preview}>
+            return compact ? (<Paper className={classes.previewCompact}>
+                    <span className={classes.stringQuote}>"</span>
+                    <span className={classes.stringValue}>{object}</span>
+                    <span className={classes.stringQuote}>"</span>
+                </Paper>)
+                : (<span className={classes.preview}>
                 <span className={classes.stringQuote}>"</span>
                 <span className={classes.stringValue}>{object}</span>
                 <span className={classes.stringQuote}>"</span>
@@ -119,14 +130,20 @@ export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, 
         }
         const objectClassName = compact ?
             object.constructor.name === 'Object' ? '' : object.constructor.name : object.constructor.name;
-        return (
-            <span className={classes.preview}>
+        return compact ? (
+                <Paper className={classes.previewCompact}>
+                    <span className={classes.objectClassName}>{`${objectClassName} `}</span>
+                    <span className={classes.objectBraces}>{'{'}</span>
+                    <span>{intersperse(propertyNodes, ', ')}</span>
+                    <span className={classes.objectBraces}>{'}'}</span>
+                </Paper>)
+            : (<span className={classes.preview}>
                 <span className={classes.objectClassName}>{`${objectClassName} `}</span>
                 <span className={classes.objectBraces}>{'{'}</span>
                 <span>{intersperse(propertyNodes, ', ')}</span>
                 <span className={classes.objectBraces}>{'}'}</span>
             </span>
-        );
+            );
     }
 });
 
