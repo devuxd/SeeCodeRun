@@ -308,7 +308,6 @@ const EnhancedToolbar = props => {
                                 <CallMergeIcon/>
                             </IconButton>
                         </Tooltip>
-
                     </React.Fragment>
                 ) : (isSelectable ?
                         <Tooltip title="Filter list">

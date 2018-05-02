@@ -33,8 +33,8 @@ import {HighlightPalette} from '../containers/LiveExpressionStore';
 import OverflowComponent from "./OverflowComponent";
 
 const columnData = [
-    {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1, showTimeflow: true},
-    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1},
+    {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1},
+    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1, showTimeflow: true},
 ];
 
 const createSortHandler = (props, property) => event => {
@@ -73,6 +73,20 @@ class TraceTableHead extends React.Component {
                                 sortDirection={orderBy === column.id ? order : false}
                                 // colSpan={column.colSpan}
                             >
+                                <Tooltip
+                                    title="Sort"
+                                    placement={column.numeric ? 'bottom-end' : 'bottom-start'}
+                                    enterDelay={300}
+                                >
+                                    <TableSortLabel
+                                        active={orderBy === column.id}
+                                        direction={order}
+                                        onClick={createSortHandler(this.props, column.id)}
+                                        // className={column.showTimeflow ? null : classes.tableHeadCell}
+                                    >
+                                        {column.label}
+                                    </TableSortLabel>
+                                </Tooltip>
                                 {column.showTimeflow && <Tooltip
                                     title={orderBy === 'time' ? (timeFlow === 'desc' ? 'Showing latest first' : 'Showing Oldest first') : 'Time flow'}
                                     placement={'bottom-end'}
@@ -83,20 +97,6 @@ class TraceTableHead extends React.Component {
                                         {timeFlow === 'desc' ? <VerticalAlignTopIcon/> : <VerticalAlignBottomIcon/>}
                                     </IconButton>
                                 </Tooltip>}
-                                <Tooltip
-                                    title="Sort"
-                                    placement={column.numeric ? 'bottom-end' : 'bottom-start'}
-                                    enterDelay={300}
-                                >
-                                    <TableSortLabel
-                                        active={orderBy === column.id}
-                                        direction={order}
-                                        onClick={createSortHandler(this.props, column.id)}
-                                        className={column.showTimeflow ? null : classes.tableHeadCell}
-                                    >
-                                        {column.label}
-                                    </TableSortLabel>
-                                </Tooltip>
                             </TableCell>
                         );
                     }, this)}
@@ -178,6 +178,9 @@ const styles = theme => ({
         borderBottom: 0,
         paddingLeft: theme.spacing.unit,
         paddingRight: theme.spacing.unit,
+        '&:first-child': {
+            paddingLeft: theme.spacing.unit * 2,
+        },
         '&:last-child': {
             paddingRight: theme.spacing.unit * 2,
         },
@@ -193,6 +196,10 @@ const styles = theme => ({
         margin: theme.spacing.unit * 4
     },
     timeFlowButton: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        marginTop: theme.spacing.unit / 2,
         marginLeft: -theme.spacing.unit * 3,
         marginRight: theme.spacing.unit * 2,
     },
