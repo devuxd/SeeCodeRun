@@ -278,7 +278,7 @@ export const configureFindChunks =
             return searchWords
                 .filter(searchWord => searchWord) // Remove empty words
                 .reduce((chunks, searchWord) => {
-                    searchWord = sanitize(searchWord)
+                    searchWord = sanitize(searchWord);
 
                     if (autoEscape) {
                         searchWord = escapeRegExpFn(searchWord)

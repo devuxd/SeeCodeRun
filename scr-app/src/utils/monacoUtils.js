@@ -48,7 +48,6 @@ export const monacoEditorDefaultOptions = {
     // smoothScrolling: true,
     fontSize: monacoProps.fontSize,
     quickSuggestionsDelay: 1250,
-    lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default, sync with css: max-height:18px; and padding-top
     lineNumbersMinChars: 3, //5 is default
 };
 
