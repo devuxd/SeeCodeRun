@@ -15,32 +15,68 @@ export function getDefaultTextForLanguage(language) {
 // };
 }
 
-const javascriptDefaultText =
-    `const X = (props)=><div><span>{props.val}</span><button onClick={props.onClick}>click here</button></div>;
-const onClick= e=>{console.log('click')};
-ReactDOM.render(<X val="hi there!" onClick={onClick} />, document.querySelector("#root")); 
- `
-;
+const javascriptDefaultText = `import React from 'react';
+import ReactDOM from 'react-dom';
+import { withStyles, Paper, Button } from 'material-ui';
+import PropTypes from 'prop-types';
+
+const styles = theme => ({
+    root: {
+        height: 700,
+    },
+    button: {
+        margin: theme.spacing.unit,
+    },
+});
+
+let clicks =0;
+function doSomething(event) {
+    console.log(event.currentTarget.getAttribute('data-something'));
+    clicks++;
+}
+
+function FlatButtons(props) {
+    const { classes } = props;
+    return (
+        <Paper className={classes.root}>
+            <Button className={classes.button} onClick={doSomething} data-something="Default">
+                Default</Button>
+            <Button color="primary" className={classes.button} onClick={doSomething} data-something="Primary">
+                Primary
+            </Button>
+                <Button color="secondary" className={classes.button} onClick={doSomething} data-something="Secondary">
+                    Secondary
+            </Button>
+                <Button disabled className={classes.button} onClick={doSomething} data-something="Disabled">
+                    Disabled
+            </Button>
+            <Button className={classes.button} onClick={doSomething} data-something="Disabled">
+                    Disabled
+            </Button>
+            <Button disabled href="/" className={classes.button} onClick={doSomething} data-something="Default">
+                    Link disabled
+            </Button>
+        </Paper>
+    );
+}
+
+const App = withStyles(styles)(FlatButtons);
+ReactDOM.render(<App />, document.querySelector("#root"));
+`;
 
 const htmlDefaultText = `<!DOCTYPE html>
-<html style="height:100%">
-<!DOCTYPE html>
-<html style="height:100%">
+<html>
 <head>
-<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
 </head>
 <body>
-  <div id ="root"></div>
+	<div id="root"></div>
 </body>
 </html>
 `;
 
-const cssDefaultText =
-    `html, body{
-   height: 100%;
-  }
-  span {
-    color: blue;
-  }
-  `;
+const cssDefaultText = `html, body{
+  margin:0;
+}
+`;

@@ -59,7 +59,10 @@ const styles = (theme) => {
         zIndex: theme.zIndex.snackbar,
       },
       scrIcon: {
-        paddingRight: theme.spacing.unit * 2,
+          marginLeft: theme.spacing.unit,
+          marginRight: theme.spacing.unit*2,
+          paddingLeft: theme.spacing.unit,
+          paddingRight: theme.spacing.unit,
       },
       flex: {
         flex: 1,

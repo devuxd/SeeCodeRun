@@ -14,9 +14,7 @@ import IconButton from 'material-ui/IconButton';
 
 // import SearchIcon from '@material-ui/icons/Search';
 import TuneIcon from '@material-ui/icons/Tune';
-import VerticalAlignTopIcon from '@material-ui/icons/VerticalAlignTop';
 import ChangeHistoryIcon from '@material-ui/icons/ChangeHistory';
-import VerticalAlignBottomIcon from '@material-ui/icons/VerticalAlignBottom';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import PauseIcon from '@material-ui/icons/Pause';
 // import SearchIcon from '@material-ui/icons/Search';
@@ -228,7 +226,7 @@ const EnhancedToolbar = props => {
 
     const {
         classes,
-        selected, orderBy, timeFlow, isPlaying, handleChangePlaying, handleChangeTimeFlow, timeline, liveTimeline,
+        selected, isPlaying, handleChangePlaying, timeline, liveTimeline,
         searchState, isSelectable
     } = props;
     const numSelected = selected.length;
@@ -257,16 +255,6 @@ const EnhancedToolbar = props => {
                     enterDelay={300}
                 >
                     {playingButton}
-                </Tooltip>
-                <Tooltip
-                    title={orderBy === 'time' ? (timeFlow === 'desc' ? 'Showing latest first' : 'Showing Oldest first') : 'Time flow'}
-                    placement={'bottom-end'}
-                    enterDelay={300}
-                >
-                    <IconButton color={orderBy === 'time' ? 'primary' : 'default'}
-                                onClick={handleChangeTimeFlow}>
-                        {timeFlow === 'desc' ? <VerticalAlignTopIcon/> : <VerticalAlignBottomIcon/>}
-                    </IconButton>
                 </Tooltip>
             </React.Fragment>}
             <div className={classes.title}>
@@ -320,7 +308,6 @@ const EnhancedToolbar = props => {
                                 <CallMergeIcon/>
                             </IconButton>
                         </Tooltip>
-
                     </React.Fragment>
                 ) : (isSelectable ?
                         <Tooltip title="Filter list">
@@ -346,7 +333,7 @@ EnhancedToolbar.contexTypes = {
 const EnhancedToolbarWithContext = props => (
     <PastebinContext.Consumer>
         {(context) => {
-            return <EnhancedToolbar {...context} {...props} />
+            return <EnhancedToolbar {...props} {...context}/>
         }}
     </PastebinContext.Consumer>
 );

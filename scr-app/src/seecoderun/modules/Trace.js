@@ -34,6 +34,11 @@ export const preserveLogs = (shouldPreserve) => {
     isPreserveLogs = shouldPreserve;
 };
 
+let isIgnoreObjectPrivateProperties = true;
+export const ignoreObjectPrivateProperties = (shouldIgnore) => {
+    isIgnoreObjectPrivateProperties = shouldIgnore;
+};
+
 export const canDispatch = () => !!dispatcher;
 
 export const dispatch = (action = {}) => {
@@ -298,6 +303,9 @@ class Trace {
     getReplacer = (res = {isDOM: false}) => {
         const windowRoots = this.getWindowRoots();
         return (key, value) => {
+            if (isIgnoreObjectPrivateProperties && isString(key) && key.startsWith('_')) {
+                return undefined;// ignoring libraries private data
+            }
             const i = Object.values(windowRoots).indexOf(value);
             if (i > -1) {
                 return `${this.magicTag}${Object.keys(windowRoots)[i]}`;
@@ -387,12 +395,15 @@ class Trace {
             return;
         }
 
-        const dataRefId = this.funcRefs.indexOf(data);
-        if (dataRefId < 0) {
-            this.dataRefs.push(data);
-            this.dataRefMatches.push({[pre.id]: 1});
-        } else {
-            this.dataRefMatches[dataRefId][pre.id] = (this.dataRefMatches[dataRefId][pre.id] || 0) + 1;
+        const dataRefId = this.funcRefs.indexOf(value);
+        if (isObjectLike(value) && !isString(value)) {
+            if (dataRefId < 0) {
+                this.dataRefs.push(value);
+                this.dataRefMatches.push({[pre.id]: 1});
+            } else {
+                this.dataRefMatches[dataRefId][pre.id] = (this.dataRefMatches[dataRefId][pre.id] || 0) + 1;
+            }
+
         }
 
         this.timeline.unshift({
@@ -412,16 +423,28 @@ class Trace {
         });
     };
 
-    getMatches = (funcRefId, dataRefId) => {
+    getMatches = (funcRefId, dataRefId, calleeId) => {
+        const calleeLoc = calleeId && this.locationMap[calleeId] ? this.locationMap[calleeId].loc : null;
+
         const funcMatches = Object.keys(this.funcRefMatches[funcRefId] || {}).map(key => this.locationMap[key].loc);
         if (funcMatches.length) {
+            if (calleeLoc) {
+                funcMatches.push(calleeLoc);
+            }
             return funcMatches;
         } else {
             const dataMatches = Object.keys(this.dataRefMatches[dataRefId] || {}).map(key => this.locationMap[key].loc);
             if (dataMatches.length) {
+                if (calleeLoc) {
+                    dataMatches.push(calleeLoc);
+                }
                 return dataMatches;
             } else {
-                return null;
+                if (calleeLoc) {
+                    return [calleeLoc];
+                } else {
+                    return null;
+                }
             }
         }
     };
@@ -501,7 +524,7 @@ class Trace {
         } else {
             if (type === 'BlockStatement') {
                 // console.log('b', pre, value, post, type, extraIds, areNew, extraValues);
-                const expression=this.locationMap[pre.id]||{};
+                const expression = this.locationMap[pre.id] || {};
                 // console.log('e',expression, pre, this.locationMap[pre.secondaryId]);
                 this.branches.push({
                     ...pre,
@@ -539,15 +562,28 @@ class Trace {
         return {_: value};
     };
 
-    preAutoLog = (id, type, secondaryId, navigationType) => {
+    preAutoLog = (id, type, secondaryId, navigationType, args, argsIds) => {
+        const startTimestamp = Date.now();
+        let calleeId = null;
         //  console.log(id, type);
         if (type === 'CallExpression') {
             this.currentCallExpressionId = id;
         }
+        if (args) {
+            calleeId = this.currentCallExpressionId;
+            // console.log('c', calleeId);
+            argsIds.forEach((argsId, i) => {
+                this.pushEntry({
+                    id: argsId,
+                    startTimestamp
+                }, args[i]);
+            });
+            //console.log(id, type, secondaryId, navigationType, args, argsIds);
+        }
 
         this.currentExpressionId = id;
         this.currentScope = this.currentScope.enterScope(id);
-        return {id, type, secondaryId, navigationType, startTimestamp: Date.now()};
+        return {id, type, secondaryId, navigationType, calleeId, startTimestamp};
     };
 
     postAutoLog = (id) => {
@@ -559,6 +595,9 @@ class Trace {
 
     onMainLoaded = () => {
         this.mainLoadedTimelineI = this.timeline.length;
+        const windowDispatcher = dispatcher;
+        dispatcher = command => windowDispatcher(`window.scrLoader.moduleEval('${command}')`)
+
     };
 
     onError = errors => {

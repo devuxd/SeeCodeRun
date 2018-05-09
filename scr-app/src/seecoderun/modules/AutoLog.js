@@ -252,7 +252,7 @@ class AutoLog {
         };
     }
 
-    transformWithLocationIds(ast, getLocationId) {
+    async transformWithLocationIds(ast, getLocationId) {
 
         const {locationMap, deps} = this.autoLogShift.autoLogAst(ast, getLocationId);
         const code = ast.toSource();
@@ -459,6 +459,9 @@ class AutoLog {
                 requirejs(${JSON.stringify(requireConfig.requireSync)}, function(){
                 scrLoader.onRequireSyncLoaded(scrLoader.errors, scrLoader.fallbackOverrides);
                 ${state.transformed.code}
+                scrLoader.moduleEval= function(code){
+                 return eval(code);
+                };
                 scrLoader.onUserScriptLoaded();
                 });`;
 

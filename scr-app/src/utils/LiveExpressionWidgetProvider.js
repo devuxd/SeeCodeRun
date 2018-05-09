@@ -41,6 +41,8 @@ class LiveExpressionWidgetProvider {
         this.contentWidgets = {};
         this.lineNumbersWitdhUpdates = {};
         this.throttleTime = throttleTime;
+        this.branchNavigatorIds = {};
+        this.siblings = {};
     }
 
     getLineNumberSubject(lineNumber) {
@@ -197,7 +199,8 @@ class LiveExpressionWidgetProvider {
                     });
                 });
         });
-
+        this.branchNavigatorIds = {};
+        this.siblings = {};
         return decorators;
     }
 
@@ -217,24 +220,34 @@ class LiveExpressionWidgetProvider {
             });
     };
 
+    raiseBranchWidget = (domNode, onWidthAdjust) => {
+        if (!domNode) {
+            return;
+        }
+        domNode.style.maxWidth = '100% !important';
+        domNode.style.width = '100% !important';
+        domNode.style.zIndex = '1000';
+        onWidthAdjust && onWidthAdjust(domNode.style.width);
+    };
+
     getWidgetAvailableWidth = (decoratorId, ignoreVisible, isBranchNavigator) => {
         const sourceDecorator = this.getDecorator(decoratorId);
         if (!sourceDecorator) {
             return;
         }
+
         if (isBranchNavigator) {
-            if (sourceDecorator.contentWidget && !ignoreVisible) {
-                const domNode = sourceDecorator.contentWidget.domNode;
-                const onWidthAdjust = sourceDecorator.contentWidget.onWidthAdjust;
-                if (!domNode) {
-                    return;
-                }
-                domNode.style.maxWidth = '100%';
-                domNode.style.zIndex = '1000';
-                onWidthAdjust && onWidthAdjust(domNode.style.width);
+            this.branchNavigatorIds[decoratorId] = {raised: false};
+            if (sourceDecorator.contentWidget) {
+                this.raiseBranchWidget(
+                    sourceDecorator.contentWidget.domNode,
+                    sourceDecorator.contentWidget.onWidthAdjust
+                );
+                this.branchNavigatorIds[decoratorId].raised = true;
             }
             return;
         }
+
         const lineNumber = sourceDecorator.range.startLineNumber;
         const lineNumberDecorators = this.getDecoratorsInLineNumber(lineNumber);
         const lineNumberSubject = this.getLineNumberSubject(lineNumber);
@@ -242,7 +255,7 @@ class LiveExpressionWidgetProvider {
         lineNumberDecorators.forEach((decorator) => {
             if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
                 // setTimeout(() => {
-                if (decorator.contentWidget && !ignoreVisible) {
+                if (decorator.contentWidget && !ignoreVisible && !this.branchNavigatorIds[decorator.id]) {
                     const domNode = decorator.contentWidget.domNode;
                     const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
                     if (!domNode) {
@@ -258,12 +271,27 @@ class LiveExpressionWidgetProvider {
 
 
             const i = lineNumberDecorators.indexOf(decorator);
-            let hideSib = false;
+            let hideSib = false; //todo make siblings an array, and children as well
             let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
             rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
                 rightSibling : null;
-            if (rightSibling && rightSibling.range.equalsRange(decorator.range)) {
+            this.siblings[decorator.id] = this.siblings[decorator.id] || rightSibling;
+            rightSibling = this.siblings[decorator.id];
+
+            if (rightSibling && decorator.range.containsRange(rightSibling.range)) {
                 hideSib = true;
+            }
+
+            if (this.branchNavigatorIds[decorator.id] || (rightSibling && this.branchNavigatorIds[rightSibling.id])) {
+                const dec = this.branchNavigatorIds[decorator.id] ? decorator : rightSibling;
+                if (dec.contentWidget && !this.branchNavigatorIds[dec.id].raised) {
+                    this.raiseBranchWidget(
+                        dec.contentWidget.domNode,
+                        dec.contentWidget.onWidthAdjust
+                    );
+                    this.branchNavigatorIds[dec.id].raised = true;
+                }
+                return;
             }
 
             updates.push(() => {
@@ -285,13 +313,19 @@ class LiveExpressionWidgetProvider {
                     if (sel) {
                         if (hideSib) {
                             sel.style.maxWidth = '0px';
+                        }else{
+                            const ll = (el.style.left || '0').replace('px', '');
+                            const lr = (sel.style.left || width).replace('px', '');
+                            width = `${parseInt(lr, 10) - parseInt(ll, 10)}px`;
                         }
-                        const ll = (el.style.left || '0').replace('px', '');
-                        const lr = (sel.style.left || width).replace('px', '');
-                        width = `${parseInt(lr, 10) - parseInt(ll, 10)}px`;
+                    } else {
+                        width = '100%';
                     }
+                } else {
+                    width = '100%';
                 }
                 // console.log('w', width);
+                // domNode.style.width = width;
                 domNode.style.maxWidth = width;
                 onWidthAdjust && onWidthAdjust(domNode.style.width);
             });

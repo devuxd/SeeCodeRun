@@ -5,10 +5,15 @@ import debounce from 'lodash.debounce';
 import {Responsive} from 'react-grid-layout';
 // import {withStyles, Paper} from 'material-ui';
 import {withStyles} from 'material-ui/styles';
+import {darken} from 'material-ui/styles/colorManipulator';
 import Paper from 'material-ui/Paper';
-// import AddIcon from '@material-ui/icons/Add';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
+// import SlowMotionVideoIcon from '@material-ui/icons/SlowMotionVideo';
+import TvIcon from '@material-ui/icons/Tv';
+import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
+import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
+import LanguageCss3Icon from 'mdi-material-ui/LanguageCss3';
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
@@ -47,15 +52,23 @@ const styles = theme => ({
         float: 'right',
         margin: theme.spacing.unit,
     },
+    icon: {
+        position: 'absolute',
+        zIndex: theme.zIndex.snackbar,
+        right: theme.spacing.unit/2,
+        top: theme.spacing.unit/4,
+        color: darken(theme.palette.action.disabled, 0.5),
+        fontSize: theme.spacing.unit * 3,
+    },
     draggable: {
         position: 'absolute',
         zIndex: theme.zIndex.snackbar,
-        right: 3,
-        top: 3,
+        bottom: theme.spacing.unit/2,
+        right: theme.spacing.unit*4,
         color: 'rgba(30, 144, 255, 0.7)', // same as utils/react-grid-layout-scr-theme.css
         fontSize: theme.spacing.unit * 2,
         cursor: 'grab',
-        active: {
+        '&:active': {
             cursor: 'grabbing',
         }
     },
@@ -558,6 +571,7 @@ class Pastebin extends Component {
         },
         width: 800,
         height: 600,
+        hoveredCellKey: null,
     };
 
     handleChangeAutorunDelay = autorunDelay => {
@@ -658,12 +672,15 @@ class Pastebin extends Component {
     //         </div>
     //     );
     // }
+    handleChangeHoveredCellKey = (event, hoveredCellKey) => {
+        this.setState({hoveredCellKey});
+    }
 
     render() {
         const {themeType, appClasses, classes, appStyle, editorIds} = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
-            autorunDelay, width, height
+            autorunDelay, width, height, hoveredCellKey
         } = this.state;
 
         const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
@@ -694,25 +711,43 @@ class Pastebin extends Component {
                             onLayoutChange={this.onLayoutChange}
                             onBreakpointChange={this.onBreakpointChange}
                         >
-                            <Paper key="scriptContainer">
+                            <Paper key="scriptContainer"
+                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'scriptContainer')}
+                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            >
                                 <Editor editorId={editorIds['js']}
                                         themeType={themeType}
                                         observeMouseEvents
                                         observeLiveExpressions={true}
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['js'])}
                                 />
+                                {hoveredCellKey === 'scriptContainer' ?
+                                    null : <LanguageJavaScriptIcon className={classes.icon}/>}
                             </Paper>
-                            <Paper key="htmlContainer">
+                            <Paper key="htmlContainer"
+                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'htmlContainer')}
+                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            >
                                 <Editor editorId={editorIds['html']}
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['html'])}
                                 />
+                                {hoveredCellKey === 'htmlContainer' ?
+                                    null : <LanguageHtml5Icon className={classes.icon}/>}
                             </Paper>
-                            <Paper key="cssContainer">
+                            <Paper key="cssContainer"
+                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'cssContainer')}
+                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            >
                                 <Editor editorId={editorIds['css']}
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['css'])}
                                 />
+                                {hoveredCellKey === 'cssContainer' ?
+                                    null : <LanguageCss3Icon className={classes.icon}/>}
                             </Paper>
-                            <Paper key="debugContainer" className={appClasses.container}>
+                            <Paper key="debugContainer" className={appClasses.container}
+                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'debugContainer')}
+                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            >
                                 <ScrollingList
                                     ScrollingListRef={this.debugScrollerRef}
                                     onScrollEnd={this.onScrollEnd}
@@ -735,9 +770,13 @@ class Pastebin extends Component {
 
                                 {isDebugLoading ?
                                     <span className={classes.loadingFeedback}><MoreHorizIcon/> </span> : null}
+                                {/*hoveredCellKey === 'debugContainer' ?
+                                    null : <SlowMotionVideoIcon className={classes.icon}/>*/}
                             </Paper>
                             <Paper key="playgroundContainer"
                                    className={appClasses.container}
+                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'playgroundContainer')}
+                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
                             >
                                 <DragHandleIcon className={classes.draggable}/>
                                 <Playground editorIds={editorIds}
@@ -745,6 +784,8 @@ class Pastebin extends Component {
                                             appStyle={appStyle}
                                             exports={this.exports}
                                 />
+                                {hoveredCellKey === 'playgroundContainer' ?
+                                    null : <TvIcon className={classes.icon}/>}
                             </Paper>
                         </Responsive>
                     </PastebinContext.Provider>

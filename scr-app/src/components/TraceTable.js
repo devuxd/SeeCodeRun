@@ -19,6 +19,9 @@ import Table, {
 import Paper from 'material-ui/Paper';
 import Checkbox from 'material-ui/Checkbox';
 import Tooltip from 'material-ui/Tooltip';
+import IconButton from 'material-ui/IconButton';
+import VerticalAlignTopIcon from '@material-ui/icons/VerticalAlignTop';
+import VerticalAlignBottomIcon from '@material-ui/icons/VerticalAlignBottom';
 import Highlighter from "react-highlight-words";
 
 
@@ -31,7 +34,7 @@ import OverflowComponent from "./OverflowComponent";
 
 const columnData = [
     {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1},
-    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1},
+    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1, showTimeflow: true},
 ];
 
 const createSortHandler = (props, property) => event => {
@@ -42,7 +45,11 @@ const createSortHandler = (props, property) => event => {
 
 class TraceTableHead extends React.Component {
     render() {
-        const {isSelectable, onSelectAllClick, order, orderBy, numSelected, rowCount, classes} = this.props;
+        const {
+            classes,
+            isSelectable, onSelectAllClick, order, orderBy, numSelected, rowCount,
+            timeFlow, handleChangeTimeFlow
+        } = this.props;
 
         return (
             <TableHead>
@@ -75,10 +82,21 @@ class TraceTableHead extends React.Component {
                                         active={orderBy === column.id}
                                         direction={order}
                                         onClick={createSortHandler(this.props, column.id)}
+                                        // className={column.showTimeflow ? null : classes.tableHeadCell}
                                     >
                                         {column.label}
                                     </TableSortLabel>
                                 </Tooltip>
+                                {column.showTimeflow && <Tooltip
+                                    title={orderBy === 'time' ? (timeFlow === 'desc' ? 'Showing latest first' : 'Showing Oldest first') : 'Time flow'}
+                                    placement={'bottom-end'}
+                                    enterDelay={300}
+                                >
+                                    <IconButton color={orderBy === 'time' ? 'secondary' : 'default'}
+                                                onClick={handleChangeTimeFlow} className={classes.timeFlowButton}>
+                                        {timeFlow === 'desc' ? <VerticalAlignTopIcon/> : <VerticalAlignBottomIcon/>}
+                                    </IconButton>
+                                </Tooltip>}
                             </TableCell>
                         );
                     }, this)}
@@ -160,6 +178,9 @@ const styles = theme => ({
         borderBottom: 0,
         paddingLeft: theme.spacing.unit,
         paddingRight: theme.spacing.unit,
+        '&:first-child': {
+            paddingLeft: theme.spacing.unit * 2,
+        },
         '&:last-child': {
             paddingRight: theme.spacing.unit * 2,
         },
@@ -174,6 +195,17 @@ const styles = theme => ({
     bottomAction: {
         margin: theme.spacing.unit * 4
     },
+    timeFlowButton: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        marginTop: theme.spacing.unit / 2,
+        marginLeft: -theme.spacing.unit * 3,
+        marginRight: theme.spacing.unit * 2,
+    },
+    tableHeadCell: {
+        marginLeft: theme.spacing.unit * 5,
+    }
 });
 
 const configureMatchesFilter = (searchState) => {
@@ -236,7 +268,8 @@ class TraceTable extends React.Component {
             classes,
             data, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
-            HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying
+            HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying,
+            timeFlow, handleChangeTimeFlow
         } = this.props;
 
 
@@ -271,6 +304,8 @@ class TraceTable extends React.Component {
                             onRequestSort={handleRequestSort}
                             rowCount={data.length}
                             classes={classes}
+                            timeFlow={timeFlow}
+                            handleChangeTimeFlow={handleChangeTimeFlow}
                         />
                         <TableBody onMouseEnter={() => handleChangePlaying('table', false)}
                                    onMouseLeave={() => handleChangePlaying('table', true)}>
@@ -393,7 +428,7 @@ TraceTable.propTypes = {
 const TraceTableWithContext = props => (
     <PastebinContext.Consumer>
         {(context) => {
-            return <TraceTable {...context} {...props} />
+            return <TraceTable {...props} {...context}/>
         }}
     </PastebinContext.Consumer>
 );

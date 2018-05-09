@@ -1,53 +1,60 @@
 .react-grid-layout {
-  position: relative;
-  transition: height 100ms ease;
+    position: relative;
+    transition: height 200ms ease;
 }
+
 .react-grid-item {
-  transition: all 50ms ease;
-  transition-property: left, top;
+    transition: all 200ms ease;
+    transition-property: left, top;
 }
+
 .react-grid-item.cssTransforms {
-  transition-property: transform;
+    transition-property: transform;
 }
+
 .react-grid-item.resizing {
-  z-index: 1;
-  will-change: width, height;
+    z-index: 1;
+    will-change: width, height;
 }
 
 .react-grid-item.react-draggable-dragging {
-  transition: none;
-  z-index: 3;
-  will-change: transform;
+    transition: none;
+    z-index: 3;
+    will-change: transform;
 }
 
 .react-grid-item.react-grid-placeholder {
-  background: dodgerblue;
-  opacity: 0.2;
-  transition-duration: 100ms;
-  z-index: 2;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-  user-select: none;
+    background: rgba(30, 144, 255, 0.7);
+    opacity: 0.2;
+    transition-duration: 100ms;
+    z-index: 2;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
 }
 
 .react-grid-item > .react-resizable-handle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
+    position: absolute;
+    width: 5px;
+    height: 100%;
+    bottom: 0;
+    right: 0;
+    margin-right: -6px;
+    cursor: ew-resize;
+    background: transparent;
+    z-index: 9999;
 }
 
 .react-grid-item > .react-resizable-handle::after {
-  content: "";
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 5px;
-  height: 5px;
-  border-right: 2px solid rgba(30, 144, 255, 0.7);
-  border-bottom: 2px solid rgba(30, 144, 255, 0.7);
+    content: "";
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    margin-right: 6px;
+    width: 24px;
+    height: 24px;
+    background: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="24" height="24" viewBox="0 0 24 24"><path fill="rgba(30, 144, 255, 0.7)" d="M22,22H20V20H22V22M22,18H20V16H22V18M18,22H16V20H18V22M18,18H16V16H18V18M14,22H12V20H14V22M22,14H20V12H22V14Z" /></svg>');
+    cursor: se-resize;
 }
