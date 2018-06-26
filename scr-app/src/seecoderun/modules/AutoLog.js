@@ -9,6 +9,7 @@ import Trace from './Trace';
 //     updatePlaygroundLoadSuccess
 // } from "../../redux/modules/playground";
 import {decodeBabelError} from "../../utils/scrUtils";
+import GraphicalMapper from "./GraphicalMapper";
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
@@ -204,6 +205,8 @@ export const importLoaders = async () => {
                         || key.includes('transform-runtime')
                         || key.includes('-async-to')
                         || key.includes('-regenerator')
+                        || key.includes('proposal-decorators')
+                        || key.includes('syntax-decorators')
                     )),
         };
 
@@ -364,8 +367,8 @@ class AutoLog {
             requireConfig.triggerChange = this.appendIframe;
             this.appendIframe();
         }).catch(error => {
-            // todo [semantic] errors
-                const {humanUnderstandableError} = state;
+                // todo [semantic] errors
+                const {humanUnderstandableError, criticalError} = state;
                 if (humanUnderstandableError) {
                     switch (humanUnderstandableError.type) {
                         case AutoLogErrors.babel:
@@ -377,6 +380,10 @@ class AutoLog {
                     }
                 } else {
                     console.log('Unknown error', error);
+                }
+
+                if (criticalError) {
+                    console.log('criticalError', criticalError);
                 }
 
 
@@ -451,7 +458,7 @@ class AutoLog {
         }
 
         state.transformed.source = state.transformed.code;
-
+        //  requireConfig.requireSync.push('"material-ui/Tooltip"');
         state.transformed.code = requireConfig.isDisabled ?
             state.transformed.code
             : `${requireConfig.requireOnLoadString}
@@ -492,6 +499,15 @@ class AutoLog {
                 return null;
             }
         };
+    }
+
+    configureGraphicalMapper(bundle, isGraphicalLocatorActive){
+        this.graphicalMapper = new GraphicalMapper(bundle, isGraphicalLocatorActive);
+        return this.graphicalMapper.configureHandleChange();
+    }
+
+    updateGraphicalMapper(isGraphicalLocatorActive) {
+        this.graphicalMapper.onActiveChange(isGraphicalLocatorActive);
     }
 }
 

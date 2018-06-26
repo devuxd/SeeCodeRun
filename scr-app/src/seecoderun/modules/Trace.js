@@ -212,9 +212,10 @@ class Trace {
             const isResult = actionType === TraceActions.evaluateResult;
 
             params = isError ? [ClassFactory.fromErrorClassName(params[0].name, params[0].message)] : params;
-
+            let timelineI = context.timeline.length;
             context.logs.push({
                 i: i,
+                timelineI,
                 reactKey: context.getReactKey(i),
                 traceAction: actionType,
                 isLog: false,
@@ -299,6 +300,13 @@ class Trace {
         return `${this.startTimestamp};${i}`;
     }
 
+    setDomNodeAdded(callback) {
+        this.domNodeAdded = callback;
+    }
+
+    onDomNodeAdded() {
+        this.domNodeAdded && this.domNodeAdded();
+    }
 
     getReplacer = (res = {isDOM: false}) => {
         const windowRoots = this.getWindowRoots();
@@ -311,6 +319,7 @@ class Trace {
                 return `${this.magicTag}${Object.keys(windowRoots)[i]}`;
             }
             if (isNode(value)) {
+
                 const val = copifyDOMNode(value);
                 const domId = this.domNodes.indexOf(value);
                 if (domId >= 0) {
@@ -325,6 +334,7 @@ class Trace {
                     this.domNodesObs.push(observer);
                 }
                 res.isDOM = true;
+                this.onDomNodeAdded();
                 return val;
             }
             return value;
@@ -333,6 +343,7 @@ class Trace {
 
     parseLiveRefs = (data, hideLiveRefs) => {
         let liveRef = this.reinstateLiveRef(data);
+        //const liveRefs
         if ((!liveRef.isReinstate) && isObjectLike(data)) {
             if (isArrayLike(data)) {
                 for (const i in data) {
@@ -348,6 +359,7 @@ class Trace {
         }
         return {
             isLive: liveRef.isLive || liveRef.isReinstate,
+            liveRef,
             data: liveRef.isReinstate ? (hideLiveRefs ? liveRef.hiddenMessage : liveRef.ref) : data,
         };
     };
@@ -642,9 +654,11 @@ class Trace {
         let context = this;
         this.consoleLog = function (...params) {//type, info = {}, params = []
             let i = context.logs.length;
+            let timelineI = context.timeline.length;
             const expression = context.locationMap[context.currentCallExpressionId] || {};
             context.logs.push({
-                i: i,
+                i,
+                timelineI,
                 traceAction: TraceActions.log,
                 isLog: true,
                 reactKey: context.getReactKey(i),
@@ -654,6 +668,7 @@ class Trace {
                 data: params,
                 timestamp: Date.now(),
             });
+            // console.log(context.logs);
             // log(...params);
             // if (type === 'SCR_LOG' && info.location) {
             //     // store.dispatch();

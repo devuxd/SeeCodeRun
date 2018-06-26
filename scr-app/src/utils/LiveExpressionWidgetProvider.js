@@ -1,10 +1,12 @@
 import difference from 'lodash/difference';
-import {Subject} from 'rxjs/Subject';
-import {Observable} from 'rxjs/Observable';
+import debounce from 'lodash.debounce';
+// import {Subject} from 'rxjs/Subject';
+// import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";
 import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
 
 import AutoLogShift from '../seecoderun/modules/AutoLogShift';
+import LiveExpressionStore from "../containers/LiveExpressionStore";
 
 
 export const jExpressions = [];
@@ -17,7 +19,7 @@ let j = null;
 
 
 class LiveExpressionWidgetProvider {
-    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 50) {
+    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 500) {
         this.monaco = monaco;
         j = jRef;
 
@@ -43,15 +45,22 @@ class LiveExpressionWidgetProvider {
         this.throttleTime = throttleTime;
         this.branchNavigatorIds = {};
         this.siblings = {};
+        this.livenumberExpressions = {};
     }
 
-    getLineNumberSubject(lineNumber) {
+    getlineNumberScheduler(lineNumber) {
         if (!this.lineNumbersWitdhUpdates[lineNumber]) {
-            this.lineNumbersWitdhUpdates[lineNumber] = new Subject();
-            this.lineNumbersWitdhUpdates[lineNumber]
-                .throttle(() => Observable.interval(this.throttleTime), {leading: true, trailing: false})
-                .debounceTime(100)
-                .subscribe(update => update());
+            this.lineNumbersWitdhUpdates[lineNumber] =
+                debounce(update => update(),
+                    this.throttleTime,
+                    {maxWait: this.throttleTime * 3, leading: true, trailing: false}
+                );
+            // this.lineNumbersWitdhUpdates[lineNumber] = new Subject();
+            // this.lineNumbersWitdhUpdates[lineNumber]
+            //     .throttleTime(this.throttleTime)
+            //     // .throttle(() => Observable.interval(this.throttleTime), {leading: true, trailing: false})
+            //     // .debounceTime(100)
+            //     .subscribe(update => update());
 
         }
         return this.lineNumbersWitdhUpdates[lineNumber];
@@ -201,6 +210,7 @@ class LiveExpressionWidgetProvider {
         });
         this.branchNavigatorIds = {};
         this.siblings = {};
+        this.livenumberExpressions = {};
         return decorators;
     }
 
@@ -216,7 +226,10 @@ class LiveExpressionWidgetProvider {
         return (this.decorators || [])
             .filter(decorator => decorator.range.startLineNumber === lineNumber)
             .sort((decoratorA, decoratorB) => {
-                return decoratorA.range.startColumn - decoratorB.range.startColumn;
+                let diff = decoratorA.range.startColumn - decoratorB.range.startColumn;
+                diff = diff === 0 ? decoratorB.range.endLineNumber - decoratorA.range.endLineNumber : diff;
+                diff = diff === 0 ? decoratorB.range.endColumn - decoratorA.range.endColumn : diff;
+                return diff;
             });
     };
 
@@ -228,6 +241,53 @@ class LiveExpressionWidgetProvider {
         domNode.style.width = '100% !important';
         domNode.style.zIndex = '1000';
         onWidthAdjust && onWidthAdjust(domNode.style.width);
+    };
+
+    static containsDecorator = (decorators, decorator) => {
+        return decorators.find(current => current.range.containsRange(decorator.range));
+    };
+
+    static isValidLiveDecorator = (decorator) =>
+        (!decorator.expressionType.endsWith('rty')
+            && !decorator.expressionType.endsWith('tement')
+            && !decorator.expressionType.startsWith('Sequence')
+            // && !decorator.expressionType.startsWith('Variable')
+            && !decorator.expressionType.startsWith('Variable')
+            && !decorator.expressionType.startsWith('JSX')
+            && !decorator.expressionType.startsWith('Arrow')
+        );
+
+    getLineNumberExpressions = (lineNumber) => {
+        if (!this.livenumberExpressions[lineNumber]) {
+            const AllLineNumberDecorators = this.getDecoratorsInLineNumber(lineNumber);
+            const lineNumberDecorators = [];
+            let current = null;
+            AllLineNumberDecorators.forEach(decorator => {
+                if (current) {
+                    //LiveExpressionWidgetProvider.containsDecorator(lineNumberDecorators, decorator))
+                    if (current.range.containsRange(decorator.range)) {
+                        if (!this.branchNavigatorIds[decorator.id] && decorator.contentWidget.domNode) {
+                            decorator.contentWidget.domNode.style.maxWidth = '0px';
+                        }
+                    } else {
+                        current = null;
+                    }
+                }
+
+                if (!current && LiveExpressionWidgetProvider.isValidLiveDecorator(decorator)) {
+                    current = decorator;
+                    lineNumberDecorators.push(current);
+                }
+            });
+            this.livenumberExpressions[lineNumber] = {
+                lineNumberDecorators,
+                AllLineNumberDecorators
+            };
+        }
+        if (lineNumber === 92) {
+            console.log(lineNumber, this.livenumberExpressions[lineNumber]);
+        }
+        return this.livenumberExpressions[lineNumber];
     };
 
     getWidgetAvailableWidth = (decoratorId, ignoreVisible, isBranchNavigator) => {
@@ -249,12 +309,11 @@ class LiveExpressionWidgetProvider {
         }
 
         const lineNumber = sourceDecorator.range.startLineNumber;
-        const lineNumberDecorators = this.getDecoratorsInLineNumber(lineNumber);
-        const lineNumberSubject = this.getLineNumberSubject(lineNumber);
+        const {lineNumberDecorators} = this.getLineNumberExpressions(lineNumber);
+        const lineNumberScheduler = this.getlineNumberScheduler(lineNumber);
         const updates = [];
-        lineNumberDecorators.forEach((decorator) => {
+        lineNumberDecorators.forEach((decorator, i) => {
             if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
-                // setTimeout(() => {
                 if (decorator.contentWidget && !ignoreVisible && !this.branchNavigatorIds[decorator.id]) {
                     const domNode = decorator.contentWidget.domNode;
                     const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
@@ -264,13 +323,11 @@ class LiveExpressionWidgetProvider {
                     domNode.style.maxWidth = '0px';
                     onWidthAdjust && onWidthAdjust(domNode.style.width);
                 }
-
-                //}, 0);
                 return;
             }
 
 
-            const i = lineNumberDecorators.indexOf(decorator);
+            // const i = lineNumberDecorators.indexOf(decorator);
             let hideSib = false; //todo make siblings an array, and children as well
             let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
             rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
@@ -278,9 +335,9 @@ class LiveExpressionWidgetProvider {
             this.siblings[decorator.id] = this.siblings[decorator.id] || rightSibling;
             rightSibling = this.siblings[decorator.id];
 
-            if (rightSibling && decorator.range.containsRange(rightSibling.range)) {
-                hideSib = true;
-            }
+            // if (rightSibling && decorator.range.containsRange(rightSibling.range)) {
+            //     hideSib = true;
+            // }
 
             if (this.branchNavigatorIds[decorator.id] || (rightSibling && this.branchNavigatorIds[rightSibling.id])) {
                 const dec = this.branchNavigatorIds[decorator.id] ? decorator : rightSibling;
@@ -313,7 +370,7 @@ class LiveExpressionWidgetProvider {
                     if (sel) {
                         if (hideSib) {
                             sel.style.maxWidth = '0px';
-                        }else{
+                        } else {
                             const ll = (el.style.left || '0').replace('px', '');
                             const lr = (sel.style.left || width).replace('px', '');
                             width = `${parseInt(lr, 10) - parseInt(ll, 10)}px`;
@@ -331,7 +388,7 @@ class LiveExpressionWidgetProvider {
             });
         });
 
-        lineNumberSubject.next(() => updates.forEach(update => update()));
+        lineNumberScheduler(() => updates.forEach(update => update()));
         // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
     };
 

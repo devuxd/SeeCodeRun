@@ -121,7 +121,7 @@ export const configureMonacoThemeSwitchEpic=(action$, store, {appManager}) => {
   return action$.ofType(SWITCH_MONACO_THEME)
     .mergeMap(action =>
       appManager.observeSwitchMonacoTheme(action.previousThemeType)
-    ).startWith(loadMonaco());
+    );
 };
 
 

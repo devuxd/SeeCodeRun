@@ -50,12 +50,11 @@ export const loadMonacoEditorRejected = (editorId, error) => ({
 
 
 export const monacoEditorContentChanged =
-    (editorId, text, changes, isLocal) => ({
+    (editorId, text, changes) => ({
         type: MONACO_EDITOR_CONTENT_CHANGED,
         editorId: editorId,
         text: text,
         changes: changes,
-        isLocal: isLocal
     })
 ;
 

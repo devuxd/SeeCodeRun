@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from 'material-ui/styles';
-import Paper from 'material-ui/Paper';
+import {withStyles} from '@material-ui/core/styles';
+import Tooltip from '@material-ui/core/Tooltip';
 import MyLocationIcon from '@material-ui/icons/MyLocation';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
-// import Tooltip from 'material-ui/Tooltip';
+// import Tooltip from '@material-ui/core/Tooltip';
 // import deepDiff from 'deep-diff';
 
 import {isNode} from '../utils/scrUtils';
@@ -18,25 +18,21 @@ const styles = theme => ({
     preview: {
         fontStyle: 'italic',
     },
-    previewCompact: {
-        fontStyle: 'italic',
-        backgroundColor: theme.palette.type === 'light' ? '#fffffe' : '#1e1e1e'// monaco bg colors
-        // backgroundColor: theme.palette.type === 'light' ? theme.palette.background.paper : theme.palette.background.default
-    },
     objectClassName: {
         fontSize: '80%',
     },
     objectBraces: {
         fontWeight: 'bold',
         fontStyle: 'normal',
-        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
-        fontSize: '110%',
+        color: 'white',
+        backgroundColor: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+        // fontSize: '110%',
     },
     arrayBrackets: {
         fontWeight: 'bold',
         fontStyle: 'normal',
-        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
-        fontSize: '110%',
+        color: theme.palette.type === 'light' ? 'rgb(28, 0, 207)' : 'rgb(153, 128, 255)',
+        // fontSize: '110%',
     },
     stringQuote: {
         fontWeight: 'bold',
@@ -45,13 +41,24 @@ const styles = theme => ({
         color: theme.palette.type !== 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
     },
     stringValue: {
-        color: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+        fontWeight: 100,
+        // color: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    emptyStringValue: {
+        color: 'white',
+        fontWeight: 'bold',
+        backgroundColor: theme.palette.action.disabled,
     },
     booleanValue: {
         fontSize: '90%',
         fontWeight: 'bold',
     },
     numberValue: {},
+    undefinedValue: {
+        color: 'white',
+        fontWeight: 'bold',
+        backgroundColor: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    }
 });
 
 let currentLiveObjectNodeRenderer = null;
@@ -78,18 +85,34 @@ export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, 
         object instanceof RegExp
     ) {
         if (typeof object === 'string') {
-            return compact ? (<Paper className={classes.previewCompact}>
-                    <span className={classes.stringQuote}>"</span>
-                    <span className={classes.stringValue}>{object}</span>
-                    <span className={classes.stringQuote}>"</span>
-                </Paper>)
-                : (<span className={classes.preview}>
-                <span className={classes.stringQuote}>"</span>
-                <span className={classes.stringValue}>{object}</span>
-                <span className={classes.stringQuote}>"</span>
-            </span>);
+            if (object.length) {
+                return (<span className={classes.stringValue}>{object}</span>);
+            } else {
+                return (
+                    <Tooltip title="Empty String" enterDelay={300}>
+                        <span className={classes.emptyStringValue}>{'E'}</span>
+                    </Tooltip>);
+            }
+
+            // return (<span className={classes.preview}>
+            //     <span className={classes.stringQuote}>"</span>
+            //     <span className={classes.stringValue}>{object}</span>
+            //     <span className={classes.stringQuote}>"</span>
+            // </span>);
         } else {
-            return <ObjectValue object={object}/>;
+            if (object === undefined) {
+                return (<Tooltip title="undefined" enterDelay={300}>
+                    <span className={classes.undefinedValue}>{'U'}</span>
+                </Tooltip>);
+            } else {
+                if (object === null) {
+                    return (<Tooltip title="null" enterDelay={300}>
+                        <span className={classes.undefinedValue}>{'N'}</span>
+                    </Tooltip>);
+                } else {
+                    return <ObjectValue object={object}/>;
+                }
+            }
         }
 
     }
@@ -130,20 +153,14 @@ export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, 
         }
         const objectClassName = compact ?
             object.constructor.name === 'Object' ? '' : object.constructor.name : object.constructor.name;
-        return compact ? (
-                <Paper className={classes.previewCompact}>
-                    <span className={classes.objectClassName}>{`${objectClassName} `}</span>
-                    <span className={classes.objectBraces}>{'{'}</span>
-                    <span>{intersperse(propertyNodes, ', ')}</span>
-                    <span className={classes.objectBraces}>{'}'}</span>
-                </Paper>)
-            : (<span className={classes.preview}>
+        return (
+            <span className={classes.preview}>
                 <span className={classes.objectClassName}>{`${objectClassName} `}</span>
                 <span className={classes.objectBraces}>{'{'}</span>
                 <span>{intersperse(propertyNodes, ', ')}</span>
                 <span className={classes.objectBraces}>{'}'}</span>
             </span>
-            );
+        );
     }
 });
 

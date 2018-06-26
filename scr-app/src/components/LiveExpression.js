@@ -1,12 +1,12 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import Popover from 'material-ui/Popover';
+import Popover from '@material-ui/core/Popover';
 import JSAN from 'jsan';
 import isString from 'lodash/isString';
 import debounce from 'lodash.debounce';
 
 import ObjectExplorer from './ObjectExplorer';
-import RangeSlider from "./RangeSlider";
+import BranchNavigator from "./BranchNavigator";
 
 const defaultCloseDelay = 1000;
 
@@ -182,7 +182,7 @@ class LiveExpression extends Component {
 
     configureHandleSliderChange = (branchNavigatorChange) => {
         const {data} = this.props;
-        return (change) => {
+        return (event, change) => {
             if (data && data.length) {
                 // console.log(data, change);
                 branchNavigatorChange(data[change], change, change - 1 > -1 ? data[change - 1] : 0);
@@ -195,7 +195,8 @@ class LiveExpression extends Component {
         const {classes, style, data, objectNodeRenderer, expressionId, handleChange, branchNavigatorChange, color} = this.props;
         const {anchorEl} = this.state;
         const isBranchNavigator = !!branchNavigatorChange;
-        const isActive = !!anchorEl && (!isBranchNavigator || (isBranchNavigator && data && data.length > 1));
+        const isActive = this.open || !!anchorEl && (!isBranchNavigator || (isBranchNavigator && data && data.length > 1));
+        // this.open = isActive; // debug
         const {datum, sliderMin, sliderMax, rangeStart} = isBranchNavigator ?
             this.getBranchDatum(data) : this.getDatum(data);
         const handleSliderChange = isBranchNavigator ?
@@ -212,7 +213,7 @@ class LiveExpression extends Component {
             </div>);
         let navigatorStyle = {...style, overflow: 'auto', minWidth: branchNavigatorChange ? 200 : 50};
         const defaultValue = rangeStart;//[rangeStart, rangeEnd,];
-        const showSlider = sliderMin > 1 || sliderMax > 1;
+        const showSlider = isBranchNavigator && (sliderMin > 1 || sliderMax > 1);
         return (
             <Popover
                 className={classes.popover}
@@ -236,10 +237,10 @@ class LiveExpression extends Component {
                      style={navigatorStyle}
                 >
                     {showSlider &&
-                    <RangeSlider
+                    <BranchNavigator
                         min={sliderMin}
                         max={sliderMax}
-                        defaultValue={defaultValue}
+                        value={defaultValue}
                         handleSliderChange={handleSliderChange}
                         color={color}
                         hideLabel={isBranchNavigator}

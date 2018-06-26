@@ -2,12 +2,14 @@
 import 'rc-slider/assets/index.css';
 import React, {Component} from 'react';
 // import Range from 'rc-slider';
-import Slider from 'rc-slider/lib/Slider';
+// import Slider from 'rc-slider/lib/Slider';
+import Slider from '@material-ui/lab/Slider';
 import PropTypes from "prop-types";
-import {withStyles} from 'material-ui/styles';
-import Typography from 'material-ui/Typography';
-import {ListItem, ListItemText} from 'material-ui/List';
-import {fade, darken} from 'material-ui/styles/colorManipulator';
+import {withStyles} from '@material-ui/core/styles';
+import Typography from '@material-ui/core/Typography';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import {fade, darken} from '@material-ui/core/styles/colorManipulator';
 // import Slider from "./@material/Slider";
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
@@ -87,9 +89,9 @@ const getSliderStyle = (color) => {
     }
 };
 
-class RangeSlider extends Component {
+class BranchNavigator extends Component {
     render() {
-        const {classes, min, max, defaultValue, handleSliderChange, color, hideLabel} = this.props;
+        const {classes, min, max, value, handleSliderChange, color, hideLabel} = this.props;
         const sliderStyle = getSliderStyle(color);
         return (
             <ListItem
@@ -100,17 +102,20 @@ class RangeSlider extends Component {
             >
                 {hideLabel ?
                     null
-                    : <Typography className={classes.text}>{formatBranchValue(defaultValue, max)}</Typography>
+                    : <Typography className={classes.text}>{formatBranchValue(value, max)}</Typography>
                 }
                 <ListItemText className={hideLabel ? classes.slider : classes.sliderWithLabel}>
                     <Slider
                         min={min}
                         max={max}
-                        defaultValue={defaultValue}
+                        step={1}
+                        color={'secondary'}
+                        // defaultValue={defaultValue}
+                        value={value}
                         onChange={handleSliderChange}
-                        handleStyle={sliderStyle.handleStyle}
-                        trackStyle={sliderStyle.trackStyle}
-                        railStyle={sliderStyle.railStyle}
+                        // handleStyle={sliderStyle.handleStyle}
+                        // trackStyle={sliderStyle.trackStyle}
+                        // railStyle={sliderStyle.railStyle}
                     />
                 </ListItemText>
             </ListItem>
@@ -118,14 +123,14 @@ class RangeSlider extends Component {
     }
 }
 
-RangeSlider.propTypes = {
+BranchNavigator.propTypes = {
     min: PropTypes.number.isRequired,
     max: PropTypes.number.isRequired,
-    defaultValue: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
     //defaultValue: PropTypes.array.isRequired,
     handleSliderChange: PropTypes.func.isRequired,
     hideLabel: PropTypes.bool
 };
 
-export default withStyles(styles)(RangeSlider);
+export default withStyles(styles)(BranchNavigator);
 

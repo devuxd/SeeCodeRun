@@ -22,12 +22,12 @@ import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CodeIcon from '@material-ui/icons/Code';
 import EditIcon from '@material-ui/icons/ModeEdit';
 
-import {withStyles} from 'material-ui/styles';
-import Menu from 'material-ui/Menu';
-import {ListItem} from 'material-ui/List';
-import {MenuItem} from 'material-ui/Menu';
-import TextField from 'material-ui/TextField';
-import Button from 'material-ui/Button';
+import {withStyles} from '@material-ui/core/styles';
+import Menu from '@material-ui/core/Menu';
+import ListItem from '@material-ui/core/ListItem';
+import MenuItem from '@material-ui/core/MenuItem';
+import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
 import {Subject} from 'rxjs/Subject';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';

@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import debounce from 'lodash.debounce';
-import {withStyles} from 'material-ui/styles';
-import Tooltip from 'material-ui/Tooltip';
-import IconButton from 'material-ui/IconButton';
+import {withStyles} from '@material-ui/core/styles';
+import Tooltip from '@material-ui/core/Tooltip';
+import IconButton from '@material-ui/core/IconButton';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import DoNotDisturbIcon from '@material-ui/icons/DoNotDisturb';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
@@ -79,18 +79,23 @@ const styles = theme => ({
         flexDirection: 'row',
         right: 0,
         // marginRight: -theme.spacing.unit * 3,
-        margin: theme.spacing.unit/2,
+        margin: theme.spacing.unit / 2,
         width: theme.spacing.unit * 6,
         alignItems: 'center',
         justifyContent: 'center',
     },
     actionIconContainer: {
+        color: theme.palette.secondary.main,
+        width: theme.spacing.unit * 3,
+        height: theme.spacing.unit * 3,
+    },
+    clearActionIconContainer: {
         color: theme.palette.primary.main,
         width: theme.spacing.unit * 3,
         height: theme.spacing.unit * 3,
     },
     actionIcon: {
-        color: theme.palette.primary.main,
+        // color: theme.palette.secondary.main,
         width: theme.spacing.unit * 2,
         height: theme.spacing.unit * 2,
 
@@ -128,6 +133,7 @@ const defaultMonacoOptions = {
     ariaLabel: 'ConsoleInput',
     fontFamily: 'Menlo, monospace',
     fontSize: 12,
+    lineHeight: 32,
 };
 
 class ConsoleInput extends Component {
@@ -263,7 +269,7 @@ class ConsoleInput extends Component {
                 </span>
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
-                        <IconButton aria-label="Clear Console" className={classes.actionIconContainer}>
+                        <IconButton aria-label="Clear Console" className={classes.clearActionIconContainer}>
                             <DoNotDisturbIcon
                                 onClick={clearConsole}
                                 className={classes.actionIcon}

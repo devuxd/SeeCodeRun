@@ -1,5 +1,5 @@
 import {Observable} from 'rxjs/Observable';
-import throttle from 'lodash.throttle';
+import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
 
 import isString from 'lodash/isString';
@@ -537,6 +537,7 @@ class AppManager {
                 loadFire().then(() => {
                     fireco.unsubscribeOnIdTokenChanged = fireco.auth.onIdTokenChanged(
                         user => {
+                            console.log('us', user);
                             if (user) {
                                 if (!fireco.isAuth) {
                                     fireco.isAuth = true;

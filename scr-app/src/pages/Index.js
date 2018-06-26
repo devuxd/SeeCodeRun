@@ -1,10 +1,10 @@
 import React, {Component, createContext, /*, StrictMode*/} from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from 'material-ui/styles';
+import {withStyles} from '@material-ui/core/styles';
 import {chromeDark, chromeLight} from "react-inspector";
 import withRoot, {themeTypes} from '../components/withRoot';
 import NotificationCenter from '../containers/NotificationCenter';
-import TopNavigationBar from '../components/TopNavigationBar';
+import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
@@ -22,10 +22,12 @@ let appStyle = {margin: 0};
 const styles = theme => {
     appStyle = {
         margin: theme.spacing.unit,
-        rowHeightSmall: theme
-            .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
-            .minHeight,
-        rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
+        rowHeightSmall: APP_BAR_HEIGHT,
+        rowHeight: APP_BAR_HEIGHT,
+        // rowHeightSmall: theme
+        //     .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
+        //     .minHeight,
+        // rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
     };
     return {
         root: {

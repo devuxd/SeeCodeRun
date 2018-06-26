@@ -1,29 +1,28 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from 'material-ui/styles';
-import {fade, lighten, darken} from 'material-ui/styles/colorManipulator';
+import {withStyles} from '@material-ui/core/styles';
+import {fade, lighten, darken} from '@material-ui/core/styles/colorManipulator';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
-import Table, {
-    TableBody,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-} from 'material-ui/Table';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableFooter from '@material-ui/core/TableFooter';
+import TableHead from '@material-ui/core/TableHead';
+import TablePagination from '@material-ui/core/TablePagination';
+import TableRow from '@material-ui/core/TableRow';
+import TableSortLabel from '@material-ui/core/TableSortLabel';
 
-import Paper from 'material-ui/Paper';
-import Checkbox from 'material-ui/Checkbox';
-import Tooltip from 'material-ui/Tooltip';
+import Paper from '@material-ui/core/Paper';
+import Checkbox from '@material-ui/core/Checkbox';
+import Tooltip from '@material-ui/core/Tooltip';
 // import Highlighter from "react-highlight-words";
 
 
 import ObjectExplorer from "./ObjectExplorer";
 
-import {PastebinContext} from "../containers/Pastebin";
+import {PastebinContext, TABLE_ROW_HEIGHT} from "../containers/Pastebin";
 import {HighlightPalette} from '../containers/LiveExpressionStore';
 
 const columnData = [
@@ -41,7 +40,7 @@ class ConsoleTableHead extends React.Component {
 
         return (
             <TableHead>
-                <TableRow>
+                <TableRow className={classes.tableHeadRow}>
                     {isSelectable &&
                     <TableCell padding="checkbox">
                         <Checkbox
@@ -105,21 +104,27 @@ const styles = theme => ({
         overflowX: 'auto',
     },
     tableRow: {
+        height: TABLE_ROW_HEIGHT,
         '&$hover:hover': {
             backgroundColor: HighlightPalette.text,
         },
     },
     tableRowError: {
+        height: TABLE_ROW_HEIGHT,
         backgroundColor: fade(HighlightPalette.error, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.error,
         },
     },
     tableRowGraphical: {
+        height: TABLE_ROW_HEIGHT,
         backgroundColor: fade(HighlightPalette.graphical, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.graphical,
         }
+    },
+    tableRowInput: {
+        height: TABLE_ROW_HEIGHT,
     },
     hover: {},
     valueCell: {
@@ -175,7 +180,10 @@ const styles = theme => ({
     commandText: {
         fontFamily: 'Menlo, monospace',
         fontSize: 12,
-    }
+    },
+    tableHeadRow: {
+        height: TABLE_ROW_HEIGHT + 16,
+    },
 });
 
 const configureMatchesFilter = (searchState) => {
@@ -230,13 +238,17 @@ class ConsoleTable extends React.Component {
         this.containerRef = React.createRef();
     }
 
-    labelDisplayedRows = ({to, count}) => count ? (to === count) ? 'End of results' : 'Scroll for more results' : 'No results';
+    labelDisplayedRows =
+        ({count}) => !count ? 'No results' : 'End of results';
+
+    // ({to, count}) => count ? (to === count) ? 'End of results' : 'Scroll for more results' : 'No results';
+
 
     render() {
 
         const {
             classes,
-            logData, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
+            logData, objectNodeRenderer, order, orderBy, selected, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
             HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying
         } = this.props;
@@ -247,19 +259,17 @@ class ConsoleTable extends React.Component {
             this.findChuncks = configureMatchesFilter(searchState);
         }
         this.totalMatches = 0;
-        this.matches = 0;
-        // console.log('table');
         const data = logData;
-        const matchedData = data.map(n => {
+        let matchedData = data.map(n => {
             const newN = {...n, isMatch: true, chunksResult: this.findChuncks(n)};
             if (!newN.chunksResult.found || (!newN.isFromInput && !newN.expression)) {
                 newN.isMatch = false;
-            } else {
-                this.totalMatches++;
             }
             return newN;
         });
-        const emptyRows = rowsPerPage - Math.min(rowsPerPage, matchedData.length - page * rowsPerPage);
+        matchedData = matchedData.filter(n => n.isMatch || n.isFromInput);
+        this.totalMatches = matchedData.length;
+        const emptyRows = 0;//rowsPerPage - Math.min(rowsPerPage, matchedData.length - page * rowsPerPage);
         return (
             <Paper className={classes.root}>
                 <div ref={this.containerRef} className={classes.tableWrapper}>
@@ -277,12 +287,9 @@ class ConsoleTable extends React.Component {
                         <TableBody onMouseEnter={() => handleChangePlaying('table', false)}
                                    onMouseLeave={() => handleChangePlaying('table', true)}
                         >
-                            {matchedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(n => {
+                            {matchedData.map(n => {
                                 const isSelected = isRowSelected(n.id);
                                 // const result = n.chunksResult;
-                                if (!n.isFromInput && !n.isMatch) {
-                                    return null;
-                                }
                                 let onMouseEnter = null, onMouseLeave = null, onClick = null;
                                 if (!n.isFromInput) {
 
@@ -296,7 +303,6 @@ class ConsoleTable extends React.Component {
                                     onMouseLeave = () => highlightSingleText();
                                     onClick = () => setCursorToLocation(n.loc)
                                 }
-                                this.matches++;
 
                                 return (<TableRow
                                     hover
@@ -309,7 +315,8 @@ class ConsoleTable extends React.Component {
                                     selected={isSelected}
                                     classes={{
                                         root: n.isError ? classes.tableRowError
-                                            : n.isGraphical ? classes.tableRowGraphical : n.isFromInput ? null : classes.tableRow,
+                                            : n.isGraphical ?
+                                                classes.tableRowGraphical : n.isFromInput ? classes.tableRowInput : classes.tableRow,
                                         hover: classes.hover
                                     }}
                                 >
@@ -346,7 +353,7 @@ class ConsoleTable extends React.Component {
                                 </TableRow>);
                             })}
                             {emptyRows > 0 && (
-                                <TableRow style={{height: 49 * emptyRows}}>
+                                <TableRow style={{height: TABLE_ROW_HEIGHT * emptyRows}}>
                                     <TableCell colSpan={isSelectable ? 2 : 1}/>
                                 </TableRow>
                             )}
@@ -357,14 +364,14 @@ class ConsoleTable extends React.Component {
                                     colSpan={isSelectable ? 2 : 1}
                                     count={this.totalMatches}
                                     rowsPerPageOptions={[]}
-                                    rowsPerPage={this.matches}
+                                    rowsPerPage={this.totalMatches}
                                     page={page}
                                     onChangePage={() => {
                                     }}
                                     onChangeRowsPerPage={() => {
                                     }}
                                     labelDisplayedRows={this.labelDisplayedRows}
-                                    Actions={() => <span className={classes.bottomAction}/>}
+                                    ActionsComponent={() => <span className={classes.bottomAction}/>}
                                     className={classes.bottomValueCell}
                                 />
                             </TableRow>
@@ -393,6 +400,11 @@ class ConsoleTable extends React.Component {
 
 ConsoleTable.propTypes = {
     classes: PropTypes.object.isRequired,
+    page: PropTypes.number,
+};
+
+ConsoleTable.defaultProps = {
+    page: 0,
 };
 
 const ConsoleTableWithContext = props => (

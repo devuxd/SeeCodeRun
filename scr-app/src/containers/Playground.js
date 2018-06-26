@@ -91,6 +91,16 @@ class Playground extends Component {
         this.unsubscribes.push(unsubscribe0);
     }
 
+    componentDidUpdate(prevState) {
+        const {isGraphicalLocatorActive} = this.props;
+        if (this.isGraphicalLocatorActive !== isGraphicalLocatorActive) {
+            if (this.currentBundle && this.currentBundle.isActive && this.currentBundle.autoLog) {
+                this.isGraphicalLocatorActive = isGraphicalLocatorActive;
+                this.currentBundle.autoLog.updateGraphicalMapper(isGraphicalLocatorActive);
+            }
+        }
+    }
+
     componentWillUnmount() {
         for (const i in this.unsubscribes) {
             this.unsubscribes[i]();
@@ -104,9 +114,11 @@ class Playground extends Component {
      */
     updateIframe(bundle) {
         const playgroundEl = this.playgroundEl;
-        if (!playgroundEl.current) {
+        if (!bundle || !playgroundEl.current) {
             return;
         }
+        bundle.isActive = false;
+
         const {editorIds} = this.props;
         const {store} = this.context;
 
@@ -123,7 +135,11 @@ class Playground extends Component {
 
         if (alJs) {
             // console.log("AL");
+            const {isGraphicalLocatorActive} = this.props;
             autoLog.configureIframe(this.runIframeHandler, store, autoLogger, html, css, js, alJs);
+            const onChange = autoLog.configureGraphicalMapper(bundle, isGraphicalLocatorActive);
+            autoLogger.trace.setDomNodeAdded(onChange);
+            bundle.isActive = true;
         } else {
             if (autoLogger && autoLogger.ast) {
                 console.log("FB");

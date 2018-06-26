@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
-import Snackbar from 'material-ui/Snackbar';
-import Slide from 'material-ui/transitions/Slide';
+import Snackbar from '@material-ui/core/Snackbar';
+import Slide from '@material-ui/core/Slide';
 // import {withStyles} from 'material-ui';
-import {withStyles} from 'material-ui/styles';
+import {withStyles} from '@material-ui/core/styles';
 import isString from 'lodash/isString';
 
 const styles = () => ({
@@ -101,8 +101,8 @@ class NotificationCenter extends Component {
             open={isSnackbarOpen}
             autoHideDuration={snackbarAutoHideDuration}
             onClose={this.handleClose}
-            transition={snackbarTransition}
-            SnackbarContentProps={{
+            TransitionComponent={snackbarTransition}
+            ContentProps={{
                 'aria-describedby': snackbarMessageId,
                 className: classes.snackbarContentNetWorkStatus,
             }}

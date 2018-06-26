@@ -1,18 +1,19 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import debounce from 'lodash.debounce';
-import throttle from 'lodash.throttle';
+import throttle from 'lodash/throttle';
 import isString from 'lodash/isString';
 import isEqual from 'lodash/isEqual';
 import {Subject} from 'rxjs/Subject';
 import JSAN from 'jsan';
 
-import {withStyles} from 'material-ui/styles';
+import {withStyles} from '@material-ui/core/styles';
 
-import Button from 'material-ui/Button';
+import Paper from '@material-ui/core/Paper';
+import Button from '@material-ui/core/Button';
 
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import {lighten, fade} from 'material-ui/styles/colorManipulator';
+import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
+import {lighten, fade} from '@material-ui/core/styles/colorManipulator';
 import {ObjectRootLabel/*, ObjectLabel*/, createLiveObjectNodeRenderer} from '../components/ObjectExplorer';
 
 import LiveExpression from '../components/LiveExpression';
@@ -39,23 +40,35 @@ export const defaultExpressionClassName = 'monaco-editor-decoration-les-expressi
 export const liveExpressionClassName = 'monaco-editor-decoration-les-expressionLive';
 
 export let HighlightPalette = {
-    text: 'transparent',
-    error: 'transparent',
-    graphical: 'transparent',
-    globalBranch: 'transparent',
-    localBranch: 'transparent',
+    text: {},
+    error: {},
+    graphical: {},
+    globalBranch: {},
+    localBranch: {},
 };
 
 const BRANCH_LINE_DECORATION_WIDTH = 3;
 
 const styles = (theme) => {
+
     HighlightPalette = {
-        text: fade(lighten(theme.palette.primary.light, 0.25), 0.35),
-        error: fade(lighten(theme.palette.error.light, 0.65), 0.35),
-        graphical: fade(lighten(theme.palette.secondary.light, 0.65), 0.35),
-        globalBranch: fade(lighten(theme.palette.primary.light, 0.075), 0.075),
-        localBranch: fade(lighten(theme.palette.secondary.light, 0.1), 0.1),
+        text: fade(theme.palette.primary.main, 0.08),
+        error: fade(theme.palette.error.main, 0.08),
+        graphical: fade(theme.palette.secondary.main, 0.08),
+        globalBranch: fade(theme.palette.primary.main, 0.08),
+        localBranch: fade(theme.palette.secondary.main, 0.08),
     };
+    // let baseAlpha = 0.04;
+    // HighlightPalette.text = {
+    //     baseAlpha,
+    //     enabled: fade(theme.palette.primary.light, baseAlpha),
+    //     hover: fade(theme.palette.primary.light, baseAlpha*2),
+    //     focus: fade(theme.palette.primary.light, baseAlpha),
+    //     selected: fade(theme.palette.primary.light, baseAlpha),
+    //     activated: fade(theme.palette.primary.light, baseAlpha),
+    //     pressed: fade(theme.palette.primary.light, baseAlpha),
+    //     dragged: fade(theme.palette.primary.light, baseAlpha),
+    // };
 
     return {
         '@global': {
@@ -63,29 +76,31 @@ const styles = (theme) => {
                 zIndex: '1000 !important',
             },
             [`.${defaultExpressionClassName}`]: {
-                opacity: 0.70,
-                filter: 'grayscale(30%)',
+                opacity: 0.75,
+                filter: 'grayscale(40%)',
                 fontWeight: 100,
             },
             [`.${liveExpressionClassName}`]: {
                 opacity: 1,
                 filter: 'unset !important',
-                fontWeight: 600,
+                fontWeight: 'normal',
+                transition: ['opacity', 'filter', 'fontWeight'],
+                transitionDuration: 2000,
             },
             [`.${HighlightTypes.text}`]: {
                 backgroundColor: HighlightPalette.text,
             },
             [`.${HighlightTypes.text}-match`]: {
-                backgroundColor: fade(lighten(theme.palette.primary.light, 0.1), 0.5),
+                backgroundColor: fade(theme.palette.primary.light, 0.15),
             },
             [`.${HighlightTypes.error}`]: {
                 backgroundColor: HighlightPalette.error,
             },
             [`.${HighlightTypes.graphical}`]: {
-                backgroundColor: HighlightPalette.graphical,
+                backgroundColor: fade(HighlightPalette.graphical, 0.35),
             },
             [`.${HighlightTypes.graphical}-match`]: {
-                backgroundColor: fade(lighten(theme.palette.secondary.light, 0.1), 0.5),
+                backgroundColor: fade(theme.palette.secondary.light, 0.25),
             },
             [`.${HighlightTypes.globalBranch}`]: {
                 backgroundColor: HighlightPalette.globalBranch,
@@ -112,6 +127,8 @@ const styles = (theme) => {
         },
         popoverPaper: {
             overflow: 'auto',
+            maxWidth: 'unset',
+            maxHeight: 'unset',
         },
         popover: { // restricts backdrop from being modal
             width: 0,
@@ -145,12 +162,17 @@ const styles = (theme) => {
             paddingBottom: 0,
         },
         liveExpressionContainerUpdated: {
-            transition: ['filter', 'opacity'],
+            transition: ['filter', 'opacity', 'color',],
             transitionDuration: 1000,
+            backgroundColor: theme.palette.type === 'light' ? '#fffffe' : '#1e1e1e',// monaco bg colors
         },
         liveExpressionContainerUpdating: {
             filter: 'grayscale(90%)',
             opacity: 0.70,
+            backgroundColor: 'transparent',
+        },
+        liveExpressionPaper: {
+            backgroundColor: theme.palette.type === 'light' ? '#fffffe' : '#1e1e1e',// monaco bg colors
         },
         liveExpressionContent: {
             // lineHeight: monacoProps.lineOffSetHeight,
@@ -182,6 +204,7 @@ const styles = (theme) => {
             top: 2,
             right: 0,
             marginTop: -2,
+            marginLeft: -2,
             marginRight: -4,
             padding: 2,
             // marginTop: -theme.spacing.unit,
@@ -242,10 +265,12 @@ class LiveExpressionStore extends Component {
     configureLiveExpressionWidgetsLayoutChange(firecoPad) {
         const {monacoEditor} = firecoPad;
         const widgetLayoutChange = throttle(() => {
-            this.setState({updatingLiveExpressions: true});
-            this.timeline = [];
-            this.logs = [];
-            this.refreshTimeline();
+            if (this.timeline && this.timeline.length) {
+                this.setState({updatingLiveExpressions: true});
+                this.timeline = [];
+                this.logs = [];
+                this.refreshTimeline();
+            }
         }, 100, {leading: true, trailing: true});
 
         monacoEditor.onDidScrollChange(throttle(() => {
@@ -270,12 +295,14 @@ class LiveExpressionStore extends Component {
     };
     handleOpenContentWidgetDebounced = debounce(this.handleOpenContentWidget, 1000);
 
-    handleCurrentContentWidgetId = (currentContentWidgetId) => {
+    handleCurrentContentWidgetId = (currentContentWidgetId, currentContentWidgetRange) => {
+        const {handleFocusedLiveExpression} = this.props;
         if (currentContentWidgetId) {
             this.handleCloseContentWidgetDebounced(true);
             if (this.state.currentContentWidgetId) {
                 if (currentContentWidgetId !== this.state.currentContentWidgetId) {
                     this.handleOpenContentWidget(currentContentWidgetId);
+                    handleFocusedLiveExpression && handleFocusedLiveExpression(currentContentWidgetId, currentContentWidgetRange);
                 }
             } else {
                 this.handleOpenContentWidgetDebounced(currentContentWidgetId);
@@ -360,26 +387,41 @@ class LiveExpressionStore extends Component {
                     const branchLabel = `${branchSelection}/${branched[id].length}`;
                     const sliderRange = isSelected ? [navigatorIndex] : null;
                     const branchNavigatorWidgetClassName = classes.branchNavigatorWidget;
+                    const n = currentBranchTimelineId ?
+                        this.timeline[this.timeline.length - currentBranchTimelineId] || {} : {};
                     navigators.push(
                         <React.Fragment key={`${id}:${navigationType}`}>
                             <DOMPortal
                                 parentEl={decorator.contentWidget.domNode}>
-                                <div onMouseEnter={() => this.handleCurrentContentWidgetId(id)}
-                                     onMouseLeave={() => this.handleCurrentContentWidgetId()}
+                                <div onMouseEnter={() => {
+                                  //  console.log(n);
+                                    this.highlightSingleText(
+                                        n.loc, n.isError ? HighlightTypes.error
+                                            : n.isGraphical ?
+                                                HighlightTypes.graphical : HighlightTypes.text,
+                                        this.traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
+                                    this.handleCurrentContentWidgetId(id, n.range);
+                                }}
+                                     onMouseLeave={() => {
+                                         this.highlightSingleText();
+                                         this.handleCurrentContentWidgetId();
+                                     }}
                                      className={liveExpressionContainerClassName}
                                 >
-                                    <OverflowComponent
-                                        contentClassName={classes.liveExpressionContent}
-                                        disableOverflowDetectionY={true}
-                                        //  placeholder={<Typography>Yo</Typography>}
-                                        //  placeholderClassName={classes.expressionCellContent}
-                                        // placeholderDisableGutters={true}
-                                    >
+                                    <Paper className={classes.liveExpressionPaper}>
+                                        {/*<OverflowComponent*/}
+                                        {/*contentClassName={classes.liveExpressionContent}*/}
+                                        {/*disableOverflowDetectionY={true}*/}
+                                        {/*//  placeholder={<Typography>Yo</Typography>}*/}
+                                        {/*//  placeholderClassName={classes.expressionCellContent}*/}
+                                        {/*// placeholderDisableGutters={true}*/}
+                                        {/*>*/}
                                         <Button variant="raised" color={color}
                                                 className={branchNavigatorWidgetClassName}>
                                             {branchLabel}</Button>
                                         {/*<ObjectRootLabel data={branched[id]}/>*/}
-                                    </OverflowComponent>
+                                        {/*</OverflowComponent>*/}
+                                    </Paper>
 
                                 </div>
                             </DOMPortal>
@@ -393,12 +435,14 @@ class LiveExpressionStore extends Component {
                                 isOpen={isSelected && branched[id].length > 0}
                                 objectNodeRenderer={this.objectNodeRenderer}
                                 sliderRange={sliderRange}
-                                branchNavigatorChange={(timelineI, navigatorIndex, prevTimelineI) => this.handleBranchChange(navigationType, id, timelineI, navigatorIndex, prevTimelineI)}
+                                branchNavigatorChange={(timelineI, navigatorIndex, prevTimelineI) =>
+                                    this.handleBranchChange(
+                                        navigationType, id, timelineI, navigatorIndex, prevTimelineI
+                                    )}
                                 //handleChange={this.handleObjectExplorerExpand}
                             />
                         </React.Fragment>);
                 }
-
             }
         }
         return navigators;
@@ -440,6 +484,7 @@ class LiveExpressionStore extends Component {
         const absoluteGlobalBranches = {};
         const localBranches = {};
         let localBranchLocs = null;
+        let selectedGlobalBranches = {};
         if (currentBranchId && currentBranchTimelineId) {
             branches.forEach(branch => {
                 const {id, timelineI, navigationType, loc, blockLoc} = branch;
@@ -460,24 +505,27 @@ class LiveExpressionStore extends Component {
                                 branched[id].push(timelineI);
                             }
 
-                        } else {
-                            branched[id] = branched[id] || [];
-                            branched[id].push(timelineI);
                         }
+                        // else {
+                        //     branched[id] = branched[id] || [];
+                        //     branched[id].push(timelineI);
+                        // }
 
                     }
                     if (navigationType === NavigationTypes.Global) {
-                        absoluteGlobalBranches[id] = absoluteGlobalBranches[id] || [];
-                        absoluteGlobalBranches[id].push(timelineI);
+                        branched[id] = branched[id] || [];
+                        branched[id].push(timelineI);
+                        // absoluteGlobalBranches[id] = absoluteGlobalBranches[id] || [];
+                        // absoluteGlobalBranches[id].push(timelineI);
                     }
 
                 }
             });
-            for (const id in globalBranches) {
-                if (id !== currentBranchId) {
-                    globalBranches[id][globalBranches[id].length - 1] = currentBranchTimelineId;
-                }
-            }
+            // for (const id in globalBranches) {
+            //     if (id !== currentBranchId) {
+            //         globalBranches[id][globalBranches[id].length - 1] = currentBranchTimelineId;
+            //     }
+            // }
 
         } else {
             branches.forEach(branch => {
@@ -532,15 +580,20 @@ class LiveExpressionStore extends Component {
                 // widget.contentWidget.domNode.style.fontSize = '8px';
                 widget.range && liveRanges.push(widget.range);
                 let datum = null;
+                let entry = null;
                 try {
-                    datum = data[data.length - 1].isError ? data[data.length - 1].data : JSAN.parse(data[data.length - 1].data);
+                    //todo needs parsed memoizing
+                    datum =
+                        data[data.length - 1].isError ?
+                            data[data.length - 1].data : JSAN.parse(data[data.length - 1].data);
+                    entry = data[data.length - 1];
                     // datum = isString(data[data.length - 1].data) ?
                     //     JSAN.parse(data[data.length - 1].data) : data[data.length - 1].data;
                 } catch (e) {
                     console.log(data[data.length - 1], e)
                 }
 
-                this.liveExpressionWidgets[widget.id] = {datum, widget};
+                this.liveExpressionWidgets[widget.id] = {datum, widget, entry};
                 //  if (hasChildNodes(datum, objectIterator)) {
                 //    // let text = '';
                 //    // for (let {name, data, ...props} of objectIterator(datum)) {
@@ -581,28 +634,40 @@ class LiveExpressionStore extends Component {
         const liveWidgets = [];
         for (const i in this.liveExpressionWidgets) {
             if (this.liveExpressionWidgets[i]) {
-                const {datum, widget} = this.liveExpressionWidgets[i];
+                const {datum, widget, entry} = this.liveExpressionWidgets[i];
+                const n = entry;
                 if (widget.contentWidget) {
                     widget.contentWidget.adjustWidth(true);
                     liveWidgets.push(
                         <DOMPortal key={widget.id}
                                    parentEl={widget.contentWidget.domNode}>
-                            <div onMouseEnter={() => this.handleCurrentContentWidgetId(widget.id)}
-                                 onMouseLeave={() => this.handleCurrentContentWidgetId()}
-                                 className={liveExpressionContainerClassName}
+                            <div
+                                onMouseEnter={() => {
+                                    // console.log(entry);
+                                    this.highlightSingleText(
+                                        n.loc, n.isError ? HighlightTypes.error
+                                            : n.isGraphical ?
+                                                HighlightTypes.graphical : HighlightTypes.text,
+                                        this.traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
+                                    this.handleCurrentContentWidgetId(widget.id);
+                                }}
+                                onMouseLeave={() => {
+                                    this.highlightSingleText();
+                                    this.handleCurrentContentWidgetId();
+                                }}
+                                className={liveExpressionContainerClassName}
                             >
                                 <OverflowComponent
                                     overflowXClassName={classes.liveExpressionRoot}
                                     contentClassName={classes.liveExpressionContent}
                                     disableOverflowDetectionY={true}
-                                    overflowXAdornment={<MoreVertIcon className={classes.overflowXIcon}/>}
+                                    overflowXAdornment={<MoreHorizIcon className={classes.overflowXIcon}/>}
                                     //  placeholder={<Typography>Yo</Typography>}
                                     //  placeholderClassName={classes.expressionCellContent}
                                     // placeholderDisableGutters={true}
                                 >
                                     <ObjectRootLabel data={datum} compact={true}/>
                                 </OverflowComponent>
-
                             </div>
                         </DOMPortal>);
                 }

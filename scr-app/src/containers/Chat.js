@@ -2,15 +2,18 @@ import classnames from 'classnames';
 import React, {Component} from 'react';
 import localStorage from 'store';
 import isEqual from 'lodash/isEqual';
-import {withStyles} from 'material-ui/styles';
-import ListSubheader from 'material-ui/List/ListSubheader';
-import List, {ListItem, ListItemSecondaryAction, ListItemText} from 'material-ui/List';
-import {CardHeader} from 'material-ui/Card';
-import Avatar from 'material-ui/Avatar';
-import IconButton from 'material-ui/IconButton';
-import Menu from 'material-ui/Menu';
+import {withStyles} from '@material-ui/core/styles';
+import ListSubheader from '@material-ui/core/ListSubheader';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
+import CardHeader from '@material-ui/core/CardHeader';
+import Avatar from '@material-ui/core/Avatar';
+import IconButton from '@material-ui/core/IconButton';
+import Menu from '@material-ui/core/Menu';
 import ChatIcon from '@material-ui/icons/Chat';
-import TextField from 'material-ui/TextField';
+import TextField from '@material-ui/core/TextField';
 import randomColor from "randomcolor";
 
 import {configureFirecoChat} from '../redux/modules/fireco';
@@ -70,7 +73,7 @@ const styles = theme => ({
     },
     chatMessageCardHeader: {
         padding: 0,
-    }
+    },
 });
 
 class Chat extends Component {
@@ -679,8 +682,8 @@ class Chat extends Component {
                                                 </div>
                                             }
                                             action={
-                                                <IconButton title={chatTitle} onClick={chatClick}
-                                                            className={classes.messageChatIcon}
+                                                <IconButton title={chatTitle}
+                                                            onClick={chatClick}
                                                             color={isChatToggled ? "secondary" : "default"}>
                                                     <ChatIcon/>
                                                 </IconButton>
@@ -691,7 +694,6 @@ class Chat extends Component {
                                                     error={errors}
                                                     placeholder="type message..."
                                                     value={chatMessageText}
-                                                    className={classes.messageTextField}
                                                     onChange={this.handleMessageTextChange}
                                                     onKeyUp={this.handleMessageInputEnter}
                                                 />
@@ -712,6 +714,7 @@ class Chat extends Component {
                                     >
                                         <ListItem button={true}
                                                   disableGutters={true}
+                                                  dense
                                         >
                                             {chatUserId === message.chatUserId || skipInfo ?
                                                 <Avatar/>

@@ -1,25 +1,24 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
-import {withStyles} from 'material-ui/styles';
-import ButtonBase from 'material-ui/ButtonBase';
-import Typography from 'material-ui/Typography';
-import {fade, lighten, darken} from 'material-ui/styles/colorManipulator';
+import {withStyles} from '@material-ui/core/styles';
+import ButtonBase from '@material-ui/core/ButtonBase';
+import Typography from '@material-ui/core/Typography';
+import {fade, lighten, darken} from '@material-ui/core/styles/colorManipulator';
 
-import Table, {
-    TableBody,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-} from 'material-ui/Table';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableFooter from '@material-ui/core/TableFooter';
+import TableHead from '@material-ui/core/TableHead';
+import TablePagination from '@material-ui/core/TablePagination';
+import TableRow from '@material-ui/core/TableRow';
+import TableSortLabel from '@material-ui/core/TableSortLabel';
 
-import Paper from 'material-ui/Paper';
-import Checkbox from 'material-ui/Checkbox';
-import Tooltip from 'material-ui/Tooltip';
-import IconButton from 'material-ui/IconButton';
+import Paper from '@material-ui/core/Paper';
+import Checkbox from '@material-ui/core/Checkbox';
+import Tooltip from '@material-ui/core/Tooltip';
+import IconButton from '@material-ui/core/IconButton';
 import VerticalAlignTopIcon from '@material-ui/icons/VerticalAlignTop';
 import VerticalAlignBottomIcon from '@material-ui/icons/VerticalAlignBottom';
 import Highlighter from "react-highlight-words";
@@ -28,7 +27,7 @@ import Highlighter from "react-highlight-words";
 import JSAN from "jsan";
 import ObjectExplorer from "./ObjectExplorer";
 
-import {PastebinContext} from "../containers/Pastebin";
+import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
 import {HighlightPalette} from '../containers/LiveExpressionStore';
 import OverflowComponent from "./OverflowComponent";
 
@@ -41,7 +40,7 @@ const createSortHandler = (props, property) => event => {
     props.onRequestSort(event, property);
 };
 
-// const labelDisplayedRows = ({to, count}) => `${to} of ${count}`;
+
 
 class TraceTableHead extends React.Component {
     render() {
@@ -53,7 +52,7 @@ class TraceTableHead extends React.Component {
 
         return (
             <TableHead>
-                <TableRow>
+                <TableRow className={classes.tableHeadRow}>
                     {isSelectable &&
                     <TableCell padding="checkbox">
                         <Checkbox
@@ -71,7 +70,6 @@ class TraceTableHead extends React.Component {
                                 numeric={column.numeric}
                                 className={classes[column.className]}
                                 sortDirection={orderBy === column.id ? order : false}
-                                // colSpan={column.colSpan}
                             >
                                 <Tooltip
                                     title="Sort"
@@ -82,13 +80,15 @@ class TraceTableHead extends React.Component {
                                         active={orderBy === column.id}
                                         direction={order}
                                         onClick={createSortHandler(this.props, column.id)}
-                                        // className={column.showTimeflow ? null : classes.tableHeadCell}
                                     >
                                         {column.label}
                                     </TableSortLabel>
                                 </Tooltip>
                                 {column.showTimeflow && <Tooltip
-                                    title={orderBy === 'time' ? (timeFlow === 'desc' ? 'Showing latest first' : 'Showing Oldest first') : 'Time flow'}
+                                    title={orderBy === 'time' ?
+                                        (timeFlow === 'desc' ? 'Showing latest first' : 'Showing Oldest first')
+                                        : 'Time flow'
+                                    }
                                     placement={'bottom-end'}
                                     enterDelay={300}
                                 >
@@ -116,6 +116,8 @@ TraceTableHead.propTypes = {
     rowCount: PropTypes.number.isRequired,
 };
 
+TraceTableHead.muiName = 'TableHead';
+
 let expressionCellMaxWidth = 300;
 
 const styles = theme => ({
@@ -132,20 +134,23 @@ const styles = theme => ({
         height: '100%',
     },
     tableRow: {
+        height: TABLE_ROW_HEIGHT,
         '&$hover:hover': {
             backgroundColor: HighlightPalette.text,
         },
     },
     tableRowError: {
+        height: TABLE_ROW_HEIGHT,
         backgroundColor: fade(HighlightPalette.error, 0.2),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.error,
         },
     },
     tableRowGraphical: {
-        backgroundColor: fade(HighlightPalette.graphical, 0.2),
+        height: TABLE_ROW_HEIGHT,
+        backgroundColor: HighlightPalette.graphical,
         '&$hover:hover': {
-            backgroundColor: HighlightPalette.graphical,
+            backgroundColor: fade(HighlightPalette.graphical, 0.2),
         }
     },
     hover: {},
@@ -154,25 +159,25 @@ const styles = theme => ({
         overflow: 'hidden',
         display: 'table-cell',
         verticalAlign: 'inherit',
-        // Workaround for a rendering bug with spanned columns in Chrome 62.0.
-        // Removes the alpha (sets it to 1), and lightens or darkens the theme color.
-        // borderBottom: `1px solid ${
-        //     theme.palette.type === 'light'
-        //         ? lighten(fade(theme.palette.divider, 1), 0.88)
-        //         : darken(fade(theme.palette.divider, 1), 0.8)
-        //     }`,
         textAlign: 'left',
         padding: 0,
         paddingLeft: theme.spacing.unit * 2,
-        paddingRight: 0,
+        maxWidth: expressionCellMaxWidth,
     },
     expressionCellContent: {
         overflow: 'auto',
         position: 'relative',
         maxWidth: expressionCellMaxWidth,
-        paddingTop: theme.spacing.unit,
-        paddingBottom: theme.spacing.unit * 2,
+        paddingTop: theme.spacing.unit / 2,
+        paddingBottom: theme.spacing.unit,
         marginBottom: -theme.spacing.unit,
+    },
+    expressionCellContentTypography: {
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontWeight: 'normal',
+        fontSize: 11,
+        // lineHeight: 14,
+        letterSpacing: 0,
     },
     valueCell: {
         borderBottom: 0,
@@ -199,9 +204,11 @@ const styles = theme => ({
         position: 'absolute',
         right: 0,
         top: 0,
-        marginTop: theme.spacing.unit / 2,
         marginLeft: -theme.spacing.unit * 3,
         marginRight: theme.spacing.unit * 2,
+    },
+    tableHeadRow: {
+        height: TABLE_ROW_HEIGHT + 16,
     },
     tableHeadCell: {
         marginLeft: theme.spacing.unit * 5,
@@ -232,23 +239,22 @@ const configureMatchesFilter = (searchState) => {
             }
 
             if (searchState.isFunctions &&
-                searchState.functionLikeExpressions.includes(data.expressionType)) {
+                searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
                 result.functions = isAnyText ? [] : findChuncks(data.expression);
                 result.found = isAnyText || !!result.functions.length;
             }
 
             if (searchState.isExpressions &&
-                !searchState.functionLikeExpressions.includes(data.expressionType)) {
+                !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
                 result.expressions = isAnyText ? [] : findChuncks(data.expression);
                 result.found = isAnyText || result.found || !!result.expressions.length;
             }
 
             if (searchState.isValues &&
-                !searchState.functionLikeExpressions.includes(data.expressionType)) {
+                !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
                 result.values = isAnyText ? [] : findChuncks(data.value);
                 result.found = isAnyText || result.found || !!result.values.length;
             }
-            // console.log(result);
             return result;
         }
     }
@@ -258,9 +264,17 @@ class TraceTable extends React.Component {
     constructor(props) {
         super(props);
         this.containerRef = React.createRef();
+        this.parsed = {};
+        this.isHovered = false;
     }
 
-    labelDisplayedRows = ({to, count}) => count ? (to === count) ? 'End of results' : 'Scroll for more results' : 'No results';
+    actionsComponent = (classes) => {
+        this.actions = this.actions || (() => <span className={classes.bottomAction}/>);
+        return this.actions;
+    };
+
+    labelDisplayedRows = ({to, count}) =>
+        count ? (to === count) ? 'End of results' : 'Scroll for more results' : 'No results';
 
     render() {
 
@@ -269,28 +283,30 @@ class TraceTable extends React.Component {
             data, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
             HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying,
-            timeFlow, handleChangeTimeFlow
+            timeFlow, handleChangeTimeFlow, isNew, defaultRowsPerPage, /*scrollToTop,*/
         } = this.props;
 
+        if (isNew) {
+            this.parsed = {};
+        }
 
         if (this.searchState !== searchState) {
             this.searchState = searchState;
             this.findChuncks = configureMatchesFilter(searchState);
         }
-        this.totalMatches = 0;
-        this.matches = 0;
-        // console.log('table');
 
-        const matchedData = data.map(n => {
+        this.totalMatches = 0;
+        let matchedData = data.map(n => {
             const newN = {...n, isMatch: true, chunksResult: this.findChuncks(n)};
             if (!newN.chunksResult.found || !newN.expression) {
                 newN.isMatch = false;
-            } else {
-                this.totalMatches++;
             }
             return newN;
         });
-        const emptyRows = rowsPerPage - Math.min(rowsPerPage, matchedData.length - page * rowsPerPage);
+        matchedData = matchedData.filter(n => n.isMatch);
+        this.totalMatches = matchedData.length;
+        // console.log('table', this.totalMatches, data.length);
+
         return (
             <Paper className={classes.root}>
                 <div ref={this.containerRef} className={classes.tableWrapper}>
@@ -307,26 +323,26 @@ class TraceTable extends React.Component {
                             timeFlow={timeFlow}
                             handleChangeTimeFlow={handleChangeTimeFlow}
                         />
-                        <TableBody onMouseEnter={() => handleChangePlaying('table', false)}
-                                   onMouseLeave={() => handleChangePlaying('table', true)}>
+                        <TableBody onMouseEnter={() => {
+                            this.isHovered = true;
+                            handleChangePlaying('table', false);
+                        }}
+                                   onMouseLeave={() => {
+                                       this.isHovered = false;
+                                       handleChangePlaying('table', true);
+                                   }}>
                             {matchedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(n => {
                                 const isSelected = isRowSelected(n.id);
                                 const result = n.chunksResult;
-                                if (!n.isMatch) {
-                                    return null;
-                                }
-                                this.matches++;
-
+                                this.parsed[n.id] =
+                                    this.parsed[n.id] || {
+                                        current: (isString(n.value) ?
+                                            JSAN.parse(n.value) : n.value)
+                                    };
+                                const parsed = this.parsed[n.id].current;
                                 return (
                                     <TableRow
                                         hover
-                                        onMouseEnter={() =>
-                                            highlightSingleText(
-                                                n.loc, n.isError ? HighlightTypes.error
-                                                    : n.isGraphical ?
-                                                        HighlightTypes.graphical : HighlightTypes.text,
-                                                traceSubscriber.getMatches(n.funcRefId, n.dataRefId))}
-                                        onMouseLeave={() => highlightSingleText()}
                                         role="checkbox"
                                         aria-checked={isSelected}
                                         tabIndex={-1}
@@ -346,16 +362,21 @@ class TraceTable extends React.Component {
                                         }
                                         <TableCell
                                             classes={{root: classes.expressionCellRoot}}
+                                            onMouseEnter={() =>
+                                                highlightSingleText(
+                                                    n.loc, n.isError ? HighlightTypes.error
+                                                        : n.isGraphical ?
+                                                            HighlightTypes.graphical : HighlightTypes.text)}
+                                            onMouseLeave={() => highlightSingleText()}
                                         >
                                             <OverflowComponent
                                                 contentClassName={classes.expressionCellContent}
                                                 disableOverflowDetectionY={true}
-                                                //  placeholder={<Typography>Yo</Typography>}
-                                                //  placeholderClassName={classes.expressionCellContent}
-                                                // placeholderDisableGutters={true}
                                             >
                                                 <ButtonBase onClick={() => setCursorToLocation(n.loc)}>
-                                                    <Typography align={"left"} noWrap>
+                                                    <Typography align={"left"}
+                                                                className={classes.expressionCellContentTypography}
+                                                                noWrap>
                                                         <Highlighter
                                                             searchWords={[searchState.value]}
                                                             textToHighlight={n.expression}
@@ -365,18 +386,29 @@ class TraceTable extends React.Component {
                                                 </ButtonBase>
                                             </OverflowComponent>
                                         </TableCell>
-                                        <TableCell className={classes.valueCell}>
+                                        <TableCell className={classes.valueCell}
+                                                   onMouseEnter={() =>
+                                                       highlightSingleText(
+                                                           n.loc, n.isError ? HighlightTypes.error
+                                                               : n.isGraphical ?
+                                                                   HighlightTypes.graphical : HighlightTypes.text,
+                                                           traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.entry.calleeId))}
+                                                   onMouseLeave={() => highlightSingleText()}
+                                        >
                                             <ObjectExplorer
                                                 expressionId={n.expressionId}
                                                 objectNodeRenderer={objectNodeRenderer}
-                                                data={isString(n.value) ? JSAN.parse(n.value) : n.value}
+                                                data={parsed}
                                             />
                                         </TableCell>
                                     </TableRow>
                                 );
                             })}
-                            {emptyRows > 0 && (
-                                <TableRow style={{height: 49 * emptyRows}}>
+                            {((defaultRowsPerPage - 4) - this.totalMatches) > 0 && (
+                                <TableRow style={{
+                                    height:
+                                        TABLE_ROW_HEIGHT * ((defaultRowsPerPage - 4) - this.totalMatches)
+                                }}>
                                     <TableCell colSpan={isSelectable ? 3 : 2}/>
                                 </TableRow>
                             )}
@@ -387,14 +419,14 @@ class TraceTable extends React.Component {
                                     colSpan={isSelectable ? 3 : 2}
                                     count={this.totalMatches}
                                     rowsPerPageOptions={[]}
-                                    rowsPerPage={this.matches}
+                                    rowsPerPage={rowsPerPage}
                                     page={page}
                                     onChangePage={() => {
                                     }}
                                     onChangeRowsPerPage={() => {
                                     }}
                                     labelDisplayedRows={this.labelDisplayedRows}
-                                    Actions={() => <span className={classes.bottomAction}/>}
+                                    ActionsComponent={this.actionsComponent(classes)}
                                     className={classes.bottomValueCell}
                                 />
                             </TableRow>
@@ -413,16 +445,28 @@ class TraceTable extends React.Component {
     }
 
     componentDidUpdate() {
-        const {handleTotalChange} = this.props;
+        const {handleTotalChange, scrollToTop} = this.props;
         if (handleTotalChange && this.traceTotal !== this.totalMatches) {
             this.traceTotal = this.totalMatches;
             handleTotalChange(this.traceTotal);
         }
+        if (!this.isHovered && scrollToTop) {
+            scrollToTop();
+        }
+    }
+
+    componentWillUnmount() {
+        this.parsed = {};
     }
 }
 
 TraceTable.propTypes = {
     classes: PropTypes.object.isRequired,
+    page: PropTypes.number,
+};
+
+TraceTable.defaultProps = {
+    page: 0,
 };
 
 const TraceTableWithContext = props => (

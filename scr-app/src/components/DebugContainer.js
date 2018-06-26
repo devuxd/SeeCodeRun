@@ -1,18 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import throttle from 'lodash.throttle';
+import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
 // import {withStyles, AppBar, Typography, Tabs, Tab} from 'material-ui';
-import {withStyles} from 'material-ui/styles';
-import AppBar from 'material-ui/AppBar';
-import Paper from 'material-ui/Paper';
-import Tabs, {Tab} from 'material-ui/Tabs';
+import {withStyles} from '@material-ui/core/styles';
+import AppBar from '@material-ui/core/AppBar';
+import Paper from '@material-ui/core/Paper';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 import SwipeableViews from 'react-swipeable-views';
-import {ListItem, ListItemAvatar, ListItemText} from 'material-ui/List';
-import Avatar from 'material-ui/Avatar';
-import {fade} from 'material-ui/styles/colorManipulator';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import ListItemText from '@material-ui/core/ListItemText';
+import Avatar from '@material-ui/core/Avatar';
+import {fade} from '@material-ui/core/styles/colorManipulator';
 
-import Slide from 'material-ui/transitions/Slide';
+import Slide from '@material-ui/core/Slide';
 
 import PlayListPlayIcon from '@material-ui/icons/PlaylistPlay';
 import ConsoleIcon from 'mdi-material-ui/ConsoleLine';
@@ -107,6 +110,13 @@ TabContainer.propTypes = {
 };
 
 const styles = theme => ({
+    appCompact: {
+        minHeight: 38,
+    },
+    appCompactTab: {
+        // minHeight: 42,
+        // height: 42,
+    },
     root: {
         minWidth: 600,
         // overflowY: 'hidden',
@@ -118,7 +128,10 @@ const styles = theme => ({
         color: 'unset',
     },
     labelContainer: {
+        minHeight: 38,
+        height: 38,
         paddingTop: 0,
+        // marginTop: -theme.spacing.unit/4,
         paddingBottom: 0,
     },
     avatar: {
@@ -160,7 +173,7 @@ const styles = theme => ({
         zIndex: 1,
         position: 'absolute',
         width: 'fill-available',
-        margin: theme.spacing.unit * 2,
+        margin: theme.spacing.unit,
     },
 });
 
@@ -174,7 +187,7 @@ class DebugContainer extends React.Component {
         const {theme, classes, tabIndex, handleChangeTab, handleChangeTabIndex, ScrollingListContainers} = this.props;
         return (
             <div className={classes.root}>
-                <AppBar position="sticky" color="default">
+                <AppBar position="sticky" color="default" className={classes.appCompact} elevation={1}>
                     <TraceToolbar/>
                     <Tabs
                         value={tabIndex}
@@ -183,9 +196,11 @@ class DebugContainer extends React.Component {
                         textColor="primary"
                         fullWidth
                         centered
+                        className={classes.appCompact}
                     >
                         <Tab
                             classes={{
+                                root: classes.appCompactTab,
                                 labelContainer: classes.labelContainer
                             }}
                             label={<TabLabel
@@ -194,6 +209,7 @@ class DebugContainer extends React.Component {
                         />
                         <Tab
                             classes={{
+                                root: classes.appCompactTab,
                                 labelContainer: classes.labelContainer
                             }}
 
@@ -206,7 +222,7 @@ class DebugContainer extends React.Component {
                     </Tabs>
                 </AppBar>
                 <Slide direction="down" in={this.consoleTabIndex === tabIndex}>
-                    <Paper elevation={4} className={classes.paper}>
+                    <Paper elevation={2} className={classes.paper}>
                         <ConsoleInput className={classes.consoleInput}/>
                     </Paper>
                 </Slide>

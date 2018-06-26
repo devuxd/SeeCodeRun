@@ -1,12 +1,14 @@
 import React, {Component, createContext} from 'react';
 import PropTypes from 'prop-types';
-import throttle from 'lodash.throttle';
+import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
 import {Responsive} from 'react-grid-layout';
 // import {withStyles, Paper} from 'material-ui';
-import {withStyles} from 'material-ui/styles';
-import {darken} from 'material-ui/styles/colorManipulator';
-import Paper from 'material-ui/Paper';
+import {withStyles} from '@material-ui/core/styles';
+import {darken} from '@material-ui/core/styles/colorManipulator';
+import Paper from '@material-ui/core/Paper';
+import Tooltip from '@material-ui/core/Tooltip';
+import IconButton from '@material-ui/core/IconButton';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
 // import SlowMotionVideoIcon from '@material-ui/icons/SlowMotionVideo';
@@ -14,6 +16,7 @@ import TvIcon from '@material-ui/icons/Tv';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
 import LanguageCss3Icon from 'mdi-material-ui/LanguageCss3';
+import CodeTagsCheckIcon from 'mdi-material-ui/CodeTagsCheck';
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
@@ -38,9 +41,14 @@ let gridLayoutFormatter = isCompact ?
     configureDefaultGridLayoutCompactFormatter() : configureDefaultGridLayoutFormatter();
 
 export const PastebinContext = createContext({});
+export const VisualQueryListener = {
+    onChange: (el, key) => {
+    }
+};
+
 const animationId = `scr-a-id-${Date.now()}`;
 
-const TABLE_ROW_HEIGHT = 48;
+export const TABLE_ROW_HEIGHT = 32;
 const styles = theme => ({
     layout: {
         overflow: 'visible',
@@ -55,16 +63,25 @@ const styles = theme => ({
     icon: {
         position: 'absolute',
         zIndex: theme.zIndex.snackbar,
-        right: theme.spacing.unit/2,
-        top: theme.spacing.unit/4,
+        right: theme.spacing.unit / 2,
+        top: theme.spacing.unit / 4,
         color: darken(theme.palette.action.disabled, 0.5),
         fontSize: theme.spacing.unit * 3,
+    },
+    locatorButton: {
+        position: 'absolute',
+        zIndex: theme.zIndex.snackbar,
+        bottom: theme.spacing.unit * 3,
+        right: 0,
+    },
+    locator: {
+        fontSize: theme.spacing.unit * 2,
     },
     draggable: {
         position: 'absolute',
         zIndex: theme.zIndex.snackbar,
-        bottom: theme.spacing.unit/2,
-        right: theme.spacing.unit*4,
+        bottom: theme.spacing.unit / 2,
+        right: theme.spacing.unit * 4,
         color: 'rgba(30, 144, 255, 0.7)', // same as utils/react-grid-layout-scr-theme.css
         fontSize: theme.spacing.unit * 2,
         cursor: 'grab',
@@ -100,6 +117,7 @@ class Pastebin extends Component {
         this.exports = {};
         this.debugScrollerRefSnapshots = {};
         this.scrollingListContainers = {};
+        VisualQueryListener.onChange = this.onVisualQueryChange;
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -112,6 +130,12 @@ class Pastebin extends Component {
         }
         return null;
     }
+
+    onVisualQueryChange = (visualQuery, visualId) => {
+        this.setState({
+            searchState: {...this.state.searchState, visualQuery, visualId}
+        })
+    };
 
     onGridResize = (isResizing) => {
         this.exports.onResize && this.exports.onResize(isResizing);
@@ -126,7 +150,8 @@ class Pastebin extends Component {
     };
 
     restoreGridLayouts = gridLayouts => {
-        gridLayouts = gridLayoutFormatter.validateLayout(gridLayouts, gridLayoutFormatter.currentBreakPoint);
+        gridLayouts =
+            gridLayoutFormatter.validateLayout(gridLayouts, gridLayoutFormatter.currentBreakPoint);
         this.setState({
             gridLayouts: gridLayouts,
         });
@@ -143,26 +168,33 @@ class Pastebin extends Component {
 
     };
 
-    debouncedOnDebugContainerResizeEnd = debounce((isNew) => {
+    getRowsLayout = (isNew) => {
         if (this.debugScrollerRef.current) {
-            let availableHeight = this.debugScrollerRef.current.parentElement ?
-                (this.debugScrollerRef.current.parentElement.style.height || '0')
-                : (this.debugScrollerRef.current.style.height || '0');
-            availableHeight = parseInt(availableHeight.replace('px', ''), 10);
-            const defaultRowsPerPage = (parseInt(availableHeight / TABLE_ROW_HEIGHT, 10) || 0) + 1;
-            this.setState((prevState) => {
-                const nextRowsPerPage = isNew ?
-                    defaultRowsPerPage : Math.max(
-                        prevState.rowsPerPage + prevState.rowsPerPageIncrement, defaultRowsPerPage
-                    );
-                const rowsPerPage =
-                    Math.min(nextRowsPerPage, Math.max((prevState.timeline || []).length, prevState.minRows));
-                if (rowsPerPage !== prevState.rowsPerPage) {
-                    return {rowsPerPage, defaultRowsPerPage};
-                } else {
-                    return null;
-                }
-            });
+            // console.log(
+            // 'this.debugScrollerRef.current.scrollHeight',
+            // , this.debugScrollerRef.current.scrollHeight, this.debugScrollerRef.current.style);
+            const defaultRowsPerPage = (
+                parseInt(this.debugScrollerRef.current.getBoundingClientRect().height / TABLE_ROW_HEIGHT, 10)
+            );
+            const rowsPerPage = isNew ?
+                defaultRowsPerPage : Math.max(
+                    this.state.rowsPerPage,
+                    defaultRowsPerPage
+                );
+            if (rowsPerPage !== this.state.rowsPerPage
+                || defaultRowsPerPage !== this.state.defaultRowsPerPage) {
+                return {rowsPerPage, defaultRowsPerPage};
+            } else {
+                return null;
+            }
+        }
+        return {defaultRowsPerPage: this.state.minRows};
+    };
+
+    debouncedOnDebugContainerResizeEnd = debounce((isNew) => {
+        const rowsLayout = this.getRowsLayout(isNew);
+        if (rowsLayout) {
+            this.setState(rowsLayout);
         }
         this.handleChangeDebugLoading(false);
     }, 50);
@@ -318,18 +350,32 @@ class Pastebin extends Component {
     }
 
     handleScrollEnd = (isBottom) => {
-        this.setState((prevState) => {
+        const rowsLayout = this.getRowsLayout(false);
+        if (rowsLayout) {
+            rowsLayout.rowsPerPage = isBottom ?
+                Math.min(
+                    this.state.rowsPerPage + this.state.rowsPerPageIncrement,
+                    Math.max(
+                        (this.state.timeline || []).length,
+                        rowsLayout.defaultRowsPerPage || this.state.defaultRowsPerPage)
+                )
+                : (rowsLayout.defaultRowsPerPage || this.state.defaultRowsPerPage);
+            if (rowsLayout.rowsPerPage !== this.state.rowsPerPage) {
+                this.setState({rowsPerPage: rowsLayout.rowsPerPage});
+            }
+        } else {
             const rowsPerPage = isBottom ?
                 Math.min(
-                    prevState.rowsPerPage + prevState.rowsPerPageIncrement,
-                    Math.max((prevState.timeline || []).length, prevState.minRows))
-                : prevState.defaultRowsPerPage * 3;
-            if (rowsPerPage !== prevState.rowsPerPage) {
-                return {rowsPerPage};
-            } else {
-                return null;
+                    this.state.rowsPerPage + this.state.rowsPerPageIncrement,
+                    Math.max(
+                        (this.state.timeline || []).length,
+                        this.state.defaultRowsPerPage)
+                )
+                : this.state.defaultRowsPerPage;
+            if (rowsPerPage !== this.state.rowsPerPage) {
+                this.setState({rowsPerPage});
             }
-        });
+        }
 
         this.handleChangeDebugLoading(false);
     };
@@ -354,6 +400,13 @@ class Pastebin extends Component {
             }
         }
     };
+
+    scrollToTop = () => {
+        if (this.state.tabIndex !== 0) {
+            return;
+        }
+        this.debugScrollerRef.current && (this.debugScrollerRef.current.scrollTop = 0);
+    }
 
     createData(timeline, getEditorTextInLoc) {
         let tl = timeline || [];
@@ -406,42 +459,47 @@ class Pastebin extends Component {
         });
     }
 
-    liveExpressionStoreChange = (traceSubscriber, timeline, logs, isNew, HighlightTypes, highlightSingleText, setCursorToLocation, getEditorTextInLoc, colorizeDomElement, objectNodeRenderer, handleChange) => {
-        const {orderBy, order, isPlaying} = this.state;
-        isPlaying && this.handleChangeDebugLoading(true);
-        setTimeout(() => {
-            if (isPlaying || isNew) {
-                let currentTimeline = isPlaying ? timeline : this.state.timeline;
-                let currentLogs = isPlaying ? logs : this.state.logs;
-                const data = this.createData(currentTimeline, getEditorTextInLoc);
-                const logData = this.createLogData(currentLogs, getEditorTextInLoc);
-                //console.log(orderBy, order,orderBy === 'time' && order === 'desc');
-                const sortedData = orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
-                this.setState((prevState) => ({
-                    isNew: isNew,
-                    isPlaying: isNew ? true : prevState.isPlaying,
-                    traceSubscriber: traceSubscriber,
-                    timeline: currentTimeline,
-                    liveTimeline: timeline,
-                    logs: currentLogs,
-                    liveLogs: logs,
-                    rowsPerPage: prevState.rowsPerPage === prevState.minRows ? prevState.defaultRowsPerPage : prevState.rowsPerPage,
-                    data: sortedData,
-                    logData,
-                    HighlightTypes: HighlightTypes,
-                    highlightSingleText: highlightSingleText,
-                    setCursorToLocation: setCursorToLocation,
-                    getEditorTextInLoc: getEditorTextInLoc,
-                    colorizeDomElement: colorizeDomElement,
-                    objectNodeRenderer: objectNodeRenderer,
-                    handleChange: handleChange,
-                }));
-                this.handleChangeDebugLoading(false);
-            } else {
-                this.setState({liveTimeline: timeline, liveLogs: logs, isNew});
-            }
-        }, 0);
-    };
+    liveExpressionStoreChange =
+        (traceSubscriber, timeline, logs, isNew, HighlightTypes, highlightSingleText,
+         setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
+         objectNodeRenderer, handleChange) => {
+            const {orderBy, order, isPlaying} = this.state;
+            isPlaying && this.handleChangeDebugLoading(true);
+            const rowsLayout = this.getRowsLayout(isNew) || {};
+            setTimeout(() => {
+                if (isPlaying || isNew) {
+                    let currentTimeline = isPlaying ? timeline : this.state.timeline;
+                    let currentLogs = isPlaying ? logs : this.state.logs;
+                    const data = this.createData(currentTimeline, getEditorTextInLoc);
+                    const logData = this.createLogData(currentLogs, getEditorTextInLoc);
+                    //console.log(orderBy, order,orderBy === 'time' && order === 'desc');
+                    const sortedData =
+                        orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
+                    this.setState((prevState) => ({
+                        ...rowsLayout, // rowsPerPage, defaulRowsPerPage
+                        isNew: isNew,
+                        isPlaying: isNew ? true : prevState.isPlaying,
+                        traceSubscriber: traceSubscriber,
+                        timeline: currentTimeline,
+                        liveTimeline: timeline,
+                        logs: currentLogs,
+                        liveLogs: logs,
+                        data: sortedData,
+                        logData,
+                        HighlightTypes: HighlightTypes,
+                        highlightSingleText: highlightSingleText,
+                        setCursorToLocation: setCursorToLocation,
+                        getEditorTextInLoc: getEditorTextInLoc,
+                        colorizeDomElement: colorizeDomElement,
+                        objectNodeRenderer: objectNodeRenderer,
+                        handleChange: handleChange,
+                    }));
+                    this.handleChangeDebugLoading(false);
+                } else {
+                    this.setState({...rowsLayout, liveTimeline: timeline, liveLogs: logs, isNew});
+                }
+            }, 0);
+        };
 
     handleChangePlaying = debounce((id, play) => {
         let {isPlaying, lastHandleChangePlayingId} = this.state;
@@ -460,12 +518,15 @@ class Pastebin extends Component {
 
         }
 
-        const {orderBy, order, timeline, liveTimeline, logs, liveLogs, getEditorTextInLoc} = this.state;
+        const {
+            orderBy, order, timeline, liveTimeline, logs, liveLogs, getEditorTextInLoc
+        } = this.state;
         let currentTimeline = isPlaying ? timeline : liveTimeline;
         let currentLogs = isPlaying ? logs : liveLogs;
         const data = this.createData(currentTimeline, getEditorTextInLoc);
         const logData = this.createLogData(currentLogs, getEditorTextInLoc);
-        const sortedData = orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
+        const sortedData =
+            orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
         this.setState({
             isPlaying: !isPlaying,
             lastHandleChangePlayingId,
@@ -518,6 +579,10 @@ class Pastebin extends Component {
         this.setState({searchState: nextSearchState});
     };
 
+    handleChangeAutoExpand = () => {
+        this.setState(prevState => ({isAutoExpand: !prevState.isAutoExpand}));
+    };
+
     state = {
         traceAvailable: true,
         autorunDelay: 2000,
@@ -533,9 +598,9 @@ class Pastebin extends Component {
         logData: [],
         page: 0,
         rowsPerPage: 10,
-        minRows: 5,
-        defaultRowsPerPage: 50,
-        rowsPerPageIncrement: 250,
+        minRows: 10,
+        defaultRowsPerPage: 10,
+        rowsPerPageIncrement: 100,
         handleChangeDebugLoading: this.handleChangeDebugLoading,
         handleSelectClick: this.handleSelectClick,
         handleSelectAllClick: this.handleSelectAllClick,
@@ -556,22 +621,28 @@ class Pastebin extends Component {
         timeFlow: 'desc',
         handleChangePlaying: this.handleChangePlaying,
         handleChangeTimeFlow: this.handleChangeTimeFlow,
+        isAutoExpand: true,
+        handleChangeAutoExpand: this.handleChangeAutoExpand,
         searchState: {
             functionLikeExpressions: functionLikeExpressions,
             value: '',
             handleChangeValue: this.handleChangeSearchValue,
-            isFunctions: false, //true
-            isExpressions: true, // false
+            isFunctions: true,
+            isExpressions: false,
             isValues: false,
             isCase: false,
             isWord: false,
             isRegExp: false,
             handleFilterClick: this.handleChangeSearchFilterClick,
             findChuncks: configureFindChunks(true),
+            visualQuery: null,
+            visualKey: null,
         },
         width: 800,
         height: 600,
         hoveredCellKey: null,
+        scrollToTop: this.scrollToTop,
+        isGraphicalLocatorActive: false,
     };
 
     handleChangeAutorunDelay = autorunDelay => {
@@ -582,110 +653,28 @@ class Pastebin extends Component {
         this.updateMonacoEditorLayouts[editorId] = monacoEditor;
     };
 
-    // oldRender = () => {
-    //     const {themeType, appClasses, classes, appStyle, editorIds} = this.props;
-    //     const {
-    //         gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
-    //         autorunDelay, width, height
-    //     } = this.state;
-    //
-    //     const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
-    //     gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;
-    //     return (
-    //         <div className={appClasses.content}>
-    //             <PastebinContext.Provider value={this.state}>
-    //                 <Responsive
-    //                     width={width}
-    //                     breakpoints={gridLayoutFormatter.gridBreakpoints}
-    //                     layouts={gridLayouts}
-    //                     cols={gridLayoutFormatter.grid.cols}
-    //                     compactType={'vertical'}
-    //                     autoSize={true}
-    //                     margin={[appStyle.margin, appStyle.margin]}
-    //                     containerPadding={[appStyle.margin, appStyle.margin]}
-    //                     rowHeight={gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint]}
-    //                     onResizeStart={this.onResizeStart}
-    //                     onResize={this.onResize}
-    //                     onResizeStop={this.onResizeStop}
-    //                     draggableHandle={`.${classes.draggable}`}
-    //                     // onDragStart={this.onDragStart}
-    //                     onDrag={this.onDrag}
-    //                     onDragStop={this.onDragStop}
-    //                     onLayoutChange={this.onLayoutChange}
-    //                     onBreakpointChange={this.onBreakpointChange}
-    //                 >
-    //                     <Paper key="scriptContainer">
-    //                         <Editor editorId={editorIds['js']}
-    //                                 themeType={themeType}
-    //                                 observeLiveExpressions={true}
-    //                         />
-    //                     </Paper>
-    //                     <Paper key="htmlContainer">
-    //                         <Editor editorId={editorIds['html']}/>
-    //                     </Paper>
-    //                     <Paper key="cssContainer">
-    //                         <Editor editorId={editorIds['css']}/>
-    //                     </Paper>
-    //                     <Paper key="debugContainer" className={appClasses.container}>
-    //                         <ScrollingList
-    //                             ScrollingListRef={this.debugScrollerRef}
-    //                             onScrollEnd={this.onScrollEnd}
-    //                             classes={appClasses.scroller}
-    //                             listLength={data.length}
-    //                             isRememberScrollingDisabled={isNew}
-    //                         >
-    //                             <DebugContainer
-    //                                 ScrollingListRef={this.debugScrollerRef}
-    //                                 appClasses={appClasses}
-    //                                 appStyle={appStyle}
-    //                                 tabIndex={tabIndex}
-    //                                 handleChangeTab={this.handleChangeTab}
-    //                                 handleChangeTabIndex={this.handleChangeTabIndex}
-    //                             />
-    //                         </ScrollingList>
-    //
-    //                         {isDebugLoading ? <span className={classes.loadingFeedback}><MoreHorizIcon/> </span> : null}
-    //                     </Paper>
-    //                     <Paper key="consoleContainer" className={appClasses.container}>
-    //                         <DragHandleIcon className={classes.draggable}/>
-    //                         <div className={appClasses.scroller}>
-    //                             <div className={appClasses.content}>
-    //                             </div>
-    //                         </div>
-    //                     </Paper>
-    //                     <Paper key="playgroundContainer"
-    //                            className={appClasses.container}
-    //                     >
-    //                         <DragHandleIcon className={classes.draggable}/>
-    //                         <div className={appClasses.scroller}>
-    //                             <Playground editorIds={editorIds}
-    //                                         appClasses={appClasses}
-    //                                         appStyle={appStyle}
-    //                             />
-    //                         </div>
-    //                     </Paper>
-    //                 </Responsive>
-    //             </PastebinContext.Provider>
-    //             {traceAvailable && <TraceControls
-    //                 autorunDelay={autorunDelay} handleChangeAutorunDelay={this.handleChangeAutorunDelay}/>
-    //             }
-    //         </div>
-    //     );
-    // }
     handleChangeHoveredCellKey = (event, hoveredCellKey) => {
         this.setState({hoveredCellKey});
+    }
+
+    handleChangeGraphicalLocator = () => {
+        this.setState(prevState => ({
+            isGraphicalLocatorActive: !prevState.isGraphicalLocatorActive
+        }));
     }
 
     render() {
         const {themeType, appClasses, classes, appStyle, editorIds} = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
-            autorunDelay, width, height, hoveredCellKey
+            autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive
         } = this.state;
 
-        const rowHeight = Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
-        gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] = rowHeight - appStyle.margin;
-
+        const rowHeight =
+            Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
+        gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] =
+            rowHeight - appStyle.margin;
+        // console.log('l', this.state.defaultRowsPerPage, this.state.rowsPerPage);
         if (isCompact) {
             return (
                 <div className={appClasses.content}>
@@ -711,9 +700,12 @@ class Pastebin extends Component {
                             onLayoutChange={this.onLayoutChange}
                             onBreakpointChange={this.onBreakpointChange}
                         >
-                            <Paper key="scriptContainer"
-                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'scriptContainer')}
-                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            <Paper elevation={1}
+                                   key="scriptContainer"
+                                   onMouseEnter={event =>
+                                       this.handleChangeHoveredCellKey(event, 'scriptContainer')}
+                                   onMouseLeave={event =>
+                                       this.handleChangeHoveredCellKey(event, null)}
                             >
                                 <Editor editorId={editorIds['js']}
                                         themeType={themeType}
@@ -724,9 +716,12 @@ class Pastebin extends Component {
                                 {hoveredCellKey === 'scriptContainer' ?
                                     null : <LanguageJavaScriptIcon className={classes.icon}/>}
                             </Paper>
-                            <Paper key="htmlContainer"
-                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'htmlContainer')}
-                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            <Paper elevation={1}
+                                   key="htmlContainer"
+                                   onMouseEnter={event =>
+                                       this.handleChangeHoveredCellKey(event, 'htmlContainer')}
+                                   onMouseLeave={event =>
+                                       this.handleChangeHoveredCellKey(event, null)}
                             >
                                 <Editor editorId={editorIds['html']}
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['html'])}
@@ -734,9 +729,12 @@ class Pastebin extends Component {
                                 {hoveredCellKey === 'htmlContainer' ?
                                     null : <LanguageHtml5Icon className={classes.icon}/>}
                             </Paper>
-                            <Paper key="cssContainer"
-                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'cssContainer')}
-                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            <Paper elevation={1}
+                                   key="cssContainer"
+                                   onMouseEnter={event =>
+                                       this.handleChangeHoveredCellKey(event, 'cssContainer')}
+                                   onMouseLeave={event =>
+                                       this.handleChangeHoveredCellKey(event, null)}
                             >
                                 <Editor editorId={editorIds['css']}
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['css'])}
@@ -744,9 +742,12 @@ class Pastebin extends Component {
                                 {hoveredCellKey === 'cssContainer' ?
                                     null : <LanguageCss3Icon className={classes.icon}/>}
                             </Paper>
-                            <Paper key="debugContainer" className={appClasses.container}
-                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'debugContainer')}
-                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                            <Paper elevation={1}
+                                   key="debugContainer" className={appClasses.container}
+                                   onMouseEnter={event =>
+                                       this.handleChangeHoveredCellKey(event, 'debugContainer')}
+                                   onMouseLeave={event =>
+                                       this.handleChangeHoveredCellKey(event, null)}
                             >
                                 <ScrollingList
                                     ScrollingListRef={this.debugScrollerRef}
@@ -769,20 +770,40 @@ class Pastebin extends Component {
                                 </ScrollingList>
 
                                 {isDebugLoading ?
-                                    <span className={classes.loadingFeedback}><MoreHorizIcon/> </span> : null}
+                                    <span className={classes.loadingFeedback}>
+                                        <MoreHorizIcon/>
+                                    </span>
+                                    : null}
                                 {/*hoveredCellKey === 'debugContainer' ?
                                     null : <SlowMotionVideoIcon className={classes.icon}/>*/}
                             </Paper>
-                            <Paper key="playgroundContainer"
+                            <Paper elevation={1}
+                                   key="playgroundContainer"
                                    className={appClasses.container}
-                                   onMouseEnter={event => this.handleChangeHoveredCellKey(event, 'playgroundContainer')}
-                                   onMouseLeave={event => this.handleChangeHoveredCellKey(event, null)}
+                                   onMouseEnter={event =>
+                                       this.handleChangeHoveredCellKey(event, 'playgroundContainer')}
+                                   onMouseLeave={event =>
+                                       this.handleChangeHoveredCellKey(event, null)}
                             >
+                                <Tooltip
+                                    title={`${isGraphicalLocatorActive ?
+                                        'Hide' : 'Show'} visual elements referenced in code`}
+                                >
+                                    <IconButton
+                                        color={isGraphicalLocatorActive ? 'secondary' : 'default'}
+                                        className={classes.locatorButton}
+                                        raised="true"
+                                        onClick={this.handleChangeGraphicalLocator}
+                                    >
+                                        <CodeTagsCheckIcon className={classes.locator}/>
+                                    </IconButton>
+                                </Tooltip>
                                 <DragHandleIcon className={classes.draggable}/>
                                 <Playground editorIds={editorIds}
                                             appClasses={appClasses}
                                             appStyle={appStyle}
                                             exports={this.exports}
+                                            isGraphicalLocatorActive={isGraphicalLocatorActive}
                                 />
                                 {hoveredCellKey === 'playgroundContainer' ?
                                     null : <TvIcon className={classes.icon}/>}

@@ -3,13 +3,13 @@ import PropTypes from "prop-types";
 import debounce from 'lodash.debounce';
 import {Subject} from 'rxjs/Subject';
 import classNames from 'classnames';
-import {withStyles} from 'material-ui/styles';
-import Button from 'material-ui/Button';
+import {withStyles} from '@material-ui/core/styles';
+import Button from '@material-ui/core/Button';
 import CloseIcon from '@material-ui/icons/Close';
 // import WarningIcon from '@material-ui/icons/Warning';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
 import SettingsIcon from '@material-ui/icons/Settings';
-import Snackbar from 'material-ui/Snackbar';
+import Snackbar from '@material-ui/core/Snackbar';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
 import {end$} from "../utils/scrUtils";
@@ -127,7 +127,7 @@ class Editor extends Component {
                 <Snackbar
                     open={errorSnackbarOpen}
                     onClose={this.handleClose}
-                    SnackbarContentProps={{
+                    ContentProps={{
                         'aria-describedby': 'snackbar-fab-message-id',
                         className: classes.snackbarContent,
                     }}
