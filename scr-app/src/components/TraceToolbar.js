@@ -278,7 +278,7 @@ class EnhancedToolbar extends React.Component {
                             margin="normal"
                             fullWidth
                             InputProps={{
-                                startAdornment: (searchState.visualId >= 0 &&
+                                startAdornment: (!!searchState.visualQuery &&
                                     <InputAdornment position="start">
                                         <Chip
                                             avatar={

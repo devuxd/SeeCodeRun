@@ -187,9 +187,9 @@ const styles = theme => ({
 });
 
 const configureMatchesFilter = (searchState) => {
-        const findChuncks = (textToHighlight) => {
+        const findChunks = (textToHighlight) => {
             const searchWords = searchState.value.split(' ');
-            return searchState.findChuncks({searchWords, textToHighlight})
+            return searchState.findChunks({searchWords, textToHighlight})
         };
 
         return (data) => {
@@ -200,33 +200,22 @@ const configureMatchesFilter = (searchState) => {
                 values: [],
             };
 
-            const hasFilters = searchState.isFunctions || searchState.isExpressions || searchState.isValues;
 
             const isAnyText = !searchState.value.trim().length;
 
-            if (isAnyText && !hasFilters) {
+            if (isAnyText) {
                 result.found = true;
                 return result;
             }
 
-            if (searchState.isFunctions &&
-                searchState.functionLikeExpressions.includes(data.expressionType)) {
-                result.functions = isAnyText ? [] : findChuncks(data.expression);
-                result.found = isAnyText || !!result.functions.length;
+            result.values = findChunks(data.expression);
+            result.found = !!result.values.length;
+
+            if (!result.found) {
+                result.values = findChunks(data.value);
+                result.found = !!result.values.length;
             }
 
-            if (searchState.isExpressions &&
-                !searchState.functionLikeExpressions.includes(data.expressionType)) {
-                result.expressions = isAnyText ? [] : findChuncks(data.expression);
-                result.found = isAnyText || result.found || !!result.expressions.length;
-            }
-
-            if (searchState.isValues &&
-                !searchState.functionLikeExpressions.includes(data.expressionType)) {
-                result.values = isAnyText ? [] : findChuncks(data.value);
-                result.found = isAnyText || result.found || !!result.values.length;
-            }
-            // console.log(result);
             return result;
         }
     }
@@ -256,12 +245,12 @@ class ConsoleTable extends React.Component {
 
         if (this.searchState !== searchState) {
             this.searchState = searchState;
-            this.findChuncks = configureMatchesFilter(searchState);
+            this.findChunks = configureMatchesFilter(searchState);
         }
         this.totalMatches = 0;
         const data = logData;
         let matchedData = data.map(n => {
-            const newN = {...n, isMatch: true, chunksResult: this.findChuncks(n)};
+            const newN = {...n, isMatch: true, chunksResult: this.findChunks(n)};
             if (!newN.chunksResult.found || (!newN.isFromInput && !newN.expression)) {
                 newN.isMatch = false;
             }

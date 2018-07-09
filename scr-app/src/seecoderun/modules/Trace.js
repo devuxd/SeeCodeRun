@@ -15,6 +15,9 @@ export const listen = (lis) => {
 
 let dispatcher = null;
 
+
+const ignoreTags = ['style'];
+
 export const TraceActions = {
     log: 'log',
     evaluate: 'evaluate',
@@ -305,10 +308,10 @@ class Trace {
     }
 
     onDomNodeAdded() {
-        this.domNodeAdded && this.domNodeAdded();
+        this.domNodeAdded && this.domNodeAdded([...(this.domNodes||[])]);
     }
 
-    getReplacer = (res = {isDOM: false}) => {
+    getReplacer = (res = {isDOM: false, isOutput: false, outputRefs:[]}) => {
         const windowRoots = this.getWindowRoots();
         return (key, value) => {
             if (isIgnoreObjectPrivateProperties && isString(key) && key.startsWith('_')) {
@@ -319,7 +322,7 @@ class Trace {
                 return `${this.magicTag}${Object.keys(windowRoots)[i]}`;
             }
             if (isNode(value)) {
-
+                res.isOutput =!ignoreTags.includes((value.tagName||'').toLowerCase());
                 const val = copifyDOMNode(value);
                 const domId = this.domNodes.indexOf(value);
                 if (domId >= 0) {
@@ -334,6 +337,8 @@ class Trace {
                     this.domNodesObs.push(observer);
                 }
                 res.isDOM = true;
+                res.outputRefs = res.outputRefs||[];
+                res.outputRefs.push(value);
                 this.onDomNodeAdded();
                 return val;
             }
@@ -397,7 +402,7 @@ class Trace {
             return;
         }
         let dataType = 'jsan';
-        let res = {};
+        let res = {isDOM: false, isOutput: false, outputRefs:[]};
         const data = JSAN.stringify(value, this.getReplacer(res), null, true);
         let objectClassName = value && value.constructor && value.constructor.name;
         //this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, dataType: dataType, data: data});
@@ -427,6 +432,8 @@ class Trace {
             dataType: dataType,
             data: data,
             isDOM: res.isDOM,
+            isOutput: res.isOutput,
+            outputRefs: res.outputRefs,
             objectClassName: objectClassName,
             timestamp: Date.now(),
             dataRefId: dataRefId,

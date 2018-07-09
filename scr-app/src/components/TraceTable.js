@@ -40,8 +40,6 @@ const createSortHandler = (props, property) => event => {
     props.onRequestSort(event, property);
 };
 
-
-
 class TraceTableHead extends React.Component {
     render() {
         const {
@@ -139,19 +137,23 @@ const styles = theme => ({
             backgroundColor: HighlightPalette.text,
         },
     },
-    tableRowError: {
-        height: TABLE_ROW_HEIGHT,
-        backgroundColor: fade(HighlightPalette.error, 0.2),
+    hoverObject: {
+        backgroundColor: fade(HighlightPalette.object, 0.05),
         '&$hover:hover': {
-            backgroundColor: HighlightPalette.error,
+            backgroundColor: HighlightPalette.object,
         },
     },
-    tableRowGraphical: {
-        height: TABLE_ROW_HEIGHT,
+    hoverGraphical: {
         backgroundColor: HighlightPalette.graphical,
         '&$hover:hover': {
             backgroundColor: fade(HighlightPalette.graphical, 0.2),
         }
+    },
+    hoverError: {
+        backgroundColor: fade(HighlightPalette.error, 0.2),
+        '&$hover:hover': {
+            backgroundColor: HighlightPalette.error,
+        },
     },
     hover: {},
     expressionCellRoot: {
@@ -216,9 +218,9 @@ const styles = theme => ({
 });
 
 const configureMatchesFilter = (searchState) => {
-        const findChuncks = (textToHighlight) => {
+        const findChunks = (textToHighlight) => {
             const searchWords = searchState.value.split(' ');
-            return searchState.findChuncks({searchWords, textToHighlight})
+            return searchState.findChunks({searchWords, textToHighlight})
         };
 
         return (data) => {
@@ -240,19 +242,19 @@ const configureMatchesFilter = (searchState) => {
 
             if (searchState.isFunctions &&
                 searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
-                result.functions = isAnyText ? [] : findChuncks(data.expression);
+                result.functions = isAnyText ? [] : findChunks(data.expression);
                 result.found = isAnyText || !!result.functions.length;
             }
 
             if (searchState.isExpressions &&
                 !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
-                result.expressions = isAnyText ? [] : findChuncks(data.expression);
+                result.expressions = isAnyText ? [] : findChunks(data.expression);
                 result.found = isAnyText || result.found || !!result.expressions.length;
             }
 
             if (searchState.isValues &&
                 !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
-                result.values = isAnyText ? [] : findChuncks(data.value);
+                result.values = isAnyText ? [] : findChunks(data.value);
                 result.found = isAnyText || result.found || !!result.values.length;
             }
             return result;
@@ -292,12 +294,12 @@ class TraceTable extends React.Component {
 
         if (this.searchState !== searchState) {
             this.searchState = searchState;
-            this.findChuncks = configureMatchesFilter(searchState);
+            this.findChunks = configureMatchesFilter(searchState);
         }
 
         this.totalMatches = 0;
         let matchedData = data.map(n => {
-            const newN = {...n, isMatch: true, chunksResult: this.findChuncks(n)};
+            const newN = {...n, isMatch: true, chunksResult: this.findChunks(n)};
             if (!newN.chunksResult.found || !newN.expression) {
                 newN.isMatch = false;
             }
@@ -339,6 +341,7 @@ class TraceTable extends React.Component {
                                         current: (isString(n.value) ?
                                             JSAN.parse(n.value) : n.value)
                                     };
+
                                 const parsed = this.parsed[n.id].current;
                                 return (
                                     <TableRow
@@ -349,8 +352,7 @@ class TraceTable extends React.Component {
                                         key={n.id}
                                         selected={isSelected}
                                         classes={{
-                                            root: n.isError ? classes.tableRowError
-                                                : n.isGraphical ? classes.tableRowGraphical : classes.tableRow,
+                                            root: classes.tableRow,
                                             hover: classes.hover
                                         }}
                                     >
@@ -363,10 +365,7 @@ class TraceTable extends React.Component {
                                         <TableCell
                                             classes={{root: classes.expressionCellRoot}}
                                             onMouseEnter={() =>
-                                                highlightSingleText(
-                                                    n.loc, n.isError ? HighlightTypes.error
-                                                        : n.isGraphical ?
-                                                            HighlightTypes.graphical : HighlightTypes.text)}
+                                                highlightSingleText(n.loc, HighlightTypes.text)}
                                             onMouseLeave={() => highlightSingleText()}
                                         >
                                             <OverflowComponent
@@ -394,6 +393,11 @@ class TraceTable extends React.Component {
                                                                    HighlightTypes.graphical : HighlightTypes.text,
                                                            traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.entry.calleeId))}
                                                    onMouseLeave={() => highlightSingleText()}
+                                                   classes={{
+                                                       root: n.isError ? classes.hoverError
+                                                           : n.isGraphical ? classes.hoverGraphical : classes.hoverObject,
+                                                       hover: classes.hover
+                                                   }}
                                         >
                                             <ObjectExplorer
                                                 expressionId={n.expressionId}

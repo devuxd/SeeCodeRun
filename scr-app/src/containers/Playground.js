@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
+import GraphicalMapper from '../seecoderun/modules/GraphicalMapper';
 
 class Playground extends Component {
     constructor(props) {
@@ -9,7 +10,9 @@ class Playground extends Component {
         this.currentBundle = null;
         this.unsubscribes = [];
         this.state = {
-            isResizing: false
+            isResizing: false,
+            bundle: null,
+            visualElements: [],
         };
     }
 
@@ -44,7 +47,24 @@ class Playground extends Component {
     };
 
     render() {
+        const {isGraphicalLocatorActive, handleChangeGraphicalLocator} = this.props;
+        const {bundle, visualElements} = this.state;
         return <React.Fragment>
+            <div ref={this.playgroundEl}
+                 style={{
+                     overflow: 'hidden'
+                 }}
+            >
+                <GraphicalMapper
+                    containerRef={this.playgroundEl}
+                    bundle={bundle}
+                    isGraphicalLocatorActive={isGraphicalLocatorActive}
+                    handleChangeGraphicalLocator={handleChangeGraphicalLocator}
+                    visualElements={visualElements}
+                />
+            </div>
+
+
             <div ref={this.playgroundEl}
                  style={{
                      height: '100%',
@@ -91,15 +111,6 @@ class Playground extends Component {
         this.unsubscribes.push(unsubscribe0);
     }
 
-    componentDidUpdate(prevState) {
-        const {isGraphicalLocatorActive} = this.props;
-        if (this.isGraphicalLocatorActive !== isGraphicalLocatorActive) {
-            if (this.currentBundle && this.currentBundle.isActive && this.currentBundle.autoLog) {
-                this.isGraphicalLocatorActive = isGraphicalLocatorActive;
-                this.currentBundle.autoLog.updateGraphicalMapper(isGraphicalLocatorActive);
-            }
-        }
-    }
 
     componentWillUnmount() {
         for (const i in this.unsubscribes) {
@@ -107,12 +118,16 @@ class Playground extends Component {
         }
     }
 
+    handleChangeVisualElements = visualElements => {
+        this.setState({visualElements});
+    };
+
     /**
      *
      * @param {Object} bundle -  bundle.editorsTexts requires editorsTexts.html,
      * editorsTexts.css and editorsTexts.js to contain text.
      */
-    updateIframe(bundle) {
+    updateIframe = (bundle) => {
         const playgroundEl = this.playgroundEl;
         if (!bundle || !playgroundEl.current) {
             return;
@@ -135,10 +150,8 @@ class Playground extends Component {
 
         if (alJs) {
             // console.log("AL");
-            const {isGraphicalLocatorActive} = this.props;
             autoLog.configureIframe(this.runIframeHandler, store, autoLogger, html, css, js, alJs);
-            const onChange = autoLog.configureGraphicalMapper(bundle, isGraphicalLocatorActive);
-            autoLogger.trace.setDomNodeAdded(onChange);
+            autoLogger.trace.setDomNodeAdded(this.handleChangeVisualElements);
             bundle.isActive = true;
         } else {
             if (autoLogger && autoLogger.ast) {

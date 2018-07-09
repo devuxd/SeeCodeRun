@@ -10,6 +10,8 @@ import JSAN from 'jsan';
 import {withStyles} from '@material-ui/core/styles';
 
 import Paper from '@material-ui/core/Paper';
+import Tooltip from '@material-ui/core/Tooltip';
+import Portal from '@material-ui/core/Portal';
 import Button from '@material-ui/core/Button';
 
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
@@ -52,9 +54,11 @@ const BRANCH_LINE_DECORATION_WIDTH = 3;
 const styles = (theme) => {
 
     HighlightPalette = {
-        text: fade(theme.palette.primary.main, 0.08),
-        error: fade(theme.palette.error.main, 0.08),
+        text: theme.palette.action.hover,
+        object: fade(theme.palette.primary.main, 0.2),
         graphical: fade(theme.palette.secondary.main, 0.08),
+        error: fade(theme.palette.error.main, 0.08),
+        //   callback: fade(theme.palette.secondary.main, 0.08),
         globalBranch: fade(theme.palette.primary.main, 0.08),
         localBranch: fade(theme.palette.secondary.main, 0.08),
     };
@@ -394,7 +398,7 @@ class LiveExpressionStore extends Component {
                             <DOMPortal
                                 parentEl={decorator.contentWidget.domNode}>
                                 <div onMouseEnter={() => {
-                                  //  console.log(n);
+                                    //  console.log(n);
                                     this.highlightSingleText(
                                         n.loc, n.isError ? HighlightTypes.error
                                             : n.isGraphical ?
@@ -448,6 +452,37 @@ class LiveExpressionStore extends Component {
         return navigators;
     };
 
+    findFuncRefs(timeline, branches){
+        let branchSource= null, startIndex = 0;
+       // console.log(timeline, branches);
+        branches.forEach(branch=>{
+           if(branchSource){
+               console.log(branchSource.loc.start.line, 'range', startIndex, branch.timelineI
+                   );
+
+               // timeline.reduce((r, e, i)=>((i>startIndex&& i<= branch.timelineI)?((r.push(e)|| true)&& r):r), []).forEach(
+               //     entry=>{
+               //         if(entry &&entry.type === 'AssignmentExpression'){
+               //                     // console.log(entry);
+               //                 }
+               //     }
+               // );
+               for(let i =timeline.length - startIndex; i>timeline.length -branch.timelineI; i--){
+
+                   if(timeline[i] &&timeline[i].type === 'AssignmentExpression'){
+                       if(timeline[i].objectClassName === 'Function'){
+                           console.log(timeline[i]);
+                           console.log('other refs',timeline.filter(t=>t.value === timeline[i].value));
+                       }
+
+                   }
+               }
+           }
+            branchSource = branch;
+            startIndex = branch.timelineI;
+        });
+    }
+
     render() {
         const {classes, editorWidth, editorHeight, timeline} = this.props;
         const {
@@ -478,13 +513,16 @@ class LiveExpressionStore extends Component {
         }
 
         const branches = this.traceSubscriber && this.timeline.length ? this.traceSubscriber.branches || [] : [];
+       // console.log('timeline', this.timeline, this.traceSubscriber?this.traceSubscriber.branches:null);
+       //  if(this.timeline && this.timeline.length && this.traceSubscriber && this.traceSubscriber.branches){
+       //      this.findFuncRefs(this.timeline, this.traceSubscriber.branches);
+       //  }
         //const mainLoadedTimelineI = this.traceSubscriber ? this.traceSubscriber.mainLoadedTimelineI : 0;
         const globalBranches = {};
         let globalBranchLocs = null;
         const absoluteGlobalBranches = {};
         const localBranches = {};
         let localBranchLocs = null;
-        let selectedGlobalBranches = {};
         if (currentBranchId && currentBranchTimelineId) {
             branches.forEach(branch => {
                 const {id, timelineI, navigationType, loc, blockLoc} = branch;
@@ -630,7 +668,17 @@ class LiveExpressionStore extends Component {
             />);
         });
         this.highlightLiveExpressions(liveRanges);
-
+      //  console.log('tr', this.traceSubscriber, this.autoLog);
+        let visualIds = [];
+        // if (this.autoLog && this.autoLog.graphicalMapper) {
+        //     if (this.autoLog.graphicalMapper.isGraphicalLocatorActive && this.autoLog.graphicalMapper.locatedEls) {
+        //         const els = this.autoLog.graphicalMapper.locatedEls;
+        //         visualIds = els.filter(e=>!!e.el.appendChild).map((e, id) => {
+        //             console.log('e', e);
+        //             return <Tooltip title={`$<${id}>`} key={id} placement="right-start"><Portal container={e.el}/></Tooltip>;
+        //         });
+        //     }
+        // }
         const liveWidgets = [];
         for (const i in this.liveExpressionWidgets) {
             if (this.liveExpressionWidgets[i]) {
@@ -679,6 +727,7 @@ class LiveExpressionStore extends Component {
             {liveWidgets}
             {globalNavigators}
             {localNavigators}
+            {visualIds}
         </React.Fragment>);
     }
 

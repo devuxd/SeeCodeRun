@@ -502,12 +502,12 @@ class AutoLog {
     }
 
     configureGraphicalMapper(bundle, isGraphicalLocatorActive){
-        this.graphicalMapper = new GraphicalMapper(bundle, isGraphicalLocatorActive);
-        return this.graphicalMapper.configureHandleChange();
+        // this.graphicalMapper = new GraphicalMapper(bundle, isGraphicalLocatorActive);
+        // return this.graphicalMapper.configureHandleChange();
     }
 
     updateGraphicalMapper(isGraphicalLocatorActive) {
-        this.graphicalMapper.onActiveChange(isGraphicalLocatorActive);
+        // this.graphicalMapper.onActiveChange(isGraphicalLocatorActive);
     }
 }
 
