@@ -12,6 +12,7 @@ export default function configureStore() {
 
     if (process.env.NODE_ENV === 'production') {
         store = applyMiddleware(epicMiddleware)(createStore)(rootReducer);
+        epicMiddleware.run(rootEpic);
     } else {
         let finalCreateStore =
             // if there is a browser extension of Redux devtools, that will be used instead
@@ -24,9 +25,6 @@ export default function configureStore() {
                     const enhancer = composeEnhancers(
                         applyMiddleware(epicMiddleware)
                     );
-
-                    epicMiddleware.run(rootEpic);
-
                     return createStore(reducer, enhancer);
                 } :
                 reducer => {
@@ -39,12 +37,11 @@ export default function configureStore() {
                     const showDevTools = require('./devtools/showDevTools').default;
                     showDevTools(store);
 
-                    epicMiddleware.run(rootEpic);
-
                     return store;
 
                 };
         store = finalCreateStore(rootReducer);
+        epicMiddleware.run(rootEpic);
         // Enable Webpack hot module replacement for reducers
         if (module) {
             module.hot.accept('./modules/root', () => {
