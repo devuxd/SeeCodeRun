@@ -30,10 +30,11 @@ import ObjectExplorer from "./ObjectExplorer";
 import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
 import {HighlightPalette} from '../containers/LiveExpressionStore';
 import OverflowComponent from "./OverflowComponent";
+import {configureGoToTimelineBranch} from '../containers/LiveExpressionStore';
 
 const columnData = [
-    {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1},
-    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1, showTimeflow: true},
+    {id: 'expression', numeric: false, className: 'cellPadding', label: 'Expression', colSpan: 1, showTimeflow: true},
+    {id: 'value', numeric: false, className: 'cellPadding', label: 'Value', colSpan: 1, showTimeflow: false},
 ];
 
 const createSortHandler = (props, property) => event => {
@@ -69,19 +70,6 @@ class TraceTableHead extends React.Component {
                                 className={classes[column.className]}
                                 sortDirection={orderBy === column.id ? order : false}
                             >
-                                <Tooltip
-                                    title="Sort"
-                                    placement={column.numeric ? 'bottom-end' : 'bottom-start'}
-                                    enterDelay={300}
-                                >
-                                    <TableSortLabel
-                                        active={orderBy === column.id}
-                                        direction={order}
-                                        onClick={createSortHandler(this.props, column.id)}
-                                    >
-                                        {column.label}
-                                    </TableSortLabel>
-                                </Tooltip>
                                 {column.showTimeflow && <Tooltip
                                     title={orderBy === 'time' ?
                                         (timeFlow === 'desc' ? 'Showing latest first' : 'Showing Oldest first')
@@ -95,6 +83,19 @@ class TraceTableHead extends React.Component {
                                         {timeFlow === 'desc' ? <VerticalAlignTopIcon/> : <VerticalAlignBottomIcon/>}
                                     </IconButton>
                                 </Tooltip>}
+                                <Tooltip
+                                    title="Sort"
+                                    placement={column.numeric ? 'bottom-end' : 'bottom-start'}
+                                    enterDelay={300}
+                                >
+                                    <TableSortLabel
+                                        active={orderBy === column.id}
+                                        direction={order}
+                                        onClick={createSortHandler(this.props, column.id)}
+                                    >
+                                        {column.label}
+                                    </TableSortLabel>
+                                </Tooltip>
                             </TableCell>
                         );
                     }, this)}
@@ -204,16 +205,19 @@ const styles = theme => ({
     },
     timeFlowButton: {
         position: 'absolute',
-        right: 0,
+        left: 0,
         top: 0,
-        marginLeft: -theme.spacing.unit * 3,
-        marginRight: theme.spacing.unit * 2,
+        //marginLeft: -theme.spacing.unit * 3,
+        // marginRight: theme.spacing.unit * 2,
     },
     tableHeadRow: {
         height: TABLE_ROW_HEIGHT + 16,
     },
     tableHeadCell: {
         marginLeft: theme.spacing.unit * 5,
+    },
+    cellPadding: {
+        paddingLeft: theme.spacing.unit * 6,
     }
 });
 
@@ -309,6 +313,8 @@ class TraceTable extends React.Component {
         this.totalMatches = matchedData.length;
         // console.log('table', this.totalMatches, data.length);
 
+        const goToTimelineBranch = configureGoToTimelineBranch();
+
         return (
             <Paper className={classes.root}>
                 <div ref={this.containerRef} className={classes.tableWrapper}>
@@ -353,7 +359,7 @@ class TraceTable extends React.Component {
                                         selected={isSelected}
                                         classes={{
                                             root: classes.tableRow,
-                                            hover: classes.hover
+                                            //  hover: classes.hover
                                         }}
                                     >
                                         {isSelectable &&
@@ -372,7 +378,12 @@ class TraceTable extends React.Component {
                                                 contentClassName={classes.expressionCellContent}
                                                 disableOverflowDetectionY={true}
                                             >
-                                                <ButtonBase onClick={() => setCursorToLocation(n.loc)}>
+                                                <ButtonBase onClick={
+                                                    () => {
+                                                        setCursorToLocation(n.loc);
+                                                        goToTimelineBranch(n.entry);
+                                                    }
+                                                }>
                                                     <Typography align={"left"}
                                                                 className={classes.expressionCellContentTypography}
                                                                 noWrap>
@@ -396,13 +407,14 @@ class TraceTable extends React.Component {
                                                    classes={{
                                                        root: n.isError ? classes.hoverError
                                                            : n.isGraphical ? classes.hoverGraphical : classes.hoverObject,
-                                                       hover: classes.hover
+                                                       // hover: classes.hover
                                                    }}
                                         >
                                             <ObjectExplorer
                                                 expressionId={n.expressionId}
                                                 objectNodeRenderer={objectNodeRenderer}
                                                 data={parsed}
+                                                outputRefs={n.entry.outputRefs}
                                             />
                                         </TableCell>
                                     </TableRow>

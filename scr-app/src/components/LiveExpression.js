@@ -1,12 +1,17 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import Popover from '@material-ui/core/Popover';
+import Button from '@material-ui/core/Button';
 import JSAN from 'jsan';
 import isString from 'lodash/isString';
 import debounce from 'lodash.debounce';
 
 import ObjectExplorer from './ObjectExplorer';
 import BranchNavigator from "./BranchNavigator";
+
+import {getVisualIdsFromRefs} from '../containers/GraphicalMapper';
+import GraphicalQuery from '../components/GraphicalQuery';
+import {VisualQueryManager} from "../containers/Pastebin";
 
 const defaultCloseDelay = 1000;
 
@@ -133,7 +138,7 @@ class LiveExpression extends Component {
 
     getDatum = (data) => {
         const {sliderRange} = this.state;
-        let datum;
+        let datum, outputRefs = [];
         let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];//, rangeEnd = sliderRange[1];
 
         if (data) {
@@ -145,11 +150,14 @@ class LiveExpression extends Component {
                 // rangeStart = Math.min(rangeStart, sliderMax);
                 //   rangeEnd = Math.min(rangeEnd, sliderMax);
                 datum = isString(data[rangeStart - 1].data) ? JSAN.parse(data[rangeStart - 1].data) : data[rangeStart - 1].data;
+                if (data[rangeStart - 1].outputRefs) {
+                    outputRefs = data[rangeStart - 1].outputRefs;
+                }
             }
         } else {
             datum = data;
         }
-        return {datum, sliderMin, sliderMax, rangeStart}
+        return {datum, sliderMin, sliderMax, rangeStart, outputRefs}
     };
 
     getBranchDatum = (data) => {
@@ -197,20 +205,30 @@ class LiveExpression extends Component {
         const isBranchNavigator = !!branchNavigatorChange;
         const isActive = this.open || !!anchorEl && (!isBranchNavigator || (isBranchNavigator && data && data.length > 1));
         // this.open = isActive; // debug
-        const {datum, sliderMin, sliderMax, rangeStart} = isBranchNavigator ?
+        const {datum, sliderMin, sliderMax, rangeStart, outputRefs} = isBranchNavigator ?
             this.getBranchDatum(data) : this.getDatum(data);
         const handleSliderChange = isBranchNavigator ?
             this.configureHandleSliderChange(branchNavigatorChange) : this.handleSliderChange;
         const origin = isBranchNavigator ? branchPopoverOrigin : popoverOrigin;
+        // if (outputRefs && outputRefs.length) {
+        //     console.log('or', data, outputRefs);
+        // }
         const explorer = isBranchNavigator ? null // todo function params vs arguments + return explorer
-            : (<div className={classes.objectExplorer}>
+            : <div className={classes.objectExplorer}>
+                {!!(outputRefs && outputRefs.length) &&
+                <GraphicalQuery
+                    outputRefs={outputRefs}
+                    visualIds={getVisualIdsFromRefs(outputRefs)}
+                    selected={false}
+                    />
+                }
                 <ObjectExplorer
                     expressionId={expressionId}
                     objectNodeRenderer={objectNodeRenderer}
                     data={datum}
                     handleChange={handleChange}
                 />
-            </div>);
+            </div>;
         let navigatorStyle = {...style, overflow: 'auto', minWidth: branchNavigatorChange ? 200 : 50};
         const defaultValue = rangeStart;//[rangeStart, rangeEnd,];
         const showSlider = isBranchNavigator && (sliderMin > 1 || sliderMax > 1);

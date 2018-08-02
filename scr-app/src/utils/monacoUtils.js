@@ -1,6 +1,4 @@
-import {Observable} from 'rxjs/Observable';
-
-import './monacoUtils.css';
+import {Observable} from 'rxjs';
 
 export const monacoProps = {
     fontSize: 12,

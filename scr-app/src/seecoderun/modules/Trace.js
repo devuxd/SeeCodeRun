@@ -1,5 +1,5 @@
 import JSAN from 'jsan';
-import {Subject} from 'rxjs/Subject';
+import {Subject} from 'rxjs';
 import isString from 'lodash/isString';
 import isObjectLike from 'lodash/isObjectLike';
 import isArrayLike from 'lodash/isArrayLike';
@@ -308,10 +308,10 @@ class Trace {
     }
 
     onDomNodeAdded() {
-        this.domNodeAdded && this.domNodeAdded([...(this.domNodes||[])]);
+        this.domNodeAdded && this.domNodeAdded([...(this.domNodes || [])]);
     }
 
-    getReplacer = (res = {isDOM: false, isOutput: false, outputRefs:[]}) => {
+    getReplacer = (res = {isDOM: false, isOutput: false, outputRefs: []}) => {
         const windowRoots = this.getWindowRoots();
         return (key, value) => {
             if (isIgnoreObjectPrivateProperties && isString(key) && key.startsWith('_')) {
@@ -322,7 +322,7 @@ class Trace {
                 return `${this.magicTag}${Object.keys(windowRoots)[i]}`;
             }
             if (isNode(value)) {
-                res.isOutput =!ignoreTags.includes((value.tagName||'').toLowerCase());
+                res.isOutput = !ignoreTags.includes((value.tagName || '').toLowerCase());
                 const val = copifyDOMNode(value);
                 const domId = this.domNodes.indexOf(value);
                 if (domId >= 0) {
@@ -337,7 +337,7 @@ class Trace {
                     this.domNodesObs.push(observer);
                 }
                 res.isDOM = true;
-                res.outputRefs = res.outputRefs||[];
+                res.outputRefs = res.outputRefs || [];
                 res.outputRefs.push(value);
                 this.onDomNodeAdded();
                 return val;
@@ -402,12 +402,13 @@ class Trace {
             return;
         }
         let dataType = 'jsan';
-        let res = {isDOM: false, isOutput: false, outputRefs:[]};
+        let res = {isDOM: false, isOutput: false, outputRefs: []};
         const data = JSAN.stringify(value, this.getReplacer(res), null, true);
         let objectClassName = value && value.constructor && value.constructor.name;
         //this.subject.next({id: pre.id, loc: this.locationMap[pre.id].loc, dataType: dataType, data: data});
         const i = this.timeline.length;
         const expression = this.locationMap[pre.id];
+        const parentExpression = expression ? this.locationMap[expression.parentId] : null;
         if (!expression) {
             return;
         }
@@ -422,6 +423,7 @@ class Trace {
             }
 
         }
+
 
         this.timeline.unshift({
             ...pre,
@@ -438,7 +440,9 @@ class Trace {
             timestamp: Date.now(),
             dataRefId: dataRefId,
             funcRefId: refId,
-            value: value
+            value: value,
+            expression,
+            parentExpression,
         });
     };
 
@@ -526,6 +530,13 @@ class Trace {
             }
             return funcRefId;
         },
+        VariableDeclarator: (pre, value, post, type, extraIds, areNew, extraValues) => {
+            const rightData = value;
+            // areNew[0] && this.pushEntry({id: extraIds[0]}, leftData, post, type);
+            //ff
+            areNew[1] && this.pushEntry({id: extraIds[0]}, rightData, post, type);
+            //  return value;
+        },
         // NewExpression: (ast, locationMap, getLocationId, path) => {
         // },
         // FunctionExpression: (ast, locationMap, getLocationId, path) => {
@@ -550,6 +561,7 @@ class Trace {
                     loc: expression.loc,
                     blockLoc: expression.blockLoc,
                     timelineI: this.timeline.length,
+                    expression,
                 });
                 push = false;
 
@@ -581,10 +593,10 @@ class Trace {
         return {_: value};
     };
 
-    preAutoLog = (id, type, secondaryId, navigationType, args, argsIds) => {
+    preAutoLog = (id, type, secondaryId, navigationType, args, argsIds, blockName) => {
         const startTimestamp = Date.now();
         let calleeId = null;
-        //  console.log(id, type);
+        // console.log(id, type, blockName);
         if (type === 'CallExpression') {
             this.currentCallExpressionId = id;
         }
@@ -602,7 +614,7 @@ class Trace {
 
         this.currentExpressionId = id;
         this.currentScope = this.currentScope.enterScope(id);
-        return {id, type, secondaryId, navigationType, calleeId, startTimestamp};
+        return {id, type, secondaryId, navigationType, calleeId, startTimestamp, blockName};
     };
 
     postAutoLog = (id) => {

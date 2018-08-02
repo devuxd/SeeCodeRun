@@ -9,7 +9,7 @@ import Trace from './Trace';
 //     updatePlaygroundLoadSuccess
 // } from "../../redux/modules/playground";
 import {decodeBabelError} from "../../utils/scrUtils";
-import GraphicalMapper from "./GraphicalMapper";
+import GraphicalMapper from "../../containers/GraphicalMapper";
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
@@ -207,6 +207,7 @@ export const importLoaders = async () => {
                         || key.includes('-regenerator')
                         || key.includes('proposal-decorators')
                         || key.includes('syntax-decorators')
+                        || key.includes('pipeline-operator')
                     )),
         };
 
@@ -256,15 +257,15 @@ class AutoLog {
     }
 
     async transformWithLocationIds(ast, getLocationId) {
-
-        const {locationMap, deps} = this.autoLogShift.autoLogAst(ast, getLocationId);
-        const code = ast.toSource();
-        // console.log(code);
+        let res = this.autoLogShift.autoLogAst(ast, getLocationId);
+        let {locationMap, deps, functionBranches, controlBranches} = res;
         return {
             locationMap: locationMap,
             trace: new Trace(locationMap),
-            code,
-            deps
+            getCode:()=>ast.toSource(),
+            deps,
+            functionBranches,
+            controlBranches,
         };
     }
 
@@ -501,7 +502,7 @@ class AutoLog {
         };
     }
 
-    configureGraphicalMapper(bundle, isGraphicalLocatorActive){
+    configureGraphicalMapper(bundle, isGraphicalLocatorActive) {
         // this.graphicalMapper = new GraphicalMapper(bundle, isGraphicalLocatorActive);
         // return this.graphicalMapper.configureHandleChange();
     }

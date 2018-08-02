@@ -1,4 +1,4 @@
-import {Observable} from 'rxjs/Observable';
+import {Observable, of} from 'rxjs';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
 
@@ -44,6 +44,7 @@ import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider'
 import {defaultExpressionClassName} from '../containers/LiveExpressionStore';
 
 import firebaseConfig from './firebaseConfig';
+import {defaultMonacoEditorLiveExpressionClassName} from "../containers/Editor";
 
 const {root, config} = firebaseConfig;
 
@@ -122,6 +123,7 @@ class AppManager {
                     lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default, sync with css: max-height:18px; and padding-top
                     nativeContextMenu: false,
                     hover: true,
+                    extraEditorClassName: defaultMonacoEditorLiveExpressionClassName,
                 },
             },
             [editorIds['html']]: {
@@ -141,9 +143,9 @@ class AppManager {
     observeDispose() {
         try {
             this.dispose();
-            return Observable.of({type: 'DISPOSE_FULFILLED'});
+            return of({type: 'DISPOSE_FULFILLED'});
         } catch (error) {
-            return Observable.of({type: 'DISPOSE_REJECTED', error: error});
+            return of({type: 'DISPOSE_REJECTED', error: error});
         }
     }
 
@@ -262,13 +264,13 @@ class AppManager {
                             });
                 }
 
-                return Observable.of(configureMonacoModelsFulfilled());
+                return of(configureMonacoModelsFulfilled());
             } else {
-                return Observable.of(configureMonacoModelsRejected('Error: Monaco is not' +
+                return of(configureMonacoModelsRejected('Error: Monaco is not' +
                     ' loaded'));
             }
         } catch (e) {
-            return Observable.of(configureMonacoModelsRejected(e));
+            return of(configureMonacoModelsRejected(e));
         }
     }
 
@@ -280,18 +282,18 @@ class AppManager {
                     if (!firecoPad.isInit && isString(initialEditorsTexts[editorId])) {
                         firecoPad.monacoEditorModel.setValue(initialEditorsTexts[editorId]);
                     } else {
-                        return Observable.of(updateMonacoModelsRejected('Error: no ' +
+                        return of(updateMonacoModelsRejected('Error: no ' +
                             ' text was provided for editor with id: ' + editorId + ', or' +
                             ' Fireco set it first.'));
                     }
                 }
-                return Observable.of(updateMonacoModelsFulfilled());
+                return of(updateMonacoModelsFulfilled());
             } else {
-                return Observable.of(updateMonacoModelsRejected('Error: no editors' +
+                return of(updateMonacoModelsRejected('Error: no editors' +
                     ' texts was provided'));
             }
         } catch (e) {
-            return Observable.of(updateMonacoModelsRejected(e));
+            return of(updateMonacoModelsRejected(e));
         }
     }
 
@@ -414,7 +416,7 @@ class AppManager {
                             model: this.monaco.editor.createModel('', 'javascript')
                         });
                     editorComponent.editorDidMount(this.consoleInputEditor);
-                    return Observable.of(loadMonacoEditorFulfilled(editorId, null));
+                    return of(loadMonacoEditorFulfilled(editorId, null));
                 }
 
                 const firecoPad = this.firecoPads[editorId];
@@ -478,19 +480,19 @@ class AppManager {
                 firecoPad.firstBuildAst && firecoPad.firstBuildAst();
 
                 firecoPadDidMount && firecoPadDidMount(firecoPad);
-                return Observable.of(loadMonacoEditorFulfilled(editorId, firecoPad));
+                return of(loadMonacoEditorFulfilled(editorId, firecoPad));
             } catch (error) {
-                return Observable.of(loadMonacoEditorRejected(editorId, error));
+                return of(loadMonacoEditorRejected(editorId, error));
             }
 
         } else {
-            return Observable.of(loadMonacoEditorRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
+            return of(loadMonacoEditorRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
         }
     }
 
     observeSwitchMonacoTheme(themeType) {
         if (!monacoThemes[themeType]) {
-            return Observable.of(switchMonacoThemeRejected('Unknown theme type'));
+            return of(switchMonacoThemeRejected('Unknown theme type'));
         }
 
         if (this.monaco) {
@@ -498,10 +500,10 @@ class AppManager {
                 monacoThemes.current = monacoThemes[themeType];
                 this.monaco.editor.setTheme(monacoThemes.current);
             }
-            return Observable.of(switchMonacoThemeFulfilled());
+            return of(switchMonacoThemeFulfilled());
         }
 
-        return Observable.of(loadMonacoEditorRejected('Attempting to switch' +
+        return of(loadMonacoEditorRejected('Attempting to switch' +
             ' Monaco theme without loading Monaco.'));
     }
 
@@ -537,7 +539,6 @@ class AppManager {
                 loadFire().then(() => {
                     fireco.unsubscribeOnIdTokenChanged = fireco.auth.onIdTokenChanged(
                         user => {
-                            console.log('us', user);
                             if (user) {
                                 if (!fireco.isAuth) {
                                     fireco.isAuth = true;
@@ -561,7 +562,7 @@ class AppManager {
 
             });
         } else {
-            return Observable.of(activateFirepadRejected('Values missing:' +
+            return of(activateFirepadRejected('Values missing:' +
                 ' pastebinToken, firepadPaths; or Fireco is not configured.'));
         }
     }
@@ -603,7 +604,7 @@ class AppManager {
 
     observeConfigureFirecoEditor(editorId, editorText) {
         if (!fireco.isAuth) {
-            return Observable.of(configureFirecoEditorRejected(editorId, 'Error:' +
+            return of(configureFirecoEditorRejected(editorId, 'Error:' +
                 ' Fireco' +
                 ' is not' +
                 ' authenticated. Execute activateFireco(pastebinToken) first,' +
@@ -611,7 +612,7 @@ class AppManager {
                 ' a valid token'));
         }
         if (!this.monaco) {
-            return Observable.of(configureFirecoEditorRejected(editorId, 'Error:' +
+            return of(configureFirecoEditorRejected(editorId, 'Error:' +
                 ' monaco' +
                 ' is not' +
                 ' configured. Execute configureMonaco(monaco) first, providing a' +
@@ -679,9 +680,9 @@ class AppManager {
             firecoPad.onContentChanged = () => {
                 firecoPad.setFirecoText();
             };
-            return Observable.of(configureFirecoEditorFulfilled(editorId));
+            return of(configureFirecoEditorFulfilled(editorId));
         } catch (error) {
-            return Observable.of(configureFirecoEditorRejected(editorId, error));
+            return of(configureFirecoEditorRejected(editorId, error));
         }
     }
 
@@ -691,24 +692,24 @@ class AppManager {
             fireco.usersRef = fireco.usersRef || fireco.database.ref(fireco.usersPath);
             onFirecoActive(fireco.chatRef, fireco.usersRef, fireco.TIMESTAMP, chatUserIdLocalStoragePath);
             fireco.chatOnDispose = onDispose;
-            return Observable.of(configureFirecoChatFulfilled());
+            return of(configureFirecoChatFulfilled());
         } catch (error) {
-            return Observable.of(configureFirecoChatRejected(error));
+            return of(configureFirecoChatRejected(error));
         }
     }
 
     observeConfigureFirecoPersistableComponent(path, onFirecoActive, onDispose) {
         try {
             if (!path || path.trim().length === 0 || path.startsWith('/')) {
-                return Observable.of(configureFirecoChatRejected('Empty path string or starts with /'));
+                return of(configureFirecoChatRejected('Empty path string or starts with /'));
             }
             fireco.persistableComponents[path] = fireco.persistableComponents[path] ||
                 fireco.database.ref(`${fireco.persistablePath}/${path}`);
             onFirecoActive(fireco.persistableComponents[path], fireco.TIMESTAMP);
             fireco.persistableComponentsOnDispose.push({onDispose, path});
-            return Observable.of(configureFirecoPersistableComponentFulfilled());
+            return of(configureFirecoPersistableComponentFulfilled());
         } catch (error) {
-            return Observable.of(configureFirecoPersistableComponentRejected(error));
+            return of(configureFirecoPersistableComponentRejected(error));
         }
     }
 

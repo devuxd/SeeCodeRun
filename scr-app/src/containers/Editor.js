@@ -1,21 +1,29 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import debounce from 'lodash.debounce';
-import {Subject} from 'rxjs/Subject';
+import {Subject} from 'rxjs';
+import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
 import {withStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import CloseIcon from '@material-ui/icons/Close';
 // import WarningIcon from '@material-ui/icons/Warning';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
-import SettingsIcon from '@material-ui/icons/Settings';
+import SettingsIcon from '@material-ui/icons/SettingsSharp';
 import Snackbar from '@material-ui/core/Snackbar';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
 import {end$} from "../utils/scrUtils";
 import LiveExpressionStore from './LiveExpressionStore';
 
+export const defaultMonacoEditorLiveExpressionClassName = 'monaco-editor-live-expression';
 const styles = theme => ({
+    '@global': {
+        [`.${defaultMonacoEditorLiveExpressionClassName}.monaco-editor .cursors-layer > .cursor`]: {
+            maxHeight: 18,
+            marginTop: 7,
+        }
+    },
     container: {
         height: '100%',
         position: 'relative',
@@ -252,8 +260,7 @@ class Editor extends Component {
             });
 
         contentWidgetMouseEventSubjects.mouseLeave
-            .throttleTime(50)
-            // .debounceTime(100)
+            .pipe(throttleTime(50))
             .subscribe(payload => {
                 this.setState(payload);
             });

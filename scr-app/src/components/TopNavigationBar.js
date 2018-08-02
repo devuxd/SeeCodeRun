@@ -9,7 +9,7 @@ import IconButton from '@material-ui/core/IconButton';
 import ChatIcon from '@material-ui/icons/Chat';
 import ShareIcon from '@material-ui/icons/Share';
 import CloudOffIcon from '@material-ui/icons/CloudOff';
-import LightbulbOutlineIcon from '@material-ui/icons/LightbulbOutline';
+import LightbulbOutlineIcon from 'mdi-material-ui//LightbulbOutline';
 import LightbulbIcon from './icons/Lightbulb';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import Menu from '@material-ui/core/Menu';

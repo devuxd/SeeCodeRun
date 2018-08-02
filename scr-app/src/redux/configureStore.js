@@ -3,7 +3,7 @@ import {createEpicMiddleware} from 'redux-observable';
 import {rootEpic, rootReducer} from './modules/root';
 import configureAppManager from "../seecoderun/AppManager";
 
-const epicMiddleware = createEpicMiddleware(rootEpic, {
+const epicMiddleware = createEpicMiddleware({
     dependencies: {appManager: configureAppManager()}
 });
 
@@ -24,6 +24,9 @@ export default function configureStore() {
                     const enhancer = composeEnhancers(
                         applyMiddleware(epicMiddleware)
                     );
+
+                    epicMiddleware.run(rootEpic);
+
                     return createStore(reducer, enhancer);
                 } :
                 reducer => {
@@ -35,6 +38,8 @@ export default function configureStore() {
                     const store = createStoreWithEnhancers(reducer);
                     const showDevTools = require('./devtools/showDevTools').default;
                     showDevTools(store);
+
+                    epicMiddleware.run(rootEpic);
 
                     return store;
 

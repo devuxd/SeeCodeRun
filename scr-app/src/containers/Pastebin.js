@@ -41,9 +41,10 @@ let gridLayoutFormatter = isCompact ?
     configureDefaultGridLayoutCompactFormatter() : configureDefaultGridLayoutFormatter();
 
 export const PastebinContext = createContext({});
-export const VisualQueryListener = {
-    onChange: (el, key) => {
-    }
+export const VisualQueryManager = {
+    onChange: (els, keys, event) => {
+    },
+    visualElements: [],
 };
 
 const animationId = `scr-a-id-${Date.now()}`;
@@ -117,7 +118,7 @@ class Pastebin extends Component {
         this.exports = {};
         this.debugScrollerRefSnapshots = {};
         this.scrollingListContainers = {};
-        VisualQueryListener.onChange = this.onVisualQueryChange;
+        VisualQueryManager.onChange = this.onVisualQueryChange;
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -131,10 +132,53 @@ class Pastebin extends Component {
         return null;
     }
 
-    onVisualQueryChange = (visualQuery, visualId) => {
-        this.setState({
-            searchState: {...this.state.searchState, visualQuery, visualId}
-        })
+    onVisualQueryChange = (visualQuery, visualIds, event) => {
+        this.setState(prevState => {
+            let visualQueryHover = prevState.searchState.visualQueryHover || [];
+            let selectedVisualQueries = prevState.searchState.selectedVisualQueries || [];
+            switch (event) {
+                case 'click':
+                    if (selectedVisualQueries === visualQuery) {
+                        selectedVisualQueries = [];
+                    } else {
+                        selectedVisualQueries = visualQuery;
+                    }
+                    // if (selectedVisualQueries.includes(visualQuery)) {
+                    //     selectedVisualQueries = [...selectedVisualQueries].filter(s => s !== visualQuery);
+                    // } else {
+                    //     selectedVisualQueries = [...selectedVisualQueries];
+                    //     selectedVisualQueries.push(visualQuery);
+                    // }
+                    break;
+                case 'mouseenter':
+                    visualQueryHover = visualQuery;
+                    break;
+                default:
+                    visualQueryHover = [];
+            }
+
+            // let newVisualQuery = selectedVisualQueries.reduce((r, q) => {
+            //     q.forEach(e => r.push(e))
+            //     return r;
+            // }, []);
+            let newVisualQuery =
+                visualQueryHover && visualQueryHover.length ? visualQueryHover : selectedVisualQueries;
+            // let newVisualQuery = selectedVisualQueries.concat(visualQueryHover);
+            // newVisualQuery = newVisualQuery.reduce((r, e) => {
+            //     if (!r.includes(e)) {
+            //         r.push(e);
+            //     }
+            //     return r;
+            // }, []);
+            return {
+                searchState: {
+                    ...this.state.searchState,
+                    visualQuery: newVisualQuery,
+                    visualQueryHover,
+                    selectedVisualQueries
+                }
+            }
+        });
     };
 
     onGridResize = (isResizing) => {
@@ -410,7 +454,9 @@ class Pastebin extends Component {
 
     createData(timeline, getEditorTextInLoc) {
         let tl = timeline || [];
-        return (tl).map((entry, i) => ({
+        return tl.filter(entry => (!this.state.searchState.visualQuery || !this.state.searchState.visualQuery.length) ||
+            (entry.isOutput && this.state.searchState.visualQuery.find(q => entry.outputRefs.includes(q)))
+        ).map((entry, i) => ({
             id: entry.reactKey,
             time: entry.i,
             // time: entry.timestamp,
@@ -574,7 +620,7 @@ class Pastebin extends Component {
             }
         }
 
-        nextSearchState.findChuncks =
+        nextSearchState.findChunks =
             configureFindChunks(!nextSearchState.isRegExp, nextSearchState.isCase, nextSearchState.isWord);
         this.setState({searchState: nextSearchState});
     };
@@ -634,7 +680,7 @@ class Pastebin extends Component {
             isWord: false,
             isRegExp: false,
             handleFilterClick: this.handleChangeSearchFilterClick,
-            findChuncks: configureFindChunks(true),
+            findChunks: configureFindChunks(true),
             visualQuery: null,
             visualKey: null,
         },
@@ -658,9 +704,19 @@ class Pastebin extends Component {
     }
 
     handleChangeGraphicalLocator = () => {
-        this.setState(prevState => ({
-            isGraphicalLocatorActive: !prevState.isGraphicalLocatorActive
-        }));
+        this.setState(prevState => {
+            const isGraphicalLocatorActive = !prevState.isGraphicalLocatorActive;
+            const searchState = {...prevState.searchState};
+            if (!isGraphicalLocatorActive) {
+                searchState.visualQuery = null;
+                searchState.visualId = null;
+            }
+            //  console.log(prevState, isGraphicalLocatorActive);
+            return {
+                isGraphicalLocatorActive,
+                searchState
+            }
+        });
     }
 
     render() {
@@ -804,6 +860,7 @@ class Pastebin extends Component {
                                             appStyle={appStyle}
                                             exports={this.exports}
                                             isGraphicalLocatorActive={isGraphicalLocatorActive}
+                                            handleChangeGraphicalLocator={this.handleChangeGraphicalLocator}
                                 />
                                 {hoveredCellKey === 'playgroundContainer' ?
                                     null : <TvIcon className={classes.icon}/>}

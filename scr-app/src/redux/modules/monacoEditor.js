@@ -1,3 +1,7 @@
+import {ofType} from 'redux-observable';
+import {zip} from 'rxjs';
+import {concatMap, startWith, mapTo, filter} from 'rxjs/operators';
+
 import {CONFIGURE_MONACO_MODELS_FULFILLED} from "./monaco";
 
 const LOAD_MONACO_EDITORS = 'LOAD_MONACO_EDITORS';
@@ -123,23 +127,26 @@ export const monacoEditorsReducer =
         }
     };
 
-export const monacoEditorsEpic = (action$, store) =>
-    action$.ofType(LOAD_MONACO_EDITOR_FULFILLED)
-        .filter(() =>
-            (store.getState().monacoEditorsReducer.monacoEditorsLoaded ===
-                store.getState().monacoEditorsReducer.monacoEditorsToLoad))
-        .mapTo(loadMonacoEditorsFulfilled())
-        .startWith(loadMonacoEditors())
-;
 
-export const mountedEditorEpic = (action$, store, {appManager}) =>
-    action$.ofType(MOUNT_EDITOR_FULFILLED)
-        .zip(action$
-            .ofType(CONFIGURE_MONACO_MODELS_FULFILLED, LOAD_MONACO_EDITOR_FULFILLED))
-        .concatMap(actions => {
+export const mountedEditorEpic = (action$, state$, {appManager}) =>
+    zip(
+        action$.pipe(ofType(MOUNT_EDITOR_FULFILLED)),
+        action$.pipe(ofType(CONFIGURE_MONACO_MODELS_FULFILLED, LOAD_MONACO_EDITOR_FULFILLED)),
+    ).pipe(
+        concatMap(actions => {
                 const action = actions[0];
                 return appManager
                     .observeConfigureMonacoEditor(action.editorId, action.editorContainer)
             }
         )
-;
+    );
+
+export const monacoEditorsEpic = (action$, state$) =>
+    action$.pipe(
+        ofType(LOAD_MONACO_EDITOR_FULFILLED),
+        filter(() =>
+            (state$.value.monacoEditorsReducer.monacoEditorsLoaded ===
+                state$.value.monacoEditorsReducer.monacoEditorsToLoad)),
+        mapTo(loadMonacoEditorsFulfilled()),
+        startWith(loadMonacoEditors())
+    );

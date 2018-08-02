@@ -1,3 +1,7 @@
+import {ofType} from 'redux-observable';
+import {zip} from 'rxjs';
+import {mergeMap, startWith, mapTo, filter} from 'rxjs/operators';
+
 import {
     LOAD_MONACO_EDITOR_FULFILLED,
     LOAD_MONACO_EDITORS_FULFILLED,
@@ -92,7 +96,7 @@ export const configureFirecoChatRejected = (error) => ({
 
 export const configureFirecoPersistableComponent = (path, onFirecoActive, onDispose) => ({
     type: PERSISTABLE_COMPONENT_MOUNTED,
-    path:path,
+    path: path,
     onFirecoActive: onFirecoActive,
     onDispose: onDispose,
 });
@@ -178,80 +182,80 @@ export const firecoReducer =
         }
     };
 
-export const firecoActivateEpic = (action$, store, {appManager}) =>
-    action$.ofType(FETCH_PASTEBIN_TOKEN_FULFILLED)
-        .zip(
-            action$.ofType(
-                LOAD_MONACO_EDITORS_FULFILLED
+export const firecoActivateEpic = (action$, state$, {appManager}) =>
+        zip(
+            action$.pipe(startWith(activateFirepad()),ofType(FETCH_PASTEBIN_TOKEN_FULFILLED)),
+            action$.pipe(ofType(LOAD_MONACO_EDITORS_FULFILLED)),
+        ).pipe(
+            mergeMap(() =>
+                appManager.observeActivateFireco(
+                    state$.value.pastebinReducer.pastebinId,
+                    state$.value.pastebinReducer.pastebinToken,
+                    state$.value.pastebinReducer.isNew
+                )
             )
-        )
-        .mergeMap(() =>
-            appManager.observeActivateFireco(
-                store.getState().pastebinReducer.pastebinId,
-                store.getState().pastebinReducer.pastebinToken,
-                store.getState().pastebinReducer.isNew
-            )
-        )
-        .startWith(activateFirepad())
-;
+        );
 
-export const firecoEditorEpic = (action$, store, {appManager}) =>
-    action$.ofType(LOAD_MONACO_EDITOR_FULFILLED)
-        .filter(action=>action.editorId !== 'consoleInput') //// ignore consoleInput
-        .zip(
-            action$.ofType(
+export const firecoEditorEpic = (action$, state$, {appManager}) =>
+    zip(
+        action$.pipe(
+            ofType(LOAD_MONACO_EDITOR_FULFILLED),
+            filter(action => action.editorId !== 'consoleInput'), //// ignore consoleInput
+        ),
+        action$.pipe(
+            ofType(
                 ACTIVATE_FIREPAD_FULFILLED,
                 CONFIGURE_FIRECO_EDITOR_FULFILLED
-            )
-        )
-        .mergeMap(actions =>
+            ))
+    ).pipe(
+        mergeMap(actions =>
             appManager.observeConfigureFirecoEditor(
                 actions[0].editorId,
-                store.getState().pastebinReducer.editorsTexts ?
-                    store.getState().pastebinReducer.editorsTexts[actions[0].editorId]
+                state$.value.pastebinReducer.editorsTexts ?
+                    state$.value.pastebinReducer.editorsTexts[actions[0].editorId]
                     : null
             )
-        )
-;
+        ),
+    );
 
-export const firecoEditorsEpic = (action$, store) =>
-    action$.ofType(CONFIGURE_FIRECO_EDITOR_FULFILLED)
-        .filter(() =>
-            (store.getState().firecoReducer.fulfilledFirecoEditors ===
-                store.getState().monacoEditorsReducer.monacoEditorsToLoad-1) // ignore consoleInput
-        )
-        .mapTo(configureFirecoEditorsFulfilled())
-        .startWith(configureFirecoEditors())
-;
+export const firecoEditorsEpic = (action$, state$) =>
+    action$.pipe(
+        ofType(CONFIGURE_FIRECO_EDITOR_FULFILLED),
+        filter(() =>
+            (state$.value.firecoReducer.fulfilledFirecoEditors ===
+                state$.value.monacoEditorsReducer.monacoEditorsToLoad - 1) // ignore consoleInput
+        ),
+        mapTo(configureFirecoEditorsFulfilled()),
+        startWith(configureFirecoEditors()),
+    );
 
-export const firecoChatEpic = (action$, store, {appManager}) =>
-    action$.ofType(CHAT_MOUNTED)
-        .zip(
-            action$.ofType(
-                CONFIGURE_FIRECO_EDITORS_FULFILLED
-                //ACTIVATE_FIREPAD_FULFILLED // too early
+export const firecoChatEpic = (action$, state$, {appManager}) =>
+    zip(
+        action$.pipe(ofType(CHAT_MOUNTED)),
+        action$.pipe(ofType(
+            CONFIGURE_FIRECO_EDITORS_FULFILLED
+            //ACTIVATE_FIREPAD_FULFILLED // too early
             )
-        )
-        .mergeMap(actions => {
+        ),
+    ).pipe(
+        mergeMap(actions => {
                 return appManager.observeConfigureFirecoChat(
                     actions[0].onFirecoActive,
                     actions[0].onDispose,
                     `scr_chatUserId#${
-                        store.getState().pastebinReducer.pastebinId
+                        state$.value.pastebinReducer.pastebinId
                         }`
                 )
             }
-        )
-;
+        ),
+    );
 
-export const firecoPersistableComponentEpic = (action$, store, {appManager}) =>
-    action$.ofType(PERSISTABLE_COMPONENT_MOUNTED)
-        .zip(
-            action$.ofType(
-                ACTIVATE_FIREPAD_FULFILLED
-            )
-        )
-        .mergeMap(actions => {
+export const firecoPersistableComponentEpic = (action$, state$, {appManager}) =>
+    zip(
+        action$.pipe(ofType(PERSISTABLE_COMPONENT_MOUNTED),),
+        action$.pipe(ofType(ACTIVATE_FIREPAD_FULFILLED),),
+    ).pipe(
+        mergeMap(actions => {
                 return appManager.observeConfigureFirecoPersistableComponent(
                     actions[0].path,
                     actions[0].onFirecoActive,
@@ -259,6 +263,4 @@ export const firecoPersistableComponentEpic = (action$, store, {appManager}) =>
                 )
             }
         )
-;
-
-
+    );

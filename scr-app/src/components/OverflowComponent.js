@@ -213,7 +213,7 @@ class OverflowComponent extends React.Component {
     render() {
         const {
             classes, overflowXClassName, contentClassName, children, placeholder, placeholderClassName, placeholderDisableGutters,
-            overflowXAdornment, overflowYAdornment, ...rest
+            overflowXAdornment, overflowYAdornment, contentAlign, ...rest
         } = this.props;
 
         const {
@@ -245,7 +245,9 @@ class OverflowComponent extends React.Component {
                     onScrollChange={this.handleScrollChange}
                     {...rest}
                 >
+                    {/*<div style={{marginLeft:contentAlign==='center'? '50%': '0px'}}>*/}
                     {content}
+                    {/*</div>*/}
                 </OverflowAndScrollDetector>
             </div>
         );
@@ -272,6 +274,7 @@ OverflowComponent.propTypes = {
     placeholderDisableGutters: PropTypes.bool,
     overflowXAdornment: PropTypes.node,
     overflowYAdornment: PropTypes.node,
+    contentAlign: PropTypes.string,
 };
 
 OverflowComponent.defaultProps = {
@@ -281,6 +284,7 @@ OverflowComponent.defaultProps = {
     isRememberScrollDisabled: false,
     isRememberScrollDisabledX: false,
     isRememberScrollDisabledY: false,
+    contentAlign: 'center'
 };
 
 export default withStyles(styles)(OverflowComponent);

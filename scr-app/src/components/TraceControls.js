@@ -16,11 +16,11 @@ import PropTypes from 'prop-types';
 import SpeedDial from '@material-ui/lab/SpeedDial';
 import SpeedDialIcon from '@material-ui/lab/SpeedDialIcon';
 import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
-import SettingsIcon from '@material-ui/icons/Settings';
+import SettingsIcon from '@material-ui/icons/SettingsSharp';
 import TimerIcon from '@material-ui/icons/Timer';
 import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CodeIcon from '@material-ui/icons/Code';
-import EditIcon from '@material-ui/icons/ModeEdit';
+import PencilIcon from 'mdi-material-ui/Pencil';
 
 import {withStyles} from '@material-ui/core/styles';
 import Menu from '@material-ui/core/Menu';
@@ -28,7 +28,8 @@ import ListItem from '@material-ui/core/ListItem';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
-import {Subject} from 'rxjs/Subject';
+import {Subject} from 'rxjs';
+import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
 
@@ -95,7 +96,7 @@ const actions = [
         icon: <PlaylistPlayIcon/>, name: 'Trace history'
     },
     {
-        icon: <EditIcon/>, name: 'Change history'
+        icon: <PencilIcon/>, name: 'Change history'
     },
 ];
 
@@ -351,7 +352,7 @@ class TraceControls extends React.Component {
         requireConfig.onDependenciesChange = this.onDependenciesChange;
         this.subject = new Subject();
         this.subject
-            .debounceTime(1000)
+            .pipe(debounceTime(1000))
             .subscribe(() => (requireConfig.triggerChange && requireConfig.triggerChange()));
     }
 

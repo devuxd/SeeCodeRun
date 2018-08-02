@@ -10,6 +10,7 @@ import Pastebin from '../containers/Pastebin';
 import {getEditorIds} from '../seecoderun/AppManager';
 import {getShareUrl} from '../redux/modules/pastebin';
 import {online$, end$} from '../utils/scrUtils';
+import {takeUntil} from 'rxjs/operators';
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
 
@@ -101,7 +102,7 @@ class Index extends Component {
     };
     logoClick = (event, isTopNavigationToggled) => {
         this.setState({
-            isTopNavigationToggled:event? !this.state.isTopNavigationToggled: isTopNavigationToggled,
+            isTopNavigationToggled: event ? !this.state.isTopNavigationToggled : isTopNavigationToggled,
         });
     };
 
@@ -327,7 +328,7 @@ class Index extends Component {
         if (this.storeUnsubscribe) {
             this.storeUnsubscribe();
         }
-        this.online$ && this.online$.takeUntil(end$());
+        this.online$ && this.online$.pipe(takeUntil(end$()));
     }
 }
 

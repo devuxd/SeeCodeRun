@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import 'rc-slider/assets/index.css';
+// import 'rc-slider/assets/index.css';
 import React, {Component} from 'react';
 // import Range from 'rc-slider';
 // import Slider from 'rc-slider/lib/Slider';

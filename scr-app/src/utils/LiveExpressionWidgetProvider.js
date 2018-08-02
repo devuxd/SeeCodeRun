@@ -3,10 +3,10 @@ import debounce from 'lodash.debounce';
 // import {Subject} from 'rxjs/Subject';
 // import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";
-import {configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
+import {configureCreateMonacoRange, configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
 
 import AutoLogShift from '../seecoderun/modules/AutoLogShift';
-import LiveExpressionStore from "../containers/LiveExpressionStore";
+import LiveExpressionStore, {defaultExpressionClassName} from "../containers/LiveExpressionStore";
 
 
 export const jExpressions = [];
@@ -35,6 +35,7 @@ class LiveExpressionWidgetProvider {
         this.contentWidgetPositionPreference =
             [this.monaco.editor.ContentWidgetPositionPreference.BELOW];
         this.locToMonacoRange = configureLocToMonacoRange(this.monaco);
+        this.createMonacoRange = configureCreateMonacoRange(this.monaco);
         this.monacoRangeToClassName = configureMonacoRangeToClassName(`${editorId}-r`);
         this.editorId = editorId;
         this.monacoEditor = monacoEditor;
@@ -98,6 +99,8 @@ class LiveExpressionWidgetProvider {
         }
     }
 
+    count = 0;
+
     widgetize({ast}) {
         let hasDecoratorIdsChanged = true;
         let success = true;
@@ -105,6 +108,19 @@ class LiveExpressionWidgetProvider {
             if (ast) {
                 const prevDecoratorIds = this.jExpressionDecoratorIds || [];
                 const prevContentWidgets = this.contentWidgets || {};
+
+                if (this.decorators) {
+                    if (this.count++ > 3) {
+                        const res = this.monacoEditor
+                            .getModel()
+                            .getAllDecorations()
+                            .filter(dec => dec.options.inlineClassName.includes(defaultExpressionClassName))
+                            .map(dec => dec.id);
+                        this.monacoEditor.deltaDecorations(res, []);
+                    }
+
+                }
+
 
                 this.decorators = this.createExpressionDecorators(ast);
                 this.jExpressionDecoratorIds = this.monacoEditor
@@ -224,7 +240,7 @@ class LiveExpressionWidgetProvider {
 
     getDecoratorsInLineNumber = (lineNumber) => {
         return (this.decorators || [])
-            .filter(decorator => decorator.range.startLineNumber === lineNumber)
+            .filter(decorator => (decorator.range.startLineNumber === lineNumber))
             .sort((decoratorA, decoratorB) => {
                 let diff = decoratorA.range.startColumn - decoratorB.range.startColumn;
                 diff = diff === 0 ? decoratorB.range.endLineNumber - decoratorA.range.endLineNumber : diff;
@@ -255,6 +271,7 @@ class LiveExpressionWidgetProvider {
             && !decorator.expressionType.startsWith('Variable')
             && !decorator.expressionType.startsWith('JSX')
             && !decorator.expressionType.startsWith('Arrow')
+            && !decorator.expressionType.startsWith('Program')
         );
 
     getLineNumberExpressions = (lineNumber) => {
@@ -263,11 +280,34 @@ class LiveExpressionWidgetProvider {
             const lineNumberDecorators = [];
             let current = null;
             AllLineNumberDecorators.forEach(decorator => {
+                if (lineNumber === 1) {
+                    //     console.log('LE', current && current.type, decorator.expressionType,);
+                }
+
+                switch (decorator.expressionType) {
+                    case 'BinaryExpression':
+                        decorator.contentWidget.domNode.style.maxWidth = '0px';
+                        return;
+                    // break;
+                    case 'ReturnStatement':
+                        decorator.contentWidget.domNode.style.maxWidth = '0px';
+                        return;
+                    // decorator.contentWidget.domNode.style.marginLeft = '-40px';
+                    // decorator.contentWidget.domNode.style.backgroundColor = 'red';
+                    // break;
+
+                    default:
+                    // decorator.contentWidget.domNode.style.maxWidth = '0px';
+                }
+
                 if (current) {
                     //LiveExpressionWidgetProvider.containsDecorator(lineNumberDecorators, decorator))
                     if (current.range.containsRange(decorator.range)) {
                         if (!this.branchNavigatorIds[decorator.id] && decorator.contentWidget.domNode) {
-                            decorator.contentWidget.domNode.style.maxWidth = '0px';
+                            if (!['BinaryExpression', 'ReturnStatement', 'Identifier'].includes(current.expressionType)) {
+                                // decorator.contentWidget.domNode.style.maxWidth = '0px';
+                            }
+
                         }
                     } else {
                         current = null;
@@ -285,7 +325,7 @@ class LiveExpressionWidgetProvider {
             };
         }
         if (lineNumber === 92) {
-            console.log(lineNumber, this.livenumberExpressions[lineNumber]);
+            //    console.log(lineNumber, this.livenumberExpressions[lineNumber]);
         }
         return this.livenumberExpressions[lineNumber];
     };
@@ -310,6 +350,9 @@ class LiveExpressionWidgetProvider {
 
         const lineNumber = sourceDecorator.range.startLineNumber;
         const {lineNumberDecorators} = this.getLineNumberExpressions(lineNumber);
+        if (lineNumber === 1) {
+            //   console.log('ld', lineNumberDecorators);
+        }
         const lineNumberScheduler = this.getlineNumberScheduler(lineNumber);
         const updates = [];
         lineNumberDecorators.forEach((decorator, i) => {

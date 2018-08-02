@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
-import GraphicalMapper from '../seecoderun/modules/GraphicalMapper';
+import GraphicalMapper from './GraphicalMapper';
 
 class Playground extends Component {
     constructor(props) {

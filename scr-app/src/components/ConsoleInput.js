@@ -5,7 +5,7 @@ import {withStyles} from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import DoNotDisturbIcon from '@material-ui/icons/DoNotDisturb';
+import CancelIcon from 'mdi-material-ui/Cancel';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
@@ -37,6 +37,10 @@ const styles = theme => ({
         [`.${defaultMonacoConsoleClassName} .Identifier.CallExpression .OpenParenToken.CallExpression .Identifier.CallExpression`]: {
             color: '#fac863 !important',
         },
+        [`.${defaultMonacoConsoleClassName}.monaco-editor .cursors-layer > .cursor`]: {
+            maxHeight: 18,
+            marginTop: 7,
+        }
     },
     container: {
         flexShrink: 0,
@@ -270,7 +274,7 @@ class ConsoleInput extends Component {
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
                         <IconButton aria-label="Clear Console" className={classes.clearActionIconContainer}>
-                            <DoNotDisturbIcon
+                            <CancelIcon
                                 onClick={clearConsole}
                                 className={classes.actionIcon}
                             />

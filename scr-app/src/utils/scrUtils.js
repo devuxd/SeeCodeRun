@@ -1,4 +1,5 @@
-import {Observable} from 'rxjs/Observable';
+import {of, fromEvent, merge} from 'rxjs';
+import {mapTo} from 'rxjs/operators';
 import isNumber from 'lodash/isNumber';
 import AppleKeyboardOptionIcon from 'mdi-material-ui/AppleKeyboardOption';
 import CallMadeIcon from '@material-ui/icons/CallMade';
@@ -31,6 +32,7 @@ export const getLocationUrlData = () => {
     };
 };
 
+
 export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
     switch (parser) {
         case 'babylon':
@@ -43,6 +45,12 @@ export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
                 );
             };
     }
+};
+
+export const configureCreateMonacoRange = (monaco) => {
+            return (startLineNumber, startColumn, endLineNumber, endColumn) => {
+                return new monaco.Range(startLineNumber, startColumn, endLineNumber, endColumn);
+            };
 };
 
 export const configureMonacoRangeToClassName = (prefix = 'r') => {
@@ -328,19 +336,21 @@ export const functionLikeExpressions = [
 ];
 
 const isOnline$ =
-    Observable.of(window.navigator.onLine);
+    of(window.navigator.onLine);
 const goesOffline$ =
-    Observable.fromEvent(window, 'offline').mapTo(false);
+    fromEvent(window, 'offline')
+        .pipe(mapTo(false));
 const goesOnline$ =
-    Observable.fromEvent(window, 'online').mapTo(true);
+    fromEvent(window, 'online')
+        .pipe(mapTo(true));
 
 export const online$ = () =>
-    Observable.merge(
+    merge(
         isOnline$,
         goesOffline$,
         goesOnline$
     );
-export const end$ = () => Observable.of(true);
+export const end$ = () => of(true);
 
 export const UIcons = {
     FuncCall: CallMadeIcon, // callExpression

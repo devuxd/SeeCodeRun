@@ -7,6 +7,7 @@ import Paper from '@material-ui/core/Paper';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
+import Button from '@material-ui/core/Button';
 import Badge from '@material-ui/core/Badge';
 import Chip from '@material-ui/core/Chip';
 import Avatar from '@material-ui/core/Avatar';
@@ -30,7 +31,9 @@ import {lighten} from '@material-ui/core/styles/colorManipulator';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import TextField from '@material-ui/core/TextField';
 
-import {PastebinContext} from '../containers/Pastebin';
+import {PastebinContext, VisualQueryManager} from '../containers/Pastebin';
+import GraphicalQuery from '../components/GraphicalQuery';
+import {getVisualIdsFromRefs} from "../containers/GraphicalMapper";
 
 // const columnTime = [
 //   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
@@ -278,7 +281,7 @@ class EnhancedToolbar extends React.Component {
                             margin="normal"
                             fullWidth
                             InputProps={{
-                                startAdornment: (!!searchState.visualQuery &&
+                                startAdornment: (!!(searchState.visualQuery && searchState.visualQuery.length) &&
                                     <InputAdornment position="start">
                                         <Chip
                                             avatar={
@@ -286,7 +289,18 @@ class EnhancedToolbar extends React.Component {
                                                     <CodeTagsCheckIcon color="secondary"/>
                                                 </Avatar>
                                             }
-                                            label={'#' + searchState.visualId}
+                                            label={<GraphicalQuery
+                                                outputRefs={searchState.visualQuery}
+                                                visualIds={getVisualIdsFromRefs(searchState.visualQuery)}
+                                                selected={true}
+                                            />}
+                                            onDelete={() => {
+                                                VisualQueryManager
+                                                    .onChange(
+                                                        searchState.visualQuery,
+                                                        getVisualIdsFromRefs(searchState.visualQuery), 'click'
+                                                    );
+                                            }}
                                         />
                                     </InputAdornment>
                                 ),
