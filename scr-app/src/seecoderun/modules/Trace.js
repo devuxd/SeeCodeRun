@@ -207,7 +207,7 @@ class Trace {
             return r;
         };
         this.isValid = true;
-        dispatcher = runIframe.contentWindow.eval;
+        dispatcher = runIframe.contentWindow['eval'];
         const context = this;
         listener = function (actionType, ...params) {
             let i = context.logs.length;
@@ -510,6 +510,8 @@ class Trace {
             //console.log(objectData[propertyData]("x"));
             // return objectData[propertyData];
             // value;
+            console.log('MemberExpression', this.timeline);
+
         },
         BinaryExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
             const leftData = areNew[0] ? extraValues[0] : this.findPreviousOccurrence(extraIds[0]).value;
@@ -550,6 +552,7 @@ class Trace {
         let refId = null;
         let push = true;
         if (this.composedExpressions[type]) {
+            // console.log(type, pre, value, post, type, extraIds, areNew, extraValues);
             refId = this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
         } else {
             if (type === 'BlockStatement') {
@@ -587,9 +590,14 @@ class Trace {
                 }
             }
         }
-        // console.log(value);
+       // console.log(value);
         push && this.pushEntry(pre, value, post, type, refId);
+        pre.pushArgs();
         // console.log(val, val("x"));
+        clearTimeout(this.fff);
+        this.fff = setTimeout(() => {
+            console.log('t', this.timeline);
+        }, 1000);
         return {_: value};
     };
 
@@ -600,21 +608,26 @@ class Trace {
         if (type === 'CallExpression') {
             this.currentCallExpressionId = id;
         }
+
+        let pushArgs = () => {
+        };
         if (args) {
             calleeId = this.currentCallExpressionId;
             // console.log('c', calleeId);
-            argsIds.forEach((argsId, i) => {
-                this.pushEntry({
-                    id: argsId,
-                    startTimestamp
-                }, args[i]);
-            });
-            //console.log(id, type, secondaryId, navigationType, args, argsIds);
+            pushArgs = () => {
+                argsIds.forEach((argsId, i) => {
+                    this.pushEntry({
+                        id: argsId,
+                        startTimestamp
+                    }, args[i]);
+                });
+                //console.log(id, type, secondaryId, navigationType, args, argsIds);
+            };
         }
 
         this.currentExpressionId = id;
         this.currentScope = this.currentScope.enterScope(id);
-        return {id, type, secondaryId, navigationType, calleeId, startTimestamp, blockName};
+        return {id, type, secondaryId, navigationType, calleeId, startTimestamp, blockName, pushArgs};
     };
 
     postAutoLog = (id) => {

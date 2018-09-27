@@ -26,8 +26,8 @@ export const isNode = (val, win = window) => {
 export const getLocationUrlData = () => {
     return {
         url:
-        process.env.PUBLIC_URL ||
-        `${window.location.origin}`,
+            process.env.PUBLIC_URL ||
+            `${window.location.origin}`,
         hash: `${window.location.hash}`
     };
 };
@@ -38,6 +38,9 @@ export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
         case 'babylon':
         default:
             return loc => {
+                if (!loc || !loc.start) {
+                    return new monaco.Range(1, 1, 1, 1);
+                }
                 return new monaco.Range(loc.start.line
                     , loc.start.column + 1
                     , loc.end ? loc.end.line : loc.start.line
@@ -48,9 +51,9 @@ export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
 };
 
 export const configureCreateMonacoRange = (monaco) => {
-            return (startLineNumber, startColumn, endLineNumber, endColumn) => {
-                return new monaco.Range(startLineNumber, startColumn, endLineNumber, endColumn);
-            };
+    return (startLineNumber, startColumn, endLineNumber, endColumn) => {
+        return new monaco.Range(startLineNumber, startColumn, endLineNumber, endColumn);
+    };
 };
 
 export const configureMonacoRangeToClassName = (prefix = 'r') => {
@@ -377,7 +380,7 @@ export const mapUIconFromExpressionType = (expressionType) => {
     }
 };
 
-export const decodeBabelError = (babelError = '', offsetAfterDivider =2) => {
+export const decodeBabelError = (babelError = '', offsetAfterDivider = 2) => {
     const lines = babelError.message.split('\n');
     const errorInfo = lines.reduce((location, line, i) => {
         if (location.found) {

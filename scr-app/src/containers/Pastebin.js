@@ -454,7 +454,7 @@ class Pastebin extends Component {
 
     createData(timeline, getEditorTextInLoc) {
         let tl = timeline || [];
-        return tl.filter(entry => (!this.state.searchState.visualQuery || !this.state.searchState.visualQuery.length) ||
+        return tl.filter(entry => (!entry.isError||!this.state.searchState.visualQuery || !this.state.searchState.visualQuery.length) ||
             (entry.isOutput && this.state.searchState.visualQuery.find(q => entry.outputRefs.includes(q)))
         ).map((entry, i) => ({
             id: entry.reactKey,
@@ -506,7 +506,7 @@ class Pastebin extends Component {
     }
 
     liveExpressionStoreChange =
-        (traceSubscriber, timeline, logs, isNew, HighlightTypes, highlightSingleText,
+        (traceSubscriber, timeline, logs, isNew, HighlightTypes, highlightSingleText, highlightErrors,
          setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
          objectNodeRenderer, handleChange) => {
             const {orderBy, order, isPlaying} = this.state;
@@ -525,20 +525,21 @@ class Pastebin extends Component {
                         ...rowsLayout, // rowsPerPage, defaulRowsPerPage
                         isNew: isNew,
                         isPlaying: isNew ? true : prevState.isPlaying,
-                        traceSubscriber: traceSubscriber,
+                        traceSubscriber,
                         timeline: currentTimeline,
                         liveTimeline: timeline,
                         logs: currentLogs,
                         liveLogs: logs,
                         data: sortedData,
                         logData,
-                        HighlightTypes: HighlightTypes,
-                        highlightSingleText: highlightSingleText,
-                        setCursorToLocation: setCursorToLocation,
-                        getEditorTextInLoc: getEditorTextInLoc,
-                        colorizeDomElement: colorizeDomElement,
-                        objectNodeRenderer: objectNodeRenderer,
-                        handleChange: handleChange,
+                        HighlightTypes,
+                        highlightSingleText,
+                        highlightErrors,
+                        setCursorToLocation,
+                        getEditorTextInLoc,
+                        colorizeDomElement,
+                        objectNodeRenderer,
+                        handleChange,
                     }));
                     this.handleChangeDebugLoading(false);
                 } else {

@@ -240,7 +240,8 @@ class LiveExpressionWidgetProvider {
 
     getDecoratorsInLineNumber = (lineNumber) => {
         return (this.decorators || [])
-            .filter(decorator => (decorator.range.startLineNumber === lineNumber))
+            .filter(decorator =>
+                (decorator.range.startLineNumber === lineNumber || decorator.range.endLineNumber === lineNumber))
             .sort((decoratorA, decoratorB) => {
                 let diff = decoratorA.range.startColumn - decoratorB.range.startColumn;
                 diff = diff === 0 ? decoratorB.range.endLineNumber - decoratorA.range.endLineNumber : diff;
@@ -253,8 +254,8 @@ class LiveExpressionWidgetProvider {
         if (!domNode) {
             return;
         }
-        domNode.style.maxWidth = '100% !important';
-        domNode.style.width = '100% !important';
+        domNode.style.maxWidth = '100% !important';//'100% !important';
+        domNode.style.width = '100% !important';//'100% !important';
         domNode.style.zIndex = '1000';
         onWidthAdjust && onWidthAdjust(domNode.style.width);
     };
@@ -286,11 +287,11 @@ class LiveExpressionWidgetProvider {
 
                 switch (decorator.expressionType) {
                     case 'BinaryExpression':
-                        decorator.contentWidget.domNode.style.maxWidth = '0px';
+                        decorator.contentWidget.domNode.style.height = '0px';
                         return;
                     // break;
                     case 'ReturnStatement':
-                        decorator.contentWidget.domNode.style.maxWidth = '0px';
+                        decorator.contentWidget.domNode.style.height = '0px';
                         return;
                     // decorator.contentWidget.domNode.style.marginLeft = '-40px';
                     // decorator.contentWidget.domNode.style.backgroundColor = 'red';
@@ -336,17 +337,17 @@ class LiveExpressionWidgetProvider {
             return;
         }
 
-        if (isBranchNavigator) {
-            this.branchNavigatorIds[decoratorId] = {raised: false};
-            if (sourceDecorator.contentWidget) {
-                this.raiseBranchWidget(
-                    sourceDecorator.contentWidget.domNode,
-                    sourceDecorator.contentWidget.onWidthAdjust
-                );
-                this.branchNavigatorIds[decoratorId].raised = true;
-            }
-            return;
-        }
+        // if (isBranchNavigator) {
+        //     // this.branchNavigatorIds[decoratorId] = {raised: false};
+        //     // if (sourceDecorator.contentWidget) {
+        //     //     this.raiseBranchWidget(
+        //     //         sourceDecorator.contentWidget.domNode,
+        //     //         sourceDecorator.contentWidget.onWidthAdjust
+        //     //     );
+        //     //     this.branchNavigatorIds[decoratorId].raised = true;
+        //     // }
+        //     return;
+        // }
 
         const lineNumber = sourceDecorator.range.startLineNumber;
         const {lineNumberDecorators} = this.getLineNumberExpressions(lineNumber);
@@ -355,7 +356,7 @@ class LiveExpressionWidgetProvider {
         }
         const lineNumberScheduler = this.getlineNumberScheduler(lineNumber);
         const updates = [];
-        lineNumberDecorators.forEach((decorator, i) => {
+        lineNumberDecorators.reverse().forEach((decorator, i) => {
             if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
                 if (decorator.contentWidget && !ignoreVisible && !this.branchNavigatorIds[decorator.id]) {
                     const domNode = decorator.contentWidget.domNode;
@@ -363,7 +364,7 @@ class LiveExpressionWidgetProvider {
                     if (!domNode) {
                         return;
                     }
-                    domNode.style.maxWidth = '0px';
+                    domNode.style.maxWidth = '0px !important';
                     onWidthAdjust && onWidthAdjust(domNode.style.width);
                 }
                 return;
@@ -398,6 +399,7 @@ class LiveExpressionWidgetProvider {
                 if (!decorator.contentWidget) {
                     return;
                 }
+                let marginLeft = '0px';
                 const domNode = decorator.contentWidget.domNode;
                 const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
                 if (!domNode) {
@@ -408,6 +410,16 @@ class LiveExpressionWidgetProvider {
                     return;
                 }
                 let width = el.style.width;
+                let changeMargin = false;
+                if (decorator.expressionType === 'CallExpression'
+                    || decorator.expressionType === 'MemberExpression'
+                    || decorator.expressionType === 'ReturnStatement') {
+                } else {
+                    changeMargin = true;
+                    const lr = (width).replace('px', '');
+                    const wl = parseInt(lr, 10);
+                    marginLeft = `${wl / 2}px`;
+                }
                 if (rightSibling) {
                     const sel = document.querySelector(rightSibling.selector);
                     if (sel) {
@@ -416,7 +428,9 @@ class LiveExpressionWidgetProvider {
                         } else {
                             const ll = (el.style.left || '0').replace('px', '');
                             const lr = (sel.style.left || width).replace('px', '');
-                            width = `${parseInt(lr, 10) - parseInt(ll, 10)}px`;
+                            const wl = parseInt(lr, 10) - parseInt(ll, 10);
+                            marginLeft = `${wl / 2}px`;
+                            width = `${Math.abs(wl)}px`;
                         }
                     } else {
                         width = '100%';
@@ -424,9 +438,10 @@ class LiveExpressionWidgetProvider {
                 } else {
                     width = '100%';
                 }
-                // console.log('w', width);
+                console.log('w', width);
                 // domNode.style.width = width;
                 domNode.style.maxWidth = width;
+                //    changeMargin && (domNode.style.marginLeft = marginLeft);
                 onWidthAdjust && onWidthAdjust(domNode.style.width);
             });
         });

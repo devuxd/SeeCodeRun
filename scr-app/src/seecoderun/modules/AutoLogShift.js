@@ -202,7 +202,7 @@ class AutoLogShift {
             const property = path.value ? path.value.property : null;
             //const propertyNode = property
             // && property.computed ? property : j.identifier(`'${j(property).toSource()}'`);
-            const objectId = object.loc ? getLocationId(object.loc, object.type) : object.autologId;
+            const objectId = /*object.loc ?*/  getLocationId(object.loc, object.type); //: object.autologId;
             const objectLoc = object.loc || (locationMap[objectId] || {}).loc;
             const propertyId =
                 property.loc ? getLocationId(path.value.property.loc, path.value.property.type) : property.autologId;
@@ -217,12 +217,12 @@ class AutoLogShift {
                 };
                 objectValue = `${j(object).toSource()}`;
             }
-            // else{
-            //     objectValue = `${j(object).toSource()}`;
-            // }
-            else {
-                //   console.log('OBJ', id, object.autologId, locationMap[object.autologId], locationMap);
+            else{
+                objectValue = `${j(object).toSource()}`;
             }
+            // else {
+            //     //   console.log('OBJ', id, object.autologId, locationMap[object.autologId], locationMap);
+            // }
 
             if (propertyId && !property.autologId) {
                 locationMap[propertyId] = {
@@ -338,6 +338,7 @@ class AutoLogShift {
                 calleeValue = j(callee).toSource();
             }
             calleeValue = calleeValue === 'import' ? `'import'` : calleeValue;
+            console.log('callee',callee);
 
             const jValue = j.identifier(j(path.value).toSource());
             const params = [
@@ -356,6 +357,7 @@ class AutoLogShift {
             // j.identifier(`['${calleeId}', '${parametersId}']`),
             //     j.identifier(`[${!callee.autologId}, ${!parameters.autologId}]`),
             //     j.identifier(`[${calleeValue}, ${parametersValue}]`),
+            console.log('CE', pathSource, id, type, path, p, params);
             return this.autoLogExpression(pathSource, id, type, path, p, params);
         },
         VariableDeclarator: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
@@ -658,8 +660,7 @@ class AutoLogShift {
                 testableStatementType,
                 extraLocs,
             };
-
-            if (this.composedExpressions[type]) {
+            if (this.composedExpressions[type]  ) {
                 return this.composedExpressions[type]({ast, locationMap, getLocationId, path}, {
                     pathSource,
                     id,
@@ -715,8 +716,12 @@ class AutoLogShift {
                 if (AutoLogShift.SupportedExpressions.includes(type)) {
                     let isValid = true;
                     //isValid && type === 'VariableDeclarator' && console.log('vdr', path);
-                    if (type === j.MemberExpression.name && parentType === j.CallExpression.name) {
-                        isValid = false; // c of c() => handled in parent
+                    // if (type === j.MemberExpression.name && parentType === j.CallExpression.name) {
+                    //     isValid = false; // c of c() => handled in parent
+                    // }
+
+                    if (type === j.CallExpression.name && parentType === j.MemberExpression.name) {
+                        isValid = false; // c of c().x => handled in parent
                     }
 
                     if (type === j.CallExpression.name && path.value.callee.type === 'Super') {

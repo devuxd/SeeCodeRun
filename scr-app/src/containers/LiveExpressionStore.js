@@ -53,6 +53,7 @@ export const HighlightTypes = {
 export const defaultExpressionClassName = 'monaco-editor-decoration-les-expression';
 export const deadExpressionClassName = 'monaco-editor-decoration-les-expressionDead';
 export const liveExpressionClassName = 'monaco-editor-decoration-les-expressionLive';
+export const errorExpressionClassName = 'monaco-editor-decoration-les-expressionError';
 export const branchExpressionClassName = 'monaco-editor-decoration-les-expressionBranch';
 
 export let HighlightPalette = {
@@ -108,16 +109,27 @@ const styles = (theme) => {
                 //  border: '2px solid red'
             },
             [`.${liveExpressionClassName}`]: {
-                // opacity: '1 !important',
-                // filter: 'unset !important',
-                // fontWeight: 'normal !important',
                 opacity: '1',
                 filter: 'unset',
                 fontWeight: 'normal',
-                border: 'none'
-
-                // transition: ['opacity', 'filter', 'fontWeight'],
-                //   transitionDuration: 2000,
+                border: 'none',
+                transition: ['opacity', 'filter', 'fontWeight'],
+                transitionDuration: 2000,
+            },
+            [`.${errorExpressionClassName}`]: {
+                opacity: '1',
+                filter: 'unset',
+                fontWeight: 'bolder',
+                borderTop: '1px solid red',
+                borderBottom: '2px solid red',
+                backgroundColor: HighlightPalette.error,
+            },
+            [`.${errorExpressionClassName}-lineDecoration`]: {
+                backgroundColor: 'red',
+                margin: theme.spacing.unit,
+                top: theme.spacing.unit / 2,
+                height: `${theme.spacing.unit}px !important`,
+                width: `${theme.spacing.unit}px !important`,
             },
             [`.${branchExpressionClassName}`]: {
                 opacity: 1,
@@ -132,6 +144,7 @@ const styles = (theme) => {
             },
             [`.${HighlightTypes.error}`]: {
                 backgroundColor: HighlightPalette.error,
+                border: '1px solid red',
             },
             [`.${HighlightTypes.graphical}`]: {
                 backgroundColor: fade(HighlightPalette.graphical, 0.35),
@@ -437,11 +450,10 @@ class LiveExpressionStore extends Component {
                     const branchSelection = currentBranched && currentBranched[id] ?
                         currentBranched[id].length
                         : branchIndex >= 0 ? branchIndex : branched[id].length;
-
-                    const branchLabel = `${branchSelection}/${
-                        absoluteBranched && absoluteBranched[id] ? absoluteBranched[id].length : branched[id].length
-                        }`;
-                    const sliderRange = isSelected ? [navigatorIndex] : null;
+                    const branchTotal =
+                        absoluteBranched && absoluteBranched[id] ? absoluteBranched[id].length : branched[id].length;
+                    const branchLabel = `${branchSelection}/${branchTotal}`;
+                    const sliderRange = [branchSelection];
                     const branchNavigatorWidgetClassName = classes.branchNavigatorWidget;
                     const n = currentBranchTimelineId ?
                         this.timeline[this.timeline.length - currentBranchTimelineId] || {} : {};
@@ -836,6 +848,7 @@ class LiveExpressionStore extends Component {
 
 
         this.unHighlightLiveExpressions();
+        // this.unHighlightErrors();
         this.unHighlightBranches();
 
         const tbm =
@@ -955,8 +968,12 @@ class LiveExpressionStore extends Component {
                     return r.containsRange(range);
                 });
 
+                const isIcon = range ?
+                    range.startLineNumber === range.endLineNumber && range.endColumn - range.startColumn === 1 : false;
+                const isAlignLeft = (entry.expression && entry.expression.isReturn) || entry.expressionType === 'CallExpression';
+
                 //  ignore && console.log('n', n, ignoreRanges, ignore);
-                if (widget.contentWidget && !ignore) {
+                if (widget.contentWidget && n.expression && !ignore) {
 
                     if (n.expression.isTest && n.expression.extraLocs && n.expression.extraLocs.testableStatement) {
                         //n.expression.isTest && console.log('TEST', n.expression);
@@ -985,9 +1002,9 @@ class LiveExpressionStore extends Component {
                                 column: n.expression.loc.end.column,
                             }
                         };
-                        const range = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(testableLoc);
+                        const testableRange = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(testableLoc);
 
-                        range && liveRanges.push(range);
+                        testableRange && liveRanges.push(testableRange);
                         const branch = {
                             expression: n.parentExpression,
                             type: n.parentExpression ? n.parentExpression.expressionType : null,
@@ -1183,6 +1200,7 @@ class LiveExpressionStore extends Component {
 
 
                     widget.contentWidget.adjustWidth(true);
+                    //n.isError && this.highlightErrors([range], ignoreRanges);
                     liveWidgets.push({
                         range,
                         liveWidget:
@@ -1211,7 +1229,7 @@ class LiveExpressionStore extends Component {
                                         overflowXClassName={classes.liveExpressionRoot}
                                         contentClassName={classes.liveExpressionContent}
                                         disableOverflowDetectionY={true}
-                                        contentAlign={n.expression.isReturn || n.expression.isCallExpression ?
+                                        contentAlign={isAlignLeft ?
                                             'left' : 'center'
                                         }
                                         overflowXAdornment={<MoreHorizIcon className={classes.overflowXIcon}/>}
@@ -1225,7 +1243,12 @@ class LiveExpressionStore extends Component {
                                             selected={!!isSelected}
                                         />
                                         :
-                                        <ObjectRootLabel data={datum} compact={true} expressionType={n.expressionType}/>
+                                        <ObjectRootLabel
+                                            data={datum}
+                                            compact={true}
+                                            expressionType={n.expressionType}
+                                            iconify={isIcon}
+                                        />
                                     }
                                     </OverflowComponent>
                                 </div>
@@ -1399,8 +1422,10 @@ class LiveExpressionStore extends Component {
             store.dispatch(updateBundleFailure(firecoPad.astResult.astError));
             return;
         }
-        let retries = 10;
+        let retries = 20;
+        let tm = null;
         const onAstReady = (astResult) => {
+            clearTimeout(tm);
             if (!this.autoLog) {
                 this.autoLog = new AutoLog(firecoPad.j);
             }
@@ -1417,6 +1442,7 @@ class LiveExpressionStore extends Component {
                         if (this.traceSubscriber) {
                             this.traceSubscriber.unsubscribe();
                         }
+                        console.log('alJs', bundle.alJs);
 
                         this.objectNodeRenderer = createLiveObjectNodeRenderer(autoLogger);
                         this.timeline = [];
@@ -1430,10 +1456,13 @@ class LiveExpressionStore extends Component {
                     };
                     // JsCodeShift silently does nothing while loading its dependencies. Bundling needs retrying
                     // until it is JsCodeShift is ready
-                    if (baseAlJs === bundle.alJs) {
+                    if ((bundle.editorsTexts.js && !bundle.alJs) || baseAlJs === bundle.alJs) {
                         if (retries--) {
-                            setTimeout(() => {
-                                onAstReady(astResult);
+                            tm = setTimeout(() => {
+                                firecoPad
+                                    .getAst()
+                                    .then(onAstReady)
+                                    .catch(error => console.log('Invalidated AST', error));
                             }, 100);
 
                         }
@@ -1492,6 +1521,39 @@ class LiveExpressionStore extends Component {
         if (this.prevIgnoreDecorationIds && this.prevIgnoreDecorationIds.length) {
             const {firecoPad} = this.state;
             this.prevIgnoreDecorationIds = firecoPad.monacoEditor.deltaDecorations(this.prevIgnoreDecorationIds, []);
+        }
+    };
+
+    highlightErrors = (liveRanges, ignoreRanges, isReveal = false, isLoc = false) => {
+        if (!liveRanges) {
+            this.unHighlightErrors();
+            return;
+        }
+        //  console.log('ignoreRanges', ignoreRanges);
+        liveRanges = liveRanges.filter(ran => {
+            return !ignoreRanges.find(r => {
+                return r.containsRange(ran);
+            });
+        });
+        // this.unHighlightLiveExpressions();
+        const res = this.highlightTexts(
+            liveRanges,
+            {
+                inlineClassName: errorExpressionClassName,
+                linesDecorationsClassName: `${errorExpressionClassName}-lineDecoration`,
+            },
+            this.prevErrorDecorationIds,
+            isReveal,
+            !isLoc
+        );
+        this.prevErrorDecorationIds = res ? res.decorationIds : [];
+
+    };
+
+    unHighlightErrors = () => {
+        if (this.prevErrorDecorationIds && this.prevErrorDecorationIds.length) {
+            const {firecoPad} = this.state;
+            this.prevErrorDecorationIds = firecoPad.monacoEditor.deltaDecorations(this.prevErrorDecorationIds, []);
         }
     };
 
@@ -1726,6 +1788,7 @@ class LiveExpressionStore extends Component {
                     this.isNew,
                     HighlightTypes,
                     this.highlightSingleText,
+                    this.highlightErrors,
                     this.setCursorToLocation,
                     this.getEditorTextInLoc,
                     this.colorizeDomElement,

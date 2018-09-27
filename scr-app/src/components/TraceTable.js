@@ -288,7 +288,8 @@ class TraceTable extends React.Component {
             classes,
             data, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
-            HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying,
+            HighlightTypes, highlightSingleText, highlightErrors,
+            setCursorToLocation, traceSubscriber, handleChangePlaying,
             timeFlow, handleChangeTimeFlow, isNew, defaultRowsPerPage, /*scrollToTop,*/
         } = this.props;
 
@@ -307,10 +308,14 @@ class TraceTable extends React.Component {
             if (!newN.chunksResult.found || !newN.expression) {
                 newN.isMatch = false;
             }
+            if (n.isError) {
+                newN.isMatch = true;
+            }
             return newN;
         });
         matchedData = matchedData.filter(n => n.isMatch);
         this.totalMatches = matchedData.length;
+        highlightErrors && highlightErrors();
         // console.log('table', this.totalMatches, data.length);
 
         const goToTimelineBranch = configureGoToTimelineBranch();
@@ -349,6 +354,7 @@ class TraceTable extends React.Component {
                                     };
 
                                 const parsed = this.parsed[n.id].current;
+                                n.isError && highlightErrors && highlightErrors([n.loc], [], false, true);
                                 return (
                                     <TableRow
                                         hover
