@@ -27,8 +27,9 @@ const defaultState = {
 };
 
 const loadMonaco = () => ({type: LOAD_MONACO});
-export const loadMonacoFulfilled = () => ({
+export const loadMonacoFulfilled = monaco => ({
     type: LOAD_MONACO_FULFILLED,
+    monaco
 });
 export const loadMonacoRejected = error => ({
     type: LOAD_MONACO_REJECTED,
@@ -108,8 +109,8 @@ export const monacoReducer =
 export const configureMonacoModelsEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         ofType(LOAD_MONACO_FULFILLED),
-        mergeMap(() =>
-            appManager.observeConfigureMonacoModels()
+        mergeMap(action =>
+            appManager.observeConfigureMonacoModels(action.monaco)
         ),
         startWith(loadMonaco()),
     );

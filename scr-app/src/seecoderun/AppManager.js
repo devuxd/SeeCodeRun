@@ -242,10 +242,10 @@ class AppManager {
         }
     }
 
-    observeConfigureMonacoModels() {
+    observeConfigureMonacoModels(monaco) {
         try {
-            if (window.monaco) {
-                this.monaco = window.monaco;
+            if (monaco) {
+                this.monaco = monaco;
                 for (const editorId in this.firecoPads) {
                     const firecoPad = this.firecoPads[editorId];
                     let text = '';

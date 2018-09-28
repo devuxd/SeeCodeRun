@@ -1,3 +1,5 @@
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const path = require('path');
 // --start from:
 // https://github.com/jdcrensh/create-react-app/blob/jdcrensh/packages/react-scripts-plugin-no-minify/utils.js
 const getFunctionName = obj => {
@@ -38,6 +40,13 @@ module.exports = (config/*, env*/) => {
             plugin.options.exclude = excludes;
         }
     }
+    // Monaco ESM
+    config.output.path = path.resolve(__dirname, 'dist');
+    config.module.rules.push({
+        test: /\/monaco-editor\/esm\/*\.css$/,
+        use: ['style-loader', 'css-loader']
+    });
+    config.plugins.push(new MonacoWebpackPlugin());
 
     return config;
 };

@@ -24,6 +24,7 @@
     "lodash": "^4.17.10",
     "mdi-material-ui": "^5.2.0",
     "monaco-editor": "^0.14.3",
+    "monaco-editor-webpack-plugin": "^1.5.4",
     "parse5": "^4.0.0",
     "prop-types": "^15.6.2",
     "randomcolor": "^0.5.3",
@@ -81,8 +82,6 @@
     "source-map-explorer": "^1.5.0"
   },
   "scripts": {
-    "install-and-monaco": "(npm install) && (rm -rf ./public/fireco/monaco-editor/; cp -r ./node_modules/monaco-editor/ ./public/fireco/monaco-editor/)",
-    "win-install-and-monaco": "npm install & rm -rf .\\public\\fireco\\monaco-editor\\ & cp -r .\\node_modules\\monaco-editor\\ .\\public\\fireco\\monaco-editor\\",
     "start": "react-app-rewired start",
     "start-url": "cross-env PUBLIC_URL='https://seecode.run' react-app-rewired start",
     "build-with-source-maps": "cross-env PUBLIC_URL='https://seecode.run' react-app-rewired build; rm -rf ./build/fireco/monaco-editor/dev/; rm -rf ./build/fireco/monaco-editor/esm/",
