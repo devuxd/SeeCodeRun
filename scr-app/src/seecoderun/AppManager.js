@@ -629,67 +629,75 @@ class AppManager {
             editor.onDidBlurEditor = editor.onDidBlurEditorWidget;
             editor.onDidFocusEditor = editor.onDidFocusEditorWidget;
             //end fix
-            firecoPad.headlessFirepad = fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor);
-            // firecoPad.headlessFirepad = new fireco.Firepad.Headless(firecoPad.firebaseRef);
-            // firecoPad.preventStarvation = debounce(() => {
-            //     firecoPad.mutex = false;
-            // }, 5000);
+            // normal firepad has several errors at runtime, disabled till is correctly supported
+            // trade-off, no diffed storing
+            // firecoPad.headlessFirepad = fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor);
 
-            // firecoPad.getFirecoText = () => firecoPad.headlessFirepad.getText((text) => {
-            //     firecoPad.isInit = true;
-            //     this.setEditorText(editorId, text);
-            // });
-            // firecoPad.getFirecoTextDebounced = debounce(firecoPad.getFirecoText, 50, {maxWait: 100});
+            // custom sync starts:
+            firecoPad.headlessFirepad = new fireco.Firepad.Headless(firecoPad.firebaseRef);
+            firecoPad.preventStarvation = debounce(() => {
+                firecoPad.mutex = false;
+            }, 5000);
 
-            // firecoPad.setFirecoText = (text, isChain) => {
-            //     // Prevents Firepad mutex starvation when Firebase is not connected.
-            //     firecoPad.preventStarvation();
-            //
-            //     if (firecoPad.mutex && !isChain) {
-            //         // chains all pending editor changes
-            //         firecoPad
-            //             .nextSetFirecoTexts
-            //             .unshift(
-            //                 () => firecoPad.setFirecoText(null, true)
-            //             );
-            //         return;
-            //     }
-            //
-            //     firecoPad.mutex = true;
-            //     firecoPad.headlessFirepad.setText(text || firecoPad.monacoEditor.getValue(), (/*error, committed*/) => {
-            //         if (firecoPad.nextSetFirecoTexts.length) {
-            //             // only send the most recent change, discard the rest
-            //             firecoPad.nextSetFirecoTexts[0]();
-            //             firecoPad.nextSetFirecoTexts = [];
-            //         } else {
-            //             firecoPad.preventStarvation.cancel();
-            //             firecoPad.mutex = false;
-            //         }
-            //     });
-            // };
+            firecoPad.getFirecoText = () => firecoPad.headlessFirepad.getText((text) => {
+                firecoPad.isInit = true;
+                this.setEditorText(editorId, text);
+            });
+            firecoPad.getFirecoTextDebounced = debounce(firecoPad.getFirecoText, 50, {maxWait: 100});
+
+            firecoPad.setFirecoText = (text, isChain) => {
+                // Prevents Firepad mutex starvation when Firebase is not connected.
+                firecoPad.preventStarvation();
+
+                if (firecoPad.mutex && !isChain) {
+                    // chains all pending editor changes
+                    firecoPad
+                        .nextSetFirecoTexts
+                        .unshift(
+                            () => firecoPad.setFirecoText(null, true)
+                        );
+                    return;
+                }
+
+                firecoPad.mutex = true;
+                firecoPad.headlessFirepad.setText(text || firecoPad.monacoEditor.getValue(), (/*error, committed*/) => {
+                    if (firecoPad.nextSetFirecoTexts.length) {
+                        // only send the most recent change, discard the rest
+                        firecoPad.nextSetFirecoTexts[0]();
+                        firecoPad.nextSetFirecoTexts = [];
+                    } else {
+                        firecoPad.preventStarvation.cancel();
+                        firecoPad.mutex = false;
+                    }
+                });
+            };
 
             if (firecoPad.isNew && isString(editorText)) {
-                //firecoPad.setFirecoText(editorText);
+                firecoPad.setFirecoText(editorText);
                 firecoPad.monacoEditor.setValue(editorText);
+            } else {
+                firecoPad.getFirecoText();
             }
-            // else {
-            //     firecoPad.getFirecoText();
-            // }
-            //
-            // firecoPad.firebaseRef
-            //     .child('history')
-            //     .limitToLast(1)
-            //     .on('child_added', snapshot => {
-            //         if (snapshot.exists() && firecoPad.headlessFirepad.firebaseAdapter_.userId_ !== snapshot.val().a) {
-            //             firecoPad.getFirecoTextDebounced();
-            //         } else {
-            //             firecoPad.getFirecoTextDebounced.cancel();
-            //         }
-            //     });
-            //
-            // firecoPad.onContentChanged = () => {
-            //     firecoPad.setFirecoText();
-            // };
+
+            firecoPad.firebaseRef
+                .child('history')
+                .limitToLast(1)
+                .on('child_added', snapshot => {
+                    if (snapshot.exists() && firecoPad.headlessFirepad.firebaseAdapter_.userId_ !== snapshot.val().a) {
+                        firecoPad.getFirecoTextDebounced();
+                    } else {
+                        firecoPad.getFirecoTextDebounced.cancel();
+                    }
+                });
+
+            firecoPad.onContentChanged = () => {
+                firecoPad.setFirecoText();
+            };
+
+
+            // custom sync ends
+
+
             return of(configureFirecoEditorFulfilled(editorId));
         } catch (error) {
             return of(configureFirecoEditorRejected(editorId, error));
