@@ -5,6 +5,7 @@
 
 # production
 /build
+/dist
 
 # misc
 package-lock.json

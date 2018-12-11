@@ -261,8 +261,8 @@ class AutoLog {
         let {locationMap, deps, functionBranches, controlBranches} = res;
         return {
             locationMap: locationMap,
-            trace: new Trace(locationMap),
-            getCode:()=>ast.toSource(),
+            trace: new Trace(locationMap, deps),
+            getCode: () => ast.toSource(),
             deps,
             functionBranches,
             controlBranches,
@@ -322,9 +322,7 @@ class AutoLog {
                                         requireConfig.fallbackOverrides = {...fallbackOverrides};
                                     }
                                 } else {
-                                    console.log('load errors', errors);
-                                    //todo handle bundling/dependency error
-                                    autoLogger.trace.onError(errors);
+                                    autoLogger.trace.onError(errors, true); // isBundlingError
                                 }
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
@@ -337,7 +335,7 @@ class AutoLog {
                                         requireConfig.fallbackOverrides = {...fallbackOverrides};
                                     }
                                 } else {
-                                    console.log('load errors', errors);
+                                    autoLogger.trace.onError(errors, true); // isBundlingError
                                 }
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;

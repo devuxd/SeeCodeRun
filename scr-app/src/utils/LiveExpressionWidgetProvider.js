@@ -193,7 +193,8 @@ class LiveExpressionWidgetProvider {
             const locRange = this.locToMonacoRange(loc);
             // console.log(loc, expressionType, locRange);
             const matchingDecorator = this.decorators.find(decorator => {
-                return decorator.expressionType === expressionType && this.monaco.Range.equalsRange(decorator.range, locRange);
+                return decorator.expressionType === expressionType &&
+                    this.monaco.Range.equalsRange(decorator.range, locRange);
             });
             return matchingDecorator ? matchingDecorator.id : null;
         };
@@ -305,7 +306,8 @@ class LiveExpressionWidgetProvider {
                     //LiveExpressionWidgetProvider.containsDecorator(lineNumberDecorators, decorator))
                     if (current.range.containsRange(decorator.range)) {
                         if (!this.branchNavigatorIds[decorator.id] && decorator.contentWidget.domNode) {
-                            if (!['BinaryExpression', 'ReturnStatement', 'Identifier'].includes(current.expressionType)) {
+                            if (!['BinaryExpression', 'ReturnStatement', 'Identifier']
+                                .includes(current.expressionType)) {
                                 // decorator.contentWidget.domNode.style.maxWidth = '0px';
                             }
 
@@ -331,6 +333,36 @@ class LiveExpressionWidgetProvider {
         return this.livenumberExpressions[lineNumber];
     };
 
+    getVisibleTopLeftMostEl(nodeList) {
+        if (nodeList) {
+            let topLeftMost = null;
+            nodeList.forEach(el => {
+                if ((el.offsetParent === null)) {
+                    // !(el.offsetWidth > 0 && el.offsetHeight > 0)
+                    return;
+                }
+                if (topLeftMost) {
+                    const elTop = el.getBoundingClientRect().top;
+                    const tlmTop = topLeftMost.getBoundingClientRect().top;
+                    const elLeft = el.getBoundingClientRect().left;
+                    const tlmLeft = topLeftMost.getBoundingClientRect().left;
+
+                    if (elTop < tlmTop) {
+                        topLeftMost = el;
+                    } else {
+                        if (elTop === tlmTop && elLeft <= tlmLeft) {
+                            topLeftMost = el;
+                        }
+                    }
+                } else {
+                    topLeftMost = el;
+                }
+            });
+            return topLeftMost;
+        }
+        return null;
+    }
+
     getWidgetAvailableWidth = (decoratorId, ignoreVisible, isBranchNavigator) => {
         const sourceDecorator = this.getDecorator(decoratorId);
         if (!sourceDecorator) {
@@ -351,109 +383,150 @@ class LiveExpressionWidgetProvider {
 
         const lineNumber = sourceDecorator.range.startLineNumber;
         const {lineNumberDecorators} = this.getLineNumberExpressions(lineNumber);
-        if (lineNumber === 1) {
-            //   console.log('ld', lineNumberDecorators);
-        }
-        const lineNumberScheduler = this.getlineNumberScheduler(lineNumber);
-        const updates = [];
-        lineNumberDecorators.reverse().forEach((decorator, i) => {
-            if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
-                if (decorator.contentWidget && !ignoreVisible && !this.branchNavigatorIds[decorator.id]) {
-                    const domNode = decorator.contentWidget.domNode;
-                    const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
-                    if (!domNode) {
-                        return;
-                    }
-                    domNode.style.maxWidth = '0px !important';
-                    onWidthAdjust && onWidthAdjust(domNode.style.width);
-                }
-                return;
-            }
 
-
-            // const i = lineNumberDecorators.indexOf(decorator);
-            let hideSib = false; //todo make siblings an array, and children as well
-            let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
-            rightSibling = (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
-                rightSibling : null;
-            this.siblings[decorator.id] = this.siblings[decorator.id] || rightSibling;
-            rightSibling = this.siblings[decorator.id];
-
-            // if (rightSibling && decorator.range.containsRange(rightSibling.range)) {
-            //     hideSib = true;
-            // }
-
-            if (this.branchNavigatorIds[decorator.id] || (rightSibling && this.branchNavigatorIds[rightSibling.id])) {
-                const dec = this.branchNavigatorIds[decorator.id] ? decorator : rightSibling;
-                if (dec.contentWidget && !this.branchNavigatorIds[dec.id].raised) {
-                    this.raiseBranchWidget(
-                        dec.contentWidget.domNode,
-                        dec.contentWidget.onWidthAdjust
-                    );
-                    this.branchNavigatorIds[dec.id].raised = true;
-                }
-                return;
-            }
-
-            updates.push(() => {
-                if (!decorator.contentWidget) {
-                    return;
-                }
-                let marginLeft = '0px';
+        let prev = null;
+        const domys = [];
+        lineNumberDecorators.forEach((decorator, i) => {
+            if (decorator.contentWidget) {
                 const domNode = decorator.contentWidget.domNode;
-                const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
-                if (!domNode) {
-                    return;
-                }
-                const el = document.querySelector(decorator.selector);
-                if (!el) {
-                    return;
-                }
-                let width = el.style.width;
-                let changeMargin = false;
-                if (decorator.expressionType === 'CallExpression'
-                    || decorator.expressionType === 'MemberExpression'
-                    || decorator.expressionType === 'ReturnStatement') {
-                } else {
-                    changeMargin = true;
-                    const lr = (width).replace('px', '');
-                    const wl = parseInt(lr, 10);
-                    marginLeft = `${wl / 2}px`;
-                }
-                if (rightSibling) {
-                    const sel = document.querySelector(rightSibling.selector);
-                    if (sel) {
-                        if (hideSib) {
-                            sel.style.maxWidth = '0px';
-                        } else {
-                            const ll = (el.style.left || '0').replace('px', '');
-                            const lr = (sel.style.left || width).replace('px', '');
-                            const wl = parseInt(lr, 10) - parseInt(ll, 10);
-                            marginLeft = `${wl / 2}px`;
-                            width = `${Math.abs(wl)}px`;
-                        }
-                    } else {
-                        width = '100%';
-                    }
-                } else {
-                    width = '100%';
-                }
-                console.log('w', width);
-                // domNode.style.width = width;
-                domNode.style.maxWidth = width;
-                //    changeMargin && (domNode.style.marginLeft = marginLeft);
-                onWidthAdjust && onWidthAdjust(domNode.style.width);
-            });
-        });
+                const el = this.getVisibleTopLeftMostEl(document.querySelectorAll(decorator.selector));
 
-        lineNumberScheduler(() => updates.forEach(update => update()));
+                //   domys.push({expressionType: decorator.expressionType, domNode, el});
+                if (!domNode || !el) {
+                    return;
+                }
+                domNode.style.zIndex = 1200- i;
+
+                if (lineNumberDecorators.length === i + 1) {
+                    domNode.style.maxWidth = '100%';
+                    return;
+                }
+
+
+                let width = el.style.width;
+                if (width !== '0px') {
+                    // if (decorator.expressionType === 'CallExpression'
+                    //     || decorator.expressionType === 'MemberExpression'
+                    //     || decorator.expressionType === 'ReturnStatement'
+                    //     || decorator.expressionType === 'AssignmentExpression') {
+                    //     width = '0px';
+                    // }
+                    domNode.style.maxWidth = width;
+
+                }
+                // lineNumber === 11 && console.log('W', el.style.width, domNode.style.maxWidth, domNode, el, document.querySelectorAll(decorator.selector));
+                //
+                prev = {expressionType: decorator.expressionType, domNode, el};
+
+
+            }
+
+        });
+        //  lineNumber === 11 && console.log('L', lineNumberDecorators, domys);
+        // if (lineNumber === 1) {
+        //     //   console.log('ld', lineNumberDecorators);
+        // }
+        // const lineNumberScheduler = this.getlineNumberScheduler(lineNumber);
+        // const updates = [];
+        // lineNumberDecorators.reverse().forEach((decorator, i) => {
+        //     if (!AutoLogShift.supportedLiveExpressions.includes(decorator.expressionType)) {
+        //         if (decorator.contentWidget && !ignoreVisible && !this.branchNavigatorIds[decorator.id]) {
+        //             const domNode = decorator.contentWidget.domNode;
+        //             const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+        //             if (!domNode) {
+        //                 return;
+        //             }
+        //           //  domNode.style.maxWidth = '0px !important';
+        //             onWidthAdjust && onWidthAdjust(domNode.style.width);
+        //         }
+        //         return;
+        //     }
+        //
+        //
+        //     // const i = lineNumberDecorators.indexOf(decorator);
+        //     let hideSib = false; //todo make siblings an array, and children as well
+        //     let rightSibling = (i <= 0 || i >= lineNumberDecorators.length) ? null : lineNumberDecorators[i + 1];
+        //     rightSibling =
+        //         (rightSibling && AutoLogShift.supportedLiveExpressions.includes(rightSibling.expressionType)) ?
+        //         rightSibling : null;
+        //     this.siblings[decorator.id] = this.siblings[decorator.id] || rightSibling;
+        //     rightSibling = this.siblings[decorator.id];
+        //
+        //     // if (rightSibling && decorator.range.containsRange(rightSibling.range)) {
+        //     //     hideSib = true;
+        //     // }
+        //
+        //     if (this.branchNavigatorIds[decorator.id] || (rightSibling && this.branchNavigatorIds[rightSibling.id])) {
+        //         const dec = this.branchNavigatorIds[decorator.id] ? decorator : rightSibling;
+        //         if (dec.contentWidget && !this.branchNavigatorIds[dec.id].raised) {
+        //             this.raiseBranchWidget(
+        //                 dec.contentWidget.domNode,
+        //                 dec.contentWidget.onWidthAdjust
+        //             );
+        //             this.branchNavigatorIds[dec.id].raised = true;
+        //         }
+        //         return;
+        //     }
+        //
+        //     updates.push(() => {
+        //         if (!decorator.contentWidget) {
+        //             return;
+        //         }
+        //         let marginLeft = '0px';
+        //         const domNode = decorator.contentWidget.domNode;
+        //         const onWidthAdjust = decorator.contentWidget.onWidthAdjust;
+        //         if (!domNode) {
+        //             return;
+        //         }
+        //         const el = document.querySelector(decorator.selector);
+        //         if (!el) {
+        //             return;
+        //         }
+        //         let width = el.style.width;
+        //         let changeMargin = false;
+        //         if (decorator.expressionType === 'CallExpression'
+        //             || decorator.expressionType === 'MemberExpression'
+        //             || decorator.expressionType === 'ReturnStatement') {
+        //         } else {
+        //             changeMargin = true;
+        //             const lr = (width).replace('px', '');
+        //             const wl = parseInt(lr, 10);
+        //             marginLeft = `${wl / 2}px`;
+        //         }
+        //         if (rightSibling) {
+        //             const sel = document.querySelector(rightSibling.selector);
+        //             if (sel) {
+        //                 if (hideSib) {
+        //                     sel.style.maxWidth = '0px';
+        //                 } else {
+        //                     const ll = (el.style.left || '0').replace('px', '');
+        //                     const lr = (sel.style.left || width).replace('px', '');
+        //                     const wl = parseInt(lr, 10) - parseInt(ll, 10);
+        //                     marginLeft = `${wl / 2}px`;
+        //                     width = `${Math.abs(wl)}px`;
+        //                 }
+        //             } else {
+        //                 width = '100%';
+        //             }
+        //         } else {
+        //             width = '100%';
+        //         }
+        //         // console.log('w', width);
+        //         // domNode.style.width = width;
+        //         domNode.style.maxWidth = width;
+        //         //    changeMargin && (domNode.style.marginLeft = marginLeft);
+        //         onWidthAdjust && onWidthAdjust(domNode.style.width);
+        //     });
+        // });
+        //
+        // lineNumberScheduler(() => updates.forEach(update => update()));
         // console.log(decorator.range.startLineNumber, i, decorator, rightSibling);
     };
 
     configureLiveExpressionContentWidget(decoratorId, preference) {
         //const getDecorators = this.getDecorators;
         const getDecorator = this.getDecorator;
-        const getWidgetAvailableWidth = this.getWidgetAvailableWidth;
+        //  const getWidgetAvailableWidth = this.getWidgetAvailableWidth;
         return {
             allowEditorOverflow: true,
             suppressMouseDown: true,
@@ -464,7 +537,7 @@ class LiveExpressionWidgetProvider {
                 return decoratorId;
             },
             adjustWidth: function (ignoreVisible, isBranchNavigator) {
-                getWidgetAvailableWidth(decoratorId, ignoreVisible, isBranchNavigator);
+                //   getWidgetAvailableWidth(decoratorId, ignoreVisible, isBranchNavigator);
             },
             getDomNode: function () {
                 if (this.domNode) {

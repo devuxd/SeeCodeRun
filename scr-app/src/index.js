@@ -10,7 +10,6 @@ import configureMonacoDefaults from './configureMonaco';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-
 import Index from './pages/Index';
 import {disposePastebin, fetchPastebin} from './redux/modules/pastebin';
 import {loadMonacoFulfilled, loadMonacoRejected} from "./redux/modules/monaco";

@@ -5,6 +5,7 @@ import isObjectLike from 'lodash/isObjectLike';
 import isArrayLike from 'lodash/isArrayLike';
 import {isNode, /*createObjectIterator, hasChildNodes,*/ copifyDOMNode} from '../../utils/scrUtils';
 import isArray from 'lodash/isArray';
+import isFunction from 'lodash/isFunction';
 import ClassFactory from "./ClassFactory";
 import {NavigationTypes} from "./AutoLogShift";
 
@@ -74,8 +75,7 @@ const obsCallback = function (mutationsList) {
     for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
             //   console.log('A child node has been added or removed.');
-        }
-        else if (mutation.type === 'attributes') {
+        } else if (mutation.type === 'attributes') {
             //     console.log('The ' + mutation.attributeName + ' attribute was modified.');
         }
     }
@@ -114,8 +114,9 @@ class Scope {
 }
 
 class Trace {
-    constructor(locationMap) {
+    constructor(locationMap, deps) {
         this.locationMap = locationMap;
+        this.deps = deps;
         this.currentScope = null;
         this.rootScope = null;
         this.subject = new Subject();
@@ -145,6 +146,14 @@ class Trace {
         listener = null;
         dispatcher = null;
         consoleClear = null;
+    }
+
+    nextTick() {
+        this.subject.next({
+            timeline: [...this.timeline],
+            logs: [...this.logs],
+            mainLoadedTimelineI:this.mainLoadedTimelineI,
+        });
     }
 
     configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
@@ -181,10 +190,11 @@ class Trace {
         this.lastTickTimestamp = Date.now();
         this.tli = setInterval(() => {
             this.lastTickTimestamp = Date.now();
-            if ((this.timeline.length || this.logs.length) && (this.timelineLength !== this.timeline.length || this.logsLength !== this.logs.length)) {
+            if ((this.timeline.length || this.logs.length) &&
+                (this.timelineLength !== this.timeline.length || this.logsLength !== this.logs.length)) {
                 this.timelineLength = this.timeline.length;
                 this.logsLength = this.logs.length;
-                this.subject.next({timeline: [...this.timeline], logs: [...this.logs]});
+                this.nextTick();
             }
         }, 1000);
 
@@ -293,6 +303,7 @@ class Trace {
                 document: this.window.document,
                 body: this.window.document.body,
                 log: this.consoleLog,
+                console: this.window.console,
             };
         } catch (e) {
         }
@@ -328,6 +339,7 @@ class Trace {
                 if (domId >= 0) {
                     val.liveRef = `${this.magicTag}${domId}`;
                 } else {
+                    // console.log('ref', value.tagName,res, value);
                     this.domNodes.push(value);
                     val.liveRef = `${this.magicTag}${this.domNodes.length - 1}`;
                     // Create an observer instance linked to the callback function
@@ -358,7 +370,8 @@ class Trace {
             } else {
                 for (const i in Object.values(data)) {
                     const aLiveRef = this.reinstateLiveRef(data[i]);
-                    (aLiveRef.isReinstate) && (data[Object.keys(data)[i]] = (hideLiveRefs ? aLiveRef.hiddenMessage : aLiveRef.ref));
+                    (aLiveRef.isReinstate) &&
+                    (data[Object.keys(data)[i]] = (hideLiveRefs ? aLiveRef.hiddenMessage : aLiveRef.ref));
                 }
             }
         }
@@ -449,14 +462,16 @@ class Trace {
     getMatches = (funcRefId, dataRefId, calleeId) => {
         const calleeLoc = calleeId && this.locationMap[calleeId] ? this.locationMap[calleeId].loc : null;
 
-        const funcMatches = Object.keys(this.funcRefMatches[funcRefId] || {}).map(key => this.locationMap[key].loc);
+        const funcMatches =
+            Object.keys(this.funcRefMatches[funcRefId] || {}).map(key => this.locationMap[key].loc);
         if (funcMatches.length) {
             if (calleeLoc) {
                 funcMatches.push(calleeLoc);
             }
             return funcMatches;
         } else {
-            const dataMatches = Object.keys(this.dataRefMatches[dataRefId] || {}).map(key => this.locationMap[key].loc);
+            const dataMatches =
+                Object.keys(this.dataRefMatches[dataRefId] || {}).map(key => this.locationMap[key].loc);
             if (dataMatches.length) {
                 if (calleeLoc) {
                     dataMatches.push(calleeLoc);
@@ -483,7 +498,9 @@ class Trace {
 
     composedExpressions = {
         MemberExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
-            const objectData = areNew[0] ? extraValues[0] : this.findPreviousOccurrence(extraIds[0]).value;
+            const objectData =
+                areNew[0] ? extraValues[0] : extraIds[0] !== 'null' ?
+                    this.findPreviousOccurrence(extraIds[0]).value : value;
             const propertyData = areNew[1] ? extraValues[1] : this.findPreviousOccurrence(extraIds[1]).value;
             // console.log(pre, value, post, type, extraIds, areNew, extraValues);
             areNew[0] && this.pushEntry({id: extraIds[0]}, objectData, post, type);
@@ -508,9 +525,9 @@ class Trace {
                 throw errorMessage;
             }
             //console.log(objectData[propertyData]("x"));
-            // return objectData[propertyData];
+            return objectData[propertyData];
             // value;
-            console.log('MemberExpression', this.timeline);
+            //  console.log('MemberExpression', this.timeline);
 
         },
         BinaryExpression: (pre, value, post, type, extraIds, areNew, extraValues) => {
@@ -535,7 +552,8 @@ class Trace {
         VariableDeclarator: (pre, value, post, type, extraIds, areNew, extraValues) => {
             const rightData = value;
             // areNew[0] && this.pushEntry({id: extraIds[0]}, leftData, post, type);
-            //ff
+            //f
+            // console.log('trace vd',pre, value, post, type, extraIds, areNew, extraValues);
             areNew[1] && this.pushEntry({id: extraIds[0]}, rightData, post, type);
             //  return value;
         },
@@ -544,7 +562,8 @@ class Trace {
         // FunctionExpression: (ast, locationMap, getLocationId, path) => {
         // },
     };
-
+    prev_ = null;
+    this_ = null;
     autoLog = (pre, value, post, type, extraIds, areNew, extraValues) => {
         // let c = this.checkNonHaltingLoop(this.timeline.length>10);
         //  console.log(pre.id, value);
@@ -556,8 +575,13 @@ class Trace {
             refId = this.composedExpressions[type](pre, value, post, type, extraIds, areNew, extraValues);
         } else {
             if (type === 'BlockStatement') {
-                // console.log('b', pre, value, post, type, extraIds, areNew, extraValues);
                 const expression = this.locationMap[pre.id] || {};
+                const e = pre.type === 'CatchClause' && expression.extraLocs ? {
+                    ...expression.extraLocs.tryLocs.e,
+                    data: this.stringifyE(extraIds[0], true)
+                } : null;
+                // console.log('b', e, pre, value, post, type, extraIds, areNew, extraValues);
+
                 // console.log('e',expression, pre, this.locationMap[pre.secondaryId]);
                 this.branches.push({
                     ...pre,
@@ -565,6 +589,7 @@ class Trace {
                     blockLoc: expression.blockLoc,
                     timelineI: this.timeline.length,
                     expression,
+                    e
                 });
                 push = false;
 
@@ -590,15 +615,33 @@ class Trace {
                 }
             }
         }
-       // console.log(value);
         push && this.pushEntry(pre, value, post, type, refId);
         pre.pushArgs();
-        // console.log(val, val("x"));
-        clearTimeout(this.fff);
-        this.fff = setTimeout(() => {
-            console.log('t', this.timeline);
-        }, 1000);
-        return {_: value};
+
+        // clearTimeout(this.fff);
+        // this.fff = setTimeout(() => {
+        //     console.log('t', this.timeline);
+        // }, 1000);
+
+        let fValue = value;
+        this.prev_ =
+            type === 'MemberExpression' && extraValues && extraValues.length > 1 && extraValues[0] ?
+                extraValues[0] : this.prev_;
+        if (isFunction(fValue)) {
+            if (this.this_) {
+                fValue = fValue.bind(this.this_);
+                this.this_ = null;
+            } else {
+                fValue = fValue.bind(this.prev_);
+                this.prev_ = null;
+            }
+        }
+
+        if (type === 'MemberExpression' && !isFunction(fValue)) {
+            this.this_ = value;
+        }
+
+        return {_: fValue};
     };
 
     preAutoLog = (id, type, secondaryId, navigationType, args, argsIds, blockName) => {
@@ -640,46 +683,87 @@ class Trace {
     onMainLoaded = () => {
         this.mainLoadedTimelineI = this.timeline.length;
         const windowDispatcher = dispatcher;
-        dispatcher = command => windowDispatcher(`window.scrLoader.moduleEval('${command}')`)
+        dispatcher = command => windowDispatcher(`window.scrLoader.moduleEval('${command}')`);
+        this.lastTickTimestamp = Date.now();
+        this.nextTick();
 
     };
 
-    onError = errors => {
+    onError = (errors, isBundlingError) => {
         //todo runtime errors
-        let i = this.timeline.length;
-        const expression = this.locationMap[this.currentExpressionId] || {};
+        let expression = this.locationMap[this.currentExpressionId] || {};
         if (!isArray(errors)) {
             errors = [errors];
         }
-        errors = errors.map(error => {
-            //  console.log(error);
-            switch (error.requireType) {
-                case 'require':
-                    return ClassFactory.fromErrorClassName(error.name || error.constructor.name, error.message);
-                default:
-                    if (error.requireModules && error.requireModules.length) {
-                        return ClassFactory.fromErrorClassName('DependencyError',
-                            `The following dependencies were not found online:
+        if (isBundlingError) {
+            errors.reverse().forEach(error => {
+                let depName = null;
+                const neededByMatches = /needed by: (.+)/.exec(error.message);
+                if (neededByMatches) {
+                    depName = neededByMatches[1];
+                } else {
+                    const depMatches = /"(.+)"/.exec(error.message);
+                    if (depMatches) {
+                        depName = depMatches[1];
+                    }
+                }
+                const depInfo = this.deps.dependenciesInfo.find(dep => dep.name === depName);
+                if (!depInfo) {
+                    return;
+                }
+                const depLocs = this.locationMap[depInfo.id];
+                let i = this.timeline.length;
+                this.timeline.unshift({
+                    i,
+                    reactKey: this.getReactKey(i),
+                    isError: true,
+                    id: depInfo.id,
+                    loc: depLocs.expressionLoc,
+                    expressionType: depInfo.expressionType,
+                    data: this.stringifyE(error),
+                    timestamp: Date.now(),
+                });
+            });
+
+        } else {
+            let i = this.timeline.length;
+            errors = errors.map(this.stringifyE);
+
+            errors = errors.length === 1 ? errors[0] : errors;
+
+            this.timeline.unshift({
+                i,
+                reactKey: this.getReactKey(i),
+                isError: true,
+                id: this.currentExpressionId,
+                loc: expression.loc,
+                expressionType: expression.expressionType,
+                data: errors,
+                timestamp: Date.now(),
+            });
+        }
+
+    };
+    stringifyE = (error, isE) => {
+        //  console.log(error);
+        if (isE) {
+            return ClassFactory
+                .fromErrorClassName(error.name || error.constructor.name, error.message);
+        }
+        switch (error.requireType) {
+            case 'require':
+                return ClassFactory
+                    .fromErrorClassName(error.name || error.constructor.name, error.message);
+            default:
+                if (error.requireModules && error.requireModules.length) {
+                    return ClassFactory.fromErrorClassName('DependencyError',
+                        `The following dependencies were not found online:
                                                      ${error.requireModules.toString()}.
                                                       Please check your code bundling configuration.`);
-                    } else {
-                        return ClassFactory.fromErrorClassName('undefined', JSON.stringify(error));
-                    }
-            }
-        });
-
-        errors = errors.length === 1 ? errors[0] : errors;
-
-        this.timeline.unshift({
-            i: i,
-            reactKey: this.getReactKey(i),
-            isError: true,
-            id: this.currentExpressionId,
-            loc: expression.loc,
-            expressionType: expression.expressionType,
-            data: errors,
-            timestamp: Date.now(),
-        });
+                } else {
+                    return ClassFactory.fromErrorClassName('undefined', JSON.stringify(error));
+                }
+        }
     };
 
     setConsoleLog = (/*log*/) => {

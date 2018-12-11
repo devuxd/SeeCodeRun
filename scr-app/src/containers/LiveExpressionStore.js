@@ -4,6 +4,7 @@ import debounce from 'lodash.debounce';
 import throttle from 'lodash/throttle';
 import isString from 'lodash/isString';
 import isEqual from 'lodash/isEqual';
+import isFunction from 'lodash/isFunction';
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import JSAN from 'jsan';
@@ -11,8 +12,8 @@ import JSAN from 'jsan';
 import {withStyles} from '@material-ui/core/styles';
 
 import Paper from '@material-ui/core/Paper';
-import Tooltip from '@material-ui/core/Tooltip';
-import Portal from '@material-ui/core/Portal';
+// import Tooltip from '@material-ui/core/Tooltip';
+// import Portal from '@material-ui/core/Portal';
 import Button from '@material-ui/core/Button';
 
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
@@ -403,24 +404,98 @@ class LiveExpressionStore extends Component {
         }
     };
 
-    handleBranchChange = (navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI) => {
-        //  console.log('na', navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI);
-        let {branchSelections} = this.state;
-        const globalB = (branchSelections[NavigationTypes.Global] || {});
-        const globalCurrentBranchId = globalB.currentBranchId;
-        branchSelections = {
-            ...branchSelections, [navigationType]: {
-                currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI,
-                globalCurrentBranchId,
+    handleBranchChange =
+        (navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI) => {
+            //  console.log('na',
+            // navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI);
+            let {branchSelections} = this.state;
+            const globalB = (branchSelections[NavigationTypes.Global] || {});
+            const globalCurrentBranchId = globalB.currentBranchId;
+            branchSelections = {
+                ...branchSelections, [navigationType]: {
+                    currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI,
+                    globalCurrentBranchId,
+                }
+            };
+
+            if (globalCurrentBranchId && branchSelections[NavigationTypes.Local]
+                && branchSelections[NavigationTypes.Local].globalCurrentBranchId !== globalCurrentBranchId) {
+                branchSelections[NavigationTypes.Local] = null;
             }
+
+            this.setState({branchSelections});
         };
 
-        if (globalCurrentBranchId && branchSelections[NavigationTypes.Local]
-            && branchSelections[NavigationTypes.Local].globalCurrentBranchId !== globalCurrentBranchId) {
-            branchSelections[NavigationTypes.Local] = null;
-        }
+    getTryBlockLocs = (tryLocs) => {
+        const lParLoc = {
+            start: {
+                line: tryLocs.loc.start.line,
+                column: tryLocs.loc.start.column,
+            },
+            end: {
+                line: tryLocs.extraLocs.block.blockLoc.start.line,
+                column: tryLocs.extraLocs.block.blockLoc.start.column + 1,
+            }
+        };
+        const rParLoc = {
+            start: {
+                line: tryLocs.extraLocs.block.blockLoc.end.line,
+                column: tryLocs.extraLocs.block.blockLoc.end.column - 1,
+            },
+            end: {
+                line: tryLocs.extraLocs.block.blockLoc.end.line,
+                column: tryLocs.extraLocs.block.blockLoc.end.column,
+            }
+        };
+        return [lParLoc, rParLoc];
+    };
+    getTryHandlerLocs = (tryLocs) => {
+        const lParLoc = {
+            start: {
+                line: tryLocs.extraLocs.block.blockLoc.end.line,
+                column: tryLocs.extraLocs.block.blockLoc.end.column,
+            },
+            end: {
+                line: tryLocs.extraLocs.handler.blockLoc.start.line,
+                column: tryLocs.extraLocs.handler.blockLoc.start.column + 1,
+            }
+        };
+        const rParLoc = {
+            start: {
+                line: tryLocs.extraLocs.handler.blockLoc.end.line,
+                column: tryLocs.extraLocs.handler.blockLoc.end.column - 1,
+            },
+            end: {
+                line: tryLocs.extraLocs.handler.blockLoc.end.line,
+                column: tryLocs.extraLocs.handler.blockLoc.end.column,
+            }
+        };
+        return [lParLoc, rParLoc];
+    };
 
-        this.setState({branchSelections});
+    getTryFinalizerLocs = (tryLocs) => {
+        const prev = tryLocs.extraLocs.handler || tryLocs.extraLocs.block;
+        const lParLoc = {
+            start: {
+                line: prev.blockLoc.end.line,
+                column: prev.blockLoc.end.column,
+            },
+            end: {
+                line: tryLocs.extraLocs.finalizer.blockLoc.start.line,
+                column: tryLocs.extraLocs.finalizer.blockLoc.start.column + 1,
+            }
+        };
+        const rParLoc = {
+            start: {
+                line: tryLocs.extraLocs.finalizer.blockLoc.end.line,
+                column: tryLocs.extraLocs.finalizer.blockLoc.end.column - 1,
+            },
+            end: {
+                line: tryLocs.extraLocs.finalizer.blockLoc.end.line,
+                column: tryLocs.extraLocs.finalizer.blockLoc.end.column,
+            }
+        };
+        return [lParLoc, rParLoc];
     };
 
     configureNavigators = (
@@ -443,13 +518,13 @@ class LiveExpressionStore extends Component {
                 //   console.log('bn', decorator);
                 if (decorator && decorator.contentWidget) {
                     // console.log(id, branched[id])
-                    decorator.contentWidget.adjustWidth(true, true);
+                    //decorator.contentWidget.adjustWidth(true, true);
 
                     const branchIndex = branched[id].indexOf(currentBranchTimelineId);
                     const isSelected = currentContentWidgetId === id;
                     const branchSelection = currentBranched && currentBranched[id] ?
                         currentBranched[id].length
-                        : branchIndex >= 0 ? branchIndex : branched[id].length;
+                        : branched[id].length; //branchIndex >= 0 ? branchIndex :
                     const branchTotal =
                         absoluteBranched && absoluteBranched[id] ? absoluteBranched[id].length : branched[id].length;
                     const branchLabel = `${branchSelection}/${branchTotal}`;
@@ -458,6 +533,59 @@ class LiveExpressionStore extends Component {
                     const n = currentBranchTimelineId ?
                         this.timeline[this.timeline.length - currentBranchTimelineId] || {} : {};
                     const branch = (branches || []).find(b => b.id === id);
+
+                    let isE = false;
+
+                    if (branch.expression.extraLocs && branch.expression.extraLocs.isException) {
+                        const tryLocs = branch.expression.extraLocs.tryLocs;
+                        if (tryLocs) {
+                            switch (branch.expression.extraLocs.name) {
+                                case 'block':
+                                    this.getTryBlockLocs(tryLocs).forEach(loc => {
+                                        const range =
+                                            firecoPad
+                                                .liveExpressionWidgetProvider
+                                                .locToMonacoRange(loc);
+                                        range && liveRanges.push(range);
+                                    });
+
+                                    break;
+
+                                case 'finalizer':
+                                    this.getTryFinalizerLocs(tryLocs).forEach(loc => {
+                                        const range =
+                                            firecoPad
+                                                .liveExpressionWidgetProvider
+                                                .locToMonacoRange(loc);
+                                        range && liveRanges.push(range);
+                                    });
+
+                                    break;
+                                default:// handler
+                                    // console.log('h', branch);
+                                    this.getTryBlockLocs(tryLocs).forEach(loc => {
+                                        const range =
+                                            firecoPad
+                                                .liveExpressionWidgetProvider
+                                                .locToMonacoRange(loc);
+                                        const index = range && liveRanges.findIndex(r => r.equalsRange(range));
+                                        index >= 0 && liveRanges.splice(index, 1);
+                                    });
+
+                                    this.getTryHandlerLocs(tryLocs).forEach(loc => {
+                                        const range =
+                                            firecoPad
+                                                .liveExpressionWidgetProvider
+                                                .locToMonacoRange(loc);
+                                        range && liveRanges.push(range);
+                                    });
+                                    isE = true;
+                            }
+                            if (!isE) {
+                                continue;
+                            }
+                        }
+                    }
                     if (color === 'secondary') {
                         // console.log('lo',
                         // branch, decorator,
@@ -735,24 +863,31 @@ class LiveExpressionStore extends Component {
                                          }}
                                          className={liveExpressionContainerClassName}
                                     >
-                                        <Paper className={classes.liveExpressionPaper}>
-                                            {/*<OverflowComponent*/}
-                                            {/*contentClassName={classes.liveExpressionContent}*/}
-                                            {/*disableOverflowDetectionY={true}*/}
-                                            {/*//  placeholder={<Typography>Yo</Typography>}*/}
-                                            {/*//  placeholderClassName={classes.expressionCellContent}*/}
-                                            {/*// placeholderDisableGutters={true}*/}
-                                            {/*>*/}
-                                            <Button variant="raised" color={color}
-                                                    className={branchNavigatorWidgetClassName}>
-                                                {branchLabel}</Button>
-                                            {/*<ObjectRootLabel data={branched[id]}/>*/}
-                                            {/*</OverflowComponent>*/}
-                                        </Paper>
+                                        {isE ?
+                                            <ObjectRootLabel
+                                                data={branch.e.data}
+                                                compact={true}
+                                                expressionType={n.expressionType}
+                                                iconify={false}
+                                            />
+                                            : <Paper className={classes.liveExpressionPaper}>
+                                                {/*<OverflowComponent*/}
+                                                {/*contentClassName={classes.liveExpressionContent}*/}
+                                                {/*disableOverflowDetectionY={true}*/}
+                                                {/*//  placeholder={<Typography>Yo</Typography>}*/}
+                                                {/*//  placeholderClassName={classes.expressionCellContent}*/}
+                                                {/*// placeholderDisableGutters={true}*/}
+                                                {/*>*/}
+                                                <Button variant="raised" color={color}
+                                                        className={branchNavigatorWidgetClassName}>
+                                                    {branchLabel}</Button>
+                                                {/*<ObjectRootLabel data={branched[id]}/>*/}
+                                                {/*</OverflowComponent>*/}
+                                            </Paper>}
 
                                     </div>
                                 </DOMPortal>
-                                <LiveExpression
+                                {!isE && <LiveExpression
                                     style={style}
                                     color={color}
                                     expressionId={id}
@@ -767,7 +902,7 @@ class LiveExpressionStore extends Component {
                                             navigationType, id, timelineI, navigatorIndex, prevTimelineI
                                         )}
                                     //handleChange={this.handleObjectExplorerExpand}
-                                />
+                                />}
                             </React.Fragment>);
 
 
@@ -808,6 +943,130 @@ class LiveExpressionStore extends Component {
             startIndex = branch.timelineI;
         });
     }
+
+    adjustWidth = (liveExpresionDataInLine) => {
+        const {firecoPad} = this.state;
+        liveExpresionDataInLine.forEach(i => {
+            let isIVisible = true, marginLeft = 0, isAlignRight = false;
+            if (i.domNode.offsetParent === null) {
+                isIVisible = false;
+                if (i.domNode.dataset.marginLeft) {
+                    marginLeft = i.domNode.dataset.marginLeft;
+                } else {
+                    return;
+                }
+            }
+            if (i.n.expressionType === 'CallExpression' && !isFunction(i.n.value)) {
+                isAlignRight = true;
+
+                marginLeft = isIVisible ?
+                    firecoPad
+                        .monacoEditor
+                        .getOffsetForColumn(
+                            i.range.endLineNumber, i.range.endColumn)
+                    - firecoPad
+                        .monacoEditor
+                        .getOffsetForColumn(i.range.startLineNumber, i.range.startColumn)
+                    : marginLeft;
+                i.domNode.style.marginLeft = `${marginLeft - 7}px`;
+                i.domNode.dataset.marginLeft = `${marginLeft}`;
+                i.domNode.dataset.isAlignRight = 'true';
+            } else {
+                if (i.n.expressionType === 'AssignmentExpression'
+                    || i.n.expressionType === 'ReturnStatement'
+                    || ((i.n.expressionType === 'CallExpression'
+                        || i.n.expressionType === 'MemberExpression') && isFunction(i.n.value))
+                    || i.n.expressionType === 'VariableDeclarator') {
+                    i.domNode.style.maxWidth = '0px';
+                    i.domNode.dataset.maxWidth = '0';
+                    return;
+                }
+
+            }
+
+
+            let leftBound = null;
+            let marginBound = null;
+            liveExpresionDataInLine.forEach(j => {
+
+                if (j.n.expressionType === 'AssignmentExpression'
+                    || j.n.expressionType === 'ReturnStatement'
+                    || ((j.n.expressionType === 'CallExpression' || j.n.expressionType === 'MemberExpression')
+                        && isFunction(j.n.value))
+                    || j.n.expressionType === 'VariableDeclarator') {
+                    return;
+                }
+
+                if (i.range !== j.range) {
+
+                    if (!(j.range.containsRange(i.range) || i.range.containsRange(j.range))) {
+                        if (i.range.startLineNumber === i.range.endLineNumber
+                            && i.range.endLineNumber === j.range.endLineNumber) {
+                            if (i.range.endColumn <= j.range.startColumn) {
+                                if (leftBound) {
+                                    if (j.range.startColumn <= leftBound.range.startColumn) {
+                                        leftBound = j;
+                                    }
+                                } else {
+                                    leftBound = j;
+                                }
+                            }
+                        }
+
+                    } else {
+                        if (j.range.containsRange(i.range) && i.range.startLineNumber === i.range.endLineNumber
+                            && i.range.startColumn === j.range.startColumn
+                            && i.range.endLineNumber === j.range.endLineNumber) {
+                            if (marginBound) {
+                                if (marginBound.range.containsRange(j.range)) {
+                                    marginBound = j;
+                                }
+                            } else {
+                                marginBound = j;
+                            }
+                        }
+                    }
+                }
+            });
+            let leftBoundWidth = 0;
+
+            if (leftBound && (leftBound.domNode.offsetParent !== null || i.domNode.dataset.maxWidth)) {
+                leftBoundWidth = leftBound.domNode.offsetParent !== null ?
+                    firecoPad
+                        .monacoEditor
+                        .getOffsetForColumn(
+                            leftBound.range.startLineNumber, leftBound.range.startColumn)
+                    - firecoPad
+                        .monacoEditor
+                        .getOffsetForColumn(i.range.startLineNumber, i.range.startColumn)
+                    : i.domNode.dataset.maxWidth;
+                i.domNode.style.maxWidth = `${leftBoundWidth - 7}px`;
+                i.domNode.dataset.maxWidth = `${leftBoundWidth}`;
+            }
+
+            if (marginBound) {
+                if (!isAlignRight && !marginBound.domNode.dataset.isAlignRight) {
+                    marginLeft = leftBoundWidth || isIVisible ?
+                        firecoPad
+                            .monacoEditor
+                            .getOffsetForColumn(
+                                i.range.endLineNumber, i.range.endColumn)
+                        - firecoPad
+                            .monacoEditor
+                            .getOffsetForColumn(i.range.startLineNumber, i.range.startColumn)
+                        : marginBound.domNode.dataset.marginLeft;
+
+                    marginBound.domNode.style.marginLeft = `${marginLeft + 7}px`;
+                    marginBound.domNode.dataset.marginLeft = `${marginLeft}`;
+                    i.domNode.style.maxWidth = `${marginLeft}px`;
+                    i.domNode.dataset.maxWidth = `${marginLeft}`;
+                }
+
+
+            }
+
+        });
+    };
 
     render() {
         const {classes, editorWidth, editorHeight, timeline, searchState} = this.props;
@@ -877,7 +1136,7 @@ class LiveExpressionStore extends Component {
         const currentTimeline = (currentBranchId && currentBranchTimelineId) ?
             timeline.slice(timeline.length - currentBranchTimelineId) : timeline;
         // console.log(currentBranchId, currentBranchTimelineId, currentTimeline, timeline.length);
-
+        // console.log('---------');
         this.liveExpressionWidgets = {};
         // (tbm.globalBranchLocs && tbm.globalBranchLocs.loc) ?
         //     this.highlightBranch(NavigationTypes.Global, tbm.globalBranchLocs.loc)
@@ -896,7 +1155,8 @@ class LiveExpressionStore extends Component {
             if (data.length) {
                 // widget.contentWidget.domNode.style.backgroundColor = 'orange';
                 // widget.contentWidget.domNode.style.fontSize = '8px';
-                widget.range && liveRanges.push(widget.range);
+
+
                 let datum = null;
                 let entry = null;
                 try {
@@ -913,6 +1173,14 @@ class LiveExpressionStore extends Component {
 
 
                 this.liveExpressionWidgets[widget.id] = {datum, widget, entry};
+                //todo assignemntexp
+                if (entry && (entry.expression && entry.expression.expressionType === 'VariableDeclarator') && isFunction(entry.value)) {
+                    const range = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(entry.loc);
+                    range && liveRanges.push(range);
+                } else {
+                    widget.range && liveRanges.push(widget.range);
+                }
+
                 // }
                 //  if (hasChildNodes(datum, objectIterator)) {
                 //    // let text = '';
@@ -972,8 +1240,34 @@ class LiveExpressionStore extends Component {
                     range.startLineNumber === range.endLineNumber && range.endColumn - range.startColumn === 1 : false;
                 const isAlignLeft = (entry.expression && entry.expression.isReturn) || entry.expressionType === 'CallExpression';
 
-                //  ignore && console.log('n', n, ignoreRanges, ignore);
+                // ignore && console.log('n', n, ignoreRanges, ignore);
                 if (widget.contentWidget && n.expression && !ignore) {
+                    const end =
+                        firecoPad.liveExpressionWidgetProvider.locToMonacoRange(n.expression.statementEndLoc);
+                    end && liveRanges.push(end);
+
+                    if (n.expression.isJSX && n.expression.jsxElements && !n.expression.jsxElements.error) {
+                        n.expression.jsxElements.openingElements.forEach(elem => {
+                            const openingE = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(elem);
+                            openingE && liveRanges.push(openingE);
+                        });
+                        n.expression.jsxElements.closingElements.forEach(elem => {
+                            const closingE = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(elem);
+                            closingE && liveRanges.push(closingE);
+                        });
+                        n.expression.jsxElements.attributes.forEach(elem => {
+                            const att = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(elem);
+                            att && liveRanges.push(att);
+                        });
+                        n.expression.jsxElements.children.forEach(elem => {
+                            const child = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(elem);
+                            child && liveRanges.push(child);
+                        });
+                        n.expression.jsxElements.parents.forEach(elem => {
+                            const parent = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(elem);
+                            parent && liveRanges.push(parent);
+                        });
+                    }
 
                     if (n.expression.isTest && n.expression.extraLocs && n.expression.extraLocs.testableStatement) {
                         //n.expression.isTest && console.log('TEST', n.expression);
@@ -1014,7 +1308,6 @@ class LiveExpressionStore extends Component {
 
                         if (branch && branch.type === 'IfStatement'
                             && branch.expression && branch.expression.extraLocs && branch.expression.extraLocs.test) {
-
 
                             if (branch.expression.extraLocs.test) {
                                 //{start:{line:0, column:0}, end:{line:0, column:0}};
@@ -1146,7 +1439,8 @@ class LiveExpressionStore extends Component {
                                         column: branch.expression.extraLocs[branch.blockName].start.column + 1,
                                     }
                                 } : null;
-                                const rangeO = locO ? firecoPad.liveExpressionWidgetProvider.locToMonacoRange(locO) : null;
+                                const rangeO = locO ?
+                                    firecoPad.liveExpressionWidgetProvider.locToMonacoRange(locO) : null;
                                 rangeO && liveRanges.push(rangeO);
                                 const locC = branch.expression.extraLocs[branch.blockName] ? {
                                     start: {
@@ -1172,16 +1466,18 @@ class LiveExpressionStore extends Component {
                             }
                         }
                     }
-                    // n.expression && console.log('nnnnnnnnnnnnn', n);
-                    if (n.expression && n.expression.isVariableDeclarator && n.expression.extraLocs) {
+                    if (n.expression.isVariableDeclarator && n.expression.extraLocs) {
                         const range = n.expression.extraLocs['kind'] ?
                             firecoPad.liveExpressionWidgetProvider.locToMonacoRange(n.expression.extraLocs['kind'])
                             : null;
-                        //           console.log('dfff', n.expression, n.expression.extraLocs['kind'], range);
                         range && liveRanges.push(range);
 
+                        const endRange = n.expression.extraLocs['end'] ?
+                            firecoPad.liveExpressionWidgetProvider.locToMonacoRange(n.expression.extraLocs['end'])
+                            : null;
+                        endRange && liveRanges.push(endRange);
                     }
-                    if (n.expression && n.expression.isReturn && n.expression.extraLocs) {
+                    if (n.expression.isReturn && n.expression.extraLocs) {
                         const returnLoc = {
                             start: {
                                 line: n.expression.extraLocs.return.start.line,
@@ -1193,27 +1489,45 @@ class LiveExpressionStore extends Component {
                             }
                         };
                         const range = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(returnLoc);
-                        //           console.log('dfff', n.expression, n.expression.extraLocs['kind'], range);
                         range && liveRanges.push(range);
+
+                        const returnEndLoc = {
+                            start: {
+                                line: n.expression.loc.end.line,
+                                column: n.expression.loc.end.column,
+                            }
+                            , end: {
+                                line: n.expression.extraLocs.return.end.line,
+                                column: n.expression.extraLocs.return.end.column
+                            }
+                        };
+                        const rangeEnd = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(returnEndLoc);
+                        rangeEnd && liveRanges.push(rangeEnd);
 
                     }
 
 
-                    widget.contentWidget.adjustWidth(true);
+                    //   widget.contentWidget.adjustWidth(true);
                     //n.isError && this.highlightErrors([range], ignoreRanges);
+                    const contentRef = React.createRef();
                     liveWidgets.push({
+                        contentRef,
+                        n,
+                        domNode: widget.contentWidget.domNode,
                         range,
-                        liveWidget:
+                        configureLiveWidget: () =>
                             <DOMPortal key={widget.id}
                                        parentEl={widget.contentWidget.domNode}>
                                 <div
+                                    ref={contentRef}
                                     onMouseEnter={() => {
                                         // console.log(entry);
                                         this.highlightSingleText(
                                             n.loc, n.isError ? HighlightTypes.error
                                                 : n.isGraphical ?
                                                     HighlightTypes.graphical : HighlightTypes.text,
-                                            this.traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
+                                            this.traceSubscriber
+                                                .getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
                                         this.handleCurrentContentWidgetId(widget.id);
                                     }}
                                     onMouseLeave={() => {
@@ -1236,20 +1550,22 @@ class LiveExpressionStore extends Component {
                                         //  placeholder={<Typography>Yo</Typography>}
                                         //  placeholderClassName={classes.expressionCellContent}
                                         // placeholderDisableGutters={true}
-                                    >{isOutput ?
-                                        <GraphicalQuery
-                                            outputRefs={n.outputRefs}
-                                            visualIds={getVisualIdsFromRefs(n.outputRefs)}
-                                            selected={!!isSelected}
-                                        />
-                                        :
-                                        <ObjectRootLabel
-                                            data={datum}
-                                            compact={true}
-                                            expressionType={n.expressionType}
-                                            iconify={isIcon}
-                                        />
-                                    }
+                                    >
+                                        {/*<div>{n.expressionType}</div>*/}
+                                        {isOutput ?
+                                            <GraphicalQuery
+                                                outputRefs={n.outputRefs}
+                                                visualIds={getVisualIdsFromRefs(n.outputRefs)}
+                                                selected={!!isSelected}
+                                            />
+                                            :
+                                            <ObjectRootLabel
+                                                data={datum}
+                                                compact={true}
+                                                expressionType={n.expressionType}
+                                                iconify={isIcon}
+                                            />
+                                        }
                                     </OverflowComponent>
                                 </div>
                             </DOMPortal>
@@ -1259,19 +1575,30 @@ class LiveExpressionStore extends Component {
             }
         }
         this.highlightLiveExpressions(liveRanges, ignoreRanges);
-        const finalLiveWidgets = liveWidgets.reduce((result, {liveWidget, range}) => {
+        const liveExpresionDataInLines = {};
+        const finalLiveWidgets = liveWidgets.reduce((result, data) => {
+            const {range, configureLiveWidget} = data;
             const ignore = ignoreRanges.find(r => {
                 return r.containsRange(range);
             });
 
+            liveExpresionDataInLines[range.startLineNumber] = liveExpresionDataInLines[range.startLineNumber] || [];
+            liveExpresionDataInLines[range.startLineNumber].push(data);
+
             if (!ignore) {
-                result.push(liveWidget);
+                result.push(() => configureLiveWidget());
             }
             return result;
         }, []);
+        this.onAdjustWidths = () => {
+            Object.keys(liveExpresionDataInLines)
+                .forEach(lineNumber => this.adjustWidth(liveExpresionDataInLines[lineNumber]));
+        };
+        this.onAdjustWidths();
+
         return (<React.Fragment>
             {liveExpressions}
-            {finalLiveWidgets}
+            {finalLiveWidgets.map(cb => cb())}
             {globalNavigators}
             {localNavigators}
             {visualIds}
@@ -1279,17 +1606,8 @@ class LiveExpressionStore extends Component {
     }
 
     updateLiveExpressionWidgetWidths = () => {
-        if (!this.liveExpressionWidgets) {
-            return;
-        }
-        for (const i in this.liveExpressionWidgets) {
-            if (this.liveExpressionWidgets[i]) {
-                const {widget} = this.liveExpressionWidgets[i];
-                if (widget.contentWidget) {
-                    widget.contentWidget.adjustWidth(true);
-                }
-            }
-        }
+        clearTimeout(this.onAdjustWidthsTimeout);
+        this.onAdjustWidths && (this.onAdjustWidthsTimeout = setTimeout(this.onAdjustWidths, 10));
     };
 
     shouldBundle = (editorsTexts) => {
@@ -1363,7 +1681,8 @@ class LiveExpressionStore extends Component {
             this.props.exports.updateLiveExpressionWidgetWidths = this.updateLiveExpressionWidgetWidths;
         }
         this.handleBundlingSubscription();
-        this.handleBundlingSubscriptionDebounced = this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
+        this.handleBundlingSubscriptionDebounced =
+            this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
         const {store} = this.context;
         const {editorId} = this.props;
         this.unsubscribe = store.subscribe(() => {
@@ -1447,6 +1766,7 @@ class LiveExpressionStore extends Component {
                         this.objectNodeRenderer = createLiveObjectNodeRenderer(autoLogger);
                         this.timeline = [];
                         this.isNew = true;
+                        this.depLocs = bundle.autoLogger.deps.dependencies;
                         //   this.unHighlightLiveExpressions();
                         this.refreshInterval = setInterval(this.refreshTimeline, this.refreshRate);
                         this.traceSubscriber = autoLogger.trace;
@@ -1477,20 +1797,28 @@ class LiveExpressionStore extends Component {
 
     };
 
-    handleTraceChange = ({timeline, logs}) => {
+    handleTraceChange = ({timeline, logs, mainLoadedTimelineI}) => {
         this.timeline = timeline;
         this.logs = logs;
+        this.mainLoadedTimelineI = mainLoadedTimelineI;
         this.refreshTimeline();
     };
 
     highlightLiveExpressions = (liveRanges, ignoreRanges, isReveal = false) => {
-        //  console.log('ignoreRanges', ignoreRanges);
         liveRanges = liveRanges.filter(ran => {
             return !ignoreRanges.find(r => {
                 return r.containsRange(ran);
             });
         });
-        // this.unHighlightLiveExpressions();
+        const {firecoPad} = this.state;
+        if (this.mainLoadedTimelineI && this.depLocs) {
+            Object.keys(this.depLocs).forEach(key => {
+                const loc = this.depLocs[key];
+                const range = loc ? firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc[0]) : null;
+                range && liveRanges.push(range);
+            });
+
+        }
         const res = this.highlightTexts(
             liveRanges,
             {
@@ -1683,7 +2011,9 @@ class LiveExpressionStore extends Component {
                 [loc],
                 {
                     className: type
-                }, this.prevSingleTextState ? this.prevSingleTextState.single.decorationIds : [], isReveal)
+                },
+                this.prevSingleTextState ?
+                    this.prevSingleTextState.single.decorationIds : [], isReveal)
             ,
             matches: matches ? this.highlightTexts(
                 matches,

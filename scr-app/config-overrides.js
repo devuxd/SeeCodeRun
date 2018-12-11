@@ -25,7 +25,7 @@ const disableUglifyJsPlugin = false;
 // Now enable UglifyJsPlugin again: disableUglifyJsPlugin:false.
 // The chunks in the array of reg exps plugin.options.exclude will be ignored.
 const excludes = [
-    /\/js\/0\..*chunk.js$/ // so far jscodeshift is chunk 0, it may change with more code splits
+    /\/js\/0\..*chunk.js$/, // so far jscodeshift is chunk 0, it may change with more code splits
 ];
 
 const findPlugin = (config, pluginName) =>
@@ -41,12 +41,10 @@ module.exports = (config/*, env*/) => {
         }
     }
     // Monaco ESM
-    config.output.path = path.resolve(__dirname, 'dist');
-    config.module.rules.push({
+    config.module.rules.unshift({
         test: /\/monaco-editor\/esm\/*\.css$/,
         use: ['style-loader', 'css-loader']
     });
-    config.plugins.push(new MonacoWebpackPlugin());
-
+    config.plugins.unshift(new MonacoWebpackPlugin());
     return config;
 };

@@ -192,9 +192,9 @@ class Editor extends Component {
                     : null;
             if (currentErrors !== this.state.errors) {
                 if (currentErrors) {
-                    console.log("rrrrrrr", currentErrors.loc, currentErrors.stack);
+                 //   console.log("rrrrrrr", currentErrors.loc, currentErrors.stack);
                 } else {
-                    console.log("EMPTY");
+                   // console.log("EMPTY");
                 }
 
                 this.setState({

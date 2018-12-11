@@ -26,9 +26,9 @@ const styles = theme => ({
     objectBraces: {
         fontWeight: 'bold',
         fontStyle: 'normal',
-        color: 'white',
-        backgroundColor: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
-        // fontSize: '110%',
+        // color: 'white',
+        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+        fontSize: '110%',
     },
     arrayBrackets: {
         fontWeight: 'bold',
@@ -83,8 +83,12 @@ function intersperse(arr, sep) {
  * A preview of the object
  */
 export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, compact, expressionType}) => {
-    const object = data;
+    const liveRef = currentLiveObjectNodeRenderer.parseLiveRefs(data);
+    if (liveRef.isLive) {
+        return null;
+    }
 
+    const object = data;
     if (
         typeof object !== 'object' ||
         object === null ||
@@ -492,12 +496,13 @@ class ObjectExplorer extends React.Component {
         };
     }
 
+
     render() {
         const {theme, data, objectNodeRenderer, expressionId, handleChange, outputRefs, ...rest} = this.props;
         const {expandPaths} = this.state;
         const liveRef = objectNodeRenderer.parseLiveRefs(data);
         //   console.log(expandPaths);
-        return <Inspector
+        return (!liveRef.isLive && <Inspector
             key={expressionId}
             data={liveRef.data}
             nodeRenderer={objectNodeRenderer.render}
@@ -506,7 +511,7 @@ class ObjectExplorer extends React.Component {
             expandPaths={expandPaths}
             outputRefs={outputRefs}
             {...rest}
-        />;
+        />);
     }
 }
 

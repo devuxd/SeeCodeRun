@@ -15,6 +15,7 @@ export const alt = {
     BlockEnd: 'BlockEnd',
     BlockControl: 'BlockControl',
     Argument: 'Argument',
+    DependencyError: 'DependencyError',
 };
 
 export const l = {
@@ -54,36 +55,216 @@ class AutoLogShift {
         //  wrapFunctionExpressions(ast, locationMap);
         // this.autoLogCallExpressions(ast, locationMap, getLocationId);
         // try {
-        deps = AutoLogShift.getDependencies(ast);
+        deps = AutoLogShift.getDependencies(ast, locationMap, getLocationId);
         const expressionPaths = [];
         ast.find(j.Expression).forEach(
-            path => expressionPaths.unshift(path)
+            path => expressionPaths.unshift({type: 'expression', path})
         );
         const variableDeclaratorPaths = [];
+        // console.log(variableDeclaratorPaths);
+        const blockPaths = [];
+        // ast.findVariableDeclarators().forEach(
+        //     path => variableDeclaratorPaths.unshift({type: 'expression', path})
+        // );
+        ast.find(j.BlockStatement).forEach(
+            path => blockPaths.unshift({type: 'block', path})
+        );
+
+        const allPaths = expressionPaths.concat(variableDeclaratorPaths).concat(blockPaths).sort((a, b) => {
+            const aPath = a.path, bPath = b.path;
+            if (aPath.value && bPath.value && aPath.value.loc && bPath.value.loc) {
+                const aLoc = aPath.value.loc;
+                const bLoc = bPath.value.loc;
+                if (aLoc.start.line < bLoc.start.line) {
+                    return -1;
+                } else {
+                    if (aLoc.start.line > bLoc.start.line) {
+                        return 1;
+                    } else {
+                        if (aLoc.start.column < bLoc.start.column) {
+                            return -1;
+                        } else {
+                            if (aLoc.start.column > bLoc.start.column) {
+                                return 1;
+                            } else {
+                                if (aLoc.end.line < bLoc.end.line) {
+                                    return 1;
+                                } else {
+                                    if (aLoc.end.line > bLoc.end.line) {
+                                        return -1;
+                                    } else {
+                                        if (aLoc.end.column < bLoc.end.column) {
+                                            return 1;
+                                        } else {
+                                            if (aLoc.end.column > bLoc.end.column) {
+                                                return -1;
+                                            } else {
+                                                return 0;
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+
+                        }
+                    }
+
+                }
+            } else {
+                return 0;
+            }
+        });
+        //console.log('all', allPaths);
+        allPaths.reverse().forEach(pathElem => {
+            switch (pathElem.type) {
+                case 'expression':
+                    this.autoLogExpressions(ast, [pathElem.path], locationMap, getLocationId);
+                    break;
+                default:
+                    this.autoLogBlocks(ast, [pathElem.path], locationMap, getLocationId);
+            }
+        });
         ast.findVariableDeclarators().forEach(
             path => variableDeclaratorPaths.unshift(path)
         );
-        // console.log(variableDeclaratorPaths);
-        const blockPaths = [];
-        ast.find(j.BlockStatement).forEach(
-            path => blockPaths.unshift(path)
-        );
-        this.autoLogExpressions(ast, expressionPaths, locationMap, getLocationId);
+        // this.autoLogExpressions(ast, expressionPaths, locationMap, getLocationId);
         this.autoLogExpressions(ast, variableDeclaratorPaths, locationMap, getLocationId);
-        this.autoLogBlocks(ast, blockPaths, locationMap, getLocationId);
+        // console.log('bl', blockPaths, ast);
+        // this.autoLogBlocks(ast, blockPaths, locationMap, getLocationId);
         //todo autologBlock expressions
         // } catch (e) {
         //   console.log('j', e)
         // }
-
         // console.log(locationMap);
         return {ast, locationMap, deps};
     }
 
-    autoLogExpression(expression, id, type, path, p, params) {
+    autoLogExpression(expression, id, type, path, p, params, locationMap) {
         const jid = j.identifier(`'${id}'`);
         const jtype = j.identifier(`'${type}'`);
         const jValue = isString(expression) ? j.identifier(expression) : expression;
+        // const jValue = type === j.CallExpression.name ?
+        //     j.memberExpression(j.identifier(expression.callee), j.callExpression(j.identifier('call'), expression.arguments), false)
+        //     :isString(expression) ? j.identifier(expression) : expression;
+        let ident = j.identifier('_');
+        // if (type === j.CallExpression.name && path.callee && path.callee.type === j.MemberExpression.name) {
+        //     path.callee.property = j.identifier('_.call');
+        //     //path.callee.object.arguments[1].name
+        //     path.arguments = [j.identifier('this'), j.arrayExpression(path.arguments)];
+        // }
+        if (path.parentPath && path.parentPath.parentPath && path.parentPath.parentPath.value.type === 'JSXAttribute') {
+            locationMap[id].isJSX = true;
+            try {
+                const parents = [];
+                const children = [];
+                let parentPath = path.parentPath.parentPath.parentPath.parentPath.parentPath;
+                while (parentPath) {
+                    const untrackedParent = parentPath.value;
+                    if (untrackedParent.type === 'JSXElement' && untrackedParent.openingElement && untrackedParent.openingElement.attributes.length === 0) {
+                        parents.push(untrackedParent.openingElement.loc);
+                        !untrackedParent.openingElement.selfClosing &&
+                        parents.push(untrackedParent.closingElement.loc);
+
+                        untrackedParent.children.forEach(child => {
+                            if (child.type === 'JSXText' ||
+                                (child.openingElement && child.openingElement.attributes.length === 0 && child.children.length === 0) ||
+                                (child.children && child.children.length === 1 && child.children[0].type === 'JSXExpressionContainer')
+                            ) {
+                                children.push(child.loc);
+                            } else {
+                                if (child.openingElement && child.openingElement.attributes.length === 0) {
+                                    children.push(child.openingElement.loc);
+                                    !child.openingElement.selfClosing && children.push(child.closingElement.loc);
+                                }
+                            }
+                        });
+                    } else {
+                        if (untrackedParent.type === 'ReturnStatement') {
+                            parents.push({
+                                ...untrackedParent.loc, end: {
+                                    line: untrackedParent.argument.loc.start.line,
+                                    column: untrackedParent.argument.loc.start.column + 1,
+                                }
+                            });
+                            const endLoc = {
+                                ...untrackedParent.loc, start: {
+                                    line: untrackedParent.argument.loc.end.line,
+                                    column: untrackedParent.argument.loc.end.column - 1,
+                                }
+                            };
+                            // console.log('end', endLoc);
+                            parents.push(endLoc);
+                        }
+                    }
+                    parentPath = parentPath.parentPath;
+                }
+                const JSXe = path.parentPath.parentPath.parentPath.parentPath.parentPath.value;
+                const openingElements = [{
+                    ...JSXe.openingElement.loc, end: {
+                        line: JSXe.openingElement.loc.start.line,
+                        column: JSXe.openingElement.loc.start.column + ((JSXe.openingElement.name || {name: ''}).name).length + 1,
+                    }
+                },
+                    {
+                        ...JSXe.openingElement.loc, start: {
+                            line: JSXe.openingElement.loc.end.line,
+                            column: JSXe.openingElement.loc.end.column - (JSXe.openingElement.selfClosing ? 2 : 1),
+                        }
+                    }
+
+                ];
+
+                const attributes = [];
+                JSXe.openingElement.attributes.forEach(attribute => {
+                    if (!attribute.value || attribute.value.type !== 'JSXExpressionContainer') {
+                        attributes.push(attribute.loc);
+                    } else {
+                        attributes.push({
+                            ...attribute.loc, end: {
+                                line: attribute.value.loc.start.line,
+                                column: attribute.value.loc.start.column + 1,
+                            }
+                        });
+                        attributes.push({
+                            ...attribute.value.loc, start: {
+                                line: attribute.value.loc.end.line,
+                                column: attribute.value.loc.end.column - 1,
+                            }
+                        });
+                    }
+                });
+
+                JSXe.children.forEach(child => {
+                    if (child.type === 'JSXText' ||
+                        (child.openingElement && child.openingElement.attributes.length === 0 && child.children.length === 0) ||
+                        (child.children && child.children.length === 1 && child.children[0].type === 'JSXExpressionContainer')
+                    ) {
+                        children.push(child.loc);
+                    } else {
+                        if (child.openingElement && child.openingElement.attributes.length === 0) {
+                            children.push(child.openingElement.loc);
+                            !child.openingElement.selfClosing && children.push(child.closingElement.loc);
+                        }
+                    }
+                });
+                locationMap[id].jsxElements = {
+                    openingElements,
+                    closingElements: [JSXe.closingElement.loc],
+                    attributes,
+                    parents,
+                    children,
+                };
+
+                // console.log('JSX', JSXe.openingElement);
+
+            } catch (e) {
+                locationMap[id].jsxElements = {error: e};
+                //console.log(e);
+            }
+            // console.log('JSXAttribute', path.parentPath.parentPath.parentPath,locationMap[id].jsxElements);
+        }
+
         params = params || [
             j.callExpression(j.identifier(l.preAutoLogId),
                 [
@@ -93,9 +274,10 @@ class AutoLogShift {
             jValue,
             j.callExpression(j.identifier(l.postAutoLogId), [jid]),
         ];
-        const alExpression =
-            j.memberExpression(j.callExpression(j.identifier(l.autoLogId), params), j.identifier('_'), false);
+
+        const alExpression = j.memberExpression(j.callExpression(j.identifier(l.autoLogId), params), ident, false);
         alExpression.autologId = id;
+        //  type === j.CallExpression.name && console.log('V', path, j(jValue).toSource(), 'E', j(alExpression).toSource());
         return alExpression;
     }
 
@@ -117,6 +299,7 @@ class AutoLogShift {
         // 'FunctionExpression', is as block
         // 'ArrowFunctionExpression',  is as block
         'VariableDeclarator',
+        // 'JSXElement',
     ];
 
     static SupportedBlockExpressions = [
@@ -126,6 +309,8 @@ class AutoLogShift {
 
     static SupportedBlocks = [
         // 'Function', //?
+        // 'FunctionExpression', // x= function (...){...}
+        // 'ArrowFunctionExpression', // (...)=>{...},..., x=>y
         'FunctionDeclaration', // function x(...){...}
         'MethodDefinition', // Class X{ x(...){...} x=(...)=>{...}},
         'IfStatement', // if(...){...}else{...}
@@ -144,7 +329,7 @@ class AutoLogShift {
 
     static IdentifierIgnores = [
         // 'ThisExpression',
-        // 'ArrayExpression',
+        'ArrayExpression',
         'ObjectExpression',
         'UnaryExpression',
         'UpdateExpression',
@@ -159,6 +344,7 @@ class AutoLogShift {
         'MethodDefinition',
         'ImportDefaultSpecifier',
         'ExportDefaultDeclaration',
+        'CatchClause',
     ];
 
     static ignorePatterns = [
@@ -217,9 +403,9 @@ class AutoLogShift {
                 };
                 objectValue = `${j(object).toSource()}`;
             }
-            else{
-                objectValue = `${j(object).toSource()}`;
-            }
+            // else {
+            //     objectValue = `${j(object).toSource()}`;
+            // }
             // else {
             //     //   console.log('OBJ', id, object.autologId, locationMap[object.autologId], locationMap);
             // }
@@ -247,7 +433,7 @@ class AutoLogShift {
                 j.identifier(`[${!object.autologId}, ${!property.autologId}]`),
                 j.identifier(`[${objectValue}, ${propertyValue}]`),
             ];
-            return this.autoLogExpression(pathSource, id, type, path, p, params);
+            return this.autoLogExpression(pathSource.parent, id, type, path, p, params, locationMap);
         },
         BinaryExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
@@ -294,7 +480,7 @@ class AutoLogShift {
                 j.identifier(`[${!left.autologId}, ${!right.autologId}]`),
                 j.identifier(`[${leftValue}, ${rightValue}]`),
             ];
-            return this.autoLogExpression(pathSource, id, type, path, p, params);
+            return this.autoLogExpression(pathSource, id, type, path, p, params, locationMap);
         },
         CallExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
@@ -317,12 +503,16 @@ class AutoLogShift {
                         isArgument: true,
                     };
                     argumentValue = j(argument).toSource();
-                    // console.log(argumentValue, argument.loc, argument.type, argumentId);
-                    return this.autoLogExpression(argumentValue, argumentId, argument.type, argument);
+                    //console.log('argv', argumentValue, argument.loc, argument.type, argumentId);
+                    return this
+                        .autoLogExpression(
+                            argumentValue, argumentId, argument.type, argument, null, null, locationMap
+                        );
                 } else {
                     return argument;
                 }
             });
+            // path.value.arguments.unshift(callee);
 
 
             let calleeValue = null;
@@ -338,9 +528,9 @@ class AutoLogShift {
                 calleeValue = j(callee).toSource();
             }
             calleeValue = calleeValue === 'import' ? `'import'` : calleeValue;
-            console.log('callee',callee);
 
             const jValue = j.identifier(j(path.value).toSource());
+            //  console.log('V',j(path.value).toSource());
             const params = [
                 j.callExpression(j.identifier(l.preAutoLogId),
                     [
@@ -357,8 +547,9 @@ class AutoLogShift {
             // j.identifier(`['${calleeId}', '${parametersId}']`),
             //     j.identifier(`[${!callee.autologId}, ${!parameters.autologId}]`),
             //     j.identifier(`[${calleeValue}, ${parametersValue}]`),
-            console.log('CE', pathSource, id, type, path, p, params);
-            return this.autoLogExpression(pathSource, id, type, path, p, params);
+            // console.log('CE', pathSource, id, type, path, p, params);
+            // console.log('C', calleeValue, jValue);
+            return this.autoLogExpression(pathSource, id, type, path, p, params, locationMap);
         },
         VariableDeclarator: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
@@ -371,24 +562,25 @@ class AutoLogShift {
             const rightLoc = right.loc || (locationMap[rightId] || {}).loc;
             let rightValue = null;
 
-            let extraLocs = null;
-
+            let extraLocs = {
+                value: {...rightLoc},
+                end: path.parentPath && path.parentPath.value &&
+                path.parentPath.value[path.parentPath.value.length - 1] === path.value ?
+                    AutoLogShift.getEndLoc(path.parentPath.parentPath.value.loc, path.value.loc) : null
+            };
             const variableDeclarationLoc =
                 path.parentPath && path.parentPath.parentPath ? path.parentPath.parentPath.value.loc : null;
             const firstVariableDeclaratorLoc = path.parentPath && path.parentPath.value ? path.parentPath.value[0].id.loc : null;
             //expressionType     console.log('ve', !!(variableDeclarationLoc && firstVariableDeclaratorLoc), variableDeclarationLoc, firstVariableDeclaratorLoc);
-            if (!!(variableDeclarationLoc && firstVariableDeclaratorLoc)) {
-
-                extraLocs = {
-                    'kind': {
-                        start: {
-                            line: variableDeclarationLoc.start.line,
-                            column: variableDeclarationLoc.start.column,
-                        },
-                        end: {
-                            line: firstVariableDeclaratorLoc.start.line,
-                            column: firstVariableDeclaratorLoc.start.column,
-                        }
+            if (variableDeclarationLoc && firstVariableDeclaratorLoc) {
+                extraLocs['kind'] = {
+                    start: {
+                        line: variableDeclarationLoc.start.line,
+                        column: variableDeclarationLoc.start.column,
+                    },
+                    end: {
+                        line: firstVariableDeclaratorLoc.start.line,
+                        column: firstVariableDeclaratorLoc.start.column,
                     }
                 };
             }
@@ -436,7 +628,7 @@ class AutoLogShift {
             ];
             // console.log('vd', type, path);
             // path.value.init=this.autoLogExpression(pathSource, id, type, path, p, params);
-            return j.variableDeclarator(left, this.autoLogExpression(pathSource, id, type, path, p, params));
+            return j.variableDeclarator(left, this.autoLogExpression(pathSource, id, type, path, p, params, locationMap));
         },
         // NewExpression: (ast, locationMap, getLocationId, path) => {
         // },
@@ -455,7 +647,11 @@ class AutoLogShift {
         return false;
     };
 
-    static extractDependencyInfo = (node) => {
+    static extractDependencyInfo = (node, expressionPath, locationMap, getLocationId) => {
+        const expressionType = expressionPath.value ? expressionPath.value.type : null;
+        const expressionLoc = expressionType ? expressionPath.value.loc : null;
+        let id = expressionLoc ? getLocationId(expressionLoc, expressionType) : null;
+
         let path = (j(node).toSource() || '').replace(/["'`]/g, '');
         let loc = node.loc;
         let error = null;
@@ -465,16 +661,23 @@ class AutoLogShift {
             name = path.substring(0, firstSlash);
             error = `Dependency ${name} cannot have paths: RequireJS does not support relative paths: "${path}".`;
         }
-        return {path, source: `"${name}"`, name, loc, error};
+        id && (locationMap[id] = {
+            type: alt.DependencyError,
+            expressionType,
+            loc,
+            expressionLoc
+        });
+        return {path, source: `"${name}"`, name, id, error};
     };
 
-    static getDependencies = (ast) => {
+    static getDependencies = (ast, locationMap, getLocationId) => {
         const dependencies = {};
         const asyncDependencies = {};
         const dependenciesInfo = [];
         let hasErrors = false;
         const handleImports = path => {
-            const dependencyInfo = AutoLogShift.extractDependencyInfo(path.value.source);
+            const dependencyInfo =
+                AutoLogShift.extractDependencyInfo(path.value.source, path, locationMap, getLocationId);
             hasErrors = hasErrors || !!dependencyInfo.error;
             dependenciesInfo.push(dependencyInfo);
             const source = dependencyInfo.source;
@@ -487,7 +690,8 @@ class AutoLogShift {
             if (isRequire) {
                 const arg = path.value.arguments[0];
                 if (arg.type === j.Literal.name) {
-                    const dependencyInfo = AutoLogShift.extractDependencyInfo(path.value.arguments[0]);
+                    const dependencyInfo =
+                        AutoLogShift.extractDependencyInfo(path.value.arguments[0], path, locationMap, getLocationId);
                     hasErrors = hasErrors || !!dependencyInfo.error;
                     dependenciesInfo.push(dependencyInfo);
                     const source = dependencyInfo.source;
@@ -502,7 +706,8 @@ class AutoLogShift {
                     if (arg.type === j.ArrayExpression.name) {
                         arg.elements.forEach(el => {
                             if (el.type === j.Literal.name) { // same
-                                const dependencyInfo = AutoLogShift.extractDependencyInfo(el);
+                                const dependencyInfo =
+                                    AutoLogShift.extractDependencyInfo(el, path, locationMap, getLocationId);
                                 hasErrors = hasErrors || !!dependencyInfo.error;
                                 dependenciesInfo.push(dependencyInfo);
                                 const source = dependencyInfo.source;
@@ -554,7 +759,7 @@ class AutoLogShift {
                             paramIds = `${paramIds}${paramIds ? ',' : ''}'${param.name}'`;
                             paramValues = `${paramValues}${paramValues ? ',' : ''}${param.name}`;
                         } else {
-                          //  console.log('pi', param);
+                            //  console.log('pi', param);
                         }
 
                     }
@@ -575,7 +780,7 @@ class AutoLogShift {
                             paramIds = `${paramIds}${paramIds ? ',' : ''}'${paramId.name}'`;
                             paramValues = `${paramValues}${paramValues ? ',' : ''}${paramId.name}`;
                         } else {
-                            console.log('pi', idPath, idPath.value);
+                           // console.log('pi', idPath, idPath.value);
                         }
                     });
                 });
@@ -631,6 +836,38 @@ class AutoLogShift {
             },
     };
 
+    static getPathExpressionStatementLoc(path) {
+        let parentPath = path.parentPath;
+        let expressionStatementLoc = null;
+        let expressionLoc = null;
+        while (parentPath) {
+            expressionStatementLoc = (parentPath && parentPath.value &&
+                parentPath.value.type === 'ExpressionStatement') ?
+                {...parentPath.value.loc} : null;
+            // expressionStatementLoc && console.log('exp', parentPath.value, parentPath.value.expression);
+            expressionLoc = expressionStatementLoc ?
+                parentPath.value.expression ? parentPath.value.expression.loc :
+                    parentPath.value && parentPath.value.name === 'declarations' ?
+                        parentPath.value[parentPath.value.length - 1].loc :
+                        parentPath.value && parentPath.value.name === 'arguments' ?
+                            parentPath.value[parentPath.value.length - 1].loc : null : null;
+            parentPath = expressionStatementLoc ? null : parentPath.parentPath;
+        }
+        // console.log('col', expressionLoc, expressionStatementLoc);
+        return AutoLogShift.getEndLoc(expressionStatementLoc, expressionLoc);
+    }
+
+    static getEndLoc(expressionStatementLoc, expressionLoc) {
+        //  console.log('col', expressionLoc, expressionStatementLoc);
+        return expressionStatementLoc && expressionLoc ?
+            (expressionLoc.end.line === expressionStatementLoc.end.line &&
+                expressionLoc.end.column === expressionStatementLoc.end.column) ?
+                null : {
+                    start: {...expressionLoc.end},
+                    end: {...expressionStatementLoc.end}
+                } : null;
+    }
+
     autoLogExpressions(ast, paths, locationMap, getLocationId) {
 
         const getJReplacer = (id, type, path, parentId, parentType, parentPath) => (p => {
@@ -640,16 +877,29 @@ class AutoLogShift {
             const testableStatementType = isTest ? parentPath.value.type : null;
             const extraLocs = isTest ? {
                 testableStatement: {...parentPath.value.loc},
-                body: parentPath.value.body?{...parentPath.value.body.loc}:null,
-                consequent: parentPath.value.consequent?{...parentPath.value.consequent.loc}:null,
-                alternate: parentPath.value.alternate?{...parentPath.value.alternate.loc}:null,
-                return:isReturn ? {...parentPath.value.loc} : null,
-            } : isReturn?{return:{...parentPath.value.loc} }:null;
+                body: parentPath.value.body ? {...parentPath.value.body.loc} : null,
+                consequent: parentPath.value.consequent ? {...parentPath.value.consequent.loc} : null,
+                alternate: parentPath.value.alternate ? {...parentPath.value.alternate.loc} : null,
+                return: isReturn ? {...parentPath.value.loc} : null,
+            } : isReturn ? {return: {...parentPath.value.loc}} : null;
 
-            const loc = {...path.value.loc};
-          //  id= isReturn? parentId: id;
-          //  isTest && console.log('TES', testableStatementType,path);
-        //    isReturn && console.log('RET', parentPath);
+            let variableEqualsLoc = null;
+            if (type === 'VariableDeclarator') {
+                variableEqualsLoc = {
+                    start: path.value.id.autologId ?
+                        locationMap[path.value.id.autologId].loc.start :
+                        path.value.id.loc.start,
+                    end: path.value.init.autologId ?
+                        locationMap[path.value.init.autologId].loc.start :
+                        path.value.init.loc.start
+                };
+            }
+
+            const loc = variableEqualsLoc || {...path.value.loc};
+            const statementEndLoc = AutoLogShift.getPathExpressionStatementLoc(path);
+            //  id= isReturn? parentId: id;
+            //  isTest && console.log('TES', testableStatementType,path);
+            //    isReturn && console.log('RET', parentPath);
             locationMap[id] = {
                 type: alt.Expression,
                 expressionType: type,
@@ -659,8 +909,9 @@ class AutoLogShift {
                 isTest,
                 testableStatementType,
                 extraLocs,
+                statementEndLoc
             };
-            if (this.composedExpressions[type]  ) {
+            if (this.composedExpressions[type]) {
                 return this.composedExpressions[type]({ast, locationMap, getLocationId, path}, {
                     pathSource,
                     id,
@@ -688,14 +939,20 @@ class AutoLogShift {
                             //     [j.identifier(`'${pathSource}'`)]
                             // );
                             return j.arrayExpression(
-                                [this.autoLogExpression(`'${pathSource}'`, id, type, path, p)]
+                                [this.autoLogExpression(`'${pathSource}'`, id, type, path, p, null, locationMap)]
                             );
                         }
                     } else {
-                        return this.autoLogExpression(pathSource, id, type, path, p);
+                        return this.autoLogExpression(pathSource, id, type, path, p, null, locationMap);
                     }
                 } else {
-                    return this.autoLogExpression(pathSource, id, type, path, p);
+                    // if ((path.value.type !== 'JSXAttribute')
+                    //     && path.parentPath && (path.parentPath.value.type === 'JSXElement' || path.parentPath.value.type === 'JSXExpressionContainer')) {
+                    //
+                    //     return j.jsxExpressionContainer(this.autoLogExpression(pathSource, id, type, path, p));
+                    // } else {
+                    return this.autoLogExpression(pathSource, id, type, path, p, null, locationMap);
+                    // }
                 }
             }
         });
@@ -811,6 +1068,7 @@ class AutoLogShift {
                         parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
                     }
                     if (parentId) {
+
                         let extraLocs = null;
                         let blockName = path.name;// 'TryStatement',
                         //     'WhileStatement',
@@ -818,9 +1076,10 @@ class AutoLogShift {
                         //     'ForStatement',
                         //     'ForInStatement',
                         //     'DoWhileStatement',
+
                         switch (parentType) {
                             case 'IfStatement':
-                               // console.log('IfStatement log', blockName, loc);
+                                // console.log('IfStatement log', blockName, loc);
                                 extraLocs = {
                                     test: parentPath.value.test.loc ?
                                         parentPath.value.test.loc : locationMap[parentPath.value.test.autologId].loc,
@@ -855,10 +1114,70 @@ class AutoLogShift {
                                     signature: parentLoc || locationMap[parentPath.value.autologId].loc,
                                 };
                                 break;
+                            case 'TryStatement':
+
+                                locationMap[parentId] = {
+                                    ...(locationMap[parentId] || {
+                                        type: alt.BlockControl,
+                                        expressionType: 'TryStatement',
+                                        loc: parentLoc || parentPath.value.loc,
+                                    }),
+                                };
+                                locationMap[parentId].extraLocs = locationMap[parentId].extraLocs || {};
+                                locationMap[parentId].extraLocs[path.name] = {
+                                    blockId: id,
+                                    blockLoc: loc,
+                                };
+
+                                extraLocs = {
+                                    isException: true,
+                                    name: path.name,
+                                    parentId,
+                                    tryLocs: locationMap[parentId],
+                                };
+                                parentId = id;
+                                break;
+                            case 'CatchClause':
+                                const parentStatementId = parentPath.parentPath &&
+                                    getLocationId(parentPath.parentPath.value.loc, 'TryStatement');
+                                const parentStatement = parentStatementId ?
+                                    {
+                                        isException: true,
+                                        name: 'handler',
+                                        parentId: parentStatementId,
+                                        tryLocs: locationMap[parentStatementId],
+                                    } : {};
+
+                                if (parentStatementId) {
+                                    locationMap[parentStatementId] = {
+                                        ...(locationMap[parentStatementId] || {
+                                            type: alt.BlockControl,
+                                            expressionType: 'TryStatement',
+                                            loc: parentPath.parentPath.value.loc,
+                                        }),
+                                    };
+                                    locationMap[parentStatementId].extraLocs = locationMap[parentStatementId].extraLocs || {};
+                                    locationMap[parentStatementId].extraLocs['handler'] = {
+                                        blockId: id,
+                                        blockLoc: loc,
+                                    };
+                                    const eId = parentPath.parentPath &&
+                                        getLocationId(parentPath.value.param.loc, 'Identifier');
+                                    eId && (locationMap[parentStatementId].extraLocs['e'] = {
+                                        blockId: eId,
+                                        blockLoc: parentPath.value.param.loc,
+                                    });
+                                }
+                                extraLocs = {
+                                    ...parentStatement,
+                                    exception: parentLoc || parentPath.value.param.loc,
+                                    tryLocs: parentStatementId && locationMap[parentStatementId]
+                                };
+                                break;
                             default:
                                 extraLocs = {};
                         }
-                        //     console.log(parentType, path.name, extraLocs, path, parentPath);
+
 
                         locationMap[parentId] = {
                             type: alt.BlockControl,
@@ -868,6 +1187,7 @@ class AutoLogShift {
                             blockLoc: loc,
                             extraLocs
                         };
+
                         const jid = j.identifier(`'${parentId}'`);
                         let hasParams = false;
 
@@ -907,14 +1227,14 @@ class AutoLogShift {
                             j.callExpression(j.identifier(l.postAutoLogId), [jid]),
                             j.identifier(`'${j.BlockStatement.name}'`),
                             // j.identifier(`'${parentType}'`),
-                            j.identifier(`[]`),
+                            j.identifier(`[${extraLocs.exception ? j(parentPath.value.param).toSource() : ''}]`),
                             j.identifier(`[]`),
                             j.identifier(`[]`),
                         ];
                         const funcParamsStatement = funcParams.length ? j.expressionStatement(
                             j.identifier(`let [${funcParams}] = ${l.autoLogArguments}`)
                         ) : null;
-                        const enterExpression = this.autoLogExpression(null, id, type, path, null, params);
+                        const enterExpression = this.autoLogExpression(null, id, type, path, null, params, locationMap);
 
                         const body = path.value.body;
                         //  console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
@@ -941,6 +1261,7 @@ class AutoLogShift {
                                 body.unshift(funcParamsStatement);
                             }
                         }
+                        console.log('pp', parentType, body, parentPath.value.autologId, parentLoc);
                         // if (AutoLogShift.SupportedBlocks.includes(parentType)) {
                         //     if (this.composedBlocks[parentType]) {
                         //         return this.composedBlocks[parentType](
@@ -958,8 +1279,7 @@ class AutoLogShift {
                 } else {
                     console.log('ignored no parent', path,);
                 }
-            }
-            else {
+            } else {
                 if (AutoLogShift.SupportedExpressions.includes(type)) {
                     //console.log('block', expressionType, loc, path);
                 } else {

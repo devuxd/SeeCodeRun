@@ -170,13 +170,20 @@ class Pastebin extends Component {
             //     }
             //     return r;
             // }, []);
+            const newSearchState = {
+                ...this.state.searchState,
+                visualQuery: newVisualQuery,
+                visualQueryHover,
+                selectedVisualQueries
+            };
+            const {orderBy, order, isPlaying, timeline, getEditorTextInLoc} = this.state;
+            const data = this.createData(timeline, getEditorTextInLoc, newSearchState);
+            // console.log(orderBy, order, orderBy === 'time' && order === 'desc');
+            const sortedData =
+                orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
             return {
-                searchState: {
-                    ...this.state.searchState,
-                    visualQuery: newVisualQuery,
-                    visualQueryHover,
-                    selectedVisualQueries
-                }
+                data: sortedData,
+                searchState: newSearchState
             }
         });
     };
@@ -452,10 +459,10 @@ class Pastebin extends Component {
         this.debugScrollerRef.current && (this.debugScrollerRef.current.scrollTop = 0);
     }
 
-    createData(timeline, getEditorTextInLoc) {
+    createData(timeline, getEditorTextInLoc, searchState = this.state.searchState) {
         let tl = timeline || [];
-        return tl.filter(entry => (!entry.isError||!this.state.searchState.visualQuery || !this.state.searchState.visualQuery.length) ||
-            (entry.isOutput && this.state.searchState.visualQuery.find(q => entry.outputRefs.includes(q)))
+        return tl.filter(entry => (entry.isError || !searchState.visualQuery || !searchState.visualQuery.length) ||
+            (entry.isOutput && searchState.visualQuery.find(q => entry.outputRefs.includes(q)))
         ).map((entry, i) => ({
             id: entry.reactKey,
             time: entry.i,
@@ -510,6 +517,7 @@ class Pastebin extends Component {
          setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
          objectNodeRenderer, handleChange) => {
             const {orderBy, order, isPlaying} = this.state;
+            // console.log('sta', this.state.searchState.visualQuery);
             isPlaying && this.handleChangeDebugLoading(true);
             const rowsLayout = this.getRowsLayout(isNew) || {};
             setTimeout(() => {
