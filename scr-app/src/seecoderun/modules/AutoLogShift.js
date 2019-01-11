@@ -293,24 +293,24 @@ class AutoLogShift {
         'CallExpression', // x()
         'NewExpression', // new X
         'MemberExpression', // x.y, except x.y =...
-        'AssignmentExpression', // x=y; todo needs extra statement al(id='x', val=x)
+        'AssignmentExpression', // x=y;
         'Identifier', // Property, PropertyClass
         // 'Property',// is checked with parent via Identifier child
         // 'FunctionExpression', is as block
-        // 'ArrowFunctionExpression',  is as block
+        // 'ArrowFunctionExpression',  is as block/statement
         'VariableDeclarator',
         // 'JSXElement',
     ];
 
     static SupportedBlockExpressions = [
-        'FunctionExpression', // x= function (...){...}
-        'ArrowFunctionExpression', // (...)=>{...},..., x=>y
+        // 'FunctionExpression', // x= function (...){...}
+        'ArrowFunctionExpression', // (...)=>{...},..., x=>y (without bock syntax)
     ];
 
     static SupportedBlocks = [
         // 'Function', //?
-        // 'FunctionExpression', // x= function (...){...}
-        // 'ArrowFunctionExpression', // (...)=>{...},..., x=>y
+        'FunctionExpression', // x= function (...){...}
+        'ArrowFunctionExpression', // (...)=>{...},..., x=>y (with block syntax)
         'FunctionDeclaration', // function x(...){...}
         'MethodDefinition', // Class X{ x(...){...} x=(...)=>{...}},
         'IfStatement', // if(...){...}else{...}
@@ -324,7 +324,7 @@ class AutoLogShift {
         'ForStatement',
         'ForInStatement',
         'DoWhileStatement',
-        //Program  is not a block
+        //'Program', //  is not a block
     ];
 
     static IdentifierIgnores = [

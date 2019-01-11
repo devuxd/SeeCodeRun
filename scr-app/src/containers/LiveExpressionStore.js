@@ -944,14 +944,38 @@ class LiveExpressionStore extends Component {
         });
     }
 
-    adjustWidth = (liveExpresionDataInLine) => {
+    adjustWidth = (liveExpresionDataInLineRaw) => {
+        const liveExpresionDataInLine = liveExpresionDataInLineRaw.sort((a, b) => {
+            const aRange = a.range, bRange = b.range;
+            if (aRange && bRange && aRange !== bRange) {
+                if (aRange.containsRange(bRange)) {
+                    if (aRange.equalsRange()) {
+                        return 0;
+                    } else {
+                        return 1;
+                    }
+                } else {
+                    if (aRange.startColumn < bRange.startColumn) {
+                        return -1;
+                    } else {
+                        if (aRange.startColumn > bRange.startColumn) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    }
+                }
+            }
+            return 0;
+        });
         const {firecoPad} = this.state;
+        const toReAdjust = [];
         liveExpresionDataInLine.forEach(i => {
             let isIVisible = true, marginLeft = 0, isAlignRight = false;
             if (i.domNode.offsetParent === null) {
                 isIVisible = false;
                 if (i.domNode.dataset.marginLeft) {
-                    marginLeft = i.domNode.dataset.marginLeft;
+                    marginLeft = parseFloat(i.domNode.dataset.marginLeft||'0');
                 } else {
                     return;
                 }
@@ -971,6 +995,7 @@ class LiveExpressionStore extends Component {
                 i.domNode.style.marginLeft = `${marginLeft - 7}px`;
                 i.domNode.dataset.marginLeft = `${marginLeft}`;
                 i.domNode.dataset.isAlignRight = 'true';
+                toReAdjust.push(i.domNode);
             } else {
                 if (i.n.expressionType === 'AssignmentExpression'
                     || i.n.expressionType === 'ReturnStatement'
@@ -1042,6 +1067,7 @@ class LiveExpressionStore extends Component {
                     : i.domNode.dataset.maxWidth;
                 i.domNode.style.maxWidth = `${leftBoundWidth - 7}px`;
                 i.domNode.dataset.maxWidth = `${leftBoundWidth}`;
+                toReAdjust.push(i.domNode);
             }
 
             if (marginBound) {
@@ -1060,12 +1086,23 @@ class LiveExpressionStore extends Component {
                     marginBound.domNode.dataset.marginLeft = `${marginLeft}`;
                     i.domNode.style.maxWidth = `${marginLeft}px`;
                     i.domNode.dataset.maxWidth = `${marginLeft}`;
+                    toReAdjust.push(i.domNode);
+                    toReAdjust.push(marginBound.domNode);
+                }else{
+
                 }
-
-
             }
 
         });
+        toReAdjust.forEach((nodeI, i)=>{
+            for(let j=i;j<toReAdjust.length;j++){
+                // const nodeJ = toReAdjust[j];
+                // const iStart = nodeI.dataset.isAlignRight?parseFloat(nodeI.style.marginLeft)
+                // if(){
+                //
+                // }
+            }
+        })
     };
 
     render() {
