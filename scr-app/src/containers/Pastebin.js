@@ -716,11 +716,14 @@ class Pastebin extends Component {
         this.setState(prevState => {
             const isGraphicalLocatorActive = !prevState.isGraphicalLocatorActive;
             const searchState = {...prevState.searchState};
-            if (!isGraphicalLocatorActive) {
+            if (isGraphicalLocatorActive) {
+                searchState.isExpressionsTemp = searchState.isExpressions;
+                searchState.isExpressions = true;
+            }else{
                 searchState.visualQuery = null;
                 searchState.visualId = null;
+                searchState.isExpressions = searchState.isExpressionsTemp;
             }
-            //  console.log(prevState, isGraphicalLocatorActive);
             return {
                 isGraphicalLocatorActive,
                 searchState
