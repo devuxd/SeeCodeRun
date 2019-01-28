@@ -610,9 +610,9 @@ class Chat extends Component {
             const {classes, ref, ...other} = inputProps;
             return (
                 <TextField
+                    fullWidth
                     error={!chatUserName}
                     label={chatUserName ? 'Chat Name' : 'Enter your chat name'}
-                    fullWidth
                     inputRef={ref}
                     InputProps={{
                         classes: {

@@ -194,7 +194,7 @@ class DebugContainer extends React.Component {
                         onChange={handleChangeTab}
                         indicatorColor="primary"
                         textColor="primary"
-                        fullWidth
+                        variant="fullWidth"
                         centered
                         className={classes.appCompact}
                     >

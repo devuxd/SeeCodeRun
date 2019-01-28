@@ -6,6 +6,7 @@ import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
 import {withStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 import CloseIcon from '@material-ui/icons/Close';
 // import WarningIcon from '@material-ui/icons/Warning';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
@@ -150,11 +151,11 @@ class Editor extends Component {
                 />
                 {settingsOpen ?
                     (
-                        <Button variant="fab" mini color="secondary" aria-label="settings"
+                        <Fab mini="true" color="secondary" aria-label="settings"
                                 className={fabClassName}
                                 onClick={this.handleClick}>
                             <SettingsIcon/>
-                        </Button>)
+                        </Fab>)
                     : null
                 }
             </div>

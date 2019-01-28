@@ -268,18 +268,18 @@ class EnhancedToolbar extends React.Component {
                 </React.Fragment>}
                 <div className={classes.title}>
                     {numSelected > 0 ? (
-                        <Typography color="inherit" variant="subheading">
+                        <Typography color="inherit" variant="subtitle1">
                             {numSelected} selected
                         </Typography>
                     ) : (
                         <TextField
+                            fullWidth
                             id="search"
                             label={null}
                             placeholder="Search in trace, ex: color:blue"
                             type="search"
                             className={classes.textField}
                             margin="normal"
-                            fullWidth
                             InputProps={{
                                 startAdornment: (!!(searchState.visualQuery && searchState.visualQuery.length) &&
                                     <InputAdornment position="start">

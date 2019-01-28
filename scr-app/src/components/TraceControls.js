@@ -27,7 +27,7 @@ import Menu from '@material-ui/core/Menu';
 import ListItem from '@material-ui/core/ListItem';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 
@@ -295,15 +295,14 @@ class TraceControls extends React.Component {
 
         return (
             <div>
-                {hidden && <Button variant="fab"
-                                   mini
+                {hidden && <Fab     mini="true"
                                    color="default"
                                    aria-label="seeCode.run configuration"
                                    className={classes.speedDialBackdrop}
                                    onClick={() => this.handleVisibility(true)}
                                    onMouseEnter={() => this.handleVisibility(true)}
                                    onMouseLeave={() => this.handleVisibility(false)}
-                > <SettingsIcon/></Button>}
+                > <SettingsIcon/></Fab>}
                 {!hidden && <SpeedDial
                     ariaLabel="seeCode.run configuration"
                     className={classes.speedDial}

@@ -1,4 +1,3 @@
-import 'typeface-roboto';
 import 'react-resizable/css/styles.css';
 import './utils/react-grid-layout-scr-theme.css';
 

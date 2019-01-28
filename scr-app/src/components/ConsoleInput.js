@@ -92,11 +92,13 @@ const styles = theme => ({
         color: theme.palette.secondary.main,
         width: theme.spacing.unit * 3,
         height: theme.spacing.unit * 3,
+        padding: 0,
     },
     clearActionIconContainer: {
         color: theme.palette.primary.main,
         width: theme.spacing.unit * 3,
         height: theme.spacing.unit * 3,
+        padding: 0,
     },
     actionIcon: {
         // color: theme.palette.secondary.main,
@@ -273,18 +275,18 @@ class ConsoleInput extends Component {
                 </span>
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
-                        <IconButton aria-label="Clear Console" className={classes.clearActionIconContainer}>
+                        <IconButton aria-label="Clear Console" className={classes.clearActionIconContainer}
+                                    onClick={clearConsole}>
                             <CancelIcon
-                                onClick={clearConsole}
                                 className={classes.actionIcon}
                             />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Preserve Logs">
-                        <IconButton aria-label="Preserve Logs" className={classes.actionIconContainer}>
+                        <IconButton aria-label="Preserve Logs" className={classes.actionIconContainer}
+                                    onClick={this.preserveLogs}>
                             <DeleteSweepIcon
                                 className={isPreserveLogs ? classes.actionIcon : classes.actionIconInactive}
-                                onClick={this.preserveLogs}
                             />
                          </IconButton>
                     </Tooltip>

@@ -327,7 +327,7 @@ class TopNavigationBar extends Component {
                         {
                             networkStateIcon
                         }
-                        <Typography variant="title" color="inherit"
+                        <Typography variant="h6" color="inherit"
                                     className={classes.flex}>
                         </Typography>
                         <IconButton

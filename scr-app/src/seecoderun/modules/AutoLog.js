@@ -409,15 +409,15 @@ class AutoLog {
             type: AutoLogErrors.parse5,
             message: 'The HTML file contains errors.'
         };
-        state.parsed = parse5.parse(html, {locationInfo: true});
+        state.parsed = parse5.parse(html, {sourceCodeLocationInfo: true});
         state.humanUnderstandableError.message = 'HTML Element not found.';
         const htmlElementChildNodes = state.parsed.childNodes.find(node => node.nodeName === 'html').childNodes;
 
         state.humanUnderstandableError.message = 'Head Element not found.';
-        state.headTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'head').__location;
+        state.headTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'head').sourceCodeLocation;
 
         state.humanUnderstandableError.message = 'Body Element not found.';
-        state.bodyTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'body').__location;
+        state.bodyTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'body').sourceCodeLocation;
 
         state.humanUnderstandableError.message = 'Head opening tag not found.';
         const defaultHeadTagLocation = {

@@ -36,11 +36,19 @@ const palette = {
     },
 };
 const lightTheme = createMuiTheme({
-    palette
+    palette,
+    typography: {
+        useNextVariants: true,
+    },
 });
 
 const darkTheme = createMuiTheme({
-    palette: {...palette, type: 'dark'},
+    palette: {...palette,
+        type: 'dark',
+    },
+    typography: {
+        useNextVariants: true,
+    },
 });
 
 export const themeTypes = {
@@ -55,7 +63,7 @@ const themes = {
 
 const jss = create(jssPreset());
 
-const generateClassName = createGenerateClassName();
+jss.options.createGenerateClassName = createGenerateClassName;
 
 const MuiThemeProviderComponent = class extends Component {
     state = {
@@ -107,7 +115,7 @@ const MuiThemeProviderComponent = class extends Component {
 function withRoot(Component) {
     function WithRoot(props) {
         return (
-            <JssProvider jss={jss} generateClassName={generateClassName}>
+            <JssProvider jss={jss}>
                 <MuiThemeProviderComponent Component={Component}
                                            ComponentProps={props}/>
             </JssProvider>

@@ -66,7 +66,7 @@ class TraceTableHead extends React.Component {
                         return (
                             <TableCell
                                 key={column.id}
-                                numeric={column.numeric}
+                                align={column.numeric?'right':'inherit'}
                                 className={classes[column.className]}
                                 sortDirection={orderBy === column.id ? order : false}
                             >

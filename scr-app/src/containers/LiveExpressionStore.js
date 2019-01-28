@@ -878,7 +878,7 @@ class LiveExpressionStore extends Component {
                                                 {/*//  placeholderClassName={classes.expressionCellContent}*/}
                                                 {/*// placeholderDisableGutters={true}*/}
                                                 {/*>*/}
-                                                <Button variant="raised" color={color}
+                                                <Button variant="contained" color={color}
                                                         className={branchNavigatorWidgetClassName}>
                                                     {branchLabel}</Button>
                                                 {/*<ObjectRootLabel data={branched[id]}/>*/}

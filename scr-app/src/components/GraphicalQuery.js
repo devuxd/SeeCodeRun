@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {withStyles} from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 // import Checkbox from '@material-ui/core/Checkbox';
 // import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 // import CheckBoxIcon from '@material-ui/icons/CheckBox';
@@ -25,8 +25,8 @@ const styles = theme => ({
         minHeight: 'unset',
         minWidth: 'unset',
         margin: '0',
-        paddingLeft: theme.spacing.unit/2,
-        paddingRight:  theme.spacing.unit/2,
+        paddingLeft: theme.spacing.unit / 2,
+        paddingRight: theme.spacing.unit / 2,
         height: 14,
         fontSize: 10,
         lineHeight: 1,
@@ -87,21 +87,21 @@ class GraphicalQuery extends React.Component {
             onMouseEnter={() => this.setState({isHovered: true})}
             onMouseLeave={() => this.setState({isHovered: false})}
         >
-            <Button color={color || 'secondary'}
-                    variant="extendedFab"
-                    aria-label={`visual element number ${visualIds}`}
-                    elevation={0}
-                    className={isHovered ? classes.buttonRootHovered : selected ? classes.buttonRootSelected : classes.buttonRoot}
-                    onClick={() => {
-                        VisualQueryManager.onChange(outputRefs, visualIds, 'click');
-                    }}
-                    onMouseEnter={() => {
-                        VisualQueryManager.onChange(outputRefs, visualIds, 'mouseenter');
-                    }}
-                    onMouseLeave={() => {
-                        VisualQueryManager.onChange(outputRefs, visualIds, 'mouseleave');
-                    }}
-                    {...rest}
+            <Fab color={color || 'secondary'}
+                 variant="extended"
+                 aria-label={`visual element number ${visualIds}`}
+                 elevation={0}
+                 className={isHovered ? classes.buttonRootHovered : selected ? classes.buttonRootSelected : classes.buttonRoot}
+                 onClick={() => {
+                     VisualQueryManager.onChange(outputRefs, visualIds, 'click');
+                 }}
+                 onMouseEnter={() => {
+                     VisualQueryManager.onChange(outputRefs, visualIds, 'mouseenter');
+                 }}
+                 onMouseLeave={() => {
+                     VisualQueryManager.onChange(outputRefs, visualIds, 'mouseleave');
+                 }}
+                 {...rest}
             >
                 {`${visualIds}`}
                 {/*{(isHovered || selected) && <Checkbox*/}
@@ -112,7 +112,7 @@ class GraphicalQuery extends React.Component {
                 {/*value={`${visualIds}`}*/}
                 {/*checked={selected}*/}
                 {/*/>}*/}
-            </Button>
+            </Fab>
         </div>;
     }
 }
