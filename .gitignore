@@ -3,10 +3,6 @@
 # testing
 /coverage
 
-# production
-/build
-/dist
-
 # misc
 package-lock.json
 .firebaserc
@@ -17,6 +13,7 @@ package-lock.json
 .env.development.local
 .env.test.local
 .env.production.local
+.firebase
 
 #logs
 npm-debug.log*
@@ -25,3 +22,4 @@ yarn-error.log*
 firebase-debug.log*
 functions/firebase-debug.log*
 functions/cloud-functions-emulator.log*
+
