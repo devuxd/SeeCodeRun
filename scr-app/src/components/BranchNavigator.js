@@ -69,12 +69,15 @@ const styles = theme => {
             },
         },
         text: {
-            marginLeft: theme.spacing.unit,
+            marginLeft: theme.spacing(1),
         },
         slider: {
-            marginLeft: theme.spacing.unit * 2,
+            marginLeft: theme.spacing(2),
+            // padding: 0,
         },
-        sliderWithLabel: {}
+        sliderWithLabel: {
+            marginLeft: theme.spacing(2),
+        }
     }
 };
 
@@ -94,12 +97,7 @@ class BranchNavigator extends Component {
         const {classes, min, max, value, handleSliderChange, color, hideLabel} = this.props;
         const sliderStyle = getSliderStyle(color);
         return (
-            <ListItem
-                role={undefined}
-                dense
-                disableGutters
-                divider
-            >
+            <ListItem>
                 {hideLabel ?
                     null
                     : <Typography className={classes.text}>{formatBranchValue(value, max)}</Typography>

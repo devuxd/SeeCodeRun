@@ -129,12 +129,12 @@ const styles = theme => ({
     hover: {},
     valueCell: {
         borderBottom: 0,
-        paddingLeft: theme.spacing.unit,
+        paddingLeft: theme.spacing(1),
         '&:first-child': {
-            paddingLeft: theme.spacing.unit * 4,
+            paddingLeft: theme.spacing(4),
         },
         '&:last-child': {
-            paddingRight: theme.spacing.unit * 2,
+            paddingRight: theme.spacing(2),
         },
         overflow: 'hidden',
         margin: 0,
@@ -142,7 +142,7 @@ const styles = theme => ({
         paddingBottom: 0,
     },
     bottomAction: {
-        margin: theme.spacing.unit * 4
+        margin: theme.spacing(4),
     },
     cellParamContainer: {
         //display: 'box',
@@ -151,21 +151,21 @@ const styles = theme => ({
         // flexDirection: 'row',
         // flexWrap: 'wrap',
         // overflowX: 'auto',
-        // padding: theme.spacing.unit,
-        // paddingBottom: theme.spacing.unit,
+        // padding: theme.spacing(1),
+        // paddingBottom: theme.spacing(1),
     },
     cellParam: {
         display: 'inline-flex',
-        marginLeft: theme.spacing.unit,
+        marginLeft: theme.spacing(1),
     },
     iconContainer: {
         position: 'absolute',
         left: 0,
-        marginLeft: -theme.spacing.unit * 3,
+        marginLeft: theme.spacing(-3),
         top: 0,
     },
     icon: {
-        fontSize: theme.spacing.unit * 2,
+        fontSize: theme.spacing(2),
         color: theme.palette.type === 'light'
             ? lighten(fade(theme.palette.divider, 1), 0.6)
             : darken(fade(theme.palette.divider, 1), 0.4)

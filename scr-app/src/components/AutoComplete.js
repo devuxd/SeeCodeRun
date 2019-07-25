@@ -27,8 +27,8 @@ const styles = (theme) => ({
         height: 250,
         width: 250,
         overflow: 'visible',
-        marginLeft: theme.spacing.unit,
-        marginRight: theme.spacing.unit,
+        marginLeft: theme.spacing(1),
+        marginRight: theme.spacing(1),
     },
     suggestionsContainerOpen: {
         position: 'absolute',

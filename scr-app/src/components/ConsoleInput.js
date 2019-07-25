@@ -62,20 +62,20 @@ const styles = theme => ({
     editorDiv: {
         position: 'absolute',
         top: 0,
-        left: theme.spacing.unit * 3,
+        left: theme.spacing(3),
         height: `calc(100%)`,
-        width: `calc(100% - ${theme.spacing.unit * 10}px)`
+        width: `calc(100% - ${theme.spacing(10)}px)`
     },
     iconContainer: {
         display: 'inline-flex',
         padding: '0.5rem 0',
-        width: theme.spacing.unit * 3,
+        width: theme.spacing(3),
         alignItems: 'center',
         justifyContent: 'center',
     },
     icon: {
         color: theme.palette.primary.main,
-        fontSize: theme.spacing.unit * 2,
+        fontSize: theme.spacing(2),
     },
     actionContainer: {
         position: 'absolute',
@@ -83,33 +83,33 @@ const styles = theme => ({
         flexDirection: 'row',
         right: 0,
         // marginRight: -theme.spacing.unit * 3,
-        margin: theme.spacing.unit / 2,
-        width: theme.spacing.unit * 6,
+        margin: theme.spacing(0.5),
+        width: theme.spacing(6),
         alignItems: 'center',
         justifyContent: 'center',
     },
     actionIconContainer: {
         color: theme.palette.secondary.main,
-        width: theme.spacing.unit * 3,
-        height: theme.spacing.unit * 3,
+        width: theme.spacing(3),
+        height: theme.spacing(3),
         padding: 0,
     },
     clearActionIconContainer: {
         color: theme.palette.primary.main,
-        width: theme.spacing.unit * 3,
-        height: theme.spacing.unit * 3,
+        width: theme.spacing(3),
+        height: theme.spacing(3),
         padding: 0,
     },
     actionIcon: {
         // color: theme.palette.secondary.main,
-        width: theme.spacing.unit * 2,
-        height: theme.spacing.unit * 2,
+        width: theme.spacing(2),
+        height: theme.spacing(2),
 
     },
     actionIconInactive: {
         color: theme.palette.action.active,
-        width: theme.spacing.unit * 2,
-        height: theme.spacing.unit * 2,
+        width: theme.spacing(2),
+        height: theme.spacing(2),
     },
 });
 

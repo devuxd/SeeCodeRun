@@ -139,8 +139,8 @@ const styles = theme => ({
         color: 'unset',
         backgroundColor: fade(theme.palette.background.paper, 0.75),
         // fontSize: theme.spacing.unit * 3,
-        width: theme.spacing.unit * 4,
-        height: theme.spacing.unit * 4,
+        width: theme.spacing(4),
+        height: theme.spacing(4),
 
     },
     listItemText: {
@@ -173,7 +173,7 @@ const styles = theme => ({
         zIndex: 1,
         position: 'absolute',
         width: 'fill-available',
-        margin: theme.spacing.unit,
+        margin: theme.spacing(1),
     },
 });
 
@@ -199,20 +199,11 @@ class DebugContainer extends React.Component {
                         className={classes.appCompact}
                     >
                         <Tab
-                            classes={{
-                                root: classes.appCompactTab,
-                                labelContainer: classes.labelContainer
-                            }}
                             label={<TabLabel
                                 classes={classes} icon={<PlayListPlayIcon/>} label="trace" exports={this.traceExports}/>
                             }
                         />
                         <Tab
-                            classes={{
-                                root: classes.appCompactTab,
-                                labelContainer: classes.labelContainer
-                            }}
-
                             label={<TabLabel
                                 classes={classes} icon={<ConsoleIcon/>} label="console" exports={this.consoleExports}/>
                             }

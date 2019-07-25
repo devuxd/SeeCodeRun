@@ -20,12 +20,13 @@ const disableUglifyJsPlugin = false;
 // (hint: the head comments often says the name and version the package,
 // if not the footers has the mapping to the original package)
 // Current chunks:
-// [0:jscodeshift, 1:firebase, 2:parse5 , 3:jquery, 4:firepad, 5:jquery, 6:jquery-ui, 7:jquery-ui.resizable,
+// [0:jscodeshift, 1:firebase, 2:??? , 3:jquery, 4:parse5, 5:jquery, 6:jquery-ui, 7:jquery-ui.resizable,
 //  8:jquery-ui.draggable, 9:jquery-ui-css,10:jquery,... , 12:babel]
 // Now enable UglifyJsPlugin again: disableUglifyJsPlugin:false.
 // The chunks in the array of reg exps plugin.options.exclude will be ignored.
 const excludes = [
     /\/js\/0\..*chunk.js$/, // so far jscodeshift is chunk 0, it may change with more code splits
+    /\/js\/4\..*chunk.js$/, // parse5
 ];
 
 const findPlugin = (config, pluginName) =>

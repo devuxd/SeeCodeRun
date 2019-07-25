@@ -164,16 +164,16 @@ const styles = theme => ({
         verticalAlign: 'inherit',
         textAlign: 'left',
         padding: 0,
-        paddingLeft: theme.spacing.unit * 2,
+        paddingLeft: theme.spacing(2),
         maxWidth: expressionCellMaxWidth,
     },
     expressionCellContent: {
         overflow: 'auto',
         position: 'relative',
         maxWidth: expressionCellMaxWidth,
-        paddingTop: theme.spacing.unit / 2,
-        paddingBottom: theme.spacing.unit,
-        marginBottom: -theme.spacing.unit,
+        paddingTop: theme.spacing(0.5),
+        paddingBottom: theme.spacing(1),
+        marginBottom: theme.spacing(-1),
     },
     expressionCellContentTypography: {
         fontFamily: 'Menlo, Monaco, "Courier New", monospace',
@@ -184,13 +184,13 @@ const styles = theme => ({
     },
     valueCell: {
         borderBottom: 0,
-        paddingLeft: theme.spacing.unit,
-        paddingRight: theme.spacing.unit,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
         '&:first-child': {
-            paddingLeft: theme.spacing.unit * 2,
+            paddingLeft: theme.spacing(2),
         },
         '&:last-child': {
-            paddingRight: theme.spacing.unit * 2,
+            paddingRight: theme.spacing(2),
         },
     },
     bottomValueCell: {
@@ -201,7 +201,7 @@ const styles = theme => ({
             }`,
     },
     bottomAction: {
-        margin: theme.spacing.unit * 4
+        margin: theme.spacing(4),
     },
     timeFlowButton: {
         position: 'absolute',
@@ -214,10 +214,10 @@ const styles = theme => ({
         height: TABLE_ROW_HEIGHT + 16,
     },
     tableHeadCell: {
-        marginLeft: theme.spacing.unit * 5,
+        marginLeft: theme.spacing(35),
     },
     cellPadding: {
-        paddingLeft: theme.spacing.unit * 6,
+        paddingLeft: theme.spacing(6),
     }
 });
 

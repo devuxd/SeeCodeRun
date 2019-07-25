@@ -22,7 +22,7 @@ export const ThemeContext = createContext({});
 let appStyle = {margin: 0};
 const styles = theme => {
     appStyle = {
-        margin: theme.spacing.unit,
+        margin: theme.spacing(1),
         rowHeightSmall: APP_BAR_HEIGHT,
         rowHeight: APP_BAR_HEIGHT,
         // rowHeightSmall: theme

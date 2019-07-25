@@ -42,8 +42,8 @@ import {getVisualIdsFromRefs} from "../containers/GraphicalMapper";
 
 const toolbarStyles = theme => ({
     root: {
-        paddingLeft: theme.spacing.unit,
-        paddingRight: theme.spacing.unit,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
     },
     highlight:
         theme.palette.type === 'light'
@@ -67,8 +67,8 @@ const toolbarStyles = theme => ({
     },
     textField: {
         margin: 0,
-        paddingLeft: theme.spacing.unit,
-        paddingRight: theme.spacing.unit,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
     },
     badge: {
         //  margin: theme.spacing.unit * 2,
@@ -87,13 +87,13 @@ const toolbarStyles = theme => ({
     chipRoot: {
         fontSize: theme.typography.pxToRem(theme.typography.fontSize * 0.8),
         height: theme.typography.fontSize * 1.75,
-        // margin: theme.spacing.unit,
+        // margin: theme.spacing(1),
         margin: 0,
         backgroundColor: 'transparent',
         // '&:first-child': {
-        //     marginLeft: theme.spacing.unit,
+        //     marginLeft: theme.spacing(1),
         // },
-        marginRight: theme.spacing.unit,
+        marginRight: theme.spacing(1),
     },
     chipAvatar: {
         marginRight: -(theme.typography.fontSize / 2),
@@ -108,8 +108,8 @@ const toolbarStyles = theme => ({
         width: theme.typography.fontSize * 1.25,
     },
     chipLabel: {
-        paddingLeft: theme.spacing.unit,
-        paddingRight: theme.spacing.unit * 0.5,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(0.5),
     },
 });
 

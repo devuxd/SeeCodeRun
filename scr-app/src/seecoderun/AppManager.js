@@ -158,7 +158,7 @@ class AppManager {
 
     async loadJPromise() {
         if (!this.j) {
-            this.j = await import('jscodeshift');
+            this.j = (await import('jscodeshift')).default;
         }
     }
 
@@ -301,10 +301,6 @@ class AppManager {
 
         firecoPad.astResult = {};
         firecoPad.getAst = async () => {
-            if (!this.j) {
-                this.j = await import('jscodeshift');
-            }
-
             if (!firecoPad.j) {
                 firecoPad.j = this.j;
             }

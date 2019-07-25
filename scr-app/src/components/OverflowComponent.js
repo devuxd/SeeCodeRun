@@ -157,38 +157,38 @@ const styles = theme => ({
     rootX: {
         position: 'relative',
         overflow: 'hidden',
-        paddingRight: theme.spacing.unit * 2,
+        paddingRight: theme.spacing(2),
         paddingBottom: 0,
     },
     rootY: {
         position: 'relative',
         overflow: 'hidden',
         paddingRight: 0,
-        paddingBottom: theme.spacing.unit * 2,
+        paddingBottom: theme.spacing(2),
     },
     rootBoth: {
         position: 'relative',
         overflow: 'hidden',
-        paddingRight: theme.spacing.unit * 2,
-        paddingBottom: theme.spacing.unit * 2,
+        paddingRight: theme.spacing(2),
+        paddingBottom: theme.spacing(2),
     },
     overflowXIcon: {
         color: 'default',
         position: 'absolute',
         top: '50%',
         right: 0,
-        marginTop: -theme.spacing.unit,
-        padding: theme.spacing.unit / 4,
-        fontSize: theme.spacing.unit * 2,
+        marginTop: theme.spacing(-1),
+        padding: theme.spacing(0.25),
+        fontSize: theme.spacing(2),
     },
     overflowYIcon: {
         zIndex: theme.zIndex.snackbar,
         position: 'absolute',
         left: '50%',
         bottom: 0,
-        marginLeft: -theme.spacing.unit,
-        padding: theme.spacing.unit / 4,
-        fontSize: theme.spacing.unit * 2,
+        marginLeft: theme.spacing(-1),
+        padding: theme.spacing(0.25),
+        fontSize: theme.spacing(2),
     }
 });
 

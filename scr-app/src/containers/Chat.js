@@ -63,13 +63,13 @@ const styles = theme => ({
         backgroundColor: theme.palette.background.paper,
         position: 'relative',
         overflow: 'auto',
-        padding: theme.spacing.unit * 1.2,
+        padding: theme.spacing( 1.2),
         paddingTop: 0,
     },
     chatMessageSticky: {
-        paddingTop: theme.spacing.unit,
+        paddingTop: theme.spacing(1),
         paddingLeft: 0,
-        paddingRight: theme.spacing.unit,
+        paddingRight: theme.spacing(1),
     },
     chatMessageCardHeader: {
         padding: 0,
@@ -468,7 +468,7 @@ class Chat extends Component {
 
     makeDraggableAndResizable = async () => {
         if (!$) { //todo jquery chunks is severely duplicated
-            $ = await import('jquery');
+            $ = (await import('jquery')).default;
             await import( 'jquery-ui/ui/core');
             await Promise.all([
                 import('jquery-ui/ui/widgets/draggable'),
@@ -479,7 +479,6 @@ class Chat extends Component {
                 import('jquery-ui/themes/base/resizable.css')
             ]);
         }
-
         if (!this.isDraggableAndResizable || !this.chatEl.current) {
             setTimeout(() => {
                 $(this.chatEl.current).draggable({

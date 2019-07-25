@@ -2,10 +2,12 @@ import React, {Component} from 'react';
 import {create} from 'jss';
 import JssProvider from 'react-jss/lib/JssProvider';
 import {
-    MuiThemeProvider,
-    createMuiTheme,
-    createGenerateClassName,
+    ThemeProvider,
     jssPreset,
+    createGenerateClassName,
+} from '@material-ui/styles';
+import {
+    createMuiTheme,
 } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
@@ -100,14 +102,14 @@ const MuiThemeProviderComponent = class extends Component {
         const {ComponentProps, Component} = this.props;
         const {themeType} = this.state;
         return (
-            <MuiThemeProvider theme={themes[themeType]}>
+            <ThemeProvider theme={themes[themeType]}>
                 <CssBaseline/>
                 <Component
                     {...ComponentProps}
                     themeType={themeType}
                     switchTheme={this.switchTheme}
                 />
-            </MuiThemeProvider>
+            </ThemeProvider>
         );
     }
 };
