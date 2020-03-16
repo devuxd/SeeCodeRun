@@ -127,10 +127,10 @@ const styles = (theme) => {
             },
             [`.${errorExpressionClassName}-lineDecoration`]: {
                 backgroundColor: 'red',
-                margin: theme.spacing.unit,
-                top: theme.spacing.unit / 2,
-                height: `${theme.spacing.unit}px !important`,
-                width: `${theme.spacing.unit}px !important`,
+                margin: theme.spacing(1),
+                top: theme.spacing(0.5),
+                height: `${theme.spacing(1)} !important`,
+                width: `${theme.spacing(1)} !important`,
             },
             [`.${branchExpressionClassName}`]: {
                 opacity: 1,
@@ -216,10 +216,10 @@ const styles = (theme) => {
         },
         objectExplorer: {
             minWidth: 200,
-            margin: theme.spacing.unit / 4,
+            margin: theme.spacing(0.25),
         },
         rangeSlider: {
-            padding: theme.spacing.unit,
+            padding: theme.spacing(1),
         },
         badgeRoot: {
             position: 'relative',
@@ -238,7 +238,7 @@ const styles = (theme) => {
         liveExpressionRoot: {
             position: 'relative',
             overflow: 'hidden',
-            paddingRight: theme.spacing.unit,
+            paddingRight: theme.spacing(1),
             paddingBottom: 0,
         },
         liveExpressionContainerUpdated: {
@@ -265,9 +265,9 @@ const styles = (theme) => {
             overflow: 'auto',
             position: 'relative',
             maxWidth: 'inherit',
-            // paddingTop: theme.spacing.unit,
+            // paddingTop: theme.spacing(1),
             // paddingBottom: theme.spacing.unit * 2,
-            // marginBottom: -theme.spacing.unit,
+            // marginBottom: -theme.spacing(1),
         },
         branchNavigatorWidget: {
             lineHeight: 1,
@@ -293,7 +293,7 @@ const styles = (theme) => {
             marginLeft: -2,
             marginRight: -4,
             padding: 2,
-            // marginTop: -theme.spacing.unit,
+            // marginTop: -theme.spacing(1),
             fontSize: monacoProps.lineOffSetHeight,
         },
         updated: {
@@ -327,7 +327,6 @@ class LiveExpressionStore extends Component {
         showLiveExpressions: true,
         updatingLiveExpressions: false,
         getLocationId: null,
-
     };
     rt = 100;
     currentEditorsTexts = null;
@@ -344,7 +343,7 @@ class LiveExpressionStore extends Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         // console.log('timeline', nextProps.timeline);
         if (nextProps.isNew && prevState.updatingLiveExpressions) {
-            return {updatingLiveExpressions: false};
+            return {updatingLiveExpressions: false, branchSelections: {}};
         }
         return null;
     }
@@ -406,8 +405,8 @@ class LiveExpressionStore extends Component {
 
     handleBranchChange =
         (navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI) => {
-            //  console.log('na',
-            // navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI);
+             console.log('na',
+            navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI);
             let {branchSelections} = this.state;
             const globalB = (branchSelections[NavigationTypes.Global] || {});
             const globalCurrentBranchId = globalB.currentBranchId;
@@ -510,7 +509,7 @@ class LiveExpressionStore extends Component {
         } = (branchSelections[navigationType] || {});
         const navigators = [];
         const {firecoPad} = this.state;
-        //  console.log('start cont ------------------------',);
+         // console.log('start cont ------------------------', branchSelections[navigationType] );
         for (const id in branched) {
             const decorator = (decorators || []).find(dec => dec.id === id);
             if (decorator) {
@@ -527,8 +526,9 @@ class LiveExpressionStore extends Component {
                         : branched[id].length; //branchIndex >= 0 ? branchIndex :
                     const branchTotal =
                         absoluteBranched && absoluteBranched[id] ? absoluteBranched[id].length : branched[id].length;
-                    const branchLabel = `${branchSelection}/${branchTotal}`;
-                    const sliderRange = [branchSelection];
+                    // const branchLabel = `${branchSelection}/${branchTotal}`;
+                    const branchLabel = `${navigatorIndex||branchTotal}/${branchTotal}`;
+                    const sliderRange = [navigatorIndex||branchTotal];
                     const branchNavigatorWidgetClassName = classes.branchNavigatorWidget;
                     const n = currentBranchTimelineId ?
                         this.timeline[this.timeline.length - currentBranchTimelineId] || {} : {};
@@ -969,6 +969,19 @@ class LiveExpressionStore extends Component {
             return 0;
         });
         const {firecoPad} = this.state;
+        class OffsetModel{
+            constructor(lineNumber, el, align, startOffset, endOffset, marginLeft, maxWidth){
+
+            }
+            isOccluding(){
+                
+            }
+            conciliate(){
+
+            }
+        }
+        const offsetModels = [];
+
         const toReAdjust = [];
         liveExpresionDataInLine.forEach(i => {
             let isIVisible = true, marginLeft = 0, isAlignRight = false;
@@ -1102,7 +1115,8 @@ class LiveExpressionStore extends Component {
                 //
                 // }
             }
-        })
+        });
+        // console.log('RE', toReAdjust);
     };
 
     render() {
@@ -1118,7 +1132,8 @@ class LiveExpressionStore extends Component {
         const {
             currentBranchId, currentBranchTimelineId,
             /*navigatorIndex,*/ prevTimelineI,
-        } = (branchSelections[NavigationTypes.Global] || {});
+        } = (branchSelections[NavigationTypes.Local] || branchSelections[NavigationTypes.Global]|| {});
+        //todo: pass all baranchSelections to Branch Manager
 
         const style = {
             width: 'calc(100%)',
@@ -1208,13 +1223,20 @@ class LiveExpressionStore extends Component {
                     console.log(data[data.length - 1], e)
                 }
 
+                if(entry &&
+                    (entry.expression && entry.expression.expressionType === 'BinaryExpression') &&
+                    (entry.parentExpression && entry.parentExpression.expressionType === 'WhileStatement')){
+                   // console.log('BE', entry);
+                }else{
+                    this.liveExpressionWidgets[widget.id] = {datum, widget, entry};
+                }
 
-                this.liveExpressionWidgets[widget.id] = {datum, widget, entry};
                 //todo assignemntexp
                 if (entry && (entry.expression && entry.expression.expressionType === 'VariableDeclarator') && isFunction(entry.value)) {
                     const range = firecoPad.liveExpressionWidgetProvider.locToMonacoRange(entry.loc);
                     range && liveRanges.push(range);
                 } else {
+
                     widget.range && liveRanges.push(widget.range);
                 }
 
@@ -1798,7 +1820,7 @@ class LiveExpressionStore extends Component {
                         if (this.traceSubscriber) {
                             this.traceSubscriber.unsubscribe();
                         }
-                        console.log('alJs', bundle.alJs);
+                        // console.log('alJs', bundle.alJs);
 
                         this.objectNodeRenderer = createLiveObjectNodeRenderer(autoLogger);
                         this.timeline = [];

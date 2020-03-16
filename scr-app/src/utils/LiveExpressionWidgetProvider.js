@@ -28,7 +28,7 @@ class LiveExpressionWidgetProvider {
                 const expressionName = j[k].name;
                 if (k && `${k[0]}` === `${k[0]}`.toUpperCase() && !jIgnoreExpressions.includes(expressionName)) {
                     jExpressions.push(expressionName);
-                }// else{console.log("FU",  j[k].name);}
+                }
             }
         }
 
@@ -114,7 +114,7 @@ class LiveExpressionWidgetProvider {
                         const res = this.monacoEditor
                             .getModel()
                             .getAllDecorations()
-                            .filter(dec => dec.options.inlineClassName.includes(defaultExpressionClassName))
+                            .filter(dec => dec.options.inlineClassName && dec.options.inlineClassName.includes(defaultExpressionClassName))
                             .map(dec => dec.id);
                         this.monacoEditor.deltaDecorations(res, []);
                     }
@@ -395,7 +395,7 @@ class LiveExpressionWidgetProvider {
                 if (!domNode || !el) {
                     return;
                 }
-                domNode.style.zIndex = 1200- i;
+                domNode.style.zIndex = 1200 - i;
 
                 if (lineNumberDecorators.length === i + 1) {
                     domNode.style.maxWidth = '100%';

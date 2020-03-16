@@ -1,6 +1,8 @@
 import {of, fromEvent, merge} from 'rxjs';
 import {mapTo} from 'rxjs/operators';
 import isNumber from 'lodash/isNumber';
+import debounce from 'lodash.debounce';
+import isString from 'lodash/isString';
 import AppleKeyboardOptionIcon from 'mdi-material-ui/AppleKeyboardOption';
 import CallMadeIcon from '@material-ui/icons/CallMade';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
@@ -60,9 +62,9 @@ export const configureMonacoRangeToClassName = (prefix = 'r') => {
     return (monacoRange) => {
         return `${prefix}-${
             monacoRange.startLineNumber
-            }-${
+        }-${
             monacoRange.startColumn
-            }-${monacoRange.endLineNumber}-${monacoRange.endColumn}`;
+        }-${monacoRange.endLineNumber}-${monacoRange.endColumn}`;
     };
 };
 
@@ -406,5 +408,67 @@ export const decodeBabelError = (babelError = '', offsetAfterDivider = 2) => {
     }, {found: false});
     errorInfo.message = lines[0];
     return errorInfo;
+};
+
+const customFirepadHeadlessMonacoSync = (fireco, firecoPad, editorId, editorText) => {
+    firecoPad.headlessFirepad = new fireco.Firepad.Headless(firecoPad.firebaseRef);
+    firecoPad.preventStarvation = debounce(() => {
+        firecoPad.mutex = false;
+    }, 5000);
+
+    firecoPad.getFirecoText = () => firecoPad.headlessFirepad.getText((text) => {
+        firecoPad.isInit = true;
+        this.setEditorText(editorId, text);
+    });
+    firecoPad.getFirecoTextDebounced = debounce(firecoPad.getFirecoText, 50, {maxWait: 100});
+
+    firecoPad.setFirecoText = (text, isChain) => {
+        // Prevents Firepad mutex starvation when Firebase is not connected.
+        firecoPad.preventStarvation();
+
+        if (firecoPad.mutex && !isChain) {
+            // chains all pending editor changes
+            firecoPad
+                .nextSetFirecoTexts
+                .unshift(
+                    () => firecoPad.setFirecoText(null, true)
+                );
+            return;
+        }
+
+        firecoPad.mutex = true;
+        firecoPad.headlessFirepad.setText(text || firecoPad.monacoEditor.getValue(), (/*error, committed*/) => {
+            if (firecoPad.nextSetFirecoTexts.length) {
+                // only send the most recent change, discard the rest
+                firecoPad.nextSetFirecoTexts[0]();
+                firecoPad.nextSetFirecoTexts = [];
+            } else {
+                firecoPad.preventStarvation.cancel();
+                firecoPad.mutex = false;
+            }
+        });
+    };
+
+    if (firecoPad.isNew && isString(editorText)) {
+        firecoPad.setFirecoText(editorText);
+        firecoPad.monacoEditor.setValue(editorText);
+    } else {
+        firecoPad.getFirecoText();
+    }
+
+    firecoPad.firebaseRef
+        .child('history')
+        .limitToLast(1)
+        .on('child_added', snapshot => {
+            if (snapshot.exists() && firecoPad.headlessFirepad.firebaseAdapter_.userId_ !== snapshot.val().a) {
+                firecoPad.getFirecoTextDebounced();
+            } else {
+                firecoPad.getFirecoTextDebounced.cancel();
+            }
+        });
+
+    firecoPad.onContentChanged = () => {
+        firecoPad.setFirecoText();
+    };
 };
 

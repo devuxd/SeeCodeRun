@@ -41,6 +41,7 @@ ReactDOM.render(
 
 const monacoPromise = async () => await import ('monaco-editor');
 monacoPromise().then(monaco => {
+    global.monaco = monaco;
     configureMonacoDefaults(monaco);
     onMonacoConfigured(monaco);
 });
