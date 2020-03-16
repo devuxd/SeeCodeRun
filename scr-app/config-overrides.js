@@ -1,5 +1,5 @@
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-const path = require('path');
+// const path = require('path');
 // --start from:
 // https://github.com/jdcrensh/create-react-app/blob/jdcrensh/packages/react-scripts-plugin-no-minify/utils.js
 const getFunctionName = obj => {
@@ -32,7 +32,7 @@ const excludes = [
 const findPlugin = (config, pluginName) =>
     config.plugins.find(p => getFunctionName(p) === pluginName);
 
-module.exports = (config/*, env*/) => {
+module.exports = (config, env) => {
     if (disableUglifyJsPlugin) {
         config.plugins = filterPlugins(config, {UglifyJsPlugin: false});
     } else {
@@ -43,9 +43,14 @@ module.exports = (config/*, env*/) => {
     }
     // Monaco ESM
     config.module.rules.unshift({
+        test: /\/monaco-editor\/esm\/*\.ttf$/,
+        use: ['file-loader']
+    });
+    config.module.rules.unshift({
         test: /\/monaco-editor\/esm\/*\.css$/,
         use: ['style-loader', 'css-loader']
     });
     config.plugins.unshift(new MonacoWebpackPlugin());
+
     return config;
 };
