@@ -135,17 +135,12 @@ const styles = theme => ({
         paddingBottom: 0,
     },
     avatar: {
-
-        color: 'unset',
-        backgroundColor: fade(theme.palette.background.paper, 0.75),
-        // fontSize: theme.spacing.unit * 3,
         width: theme.spacing(4),
         height: theme.spacing(4),
-
     },
-    listItemText: {
-        // maxWidth: '30px',
-    },
+    // listItemText: {
+    //     // maxWidth: '30px',
+    // },
     listItemTextPrimary: {
         color: 'unset',
     },
