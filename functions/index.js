@@ -1,27 +1,23 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-// Fixes firepad 1.4.0 infamous line with window.firebase in Node.
-global.window = {};
 const Firepad = require('firepad');
 const config = require("./cloud-functions.json");
-const uid = config.uid; // matches the uid used in db rules
-let sAccount = null, dbUrl = null;
-if (process.env.NODE_ENV === 'production') {
-    sAccount = require("./serviceAccountKey.prod.json");
-    dbUrl = config.prodDbURL;
-} else {
-    sAccount = require("./serviceAccountKey.dev.json");
-    dbUrl = config.devDbURL;
-}
 
-const serviceAccount = sAccount;
-const dataBaseUrl = dbUrl;
+const uid = config.uid; // matches the uid used in db rules
+let serviceAccount = null, databaseURL = null;
+if (process.env.NODE_ENV === 'production') {
+    serviceAccount = require("./serviceAccountKey.prod.json");
+    databaseURL = config.prodDbURL;
+} else {
+    serviceAccount = require("./serviceAccountKey.dev.json");
+    databaseURL = config.devDbURL;
+}
 
 const REQUEST_TIMEOUT_MS = 5000;
 const SERVER_TIMESTAMP = admin.database.ServerValue.TIMESTAMP;
 
 
-const dataBaseRoot = '/scr2'; //todo change to scr2/test when testing locally
+const dataBaseRoot = '/scr2';
 const defaultPastebinScheme = {
     creationTimestamp: SERVER_TIMESTAMP,
     firecos: 0, //history on each child  handled by Firepad: html, js, css
@@ -35,23 +31,15 @@ const defaultPastebinScheme = {
     users: 0
 };
 
-admin.initializeApp({
+const app = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: dataBaseUrl,
-    // storageBucket: "firebase-seecoderun.appspot.com",
+    databaseURL,
     databaseAuthVariableOverride: {
         uid: uid
     }
 });
 
-const databaseRef = admin.database();
-// Provide custom logger which prefixes log statements with "[FIREBASE]"
-// Disable logging across page refreshes
-//   databaseRef.enableLogging(function (message) {
-//       console.log("[FIREBASE]", message);
-//     },
-//     false);
-let databaseRootRef = databaseRef.ref(dataBaseRoot);
+let databaseRootRef = app.database().ref(dataBaseRoot);
 
 // Data functions
 const makeNewPastebin = onComplete => {
@@ -162,7 +150,7 @@ const copyPastebinById = (parentPastebinId, res, pastebinResponse) => {
             onError({
                 type: '[Server Error]',
                 details: 'Could not update new copy of ' +
-                ' provided pastebin.',
+                    ' provided pastebin.',
                 message: error
             });
         } else {
@@ -173,7 +161,7 @@ const copyPastebinById = (parentPastebinId, res, pastebinResponse) => {
                             onError({
                                 type: '[Server Error]',
                                 details: 'Could not update parent\'s children data during' +
-                                ' pastebin copy.',
+                                    ' pastebin copy.',
                                 message: error
                             });
                         } else {
