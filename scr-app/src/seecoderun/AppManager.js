@@ -436,7 +436,7 @@ class AppManager {
             const monacoEditor = configureMonacoEditor(this.monaco, editorDiv.current, editorOptions);
 
             if (firecoPad.monacoEditorSavedState && isString(firecoPad.monacoEditorSavedState.text)) {
-                monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
+               // monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
                 monacoEditor.restoreViewState(firecoPad.monacoEditorSavedState.viewState);
             }
 
@@ -632,14 +632,7 @@ class AppManager {
         try {
             const firecoPad = this.firecoPads[editorId];
             firecoPad.firebaseRef = fireco.database.ref(firecoPad.firebasePath);
-            //fixes monaco 0.14.x breaking change and firepad
-            const editor = firecoPad.monacoEditor;
-            editor.onDidBlurEditor = editor.onDidBlurEditorWidget;
-            editor.onDidFocusEditor = editor.onDidFocusEditorWidget;
-            //end fix
-            // normal firepad has several errors at runtime, disabled till is correctly supported
-            // trade-off, no diffed storing
-            firecoPad.monacoEditor.setValue("");
+           // firecoPad.monacoEditor.setValue("");
             firecoPad.firepadInstance = fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor, {defaultText: editorText});
 
             return of(configureFirecoEditorFulfilled(editorId));
