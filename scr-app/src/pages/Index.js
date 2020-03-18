@@ -1,15 +1,16 @@
 import React, {Component, createContext, /*, StrictMode*/} from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from 'material-ui/styles';
+import {withStyles} from '@material-ui/core/styles';
 import {chromeDark, chromeLight} from "react-inspector";
 import withRoot, {themeTypes} from '../components/withRoot';
 import NotificationCenter from '../containers/NotificationCenter';
-import TopNavigationBar from '../components/TopNavigationBar';
+import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
 import {getShareUrl} from '../redux/modules/pastebin';
 import {online$, end$} from '../utils/scrUtils';
+import {takeUntil} from 'rxjs/operators';
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
 
@@ -21,11 +22,13 @@ export const ThemeContext = createContext({});
 let appStyle = {margin: 0};
 const styles = theme => {
     appStyle = {
-        margin: theme.spacing.unit,
-        rowHeightSmall: theme
-            .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
-            .minHeight,
-        rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
+        margin: theme.spacing(1),
+        rowHeightSmall: APP_BAR_HEIGHT,
+        rowHeight: APP_BAR_HEIGHT,
+        // rowHeightSmall: theme
+        //     .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
+        //     .minHeight,
+        // rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
     };
     return {
         root: {
@@ -99,7 +102,7 @@ class Index extends Component {
     };
     logoClick = (event, isTopNavigationToggled) => {
         this.setState({
-            isTopNavigationToggled:event? !this.state.isTopNavigationToggled: isTopNavigationToggled,
+            isTopNavigationToggled: event ? !this.state.isTopNavigationToggled : isTopNavigationToggled,
         });
     };
 
@@ -325,7 +328,7 @@ class Index extends Component {
         if (this.storeUnsubscribe) {
             this.storeUnsubscribe();
         }
-        this.online$ && this.online$.takeUntil(end$());
+        this.online$ && this.online$.pipe(takeUntil(end$()));
     }
 }
 

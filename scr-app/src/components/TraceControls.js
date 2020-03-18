@@ -16,19 +16,20 @@ import PropTypes from 'prop-types';
 import SpeedDial from '@material-ui/lab/SpeedDial';
 import SpeedDialIcon from '@material-ui/lab/SpeedDialIcon';
 import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
-import SettingsIcon from '@material-ui/icons/Settings';
+import SettingsIcon from '@material-ui/icons/SettingsSharp';
 import TimerIcon from '@material-ui/icons/Timer';
 import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CodeIcon from '@material-ui/icons/Code';
-import EditIcon from '@material-ui/icons/ModeEdit';
+import PencilIcon from 'mdi-material-ui/Pencil';
 
-import {withStyles} from 'material-ui/styles';
-import Menu from 'material-ui/Menu';
-import {ListItem} from 'material-ui/List';
-import {MenuItem} from 'material-ui/Menu';
-import TextField from 'material-ui/TextField';
-import Button from 'material-ui/Button';
-import {Subject} from 'rxjs/Subject';
+import {withStyles} from '@material-ui/core/styles';
+import Menu from '@material-ui/core/Menu';
+import ListItem from '@material-ui/core/ListItem';
+import MenuItem from '@material-ui/core/MenuItem';
+import TextField from '@material-ui/core/TextField';
+import Fab from '@material-ui/core/Fab';
+import {Subject} from 'rxjs';
+import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
 
@@ -59,19 +60,19 @@ const styles = theme => ({
         position: 'absolute',
         // width: theme.spacing.unit * 9,
         // height: theme.spacing.unit * 9,
-        // width: theme.spacing.unit,
-        // height: theme.spacing.unit,
+        // width: theme.spacing(1),
+        // height: theme.spacing(1),
         bottom: 0,
         left: 0,
-        marginLeft: -theme.spacing.unit / 2,
-        marginBottom: -theme.spacing.unit / 2,
-        fontSize: theme.spacing.unit / 2,
+        marginLeft: theme.spacing(-2),
+        marginBottom: theme.spacing(-2),
+        fontSize: theme.spacing(0.5),
         zIndex: theme.zIndex.snackbar,
     },
     speedDial: {
         position: 'absolute',
-        bottom: theme.spacing.unit * 3,
-        left: theme.spacing.unit * 3,
+        bottom: theme.spacing(3),
+        left: theme.spacing(3),
     },
     list: {
         paddingTop: 0,
@@ -95,7 +96,7 @@ const actions = [
         icon: <PlaylistPlayIcon/>, name: 'Trace history'
     },
     {
-        icon: <EditIcon/>, name: 'Change history'
+        icon: <PencilIcon/>, name: 'Change history'
     },
 ];
 
@@ -294,15 +295,14 @@ class TraceControls extends React.Component {
 
         return (
             <div>
-                {hidden && <Button variant="fab"
-                                   mini
+                {hidden && <Fab     mini="true"
                                    color="default"
                                    aria-label="seeCode.run configuration"
                                    className={classes.speedDialBackdrop}
                                    onClick={() => this.handleVisibility(true)}
                                    onMouseEnter={() => this.handleVisibility(true)}
                                    onMouseLeave={() => this.handleVisibility(false)}
-                > <SettingsIcon/></Button>}
+                > <SettingsIcon/></Fab>}
                 {!hidden && <SpeedDial
                     ariaLabel="seeCode.run configuration"
                     className={classes.speedDial}
@@ -351,7 +351,7 @@ class TraceControls extends React.Component {
         requireConfig.onDependenciesChange = this.onDependenciesChange;
         this.subject = new Subject();
         this.subject
-            .debounceTime(1000)
+            .pipe(debounceTime(1000))
             .subscribe(() => (requireConfig.triggerChange && requireConfig.triggerChange()));
     }
 

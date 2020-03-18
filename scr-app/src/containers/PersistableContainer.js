@@ -55,7 +55,12 @@ export default function PersistableContainer(DataComponent) {
         componentDidMount() {
             const {store} = this.context;
             if (this.props.persistablePath) {
-                store.dispatch(configureFirecoPersistableComponent(this.props.persistablePath, this.onFirecoActive, this.onDispose));
+                store
+                    .dispatch(
+                        configureFirecoPersistableComponent(
+                            this.props.persistablePath, this.onFirecoActive, this.onDispose
+                        )
+                    );
             }
         }
 

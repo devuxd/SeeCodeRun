@@ -119,8 +119,7 @@ class JSXColoringProvider {
     }
 
     createDecoratorsByType(ast, jsxType, options, decorators = []) {
-        ast
-            .find(j[jsxType])
+        ast.find(j[jsxType])
             .find(j.JSXIdentifier)
             .forEach(p => {
                 const loc = p.value.loc;

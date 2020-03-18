@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from 'material-ui/styles';
+import {withStyles} from '@material-ui/core/styles';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 
@@ -157,38 +157,38 @@ const styles = theme => ({
     rootX: {
         position: 'relative',
         overflow: 'hidden',
-        paddingRight: theme.spacing.unit * 2,
+        paddingRight: theme.spacing(2),
         paddingBottom: 0,
     },
     rootY: {
         position: 'relative',
         overflow: 'hidden',
         paddingRight: 0,
-        paddingBottom: theme.spacing.unit * 2,
+        paddingBottom: theme.spacing(2),
     },
     rootBoth: {
         position: 'relative',
         overflow: 'hidden',
-        paddingRight: theme.spacing.unit * 2,
-        paddingBottom: theme.spacing.unit * 2,
+        paddingRight: theme.spacing(2),
+        paddingBottom: theme.spacing(2),
     },
     overflowXIcon: {
         color: 'default',
         position: 'absolute',
         top: '50%',
         right: 0,
-        marginTop: -theme.spacing.unit,
-        padding: theme.spacing.unit / 4,
-        fontSize: theme.spacing.unit * 2,
+        marginTop: theme.spacing(-1),
+        padding: theme.spacing(0.25),
+        fontSize: theme.spacing(2),
     },
     overflowYIcon: {
         zIndex: theme.zIndex.snackbar,
         position: 'absolute',
         left: '50%',
         bottom: 0,
-        marginLeft: -theme.spacing.unit,
-        padding: theme.spacing.unit / 4,
-        fontSize: theme.spacing.unit * 2,
+        marginLeft: theme.spacing(-1),
+        padding: theme.spacing(0.25),
+        fontSize: theme.spacing(2),
     }
 });
 
@@ -213,7 +213,7 @@ class OverflowComponent extends React.Component {
     render() {
         const {
             classes, overflowXClassName, contentClassName, children, placeholder, placeholderClassName, placeholderDisableGutters,
-            overflowXAdornment, overflowYAdornment, ...rest
+            overflowXAdornment, overflowYAdornment, contentAlign, ...rest
         } = this.props;
 
         const {
@@ -245,7 +245,9 @@ class OverflowComponent extends React.Component {
                     onScrollChange={this.handleScrollChange}
                     {...rest}
                 >
+                    {/*<div style={{marginLeft:contentAlign==='center'? '50%': '0px'}}>*/}
                     {content}
+                    {/*</div>*/}
                 </OverflowAndScrollDetector>
             </div>
         );
@@ -272,6 +274,7 @@ OverflowComponent.propTypes = {
     placeholderDisableGutters: PropTypes.bool,
     overflowXAdornment: PropTypes.node,
     overflowYAdornment: PropTypes.node,
+    contentAlign: PropTypes.string,
 };
 
 OverflowComponent.defaultProps = {
@@ -281,6 +284,7 @@ OverflowComponent.defaultProps = {
     isRememberScrollDisabled: false,
     isRememberScrollDisabledX: false,
     isRememberScrollDisabledY: false,
+    contentAlign: 'center'
 };
 
 export default withStyles(styles)(OverflowComponent);

@@ -26,9 +26,7 @@ export const updateBundleFailure = (error) => ({
   })
 ;
 
-export const updateBundleReducer =
-  (state = defaultUpdateBundleState,
-   action) => {
+export const updateBundleReducer = (state = defaultUpdateBundleState, action) => {
     switch (action.type) {
       case UPDATE_BUNDLE:
         return {

@@ -2,15 +2,18 @@ import classnames from 'classnames';
 import React, {Component} from 'react';
 import localStorage from 'store';
 import isEqual from 'lodash/isEqual';
-import {withStyles} from 'material-ui/styles';
-import ListSubheader from 'material-ui/List/ListSubheader';
-import List, {ListItem, ListItemSecondaryAction, ListItemText} from 'material-ui/List';
-import {CardHeader} from 'material-ui/Card';
-import Avatar from 'material-ui/Avatar';
-import IconButton from 'material-ui/IconButton';
-import Menu from 'material-ui/Menu';
+import {withStyles} from '@material-ui/core/styles';
+import ListSubheader from '@material-ui/core/ListSubheader';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
+import CardHeader from '@material-ui/core/CardHeader';
+import Avatar from '@material-ui/core/Avatar';
+import IconButton from '@material-ui/core/IconButton';
+import Menu from '@material-ui/core/Menu';
 import ChatIcon from '@material-ui/icons/Chat';
-import TextField from 'material-ui/TextField';
+import TextField from '@material-ui/core/TextField';
 import randomColor from "randomcolor";
 
 import {configureFirecoChat} from '../redux/modules/fireco';
@@ -60,17 +63,17 @@ const styles = theme => ({
         backgroundColor: theme.palette.background.paper,
         position: 'relative',
         overflow: 'auto',
-        padding: theme.spacing.unit * 1.2,
+        padding: theme.spacing( 1.2),
         paddingTop: 0,
     },
     chatMessageSticky: {
-        paddingTop: theme.spacing.unit,
+        paddingTop: theme.spacing(1),
         paddingLeft: 0,
-        paddingRight: theme.spacing.unit,
+        paddingRight: theme.spacing(1),
     },
     chatMessageCardHeader: {
         padding: 0,
-    }
+    },
 });
 
 class Chat extends Component {
@@ -465,7 +468,7 @@ class Chat extends Component {
 
     makeDraggableAndResizable = async () => {
         if (!$) { //todo jquery chunks is severely duplicated
-            $ = await import('jquery');
+            $ = (await import('jquery')).default;
             await import( 'jquery-ui/ui/core');
             await Promise.all([
                 import('jquery-ui/ui/widgets/draggable'),
@@ -476,7 +479,6 @@ class Chat extends Component {
                 import('jquery-ui/themes/base/resizable.css')
             ]);
         }
-
         if (!this.isDraggableAndResizable || !this.chatEl.current) {
             setTimeout(() => {
                 $(this.chatEl.current).draggable({
@@ -607,9 +609,9 @@ class Chat extends Component {
             const {classes, ref, ...other} = inputProps;
             return (
                 <TextField
+                    fullWidth
                     error={!chatUserName}
                     label={chatUserName ? 'Chat Name' : 'Enter your chat name'}
-                    fullWidth
                     inputRef={ref}
                     InputProps={{
                         classes: {
@@ -679,8 +681,8 @@ class Chat extends Component {
                                                 </div>
                                             }
                                             action={
-                                                <IconButton title={chatTitle} onClick={chatClick}
-                                                            className={classes.messageChatIcon}
+                                                <IconButton title={chatTitle}
+                                                            onClick={chatClick}
                                                             color={isChatToggled ? "secondary" : "default"}>
                                                     <ChatIcon/>
                                                 </IconButton>
@@ -691,7 +693,6 @@ class Chat extends Component {
                                                     error={errors}
                                                     placeholder="type message..."
                                                     value={chatMessageText}
-                                                    className={classes.messageTextField}
                                                     onChange={this.handleMessageTextChange}
                                                     onKeyUp={this.handleMessageInputEnter}
                                                 />
@@ -712,6 +713,7 @@ class Chat extends Component {
                                     >
                                         <ListItem button={true}
                                                   disableGutters={true}
+                                                  dense
                                         >
                                             {chatUserId === message.chatUserId || skipInfo ?
                                                 <Avatar/>

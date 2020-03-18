@@ -1,10 +1,13 @@
-import {Observable} from 'rxjs/Observable';
-import {ajax} from 'rxjs/observable/dom/ajax';
+import {ofType} from 'redux-observable';
+import {zip, concat, of} from 'rxjs';
+import {mergeMap, delay, map, mapTo, filter, catchError} from 'rxjs/operators';
+import {ajax} from 'rxjs/ajax';
 import localStorage from 'store';
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
 import {ACTIVATE_FIREPAD_EXPIRED} from './fireco';
 import {MONACO_EDITOR_CONTENT_CHANGED} from "./monacoEditor";
 import firebaseConfig from '../../seecoderun/firebaseConfig';
+
 const {cloudFunctionsPath} = firebaseConfig;
 
 const cloudFunctionsUrl = `${process.env.PUBLIC_URL}/${cloudFunctionsPath}`;
@@ -202,28 +205,31 @@ export const pastebinReducer = (state = defaultPasteBinState, action) => {
     }
 };
 
-export const disposePastebinEpic = (action$, store, {appManager}) =>
-    action$.ofType(DISPOSE_PASTEBIN)
-        .mergeMap(() => {
+export const disposePastebinEpic = (action$, state$, {appManager}) =>
+    action$.pipe(
+        ofType(DISPOSE_PASTEBIN),
+        mergeMap(() => {
                 localStorage.set(
                     `scr_monacoEditorsSavedStates#${
-                        store.getState().pastebinReducer.pastebinId
+                        state$.value.pastebinReducer.pastebinId
                         }`,
                     appManager.getEditorsStates()
                 );
                 localStorage.set(`scr_layoutSavedState#${
-                        store.getState().pastebinReducer.pastebinId
+                        state$.value.pastebinReducer.pastebinId
                         }`,
                     appManager.getCurrentGridLayouts());
                 return appManager.observeDispose();
             }
-        )
-;
+        ),
+    );
 
-export const pastebinLayoutEpic = (action$, store, {appManager}) =>
-    action$.ofType(FETCH_PASTEBIN_FULFILLED)
-        .zip(action$.ofType(CONFIGURE_PASTEBIN_LAYOUT))
-        .mergeMap(actions => {
+export const pastebinLayoutEpic = (action$, state$, {appManager}) =>
+    zip(
+        action$.pipe(ofType(FETCH_PASTEBIN_FULFILLED)),
+        action$.pipe(ofType(CONFIGURE_PASTEBIN_LAYOUT)),
+    ).pipe(
+        mergeMap(actions => {
             if (actions[1].restoreGridLayouts && actions[1].getCurrentGridLayouts) {
                 appManager
                     .setPastebinLayout(
@@ -232,18 +238,19 @@ export const pastebinLayoutEpic = (action$, store, {appManager}) =>
                     );
                 appManager.restoreGridLayouts(
                     localStorage.get(`scr_layoutSavedState#${
-                        store.getState().pastebinReducer.pastebinId
+                        state$.value.pastebinReducer.pastebinId
                         }`));
-                return Observable.of({type: CONFIGURE_PASTEBIN_LAYOUT_FULFILLED});
+                return of({type: CONFIGURE_PASTEBIN_LAYOUT_FULFILLED});
             } else {
-                return Observable.of({type: CONFIGURE_PASTEBIN_LAYOUT_REJECTED});
+                return of({type: CONFIGURE_PASTEBIN_LAYOUT_REJECTED});
             }
         })
-;
+    );
 
-export const pastebinEpic = (action$, store, {appManager}) =>
-    action$.ofType(FETCH_PASTEBIN)
-        .mergeMap(action => {
+export const pastebinEpic = (action$, state$, {appManager}) =>
+    action$.pipe(
+        ofType(FETCH_PASTEBIN),
+        mergeMap(action => {
             if (action.isNew) {
                 const url = action.isCopy ?
                     `${getPasteBinCopyUrl}?sourcePastebinId=${action.sourcePastebinId}`
@@ -251,21 +258,22 @@ export const pastebinEpic = (action$, store, {appManager}) =>
                 const getPastebinIdRequest = () => ajax({
                     crossDomain: true,
                     url: url,
-                })
-                    .map(result => {
+                }).pipe(
+                    map(result => {
                         appManager.setPastebinId(result.response.pastebinId);
                         return fetchPastebinFulfilled(
                             result.response.pastebinId,
                             null,
                         );
-                    })
-                    .catch(error => Observable.of(fetchPastebinRejected(error)));
+                    }),
+                    catchError(error => of(fetchPastebinRejected(error))),
+                );
 
                 if (action.isCopy) {
                     return getPastebinIdRequest();
                 } else {
-                    return Observable.concat(
-                        Observable.of(fetchPastebinContentFulfilled(
+                    return concat(
+                        of(fetchPastebinContentFulfilled(
                             getDefaultPastebinContent()
                         )),
                         getPastebinIdRequest()
@@ -280,64 +288,70 @@ export const pastebinEpic = (action$, store, {appManager}) =>
                         action.pastebinId
                         }`)
                 );
-                return Observable.of(fetchPastebinFulfilled(
+                return of(fetchPastebinFulfilled(
                     action.pastebinId,
                     appManager.getInitialEditorsTextsFromRestoreEditorsStates()
                     )
                 );
             }
-        })
-;
+        }),
+    );
 
-export const pastebinTokenEpic = (action$, store) =>
-    action$.ofType(FETCH_PASTEBIN_FULFILLED, ACTIVATE_FIREPAD_EXPIRED, FETCH_PASTEBIN_TOKEN)
-        .mergeMap(() => {
+export const pastebinTokenEpic = (action$, state$) =>
+    action$.pipe(
+        ofType(FETCH_PASTEBIN_FULFILLED, ACTIVATE_FIREPAD_EXPIRED, FETCH_PASTEBIN_TOKEN),
+        mergeMap(() => {
             const url =
                 `${getPasteBinTokenUrl}?pastebinId=${
-                    store.getState().pastebinReducer.pastebinId
+                    state$.value.pastebinReducer.pastebinId
                     }`;
             return ajax({
                 crossDomain: true,
                 url: url,
-            })
-                .map(result =>
+            }).pipe(
+                map(result =>
                     fetchPastebinTokenFulfilled(result.response.pastebinToken)
-                )
-                .catch(error =>
-                    Observable.of(fetchPastebinTokenRejected(error))
-                );
-        })
-;
+                ),
+                catchError(error =>
+                    of(fetchPastebinTokenRejected(error))
+                ),
+            );
+        }),
+    );
 
 export const pastebinTokenRejectedEpic = action$ =>
-    action$.ofType(FETCH_PASTEBIN_TOKEN_REJECTED)
-        .delay(1000)
-        .mapTo(fetchPastebinToken())
-;
+    action$.pipe(
+        ofType(FETCH_PASTEBIN_TOKEN_REJECTED),
+        delay(1000),
+        mapTo(fetchPastebinToken())
+    );
 
-export const pastebinContentEpic = (action$, store) =>
-    action$.ofType(FETCH_PASTEBIN_FULFILLED, FETCH_PASTEBIN_CONTENT)
-        .filter(() => !store.getState().pastebinReducer.isNew)
-        .mergeMap(() => {
+export const pastebinContentEpic = (action$, state$) =>
+    action$.pipe(
+        ofType(FETCH_PASTEBIN_FULFILLED, FETCH_PASTEBIN_CONTENT),
+        filter(() => !state$.value.pastebinReducer.isNew),
+        mergeMap(() => {
             const url =
                 `${
                     getPasteBinUrl
-                    }?pastebinId=${store.getState().pastebinReducer.pastebinId}`;
+                    }?pastebinId=${state$.value.pastebinReducer.pastebinId}`;
             return ajax({
                 crossDomain: true,
                 url: url,
-            })
-                .map(result =>
+            }).pipe(
+                map(result =>
                     fetchPastebinContentFulfilled(result.response.initialEditorsTexts)
+                ),
+                catchError(error =>
+                    of(fetchPastebinContentRejected(error))
                 )
-                .catch(error =>
-                    Observable.of(fetchPastebinContentRejected(error))
-                );
-        })
-;
+            );
+        }),
+    );
 
 export const pastebinContentRejectedEpic = action$ =>
-    action$.ofType(FETCH_PASTEBIN_CONTENT_REJECTED)
-        .delay(2000)
-        .mapTo(fetchPastebinContent())
-;
+    action$.pipe(
+        ofType(FETCH_PASTEBIN_CONTENT_REJECTED),
+        delay(2000),
+        mapTo(fetchPastebinContent()),
+    );

@@ -1,6 +1,4 @@
-import {Observable} from 'rxjs/Observable';
-
-import './monacoUtils.css';
+import {Observable} from 'rxjs';
 
 export const monacoProps = {
     fontSize: 12,
@@ -130,13 +128,13 @@ export function configureMonacoEditor(monaco, editorEl, customEditorOptions) {
 
 export function configureMonacoEditorMouseEventsObservable(editor) {
     return Observable.create(observer => {
-        editor.onDidFocusEditor(() => {
+        editor.onDidFocusEditorWidget(() => {
             observer.next({
                 type: monacoEditorMouseEventTypes.focusEditor,
                 event: null
             });
         });
-        editor.onDidBlurEditor(() => {
+        editor.onDidBlurEditorWidget(() => {
             observer.next({
                 type: monacoEditorMouseEventTypes.blurEditor,
                 event: null

@@ -2,7 +2,7 @@
 import React, {Component} from "react";
 import PropTypes from 'prop-types';
 import ReactDOM from "react-dom";
-import {fromEvent} from 'rxjs/observable/fromEvent';
+import {fromEvent} from 'rxjs';
 
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends Component {

@@ -2,20 +2,23 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import debounce from 'lodash.debounce';
 import classNames from 'classnames';
-import {withStyles} from 'material-ui/styles';
-import Paper from 'material-ui/Paper';
-import Toolbar from 'material-ui/Toolbar';
-import Typography from 'material-ui/Typography';
-import Tooltip from 'material-ui/Tooltip';
-import Badge from 'material-ui/Badge';
-import Chip from 'material-ui/Chip';
-import Avatar from 'material-ui/Avatar';
-import IconButton from 'material-ui/IconButton';
+import {withStyles} from '@material-ui/core/styles';
+import Paper from '@material-ui/core/Paper';
+import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
+import Tooltip from '@material-ui/core/Tooltip';
+import Button from '@material-ui/core/Button';
+import Badge from '@material-ui/core/Badge';
+import Chip from '@material-ui/core/Chip';
+import Avatar from '@material-ui/core/Avatar';
+import IconButton from '@material-ui/core/IconButton';
+import CodeTagsCheckIcon from 'mdi-material-ui/CodeTagsCheck';
 
 // import SearchIcon from '@material-ui/icons/Search';
 import TuneIcon from '@material-ui/icons/Tune';
 import ChangeHistoryIcon from '@material-ui/icons/ChangeHistory';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import FilterCenterFocusIcon from '@material-ui/icons/FilterCenterFocus';
 import PauseIcon from '@material-ui/icons/Pause';
 // import SearchIcon from '@material-ui/icons/Search';
 // import DeleteIcon from '@material-ui/icons/Delete';
@@ -24,11 +27,13 @@ import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CallMergeIcon from '@material-ui/icons/CallMerge';
 import CallSplitIcon from '@material-ui/icons/CallSplit';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import {lighten} from 'material-ui/styles/colorManipulator';
-import {InputAdornment} from 'material-ui/Input';
-import TextField from 'material-ui/TextField';
+import {lighten} from '@material-ui/core/styles/colorManipulator';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import TextField from '@material-ui/core/TextField';
 
-import {PastebinContext} from '../containers/Pastebin';
+import {PastebinContext, VisualQueryManager} from '../containers/Pastebin';
+import GraphicalQuery from '../components/GraphicalQuery';
+import {getVisualIdsFromRefs} from "../containers/GraphicalMapper";
 
 // const columnTime = [
 //   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
@@ -37,7 +42,8 @@ import {PastebinContext} from '../containers/Pastebin';
 
 const toolbarStyles = theme => ({
     root: {
-        paddingRight: theme.spacing.unit,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
     },
     highlight:
         theme.palette.type === 'light'
@@ -50,17 +56,19 @@ const toolbarStyles = theme => ({
                 backgroundColor: theme.palette.secondary.dark,
             },
     spacer: {
-        flex: '1 0 5%',
+        flex: '1 0 0%',
     },
     actions: {
         color: theme.palette.text.secondary,
         flex: '1 0 auto',
     },
     title: {
-        flex: '1 1 95%',
+        flex: '1 1 100%',
     },
     textField: {
-        margin: theme.spacing.unit,
+        margin: 0,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
     },
     badge: {
         //  margin: theme.spacing.unit * 2,
@@ -79,13 +87,13 @@ const toolbarStyles = theme => ({
     chipRoot: {
         fontSize: theme.typography.pxToRem(theme.typography.fontSize * 0.8),
         height: theme.typography.fontSize * 1.75,
-        // margin: theme.spacing.unit,
+        // margin: theme.spacing(1),
         margin: 0,
         backgroundColor: 'transparent',
-        '&:first-child': {
-            marginLeft: theme.spacing.unit,
-        },
-        marginRight: theme.spacing.unit,
+        // '&:first-child': {
+        //     marginLeft: theme.spacing(1),
+        // },
+        marginRight: theme.spacing(1),
     },
     chipAvatar: {
         marginRight: -(theme.typography.fontSize / 2),
@@ -100,8 +108,8 @@ const toolbarStyles = theme => ({
         width: theme.typography.fontSize * 1.25,
     },
     chipLabel: {
-        paddingLeft: theme.spacing.unit,
-        paddingRight: theme.spacing.unit * 0.5,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(0.5),
     },
 });
 
@@ -138,7 +146,7 @@ class InputEndAdornment extends React.Component {
                                     onClick={() => handleFilterClick('isCase')}
                                     classes={avatarClasses}
                                     avatar={isCase ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
-                                        <Avatar><CheckBoxOutlineBlankIcon color="primary"/></Avatar>}
+                                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                                 />
                             </Tooltip>
 
@@ -148,7 +156,7 @@ class InputEndAdornment extends React.Component {
                                     onClick={() => handleFilterClick('isWord')}
                                     classes={avatarClasses}
                                     avatar={isWord ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
-                                        <Avatar><CheckBoxOutlineBlankIcon color="primary"/></Avatar>}
+                                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                                 />
                             </Tooltip>
 
@@ -158,7 +166,7 @@ class InputEndAdornment extends React.Component {
                                     onClick={() => handleFilterClick('isRegExp')}
                                     classes={avatarClasses}
                                     avatar={isRegExp ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
-                                        <Avatar><CheckBoxOutlineBlankIcon color="primary"/></Avatar>}
+                                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                                 />
                             </Tooltip>
                         </Paper>
@@ -190,7 +198,7 @@ class ResultsFilter extends React.Component {
                     onClick={() => handleFilterClick('isFunctions')}
                     classes={avatarClasses}
                     avatar={isFunctions ? <Avatar><CheckBoxIcon color="secondary"/></Avatar> :
-                        <Avatar><CheckBoxOutlineBlankIcon color="secondary"/></Avatar>}
+                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                 />
             </Tooltip>
             <Tooltip title={"Include Expressions"}>
@@ -199,18 +207,18 @@ class ResultsFilter extends React.Component {
                     onClick={() => handleFilterClick('isExpressions')}
                     classes={avatarClasses}
                     avatar={isExpressions ? <Avatar><CheckBoxIcon color="secondary"/></Avatar> :
-                        <Avatar><CheckBoxOutlineBlankIcon color="secondary"/></Avatar>}
+                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                 />
             </Tooltip>
             < Tooltip
                 title={"Include Values"}>
-                < Chip
+                <Chip
                     label="{...}"
                     onClick={() => handleFilterClick('isValues')}
                     classes={avatarClasses}
                     avatar={
                         isValues ? <Avatar><CheckBoxIcon color="secondary"/></Avatar> :
-                            <Avatar><CheckBoxOutlineBlankIcon color="secondary"/></Avatar>
+                            <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
                     }
                 />
             </Tooltip>
@@ -218,108 +226,137 @@ class ResultsFilter extends React.Component {
     }
 }
 
-const EnhancedToolbar = props => {
+class EnhancedToolbar extends React.Component {
     // active={orderBy === column.id}
     // direction={order}
     // onClick={handleSortOnClick}
     // onClick={this.createSortHandler(column.id)}
+    render() {
+        const {
+            classes,
+            selected,
+            isPlaying, handleChangePlaying, timeline, liveTimeline,
+            searchState, isSelectable, isAutoExpand, handleChangeAutoExpand,
+        } = this.props;
+        const numSelected = selected.length;
+        const newEntries = liveTimeline.length - timeline.length;
+        const playingIcon =
+            isPlaying ? <PauseIcon/> : newEntries ?
+                <Badge className={classes.badge} badgeContent={newEntries > 99 ? '99+' : `${newEntries}`}
+                       color="secondary">
+                    <PlayArrowIcon/>
+                </Badge> : <PlayArrowIcon/>;
+        const playingButton =
+            <IconButton color="primary" onClick={handleChangePlaying}>
+                {playingIcon}
+            </IconButton>;
 
-    const {
-        classes,
-        selected, isPlaying, handleChangePlaying, timeline, liveTimeline,
-        searchState, isSelectable
-    } = props;
-    const numSelected = selected.length;
-    const newEntries = liveTimeline.length - timeline.length;
-    const playingIcon =
-        isPlaying ? <PlayArrowIcon/> : newEntries ?
-            <Badge className={classes.badge} badgeContent={newEntries > 99 ? '99+' : `${newEntries}`}
-                   color="secondary">
-                <PauseIcon/>
-            </Badge> : <PauseIcon/>;
-    const playingButton =
-        <IconButton color="primary" onClick={handleChangePlaying}>
-            {playingIcon}
-        </IconButton>;
-
-    return (
-        <Toolbar
-            className={classNames(classes.root, {
-                [classes.highlight]: numSelected > 0,
-            })}
-        >
-            {numSelected > 0 ? null : <React.Fragment>
+        return (
+            <Toolbar
+                className={classNames(classes.root, {
+                    [classes.highlight]: numSelected > 0,
+                })}
+            >
+                {numSelected > 0 ? null : <React.Fragment>
+                    <Tooltip
+                        title={isPlaying ? 'Pause Updates' : newEntries > 99 ? `${newEntries} new updates` : 'Resume Updates'}
+                        placement={'bottom-end'}
+                        enterDelay={300}
+                    >
+                        {playingButton}
+                    </Tooltip>
+                </React.Fragment>}
+                <div className={classes.title}>
+                    {numSelected > 0 ? (
+                        <Typography color="inherit" variant="subtitle1">
+                            {numSelected} selected
+                        </Typography>
+                    ) : (
+                        <TextField
+                            fullWidth
+                            id="search"
+                            label={null}
+                            placeholder="Search in trace, ex: color:blue"
+                            type="search"
+                            className={classes.textField}
+                            margin="normal"
+                            InputProps={{
+                                startAdornment: (!!(searchState.visualQuery && searchState.visualQuery.length) &&
+                                    <InputAdornment position="start">
+                                        <Chip
+                                            avatar={
+                                                <Avatar>
+                                                    <CodeTagsCheckIcon color="secondary"/>
+                                                </Avatar>
+                                            }
+                                            label={<GraphicalQuery
+                                                outputRefs={searchState.visualQuery}
+                                                visualIds={getVisualIdsFromRefs(searchState.visualQuery)}
+                                                selected={true}
+                                            />}
+                                            onDelete={() => {
+                                                VisualQueryManager
+                                                    .onChange(
+                                                        searchState.visualQuery,
+                                                        getVisualIdsFromRefs(searchState.visualQuery), 'click'
+                                                    );
+                                            }}
+                                        />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: <InputEndAdornment {...{classes, searchState}} />
+                            }}
+                            FormHelperTextProps={{
+                                component: 'span',
+                                margin: 'dense',
+                            }}
+                            helperText={<ResultsFilter {...this.props} />}
+                            value={searchState.value}
+                            onChange={searchState.handleChangeValue}
+                        />
+                    )}
+                </div>
+                <div className={classes.spacer}/>
                 <Tooltip
-                    title={isPlaying ? 'Updates playing' : newEntries > 99 ? `${newEntries} new updates` : 'Updates paused'}
+                    title={isAutoExpand ? 'Disable Live expression auto-focus' : 'Enable Live expression auto-focus'}
                     placement={'bottom-end'}
                     enterDelay={300}
                 >
-                    {playingButton}
+                    <IconButton color={isAutoExpand ? "primary" : 'default'} onClick={handleChangeAutoExpand}>
+                        <FilterCenterFocusIcon/>
+                    </IconButton>
                 </Tooltip>
-            </React.Fragment>}
-            <div className={classes.title}>
-                {numSelected > 0 ? (
-                    <Typography color="inherit" variant="subheading">
-                        {numSelected} selected
-                    </Typography>
-                ) : (
-                    <TextField
-                        id="search"
-                        label={null}
-                        placeholder="search in trace, ex: color:blue"
-                        type="search"
-                        className={classes.textField}
-                        margin="normal"
-                        fullWidth
-                        InputProps={{
-                            // startAdornment: (
-                            //     <InputAdornment position="start">
-                            //         <SearchIcon/>
-                            //     </InputAdornment>
-                            // ),
-                            endAdornment: <InputEndAdornment {...{classes, searchState}} />
-                        }}
-                        FormHelperTextProps={{
-                            component: 'span',
-                            margin: 'dense',
-                        }}
-                        helperText={<ResultsFilter {...props} />}
-                        value={searchState.value}
-                        onChange={searchState.handleChangeValue}
-                    />
-                )}
-            </div>
-            <div className={classes.spacer}/>
-            <div className={classes.actions}>
-                {numSelected > 0 ? (
-                    <React.Fragment>
-                        <Tooltip title="Compare values">
-                            <IconButton aria-label="Compare values">
-                                <ChangeHistoryIcon/>
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="New Pin">
-                            <IconButton aria-label="New Pin">
-                                <CallSplitIcon/>
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Add to existing pin">
-                            <IconButton aria-label="Add to existing pin">
-                                <CallMergeIcon/>
-                            </IconButton>
-                        </Tooltip>
-                    </React.Fragment>
-                ) : (isSelectable ?
-                        <Tooltip title="Filter list">
-                            <IconButton aria-label="Filter list">
-                                <FilterListIcon/>
-                            </IconButton>
-                        </Tooltip> : null
-                )}
-            </div>
-        </Toolbar>
-    );
-};
+                <div className={classes.actions}>
+                    {numSelected > 0 ? (
+                        <React.Fragment>
+                            <Tooltip title="Compare values">
+                                <IconButton aria-label="Compare values">
+                                    <ChangeHistoryIcon/>
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="New Pin">
+                                <IconButton aria-label="New Pin">
+                                    <CallSplitIcon/>
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Add to existing pin">
+                                <IconButton aria-label="Add to existing pin">
+                                    <CallMergeIcon/>
+                                </IconButton>
+                            </Tooltip>
+                        </React.Fragment>
+                    ) : (isSelectable ?
+                            <Tooltip title="Filter list">
+                                <IconButton aria-label="Filter list">
+                                    <FilterListIcon/>
+                                </IconButton>
+                            </Tooltip> : null
+                    )}
+                </div>
+            </Toolbar>
+        );
+    }
+}
 
 EnhancedToolbar.propTypes = {
     classes: PropTypes.object.isRequired,

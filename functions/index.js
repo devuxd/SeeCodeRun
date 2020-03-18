@@ -6,12 +6,12 @@ const Firepad = require('firepad');
 const config = require("./cloud-functions.json");
 const uid = config.uid; // matches the uid used in db rules
 let sAccount = null, dbUrl = null;
-if (process.env.NODE_ENV === 'development') {
-    sAccount = require("./serviceAccountKey.dev.json");
-    dbUrl = config.devDbURL;
-} else {
+if (process.env.NODE_ENV === 'production') {
     sAccount = require("./serviceAccountKey.prod.json");
     dbUrl = config.prodDbURL;
+} else {
+    sAccount = require("./serviceAccountKey.dev.json");
+    dbUrl = config.devDbURL;
 }
 
 const serviceAccount = sAccount;
@@ -305,4 +305,4 @@ exports.getPastebinToken = functions.https.onRequest((req, res) => {
     }
 });
 
-process.env.NODE_ENV === 'development' && console.log('USING DEVELOPMENT FIREBASE DB FOR FUNCTIONS: ', Object.keys(exports || {}));
+process.env.NODE_ENV !== 'production' && console.log('USING DEVELOPMENT FIREBASE DB FOR FUNCTIONS: ', Object.keys(exports || {}));

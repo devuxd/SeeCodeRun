@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
+import GraphicalMapper from './GraphicalMapper';
 
 class Playground extends Component {
     constructor(props) {
@@ -9,7 +10,9 @@ class Playground extends Component {
         this.currentBundle = null;
         this.unsubscribes = [];
         this.state = {
-            isResizing: false
+            isResizing: false,
+            bundle: null,
+            visualElements: [],
         };
     }
 
@@ -44,7 +47,24 @@ class Playground extends Component {
     };
 
     render() {
+        const {isGraphicalLocatorActive, handleChangeGraphicalLocator} = this.props;
+        const {bundle, visualElements} = this.state;
         return <React.Fragment>
+            <div ref={this.playgroundEl}
+                 style={{
+                     overflow: 'hidden'
+                 }}
+            >
+                <GraphicalMapper
+                    containerRef={this.playgroundEl}
+                    bundle={bundle}
+                    isGraphicalLocatorActive={isGraphicalLocatorActive}
+                    handleChangeGraphicalLocator={handleChangeGraphicalLocator}
+                    visualElements={visualElements}
+                />
+            </div>
+
+
             <div ref={this.playgroundEl}
                  style={{
                      height: '100%',
@@ -91,22 +111,29 @@ class Playground extends Component {
         this.unsubscribes.push(unsubscribe0);
     }
 
+
     componentWillUnmount() {
         for (const i in this.unsubscribes) {
             this.unsubscribes[i]();
         }
     }
 
+    handleChangeVisualElements = visualElements => {
+        this.setState({visualElements});
+    };
+
     /**
      *
      * @param {Object} bundle -  bundle.editorsTexts requires editorsTexts.html,
      * editorsTexts.css and editorsTexts.js to contain text.
      */
-    updateIframe(bundle) {
+    updateIframe = (bundle) => {
         const playgroundEl = this.playgroundEl;
-        if (!playgroundEl.current) {
+        if (!bundle || !playgroundEl.current) {
             return;
         }
+        bundle.isActive = false;
+
         const {editorIds} = this.props;
         const {store} = this.context;
 
@@ -124,6 +151,8 @@ class Playground extends Component {
         if (alJs) {
             // console.log("AL");
             autoLog.configureIframe(this.runIframeHandler, store, autoLogger, html, css, js, alJs);
+            autoLogger.trace.setDomNodeAdded(this.handleChangeVisualElements);
+            bundle.isActive = true;
         } else {
             if (autoLogger && autoLogger.ast) {
                 console.log("FB");

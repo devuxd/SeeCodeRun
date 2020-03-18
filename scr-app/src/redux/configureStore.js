@@ -3,7 +3,7 @@ import {createEpicMiddleware} from 'redux-observable';
 import {rootEpic, rootReducer} from './modules/root';
 import configureAppManager from "../seecoderun/AppManager";
 
-const epicMiddleware = createEpicMiddleware(rootEpic, {
+const epicMiddleware = createEpicMiddleware({
     dependencies: {appManager: configureAppManager()}
 });
 
@@ -12,6 +12,7 @@ export default function configureStore() {
 
     if (process.env.NODE_ENV === 'production') {
         store = applyMiddleware(epicMiddleware)(createStore)(rootReducer);
+        epicMiddleware.run(rootEpic);
     } else {
         let finalCreateStore =
             // if there is a browser extension of Redux devtools, that will be used instead
@@ -40,6 +41,7 @@ export default function configureStore() {
 
                 };
         store = finalCreateStore(rootReducer);
+        epicMiddleware.run(rootEpic);
         // Enable Webpack hot module replacement for reducers
         if (module) {
             module.hot.accept('./modules/root', () => {

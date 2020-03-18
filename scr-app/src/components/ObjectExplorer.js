@@ -1,15 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from 'material-ui/styles';
-import Paper from 'material-ui/Paper';
-import MyLocationIcon from '@material-ui/icons/MyLocation';
+import {withStyles} from '@material-ui/core/styles';
+import Tooltip from '@material-ui/core/Tooltip';
 import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} from 'react-inspector';
-// import Tooltip from 'material-ui/Tooltip';
+// import Tooltip from '@material-ui/core/Tooltip';
 // import deepDiff from 'deep-diff';
 
 import {isNode} from '../utils/scrUtils';
 import {ThemeContext} from '../pages/Index';
 import {HighlightPalette} from '../containers/LiveExpressionStore';
+import {getVisualIdsFromRefs} from '../containers/GraphicalMapper';
+import GraphicalQuery from '../components/GraphicalQuery';
+import {VisualQueryManager} from "../containers/Pastebin";
 
 
 //start https://github.com/xyc/react-inspector/tree/master/src/object-inspector
@@ -18,25 +20,21 @@ const styles = theme => ({
     preview: {
         fontStyle: 'italic',
     },
-    previewCompact: {
-        fontStyle: 'italic',
-        backgroundColor: theme.palette.type === 'light' ? '#fffffe' : '#1e1e1e'// monaco bg colors
-        // backgroundColor: theme.palette.type === 'light' ? theme.palette.background.paper : theme.palette.background.default
-    },
     objectClassName: {
         fontSize: '80%',
     },
     objectBraces: {
         fontWeight: 'bold',
         fontStyle: 'normal',
+        // color: 'white',
         color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
         fontSize: '110%',
     },
     arrayBrackets: {
         fontWeight: 'bold',
         fontStyle: 'normal',
-        color: theme.palette.type === 'light' ? 'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
-        fontSize: '110%',
+        color: theme.palette.type === 'light' ? 'rgb(28, 0, 207)' : 'rgb(153, 128, 255)',
+        // fontSize: '110%',
     },
     stringQuote: {
         fontWeight: 'bold',
@@ -45,13 +43,29 @@ const styles = theme => ({
         color: theme.palette.type !== 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
     },
     stringValue: {
-        color: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+        fontWeight: 100,
+        // color: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    emptyStringValue: {
+        color: 'white',
+        fontWeight: 'bold',
+        backgroundColor: theme.palette.action.disabled,
     },
     booleanValue: {
         fontSize: '90%',
         fontWeight: 'bold',
     },
     numberValue: {},
+    undefinedValue: {
+        color: 'white',
+        fontWeight: 'bold',
+        backgroundColor: theme.palette.type === 'light' ? 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+    },
+    undefinedValueWarning: {
+        color: 'white',
+        fontWeight: 'bold',
+        backgroundColor: 'grey',
+    },
 });
 
 let currentLiveObjectNodeRenderer = null;
@@ -68,9 +82,13 @@ function intersperse(arr, sep) {
 /**
  * A preview of the object
  */
-export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, compact}) => {
-    const object = data;
+export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, compact, expressionType}) => {
+    const liveRef = currentLiveObjectNodeRenderer.parseLiveRefs(data);
+    if (liveRef.isLive) {
+        return null;
+    }
 
+    const object = data;
     if (
         typeof object !== 'object' ||
         object === null ||
@@ -78,18 +96,40 @@ export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, 
         object instanceof RegExp
     ) {
         if (typeof object === 'string') {
-            return compact ? (<Paper className={classes.previewCompact}>
-                    <span className={classes.stringQuote}>"</span>
-                    <span className={classes.stringValue}>{object}</span>
-                    <span className={classes.stringQuote}>"</span>
-                </Paper>)
-                : (<span className={classes.preview}>
-                <span className={classes.stringQuote}>"</span>
-                <span className={classes.stringValue}>{object}</span>
-                <span className={classes.stringQuote}>"</span>
-            </span>);
+            if (object.length) {
+                return (<span className={classes.stringValue}>{object}</span>);
+            } else {
+                return (
+                    <Tooltip title="Empty String" enterDelay={300}>
+                        <span className={classes.emptyStringValue}>{'E'}</span>
+                    </Tooltip>);
+            }
+
+            // return (<span className={classes.preview}>
+            //     <span className={classes.stringQuote}>"</span>
+            //     <span className={classes.stringValue}>{object}</span>
+            //     <span className={classes.stringQuote}>"</span>
+            // </span>);
         } else {
-            return <ObjectValue object={object}/>;
+
+            if (object === undefined) {
+                //   console.log(expressionType, object);
+                return (<Tooltip title="undefined" enterDelay={300}>
+                    <span
+                        className={expressionType === 'VariableDeclarator' || expressionType === 'AssignmentExpression' ?
+                            classes.undefinedValue : classes.undefinedValueWarning}>
+                        {'U'}
+                        </span>
+                </Tooltip>);
+            } else {
+                if (object === null) {
+                    return (<Tooltip title="null" enterDelay={300}>
+                        <span className={classes.undefinedValue}>{'N'}</span>
+                    </Tooltip>);
+                } else {
+                    return <ObjectValue object={object}/>;
+                }
+            }
         }
 
     }
@@ -130,20 +170,14 @@ export const ObjectPreview = withStyles(styles)(({classes, data, maxProperties, 
         }
         const objectClassName = compact ?
             object.constructor.name === 'Object' ? '' : object.constructor.name : object.constructor.name;
-        return compact ? (
-                <Paper className={classes.previewCompact}>
-                    <span className={classes.objectClassName}>{`${objectClassName} `}</span>
-                    <span className={classes.objectBraces}>{'{'}</span>
-                    <span>{intersperse(propertyNodes, ', ')}</span>
-                    <span className={classes.objectBraces}>{'}'}</span>
-                </Paper>)
-            : (<span className={classes.preview}>
+        return (
+            <span className={classes.preview}>
                 <span className={classes.objectClassName}>{`${objectClassName} `}</span>
                 <span className={classes.objectBraces}>{'{'}</span>
                 <span>{intersperse(propertyNodes, ', ')}</span>
                 <span className={classes.objectBraces}>{'}'}</span>
             </span>
-            );
+        );
     }
 });
 
@@ -158,17 +192,17 @@ ObjectPreview.defaultProps = {
     maxProperties: 5,
 };
 
-export const ObjectRootLabel = ({name, data, compact}) => {
+export const ObjectRootLabel = ({name, data, compact, expressionType}) => {
     if (typeof name === 'string') {
         return (
             <span>
         <ObjectName name={name}/>
         <span>: </span>
-        <ObjectPreview data={data} compact={compact}/>
+        <ObjectPreview data={data} compact={compact} expressionType={expressionType}/>
       </span>
         );
     } else {
-        return <ObjectPreview data={data} compact={compact}/>;
+        return <ObjectPreview data={data} compact={compact} expressionType={expressionType}/>;
     }
 };
 
@@ -230,11 +264,17 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
             <ObjectRootLabel data={liveRef.data} {...rest}/>
             : <ObjectLabel data={liveRef.data} {...rest}/>;
 
+        let fData = liveRef.data;
+        if (liveRef.data && liveRef.data.liveRef) {
+            fData = {...liveRef.data};
+            delete fData.liveRef;
+        }
+
         return liveRef.isLive ?
             isRoot ?
                 objectLabel :
                 <ul style={{marginLeft: -12, marginTop: -12}}>
-                    <Inspector data={liveRef.data}
+                    <Inspector data={fData}
                                nodeRenderer={liveObjectNodeRenderer.render}
                                windowRef={liveObjectNodeRenderer.getWindowRef()}
                                {...rest}
@@ -382,7 +422,7 @@ OutputElementHover.propTypes = {
     el: PropTypes.object.isRequired,
 };
 
-export const Inspector = ({table = false, data, windowRef, nodeRenderer, ...rest}) => {
+export const Inspector = ({table = false, data, windowRef, nodeRenderer, outputRefs, ...rest}) => {
 
     return <ThemeContext.Consumer>
         {context => {
@@ -392,14 +432,26 @@ export const Inspector = ({table = false, data, windowRef, nodeRenderer, ...rest
                 return <TableInspector theme={inspectorTheme} data={data} {...rest} />;
             }
 
-            if (isNode(data, windowRef)) {
+            if (isNode(data, windowRef) || (outputRefs && outputRefs.length)) {
+                const isSelected = false;
+                const theRefs = outputRefs && outputRefs.length ? outputRefs : [data];
+                const visualIds = getVisualIdsFromRefs(theRefs);
+                // const visualId= `${visualIds && visualIds.length ? visualIds[0] : '?'}`;
+                const fData = data.liveRef ? {...data} : data;
+                delete fData.liveRef;
                 return <OutputElementHover el={data}>
-                    <div style={{position: 'relative'}}>
-                        <span style={{position: 'absolute', top: 0, color: 'grey', marginLeft: -15}}>
-                          <MyLocationIcon style={{fontSize: 15}}/>
-                        </span>
-                        <DOMInspector theme={inspectorTheme} data={data} {...rest} />
-                    </div>
+                    <GraphicalQuery
+                        outputRefs={theRefs}
+                        visualIds={visualIds}
+                        selected={!!isSelected}
+                    />
+                    <ObjectInspector theme={inspectorTheme} data={fData} nodeRenderer={nodeRenderer} {...rest} />
+                    {/*<div style={{position: 'relative'}}>*/}
+                    {/*<span style={{position: 'absolute', top: 0, color: 'grey', marginLeft: -15}}>*/}
+                    {/*<MyLocationIcon style={{fontSize: 15}}/>*/}
+                    {/*</span>*/}
+                    {/*<DOMInspector theme={inspectorTheme} data={data} {...rest} />*/}
+                    {/*</div>*/}
                 </OutputElementHover>;
             }
 
@@ -413,6 +465,7 @@ Inspector.propTypes = {
     data: PropTypes.any,
     name: PropTypes.string,
     table: PropTypes.bool,
+    outputRefs: PropTypes.array,
 };
 
 // const diffToExpandPaths = (prevData, data) => {
@@ -443,20 +496,22 @@ class ObjectExplorer extends React.Component {
         };
     }
 
+
     render() {
-        const {theme, data, objectNodeRenderer, expressionId, handleChange, ...rest} = this.props;
+        const {theme, data, objectNodeRenderer, expressionId, handleChange, outputRefs, ...rest} = this.props;
         const {expandPaths} = this.state;
         const liveRef = objectNodeRenderer.parseLiveRefs(data);
         //   console.log(expandPaths);
-        return <Inspector
+        return (!liveRef.isLive && <Inspector
             key={expressionId}
             data={liveRef.data}
             nodeRenderer={objectNodeRenderer.render}
             windowRef={objectNodeRenderer.getWindowRef()}
             showNonenumerable={false}
             expandPaths={expandPaths}
+            outputRefs={outputRefs}
             {...rest}
-        />;
+        />);
     }
 }
 

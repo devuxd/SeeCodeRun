@@ -124,7 +124,7 @@ export const updatePlaygroundReducer =
                 };
 
             case UPDATE_PLAYGROUND_CANCELED:
-                console.log("CANCELED");
+               // console.log("CANCELED");
                 return {
                     ...state,
                     isPlaygroundUpdating: false,

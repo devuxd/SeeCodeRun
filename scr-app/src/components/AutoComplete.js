@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 import Autosuggest from 'react-autosuggest';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
-import Paper from 'material-ui/Paper';
-import {MenuItem} from 'material-ui/Menu';
-import {withStyles} from 'material-ui/styles';
+import Paper from '@material-ui/core/Paper';
+import MenuItem from '@material-ui/core/MenuItem';
+import {withStyles} from '@material-ui/core/styles';
 
 const renderSuggestionsContainer = options => {
     const {containerProps, children} = options;
@@ -27,8 +27,8 @@ const styles = (theme) => ({
         height: 250,
         width: 250,
         overflow: 'visible',
-        marginLeft: theme.spacing.unit,
-        marginRight: theme.spacing.unit,
+        marginLeft: theme.spacing(1),
+        marginRight: theme.spacing(1),
     },
     suggestionsContainerOpen: {
         position: 'absolute',

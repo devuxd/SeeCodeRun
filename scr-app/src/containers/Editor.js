@@ -1,21 +1,30 @@
 import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import debounce from 'lodash.debounce';
-import {Subject} from 'rxjs/Subject';
+import {Subject} from 'rxjs';
+import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
-import {withStyles} from 'material-ui/styles';
-import Button from 'material-ui/Button';
+import {withStyles} from '@material-ui/core/styles';
+import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 import CloseIcon from '@material-ui/icons/Close';
 // import WarningIcon from '@material-ui/icons/Warning';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
-import SettingsIcon from '@material-ui/icons/Settings';
-import Snackbar from 'material-ui/Snackbar';
+import SettingsIcon from '@material-ui/icons/SettingsSharp';
+import Snackbar from '@material-ui/core/Snackbar';
 import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
 import {end$} from "../utils/scrUtils";
 import LiveExpressionStore from './LiveExpressionStore';
 
+export const defaultMonacoEditorLiveExpressionClassName = 'monaco-editor-live-expression';
 const styles = theme => ({
+    '@global': {
+        [`.${defaultMonacoEditorLiveExpressionClassName}.monaco-editor .cursors-layer > .cursor`]: {
+            maxHeight: 18,
+            marginTop: 7,
+        }
+    },
     container: {
         height: '100%',
         position: 'relative',
@@ -29,12 +38,12 @@ const styles = theme => ({
         marginRight: 20,
     },
     button: {
-        marginBottom: theme.spacing.unit,
+        marginBottom: theme.spacing(1),
     },
     fab: {
         position: 'absolute',
-        bottom: theme.spacing.unit * 2,
-        right: theme.spacing.unit * 2,
+        bottom: theme.spacing(2),
+        right: theme.spacing(2),
     },
     fabMoveUp: {
         transform: 'translate3d(0, -46px, 0)',
@@ -127,7 +136,7 @@ class Editor extends Component {
                 <Snackbar
                     open={errorSnackbarOpen}
                     onClose={this.handleClose}
-                    SnackbarContentProps={{
+                    ContentProps={{
                         'aria-describedby': 'snackbar-fab-message-id',
                         className: classes.snackbarContent,
                     }}
@@ -142,11 +151,11 @@ class Editor extends Component {
                 />
                 {settingsOpen ?
                     (
-                        <Button variant="fab" mini color="secondary" aria-label="settings"
+                        <Fab mini="true" color="secondary" aria-label="settings"
                                 className={fabClassName}
                                 onClick={this.handleClick}>
                             <SettingsIcon/>
-                        </Button>)
+                        </Fab>)
                     : null
                 }
             </div>
@@ -184,9 +193,9 @@ class Editor extends Component {
                     : null;
             if (currentErrors !== this.state.errors) {
                 if (currentErrors) {
-                    console.log("rrrrrrr", currentErrors.loc, currentErrors.stack);
+                 //   console.log("rrrrrrr", currentErrors.loc, currentErrors.stack);
                 } else {
-                    console.log("EMPTY");
+                   // console.log("EMPTY");
                 }
 
                 this.setState({
@@ -252,8 +261,7 @@ class Editor extends Component {
             });
 
         contentWidgetMouseEventSubjects.mouseLeave
-            .throttleTime(50)
-            // .debounceTime(100)
+            .pipe(throttleTime(50))
             .subscribe(payload => {
                 this.setState(payload);
             });

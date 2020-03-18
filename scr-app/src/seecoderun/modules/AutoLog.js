@@ -9,6 +9,7 @@ import Trace from './Trace';
 //     updatePlaygroundLoadSuccess
 // } from "../../redux/modules/playground";
 import {decodeBabelError} from "../../utils/scrUtils";
+import GraphicalMapper from "../../containers/GraphicalMapper";
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
@@ -204,6 +205,9 @@ export const importLoaders = async () => {
                         || key.includes('transform-runtime')
                         || key.includes('-async-to')
                         || key.includes('-regenerator')
+                        || key.includes('proposal-decorators')
+                        || key.includes('syntax-decorators')
+                        || key.includes('pipeline-operator')
                     )),
         };
 
@@ -253,15 +257,15 @@ class AutoLog {
     }
 
     async transformWithLocationIds(ast, getLocationId) {
-
-        const {locationMap, deps} = this.autoLogShift.autoLogAst(ast, getLocationId);
-        const code = ast.toSource();
-        // console.log(code);
+        let res = this.autoLogShift.autoLogAst(ast, getLocationId);
+        let {locationMap, deps, functionBranches, controlBranches} = res;
         return {
             locationMap: locationMap,
-            trace: new Trace(locationMap),
-            code,
-            deps
+            trace: new Trace(locationMap, deps),
+            getCode: () => ast.toSource(),
+            deps,
+            functionBranches,
+            controlBranches,
         };
     }
 
@@ -318,9 +322,7 @@ class AutoLog {
                                         requireConfig.fallbackOverrides = {...fallbackOverrides};
                                     }
                                 } else {
-                                    console.log('load errors', errors);
-                                    //todo handle bundling/dependency error
-                                    autoLogger.trace.onError(errors);
+                                    autoLogger.trace.onError(errors, true); // isBundlingError
                                 }
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
@@ -333,7 +335,7 @@ class AutoLog {
                                         requireConfig.fallbackOverrides = {...fallbackOverrides};
                                     }
                                 } else {
-                                    console.log('load errors', errors);
+                                    autoLogger.trace.onError(errors, true); // isBundlingError
                                 }
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
@@ -364,8 +366,8 @@ class AutoLog {
             requireConfig.triggerChange = this.appendIframe;
             this.appendIframe();
         }).catch(error => {
-            // todo [semantic] errors
-                const {humanUnderstandableError} = state;
+                // todo [semantic] errors
+                const {humanUnderstandableError, criticalError} = state;
                 if (humanUnderstandableError) {
                     switch (humanUnderstandableError.type) {
                         case AutoLogErrors.babel:
@@ -377,6 +379,10 @@ class AutoLog {
                     }
                 } else {
                     console.log('Unknown error', error);
+                }
+
+                if (criticalError) {
+                    console.log('criticalError', criticalError);
                 }
 
 
@@ -403,15 +409,15 @@ class AutoLog {
             type: AutoLogErrors.parse5,
             message: 'The HTML file contains errors.'
         };
-        state.parsed = parse5.parse(html, {locationInfo: true});
+        state.parsed = parse5.parse(html, {sourceCodeLocationInfo: true});
         state.humanUnderstandableError.message = 'HTML Element not found.';
         const htmlElementChildNodes = state.parsed.childNodes.find(node => node.nodeName === 'html').childNodes;
 
         state.humanUnderstandableError.message = 'Head Element not found.';
-        state.headTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'head').__location;
+        state.headTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'head').sourceCodeLocation;
 
         state.humanUnderstandableError.message = 'Body Element not found.';
-        state.bodyTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'body').__location;
+        state.bodyTagLocation = htmlElementChildNodes.find(node => node.nodeName === 'body').sourceCodeLocation;
 
         state.humanUnderstandableError.message = 'Head opening tag not found.';
         const defaultHeadTagLocation = {
@@ -451,7 +457,7 @@ class AutoLog {
         }
 
         state.transformed.source = state.transformed.code;
-
+        //  requireConfig.requireSync.push('"material-ui/Tooltip"');
         state.transformed.code = requireConfig.isDisabled ?
             state.transformed.code
             : `${requireConfig.requireOnLoadString}
@@ -492,6 +498,15 @@ class AutoLog {
                 return null;
             }
         };
+    }
+
+    configureGraphicalMapper(bundle, isGraphicalLocatorActive) {
+        // this.graphicalMapper = new GraphicalMapper(bundle, isGraphicalLocatorActive);
+        // return this.graphicalMapper.configureHandleChange();
+    }
+
+    updateGraphicalMapper(isGraphicalLocatorActive) {
+        // this.graphicalMapper.onActiveChange(isGraphicalLocatorActive);
     }
 }
 
