@@ -39,7 +39,7 @@ const app = admin.initializeApp({
     }
 });
 
-let databaseRootRef = app.database().ref(dataBaseRoot);
+const databaseRootRef = app.database().ref(dataBaseRoot);
 
 // Data functions
 const makeNewPastebin = onComplete => {
