@@ -103,10 +103,6 @@ const toolbarStyles = theme => ({
         backgroundColor: 'transparent',
         // margin: theme.spacing.unit / 2,
     },
-    chipAvatarChildren: {
-        // height: theme.typography.fontSize * 1.25,
-        width: theme.typography.fontSize * 1.25,
-    },
     chipLabel: {
         paddingLeft: theme.spacing(1),
         paddingRight: theme.spacing(0.5),
@@ -128,7 +124,6 @@ class InputEndAdornment extends React.Component {
         const avatarClasses = {
             root: classes.chipRoot, // class name, e.g. `classes-root-x`
             avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
-            avatarChildren: classes.chipAvatarChildren,
             label: classes.chipLabel,
         };
         const hasSelected = isCase || isWord || isRegExp;
@@ -188,7 +183,6 @@ class ResultsFilter extends React.Component {
         const avatarClasses = {
             root: classes.chipRoot, // class name, e.g. `classes-root-x`
             avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
-            avatarChildren: classes.chipAvatarChildren,
             label: classes.chipLabel,
         };
         return <React.Fragment>
