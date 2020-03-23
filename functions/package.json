@@ -19,8 +19,6 @@
   },
   "private": true,
   "devDependencies": {
-    "jest": "^25.1.0",
-    "supertest": "^5.0.0-0",
     "cross-env": "^7.0.2"
   },
   "engines": {
