@@ -216,7 +216,9 @@ exports.getPastebin = functions.https.onRequest((req, res) => {
                 databaseRootRef.child(`${pastebinResponse.pastebinId}`);
             firebasePastebinRef.once('value').then(snapshot => {
                 if (snapshot.exists()) {
-                    sendExistingContent(res, pastebinResponse, firebasePastebinRef);
+                    res.status(200).send(pastebinResponse);
+                    //slows down requests
+                   // sendExistingContent(res, pastebinResponse, firebasePastebinRef);
                 } else {
                     pastebinResponse.error = '[Client Error]: Pastebin does not exist.' +
                         ' Custom pastebinIds are not allowed.';
