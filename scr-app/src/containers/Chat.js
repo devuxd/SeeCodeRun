@@ -1,5 +1,6 @@
-import classnames from 'classnames';
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
+import classnames from 'classnames';
 import localStorage from 'store';
 import isEqual from 'lodash/isEqual';
 import {withStyles} from '@material-ui/core/styles';
@@ -19,6 +20,7 @@ import randomColor from "randomcolor";
 import {configureFirecoChat} from '../redux/modules/fireco';
 import AutoComplete from '../components/AutoComplete';
 
+const mapDispatchToProps = {configureFirecoChat};
 let $ = null;
 
 const defaultChatStyle = {
@@ -63,7 +65,7 @@ const styles = theme => ({
         backgroundColor: theme.palette.background.paper,
         position: 'relative',
         overflow: 'auto',
-        padding: theme.spacing( 1.2),
+        padding: theme.spacing(1.2),
         paddingTop: 0,
     },
     chatMessageSticky: {
@@ -74,6 +76,9 @@ const styles = theme => ({
     chatMessageCardHeader: {
         padding: 0,
     },
+    listItemText: {
+        paddingLeft: theme.spacing(1),
+    }
 });
 
 class Chat extends Component {
@@ -82,6 +87,7 @@ class Chat extends Component {
     constructor(props) {
         super(props);
         this.chatEl = React.createRef();
+        this.chatListEl = React.createRef();
         this.state = {
             ...defaultChatStyle,
             avatarAnchorEl: null,
@@ -121,7 +127,7 @@ class Chat extends Component {
     };
 
     handleMessageInputEnter = e => {
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             this.handleSendMessage();
         }
     };
@@ -266,7 +272,7 @@ class Chat extends Component {
     };
 
     handleAvatarInputEnter = e => {
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             this.handleAvatarClose();
         }
     };
@@ -297,7 +303,6 @@ class Chat extends Component {
             if (resetLayoutClick && grid && layoutGrid && !isEqual(layoutGrid, grid)) {
                 resetLayoutClick(layoutGrid);
             }
-
             if (switchTheme && layout.themeType && layout.themeType !== themeType) {
                 switchTheme(layout.themeType);
             }
@@ -467,7 +472,7 @@ class Chat extends Component {
     };
 
     makeDraggableAndResizable = async () => {
-        if (!$) { //todo jquery chunks is severely duplicated
+        if (!$) {
             $ = (await import('jquery')).default;
             await import( 'jquery-ui/ui/core');
             await Promise.all([
@@ -704,38 +709,44 @@ class Chat extends Component {
                                     const skipInfo = i && message.chatUserId === array[i - 1].chatUserId;
                                     const skipTime = i && ((new Date(message.timestamp)).getTime() - (new Date(array[i - 1].timestamp).getTime())) < 30000;
                                     const messageOwner = this.getMessageOwner(message.chatUserId);
-                                    return <div key={message.key}
-                                                ref={ref => {
-                                                    this.chatListEl = ref
-                                                }}
-                                                onMouseEnter={() => this.ignoreChatListElScroll = true}
-                                                onMouseLeave={() => this.ignoreChatListElScroll = false}
+                                    return <ListItem
+                                        key={message.key}
+                                        ref={this.chatListEl}
+                                        onMouseEnter={() => this.ignoreChatListElScroll = true}
+                                        onMouseLeave={() => this.ignoreChatListElScroll = false}
+                                        button={true}
+                                        disableGutters
+                                        dense
+                                        alignItems="flex-start"
                                     >
-                                        <ListItem button={true}
-                                                  disableGutters={true}
-                                                  dense
-                                        >
-                                            {chatUserId === message.chatUserId || skipInfo ?
-                                                <Avatar/>
-                                                : <Avatar
-                                                    title={messageOwner}
-                                                    style={{backgroundColor: this.getUserColor(message.chatUserId)}}
-                                                >
-                                                    {messageOwner ? messageOwner[0].toUpperCase() : '?'}
-                                                </Avatar>
-                                            }
-                                            {chatUserId === message.chatUserId ?
-                                                <ListItemSecondaryAction>
-                                                    <ListItemText primary={message.text}
-                                                                  secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
-                                                    />
-                                                </ListItemSecondaryAction>
-                                                : <ListItemText primary={message.text}
-                                                                secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
+                                        {chatUserId === message.chatUserId || skipInfo ?
+                                            <Avatar/>
+                                            : <Avatar
+                                                title={messageOwner}
+                                                style={{
+                                                    backgroundColor: this.getUserColor(message.chatUserId)
+                                                }}
+                                            >
+                                                {messageOwner ? messageOwner[0].toUpperCase() : '?'}
+                                            </Avatar>
+                                        }
+                                        {chatUserId === message.chatUserId ?
+                                            <ListItemSecondaryAction>
+                                                <ListItemText className={classes.listItemText}
+                                                              primary={message.text}
+                                                              secondary={skipTime ?
+                                                                  null : this.getFormattedTime(message.timestamp)}
                                                 />
-                                            }
-                                        </ListItem>
-                                    </div>;
+                                            </ListItemSecondaryAction>
+                                            : <ListItemText className={classes.listItemText}
+                                                            primary={message.text}
+                                                            secondary={
+                                                                skipTime ?
+                                                                    null : this.getFormattedTime(message.timestamp)
+                                                            }
+                                            />
+                                        }
+                                    </ListItem>;
                                 }
                             )}
                         </List>
@@ -787,15 +798,14 @@ class Chat extends Component {
     };
 
     componentDidMount() {
-        const {dispatch} = this.props;
-        dispatch(configureFirecoChat(this.onFirecoActive, this.onDispose));
+        const {configureFirecoChat} = this.props;
+        configureFirecoChat(this.onFirecoActive, this.onDispose);
         this.makeDraggableAndResizable().catch(e => console.log('chat error', e));
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps) {
         const {isChatToggled} = this.props;
-        if (this.isChatToggled !== isChatToggled) {
-            this.isChatToggled = isChatToggled;
+        if (prevProps.isChatToggled !== isChatToggled) {
             clearInterval(this.updateMessagesInterval);
             if (isChatToggled) {
                 this.updateMessagesInterval = setInterval(() => {
@@ -811,10 +821,10 @@ class Chat extends Component {
     scrollToBottom() {
         clearTimeout(this.scrollToBottomTimeout);
         this.scrollToBottomTimeout = setTimeout(() => {
-            (!this.ignoreChatListElScroll) && this.chatListEl && this.chatListEl.scrollIntoView({behavior: 'smooth'});
+            (!this.ignoreChatListElScroll) && this.chatListEl.current && this.chatListEl.current.scrollIntoView({behavior: 'smooth'});
         }, 500);
     }
 
 }
 
-export default withStyles(styles)(Chat);
+export default connect(null, mapDispatchToProps)(withStyles(styles)(Chat));

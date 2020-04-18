@@ -9,8 +9,8 @@ import IconButton from '@material-ui/core/IconButton';
 import ChatIcon from '@material-ui/icons/Chat';
 import ShareIcon from '@material-ui/icons/Share';
 import CloudOffIcon from '@material-ui/icons/CloudOff';
-import LightbulbOutlineIcon from 'mdi-material-ui//LightbulbOutline';
-import LightbulbIcon from './icons/Lightbulb';
+import Brightness4Icon from '@material-ui/icons/Brightness4';
+import Brightness7Icon from '@material-ui/icons/Brightness7';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -21,22 +21,12 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 
 export const APP_BAR_HEIGHT = 48;
 let iconStyle = {};
-const lightBulbIconStyle = {};
 const scrSvg = {};
 const aStyle = {};
 
 const styles = (theme) => {
         iconStyle = {
             fontSize: Math.floor(theme.typography.fontSize * 1.75)
-        };
-
-        lightBulbIconStyle.light = {
-            color: theme.palette.action.active,
-            fontSize: iconStyle.fontSize,
-        };
-        lightBulbIconStyle.dark = {
-            color: theme.palette.secondary.main,
-            fontSize: iconStyle.fontSize,
         };
 
         scrSvg.sticky = {
@@ -230,7 +220,7 @@ class TopNavigationBar extends Component {
                                 <MenuItem className={classes.centered}
                                           onClick={finalUrl && shareClick}
                                 >{
-                                    finalUrl ? <a href={finalUrl} target="_blank" style={aStyle.link}
+                                    finalUrl ? <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={aStyle.link}
                                                   onClick={e => e.preventDefault()}
                                     >
                                         {finalUrl}
@@ -335,8 +325,8 @@ class TopNavigationBar extends Component {
                             title={"Switch light/dark theme"}
                         >
                             {themeType === 'darkTheme' ?
-                                <LightbulbIcon {...lightBulbIconStyle.light}/>
-                                : <LightbulbOutlineIcon style={iconStyle}/>
+                                <Brightness7Icon style={iconStyle}/>
+                                : <Brightness4Icon style={iconStyle}/>
                             }
                         </IconButton>
                         <div>

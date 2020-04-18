@@ -1,13 +1,10 @@
 // import {TraceTypes, setAutoLogNames, toAst, wrapCallExpressions, wrapFunctionExpressions} from "../../utils/JsCodeShiftUtils";
 import isString from 'lodash/isString';
-import DIBabelPlugin from 'babel-plugin-dynamic-import-webpack';
+// import DIBabelPlugin from 'babel-plugin-dynamic-import-webpack';
 // import AutoLogShift from 'jscodetracker';
 import AutoLogShift from './AutoLogShift';
 import Trace from './Trace';
-// import {
-//     updatePlaygroundLoadFailure,
-//     updatePlaygroundLoadSuccess
-// } from "../../redux/modules/playground";
+
 import {decodeBabelError} from "../../utils/scrUtils";
 import GraphicalMapper from "../../containers/GraphicalMapper";
 
@@ -269,7 +266,7 @@ class AutoLog {
         };
     }
 
-    transform(ast) {
+    static transform(ast) {
         return {
             ...ast,
             trace: new Trace(ast.locationMap),
@@ -280,7 +277,7 @@ class AutoLog {
     appendIframe = () => {
     };
 
-    configureIframe(runIframeHandler, store, autoLogger, html, css, js, alJs) {
+    configureIframe(runIframeHandler, updatePlaygroundLoadSuccess, autoLogger, html, css, js, alJs) {
 
         // runIframe.onerror= (e) => {
         //   console.log("error ifr", e);
@@ -386,7 +383,7 @@ class AutoLog {
                 }
 
 
-                // store.dispatch(updatePlaygroundLoadSuccess(id, sourceTransformed));
+                // updatePlaygroundLoadSuccess(id, sourceTransformed);
             }
         )
         ;
@@ -399,8 +396,7 @@ class AutoLog {
             message: 'Could not download files from server. Please check your Internet access and refresh this page.'
         };
         if (!parsersLoaded) {
-            await
-                importLoaders();
+            await importLoaders();
             //post: parse5 and BabelSCR.transform ready
             parsersLoaded = true;
         }

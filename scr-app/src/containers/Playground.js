@@ -1,14 +1,27 @@
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
 import GraphicalMapper from './GraphicalMapper';
+import {d} from "./Pastebin";
+import {
+    // updatePlaygroundLoadFailure,
+    updatePlaygroundLoadSuccess
+} from "../redux/modules/playground";
+
+const data = {};
+
+const mapStateToProps = ({updateBundleReducer}) => {
+    const {timestamp, bundle} = updateBundleReducer;
+    return {timestamp, bundle};
+};
+const mapDispatchToProps = {updatePlaygroundLoadSuccess};
 
 class Playground extends Component {
     constructor(props) {
         super(props);
         this.playgroundEl = React.createRef();
         this.currentBundle = null;
-        this.unsubscribes = [];
         this.state = {
             isResizing: false,
             bundle: null,
@@ -87,34 +100,13 @@ class Playground extends Component {
         if (this.props.exports) {
             this.props.exports.onResize = this.onResize;
         }
-        this.unsubscribes = [];
-        const {store} = this.context;
-        const unsubscribe0 = store.subscribe(() => {
-            const timestamp = store.getState().updateBundleReducer.timestamp;
-            const bundle = store.getState().updateBundleReducer.bundle;
-
-            if (timestamp !== this.timestamp) {
-                this.timestamp = timestamp;
-                this.runIframeHandler.removeIframe();
-            }
-
-            if (this.currentBundle !== bundle) {
-                if (bundle) {
-                    this.currentBundle = bundle;
-                    this.updateIframe(this.currentBundle);
-                } else {
-                    // this.currentBundle = bundle;
-                    //  console.log('ERROR');
-                }
-            }
-        });
-        this.unsubscribes.push(unsubscribe0);
     }
 
-
-    componentWillUnmount() {
-        for (const i in this.unsubscribes) {
-            this.unsubscribes[i]();
+    componentDidUpdate(prevProps) {
+        const {bundle} = this.props;
+        if (prevProps.bundle !== bundle) {
+            this.runIframeHandler.removeIframe();
+            this.updateIframe(bundle);
         }
     }
 
@@ -129,13 +121,12 @@ class Playground extends Component {
      */
     updateIframe = (bundle) => {
         const playgroundEl = this.playgroundEl;
-        if (!bundle || !playgroundEl.current) {
+        if (!bundle || !bundle.editorsTexts || !playgroundEl.current) {
             return;
         }
         bundle.isActive = false;
 
-        const {editorIds} = this.props;
-        const {store} = this.context;
+        const {editorIds, updatePlaygroundLoadSuccess} = this.props;
 
         const html = bundle.editorsTexts[editorIds['html']];
         const css = bundle.editorsTexts[editorIds['css']];
@@ -150,13 +141,24 @@ class Playground extends Component {
 
         if (alJs) {
             // console.log("AL");
-            autoLog.configureIframe(this.runIframeHandler, store, autoLogger, html, css, js, alJs);
+            autoLog.configureIframe(this.runIframeHandler, updatePlaygroundLoadSuccess, autoLogger, html, css, js, alJs);
+            if (data.to) {
+                data.from = data.to;
+                data.to = alJs;
+                d.log(new Date(), `autoLog.configureIframe(this.runIframeHandler, store, autoLogger, html, css, js, alJs);
+          `, null, data.from, data.to);
+                data.to = null;
+
+            } else {
+                data.to = alJs;
+            }
+            // d.log(new Date(), `locationMap[parentId].extraLocs = prev || {};`, null, JSON.stringify(prev), JSON.stringify(locationMap[parentId].extraLocs));
             autoLogger.trace.setDomNodeAdded(this.handleChangeVisualElements);
             bundle.isActive = true;
         } else {
             if (autoLogger && autoLogger.ast) {
-                console.log("FB");
-                autoLog.configureIframe(this.runIframeHandler, store, autoLogger, html, css, js, js);
+                // console.log("FB");
+                autoLog.configureIframe(this.runIframeHandler, updatePlaygroundLoadSuccess, autoLogger, html, css, js, js);
             } else {
                 console.log("CRITICAL");
             }
@@ -165,12 +167,8 @@ class Playground extends Component {
 
 }
 
-Playground.contextTypes = {
-    store: PropTypes.object.isRequired
-};
-
 Playground.propTypes = {
     editorIds: PropTypes.object.isRequired,
 };
 
-export default Playground;
+export default connect(mapStateToProps, mapDispatchToProps)(Playground);

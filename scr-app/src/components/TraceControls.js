@@ -1,18 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-// webpack tree shacking is broken for reimports
-// import {withStyles, Menu, ListItem, TextField, Button} from 'material-ui';
-// import {SpeedDial, SpeedDialIcon, SpeedDialAction} from '@material-ui/lab';
-// import {
-//     Settings as SettingsIcon,
-//     PlayArrow as PlayArrowIcon,
-//     PlaylistPlay as PlaylistPlayIcon,
-//     Code as CodeIcon,
-//     Edit as EditIcon,
-// } from '@material-ui/icons';
-
-
 import SpeedDial from '@material-ui/lab/SpeedDial';
 import SpeedDialIcon from '@material-ui/lab/SpeedDialIcon';
 import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
@@ -32,6 +20,7 @@ import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
+import withPersistence from "../containers/withPersistence";
 
 const onDependenciesChange = () => {
     requireConfig.configureDependencies(requireConfig);
@@ -385,4 +374,4 @@ TraceControls.defaultProps = {
     },
 };
 
-export default withStyles(styles)(TraceControls);
+export default withPersistence(withStyles(styles)(TraceControls));

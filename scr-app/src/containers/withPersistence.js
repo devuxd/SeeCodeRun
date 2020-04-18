@@ -1,14 +1,13 @@
-import React, {Component} from 'react'
+import React, {Component} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {configureFirecoPersistableComponent} from '../redux/modules/fireco';
 
-export default function PersistableContainer(DataComponent) {
+const mapDispatchToProps = {configureFirecoPersistableComponent};
 
-    return class PersistableContainer extends Component {
-        static contextTypes = {
-            store: PropTypes.object.isRequired,
-        };
+export default function withPersistence(DataComponent) {
 
+    class PersistentComponent extends Component {
         static propTypes = {
             persistablePath: PropTypes.string.isRequired,
         };
@@ -53,15 +52,9 @@ export default function PersistableContainer(DataComponent) {
         };
 
         componentDidMount() {
-            const {store} = this.context;
-            if (this.props.persistablePath) {
-                store
-                    .dispatch(
-                        configureFirecoPersistableComponent(
-                            this.props.persistablePath, this.onFirecoActive, this.onDispose
-                        )
-                    );
-            }
+            const {persistablePath, configureFirecoPersistableComponent} = this.props;
+            persistablePath &&
+            configureFirecoPersistableComponent(persistablePath, this.onFirecoActive, this.onDispose);
         }
 
         componentWillUnmount() {
@@ -69,4 +62,6 @@ export default function PersistableContainer(DataComponent) {
         }
 
     }
+
+    return connect(null,mapDispatchToProps)(PersistentComponent);
 }

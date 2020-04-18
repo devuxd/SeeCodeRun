@@ -10,7 +10,7 @@ import CallMergeIcon from '@material-ui/icons/CallMerge';
 import LooksIcon from '@material-ui/icons/Looks';
 import ChevronDoubleLeftIcon from 'mdi-material-ui/ChevronDoubleLeft';
 import ChevronDoubleRightIcon from 'mdi-material-ui/ChevronDoubleRight';
-import JsonIcon from 'mdi-material-ui/Json';
+import JsonIcon from 'mdi-material-ui/CodeJson';
 import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
 import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
 import CodeEqualIcon from 'mdi-material-ui/CodeEqual';

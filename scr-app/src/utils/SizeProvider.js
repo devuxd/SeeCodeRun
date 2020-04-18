@@ -1,8 +1,8 @@
 // based on react-grid-layout's WidthProvider
 import React, {Component} from "react";
 import PropTypes from 'prop-types';
-import ReactDOM from "react-dom";
-import {fromEvent} from 'rxjs';
+import {fromEvent, asyncScheduler} from 'rxjs';
+import {throttleTime} from 'rxjs/operators';
 
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends Component {
@@ -15,20 +15,23 @@ export default function SizeProvider(ComposedComponent) {
             heightAdjust: PropTypes.number,
         };
 
+        constructor(props) {
+            super(props);
+            this.state = {
+                domNode: null,
+                width: 1280,
+                height: 1024,
+            };
+            this.mounted = false;
+            this.windowResizeSubscription = null;
+            this.reactRef = React.createRef();
+        }
 
-        state = {
-            domNode: null,
-            width: 1280,
-            height: 1024,
-        };
-
-        mounted = false;
-        windowResizeSubscription = null;
 
         componentDidMount() {
             this.mounted = true;
             this.windowResizeSubscription =
-                fromEvent(window, 'resize')
+                fromEvent(window, 'resize').pipe(throttleTime(250, asyncScheduler, {leading: false, trailing: true}))
                     .subscribe(() => this.onWindowResize());
             this.onWindowResize();
         }
@@ -39,8 +42,8 @@ export default function SizeProvider(ComposedComponent) {
         }
 
         onWindowResize = () => {
-            if (!this.mounted) return;
-            const node = ReactDOM.findDOMNode(this);
+            if (!this.mounted || !this.reactRef.current) return;
+            const node = this.reactRef.current;
             if (node instanceof HTMLElement) {
                 const {onHeight, heightAdjust} = this.props;
                 this.setState({
@@ -56,17 +59,19 @@ export default function SizeProvider(ComposedComponent) {
                 const height = nextProps.onHeight(prevState.domNode, nextProps.heightAdjust || 0);
                 return {height};
             }
-            return null
+            return null;
         }
 
         render() {
             const {measureBeforeMount, ...rest} = this.props;
             if (measureBeforeMount && !this.mounted) {
                 return (
-                    <div className={this.props.className} style={this.props.style}/>
+                    <div ref={this.reactRef} className={this.props.className} style={this.props.style}/>
                 );
             }
-            return <ComposedComponent {...rest} {...this.state} />;
+            return (<div ref={this.reactRef}>
+                <ComposedComponent {...rest} {...this.state} />
+            </div>);
         }
 
     };

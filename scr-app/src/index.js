@@ -4,7 +4,7 @@ import './utils/react-grid-layout-scr-theme.css';
 import {Provider} from 'react-redux';
 import configureStore from './redux/configureStore';
 
-import registerServiceWorker/*,{unregister}*/ from './registerServiceWorker';
+import * as serviceWorker from './serviceWorker';
 import configureMonacoDefaults from './configureMonaco';
 
 import React from 'react';
@@ -25,7 +25,7 @@ const onMonacoConfigured = monaco => {
         store.dispatch(loadMonacoFulfilled(monaco));
     } else {
         onConfigureMonacoError('Monaco failed to load. Try refreshing' +
-            ' page and/or cache.');
+            ' page, and cache if necessary.');
     }
 };
 
@@ -33,20 +33,24 @@ window.addEventListener("beforeunload", function () {
     store.dispatch(disposePastebin());
 }, false);
 
-ReactDOM.render(
-    <Provider store={store}>
-        <Index url={urlData.url}/>
-    </Provider>,
-    document.querySelector('#root'));
-
 const monacoPromise = async () => await import ('monaco-editor');
 monacoPromise().then(monaco => {
-    global.monaco = monaco;
+    global.monaco = monaco; // Firepad requires it
     configureMonacoDefaults(monaco);
     onMonacoConfigured(monaco);
 });
 
-registerServiceWorker();
-// unregister();
+ReactDOM.render(
+    <React.StrictMode>
+        <Provider store={store}>
+            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'}/>
+        </Provider>
+    </React.StrictMode>,
+    document.querySelector('#root'));
+
+// If you want your app to work offline and load faster, you can change
+// unregister() to register() below. Note this comes with some pitfalls.
+// Learn more about service workers: https://bit.ly/CRA-PWA
+serviceWorker.register();
 
 

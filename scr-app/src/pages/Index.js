@@ -1,23 +1,38 @@
 import React, {Component, createContext, /*, StrictMode*/} from 'react';
+import {compose} from 'redux';
+import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
+
+import {ThemeProvider} from '@material-ui/styles';
 import {withStyles} from '@material-ui/core/styles';
-import {chromeDark, chromeLight} from "react-inspector";
-import withRoot, {themeTypes} from '../components/withRoot';
+import CssBaseline from '@material-ui/core/CssBaseline';
+
+import {getTheme, themeTypes} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
-import {getShareUrl} from '../redux/modules/pastebin';
 import {online$, end$} from '../utils/scrUtils';
 import {takeUntil} from 'rxjs/operators';
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
-
-const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
-const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
+import withMediaQuery from '../utils/withMediaQuery';
 
 export const ThemeContext = createContext({});
+
+const mapStateToProps = ({firecoReducer, pastebinReducer}, {url}) => {
+    const {isConnected, authUser} = firecoReducer;
+    const {pastebinId} = pastebinReducer;
+    return {
+        pastebinId,
+        shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
+        authUser,
+        isConnected
+    }
+};
+
+const mapDispatchToProps = {switchMonacoTheme};
 
 let appStyle = {margin: 0};
 const styles = theme => {
@@ -88,7 +103,6 @@ const styles = theme => {
 };
 
 class Index extends Component {
-    prevThemeType = 'lightTheme';
     editorIds = getEditorIds();
     storeUnsubscribe = null;
 
@@ -124,7 +138,7 @@ class Index extends Component {
 
     shareClick = e => {
         e.preventDefault();
-        const {shareUrl} = this.state;
+        const {shareUrl} = this.props;
         shareUrl && window.open(shareUrl, '_blank');
         this.handleShareClose();
     };
@@ -144,17 +158,19 @@ class Index extends Component {
     };
 
     isNetworkOk = () => {
-        const {isConnected, isOnline} = this.state;
+        const {isConnected} = this.props;
+        const {isOnline} = this.state;
         return isConnected && isOnline;
     };
 
     getNetworkStateMessage = () => {
-        const {isConnected, isOnline} = this.state;
+        const {isConnected} = this.props;
+        const {isOnline} = this.state;
         return `${
             isOnline && isConnected ? 'Update' : 'Error'
-            }: ${
+        }: ${
             isOnline ? 'Online.' : 'Offline'
-            } ${
+        } ${
             isConnected ? 'Pastebin in sync.' : 'Pastebin not in sync.'}`;
     };
 
@@ -203,17 +219,56 @@ class Index extends Component {
         chatTitle: 'Chat',
         chatClick: this.chatClick,
         resetLayoutClick: this.resetLayoutClick,
+        themeType: null,
+        theme: null,
+        inspectorTheme: null,
+        monacoTheme: null,
+        themeUserOverrides: false,
     };
 
+    switchTheme = (aThemeType) => {
+        this.setState((prevState) => {
+            const themeType =
+                aThemeType && themeTypes[aThemeType] ||
+                prevState.themeType === themeTypes.lightTheme ? themeTypes.darkTheme : themeTypes.lightTheme;
+            const {theme, inspectorTheme, monacoTheme} = getTheme(themeType);
+            return {
+                themeType,
+                theme,
+                inspectorTheme,
+                monacoTheme,
+                themeUserOverrides: true,
+            }
+        });
+    };
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        const {mediaQueryResult: prefersLightMode} = nextProps;
+        const themeType = prefersLightMode ? themeTypes.lightTheme : themeTypes.darkTheme;
+        if (prevState.themeUserOverrides) {
+            return null;
+        } else {
+            const {theme, inspectorTheme, monacoTheme} = getTheme(themeType);
+            return {
+                themeType,
+                theme,
+                inspectorTheme,
+                monacoTheme,
+            };
+        }
+
+    }
+
     render() {
-        const {store} = this.context;
         const {
             classes,
-            url, themeType, switchTheme, minPastebinHeight
+            url, minPastebinHeight,
+            pastebinId, shareUrl, authUser, isConnected
         } = this.props;
         const {
             isTopNavigationToggled,
-            authUser, isChatToggled, chatClick, chatTitle, isNetworkOk
+            isChatToggled, chatClick, chatTitle, isNetworkOk,
+            themeType, theme, inspectorTheme, monacoTheme
         } = this.state;
         const activateChat = !!authUser;
 
@@ -232,102 +287,82 @@ class Index extends Component {
             const newHeight = window.innerHeight - heightAdjust;
             return Math.max(minHeight, newHeight);
         };
+
+        const forwardedState = {...this.state, pastebinId, shareUrl, authUser, isConnected};
         return (
-            //<StrictMode>
             <ThemeContext.Provider value={{
-                themeType: themeType,
-                inspectorTheme: themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
+                switchTheme: this.switchTheme,
+                themeType,
+                theme,
+                inspectorTheme,
+                monacoTheme,
             }}
             >
-                <div className={classes.root}>
-                    <NotificationCenter {...this.state}/>
-                    <TopNavigationBar {...this.state}
-                                      url={url}
-                                      themeType={themeType}
-                                      switchTheme={switchTheme}
+                <ThemeProvider theme={theme}>
+                    <CssBaseline/>
+                    <div className={classes.root}>
+                        <NotificationCenter {...forwardedState}/>
+                        <TopNavigationBar {...forwardedState}
+                                          url={url}
+                                          switchTheme={this.switchTheme}
 
-                    />
-                    <div className={rootContainerClassName}>
-                        <div className={classes.scroller}>
-                            <Pastebin
-                                themeType={themeType}
-                                editorIds={this.editorIds}
-                                setGridLayoutCallbacks={this.setGridLayoutCallbacks}
-                                appClasses={classes}
-                                appStyle={{...appStyle}}
-                                measureBeforeMount={true}
-                                onHeight={onHeight}
-                                heightAdjust={heightAdjust}
-                            />
-                        </div>
-                    </div>
-                    {
-                        activateChat &&
-                        <Chat dispatch={store.dispatch}
-                              isTopNavigationToggled={isTopNavigationToggled}
-                              logoClick={this.logoClick}
-                              isChatToggled={isChatToggled}
-                              chatClick={chatClick}
-                              chatTitle={chatTitle}
-                              isNetworkOk={isNetworkOk}
-                              currentLayout={this.currentLayout}
-                              resetLayoutClick={this.resetLayoutClick}
-                              themeType={themeType}
-                              switchTheme={switchTheme}
                         />
-                    }
-                </div>
+                        <div className={rootContainerClassName}>
+                            <div className={classes.scroller}>
+                                <Pastebin
+                                    themeType={themeType}
+                                    editorIds={this.editorIds}
+                                    setGridLayoutCallbacks={this.setGridLayoutCallbacks}
+                                    appClasses={classes}
+                                    appStyle={{...appStyle}}
+                                    measureBeforeMount={true}
+                                    onHeight={onHeight}
+                                    heightAdjust={heightAdjust}
+                                />
+                            </div>
+                        </div>
+                        {
+                            activateChat &&
+                            <Chat
+                                isTopNavigationToggled={isTopNavigationToggled}
+                                logoClick={this.logoClick}
+                                isChatToggled={isChatToggled}
+                                chatClick={chatClick}
+                                chatTitle={chatTitle}
+                                isNetworkOk={isNetworkOk}
+                                currentLayout={this.currentLayout}
+                                resetLayoutClick={this.resetLayoutClick}
+                                themeType={themeType}
+                                switchTheme={this.switchTheme}
+                            />
+                        }
+                    </div>
+                </ThemeProvider>
             </ThemeContext.Provider>
-            // </StrictMode>
         );
     }
 
     componentDidMount() {
-        const {store} = this.context;
-        this.storeUnsubscribe = store.subscribe(() => {
-            const isConnected = store.getState().firecoReducer.isConnected;
-            if (this.state.isConnected !== isConnected) {
-                this.setState({isConnected: isConnected});
-            }
-
-            const pastebinId = store.getState().pastebinReducer.pastebinId;
-            if (this.state.pastebinId !== pastebinId) {
-                const {url} = this.props;
-                this.setState({
-                    pastebinId: pastebinId,
-                    shareUrl: getShareUrl(url, pastebinId)
-                });
-            }
-
-            const authUser = store.getState().firecoReducer.authUser;
-            if (this.state.authUser !== authUser) {
-                this.setState({
-                    authUser: authUser,
-                });
-            }
-        });
-
+        const {switchMonacoTheme} = this.props;
+        const {monacoTheme} = this.state;
         this.online$ = online$();
         this.online$.subscribe(isOnline => {
             if (this.state.isOnline !== isOnline) {
                 this.setState({isOnline: isOnline});
             }
         });
+        switchMonacoTheme(monacoTheme);
     }
 
-    componentDidUpdate() {
-        const {themeType} = this.props;
-        if (this.prevThemeType !== themeType) {
-            this.prevThemeType = themeType;
-            const {store} = this.context;
-            store.dispatch(switchMonacoTheme(themeType));
+    componentDidUpdate(prevProps, prevState) {
+        const {switchMonacoTheme} = this.props;
+        const {monacoTheme} = this.state;
+        if (monacoTheme !== prevState.monacoTheme) {
+            switchMonacoTheme(monacoTheme);
         }
     }
 
     componentWillUnmount() {
-        if (this.storeUnsubscribe) {
-            this.storeUnsubscribe();
-        }
         this.online$ && this.online$.pipe(takeUntil(end$()));
     }
 }
@@ -335,11 +370,8 @@ class Index extends Component {
 Index.propTypes = {
     url: PropTypes.string.isRequired,
     classes: PropTypes.object.isRequired,
-    switchTheme: PropTypes.func.isRequired,
-    themeType: PropTypes.string.isRequired,
-};
-Index.contextTypes = {
-    store: PropTypes.object.isRequired
+    mediaQuery: PropTypes.string,
 };
 
-export default withRoot(withStyles(styles)(Index));
+const enhance = compose(withStyles(styles), withMediaQuery, connect(mapStateToProps, mapDispatchToProps));
+export default enhance(Index);

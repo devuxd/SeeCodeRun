@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import debounce from 'lodash.debounce';
 import {withStyles} from '@material-ui/core/styles';
@@ -8,8 +9,11 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import CancelIcon from 'mdi-material-ui/Cancel';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 
-import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
+import {mountEditorFulfilled, monacoEditorContentChanged} from "../redux/modules/monacoEditor";
 import {canDispatch, dispatch, clearConsole, preserveLogs} from "../seecoderun/modules/Trace";
+import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
+
+const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
 
 const CONSOLE_INPUT_TOP_PADDING = 6;
 const CONSOLE_INPUT_BOTTOM_PADDING = 6;
@@ -114,28 +118,8 @@ const styles = theme => ({
 });
 
 const defaultMonacoOptions = {
+    ...defaultSimpleMonacoOptions,
     extraEditorClassName: defaultMonacoConsoleClassName,
-    wordWrap: 'on',
-    overviewRulerLanes: 0,
-    glyphMargin: false,
-    lineNumbers: 'off',
-    folding: false,
-    selectOnLineNumbers: false,
-    selectionHighlight: false,
-    cursorStyle: 'line',
-    cursorWidth: 1,
-    scrollbar: {
-        useShadows: false,
-        horizontal: 'hidden',
-        verticalScrollbarSize: 9,
-    },
-    lineDecorationsWidth: 0,
-    scrollBeyondLastLine: false,
-    renderLineHighlight: 'none',
-    minimap: {
-        enabled: false,
-    },
-    contextmenu: false,
     ariaLabel: 'ConsoleInput',
     fontFamily: 'Menlo, monospace',
     fontSize: 12,
@@ -194,8 +178,7 @@ class ConsoleInput extends Component {
         editor.onKeyDown(event => {
             const e = event.browserEvent;
 
-            if (e.keyCode === 13) {
-                // Enter
+            if (e.key === 'Enter' || e.keyCode === 13) {
                 if (e.shiftKey) {
                     return;
                 }
@@ -215,8 +198,7 @@ class ConsoleInput extends Component {
                     commandCursor: -1,
                     commandHistory: [command, ...this.state.commandHistory],
                 });
-            } else if (e.keyCode === 38) {
-                // Up arrow
+            } else if (e.key === 'ArrowUp' || e.keyCode === 38) {
                 const lineNumber = editor.getPosition().lineNumber;
                 if (lineNumber !== 1) {
                     return;
@@ -230,8 +212,7 @@ class ConsoleInput extends Component {
                 this.setState({
                     commandCursor: newCursor,
                 });
-            } else if (e.keyCode === 40) {
-                // Down arrow
+            } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
                 const lineNumber = editor.getPosition().lineNumber;
                 const lineCount = editor.getModel().getLineCount();
                 if (lineNumber !== lineCount) {
@@ -295,13 +276,16 @@ class ConsoleInput extends Component {
         );
     }
 
-    dispatchComponentMounted = (editorId, component) => {
-        const {store} = this.context;
-        store.dispatch(mountEditorFulfilled(editorId, component));
-    };
-
     componentDidMount() {
-        this.dispatchComponentMounted(this.props.editorId, this);
+        const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
+        const {
+            editorDiv, /*dispatchMouseEvents,*/
+            editorDidMount, monacoOptions
+        } = this;
+        mountEditorFulfilled(editorId, {
+            editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
+            editorDidMount, isConsole, monacoOptions
+        });
     }
 
     componentDidUpdate() {
@@ -311,10 +295,8 @@ class ConsoleInput extends Component {
 
 ConsoleInput.propTypes = {
     classes: PropTypes.object.isRequired,
-};
-
-ConsoleInput.contextTypes = {
-    store: PropTypes.object.isRequired
+    isConsole: PropTypes.bool,
+    mountEditorFulfilled: PropTypes.func.isRequired,
 };
 
 ConsoleInput.defaultProps = {
@@ -322,4 +304,4 @@ ConsoleInput.defaultProps = {
     isConsole: true,
 };
 
-export default withStyles(styles)(ConsoleInput);
+export default connect(null, mapDispatchToProps)(withStyles(styles)(ConsoleInput));

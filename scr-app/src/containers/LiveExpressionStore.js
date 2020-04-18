@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from "prop-types";
 import debounce from 'lodash.debounce';
 import throttle from 'lodash/throttle';
@@ -33,6 +34,23 @@ import {monacoProps} from "../utils/monacoUtils";
 import {getVisualIdsFromRefs} from './GraphicalMapper';
 import GraphicalQuery from '../components/GraphicalQuery';
 import TimelineBranchManager from "../seecoderun/modules/TimelineBranchManager";
+
+let monaco = null;
+
+const mapStateToProps = ({monacoEditorsReducer, pastebinReducer}, {editorId}) => {
+    monaco = monaco || window.monaco;
+    const {monacoEditorsStates} = monacoEditorsReducer;
+    const {editorsTexts} = pastebinReducer;
+    const newFirecoPad = monacoEditorsStates && monacoEditorsStates[editorId] ?
+        monacoEditorsStates[editorId].firecoPad : null;
+
+    if (newFirecoPad && newFirecoPad.liveExpressionWidgetProvider) {
+        return {editorsTexts, firecoPad: newFirecoPad};
+    } else {
+        return {editorsTexts};
+    }
+}
+const mapDispatchToProps = {updateBundle, updateBundleFailure, updateBundleSuccess};
 
 const goToTimelineBranchInactive = (timelineI) => {
 };
@@ -162,9 +180,9 @@ const styles = (theme) => {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(90deg, ${
                     theme.palette.primary.main
-                    } ${BRANCH_LINE_DECORATION_WIDTH}px, ${
+                } ${BRANCH_LINE_DECORATION_WIDTH}px, ${
                     HighlightPalette.globalBranch
-                    } ${BRANCH_LINE_DECORATION_WIDTH}px)`,
+                } ${BRANCH_LINE_DECORATION_WIDTH}px)`,
             },
             [`.${HighlightTypes.globalBranch}-default-decoration`]: {
                 //  marginLeft: BRANCH_LINE_DECORATION_WIDTH,
@@ -175,11 +193,11 @@ const styles = (theme) => {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(0deg,  ${
                     'transparent'
-                    } ${monacoProps.lineOffSetHeight}px, ${
+                } ${monacoProps.lineOffSetHeight}px, ${
                     theme.palette.primary.main
-                    } ${monacoProps.lineOffSetHeight}px, ${
+                } ${monacoProps.lineOffSetHeight}px, ${
                     'transparent'
-                    } ${monacoProps.lineOffSetHeight + BRANCH_LINE_DECORATION_WIDTH}px)`,
+                } ${monacoProps.lineOffSetHeight + BRANCH_LINE_DECORATION_WIDTH}px)`,
             },
             [`.${HighlightTypes.localBranch}`]: {
                 //  backgroundColor: HighlightPalette.localBranch,
@@ -190,19 +208,19 @@ const styles = (theme) => {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(90deg, ${
                     theme.palette.secondary.main
-                    } ${BRANCH_LINE_DECORATION_WIDTH}px, ${
+                } ${BRANCH_LINE_DECORATION_WIDTH}px, ${
                     HighlightPalette.localBranch
-                    } ${BRANCH_LINE_DECORATION_WIDTH}px)`,
+                } ${BRANCH_LINE_DECORATION_WIDTH}px)`,
             },
             [`.${HighlightTypes.localBranch}-delimiter-decoration`]: {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(0deg,  ${
                     HighlightPalette.localBranch
-                    } ${monacoProps.lineOffSetHeight}px, ${
+                } ${monacoProps.lineOffSetHeight}px, ${
                     theme.palette.secondary.main
-                    } ${monacoProps.lineOffSetHeight}px, ${
+                } ${monacoProps.lineOffSetHeight}px, ${
                     HighlightPalette.localBranch
-                    } ${monacoProps.lineOffSetHeight + BRANCH_LINE_DECORATION_WIDTH}px)`,
+                } ${monacoProps.lineOffSetHeight + BRANCH_LINE_DECORATION_WIDTH}px)`,
             },
         },
         popoverPaper: {
@@ -306,8 +324,6 @@ const styles = (theme) => {
     }
 };
 
-let monaco = null;
-
 // const objectIterator = createObjectIterator();
 
 class LiveExpressionStore extends Component {
@@ -405,8 +421,8 @@ class LiveExpressionStore extends Component {
 
     handleBranchChange =
         (navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI) => {
-             console.log('na',
-            navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI);
+            console.log('na',
+                navigationType, currentBranchId, currentBranchTimelineId, navigatorIndex, prevTimelineI);
             let {branchSelections} = this.state;
             const globalB = (branchSelections[NavigationTypes.Global] || {});
             const globalCurrentBranchId = globalB.currentBranchId;
@@ -500,6 +516,7 @@ class LiveExpressionStore extends Component {
     configureNavigators = (
         navigationType, branches, branched, absoluteBranched, currentBranched,
         color, classes, style, liveExpressionContainerClassName, liveRanges, ignoreRanges) => {
+        const {firecoPad} = this.props;
         const {
             decorators, branchSelections, currentContentWidgetId,
         } = this.state;
@@ -508,8 +525,8 @@ class LiveExpressionStore extends Component {
             /*prevTimelineI,*/
         } = (branchSelections[navigationType] || {});
         const navigators = [];
-        const {firecoPad} = this.state;
-         // console.log('start cont ------------------------', branchSelections[navigationType] );
+
+        // console.log('start cont ------------------------', branchSelections[navigationType] );
         for (const id in branched) {
             const decorator = (decorators || []).find(dec => dec.id === id);
             if (decorator) {
@@ -527,8 +544,8 @@ class LiveExpressionStore extends Component {
                     const branchTotal =
                         absoluteBranched && absoluteBranched[id] ? absoluteBranched[id].length : branched[id].length;
                     // const branchLabel = `${branchSelection}/${branchTotal}`;
-                    const branchLabel = `${navigatorIndex||branchTotal}/${branchTotal}`;
-                    const sliderRange = [navigatorIndex||branchTotal];
+                    const branchLabel = `${navigatorIndex || branchTotal}/${branchTotal}`;
+                    const sliderRange = [navigatorIndex || branchTotal];
                     const branchNavigatorWidgetClassName = classes.branchNavigatorWidget;
                     const n = currentBranchTimelineId ?
                         this.timeline[this.timeline.length - currentBranchTimelineId] || {} : {};
@@ -945,6 +962,7 @@ class LiveExpressionStore extends Component {
     }
 
     adjustWidth = (liveExpresionDataInLineRaw) => {
+        const {firecoPad} = this.props;
         const liveExpresionDataInLine = liveExpresionDataInLineRaw.sort((a, b) => {
             const aRange = a.range, bRange = b.range;
             if (aRange && bRange && aRange !== bRange) {
@@ -968,18 +986,21 @@ class LiveExpressionStore extends Component {
             }
             return 0;
         });
-        const {firecoPad} = this.state;
-        class OffsetModel{
-            constructor(lineNumber, el, align, startOffset, endOffset, marginLeft, maxWidth){
+
+        class OffsetModel {
+            constructor(lineNumber, el, align, startOffset, endOffset, marginLeft, maxWidth) {
 
             }
-            isOccluding(){
-                
+
+            isOccluding() {
+
             }
-            conciliate(){
+
+            conciliate() {
 
             }
         }
+
         const offsetModels = [];
 
         const toReAdjust = [];
@@ -1101,14 +1122,14 @@ class LiveExpressionStore extends Component {
                     i.domNode.dataset.maxWidth = `${marginLeft}`;
                     toReAdjust.push(i.domNode);
                     toReAdjust.push(marginBound.domNode);
-                }else{
+                } else {
 
                 }
             }
 
         });
-        toReAdjust.forEach((nodeI, i)=>{
-            for(let j=i;j<toReAdjust.length;j++){
+        toReAdjust.forEach((nodeI, i) => {
+            for (let j = i; j < toReAdjust.length; j++) {
                 // const nodeJ = toReAdjust[j];
                 // const iStart = nodeI.dataset.isAlignRight?parseFloat(nodeI.style.marginLeft)
                 // if(){
@@ -1120,10 +1141,9 @@ class LiveExpressionStore extends Component {
     };
 
     render() {
-        const {classes, editorWidth, editorHeight, timeline, searchState} = this.props;
+        const {classes, editorWidth, editorHeight, timeline, searchState, firecoPad,} = this.props;
         const {
             decorators, currentContentWidgetId, updatingLiveExpressions, branchSelections,
-            firecoPad,
         } = this.state;
 
         const liveExpressionContainerClassName = updatingLiveExpressions ?
@@ -1742,71 +1762,64 @@ class LiveExpressionStore extends Component {
         this.handleBundlingSubscription();
         this.handleBundlingSubscriptionDebounced =
             this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
-        const {store} = this.context;
-        const {editorId} = this.props;
-        this.unsubscribe = store.subscribe(() => {
-            monaco = monaco || window.monaco;
-            const state = store.getState();
-            const firecoPad =
-                state.monacoEditorsReducer.monacoEditorsStates
-                && state.monacoEditorsReducer.monacoEditorsStates[editorId] ?
-                    state.monacoEditorsReducer.monacoEditorsStates[editorId].firecoPad : null;
-
-            if (firecoPad && firecoPad.liveExpressionWidgetProvider && firecoPad !== this.state.firecoPad) {
-                this.setState({firecoPad: firecoPad});
-                setTimeout(() => this.updateLiveExpressions(firecoPad.liveExpressionWidgetProvider), 0);
-            }
-
-            const editorsTexts = store.getState().pastebinReducer.editorsTexts;
-            if (this.shouldBundle(editorsTexts)) {
-                this.currentEditorsTexts = editorsTexts;
-                clearInterval(this.refreshInterval);
-                this.timeline = [];
-                //  this.unHighlightLiveExpressions();
-                store.dispatch(updateBundle(Date.now()));
-                this.bundlingSubject.next(this.currentEditorsTexts);
-            }
-        });
 
         goToTimelineBranch = this.goToTimelineBranch;
     }
 
-    componentDidUpdate(prevProps, prevState/*, snapshot*/) {
+    componentDidUpdate(prevProps/*, prevState, snapshot*/) {
         this.didUpdate = true;
         if (prevProps.autorunDelay !== this.props.autorunDelay) {
             this.handleBundlingSubscriptionDebounced();
         }
-        const {firecoPad} = this.state;
-        if (firecoPad && firecoPad !== prevState.firecoPad) {
+        const {firecoPad, editorsTexts, updateBundle} = this.props;
+        if (firecoPad && firecoPad !== prevProps.firecoPad) {
             this.configureLiveExpressionWidgetsLayoutChange(firecoPad);
+            this.updateLiveExpressionsTimeout = this.updateLiveExpressionsTimeout ||
+                setTimeout(() =>
+                    this.updateLiveExpressions(firecoPad.liveExpressionWidgetProvider), 0);
         }
+
+        if (this.shouldBundle(editorsTexts)) {
+            this.currentEditorsTexts = editorsTexts;
+            clearInterval(this.refreshInterval);
+            this.timeline = [];
+            //  this.unHighlightLiveExpressions();
+            updateBundle(Date.now());
+            this.bundlingSubject.next(this.currentEditorsTexts);
+        }
+
     }
 
     componentWillUnmount() {
-        this.unsubscribe && this.unsubscribe();
         this.bundlingSubject && this.bundlingSubject.complete();
         goToTimelineBranch = goToTimelineBranchInactive;
     }
 
     updateBundle = async (currentEditorsTexts) => {
-        const {store} = this.context;
-        const {firecoPad/*, decorators*/, getLocationId} = this.state;
+        const {updateBundleFailure, updateBundleSuccess, firecoPad} = this.props;
+        const {/*, decorators*/ getLocationId} = this.state;
 
+        let retries = 20;
+        let tm = null;
         if (!firecoPad || !firecoPad.astResult || !getLocationId) {
             this.handleBundleDebounced(currentEditorsTexts);
             return;
         }
         if (!firecoPad.astResult.ast) {
-            store.dispatch(updateBundleFailure(firecoPad.astResult.astError));
+            updateBundleFailure({js: firecoPad.astResult.astError});
             return;
         }
-        let retries = 20;
-        let tm = null;
         const onAstReady = (astResult) => {
             clearTimeout(tm);
+            if (!astResult.ast) {
+                updateBundleFailure({js: astResult.astError});
+                return;
+            }
+
             if (!this.autoLog) {
                 this.autoLog = new AutoLog(firecoPad.j);
             }
+
             const baseAlJs = astResult.ast.toSource();
             this.autoLog.transformWithLocationIds(astResult.ast, getLocationId)
                 .then(autoLogger => {
@@ -1831,7 +1844,7 @@ class LiveExpressionStore extends Component {
                         this.traceSubscriber = autoLogger.trace;
                         this.traceSubscriber.subscribe(this.handleTraceChange);
 
-                        store.dispatch(updateBundleSuccess(bundle));
+                        updateBundleSuccess(bundle);
                     };
                     // JsCodeShift silently does nothing while loading its dependencies. Bundling needs retrying
                     // until it is JsCodeShift is ready
@@ -1864,12 +1877,13 @@ class LiveExpressionStore extends Component {
     };
 
     highlightLiveExpressions = (liveRanges, ignoreRanges, isReveal = false) => {
+        const {firecoPad} = this.props;
         liveRanges = liveRanges.filter(ran => {
             return !ignoreRanges.find(r => {
                 return r.containsRange(ran);
             });
         });
-        const {firecoPad} = this.state;
+
         if (this.mainLoadedTimelineI && this.depLocs) {
             Object.keys(this.depLocs).forEach(key => {
                 const loc = this.depLocs[key];
@@ -1901,12 +1915,11 @@ class LiveExpressionStore extends Component {
     };
 
     unHighlightLiveExpressions = () => {
+        const {firecoPad} = this.props;
         if (this.prevDecorationIds && this.prevDecorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevDecorationIds = firecoPad.monacoEditor.deltaDecorations(this.prevDecorationIds, []);
         }
         if (this.prevIgnoreDecorationIds && this.prevIgnoreDecorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevIgnoreDecorationIds = firecoPad.monacoEditor.deltaDecorations(this.prevIgnoreDecorationIds, []);
         }
     };
@@ -1939,7 +1952,7 @@ class LiveExpressionStore extends Component {
 
     unHighlightErrors = () => {
         if (this.prevErrorDecorationIds && this.prevErrorDecorationIds.length) {
-            const {firecoPad} = this.state;
+            const {firecoPad} = this.props;
             this.prevErrorDecorationIds = firecoPad.monacoEditor.deltaDecorations(this.prevErrorDecorationIds, []);
         }
     };
@@ -1974,22 +1987,21 @@ class LiveExpressionStore extends Component {
     };
 
     unHighlightBranch = (navigationType) => {
+        const {firecoPad} = this.props;
         if (this.prevBranch[navigationType] && this.prevBranch[navigationType].single.decorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevBranch[navigationType].single.decorationIds =
                 firecoPad.monacoEditor.deltaDecorations(this.prevBranch[navigationType].single.decorationIds, []);
             firecoPad.monacoEditor.restoreViewState(this.prevBranch[navigationType].single.viewState);
         }
         if (this.prevBranch[navigationType] &&
             this.prevBranch[navigationType].matches && this.prevBranch[navigationType].matches.decorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevBranch[navigationType].matches.decorationIds =
                 firecoPad.monacoEditor.deltaDecorations(this.prevBranch[navigationType].matches.decorationIds, []);
         }
     };
 
     highlightBranches = (navigationType, branches, matches, isReveal) => {
-        const {firecoPad} = this.state;
+        const {firecoPad} = this.props;
         if (!firecoPad) {
             return;
         }
@@ -2036,10 +2048,9 @@ class LiveExpressionStore extends Component {
     };
 
     unHighlightBranches = (navigationType) => {
-
+        const {firecoPad} = this.props;
         if (this.prevBranches
             && this.prevBranches[navigationType] && this.prevBranches[navigationType].single.decorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevBranches[navigationType].single.decorationIds =
                 firecoPad.monacoEditor.deltaDecorations(this.prevBranches[navigationType].single.decorationIds, []);
             firecoPad.monacoEditor.restoreViewState(this.prevBranches[navigationType].single.viewState);
@@ -2052,7 +2063,7 @@ class LiveExpressionStore extends Component {
         // if (this.prevBranches[navigationType] &&
         //     this.prevBranches[navigationType].matches
         // && this.prevBranches[navigationType].matches.decorationIds.length) {
-        //     const {firecoPad} = this.state;
+        //     const {firecoPad} = this.props;
         //     this.prevBranches[navigationType].matches.decorationIds =
         //         firecoPad.monacoEditor.deltaDecorations(this.prevBranches[navigationType].matches.decorationIds, []);
         // }
@@ -2085,22 +2096,21 @@ class LiveExpressionStore extends Component {
     };
 
     unHighlightSingleText = () => {
+        const {firecoPad} = this.props;
         if (this.prevSingleTextState && this.prevSingleTextState.single.decorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevSingleTextState.single.decorationIds =
                 firecoPad.monacoEditor.deltaDecorations(this.prevSingleTextState.single.decorationIds, []);
             firecoPad.monacoEditor.restoreViewState(this.prevSingleTextState.single.viewState);
         }
         if (this.prevSingleTextState && this.prevSingleTextState.matches
             && this.prevSingleTextState.matches.decorationIds.length) {
-            const {firecoPad} = this.state;
             this.prevSingleTextState.matches.decorationIds =
                 firecoPad.monacoEditor.deltaDecorations(this.prevSingleTextState.matches.decorationIds, []);
         }
     };
 
     setCursorToLocation = (loc) => {
-        const {firecoPad} = this.state;
+        const {firecoPad} = this.props;
         const range = loc ? firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc) : null;
         if (range) {
             firecoPad.monacoEditor.setPosition(range.getStartPosition());
@@ -2110,7 +2120,7 @@ class LiveExpressionStore extends Component {
     };
 
     highlightTexts = (locs, options, prevDecorationIds, isReveal = false, areRanges = false) => {
-        const {firecoPad} = this.state;
+        const {firecoPad} = this.props;
 
         if (!firecoPad || !locs) {
             return;
@@ -2139,7 +2149,7 @@ class LiveExpressionStore extends Component {
     };
 
     getEditorTextInLoc = (loc) => {
-        const {firecoPad} = this.state;
+        const {firecoPad} = this.props;
 
         if (!firecoPad || !loc) {
             return;
@@ -2152,7 +2162,7 @@ class LiveExpressionStore extends Component {
     };
 
     colorizeDomElement = (ref) => {
-        const {firecoPad} = this.state;
+        const {firecoPad} = this.props;
         return firecoPad.liveExpressionWidgetProvider.colorizeElement(ref);
     };
 
@@ -2194,17 +2204,10 @@ class LiveExpressionStore extends Component {
     };
 
     updateLiveExpressions(liveExpressionWidgetProvider) {
-        if (!liveExpressionWidgetProvider) {
-            return;
-        }
-        liveExpressionWidgetProvider.afterWidgetize(this.afterWidgetize);
+        liveExpressionWidgetProvider && liveExpressionWidgetProvider.afterWidgetize(this.afterWidgetize);
     }
 
 }
-
-LiveExpressionStore.contextTypes = {
-    store: PropTypes.object.isRequired
-};
 
 LiveExpressionStore.propTypes = {
     classes: PropTypes.object.isRequired,
@@ -2220,4 +2223,4 @@ const LiveExpressionStoreWithContext = props => (
         }}
     </PastebinContext.Consumer>
 );
-export default withStyles(styles)(LiveExpressionStoreWithContext);
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(LiveExpressionStoreWithContext));

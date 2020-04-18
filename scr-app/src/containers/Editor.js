@@ -1,21 +1,31 @@
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from "prop-types";
 import debounce from 'lodash.debounce';
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
 import {withStyles} from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
-import CloseIcon from '@material-ui/icons/Close';
-// import WarningIcon from '@material-ui/icons/Warning';
-import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
+
 import SettingsIcon from '@material-ui/icons/SettingsSharp';
-import Snackbar from '@material-ui/core/Snackbar';
-import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
+
+import {monacoEditorContentChanged, mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
 import {end$} from "../utils/scrUtils";
 import LiveExpressionStore from './LiveExpressionStore';
+import Notification from "../components/Notification";
+
+const mapStateToProps = (state) => {
+    const {updateBundleReducer, updatePlaygroundReducer} = state;
+
+    return {
+        runTimeErrors: updatePlaygroundReducer.runtimeErrors,
+        bundleErrors: updateBundleReducer.errors
+    };
+
+};
+const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
 
 export const defaultMonacoEditorLiveExpressionClassName = 'monaco-editor-live-expression';
 const styles = theme => ({
@@ -59,13 +69,6 @@ const styles = theme => ({
             easing: theme.transitions.easing.sharp,
         }),
     },
-    snackbar: {
-        //position: 'absolute',
-    },
-    snackbarContent: {
-        maxWidth: 'inherit',
-        width: '100%',
-    },
 });
 
 class Editor extends Component {
@@ -79,7 +82,6 @@ class Editor extends Component {
             errorSnackbarOpen: false,
             anchorEl: null,
             mouseEvent: null,
-            errors: null,
             currentContentWidgetId: null,
             forceHideWidgets: false,
             automaticLayout: false,
@@ -92,30 +94,43 @@ class Editor extends Component {
     }
 
 
-    handleClick = () => {
-        this.setState(prevState =>
-            ({errorSnackbarOpen: !prevState.errorSnackbarOpen})
-        );
+    handleClose = (event, reason, isOpen) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        this.setState({errorSnackbarOpen: isOpen});
     };
 
-    handleClose = () => {
-        this.setState({errorSnackbarOpen: false});
-    };
+    handleSettingsClick = () => {
+        //todo: enable settings
+    }
 
-    onContentChangedAction = () => {
-    };
+    static getDerivedStateFromProps(props) {
+        const {runtimeErrors, bundleErrors, editorId} = props;
+        if ((runtimeErrors && runtimeErrors[editorId]) || (bundleErrors && bundleErrors[editorId])) {
+            return {
+                errors: (runtimeErrors && runtimeErrors[editorId]) || (bundleErrors && bundleErrors[editorId]),
+            };
+        } else {
+            return {
+                errors: null,
+            };
+        }
+    }
 
     render() {
-        const {classes, observeLiveExpressions, editorId, themeType, liveExpressionStoreChange} = this.props;
         const {
-            settingsOpen, errorSnackbarOpen, errors,
+            editorId, classes, observeLiveExpressions, themeType, liveExpressionStoreChange,
+        } = this.props;
+        const {
+            settingsOpen, errorSnackbarOpen, errors
             //currentContentWidgetId,// forceHideWidgets
         } = this.state;
         const fabClassName =
             classNames(
                 classes.fab, errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown
             );
-
+        const notificationType = errors ? 'error' : ''
         return (<div className={classes.container}>
                 <div ref={this.editorDiv}
                      className={classes.editor}
@@ -133,27 +148,15 @@ class Editor extends Component {
                     liveExpressionStoreChange={liveExpressionStoreChange}
                 />
                 }
-                <Snackbar
-                    open={errorSnackbarOpen}
+                {errors && <Notification
+                    type={notificationType}
                     onClose={this.handleClose}
-                    ContentProps={{
-                        'aria-describedby': 'snackbar-fab-message-id',
-                        className: classes.snackbarContent,
-                    }}
-                    message={<span id="snackbar-fab-message-id"><ErrorOutlineIcon
-                        color="error"/><span>{JSON.stringify(errors)}</span></span>}
-                    action={
-                        <Button size="small" color="inherit" onClick={this.handleClose}>
-                            <CloseIcon/>
-                        </Button>
-                    }
-                    className={classes.snackbar}
-                />
+                    message={errors}/>}
                 {settingsOpen ?
                     (
                         <Fab mini="true" color="secondary" aria-label="settings"
-                                className={fabClassName}
-                                onClick={this.handleClick}>
+                             className={fabClassName}
+                             onClick={this.handleSettingsClick}>
                             <SettingsIcon/>
                         </Fab>)
                     : null
@@ -179,32 +182,15 @@ class Editor extends Component {
     };
 
     componentDidMount() {
-        this.unsubscribes = [];
-        const {editorId} = this.props;
-        const {store} = this.context;
-        this.onContentChangedAction = action => {
-            store.dispatch(action);
-        };
-        store.dispatch(mountEditorFulfilled(this.props.editorId, this));
-        const unsubscribe0 = store.subscribe(() => {
-            const currentErrors =
-                store.getState().updatePlaygroundReducer.runtimeErrors ?
-                    store.getState().updatePlaygroundReducer.runtimeErrors[editorId]
-                    : null;
-            if (currentErrors !== this.state.errors) {
-                if (currentErrors) {
-                 //   console.log("rrrrrrr", currentErrors.loc, currentErrors.stack);
-                } else {
-                   // console.log("EMPTY");
-                }
-
-                this.setState({
-                    errorSnackbarOpen: !!currentErrors,
-                    errors: currentErrors,
-                });
-            }
+        const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
+        const {
+            editorDiv, /*dispatchMouseEvents,*/
+            firecoPadDidMount, monacoOptions
+        } = this;
+        mountEditorFulfilled(editorId, {
+            editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
+            firecoPadDidMount, isConsole, monacoOptions
         });
-        this.unsubscribes.push(unsubscribe0);
         this.updateEditorDimensions();
     }
 
@@ -220,10 +206,6 @@ class Editor extends Component {
     }
 
     componentWillUnmount() {
-        for (const i in this.unsubscribes) {
-            //     console.log(i, this.unsubscribes[i]);
-            this.unsubscribes[i] && this.unsubscribes[i]();
-        }
         this.monacoEditorMouseEventsObservable && this.monacoEditorMouseEventsObservable.takeUntil(end$);
         const {contentWidgetMouseEventSubjects} = this;
         contentWidgetMouseEventSubjects &&
@@ -251,7 +233,7 @@ class Editor extends Component {
         };
 
         contentWidgetMouseEventSubjects.mouseMove
-        // .throttleTime(100)
+            // .throttleTime(100)
             .debounceTime(500)
             .subscribe(payload => {
                 this.setState({currentContentWidgetId: null});
@@ -344,10 +326,6 @@ class Editor extends Component {
     };
 }
 
-Editor.contextTypes = {
-    store: PropTypes.object.isRequired
-};
-
 Editor.propTypes = {
     editorId: PropTypes.string.isRequired,
     classes: PropTypes.object.isRequired,
@@ -356,6 +334,7 @@ Editor.propTypes = {
     mouseEventsDisabled: PropTypes.bool,
     observeLiveExpressions: PropTypes.bool,
     setLiveExpressionStoreChange: PropTypes.func,
+    mountEditorFulfilled: PropTypes.func.isRequired,
 };
 
-export default withStyles(styles)(Editor);
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(Editor));

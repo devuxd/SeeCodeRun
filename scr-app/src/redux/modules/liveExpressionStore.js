@@ -20,9 +20,9 @@ export const updateBundleSuccess = (bundle=null) => ({
   })
 ;
 
-export const updateBundleFailure = (error) => ({
+export const updateBundleFailure = (errors) => ({
     type: UPDATE_BUNDLE_FAILURE,
-    errors: error,
+    errors
   })
 ;
 

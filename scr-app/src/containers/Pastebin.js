@@ -1,4 +1,5 @@
 import React, {Component, createContext} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
@@ -12,6 +13,7 @@ import IconButton from '@material-ui/core/IconButton';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
 // import SlowMotionVideoIcon from '@material-ui/icons/SlowMotionVideo';
+import Drawer from '@material-ui/core/Drawer';
 import TvIcon from '@material-ui/icons/Tv';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
@@ -21,9 +23,8 @@ import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
 import Playground from './Playground';
-import {pastebinConfigureLayout} from "../redux/modules/pastebin";
+// import {pastebinConfigureLayout} from "../redux/modules/pastebin";
 import SizeProvider from '../utils/SizeProvider';
-import PersistableContainer from './PersistableContainer';
 import {
     configureDefaultGridLayoutFormatter
 } from '../utils/reactGridLayoutUtils';
@@ -33,8 +34,7 @@ import {
 import DebugContainer from "../components/DebugContainer";
 import ScrollingList from "../components/ScrollingList";
 import TraceControls from '../components/TraceControls';
-
-const PersistableTraceControls = PersistableContainer(TraceControls);
+import PointOfView, {createPointOfViewTile} from "../components/PointOfView";
 
 let isCompact = true;
 let gridLayoutFormatter = isCompact ?
@@ -46,10 +46,27 @@ export const VisualQueryManager = {
     },
     visualElements: [],
 };
+export const d = {
+    //Matches PointOfView.createPointOfViewTile(...)
+    log: (id, expressionText, expressionLanguage = 'typescript', fromData, toData, dataLanguage = 'json') => {
+    },
+};
 
 const animationId = `scr-a-id-${Date.now()}`;
 
 export const TABLE_ROW_HEIGHT = 32;
+
+const CONFIGURE_PASTEBIN_LAYOUT = 'CONFIGURE_PASTEBIN_LAYOUT';
+export const pastebinConfigureLayout =
+    (restoreGridLayouts, getCurrentGridLayouts) => {
+        return {
+            type: CONFIGURE_PASTEBIN_LAYOUT,
+            restoreGridLayouts,
+            getCurrentGridLayouts,
+        };
+    };
+
+const mapDispatchToProps = {pastebinConfigureLayout};
 const styles = theme => ({
     layout: {
         overflow: 'visible',
@@ -119,6 +136,7 @@ class Pastebin extends Component {
         this.debugScrollerRefSnapshots = {};
         this.scrollingListContainers = {};
         VisualQueryManager.onChange = this.onVisualQueryChange;
+        d.log = this.handleChangePointOfViewTiles;
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -676,7 +694,7 @@ class Pastebin extends Component {
         timeFlow: 'desc',
         handleChangePlaying: this.handleChangePlaying,
         handleChangeTimeFlow: this.handleChangeTimeFlow,
-        isAutoExpand: true,
+        isAutoExpand: false,
         handleChangeAutoExpand: this.handleChangeAutoExpand,
         searchState: {
             functionLikeExpressions: functionLikeExpressions,
@@ -698,7 +716,19 @@ class Pastebin extends Component {
         hoveredCellKey: null,
         scrollToTop: this.scrollToTop,
         isGraphicalLocatorActive: false,
+        pointOfViewTiles: [],
     };
+
+    handleChangePointOfViewTiles = (...params) => {
+        if (params.length) {
+            this.setState(prevState => ({
+                pointOfViewTiles: [...prevState.pointOfViewTiles, createPointOfViewTile(...params)]
+            }));
+        } else {
+            this.setState({pointOfViewTiles: []});
+        }
+    };
+
 
     handleChangeAutorunDelay = autorunDelay => {
         this.setState({autorunDelay: autorunDelay ? parseInt(autorunDelay, 10) : 0});
@@ -719,7 +749,7 @@ class Pastebin extends Component {
             if (isGraphicalLocatorActive) {
                 searchState.isExpressionsTemp = searchState.isExpressions;
                 searchState.isExpressions = true;
-            }else{
+            } else {
                 searchState.visualQuery = null;
                 searchState.visualId = null;
                 searchState.isExpressions = searchState.isExpressionsTemp;
@@ -735,9 +765,10 @@ class Pastebin extends Component {
         const {themeType, appClasses, classes, appStyle, editorIds} = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
-            autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive
+            autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive,
+            isAutoExpand, pointOfViewTiles
         } = this.state;
-
+        //console.log('isAutoExpand',isAutoExpand,this.state);
         const rowHeight =
             Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
         gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] =
@@ -747,6 +778,10 @@ class Pastebin extends Component {
             return (
                 <div className={appClasses.content}>
                     <PastebinContext.Provider value={this.state}>
+                        {global.monaco && global.monaco.editor && isAutoExpand &&
+                        <Drawer anchor={"bottom"} open={isAutoExpand} onClose={this.handleChangeAutoExpand}>
+                            <PointOfView monaco={global.monaco} tiles={pointOfViewTiles}/>
+                        </Drawer>}
                         <Responsive
                             width={width}
                             breakpoints={gridLayoutFormatter.gridBreakpoints}
@@ -879,7 +914,7 @@ class Pastebin extends Component {
                             </Paper>
                         </Responsive>
                     </PastebinContext.Provider>
-                    {traceAvailable && <PersistableTraceControls
+                    {traceAvailable && <TraceControls
                         persistablePath={'traceControls'}
                         autorunDelay={autorunDelay}
                         handleChangeAutorunDelay={this.handleChangeAutorunDelay}
@@ -892,14 +927,10 @@ class Pastebin extends Component {
     }
 
     componentDidMount() {
-        const {setGridLayoutCallbacks} = this.props;
+        const {setGridLayoutCallbacks, pastebinConfigureLayout} = this.props;
         setGridLayoutCallbacks(this.resetGridLayout, this.getCurrentGridLayouts);
-        this.context.store.dispatch(
-            pastebinConfigureLayout(
-                this.restoreGridLayouts,
-                this.getCurrentGridLayouts
-            )
-        );
+
+        pastebinConfigureLayout(this.restoreGridLayouts, this.getCurrentGridLayouts);
         this.onDebugContainerResizeEnd();
     }
 
@@ -925,15 +956,8 @@ class Pastebin extends Component {
         }
     }
 
-    // componentWillUnmount() {
-    //
-    // }
 
 }
-
-Pastebin.contextTypes = {
-    store: PropTypes.object.isRequired
-};
 
 Pastebin.propTypes = {
     classes: PropTypes.object.isRequired,
@@ -941,4 +965,4 @@ Pastebin.propTypes = {
     setGridLayoutCallbacks: PropTypes.func.isRequired,
 };
 
-export default withStyles(styles)(SizeProvider(Pastebin));
+export default connect(null, mapDispatchToProps)(withStyles(styles)(SizeProvider(Pastebin)));

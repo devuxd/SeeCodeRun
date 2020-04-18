@@ -51,19 +51,6 @@ export const disposePastebin = () => {
     };
 };
 
-export const pastebinConfigureLayout =
-    (restoreGridLayouts, getCurrentGridLayouts) => {
-        return {
-            type: CONFIGURE_PASTEBIN_LAYOUT,
-            restoreGridLayouts: restoreGridLayouts,
-            getCurrentGridLayouts: getCurrentGridLayouts,
-        };
-    };
-
-export const getShareUrl = (url, pastebinId) => {
-    return pastebinId ? `${url}/#:${pastebinId}` : null;
-};
-
 export const fetchPastebin = (locationHash = '') => {
     const pastebinId = locationHash.replace(/#/, '');
     const isCopy = pastebinId.indexOf(':') === 0;

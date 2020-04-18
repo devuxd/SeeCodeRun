@@ -16,7 +16,6 @@ import {
 import {
     loadMonacoEditorFulfilled,
     loadMonacoEditorRejected,
-    monacoEditorContentChanged,
 } from '../redux/modules/monacoEditor';
 
 import {
@@ -70,7 +69,6 @@ const defaultFirecoPad = {
     id: null,
     language: 'html',
     isJsx: false,
-    editorComponent: null,
     monacoEditor: null,
     monacoEditorModel: null,
     monacoEditorSavedState: null, //{text: null, viewState: null}
@@ -99,17 +97,13 @@ const editorIds = {
     'css': 'css',
 };
 
-export const monacoThemes = {
-    current: 'vs-light',
-    lightTheme: 'vs-light', // matches withRoot.js themes' keys
-    darkTheme: 'vs-dark'// matches withRoot.js themes' keys
-};
 
 export const getEditorIds = () => ({...editorIds});
 
 class AppManager {
     constructor() {
         this.j = null;
+        this.currentMonacoTheme = null;
         this.pastebinLayout = null;
         this.pastebinId = null;
         this.monaco = null;
@@ -256,6 +250,7 @@ class AppManager {
         try {
             if (monaco) {
                 this.monaco = monaco;
+                this.currentMonacoTheme && this.monaco.editor.setTheme(this.currentMonacoTheme);
                 for (const editorId in this.firecoPads) {
                     const firecoPad = this.firecoPads[editorId];
                     let text = '';
@@ -373,6 +368,8 @@ class AppManager {
         let isChange = false;
         let isCursorPositionInColumnZero = false;
 
+        let prevKeyCode = null;
+        let currentKeyCode = null;
         let prevKey = null;
         let currentKey = null;
 
@@ -388,12 +385,16 @@ class AppManager {
 
         monacoEditor.onKeyDown((event) => {
             prevKey = currentKey;
-            currentKey = event.browserEvent.keyCode;
-            isChange = currentKey === 13; // enter
+            prevKeyCode = currentKeyCode;
+            currentKey = event.browserEvent.key;
+            currentKeyCode = event.browserEvent.keyCode;
+            isChange = currentKey === 'Enter' || currentKeyCode === 13;
             isChange = // backspace or delete and rightmost
-                isChange || ((currentKey === 8 || currentKey === 46) && isCursorPositionInColumnZero);
+                isChange || ((currentKey === 'Backspace' || currentKeyCode === 8 || currentKeyCode === 46) &&
+                isCursorPositionInColumnZero);
             isChange = // paste or cut := ctrl||command + V||C english only =[
-                isChange || ((prevKey === 17 || prevKey === 91) && (currentKey === 86 || currentKey === 88));
+                isChange || ((prevKey === 'Control' || prevKeyCode === 17 || prevKey === 'Meta' || prevKeyCode === 91) &&
+                (currentKey === 'c' || currentKeyCode === 86 || currentKey === 'v' || currentKeyCode === 88));
             widgetLayoutChange();
         });
 
@@ -408,24 +409,22 @@ class AppManager {
         monacoEditor.onDidScrollChange(widgetLayoutChange);
     }
 
-    observeConfigureMonacoEditor(editorId, editorComponent) {
-        const {editorDiv, /*dispatchMouseEvents,*/ onContentChangedAction, props, firecoPadDidMount} = editorComponent;
+    observeConfigureMonacoEditor(editorId, editorHooks) {
+        const {editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
+            firecoPadDidMount, editorDidMount, isConsole, monacoOptions} = editorHooks;
 
         if (this.monaco) {
-            // try {
-            const {isConsole} = props;
             if (isConsole) {
                 this.consoleInputEditor =
                     configureMonacoEditor(this.monaco, editorDiv.current, {
-                        ...editorComponent.monacoOptions,
-                        model: this.monaco.editor.createModel('', 'javascript')
+                        ...monacoOptions,
+                        model: this.monaco.editor.createModel('', 'typescript')
                     });
-                editorComponent.editorDidMount(this.consoleInputEditor);
+                editorDidMount(this.consoleInputEditor);
                 return of(loadMonacoEditorFulfilled(editorId, null));
             }
 
             const firecoPad = this.firecoPads[editorId];
-            firecoPad.editorComponent = editorComponent;
 
             firecoPad.lineNumbersProvider = configureLineNumbersProvider(editorId, document);
             const editorOptions = {
@@ -436,7 +435,7 @@ class AppManager {
             const monacoEditor = configureMonacoEditor(this.monaco, editorDiv.current, editorOptions);
 
             if (firecoPad.monacoEditorSavedState && isString(firecoPad.monacoEditorSavedState.text)) {
-               // monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
+                // monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
                 monacoEditor.restoreViewState(firecoPad.monacoEditorSavedState.viewState);
             }
 
@@ -451,11 +450,8 @@ class AppManager {
                 }
             }
 
-            firecoPad.onContentChangedAction = (changes) => {
-                onContentChangedAction && onContentChangedAction(
-                    monacoEditorContentChanged(editorId, monacoEditor.getValue(), changes)
-                );
-            };
+            firecoPad.onContentChangedAction = (changes) =>
+                monacoEditorContentChanged && monacoEditorContentChanged(editorId, monacoEditor.getValue(), changes);
             const asyncContentChanged = async (changes) => {
                 firecoPad.onContentChanged && firecoPad.onContentChanged();
                 firecoPad.onContentChangedAction(changes);
@@ -500,21 +496,20 @@ class AppManager {
         }
     }
 
-    observeSwitchMonacoTheme(themeType) {
-        if (!monacoThemes[themeType]) {
-            return of(switchMonacoThemeRejected('Unknown theme type'));
+    observeSwitchMonacoTheme(monacoTheme) {
+        if (!monacoTheme) {
+            return of(switchMonacoThemeRejected('Unknown Monaco theme type'));
         }
 
         if (this.monaco) {
-            if (monacoThemes[themeType] !== monacoThemes.current) {
-                monacoThemes.current = monacoThemes[themeType];
-                this.monaco.editor.setTheme(monacoThemes.current);
+            if (monacoTheme !== this.currentMonacoTheme) {
+                this.currentMonacoTheme = monacoTheme;
+                this.monaco.editor.setTheme(this.currentMonacoTheme);
             }
-            return of(switchMonacoThemeFulfilled());
+        } else {
+            this.currentMonacoTheme = monacoTheme;
         }
-
-        return of(loadMonacoEditorRejected('Attempting to switch' +
-            ' Monaco theme without loading Monaco.'));
+        return of(switchMonacoThemeFulfilled());
     }
 
     observeActivateFireco(pastebinId, pastebinToken, isNew) {
@@ -528,7 +523,9 @@ class AppManager {
 
                 const loadFire = async () => {
                     if (!fireco.app) {
-                        fireco.firebase = await import('firebase');
+                        fireco.firebase = await import('firebase/app');
+                        await import ('firebase/auth');
+                        await import ('firebase/database');
                         fireco.Firepad = await import('firepad');
                         fireco.TIMESTAMP = fireco.firebase.database.ServerValue.TIMESTAMP;
                         fireco.app = fireco.firebase.initializeApp(config, pastebinId);
@@ -632,7 +629,7 @@ class AppManager {
         try {
             const firecoPad = this.firecoPads[editorId];
             firecoPad.firebaseRef = fireco.database.ref(firecoPad.firebasePath);
-           // firecoPad.monacoEditor.setValue("");
+            // firecoPad.monacoEditor.setValue("");
             firecoPad.firepadInstance = fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor, {defaultText: editorText});
 
             return of(configureFirecoEditorFulfilled(editorId));
