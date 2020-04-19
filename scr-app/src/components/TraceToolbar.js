@@ -7,7 +7,6 @@ import Paper from '@material-ui/core/Paper';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
-import Button from '@material-ui/core/Button';
 import Badge from '@material-ui/core/Badge';
 import Chip from '@material-ui/core/Chip';
 import Avatar from '@material-ui/core/Avatar';

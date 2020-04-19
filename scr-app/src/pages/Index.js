@@ -7,7 +7,7 @@ import {ThemeProvider} from '@material-ui/styles';
 import {withStyles} from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
-import {getTheme, themeTypes} from '../themes';
+import {getThemes, themeTypes} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
@@ -227,11 +227,12 @@ class Index extends Component {
     };
 
     switchTheme = (aThemeType) => {
+
         this.setState((prevState) => {
             const themeType =
                 aThemeType && themeTypes[aThemeType] ||
                 prevState.themeType === themeTypes.lightTheme ? themeTypes.darkTheme : themeTypes.lightTheme;
-            const {theme, inspectorTheme, monacoTheme} = getTheme(themeType);
+            const {theme, inspectorTheme, monacoTheme} = getThemes(themeType);
             return {
                 themeType,
                 theme,
@@ -248,7 +249,7 @@ class Index extends Component {
         if (prevState.themeUserOverrides) {
             return null;
         } else {
-            const {theme, inspectorTheme, monacoTheme} = getTheme(themeType);
+            const {theme, inspectorTheme, monacoTheme} = getThemes(themeType);
             return {
                 themeType,
                 theme,

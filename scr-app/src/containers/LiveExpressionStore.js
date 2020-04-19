@@ -13,8 +13,6 @@ import JSAN from 'jsan';
 import {withStyles} from '@material-ui/core/styles';
 
 import Paper from '@material-ui/core/Paper';
-// import Tooltip from '@material-ui/core/Tooltip';
-// import Portal from '@material-ui/core/Portal';
 import Button from '@material-ui/core/Button';
 
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
@@ -25,7 +23,7 @@ import LiveExpression from '../components/LiveExpression';
 import AutoLog from "../seecoderun/modules/AutoLog";
 import {updateBundle, updateBundleFailure, updateBundleSuccess} from "../redux/modules/liveExpressionStore";
 
-import DOMPortal from "../components/DOMPortal";
+import Portal from '@material-ui/core/Portal';
 
 import {PastebinContext, VisualQueryManager} from './Pastebin';
 import OverflowComponent from "../components/OverflowComponent";
@@ -862,8 +860,8 @@ class LiveExpressionStore extends Component {
                     } else {
                         navigators.push(
                             <React.Fragment key={`${id}:${navigationType}`}>
-                                <DOMPortal
-                                    parentEl={decorator.contentWidget.domNode}>
+                                <Portal
+                                    container={decorator.contentWidget.domNode}>
                                     <div onMouseEnter={() => {
                                         //  console.log(n);
                                         this.highlightSingleText(
@@ -903,7 +901,7 @@ class LiveExpressionStore extends Component {
                                             </Paper>}
 
                                     </div>
-                                </DOMPortal>
+                                </Portal>
                                 {!isE && <LiveExpression
                                     style={style}
                                     color={color}
@@ -1009,7 +1007,7 @@ class LiveExpressionStore extends Component {
             if (i.domNode.offsetParent === null) {
                 isIVisible = false;
                 if (i.domNode.dataset.marginLeft) {
-                    marginLeft = parseFloat(i.domNode.dataset.marginLeft||'0');
+                    marginLeft = parseFloat(i.domNode.dataset.marginLeft || '0');
                 } else {
                     return;
                 }
@@ -1152,7 +1150,7 @@ class LiveExpressionStore extends Component {
         const {
             currentBranchId, currentBranchTimelineId,
             /*navigatorIndex,*/ prevTimelineI,
-        } = (branchSelections[NavigationTypes.Local] || branchSelections[NavigationTypes.Global]|| {});
+        } = (branchSelections[NavigationTypes.Local] || branchSelections[NavigationTypes.Global] || {});
         //todo: pass all baranchSelections to Branch Manager
 
         const style = {
@@ -1243,11 +1241,11 @@ class LiveExpressionStore extends Component {
                     console.log(data[data.length - 1], e)
                 }
 
-                if(entry &&
+                if (entry &&
                     (entry.expression && entry.expression.expressionType === 'BinaryExpression') &&
-                    (entry.parentExpression && entry.parentExpression.expressionType === 'WhileStatement')){
-                   // console.log('BE', entry);
-                }else{
+                    (entry.parentExpression && entry.parentExpression.expressionType === 'WhileStatement')) {
+                    // console.log('BE', entry);
+                } else {
                     this.liveExpressionWidgets[widget.id] = {datum, widget, entry};
                 }
 
@@ -1595,8 +1593,8 @@ class LiveExpressionStore extends Component {
                         domNode: widget.contentWidget.domNode,
                         range,
                         configureLiveWidget: () =>
-                            <DOMPortal key={widget.id}
-                                       parentEl={widget.contentWidget.domNode}>
+                            <Portal key={widget.id}
+                                       container={widget.contentWidget.domNode}>
                                 <div
                                     ref={contentRef}
                                     onMouseEnter={() => {
@@ -1647,7 +1645,7 @@ class LiveExpressionStore extends Component {
                                         }
                                     </OverflowComponent>
                                 </div>
-                            </DOMPortal>
+                            </Portal>
                     });
                 }
 

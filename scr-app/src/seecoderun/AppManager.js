@@ -253,17 +253,17 @@ class AppManager {
                 this.currentMonacoTheme && this.monaco.editor.setTheme(this.currentMonacoTheme);
                 for (const editorId in this.firecoPads) {
                     const firecoPad = this.firecoPads[editorId];
-                    let text = '';
-                    if (this.hasSavedEditorsStates &&
-                        firecoPad.monacoEditorSavedState) {
-                        text = isString(
-                            firecoPad.monacoEditorSavedState.text
-                        ) ? firecoPad.monacoEditorSavedState.text : '';
-                    }
+                    // let text = '';
+                    // if (this.hasSavedEditorsStates &&
+                    //     firecoPad.monacoEditorSavedState) {
+                    //     text = isString(
+                    //         firecoPad.monacoEditorSavedState.text
+                    //     ) ? firecoPad.monacoEditorSavedState.text : '';
+                    // }
                     firecoPad.monacoEditorModel =
                         configureMonacoModel(this.monaco,
                             editorId,
-                            '',//text
+                            '',
                             firecoPad.language, () => {
                                 firecoPad.isJsx = true;
                             });
@@ -410,8 +410,13 @@ class AppManager {
     }
 
     observeConfigureMonacoEditor(editorId, editorHooks) {
-        const {editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
-            firecoPadDidMount, editorDidMount, isConsole, monacoOptions} = editorHooks;
+        const {
+            editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
+            firecoPadDidMount, editorDidMount, isConsole, monacoOptions,
+            onEditorContentFirstRender
+        } = editorHooks;
+
+        let firstRender = 0;
 
         if (this.monaco) {
             if (isConsole) {
@@ -480,6 +485,7 @@ class AppManager {
 
             monacoEditor
                 .onDidChangeModelContent(changes => {
+                    (!firstRender++) && onEditorContentFirstRender && onEditorContentFirstRender();
                     firecoPad.onDidChangeModelContent && firecoPad.onDidChangeModelContent(changes)
                 });
 

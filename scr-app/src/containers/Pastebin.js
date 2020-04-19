@@ -614,10 +614,6 @@ class Pastebin extends Component {
         this.setState({tabIndex: value});
     };
 
-    handleChangeTabIndex = index => {
-        this.setState({tabIndex: index});
-    };
-
     handleChangeSearchValue = e => {
         const value = e.target.value || '';
         this.setState({
@@ -868,7 +864,6 @@ class Pastebin extends Component {
                                         tabIndex={tabIndex}
                                         ScrollingListContainers={this.scrollingListContainers}
                                         handleChangeTab={this.handleChangeTab}
-                                        handleChangeTabIndex={this.handleChangeTabIndex}
                                     />
                                 </ScrollingList>
 

@@ -1,3 +1,4 @@
+import React, {useMemo} from 'react';
 import {createMuiTheme, responsiveFontSizes} from '@material-ui/core/styles';
 import {chromeDark, chromeLight} from 'react-inspector';
 
@@ -28,14 +29,14 @@ const palette = {
         contrastText: '#000',
     },
 };
-const lightTheme = () => responsiveFontSizes(createMuiTheme({
+const getLightTheme = () => responsiveFontSizes(createMuiTheme({
     palette,
     typography: {
         useNextVariants: true,
     },
 }));
 
-const darkTheme = () => responsiveFontSizes(createMuiTheme({
+const getDarkTheme = () => responsiveFontSizes(createMuiTheme({
     palette: {
         ...palette,
         type: 'dark',
@@ -51,18 +52,27 @@ export const themeTypes = {
 };
 
 const themes = {
-    [themeTypes.lightTheme]: lightTheme,
-    [themeTypes.darkTheme]: darkTheme,
+    [themeTypes.lightTheme]: getLightTheme,
+    [themeTypes.darkTheme]: getDarkTheme,
 };
 
 const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
 const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
 
-export function getTheme(themeType){
+export function getThemes(themeType) {
     return themes[themeType] && {
-        theme:themes[themeType](),
-        inspectorTheme:themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
-        monacoTheme:themeType === themeTypes.darkTheme ? 'vs-dark' : 'vs-light'
+        theme: themes[themeType](),
+        inspectorTheme: themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
+        monacoTheme: themeType === themeTypes.darkTheme ? 'vs-dark' : 'vs-light'
     };
 }
-export default themes;
+
+export function useThemes(themeType) {
+    return useMemo(getThemes(themeType), [themeType]);
+}
+
+export default function withThemes(Component) {
+    return function WithThemes(props) {
+        return <Component {...props} themes={useThemes(props.themeType)}/>;
+    }
+}

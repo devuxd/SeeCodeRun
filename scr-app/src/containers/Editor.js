@@ -7,8 +7,8 @@ import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
 import {withStyles} from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
-
 import SettingsIcon from '@material-ui/icons/SettingsSharp';
+import Skeleton from '@material-ui/lab/Skeleton';
 
 import {monacoEditorContentChanged, mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
@@ -69,6 +69,15 @@ const styles = theme => ({
             easing: theme.transitions.easing.sharp,
         }),
     },
+    skeleton: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        height: '100%',
+        width: '100%',
+        backgroundColor: 'transparent',
+        paddingLeft: 48, //matches monaco's line number width
+    },
 });
 
 class Editor extends Component {
@@ -85,11 +94,12 @@ class Editor extends Component {
             currentContentWidgetId: null,
             forceHideWidgets: false,
             automaticLayout: false,
+            firecoPad: null,
+            isEditorContentFirstRender: true,
         };
         this.monacoEditorMouseEventsObservable = null;
         this.dispatchMouseEventsActive = false;
         this.maxLineNumber = -1;
-        this.firecoPad = null;
         this.exports = {};
     }
 
@@ -120,10 +130,10 @@ class Editor extends Component {
 
     render() {
         const {
-            editorId, classes, observeLiveExpressions, themeType, liveExpressionStoreChange,
+            editorId, classes, observeLiveExpressions, themeType, liveExpressionStoreChange, isConsole
         } = this.props;
         const {
-            settingsOpen, errorSnackbarOpen, errors
+            settingsOpen, errorSnackbarOpen, errors, firecoPad, isEditorContentFirstRender
             //currentContentWidgetId,// forceHideWidgets
         } = this.state;
         const fabClassName =
@@ -131,6 +141,7 @@ class Editor extends Component {
                 classes.fab, errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown
             );
         const notificationType = errors ? 'error' : ''
+        const isLoading = !isConsole && (isEditorContentFirstRender || !firecoPad);
         return (<div className={classes.container}>
                 <div ref={this.editorDiv}
                      className={classes.editor}
@@ -161,35 +172,50 @@ class Editor extends Component {
                         </Fab>)
                     : null
                 }
+                {isLoading ?
+                    <div className={classes.skeleton}>
+                        <Skeleton animation="wave" width={'90%'}/>
+                        <Skeleton animation="wave" width={'40%'}/>
+                        <Skeleton animation="wave" width={'50%'}/>
+                        <Skeleton animation="wave" width={'80%'}/>
+                        <Skeleton animation="wave" width={'60%'}/>
+                        <Skeleton animation="wave" width={'30%'}/>
+                        <Skeleton animation="wave" width={'60%'}/>
+                        <Skeleton animation="wave" width={'40%'}/>
+                        <Skeleton animation="wave" width={'50%'}/>
+                        <Skeleton animation="wave" width={'40%'}/>
+                        <Skeleton animation="wave" width={'60%'}/>
+                        <Skeleton animation="wave" width={'30%'}/>
+                    </div> : null}
             </div>
         );
     }
 
-    firecoPadDidMount = (firecoPad) => {
-        this.firecoPad = firecoPad;
+    firecoPadDidMount = (firecoPad = {}) => {
         const {updateMonacoEditorLayout} = this.props;
+        const {monacoEditor} = firecoPad;
         updateMonacoEditorLayout && updateMonacoEditorLayout(() => {
-            if (this.firecoPad && this.firecoPad.monacoEditor) {
-                this.firecoPad.monacoEditor.layout();
-            }
+            monacoEditor && monacoEditor.layout();
         });
-
-        if (this.exports.updateLiveExpressionWidgetWidths) {
-            if (this.firecoPad.monacoEditor) {
-                this.firecoPad.monacoEditor.onDidScrollChange(this.exports.updateLiveExpressionWidgetWidths);
-            }
-        }
+        this.exports.updateLiveExpressionWidgetWidths &&
+        monacoEditor && monacoEditor.onDidScrollChange(this.exports.updateLiveExpressionWidgetWidths);
+        this.setState({firecoPad});
     };
+
+    onEditorContentFirstRender = () => {
+        this.setState({isEditorContentFirstRender: false});
+    }
 
     componentDidMount() {
         const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
         const {
             editorDiv, /*dispatchMouseEvents,*/
-            firecoPadDidMount, monacoOptions
+            firecoPadDidMount, monacoOptions, onEditorContentFirstRender
         } = this;
         mountEditorFulfilled(editorId, {
             editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
-            firecoPadDidMount, isConsole, monacoOptions
+            firecoPadDidMount, isConsole, monacoOptions,
+            onEditorContentFirstRender
         });
         this.updateEditorDimensions();
     }

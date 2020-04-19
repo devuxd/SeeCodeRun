@@ -43,7 +43,7 @@ monacoPromise().then(monaco => {
 ReactDOM.render(
     <React.StrictMode>
         <Provider store={store}>
-            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'}/>
+            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'} mediaQueryOptions={{noSsr: true}}/>
         </Provider>
     </React.StrictMode>,
     document.querySelector('#root'));

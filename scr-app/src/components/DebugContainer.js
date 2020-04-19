@@ -2,18 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
-// import {withStyles, AppBar, Typography, Tabs, Tab} from 'material-ui';
 import {withStyles} from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Paper from '@material-ui/core/Paper';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import SwipeableViews from 'react-swipeable-views';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
-import {fade} from '@material-ui/core/styles/colorManipulator';
 
 import Slide from '@material-ui/core/Slide';
 
@@ -172,6 +169,13 @@ const styles = theme => ({
     },
 });
 
+function a11yProps(index) {
+    return {
+        id: `debug-tab-${index}`,
+        'aria-controls': `debug-tabpanel-${index}`,
+    };
+}
+
 class DebugContainer extends React.Component {
     traceExports = {};
     consoleExports = {};
@@ -179,7 +183,7 @@ class DebugContainer extends React.Component {
     consoleTabIndex = 1;
 
     render() {
-        const {theme, classes, tabIndex, handleChangeTab, handleChangeTabIndex, ScrollingListContainers} = this.props;
+        const {classes, tabIndex, handleChangeTab, ScrollingListContainers} = this.props;
         return (
             <div className={classes.root}>
                 <AppBar position="sticky" color="default" className={classes.appCompact} elevation={1}>
@@ -192,13 +196,16 @@ class DebugContainer extends React.Component {
                         variant="fullWidth"
                         centered
                         className={classes.appCompact}
+                        aria-label="debug tabs"
                     >
                         <Tab
+                            {...a11yProps(this.traceTabIndex)}
                             label={<TabLabel
                                 classes={classes} icon={<PlayListPlayIcon/>} label="trace" exports={this.traceExports}/>
                             }
                         />
                         <Tab
+                            {...a11yProps(this.consoleTabIndex)}
                             label={<TabLabel
                                 classes={classes} icon={<ConsoleIcon/>} label="console" exports={this.consoleExports}/>
                             }
@@ -212,32 +219,14 @@ class DebugContainer extends React.Component {
                         <ConsoleInput className={classes.consoleInput}/>
                     </Paper>
                 </Slide>
-
-                <SwipeableViews
-                    axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-                    index={tabIndex}
-                    onChangeIndex={handleChangeTabIndex}
-                    animateHeight={false}
-                    ignoreNativeScroll={true}
-                    animateTransitions={false}
-                    // onTransitionEnd={(...p)=>{console.log(p);}}
-                >
-                    <TraceTable
-                        handleTotalChange={this.traceExports.handleTotalChange}
-                        index={this.traceTabIndex}
-                        ScrollingListContainers={ScrollingListContainers}
-                    />
-                    <ConsoleTable
-                        handleTotalChange={this.consoleExports.handleTotalChange}
-                        index={this.consoleTabIndex}
-                        ScrollingListContainers={ScrollingListContainers}
-                    />
-
-
-                    {/*D3 soon...*/}
-
-                    {/*</TabContainer>*/}
-                </SwipeableViews>
+                {tabIndex === this.traceTabIndex ? <TraceTable
+                    handleTotalChange={this.traceExports.handleTotalChange}
+                    ScrollingListContainers={ScrollingListContainers}
+                /> : null}
+                {tabIndex === this.consoleTabIndex ? <ConsoleTable
+                    handleTotalChange={this.consoleExports.handleTotalChange}
+                    ScrollingListContainers={ScrollingListContainers}
+                /> : null}
             </div>
         );
     }
