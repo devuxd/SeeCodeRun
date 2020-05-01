@@ -45,6 +45,10 @@ export const getVisualIdsFromRefs = (refsArray) => {
 };
 
 class GraphicalMapper extends React.Component {
+    constructor(props) {
+        super(props);
+        visualIdentifier = () => [];
+    }
 
     addOverlay(elt, containerRef, handleChangeGraphicalLocator, isSelected, key) {
         if (!this.vContainer) {
@@ -52,9 +56,11 @@ class GraphicalMapper extends React.Component {
         }
 
         const overlays = [];
+
         const clientRect = containerRef.current.getBoundingClientRect();
         const containerOffsetTopPos = clientRect.y;
         const containerOffsetLeftPos = clientRect.x;
+        // console.log('addOverlay',containerRef.current, containerOffsetTopPos, containerOffsetLeftPos);
         const rects = elt.getClientRects();
         for (let i = 0; i < rects.length; i++) {
             const rect = rects[i];
@@ -81,7 +87,7 @@ class GraphicalMapper extends React.Component {
                 overlay: tableRectDiv,
                 reactKey: `${tableRectDiv.style.top}:${
                     tableRectDiv.style.left
-                    }:${tableRectDiv.style.width}:${tableRectDiv.style.height}:${key}`
+                }:${tableRectDiv.style.width}:${tableRectDiv.style.height}:${key}`
             });
         }
         return overlays;
@@ -99,16 +105,33 @@ class GraphicalMapper extends React.Component {
         visualIdentifier = this.getVisualIdsFromRefs;
     }
 
-    componentWillMount() {
-        visualIdentifier = () => [];
-    }
+    handleClose=({...p})=>{console.log('gm', ...p)}
 
     render() {
         const {
-            classes, bundle, isGraphicalLocatorActive, visualElements, containerRef, handleChangeGraphicalLocator,
+            classes, isGraphicalLocatorActive, visualElements, containerRef, handleChangeGraphicalLocator,
             searchState
         } = this.props;
         const locatedEls = [];
+
+        const updateSelectedAnchor = (key, IframeAnchorEl) => {
+            //todo: IS CURRENT?
+            const isSelected = searchState.visualQuery && searchState.visualQuery.find(el => el === IframeAnchorEl);
+            const anchorEls = this
+                .addOverlay(
+                    IframeAnchorEl, containerRef, handleChangeGraphicalLocator, isSelected, key
+                );
+            if (!anchorEls[0]) {
+                return;
+            }
+            this.anchors = this.anchors || [];
+            this.visualEls = this.visualEls || [];
+            this.anchors.push(anchorEls);
+            this.visualEls.push(IframeAnchorEl);
+            const anchorEl = anchorEls[0].overlay;
+            const reactKey = anchorEls[0].reactKey;
+            return {isSelected, anchorEl, reactKey};
+        };
 
         if (isGraphicalLocatorActive) {
             if (this.vContainer) {
@@ -122,46 +145,45 @@ class GraphicalMapper extends React.Component {
                 if (IframeAnchorEl.tagName === 'STYLE') {
                     return;
                 }
-                const isSelected = searchState.visualQuery && searchState.visualQuery.find(el => el === IframeAnchorEl);
-                const anchorEls = this
-                    .addOverlay(
-                        IframeAnchorEl, containerRef, handleChangeGraphicalLocator, isSelected, key
-                    );
-                if (!anchorEls[0]) {
-                    return;
-                }
-                this.anchors = this.anchors || [];
-                this.visualEls = this.visualEls || [];
+                const {isSelected, anchorEl, reactKey} = updateSelectedAnchor(key, IframeAnchorEl);
 
                 VisualQueryManager.visualElements = this.visualEls;
+                const box = IframeAnchorEl.getBoundingClientRect();
+                let error = false;
+                if (
+                    box.top === 0 &&
+                    box.left === 0 &&
+                    box.right === 0 &&
+                    box.bottom === 0
+                ){
+                    error = true
+                }
+               // console.log('vq',error,  IframeAnchorEl, key, !!containerRef.current);
 
-                this.anchors.push(anchorEls);
-                this.visualEls.push(IframeAnchorEl);
-                const anchorEl = anchorEls[0].overlay;
-                const reactKey = anchorEls[0].reactKey;
-
-                locatedEls.push(<Popover key={reactKey}
-                                         className={classes.popover}
-                                         classes={{
-                                             paper: classes.popoverPaper,
-                                         }}
-                                         modal={null}
-                                         hideBackdrop={true}
-                                         disableBackdropClick={true}
-                                         disableAutoFocus={true}
-                                         disableEnforceFocus={true}
-                                         open={true}
-                                         anchorEl={anchorEl}
-                                         onClose={this.handleClose}
-                                         elevation={0}
-                                         anchorOrigin={{
-                                             vertical: 'bottom',
-                                             horizontal: 'right',
-                                         }}
-                                         transformOrigin={{
-                                             vertical: 'top',
-                                             horizontal: 'left',
-                                         }}
+                locatedEls.push(<Popover
+                    key={reactKey}
+                    className={classes.popover}
+                    classes={{
+                        paper: classes.popoverPaper,
+                    }}
+                    modal={null}
+                    hideBackdrop={true}
+                    disableBackdropClick={true}
+                    disableAutoFocus={true}
+                    disableEnforceFocus={true}
+                    open={true}
+                    container={containerRef.current}
+                    anchorEl={anchorEl}
+                    onClose={this.handleClose}
+                    elevation={0}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'left',
+                    }}
                 >
                     <div className={classes.anchor}/>
                     <GraphicalQuery
@@ -188,21 +210,8 @@ class GraphicalMapper extends React.Component {
                     if (IframeAnchorEl.tagName === 'STYLE' || !searchState.visualQuery.includes(IframeAnchorEl)) {
                         return;
                     }
-                    const isSelected = searchState.visualQuery
-                        && searchState.visualQuery.find(el => el === IframeAnchorEl);
-                    const anchorEls = this
-                        .addOverlay(
-                            IframeAnchorEl, containerRef, handleChangeGraphicalLocator, isSelected, key
-                        );
-                    if (!anchorEls[0]) {
-                        return;
-                    }
-                    this.anchors = this.anchors || [];
-                    this.visualEls = this.visualEls || [];
-                    this.anchors.push(anchorEls);
-                    this.visualEls.push(IframeAnchorEl);
-                    const anchorEl = anchorEls[0].overlay;
-                    const reactKey = anchorEls[0].reactKey;
+                    const {isSelected, anchorEl, reactKey} = updateSelectedAnchor(key, IframeAnchorEl);
+
 
                     locatedEls.push(<Popover key={reactKey}
                                              className={classes.popover}
@@ -216,6 +225,7 @@ class GraphicalMapper extends React.Component {
                                              disableEnforceFocus={true}
                                              open={true}
                                              anchorEl={anchorEl}
+                                             container={containerRef.current}
                                              onClose={this.handleClose}
                                              elevation={0}
                                              anchorOrigin={{

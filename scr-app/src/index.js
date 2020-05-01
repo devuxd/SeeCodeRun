@@ -18,6 +18,18 @@ const urlData = getLocationUrlData();
 
 const store = configureStore();
 store.dispatch(fetchPastebin(urlData.hash));
+window.addEventListener("beforeunload", function () {
+    store.dispatch(disposePastebin());
+}, false);
+
+ReactDOM.render(
+    <React.StrictMode>
+        <Provider store={store}>
+            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'}
+                   mediaQueryOptions={{noSsr: true}}/>
+        </Provider>
+    </React.StrictMode>,
+    document.querySelector('#root'));
 
 const onConfigureMonacoError = error => store.dispatch(loadMonacoRejected(error));
 const onMonacoConfigured = monaco => {
@@ -29,24 +41,12 @@ const onMonacoConfigured = monaco => {
     }
 };
 
-window.addEventListener("beforeunload", function () {
-    store.dispatch(disposePastebin());
-}, false);
-
 const monacoPromise = async () => await import ('monaco-editor');
 monacoPromise().then(monaco => {
     global.monaco = monaco; // Firepad requires it
     configureMonacoDefaults(monaco);
     onMonacoConfigured(monaco);
 });
-
-ReactDOM.render(
-    <React.StrictMode>
-        <Provider store={store}>
-            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'} mediaQueryOptions={{noSsr: true}}/>
-        </Provider>
-    </React.StrictMode>,
-    document.querySelector('#root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

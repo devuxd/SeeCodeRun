@@ -100,7 +100,6 @@ class Editor extends Component {
         this.monacoEditorMouseEventsObservable = null;
         this.dispatchMouseEventsActive = false;
         this.maxLineNumber = -1;
-        this.exports = {};
     }
 
 
@@ -153,7 +152,8 @@ class Editor extends Component {
                     editorWidth={this.editorWidth}
                     editorHeight={this.editorHeight}
                     themeType={themeType}
-                    exports={this.exports}
+                    updateLiveExpressionWidgetWidths={updateLiveExpressionWidgetWidths=>
+                        this.updateLiveExpressionWidgetWidths=updateLiveExpressionWidgetWidths}
                     //currentContentWidgetId={currentContentWidgetId}
                     // forceHideWidgets={forceHideWidgets}
                     liveExpressionStoreChange={liveExpressionStoreChange}
@@ -191,14 +191,15 @@ class Editor extends Component {
         );
     }
 
-    firecoPadDidMount = (firecoPad = {}) => {
+    firecoPadDidMount = (firecoPad) => {
         const {updateMonacoEditorLayout} = this.props;
-        const {monacoEditor} = firecoPad;
+        const {updateLiveExpressionWidgetWidths} = this;
+        const {monacoEditor} = firecoPad||{};
         updateMonacoEditorLayout && updateMonacoEditorLayout(() => {
             monacoEditor && monacoEditor.layout();
         });
-        this.exports.updateLiveExpressionWidgetWidths &&
-        monacoEditor && monacoEditor.onDidScrollChange(this.exports.updateLiveExpressionWidgetWidths);
+        updateLiveExpressionWidgetWidths &&
+        monacoEditor && monacoEditor.onDidScrollChange(updateLiveExpressionWidgetWidths);
         this.setState({firecoPad});
     };
 

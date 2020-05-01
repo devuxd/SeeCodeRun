@@ -236,7 +236,7 @@ class ConsoleTable extends React.Component {
     render() {
 
         const {
-            classes,
+            classes, open,
             logData, objectNodeRenderer, order, orderBy, selected, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
             HighlightTypes, highlightSingleText, setCursorToLocation, traceSubscriber, handleChangePlaying
@@ -260,7 +260,7 @@ class ConsoleTable extends React.Component {
         this.totalMatches = matchedData.length;
         const emptyRows = 0;//rowsPerPage - Math.min(rowsPerPage, matchedData.length - page * rowsPerPage);
         return (
-            <Paper className={classes.root}>
+            <Paper className={classes.root} style={{display: open ? 'block' : 'none'}}>
                 <div ref={this.containerRef} className={classes.tableWrapper}>
                     <Table className={classes.table}>
                         <ConsoleTableHead
@@ -379,10 +379,10 @@ class ConsoleTable extends React.Component {
     }
 
     componentDidUpdate() {
-        const {handleTotalChange} = this.props;
-        if (handleTotalChange && this.consoleTotal !== this.totalMatches) {
+        const {onHandleTotalChange} = this.props;
+        if (onHandleTotalChange && this.consoleTotal !== this.totalMatches) {
             this.consoleTotal = this.totalMatches;
-            handleTotalChange(this.consoleTotal);
+            onHandleTotalChange(this.consoleTotal);
         }
     }
 }
@@ -390,6 +390,7 @@ class ConsoleTable extends React.Component {
 ConsoleTable.propTypes = {
     classes: PropTypes.object.isRequired,
     page: PropTypes.number,
+    open: PropTypes.bool,
 };
 
 ConsoleTable.defaultProps = {

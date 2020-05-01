@@ -7,6 +7,7 @@ import {ThemeProvider} from '@material-ui/styles';
 import {withStyles} from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
+
 import {getThemes, themeTypes} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
@@ -22,13 +23,14 @@ import withMediaQuery from '../utils/withMediaQuery';
 export const ThemeContext = createContext({});
 
 const mapStateToProps = ({firecoReducer, pastebinReducer}, {url}) => {
-    const {isConnected, authUser} = firecoReducer;
+    const {isConnected, authUser, areFirecoEditorsConfigured} = firecoReducer;
     const {pastebinId} = pastebinReducer;
     return {
         pastebinId,
         shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
         authUser,
-        isConnected
+        isConnected,
+        activateChat: (!!authUser) && areFirecoEditorsConfigured,
     }
 };
 
@@ -214,7 +216,6 @@ class Index extends Component {
         changeShowNetworkState: this.changeShowNetworkState,
         isNetworkOk: this.isNetworkOk,
         getNetworkStateMessage: this.getNetworkStateMessage,
-        authUser: null,
         isChatToggled: false,
         chatTitle: 'Chat',
         chatClick: this.chatClick,
@@ -264,14 +265,13 @@ class Index extends Component {
         const {
             classes,
             url, minPastebinHeight,
-            pastebinId, shareUrl, authUser, isConnected
+            pastebinId, shareUrl, authUser, isConnected, activateChat,
         } = this.props;
         const {
             isTopNavigationToggled,
             isChatToggled, chatClick, chatTitle, isNetworkOk,
-            themeType, theme, inspectorTheme, monacoTheme
+            themeType, theme, inspectorTheme, monacoTheme,
         } = this.state;
-        const activateChat = !!authUser;
 
         const rootContainerClassName = isTopNavigationToggled ?
             classes.rootContainerNavigationToggled :
@@ -352,7 +352,7 @@ class Index extends Component {
                 this.setState({isOnline: isOnline});
             }
         });
-        switchMonacoTheme(monacoTheme);
+        switchMonacoTheme && switchMonacoTheme(monacoTheme);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -372,6 +372,7 @@ Index.propTypes = {
     url: PropTypes.string.isRequired,
     classes: PropTypes.object.isRequired,
     mediaQuery: PropTypes.string,
+    switchMonacoTheme: PropTypes.func,
 };
 
 const enhance = compose(withStyles(styles), withMediaQuery, connect(mapStateToProps, mapDispatchToProps));

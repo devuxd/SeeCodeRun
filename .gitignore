@@ -9,7 +9,7 @@ package-lock.json
 .vscode/
 .idea/
 .DS_Store
-.env.local
+scr-app/.env.local
 .env.development.local
 .env.test.local
 .env.production.local

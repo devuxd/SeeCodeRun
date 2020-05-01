@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash.debounce';
@@ -21,90 +21,41 @@ import TraceToolbar from './TraceToolbar';
 import ConsoleInput from './ConsoleInput';
 import ConsoleTable from './ConsoleTable';
 
-class TabLabel extends React.Component {
-    state = {
-        isUpdating: false,
-        total: 0,
-    };
-
-    handleTotalChangeThrottled = throttle((total) => {
-        this.setState({total, isUpdating: true});
-    }, 100, {leading: true});
-
-    handleTotalChangeDebounced = debounce((total) => {
-        this.setState({total, isUpdating: false});
-    }, 250);
-
-    handleTotalChange = (total) => {
-        this.handleTotalChangeThrottled(total);
-        this.handleTotalChangeDebounced(total);
-    };
-
-    render() {
-        const {icon, label, classes, resultsMessage} = this.props;
-        const {total, isUpdating} = this.state;
-        const message = resultsMessage ? resultsMessage(total) : total ? `${total} results` : 'No results';
-
-        return (
-            <ListItem
-                role={undefined}
-                dense
-                disableGutters
-                component="div"
-                className={classes.listItem}
-            >
-                <ListItemAvatar className={classes.avatar}>
-                    <Avatar children={icon}/>
-                </ListItemAvatar>
-                <ListItemText
-                    classes={{
-                        root: classes.listItemText,
-                        primary: classes.listItemTextPrimary,
-                        secondary: isUpdating ?
-                            classes.listItemTextSecondaryUpdate : classes.listItemTextSecondary
-                    }}
-                    primary={label}
-                    secondary={message}
-                />
-            </ListItem>
-        );
-    }
-
-    componentDidMount() {
-        if (this.props.exports) {
-            this.props.exports.handleTotalChange = this.handleTotalChange;
-        }
-    }
+function TabResultLabel({icon, label, classes, formatText, result, isUpdating}) {
+    return (
+        <ListItem
+            role={undefined}
+            dense
+            disableGutters
+            component="div"
+            className={classes.listItem}
+        >
+            <ListItemAvatar className={classes.avatar}>
+                <Avatar children={icon}/>
+            </ListItemAvatar>
+            <ListItemText
+                classes={{
+                    root: classes.listItemText,
+                    primary: classes.listItemTextPrimary,
+                    secondary: isUpdating ?
+                        classes.listItemTextSecondaryUpdate : classes.listItemTextSecondary
+                }}
+                primary={label}
+                secondary={formatText ? formatText(result) : result ? `${result} results` : 'No results'}
+            />
+        </ListItem>
+    );
 }
 
-TabLabel.propTypes = {
-    classes: PropTypes.object.isRequired,
-    icon: PropTypes.node.isRequired,
+TabResultLabel.propTypes = {
+    icon: PropTypes.node,
     label: PropTypes.string.isRequired,
-    resultsMessage: PropTypes.func,
-    exports: PropTypes.object,
+    classes: PropTypes.object,
+    formatText: PropTypes.func,
+    result: PropTypes.any,
+    isUpdating: PropTypes.bool,
 };
 
-class TabContainer extends React.Component {
-    constructor(props) {
-        super(props);
-        this.listRef = React.createRef();
-    }
-
-    render() {
-        const {children, /*, dir*/} = this.props;
-        return (<div ref={this.listRef} children={children}/>);
-    }
-
-    //<Typography component="div" dir={dir}>
-    //  {children}
-    //</Typography>
-}
-
-TabContainer.propTypes = {
-    children: PropTypes.node.isRequired,
-    dir: PropTypes.string.isRequired,
-};
 
 const styles = theme => ({
     appCompact: {
@@ -176,66 +127,99 @@ function a11yProps(index) {
     };
 }
 
-class DebugContainer extends React.Component {
-    traceExports = {};
-    consoleExports = {};
-    traceTabIndex = 0;
-    consoleTabIndex = 1;
+function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContainers, handleChangePlaying}) {
+    const traceTabIndex = 0;
+    const consoleTabIndex = 1;
+    const [isTraceUpdating, setIsTraceUpdating] = useState(false);
+    const [traceTotal, setTraceTotal] = useState(0);
+    const [isConsoleUpdating, setIsConsoleUpdating] = useState(false);
+    const [consoleTotal, setConsoleTotal] = useState(0);
 
-    render() {
-        const {classes, tabIndex, handleChangeTab, ScrollingListContainers} = this.props;
-        return (
-            <div className={classes.root}>
-                <AppBar position="sticky" color="default" className={classes.appCompact} elevation={1}>
-                    <TraceToolbar/>
-                    <Tabs
-                        value={tabIndex}
-                        onChange={handleChangeTab}
-                        indicatorColor="primary"
-                        textColor="primary"
-                        variant="fullWidth"
-                        centered
-                        className={classes.appCompact}
-                        aria-label="debug tabs"
-                    >
-                        <Tab
-                            {...a11yProps(this.traceTabIndex)}
-                            label={<TabLabel
-                                classes={classes} icon={<PlayListPlayIcon/>} label="trace" exports={this.traceExports}/>
-                            }
-                        />
-                        <Tab
-                            {...a11yProps(this.consoleTabIndex)}
-                            label={<TabLabel
-                                classes={classes} icon={<ConsoleIcon/>} label="console" exports={this.consoleExports}/>
-                            }
-                        />
-                        {/*<Tab label="Streams"/>*/}
-                        {/*<Tab label="Visualizations"/>*/}
-                    </Tabs>
-                </AppBar>
-                <Slide direction="down" in={this.consoleTabIndex === tabIndex}>
-                    <Paper elevation={2} className={classes.paper}>
-                        <ConsoleInput className={classes.consoleInput}/>
-                    </Paper>
-                </Slide>
-                {tabIndex === this.traceTabIndex ? <TraceTable
-                    handleTotalChange={this.traceExports.handleTotalChange}
-                    ScrollingListContainers={ScrollingListContainers}
-                /> : null}
-                {tabIndex === this.consoleTabIndex ? <ConsoleTable
-                    handleTotalChange={this.consoleExports.handleTotalChange}
-                    ScrollingListContainers={ScrollingListContainers}
-                /> : null}
-            </div>
-        );
-    }
+    const handleTraceTotalChangeThrottled = throttle((total) => {
+        setIsTraceUpdating(true);
+        setTraceTotal(total);
+    }, 100, {leading: true});
+
+    const handleTraceTotalChangeDebounced = debounce((total) => {
+        setIsTraceUpdating(false);
+        setTraceTotal(total);
+    }, 250);
+
+    const handleTraceTotalChange = (total) => {
+        handleTraceTotalChangeThrottled(total);
+        handleTraceTotalChangeDebounced(total);
+    };
+
+    const handleConsoleTotalChangeThrottled = throttle((total) => {
+        setIsConsoleUpdating(true);
+        setConsoleTotal(total);
+    }, 100, {leading: true});
+
+    const handleConsoleTotalChangeDebounced = debounce((total) => {
+        setIsConsoleUpdating(false);
+        setConsoleTotal(total);
+    }, 250);
+
+    const handleConsoleTotalChange = (total) => {
+        handleConsoleTotalChangeThrottled(total);
+        handleConsoleTotalChangeDebounced(total);
+    };
+
+    return (<div className={classes.root}>
+            <AppBar position="sticky" color="default" className={classes.appCompact} elevation={1}>
+                <TraceToolbar/>
+                <Tabs
+                    value={tabIndex}
+                    onChange={handleChangeTab}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    variant="fullWidth"
+                    centered
+                    className={classes.appCompact}
+                    aria-label="debug tabs"
+                >
+                    <Tab
+                        {...a11yProps(traceTabIndex)}
+                        label={<TabResultLabel result={traceTotal} isUpdating={isTraceUpdating}
+                                               classes={classes} icon={<PlayListPlayIcon/>} label="trace"/>
+                        }
+                    />
+                    <Tab
+                        {...a11yProps(consoleTabIndex)}
+                        label={<TabResultLabel result={consoleTotal} isUpdating={isConsoleUpdating}
+                                               classes={classes} icon={<ConsoleIcon/>} label="console"/>
+                        }
+                    />
+                    {/*<Tab label="Streams"/>*/}
+                    {/*<Tab label="Visualizations"/>*/}
+                </Tabs>
+            </AppBar>
+            <Slide direction="down" in={consoleTabIndex === tabIndex}>
+                <Paper elevation={2} className={classes.paper}>
+                    <ConsoleInput className={classes.consoleInput}/>
+                </Paper>
+            </Slide>
+            <TraceTable
+                onHandleTotalChange={handleTraceTotalChange}
+                ScrollingListContainers={ScrollingListContainers}
+                open={tabIndex === traceTabIndex}
+                handleChangePlaying={handleChangePlaying}
+            />
+            <ConsoleTable
+                onHandleTotalChange={handleConsoleTotalChange}
+                ScrollingListContainers={ScrollingListContainers}
+                open={tabIndex === consoleTabIndex}
+                handleChangePlaying={handleChangePlaying}
+            />
+        </div>
+    );
 }
 
 DebugContainer.propTypes = {
     ScrollingListContainers: PropTypes.object,
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
+    handleChangePlaying: PropTypes.func.isRequired,
 };
 
 export default withStyles(styles, {withTheme: true})(DebugContainer);
