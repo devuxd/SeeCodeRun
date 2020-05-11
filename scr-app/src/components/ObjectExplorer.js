@@ -7,7 +7,7 @@ import {ObjectInspector, TableInspector, DOMInspector, ObjectValue, ObjectName} 
 // import deepDiff from 'deep-diff';
 
 import {isNode} from '../utils/scrUtils';
-import {ThemeContext} from '../pages/Index';
+import {ThemeContext} from '../themes';
 import {HighlightPalette} from '../containers/LiveExpressionStore';
 import {getVisualIdsFromRefs} from '../containers/GraphicalMapper';
 import GraphicalQuery from '../components/GraphicalQuery';

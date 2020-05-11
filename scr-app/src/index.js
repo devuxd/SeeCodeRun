@@ -17,24 +17,16 @@ import {getLocationUrlData} from "./utils/scrUtils";
 const urlData = getLocationUrlData();
 
 const store = configureStore();
-store.dispatch(fetchPastebin(urlData.hash));
+const {dispatch} = store;
 window.addEventListener("beforeunload", function () {
-    store.dispatch(disposePastebin());
+    dispatch(disposePastebin());
 }, false);
 
-ReactDOM.render(
-    <React.StrictMode>
-        <Provider store={store}>
-            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'}
-                   mediaQueryOptions={{noSsr: true}}/>
-        </Provider>
-    </React.StrictMode>,
-    document.querySelector('#root'));
-
-const onConfigureMonacoError = error => store.dispatch(loadMonacoRejected(error));
+dispatch(fetchPastebin(urlData.hash));
+const onConfigureMonacoError = error => dispatch(loadMonacoRejected(error));
 const onMonacoConfigured = monaco => {
     if (monaco) {
-        store.dispatch(loadMonacoFulfilled(monaco));
+        dispatch(loadMonacoFulfilled(monaco));
     } else {
         onConfigureMonacoError('Monaco failed to load. Try refreshing' +
             ' page, and cache if necessary.');
@@ -43,14 +35,20 @@ const onMonacoConfigured = monaco => {
 
 const monacoPromise = async () => await import ('monaco-editor');
 monacoPromise().then(monaco => {
-    global.monaco = monaco; // Firepad requires it
     configureMonacoDefaults(monaco);
     onMonacoConfigured(monaco);
 });
 
+ReactDOM.render(
+    <React.StrictMode>
+        <Provider store={store}>
+            <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'}
+                   mediaQueryOptions={{noSsr: true}}/>
+        </Provider>
+    </React.StrictMode>,
+    document.querySelector('#root')
+);
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.register();
-
-

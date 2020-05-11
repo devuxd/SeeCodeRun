@@ -66,7 +66,7 @@ class TraceTableHead extends React.Component {
                         return (
                             <TableCell
                                 key={column.id}
-                                align={column.numeric?'right':'inherit'}
+                                align={column.numeric ? 'right' : 'inherit'}
                                 className={classes[column.className]}
                                 sortDirection={orderBy === column.id ? order : false}
                             >
@@ -198,7 +198,7 @@ const styles = theme => ({
             theme.palette.type === 'light'
                 ? lighten(fade(theme.palette.divider, 1), 0.88)
                 : darken(fade(theme.palette.divider, 1), 0.8)
-            }`,
+        }`,
     },
     bottomAction: {
         margin: theme.spacing(4),
@@ -285,7 +285,7 @@ class TraceTable extends React.Component {
     render() {
 
         const {
-            classes,
+            classes, open,
             data, objectNodeRenderer, order, orderBy, selected, rowsPerPage, page, isSelectable,
             handleSelectClick, handleSelectAllClick, handleRequestSort, isRowSelected, searchState,
             HighlightTypes, highlightSingleText, highlightErrors,
@@ -321,7 +321,7 @@ class TraceTable extends React.Component {
         const goToTimelineBranch = configureGoToTimelineBranch();
 
         return (
-            <Paper className={classes.root}>
+            <Paper className={classes.root} style={{display: open ? 'block' : 'none'}}>
                 <div ref={this.containerRef} className={classes.tableWrapper}>
                     <Table className={classes.table}>
                         <TraceTableHead
@@ -467,10 +467,10 @@ class TraceTable extends React.Component {
     }
 
     componentDidUpdate() {
-        const {handleTotalChange, scrollToTop} = this.props;
-        if (handleTotalChange && this.traceTotal !== this.totalMatches) {
+        const {onHandleTotalChange, scrollToTop} = this.props;
+        if (onHandleTotalChange && this.traceTotal !== this.totalMatches) {
             this.traceTotal = this.totalMatches;
-            handleTotalChange(this.traceTotal);
+            onHandleTotalChange(this.traceTotal);
         }
         if (!this.isHovered && scrollToTop) {
             scrollToTop();
@@ -485,6 +485,7 @@ class TraceTable extends React.Component {
 TraceTable.propTypes = {
     classes: PropTypes.object.isRequired,
     page: PropTypes.number,
+    open: PropTypes.bool,
 };
 
 TraceTable.defaultProps = {

@@ -362,6 +362,8 @@ class TraceControls extends React.Component {
 
 TraceControls.propTypes = {
     hideDelay: PropTypes.number,
+    data: PropTypes.object,
+    changeData: PropTypes.func.isRequired,
     classes: PropTypes.object.isRequired,
     autorunDelay: PropTypes.number,
     handleChangeAutorunDelay: PropTypes.func,

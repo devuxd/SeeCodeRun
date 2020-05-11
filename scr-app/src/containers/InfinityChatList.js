@@ -38,10 +38,7 @@ export default function InfinityChatList(
                     button={false}
                     disableGutters
                 >
-                    <Tooltip
-                        arrow
-                        title={messageOwner || 'unknown'}
-                    >
+                    <Tooltip title={messageOwner || 'unknown'}>
                         <ListItemAvatar style={listItemAvatarStyle}>
                             {chatUserId === message.chatUserId || skipInfo ?
                                 <Avatar/>

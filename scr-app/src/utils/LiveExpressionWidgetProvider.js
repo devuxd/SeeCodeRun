@@ -1,5 +1,5 @@
 import difference from 'lodash/difference';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 // import {Subject} from 'rxjs/Subject';
 // import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";

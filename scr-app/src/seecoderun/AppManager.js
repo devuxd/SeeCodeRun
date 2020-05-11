@@ -1,6 +1,6 @@
 import {Observable, of} from 'rxjs';
 import throttle from 'lodash/throttle';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 
 import isString from 'lodash/isString';
 
@@ -419,83 +419,84 @@ class AppManager {
         let firstRender = 0;
 
         if (this.monaco) {
-            if (isConsole) {
-                this.consoleInputEditor =
-                    configureMonacoEditor(this.monaco, editorDiv.current, {
-                        ...monacoOptions,
-                        model: this.monaco.editor.createModel('', 'typescript')
+            try {
+                if (isConsole) {
+                    this.consoleInputEditor =
+                        configureMonacoEditor(this.monaco, editorDiv.current, {
+                            ...monacoOptions,
+                            model: this.monaco.editor.createModel('', 'javascript')
+                        });
+                    editorDidMount(this.consoleInputEditor);
+                    return of(loadMonacoEditorFulfilled(editorId, null));
+                }
+
+                const firecoPad = this.firecoPads[editorId];
+
+                firecoPad.lineNumbersProvider = configureLineNumbersProvider(editorId, document);
+                const editorOptions = {
+                    ...firecoPad.editorOptions,
+                    model: firecoPad.monacoEditorModel,
+                    lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
+                };
+                const monacoEditor = configureMonacoEditor(this.monaco, editorDiv.current, editorOptions);
+
+                if (firecoPad.monacoEditorSavedState && isString(firecoPad.monacoEditorSavedState.text)) {
+                    // monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
+                    monacoEditor.restoreViewState(firecoPad.monacoEditorSavedState.viewState);
+                }
+
+                // dispatchMouseEvents(configureMonacoEditorMouseEventsObservable(monacoEditor));
+                firecoPad.monacoEditor = monacoEditor;
+                if (firecoPad.isJsx) {
+                    this.setActivateEnhancers(() => {
+                        this.addEnhancers(this.monaco, editorId, firecoPad); //  populates buildAst +
                     });
-                editorDidMount(this.consoleInputEditor);
-                return of(loadMonacoEditorFulfilled(editorId, null));
-            }
-
-            const firecoPad = this.firecoPads[editorId];
-
-            firecoPad.lineNumbersProvider = configureLineNumbersProvider(editorId, document);
-            const editorOptions = {
-                ...firecoPad.editorOptions,
-                model: firecoPad.monacoEditorModel,
-                lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
-            };
-            const monacoEditor = configureMonacoEditor(this.monaco, editorDiv.current, editorOptions);
-
-            if (firecoPad.monacoEditorSavedState && isString(firecoPad.monacoEditorSavedState.text)) {
-                // monacoEditor.setValue(firecoPad.monacoEditorSavedState.text);
-                monacoEditor.restoreViewState(firecoPad.monacoEditorSavedState.viewState);
-            }
-
-            // dispatchMouseEvents(configureMonacoEditorMouseEventsObservable(monacoEditor));
-            firecoPad.monacoEditor = monacoEditor;
-            if (firecoPad.isJsx) {
-                this.setActivateEnhancers(() => {
-                    this.addEnhancers(this.monaco, editorId, firecoPad); //  populates buildAst +
-                });
-                if (this.j) { // JSCodeShift may load immediately if cached
-                    this.activateEnhancers();
+                    if (this.j) { // JSCodeShift may load immediately if cached
+                        this.activateEnhancers();
+                    }
                 }
+
+                firecoPad.onContentChangedAction = (changes) =>
+                    monacoEditorContentChanged && monacoEditorContentChanged(editorId, monacoEditor.getValue(), changes);
+                const asyncContentChanged = async (changes) => {
+                    firecoPad.onContentChanged && firecoPad.onContentChanged();
+                    firecoPad.onContentChangedAction(changes);
+                    firecoPad.buildAst && firecoPad.buildAst(); // internally triggers JSX Coloring and LiveExpressions
+                };
+
+                const timeWindow = 150;
+                let layoutHidden = false;
+                const throttledWidgetLayoutChange = throttle(
+                    () => firecoPad.widgetLayoutChange && firecoPad.widgetLayoutChange(),
+                    timeWindow, {leading: true, trailing: false});
+
+                const debouncedAsyncContentChanged = debounce((changes) => {
+                    asyncContentChanged(changes)
+                        .then(() => (layoutHidden = false))
+                        .catch(error => console.log('[ERROR]asyncContentChanged', error));
+                }, timeWindow * 2);
+                //todo: simplify change response
+                firecoPad.onDidChangeModelContent = debounce(async changes => {
+                    if (!layoutHidden) {
+                        layoutHidden = true;
+                        throttledWidgetLayoutChange();
+                    }
+                    debouncedAsyncContentChanged(changes);
+                }, 50, {maxWait: timeWindow});
+
+                monacoEditor
+                    .onDidChangeModelContent(changes => {
+                        (!firstRender++) && onEditorContentFirstRender && onEditorContentFirstRender();
+                        firecoPad.onDidChangeModelContent && firecoPad.onDidChangeModelContent(changes)
+                    });
+
+                firecoPad.firstBuildAst && firecoPad.firstBuildAst();
+
+                firecoPadDidMount && firecoPadDidMount(firecoPad);
+                return of(loadMonacoEditorFulfilled(editorId, firecoPad));
+            } catch (error) {
+                return of(loadMonacoEditorRejected(editorId, error));
             }
-
-            firecoPad.onContentChangedAction = (changes) =>
-                monacoEditorContentChanged && monacoEditorContentChanged(editorId, monacoEditor.getValue(), changes);
-            const asyncContentChanged = async (changes) => {
-                firecoPad.onContentChanged && firecoPad.onContentChanged();
-                firecoPad.onContentChangedAction(changes);
-                firecoPad.buildAst && firecoPad.buildAst(); // internally triggers JSX Coloring and LiveExpressions
-            };
-
-            const timeWindow = 150;
-            let layoutHidden = false;
-            const throttledWidgetLayoutChange = throttle(
-                () => firecoPad.widgetLayoutChange && firecoPad.widgetLayoutChange(),
-                timeWindow, {leading: true, trailing: false});
-
-            const debouncedAsyncContentChanged = debounce((changes) => {
-                asyncContentChanged(changes)
-                    .then(() => (layoutHidden = false))
-                    .catch(error => console.log('[ERROR]asyncContentChanged', error));
-            }, timeWindow * 2);
-            //todo: simplify change response
-            firecoPad.onDidChangeModelContent = debounce(async changes => {
-                if (!layoutHidden) {
-                    layoutHidden = true;
-                    throttledWidgetLayoutChange();
-                }
-                debouncedAsyncContentChanged(changes);
-            }, 50, {maxWait: timeWindow});
-
-            monacoEditor
-                .onDidChangeModelContent(changes => {
-                    (!firstRender++) && onEditorContentFirstRender && onEditorContentFirstRender();
-                    firecoPad.onDidChangeModelContent && firecoPad.onDidChangeModelContent(changes)
-                });
-
-            firecoPad.firstBuildAst && firecoPad.firstBuildAst();
-
-            firecoPadDidMount && firecoPadDidMount(firecoPad);
-            return of(loadMonacoEditorFulfilled(editorId, firecoPad));
-            // } catch (error) {
-            //     return of(loadMonacoEditorRejected(editorId, error));
-            // }
 
         } else {
             return of(loadMonacoEditorRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
@@ -523,8 +524,9 @@ class AppManager {
             this.configureFirecoPaths(pastebinId, isNew);
             fireco.isAuth = false;
             return Observable.create(observer => {
-                if (fireco.unsubscribeOnIdTokenChanged) {
-                    fireco.unsubscribeOnIdTokenChanged();
+                if (fireco.unsubscribeOnAuthStateChanged) {
+                    fireco.unsubscribeOnAuthStateChanged();
+                    fireco.unsubscribeOnAuthStateChanged = null;
                 }
 
                 const loadFire = async () => {
@@ -538,39 +540,32 @@ class AppManager {
                         fireco.database = fireco.firebase.database(fireco.app);
                         fireco.auth = fireco.firebase.auth(fireco.app);
                         fireco.connectedRef = fireco.database.ref(".info/connected");
-                        fireco.onValue = snap =>
-                            observer.next(onConnectionChanged(snap.val()));
-                        fireco.connectedRef.on("value", fireco.onValue);
                     } else {
-                        fireco.connectedRef.off("value", fireco.onValue);
-                        fireco.onValue = snap =>
-                            observer.next(onConnectionChanged(snap.val()));
-                        fireco.connectedRef.on("value", fireco.onValue);
+                        fireco.connectedRef && fireco.connectedRef.off("value", fireco.onValue);
                     }
+                    fireco.onValue = snap =>
+                        observer.next(onConnectionChanged(snap.val()));
+                    fireco.connectedRef.on("value", fireco.onValue);
                 };
 
                 loadFire().then(() => {
-                    fireco.unsubscribeOnIdTokenChanged = fireco.auth.onIdTokenChanged(
+                    const onError = (error) => {
+                        fireco.isAuth = false;
+                        observer.next(activateFirepadRejected(error));
+                    };
+
+                    fireco.unsubscribeOnAuthStateChanged = fireco.auth.onAuthStateChanged(
                         user => {
                             if (user) {
-                                if (!fireco.isAuth) {
-                                    fireco.isAuth = true;
-                                    observer.next(activateFirepadFulfilled(user));
-                                }
-                                // ignore non-token events
+                                fireco.isAuth = true;
+                                observer.next(activateFirepadFulfilled(user));
+                            } else {
+                                onError(new Error("Firebase user logged out"));
                             }
                         },
-                        error => {
-                            fireco.isAuth = false;
-                            observer.next(activateFirepadRejected(error));
-                        }
+                        onError
                     );
-
-                    fireco.auth.signInWithCustomToken(pastebinToken)
-                        .catch((error) => {
-                            fireco.isAuth = false;
-                            observer.next(activateFirepadRejected(error));
-                        });
+                    return fireco.auth.signInWithCustomToken(pastebinToken).catch(onError);
                 });
 
             });
@@ -635,10 +630,12 @@ class AppManager {
         try {
             const firecoPad = this.firecoPads[editorId];
             firecoPad.firebaseRef = fireco.database.ref(firecoPad.firebasePath);
-            // firecoPad.monacoEditor.setValue("");
             firecoPad.firepadInstance = fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor, {defaultText: editorText});
-
-            return of(configureFirecoEditorFulfilled(editorId));
+            return Observable.create(observer => {
+                // firecoPad.firepadInstance.on('ready', () => {
+                    observer.next(configureFirecoEditorFulfilled(editorId));
+                // });
+            });
         } catch (error) {
             return of(configureFirecoEditorRejected(editorId, error));
         }

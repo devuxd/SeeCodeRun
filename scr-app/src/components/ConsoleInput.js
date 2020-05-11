@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import {withStyles} from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
@@ -13,6 +13,12 @@ import {mountEditorFulfilled, monacoEditorContentChanged} from "../redux/modules
 import {canDispatch, dispatch, clearConsole, preserveLogs} from "../seecoderun/modules/Trace";
 import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
 
+const mapStateToProps = ({firecoReducer}) => {
+    const {areFirecoEditorsConfigured} = firecoReducer;
+    return {
+        activateConsole: areFirecoEditorsConfigured,
+    };
+};
 const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
 
 const CONSOLE_INPUT_TOP_PADDING = 6;
@@ -240,7 +246,7 @@ class ConsoleInput extends Component {
     };
 
     render() {
-        const {classes} = this.props;
+        const {classes, activateConsole} = this.props;
         const {isPreserveLogs} = this.state;
         return (
             <div style={{height: `${this.state.editorHeight + CONSOLE_INPUT_PADDING}px`}}>
@@ -249,10 +255,10 @@ class ConsoleInput extends Component {
                 </span>
 
                 <span className={classes.editor}>
-                    <div
+                    {activateConsole && <div
                         ref={this.editorDiv}
                         className={classes.editorDiv}
-                    />
+                    />}
                 </span>
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
@@ -276,19 +282,20 @@ class ConsoleInput extends Component {
         );
     }
 
-    componentDidMount() {
-        const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
-        const {
-            editorDiv, /*dispatchMouseEvents,*/
-            editorDidMount, monacoOptions
-        } = this;
-        mountEditorFulfilled(editorId, {
-            editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
-            editorDidMount, isConsole, monacoOptions
-        });
-    }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps) {
+        const {activateConsole} = this.props
+        if(activateConsole && activateConsole !==prevProps.activateConsole){
+            const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
+            const {
+                editorDiv, /*dispatchMouseEvents,*/
+                editorDidMount, monacoOptions
+            } = this;
+            mountEditorFulfilled(editorId, {
+                editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
+                editorDidMount, isConsole, monacoOptions
+            });
+        }
         this.resizeEditorDebounced();
     }
 }
@@ -304,4 +311,4 @@ ConsoleInput.defaultProps = {
     isConsole: true,
 };
 
-export default connect(null, mapDispatchToProps)(withStyles(styles)(ConsoleInput));
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(ConsoleInput));

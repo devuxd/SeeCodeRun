@@ -1,4 +1,3 @@
-// module.exports = function getDefaultTextForLanguage(language) {
 export function getDefaultTextForLanguage(language) {
     switch (language) {
         case 'javascript':

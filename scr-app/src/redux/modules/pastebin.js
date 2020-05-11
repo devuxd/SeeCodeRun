@@ -315,7 +315,7 @@ export const pastebinTokenRejectedEpic = action$ =>
 
 export const pastebinContentEpic = (action$, state$) =>
     action$.pipe(
-        ofType(FETCH_PASTEBIN_FULFILLED, FETCH_PASTEBIN_CONTENT),
+        ofType(/*FETCH_PASTEBIN_FULFILLED,*/ FETCH_PASTEBIN_CONTENT),
         filter(() => !state$.value.pastebinReducer.isNew),
         mergeMap(() => {
             const url =

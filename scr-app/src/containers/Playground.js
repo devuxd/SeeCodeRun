@@ -11,9 +11,14 @@ import {
 
 const data = {};
 
-const mapStateToProps = ({updateBundleReducer}) => {
-    const {timestamp, bundle} = updateBundleReducer;
-    return {timestamp, bundle};
+const mapStateToProps = ({updateBundleReducer, firecoReducer}) => {
+    const {areFirecoEditorsConfigured} = firecoReducer;
+    const {timestamp, bundle, isFirstBundle} = updateBundleReducer;
+    return {
+        timestamp,
+        bundle,
+        activatePlayground: areFirecoEditorsConfigured && isFirstBundle,
+    };
 };
 const mapDispatchToProps = {updatePlaygroundLoadSuccess};
 
@@ -21,7 +26,6 @@ class Playground extends Component {
     constructor(props) {
         super(props);
         this.playgroundEl = React.createRef();
-        this.currentBundle = null;
         this.state = {
             isResizing: false,
             bundle: null,
@@ -60,13 +64,15 @@ class Playground extends Component {
     };
 
     render() {
-        const {isGraphicalLocatorActive, handleChangeGraphicalLocator} = this.props;
+        const {
+            isGraphicalLocatorActive, handleChangeGraphicalLocator, activatePlayground,
+        } = this.props;
         const {bundle, visualElements} = this.state;
-        return <React.Fragment>
-            <div ref={this.playgroundEl}
-                 style={{
-                     overflow: 'hidden'
-                 }}
+        return activatePlayground && <React.Fragment>
+            <div
+                style={{
+                    overflow: 'hidden'
+                }}
             >
                 <GraphicalMapper
                     containerRef={this.playgroundEl}
@@ -97,9 +103,8 @@ class Playground extends Component {
     }
 
     componentDidMount() {
-        if (this.props.exports) {
-            this.props.exports.onResize = this.onResize;
-        }
+        const {onResize} = this.props;
+        onResize && onResize(this.onResize);
     }
 
     componentDidUpdate(prevProps) {
@@ -108,6 +113,11 @@ class Playground extends Component {
             this.runIframeHandler.removeIframe();
             this.updateIframe(bundle);
         }
+    }
+
+    componentWillUnmount() {
+        const {onResize} = this.props;
+        onResize && onResize(null);
     }
 
     handleChangeVisualElements = visualElements => {

@@ -1,6 +1,20 @@
-import React, {useMemo} from 'react';
-import {createMuiTheme, responsiveFontSizes} from '@material-ui/core/styles';
+import React from 'react';
+import PropTypes from 'prop-types';
+import {
+    unstable_createMuiStrictModeTheme as createMuiTheme,
+    responsiveFontSizes,
+} from '@material-ui/core/styles';
 import {chromeDark, chromeLight} from 'react-inspector';
+import {ThemeProvider} from '@material-ui/styles';
+import CssBaseline from '@material-ui/core/CssBaseline';
+
+export const ThemeContext = React.createContext({
+    switchTheme: null,
+    themeType: null,
+    muiTheme: null,
+    inspectorTheme: null,
+    monacoTheme: null,
+});
 
 const palette = {
     type: 'light',
@@ -51,7 +65,7 @@ export const themeTypes = {
     darkTheme: 'darkTheme',
 };
 
-const themes = {
+const getMuiThemes = {
     [themeTypes.lightTheme]: getLightTheme,
     [themeTypes.darkTheme]: getDarkTheme,
 };
@@ -60,19 +74,66 @@ const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent
 const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
 
 export function getThemes(themeType) {
-    return themes[themeType] && {
-        theme: themes[themeType](),
+    if (!getMuiThemes[themeType]) {
+        return;
+    }
+    return {
+        muiTheme: getMuiThemes[themeType](),
         inspectorTheme: themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
         monacoTheme: themeType === themeTypes.darkTheme ? 'vs-dark' : 'vs-light'
     };
 }
 
 export function useThemes(themeType) {
-    return useMemo(getThemes(themeType), [themeType]);
+    return React.useMemo(() => getThemes(themeType), [themeType]);
 }
 
 export default function withThemes(Component) {
-    return function WithThemes(props) {
-        return <Component {...props} themes={useThemes(props.themeType)}/>;
-    }
-}
+    return (function WithThemes(props) {
+        const {mediaQueryResult: prefersLightMode} = props;
+        const preferredThemeType = prefersLightMode ? themeTypes.lightTheme : themeTypes.darkTheme;
+
+        const [themeUserOverrides, setThemeUserOverrides] = React.useState(null);
+        const [themeType, setThemeType] = React.useState(preferredThemeType);
+
+        const activeThemeType = themeUserOverrides || themeType;
+        const switchTheme = (event, newThemeUserOverrides) => {
+
+            if (newThemeUserOverrides && themeTypes[newThemeUserOverrides]) {
+                setThemeUserOverrides(newThemeUserOverrides);
+            } else {
+                const nextThemeType = activeThemeType === themeTypes.darkTheme ?
+                    themeTypes.lightTheme
+                    : activeThemeType === themeTypes.lightTheme ?
+                        themeTypes.darkTheme : themeTypes.lightTheme;
+                if (themeUserOverrides) {
+                    setThemeUserOverrides(nextThemeType);
+                } else {
+                    setThemeType(nextThemeType);
+                }
+            }
+        };
+
+        React.useEffect(() => {
+            setThemeType(preferredThemeType);
+        }, [preferredThemeType]);
+
+        const {muiTheme, inspectorTheme, monacoTheme} = useThemes(activeThemeType);
+        return (
+            <ThemeProvider theme={muiTheme}>
+                <CssBaseline/>
+                <Component
+                    muiTheme={muiTheme}
+                    inspectorTheme={inspectorTheme}
+                    monacoTheme={monacoTheme}
+                    themeType={activeThemeType}
+                    switchTheme={switchTheme}
+                    {...props}
+                />
+            </ThemeProvider>);
+    });
+};
+
+withThemes.propTypes = {
+    mediaQueryResult: PropTypes.any.isRequired,
+};

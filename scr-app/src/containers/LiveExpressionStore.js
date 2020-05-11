@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from "prop-types";
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import throttle from 'lodash/throttle';
 import isString from 'lodash/isString';
 import isEqual from 'lodash/isEqual';
@@ -16,7 +16,7 @@ import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
-import {lighten, fade} from '@material-ui/core/styles/colorManipulator';
+import {fade} from '@material-ui/core/styles/colorManipulator';
 import {ObjectRootLabel/*, ObjectLabel*/, createLiveObjectNodeRenderer} from '../components/ObjectExplorer';
 
 import LiveExpression from '../components/LiveExpression';
@@ -1594,7 +1594,7 @@ class LiveExpressionStore extends Component {
                         range,
                         configureLiveWidget: () =>
                             <Portal key={widget.id}
-                                       container={widget.contentWidget.domNode}>
+                                    container={widget.contentWidget.domNode}>
                                 <div
                                     ref={contentRef}
                                     onMouseEnter={() => {
@@ -1717,19 +1717,19 @@ class LiveExpressionStore extends Component {
             .then(this.onBundlingEnd)
             .catch(this.onBundlingEnd);
     };
-    handleBundleDebounced = debounce((currentEditorsTexts) => this.handleBundle(currentEditorsTexts), 100);
+    handleBundleDebounced = debounce(
+        (currentEditorsTexts) => this.handleBundle(currentEditorsTexts),
+        200,
+        {leading: false, trailing: true});
 
     handleBundlingSubscription = () => {
-        if (!this.bundlingSubject) {
-            return;
-        }
+        const {autorunDelay = 0} = this.props;
+        this.bundlingSubject = this.bundlingSubject || new Subject();
 
-        if (this.bundlingSubscription) {
-            this.bundlingSubscription.unsubscribe();
-        }
+        this.bundlingSubscription && this.bundlingSubscription.unsubscribe();
 
         this.bundlingSubscription =
-            this.bundlingSubject.pipe(debounceTime(this.props.autorunDelay)).subscribe(this.handleBundle);
+            this.bundlingSubject.pipe(debounceTime(autorunDelay)).subscribe(this.handleBundle);
     };
 
     goToTimelineBranch = (entry) => {
@@ -1753,10 +1753,10 @@ class LiveExpressionStore extends Component {
 
 
     componentDidMount() {
-        this.bundlingSubject = new Subject();
-        if (this.props.exports) {
-            this.props.exports.updateLiveExpressionWidgetWidths = this.updateLiveExpressionWidgetWidths;
-        }
+        const {updateLiveExpressionWidgetWidths} = this.props
+        updateLiveExpressionWidgetWidths && updateLiveExpressionWidgetWidths(this.updateLiveExpressionWidgetWidths);
+
+
         this.handleBundlingSubscription();
         this.handleBundlingSubscriptionDebounced =
             this.handleChangeDebounced(this.handleBundlingSubscription, 1500);
@@ -1782,7 +1782,7 @@ class LiveExpressionStore extends Component {
             clearInterval(this.refreshInterval);
             this.timeline = [];
             //  this.unHighlightLiveExpressions();
-            updateBundle(Date.now());
+            updateBundle();
             this.bundlingSubject.next(this.currentEditorsTexts);
         }
 
@@ -1790,6 +1790,9 @@ class LiveExpressionStore extends Component {
 
     componentWillUnmount() {
         this.bundlingSubject && this.bundlingSubject.complete();
+        const {updateLiveExpressionWidgetWidths} = this.props
+        updateLiveExpressionWidgetWidths && updateLiveExpressionWidgetWidths(null);
+
         goToTimelineBranch = goToTimelineBranchInactive;
     }
 
@@ -1846,6 +1849,7 @@ class LiveExpressionStore extends Component {
                     };
                     // JsCodeShift silently does nothing while loading its dependencies. Bundling needs retrying
                     // until it is JsCodeShift is ready
+                    console.log(baseAlJs === bundle.alJs);
                     if ((bundle.editorsTexts.js && !bundle.alJs) || baseAlJs === bundle.alJs) {
                         if (retries--) {
                             tm = setTimeout(() => {
@@ -1858,6 +1862,7 @@ class LiveExpressionStore extends Component {
                         }
 
                     } else {
+                        // clearTimeout()
                         dispatchBundle();
                     }
 
@@ -2211,7 +2216,7 @@ LiveExpressionStore.propTypes = {
     classes: PropTypes.object.isRequired,
     editorId: PropTypes.string.isRequired,
     liveExpressionStoreChange: PropTypes.func,
-    exports: PropTypes.object,
+    updateBundle: PropTypes.func.isRequired,
 };
 
 const LiveExpressionStoreWithContext = props => (

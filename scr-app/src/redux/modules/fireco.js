@@ -39,8 +39,8 @@ const defaultState = {
     error: null,
     isConnected: false, // Uses Firebase's connected info
     authUser: null,
-    areFirecosEditorsConfiguring: false,
-    areFirecosEditorsConfigured: false,
+    areFirecoEditorsConfiguring: false,
+    areFirecoEditorsConfigured: false,
     fulfilledFirecoEditors: 0,
     configuredFirecoEditors: null
 };
@@ -81,8 +81,8 @@ export const configureFirecoEditorRejected = (editorId, error) => ({
 
 export const configureFirecoChat = (onFirecoActive, onDispose) => ({
     type: CHAT_MOUNTED,
-    onFirecoActive: onFirecoActive,
-    onDispose: onDispose,
+    onFirecoActive,
+    onDispose,
 });
 
 export const configureFirecoChatFulfilled = () => ({
@@ -183,18 +183,18 @@ export const firecoReducer =
     };
 
 export const firecoActivateEpic = (action$, state$, {appManager}) =>
-        zip(
-            action$.pipe(startWith(activateFirepad()),ofType(FETCH_PASTEBIN_TOKEN_FULFILLED)),
-            action$.pipe(ofType(LOAD_MONACO_EDITORS_FULFILLED)),
-        ).pipe(
-            mergeMap(() =>
-                appManager.observeActivateFireco(
-                    state$.value.pastebinReducer.pastebinId,
-                    state$.value.pastebinReducer.pastebinToken,
-                    state$.value.pastebinReducer.isNew
-                )
+    zip(
+        action$.pipe(startWith(activateFirepad()), ofType(FETCH_PASTEBIN_TOKEN_FULFILLED)),
+        action$.pipe(ofType(LOAD_MONACO_EDITORS_FULFILLED)),
+    ).pipe(
+        mergeMap(() =>
+            appManager.observeActivateFireco(
+                state$.value.pastebinReducer.pastebinId,
+                state$.value.pastebinReducer.pastebinToken,
+                state$.value.pastebinReducer.isNew
             )
-        );
+        )
+    );
 
 export const firecoEditorEpic = (action$, state$, {appManager}) =>
     zip(
@@ -230,21 +230,15 @@ export const firecoEditorsEpic = (action$, state$) =>
     );
 
 export const firecoChatEpic = (action$, state$, {appManager}) =>
-    zip(
-        action$.pipe(ofType(CHAT_MOUNTED)),
-        action$.pipe(ofType(
-            CONFIGURE_FIRECO_EDITORS_FULFILLED
-            //ACTIVATE_FIREPAD_FULFILLED // too early
-            )
-        ),
-    ).pipe(
-        mergeMap(actions => {
+    action$.pipe(
+        ofType(CHAT_MOUNTED),
+        mergeMap(action => {
                 return appManager.observeConfigureFirecoChat(
-                    actions[0].onFirecoActive,
-                    actions[0].onDispose,
+                    action.onFirecoActive,
+                    action.onDispose,
                     `scr_chatUserId#${
                         state$.value.pastebinReducer.pastebinId
-                        }`
+                    }`
                 )
             }
         ),

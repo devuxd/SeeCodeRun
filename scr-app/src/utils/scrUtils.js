@@ -1,7 +1,7 @@
 import {of, fromEvent, merge} from 'rxjs';
 import {mapTo} from 'rxjs/operators';
 import isNumber from 'lodash/isNumber';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import isString from 'lodash/isString';
 import AppleKeyboardOptionIcon from 'mdi-material-ui/AppleKeyboardOption';
 import CallMadeIcon from '@material-ui/icons/CallMade';

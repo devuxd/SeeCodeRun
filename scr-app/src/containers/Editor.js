@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from "prop-types";
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
@@ -129,7 +129,7 @@ class Editor extends Component {
 
     render() {
         const {
-            editorId, classes, observeLiveExpressions, themeType, liveExpressionStoreChange, isConsole
+            editorId, classes, observeLiveExpressions, liveExpressionStoreChange, isConsole
         } = this.props;
         const {
             settingsOpen, errorSnackbarOpen, errors, firecoPad, isEditorContentFirstRender
@@ -151,9 +151,8 @@ class Editor extends Component {
                     editorId={editorId}
                     editorWidth={this.editorWidth}
                     editorHeight={this.editorHeight}
-                    themeType={themeType}
-                    updateLiveExpressionWidgetWidths={updateLiveExpressionWidgetWidths=>
-                        this.updateLiveExpressionWidgetWidths=updateLiveExpressionWidgetWidths}
+                    updateLiveExpressionWidgetWidths={updateLiveExpressionWidgetWidths =>
+                        this.updateLiveExpressionWidgetWidths = updateLiveExpressionWidgetWidths}
                     //currentContentWidgetId={currentContentWidgetId}
                     // forceHideWidgets={forceHideWidgets}
                     liveExpressionStoreChange={liveExpressionStoreChange}
@@ -194,7 +193,7 @@ class Editor extends Component {
     firecoPadDidMount = (firecoPad) => {
         const {updateMonacoEditorLayout} = this.props;
         const {updateLiveExpressionWidgetWidths} = this;
-        const {monacoEditor} = firecoPad||{};
+        const {monacoEditor} = firecoPad || {};
         updateMonacoEditorLayout && updateMonacoEditorLayout(() => {
             monacoEditor && monacoEditor.layout();
         });

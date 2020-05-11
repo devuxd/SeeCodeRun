@@ -1,14 +1,10 @@
-import React, {Component, createContext, /*, StrictMode*/} from 'react';
+import React from 'react';
 import {compose} from 'redux';
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
 
-import {ThemeProvider} from '@material-ui/styles';
 import {withStyles} from '@material-ui/core/styles';
-import CssBaseline from '@material-ui/core/CssBaseline';
-
-
-import {getThemes, themeTypes} from '../themes';
+import withThemes, {ThemeContext} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
@@ -18,19 +14,18 @@ import {online$, end$} from '../utils/scrUtils';
 import {takeUntil} from 'rxjs/operators';
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
-import withMediaQuery from '../utils/withMediaQuery';
+import withMediaQuery from "../utils/withMediaQuery";
 
-export const ThemeContext = createContext({});
-
-const mapStateToProps = ({firecoReducer, pastebinReducer}, {url}) => {
+const mapStateToProps = ({firecoReducer, pastebinReducer, updateBundleReducer}, {url}) => {
     const {isConnected, authUser, areFirecoEditorsConfigured} = firecoReducer;
+    const {isFirstBundle} = updateBundleReducer;
     const {pastebinId} = pastebinReducer;
     return {
         pastebinId,
         shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
         authUser,
         isConnected,
-        activateChat: (!!authUser) && areFirecoEditorsConfigured,
+        activateChat: !!authUser && areFirecoEditorsConfigured && isFirstBundle,
     }
 };
 
@@ -42,10 +37,6 @@ const styles = theme => {
         margin: theme.spacing(1),
         rowHeightSmall: APP_BAR_HEIGHT,
         rowHeight: APP_BAR_HEIGHT,
-        // rowHeightSmall: theme
-        //     .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
-        //     .minHeight,
-        // rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
     };
     return {
         root: {
@@ -104,9 +95,8 @@ const styles = theme => {
     }
 };
 
-class Index extends Component {
+class Index extends React.Component {
     editorIds = getEditorIds();
-    storeUnsubscribe = null;
 
     sendNotification = (message, autoHideDuration) => {
         this.setState({
@@ -220,57 +210,18 @@ class Index extends Component {
         chatTitle: 'Chat',
         chatClick: this.chatClick,
         resetLayoutClick: this.resetLayoutClick,
-        themeType: null,
-        theme: null,
-        inspectorTheme: null,
-        monacoTheme: null,
-        themeUserOverrides: false,
     };
-
-    switchTheme = (aThemeType) => {
-
-        this.setState((prevState) => {
-            const themeType =
-                aThemeType && themeTypes[aThemeType] ||
-                prevState.themeType === themeTypes.lightTheme ? themeTypes.darkTheme : themeTypes.lightTheme;
-            const {theme, inspectorTheme, monacoTheme} = getThemes(themeType);
-            return {
-                themeType,
-                theme,
-                inspectorTheme,
-                monacoTheme,
-                themeUserOverrides: true,
-            }
-        });
-    };
-
-    static getDerivedStateFromProps(nextProps, prevState) {
-        const {mediaQueryResult: prefersLightMode} = nextProps;
-        const themeType = prefersLightMode ? themeTypes.lightTheme : themeTypes.darkTheme;
-        if (prevState.themeUserOverrides) {
-            return null;
-        } else {
-            const {theme, inspectorTheme, monacoTheme} = getThemes(themeType);
-            return {
-                themeType,
-                theme,
-                inspectorTheme,
-                monacoTheme,
-            };
-        }
-
-    }
 
     render() {
         const {
             classes,
             url, minPastebinHeight,
             pastebinId, shareUrl, authUser, isConnected, activateChat,
+            themeType, muiTheme, inspectorTheme, monacoTheme, switchTheme,
         } = this.props;
         const {
             isTopNavigationToggled,
             isChatToggled, chatClick, chatTitle, isNetworkOk,
-            themeType, theme, inspectorTheme, monacoTheme,
         } = this.state;
 
         const rootContainerClassName = isTopNavigationToggled ?
@@ -290,81 +241,81 @@ class Index extends Component {
         };
 
         const forwardedState = {...this.state, pastebinId, shareUrl, authUser, isConnected};
+
         return (
             <ThemeContext.Provider value={{
-                switchTheme: this.switchTheme,
+                switchTheme,
                 themeType,
-                theme,
+                muiTheme,
                 inspectorTheme,
                 monacoTheme,
             }}
             >
-                <ThemeProvider theme={theme}>
-                    <CssBaseline/>
-                    <div className={classes.root}>
-                        <NotificationCenter {...forwardedState}/>
-                        <TopNavigationBar {...forwardedState}
-                                          url={url}
-                                          switchTheme={this.switchTheme}
-
-                        />
-                        <div className={rootContainerClassName}>
-                            <div className={classes.scroller}>
-                                <Pastebin
-                                    themeType={themeType}
-                                    editorIds={this.editorIds}
-                                    setGridLayoutCallbacks={this.setGridLayoutCallbacks}
-                                    appClasses={classes}
-                                    appStyle={{...appStyle}}
-                                    measureBeforeMount={true}
-                                    onHeight={onHeight}
-                                    heightAdjust={heightAdjust}
-                                />
-                            </div>
-                        </div>
-                        {
-                            activateChat &&
-                            <Chat
-                                isTopNavigationToggled={isTopNavigationToggled}
-                                logoClick={this.logoClick}
-                                isChatToggled={isChatToggled}
-                                chatClick={chatClick}
-                                chatTitle={chatTitle}
-                                isNetworkOk={isNetworkOk}
-                                currentLayout={this.currentLayout}
-                                resetLayoutClick={this.resetLayoutClick}
+                <div className={classes.root}>
+                    <NotificationCenter {...forwardedState}/>
+                    <TopNavigationBar {...forwardedState}
+                                      url={url}
+                                      switchTheme={switchTheme}
+                                      themeType={themeType}
+                    />
+                    <div className={rootContainerClassName}>
+                        <div className={classes.scroller}>
+                            <Pastebin
                                 themeType={themeType}
-                                switchTheme={this.switchTheme}
+                                editorIds={this.editorIds}
+                                setGridLayoutCallbacks={this.setGridLayoutCallbacks}
+                                appClasses={classes}
+                                appStyle={{...appStyle}}
+                                measureBeforeMount={true}
+                                onHeight={onHeight}
+                                heightAdjust={heightAdjust}
                             />
-                        }
+                        </div>
                     </div>
-                </ThemeProvider>
+                    {
+                        activateChat &&
+                        <Chat
+                            isTopNavigationToggled={isTopNavigationToggled}
+                            logoClick={this.logoClick}
+                            isChatToggled={isChatToggled}
+                            chatClick={chatClick}
+                            chatTitle={chatTitle}
+                            isNetworkOk={isNetworkOk}
+                            currentLayout={this.currentLayout}
+                            resetLayoutClick={this.resetLayoutClick}
+                            themeType={themeType}
+                            switchTheme={switchTheme}
+                        />
+                    }
+                </div>
             </ThemeContext.Provider>
         );
     }
 
     componentDidMount() {
-        const {switchMonacoTheme} = this.props;
-        const {monacoTheme} = this.state;
         this.online$ = online$();
         this.online$.subscribe(isOnline => {
             if (this.state.isOnline !== isOnline) {
-                this.setState({isOnline: isOnline});
+                this.setState({isOnline});
             }
         });
-        switchMonacoTheme && switchMonacoTheme(monacoTheme);
+        this.switchMonacoTheme();
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        const {switchMonacoTheme} = this.props;
-        const {monacoTheme} = this.state;
-        if (monacoTheme !== prevState.monacoTheme) {
-            switchMonacoTheme(monacoTheme);
+    componentDidUpdate(prevProps) {
+        const {monacoTheme} = this.props;
+        if (monacoTheme !== prevProps.monacoTheme) {
+            this.switchMonacoTheme();
         }
     }
 
     componentWillUnmount() {
         this.online$ && this.online$.pipe(takeUntil(end$()));
+    }
+
+    switchMonacoTheme = () => {
+        const {switchMonacoTheme, monacoTheme} = this.props;
+        switchMonacoTheme && switchMonacoTheme(monacoTheme);
     }
 }
 
@@ -375,5 +326,5 @@ Index.propTypes = {
     switchMonacoTheme: PropTypes.func,
 };
 
-const enhance = compose(withStyles(styles), withMediaQuery, connect(mapStateToProps, mapDispatchToProps));
+const enhance = compose(withMediaQuery, withThemes, withStyles(styles), connect(mapStateToProps, mapDispatchToProps));
 export default enhance(Index);

@@ -1,54 +1,46 @@
-const UPDATE_BUNDLE = 'UPDATE_BUNDLE';
-const UPDATE_BUNDLE_SUCCESS = 'UPDATE_BUNDLE_SUCCESS';
-const UPDATE_BUNDLE_FAILURE = 'UPDATE_BUNDLE_FAILURE';
+import {createActions, handleActions, combineActions} from 'redux-actions';
 
 const defaultUpdateBundleState = {
-  errors: null,
-  timestamp: null,
-  bundle: null,
+    isFirstBundle: false,
+    isBundling: false,
+    isBundled: false,
+    errors: null,
+    timestamp: null,
+    bundle: null,
 };
 
-export const updateBundle = (timestamp) => ({
-    type: UPDATE_BUNDLE,
-    timestamp: timestamp,
-  })
-;
+export const {updateBundle, updateBundleSuccess, updateBundleFailure} = createActions({
+    UPDATE_BUNDLE: (timestamp = Date.now()) => ({
+        errors: null,
+        isBundled: false,
+        isBundling: true,
+        timestamp,
+    }),
+    UPDATE_BUNDLE_SUCCESS: (bundle = null) => ({
+        isFirstBundle: true,
+        isBundling: false,
+        isBundled: true,
+        errors: null,
+        bundle,
+    }),
+    UPDATE_BUNDLE_FAILURE: (errors = null) => ({
+        isFirstBundle: true,
+        isBundling: false,
+        isBundled: false,
+        bundle: null,
+        errors,
+    }),
+});
 
-export const updateBundleSuccess = (bundle=null) => ({
-    type: UPDATE_BUNDLE_SUCCESS,
-    bundle: bundle,
-  })
-;
 
-export const updateBundleFailure = (errors) => ({
-    type: UPDATE_BUNDLE_FAILURE,
-    errors
-  })
-;
-
-export const updateBundleReducer = (state = defaultUpdateBundleState, action) => {
-    switch (action.type) {
-      case UPDATE_BUNDLE:
-        return {
-          ...state,
-          errors: null,
-        //  bundle: null,
-          timestamp: action.timestamp,
-        };
-      case UPDATE_BUNDLE_SUCCESS:
-        return {
-          ...state,
-          errors: null,
-          bundle: action.bundle,
-        };
-
-      case UPDATE_BUNDLE_FAILURE:
-        return {
-          ...state,
-          bundle: null,
-          errors: action.errors,
-        };
-      default:
-        return state;
-    }
-  };
+export const updateBundleReducer = handleActions(
+    {
+        [combineActions(updateBundle, updateBundleSuccess, updateBundleFailure)]: (
+            state,
+            {payload}
+        ) => {
+            return {...state, ...payload};
+        }
+    },
+    defaultUpdateBundleState
+);

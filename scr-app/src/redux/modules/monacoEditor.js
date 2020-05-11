@@ -20,7 +20,7 @@ const defaultState = {
     error: null,
     areMonacoEditorsLoading: false,
     areMonacoEditorsLoaded: false,
-    monacoEditorsToLoad: 4,
+    monacoEditorsToLoad: 3,
     monacoEditorsAttempted: 0,
     monacoEditorsLoaded: 0,
     monacoEditorsStates: null

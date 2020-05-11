@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import classnames from 'classnames';
 import {of} from 'rxjs';
+import debounce from 'lodash/debounce';
 import localStorage from 'store';
 import isEqual from 'lodash/isEqual';
 import {withStyles} from '@material-ui/core/styles';
@@ -23,6 +24,7 @@ import TextField from '@material-ui/core/TextField';
 import Divider from '@material-ui/core/Divider';
 import Skeleton from '@material-ui/lab/Skeleton';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Typography from '@material-ui/core/Typography';
 import randomColor from "randomcolor";
 import update from 'immutability-helper';
 
@@ -87,7 +89,7 @@ const styles = theme => ({
     },
     chatMessageSticky: {
         marginBottom: -LIST_SUBHEADER_HEIGHT + theme.spacing(1),
-        zIndex: 2,
+        zIndex: 1,
     },
     listItemTextField: {
         paddingRight: theme.spacing(1),
@@ -388,7 +390,7 @@ class Chat extends Component {
                 resetLayoutClick(layoutGrid);
             }
             if (switchTheme && layout.themeType && layout.themeType !== themeType) {
-                switchTheme(layout.themeType);
+                switchTheme(null, layout.themeType);
             }
 
             if (this.chatEl.current && layout.chatBoundingClientRect) {
@@ -442,7 +444,7 @@ class Chat extends Component {
             let {users} = this.state;
             users = users ? {...users} : {};
             pushUser(users, snapshot);
-            this.setState({users: users});
+            this.setState({users});
             this.handleChangeListSubheaderTop();
         };
 
@@ -463,15 +465,18 @@ class Chat extends Component {
         //so far, users cannot be deleted
 
         let chatMessagesLoadingTimeout = setTimeout(() => {
-            // this.firecoChat
-            //     .child('messages')
-            //     .once('value', () => {
             this.setState({
                 isChatMessagesLoading: false,
             });
             this.handleChangeListSubheaderTop();
-            // });
         }, 2000);
+
+        let batchedState = null;
+        const debouncedSetState = debounce(() => {
+            this.handleChangeListSubheaderTop();
+            this.setState(batchedState);
+            batchedState = null;
+        }, 2000, {leading: false, trailing: true, maxWait: 4000});
 
         this.firecoChat
             .child('messages')
@@ -479,11 +484,12 @@ class Chat extends Component {
             .on('child_added', snapshot => {
                 chatMessagesLoadingTimeout && (chatMessagesLoadingTimeout = clearTimeout(chatMessagesLoadingTimeout));
                 const chatMessage = snapshot.val();
-                this.setState((prevState) => ({
+                const {messages} = this.state;
+                batchedState = {
                     isChatMessagesLoading: false,
                     lastMessageReceivedOwnerId: chatMessage.chatUserId,
                     lastMessageReceivedTimestamp: chatMessage.timestamp,
-                    messages: update(prevState.messages, {
+                    messages: update(batchedState ? batchedState.messages : messages, {
                         $push: [{
                             key: snapshot.key,
                             chatUserId: chatMessage.chatUserId,
@@ -492,8 +498,8 @@ class Chat extends Component {
                             color: chatMessage.color
                         }],
                     }),
-                }));
-                this.handleChangeListSubheaderTop();
+                };
+                debouncedSetState();
             });
     };
 
@@ -571,11 +577,11 @@ class Chat extends Component {
     makeDraggableAndResizable = async (isDraggable = true, isResizable = true) => {
         if (!$) {
             $ = (await import('jquery')).default;
-            // await Promise.all([
-            //     import( 'jquery-ui/ui/core'),
-            //     import('jquery-ui/themes/base/core.css'),
-            //     import('jquery-ui/themes/base/theme.css'),
-            // ]);
+            await Promise.all([
+                // import( 'jquery-ui/ui/core'),
+                // import('jquery-ui/themes/base/core.css'),
+                // import('jquery-ui/themes/base/theme.css'),
+            ]);
             isDraggable && await Promise.all([
                 import('jquery-ui/ui/widgets/draggable'),
                 // import('jquery-ui/themes/base/draggable.css'),
@@ -775,10 +781,7 @@ class Chat extends Component {
                                     <Divider variant="middle"/>
                                     <ListItem disableGutters component={'div'}>
                                         <ListItemAvatar ref={this.chatAvatarEl}>
-                                            <Tooltip
-                                                arrow
-                                                title={chatUserName || "click to type your user name"}
-                                            >
+                                            <Tooltip title={chatUserName || "click to type your user name"}>
                                                 <ButtonBase>
                                                     <Avatar
                                                         className={
@@ -805,7 +808,16 @@ class Chat extends Component {
                                                 onChange={this.handleMessageTextChange}
                                                 onKeyUp={this.handleMessageInputEnter}
                                             />}
-                                            secondary={this.getLastActivityMessage()}
+                                            secondary={
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                    display="block"
+                                                    noWrap
+                                                >
+                                                    {this.getLastActivityMessage()}
+                                                </Typography>
+                                            }
                                         />
                                         <ListItemSecondaryAction>
                                             <IconButton title={chatTitle}
@@ -929,9 +941,9 @@ class Chat extends Component {
 
             const newLayout = {
                 gridString: JSON.stringify(currentLayout()),
-                isTopNavigationToggled: isTopNavigationToggled,
-                themeType: themeType,
-                isChatToggled: isChatToggled,
+                isTopNavigationToggled,
+                themeType,
+                isChatToggled,
             };
 
             if (!chatBoundingClientRect.left
@@ -952,9 +964,12 @@ class Chat extends Component {
     };
 
     componentDidMount() {
-        const {configureFirecoChat} = this.props;
-        configureFirecoChat(this.onFirecoActive, this.onDispose);
-        this.makeDraggableAndResizable().catch(e => console.log('chat error', e));
+        this.makeDraggableAndResizable().then(
+            () => {
+                const {configureFirecoChat} = this.props;
+                configureFirecoChat(this.onFirecoActive, this.onDispose);
+            }
+        ).catch(e => console.log('chat error', e));
     }
 
     componentDidUpdate(prevProps) {
@@ -985,4 +1000,4 @@ class Chat extends Component {
 
 }
 
-export default connect(null, mapDispatchToProps)(withStyles(styles, {withTheme: true})(Chat));
+export default React.memo(connect(null, mapDispatchToProps)(withStyles(styles, {withTheme: true})(Chat)));

@@ -1,19 +1,35 @@
-import React, {Component} from 'react';
+import React, {Component, useState, useEffect} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {configureFirecoPersistableComponent} from '../redux/modules/fireco';
 
 const mapDispatchToProps = {configureFirecoPersistableComponent};
 
+export function usePersistence(firebaseRef, defaultValue, onError) {
+    const [data, setLocalValue] = useState(defaultValue);
+    const changeData = newValue => firebaseRef.set(newValue).catch(onError);
+    useEffect(() => {
+        const onValue = (snapshot) => {
+            setLocalValue(snapshot.val());
+        };
+        firebaseRef.on('value', onValue);
+        return () => {
+            firebaseRef.off('value', onValue);
+        };
+    }, [firebaseRef]);
+
+    return [data, changeData];
+}
+
+let SERVER_TIMESTAMP = null;
 export default function withPersistence(DataComponent) {
 
-    class PersistentComponent extends Component {
+    class WithPersistence extends Component {
         static propTypes = {
             persistablePath: PropTypes.string.isRequired,
         };
 
         static defaultProps = {};
-        SERVER_TIMESTAMP = null;
         state = {
             data: null
         };
@@ -23,10 +39,10 @@ export default function withPersistence(DataComponent) {
 
         render() {
             this.data.current = this.state.data;
-            if (DataComponent) {
-                return <DataComponent data={this.data} changeData={this.changeData} {...this.props} />;
-            }
-            return null;
+            return <DataComponent
+                SERVER_TIMESTAMP={SERVER_TIMESTAMP} data={this.data} changeData={this.changeData} {...this.props}
+            />;
+
         }
 
         onValue = (snapshot) => {
@@ -35,14 +51,12 @@ export default function withPersistence(DataComponent) {
         };
 
         changeData = (data) => {
-            if (this.firebaseRef) {
-                this.firebaseRef.set(data);
-            }
+            return this.firebaseRef && this.firebaseRef.set(data);
         };
 
         onFirecoActive = (firebaseRef, TIMESTAMP) => {
             this.firebaseRef = firebaseRef;
-            this.SERVER_TIMESTAMP = TIMESTAMP;
+            SERVER_TIMESTAMP = TIMESTAMP;
             this.firebaseRef.on('value', this.onValue);
         };
 
@@ -63,5 +77,5 @@ export default function withPersistence(DataComponent) {
 
     }
 
-    return connect(null,mapDispatchToProps)(PersistentComponent);
+    return connect(null, mapDispatchToProps)(WithPersistence);
 }

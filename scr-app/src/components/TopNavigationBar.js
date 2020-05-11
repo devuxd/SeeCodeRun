@@ -18,6 +18,7 @@ import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+import {themeTypes} from '../themes';
 
 export const APP_BAR_HEIGHT = 48;
 let iconStyle = {};
@@ -121,17 +122,17 @@ class TopNavigationBar extends Component {
         if (shareUrl) {
             let query = `${
                 checkedLocked ? '&locked' : ''
-                }${
+            }${
                 checkedJS ? '&js' : ''
-                }${
+            }${
                 checkedHTML ? '&html' : ''
-                }${
+            }${
                 checkedCSS ? '&css' : ''
-                }${
+            }${
                 checkedConsole ? '&console' : ''
-                }${
+            }${
                 checkedOutput ? '&output' : ''
-                }`;
+            }`;
 
             if (query) {
                 query = `?custom${query}`;
@@ -220,11 +221,12 @@ class TopNavigationBar extends Component {
                                 <MenuItem className={classes.centered}
                                           onClick={finalUrl && shareClick}
                                 >{
-                                    finalUrl ? <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={aStyle.link}
-                                                  onClick={e => e.preventDefault()}
-                                    >
-                                        {finalUrl}
-                                    </a> : 'No Pastebin to Share'
+                                    finalUrl ?
+                                        <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={aStyle.link}
+                                           onClick={e => e.preventDefault()}
+                                        >
+                                            {finalUrl}
+                                        </a> : 'No Pastebin to Share'
                                 }
 
                                 </MenuItem>
@@ -324,7 +326,7 @@ class TopNavigationBar extends Component {
                             onClick={switchTheme}
                             title={"Switch light/dark theme"}
                         >
-                            {themeType === 'darkTheme' ?
+                            {themeType === themeTypes.darkTheme ?
                                 <Brightness7Icon style={iconStyle}/>
                                 : <Brightness4Icon style={iconStyle}/>
                             }
@@ -375,6 +377,7 @@ TopNavigationBar.propTypes = {
     getNetworkStateMessage: PropTypes.func.isRequired,
     classes: PropTypes.object.isRequired,
     switchTheme: PropTypes.func.isRequired,
+    themeType: PropTypes.string.isRequired,
 };
 
 export default withStyles(styles)(TopNavigationBar);
