@@ -2,9 +2,8 @@ import React, {Component, createContext} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import {Responsive} from 'react-grid-layout';
-// import {withStyles, Paper} from 'material-ui';
 import {withStyles} from '@material-ui/core/styles';
 import {darken} from '@material-ui/core/styles/colorManipulator';
 import Paper from '@material-ui/core/Paper';
@@ -12,7 +11,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 import DragHandleIcon from '@material-ui/icons/DragHandle';
-// import SlowMotionVideoIcon from '@material-ui/icons/SlowMotionVideo';
 import Drawer from '@material-ui/core/Drawer';
 import TvIcon from '@material-ui/icons/Tv';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
@@ -23,7 +21,6 @@ import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
 import Playground from './Playground';
-// import {pastebinConfigureLayout} from "../redux/modules/pastebin";
 import SizeProvider from '../utils/SizeProvider';
 import {
     configureDefaultGridLayoutFormatter
@@ -132,7 +129,6 @@ class Pastebin extends Component {
         super(props);
         this.debugScrollerRef = React.createRef();
         this.updateMonacoEditorLayouts = {};
-        this.exports = {};
         this.debugScrollerRefSnapshots = {};
         this.scrollingListContainers = {};
         VisualQueryManager.onChange = this.onVisualQueryChange;
@@ -207,7 +203,8 @@ class Pastebin extends Component {
     };
 
     onGridResize = (isResizing) => {
-        this.exports.onResize && this.exports.onResize(isResizing);
+        const {onResize} = this;
+        onResize && onResize(isResizing);
     }
 
     handleChangeDebugLoading = (isLoading) => {
@@ -688,7 +685,6 @@ class Pastebin extends Component {
         liveLogs: [],
         isPlaying: true,
         timeFlow: 'desc',
-        handleChangePlaying: this.handleChangePlaying,
         handleChangeTimeFlow: this.handleChangeTimeFlow,
         isAutoExpand: false,
         handleChangeAutoExpand: this.handleChangeAutoExpand,
@@ -758,7 +754,8 @@ class Pastebin extends Component {
     }
 
     render() {
-        const {themeType, appClasses, classes, appStyle, editorIds} = this.props;
+        const {handleChangePlaying} = this;
+        const { appClasses, classes, appStyle, editorIds} = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
             autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive,
@@ -807,7 +804,6 @@ class Pastebin extends Component {
                                        this.handleChangeHoveredCellKey(event, null)}
                             >
                                 <Editor editorId={editorIds['js']}
-                                        themeType={themeType}
                                         observeMouseEvents
                                         observeLiveExpressions={true}
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['js'])}
@@ -851,19 +847,18 @@ class Pastebin extends Component {
                                 <ScrollingList
                                     ScrollingListRef={this.debugScrollerRef}
                                     onScrollEnd={this.onScrollEnd}
-
                                     onScrollChange={this.onScrollChange}
                                     classes={appClasses.scroller}
                                     listLength={data.length}
                                     isRememberScrollingDisabled={isNew}
                                 >
                                     <DebugContainer
-                                        ScrollingListRef={this.debugScrollerRef}
                                         appClasses={appClasses}
                                         appStyle={appStyle}
                                         tabIndex={tabIndex}
                                         ScrollingListContainers={this.scrollingListContainers}
                                         handleChangeTab={this.handleChangeTab}
+                                        handleChangePlaying={handleChangePlaying}
                                     />
                                 </ScrollingList>
 
@@ -900,7 +895,7 @@ class Pastebin extends Component {
                                 <Playground editorIds={editorIds}
                                             appClasses={appClasses}
                                             appStyle={appStyle}
-                                            exports={this.exports}
+                                            onResize={(onResize) => (this.onResize = onResize)}
                                             isGraphicalLocatorActive={isGraphicalLocatorActive}
                                             handleChangeGraphicalLocator={this.handleChangeGraphicalLocator}
                                 />

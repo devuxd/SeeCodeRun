@@ -1,11 +1,9 @@
-const configureMonacoDefaults = (monaco) => {
-    const hasNativeTypescript = false;
-
+const configureMonacoDefaults = (monaco, hasNativeTypescript = false) => {
     const compilerDefaults = {
         jsxFactory: 'React.createElement',
         reactNamespace: 'React',
         jsx: monaco.languages.typescript.JsxEmit.React,
-        target: monaco.languages.typescript.ScriptTarget.ES2016,
+        target: monaco.languages.typescript.ScriptTarget.Latest,
         allowNonTsExtensions: !hasNativeTypescript,
         moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
         module: hasNativeTypescript

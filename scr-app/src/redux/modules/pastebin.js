@@ -1,6 +1,6 @@
 import {ofType} from 'redux-observable';
 import {zip, concat, of} from 'rxjs';
-import {mergeMap, delay, map, mapTo, filter, catchError} from 'rxjs/operators';
+import {mergeMap, delay, map, mapTo, filter, catchError, startWith} from 'rxjs/operators';
 import {ajax} from 'rxjs/ajax';
 import localStorage from 'store';
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
@@ -282,6 +282,7 @@ export const pastebinEpic = (action$, state$, {appManager}) =>
                 );
             }
         }),
+        startWith(fetchPastebin(appManager.urlData.hash)),
     );
 
 export const pastebinTokenEpic = (action$, state$) =>

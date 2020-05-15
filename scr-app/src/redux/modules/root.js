@@ -16,10 +16,12 @@ import {
     firecoEditorsEpic,
     firecoActivateEpic,
     firecoEditorEpic,
+    firecoEditorsSetUserIdEpic,
     firecoChatEpic,
     firecoPersistableComponentEpic,
 } from './fireco';
 import {
+    loadMonacoEpic,
     configureMonacoModelsEpic,
     updateMonacoModelsEpic,
     configureMonacoThemeSwitchEpic,
@@ -47,6 +49,8 @@ export const rootEpic = combineEpics(
     pastebinTokenEpic,
     pastebinTokenRejectedEpic,
     mountedEditorEpic,
+    firecoEditorsSetUserIdEpic,
+    loadMonacoEpic,
     configureMonacoModelsEpic,
     updateMonacoModelsEpic,
     configureMonacoThemeSwitchEpic,

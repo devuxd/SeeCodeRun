@@ -106,13 +106,21 @@ export const monacoReducer =
         }
     };
 
+export const loadMonacoEpic = (action$, state$, {appManager}) =>
+    action$.pipe(
+        ofType(LOAD_MONACO),
+        mergeMap(() =>
+            appManager.observeLoadMonaco()
+        ),
+        startWith(loadMonaco()),
+    );
+
 export const configureMonacoModelsEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         ofType(LOAD_MONACO_FULFILLED),
         mergeMap(action =>
             appManager.observeConfigureMonacoModels(action.monaco)
         ),
-        startWith(loadMonaco()),
     );
 
 export const updateMonacoModelsEpic = (action$, state$, {appManager}) =>

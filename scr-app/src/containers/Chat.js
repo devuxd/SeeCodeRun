@@ -29,10 +29,11 @@ import randomColor from "randomcolor";
 import update from 'immutability-helper';
 
 import {configureFirecoChat} from '../redux/modules/fireco';
+import {firecoEditorsSetUserId} from '../redux/modules/fireco';
 import PromiseAutoComplete from '../components/PromiseAutoComplete';
 import InfinityChatList from './InfinityChatList';
 
-const mapDispatchToProps = {configureFirecoChat};
+const mapDispatchToProps = {configureFirecoChat, firecoEditorsSetUserId};
 let $ = null;
 
 const LIST_SUBHEADER_HEIGHT = 72 + 1; //1 from divider
@@ -296,7 +297,7 @@ class Chat extends Component {
     setUserId = (chatUserId, saveLocally = true) => {
         saveLocally && localStorage.set(this.chatUserIdLocalStoragePath, chatUserId);
         this.setState({
-            chatUserId: chatUserId,
+            chatUserId,
             chatAvatarWarning: chatUserId ? null : 'Please select an user.',
         });
     };
@@ -972,8 +973,9 @@ class Chat extends Component {
         ).catch(e => console.log('chat error', e));
     }
 
-    componentDidUpdate(prevProps) {
-        const {isChatToggled} = this.props;
+    componentDidUpdate(prevProps, prevState) {
+        const {isChatToggled, firecoEditorsSetUserId} = this.props;
+        const {users, chatUserId} = this.state;
         if (prevProps.isChatToggled !== isChatToggled) {
             clearInterval(this.updateMessagesInterval);
             if (isChatToggled) {
@@ -984,6 +986,17 @@ class Chat extends Component {
                 }, this.updateMessagesIntervalTime);
             }
         }
+
+        if (prevState.chatUserId !== chatUserId) {
+            this.isFirecoEditorsSetUserIdPending = true;
+        }
+
+        if (this.isFirecoEditorsSetUserIdPending && users) {
+            const userColor = users[chatUserId] ? users[chatUserId].color : null;
+            firecoEditorsSetUserId(chatUserId, userColor);
+            this.isFirecoEditorsSetUserIdPending = false;
+        }
+
         this.scrollToBottom();
     }
 

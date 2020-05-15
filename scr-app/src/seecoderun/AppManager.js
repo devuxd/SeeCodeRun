@@ -6,7 +6,7 @@ import isString from 'lodash/isString';
 
 import {
     configureMonacoModelsFulfilled,
-    configureMonacoModelsRejected,
+    configureMonacoModelsRejected, loadMonacoFulfilled, loadMonacoRejected,
     switchMonacoThemeFulfilled,
     switchMonacoThemeRejected,
     updateMonacoModelsFulfilled,
@@ -21,6 +21,9 @@ import {
 import {
     configureFirecoEditorFulfilled,
     configureFirecoEditorRejected,
+    configureFirecoEditorReady,
+    firecoEditorsSetUserIdFulfilled,
+    firecoEditorsSetUserIdRejected,
     activateFirepadFulfilled,
     activateFirepadRejected,
     onConnectionChanged,
@@ -44,6 +47,7 @@ import {defaultExpressionClassName} from '../containers/LiveExpressionStore';
 
 import firebaseConfig from './firebaseConfig';
 import {defaultMonacoEditorLiveExpressionClassName} from "../containers/Editor";
+import configureMonacoDefaults from "../configureMonaco";
 
 const {root, config} = firebaseConfig;
 
@@ -97,11 +101,11 @@ const editorIds = {
     'css': 'css',
 };
 
-
 export const getEditorIds = () => ({...editorIds});
 
 class AppManager {
-    constructor() {
+    constructor(urlData) {
+        this.urlData = urlData;
         this.j = null;
         this.currentMonacoTheme = null;
         this.pastebinLayout = null;
@@ -133,6 +137,21 @@ class AppManager {
         };
         this.jsxColoringProvider = null;
         this.loadJPromise().catch((err) => console.log('j not loaded', err));
+    }
+
+    observeLoadMonaco() {
+        return new Observable(observer => {
+                (async () => await import ('monaco-editor'))()
+                    .then(monaco => {
+                        configureMonacoDefaults(monaco);
+                        observer.next(loadMonacoFulfilled(monaco));
+                    })
+                    .catch(error => {
+                        observer.next(loadMonacoRejected(error)
+                        )
+                    });
+            }
+        );
     }
 
     observeDispose() {
@@ -499,7 +518,13 @@ class AppManager {
             }
 
         } else {
-            return of(loadMonacoEditorRejected(editorId, 'Error: monaco is not configured. Execute configureMonaco(monaco) first, providing a monaco library reference'));
+            return of(
+                loadMonacoEditorRejected(
+                    editorId,
+                    'Error: monaco is not configured.' +
+                    ' Execute configureMonaco(monaco) first, providing a monaco library reference'
+                )
+            );
         }
     }
 
@@ -630,11 +655,13 @@ class AppManager {
         try {
             const firecoPad = this.firecoPads[editorId];
             firecoPad.firebaseRef = fireco.database.ref(firecoPad.firebasePath);
-            firecoPad.firepadInstance = fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor, {defaultText: editorText});
+            firecoPad.firepadInstance =
+                fireco.Firepad.fromMonaco(firecoPad.firebaseRef, firecoPad.monacoEditor, {defaultText: editorText});
             return Observable.create(observer => {
-                // firecoPad.firepadInstance.on('ready', () => {
-                    observer.next(configureFirecoEditorFulfilled(editorId));
-                // });
+                observer.next(configureFirecoEditorFulfilled(editorId));
+                firecoPad.firepadInstance.on('ready', () => {
+                    observer.next(configureFirecoEditorReady(editorId));
+                });
             });
         } catch (error) {
             return of(configureFirecoEditorRejected(editorId, error));
@@ -665,6 +692,21 @@ class AppManager {
             return of(configureFirecoPersistableComponentFulfilled());
         } catch (error) {
             return of(configureFirecoPersistableComponentRejected(error));
+        }
+    }
+
+    observeFirecoEditorsSetUserId(userId, userColor) {
+        try {
+            for (const editorId in this.firecoPads) {
+                const {firepadInstance} = this.firecoPads[editorId];
+                if (firepadInstance) {
+                    firepadInstance.setUserId(userId || "unknown");
+                    userColor && firepadInstance.setUserColor(userColor);
+                }
+            }
+            return of(firecoEditorsSetUserIdFulfilled(userId, userColor));
+        } catch (error) {
+            return of(firecoEditorsSetUserIdRejected(userId, userColor, error));
         }
     }
 
@@ -712,7 +754,7 @@ class AppManager {
 
 }
 
-export default function configureAppManager() {
-    return new AppManager();
+export default function configureAppManager(urlData) {
+    return new AppManager(urlData);
 };
 

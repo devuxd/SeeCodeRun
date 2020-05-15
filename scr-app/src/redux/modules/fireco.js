@@ -1,12 +1,11 @@
 import {ofType} from 'redux-observable';
 import {zip} from 'rxjs';
-import {mergeMap, startWith, mapTo, filter} from 'rxjs/operators';
+import {mergeMap, switchMap, startWith, mapTo, filter} from 'rxjs/operators';
 
 import {
     LOAD_MONACO_EDITOR_FULFILLED,
     LOAD_MONACO_EDITORS_FULFILLED,
 } from "./monacoEditor";
-
 
 import {
     FETCH_PASTEBIN_TOKEN_FULFILLED,
@@ -16,6 +15,10 @@ const ON_CONNECTION_CHANGED = 'ON_CONNECTION_CHANGED';
 const CONFIGURE_FIRECO_EDITOR = 'CONFIGURE_FIRECO_EDITOR';
 const CONFIGURE_FIRECO_EDITOR_FULFILLED = 'CONFIGURE_FIRECO_EDITOR_FULFILLED';
 const CONFIGURE_FIRECO_EDITOR_REJECTED = 'CONFIGURE_FIRECO_EDITOR_REJECTED';
+export const CONFIGURE_FIRECO_EDITOR_READY = 'CONFIGURE_FIRECO_EDITOR_READY';
+const FIRECO_EDITORS_SET_USER_ID = 'FIRECO_EDITORS_SET_USER_ID';
+const FIRECO_EDITORS_SET_USER_ID_FULFILLED = 'FIRECO_EDITORS_SET_USER_ID_FULFILLED';
+const FIRECO_EDITORS_SET_USER_ID_REJECTED = 'FIRECO_EDITORS_SET_USER_ID_REJECTED';
 
 const CONFIGURE_FIRECO_EDITORS = 'CONFIGURE_FIRECO_EDITORS';
 export const CONFIGURE_FIRECO_EDITORS_FULFILLED =
@@ -42,12 +45,17 @@ const defaultState = {
     areFirecoEditorsConfiguring: false,
     areFirecoEditorsConfigured: false,
     fulfilledFirecoEditors: 0,
-    configuredFirecoEditors: null
+    readyFirecoEditors: 0,
+    configuredFirecoEditors: {},
+    userId: null,
+    userColor: null,
+    isSetUserIdPending: false,
+    isSetUserIdFulfilled: false,
 };
 
 export const onConnectionChanged = isConnected => ({
     type: ON_CONNECTION_CHANGED,
-    isConnected: isConnected
+    isConnected,
 });
 
 export const activateFirepad = () => ({
@@ -56,12 +64,12 @@ export const activateFirepad = () => ({
 
 export const activateFirepadFulfilled = authUser => ({
     type: ACTIVATE_FIREPAD_FULFILLED,
-    authUser: authUser
+    authUser,
 });
 export const activateFirepadRejected = error => ({
     type: error.code === 'auth/invalid-credential' ?
         ACTIVATE_FIREPAD_EXPIRED : ACTIVATE_FIREPAD_REJECTED,
-    error: error
+    error,
 });
 
 export const configureFirecoEditors = () => ({type: CONFIGURE_FIRECO_EDITORS});
@@ -70,14 +78,44 @@ export const configureFirecoEditorsFulfilled =
 
 export const configureFirecoEditorFulfilled = editorId => ({
     type: CONFIGURE_FIRECO_EDITOR_FULFILLED,
-    editorId: editorId
+    editorId,
 });
 
 export const configureFirecoEditorRejected = (editorId, error) => ({
     type: CONFIGURE_FIRECO_EDITOR_REJECTED,
-    editorId: editorId,
-    error: error
+    editorId,
+    error,
 });
+
+export const configureFirecoEditorReady = editorId => ({
+    type: CONFIGURE_FIRECO_EDITOR_READY,
+    editorId,
+});
+
+export const firecoEditorsSetUserId =
+    (userId, userColor) => ({
+        type: FIRECO_EDITORS_SET_USER_ID,
+        userId,
+        userColor,
+    })
+;
+
+export const firecoEditorsSetUserIdFulfilled =
+    (userId, userColor) => ({
+        type: FIRECO_EDITORS_SET_USER_ID_FULFILLED,
+        userId,
+        userColor,
+    })
+;
+
+export const firecoEditorsSetUserIdRejected =
+    (userId, userColor, error) => ({
+        type: FIRECO_EDITORS_SET_USER_ID_REJECTED,
+        userId,
+        userColor,
+        error
+    })
+;
 
 export const configureFirecoChat = (onFirecoActive, onDispose) => ({
     type: CHAT_MOUNTED,
@@ -91,14 +129,14 @@ export const configureFirecoChatFulfilled = () => ({
 
 export const configureFirecoChatRejected = (error) => ({
     type: CONFIGURE_FIRECO_CHAT_REJECTED,
-    error: error
+    error,
 });
 
 export const configureFirecoPersistableComponent = (path, onFirecoActive, onDispose) => ({
     type: PERSISTABLE_COMPONENT_MOUNTED,
-    path: path,
-    onFirecoActive: onFirecoActive,
-    onDispose: onDispose,
+    path,
+    onFirecoActive,
+    onDispose,
 });
 
 export const configureFirecoPersistableComponentFulfilled = () => ({
@@ -107,12 +145,13 @@ export const configureFirecoPersistableComponentFulfilled = () => ({
 
 export const configureFirecoPersistableComponentRejected = (error) => ({
     type: CONFIGURE_PERSISTABLE_COMPONENT_REJECTED,
-    error: error
+    error,
 });
 
 export const firecoReducer =
     (state = defaultState,
      action) => {
+        const configuredFirecoEditors = {...state.configuredFirecoEditors};
         switch (action.type) {
             case ON_CONNECTION_CHANGED:
                 return {
@@ -134,7 +173,9 @@ export const firecoReducer =
                     ...state,
                     areFirecoEditorsConfiguring: true,
                     areFirecoEditorsConfigured: false,
-                    configuredFirecoEditors: {}
+                    configuredFirecoEditors: {},
+                    fulfilledFirecoEditors: 0,
+                    readyFirecoEditors: 0,
                 };
 
             case CONFIGURE_FIRECO_EDITORS_FULFILLED:
@@ -152,31 +193,59 @@ export const firecoReducer =
                 };
 
             case CONFIGURE_FIRECO_EDITOR:
-                const configuredFirecoEditors = {...state.configuredFirecoEditors};
                 configuredFirecoEditors[action.editorId] = {isPending: true};
                 return {
                     ...state,
-                    configuredFirecoEditors: configuredFirecoEditors
+                    configuredFirecoEditors,
                 };
 
             case CONFIGURE_FIRECO_EDITOR_FULFILLED:
-                const configuredFirecosFulfilled = {...state.configuredFirecoEditors};
-                configuredFirecosFulfilled[action.editorId] = {isFulfilled: true};
+                configuredFirecoEditors[action.editorId] = {isFulfilled: true};
                 return {
                     ...state,
-                    configuredFirecoEditors: configuredFirecosFulfilled,
+                    configuredFirecoEditors,
                     fulfilledFirecoEditors: state.fulfilledFirecoEditors + 1
                 };
             case CONFIGURE_FIRECO_EDITOR_REJECTED:
-                const configuredFirecosRejected = {...state.configuredFirecoEditors};
-                configuredFirecosRejected[action.editorId] = {
+                configuredFirecoEditors[action.editorId] = {
                     isRejected: true,
                     error: action.error
                 };
                 return {
                     ...state,
-                    configuredFirecoEditors: configuredFirecosRejected
+                    configuredFirecoEditors,
                 };
+            case CONFIGURE_FIRECO_EDITOR_READY:
+                configuredFirecoEditors[action.editorId] =
+                    configuredFirecoEditors[action.editorId] || {};
+                configuredFirecoEditors[action.editorId].isReady = true;
+                return {
+                    ...state,
+                    configuredFirecoEditors,
+                    readyFirecoEditors: state.readyFirecoEditors + 1,
+                };
+            case FIRECO_EDITORS_SET_USER_ID:
+                return {
+                    ...state,
+                    userId: action.userId,
+                    userColor: action.userColor,
+                    isSetUserIdPending: true,
+                    isSetUserIdFulfilled: false,
+                };
+            case FIRECO_EDITORS_SET_USER_ID_FULFILLED:
+                return {
+                    ...state,
+                    isSetUserIdPending: false,
+                    isSetUserIdFulfilled: true,
+                };
+            case FIRECO_EDITORS_SET_USER_ID_REJECTED:
+                return {
+                    ...state,
+                    isSetUserIdPending: false,
+                    isSetUserIdFulfilled: false,
+                    error: action.error,
+                };
+
             default:
                 return state;
         }
@@ -184,14 +253,19 @@ export const firecoReducer =
 
 export const firecoActivateEpic = (action$, state$, {appManager}) =>
     zip(
-        action$.pipe(startWith(activateFirepad()), ofType(FETCH_PASTEBIN_TOKEN_FULFILLED)),
-        action$.pipe(ofType(LOAD_MONACO_EDITORS_FULFILLED)),
+        action$.pipe(
+            startWith(activateFirepad()),
+            ofType(FETCH_PASTEBIN_TOKEN_FULFILLED),
+        ),
+        action$.pipe(
+            ofType(LOAD_MONACO_EDITORS_FULFILLED),
+        ),
     ).pipe(
         mergeMap(() =>
             appManager.observeActivateFireco(
                 state$.value.pastebinReducer.pastebinId,
                 state$.value.pastebinReducer.pastebinToken,
-                state$.value.pastebinReducer.isNew
+                state$.value.pastebinReducer.isNew,
             )
         )
     );
@@ -200,7 +274,7 @@ export const firecoEditorEpic = (action$, state$, {appManager}) =>
     zip(
         action$.pipe(
             ofType(LOAD_MONACO_EDITOR_FULFILLED),
-            filter(action => action.editorId !== 'consoleInput'), //// ignore consoleInput
+            filter(action => action.firecoPad),
         ),
         action$.pipe(
             ofType(
@@ -222,8 +296,10 @@ export const firecoEditorsEpic = (action$, state$) =>
     action$.pipe(
         ofType(CONFIGURE_FIRECO_EDITOR_FULFILLED),
         filter(() =>
-            (state$.value.firecoReducer.fulfilledFirecoEditors ===
-                state$.value.monacoEditorsReducer.monacoEditorsToLoad - 1) // ignore consoleInput
+            (
+                state$.value.firecoReducer.fulfilledFirecoEditors ===
+                state$.value.monacoEditorsReducer.monacoEditorsToLoad
+            )
         ),
         mapTo(configureFirecoEditorsFulfilled()),
         startWith(configureFirecoEditors()),
@@ -231,6 +307,11 @@ export const firecoEditorsEpic = (action$, state$) =>
 
 export const firecoChatEpic = (action$, state$, {appManager}) =>
     action$.pipe(
+        filter(() =>
+            (
+                state$.value.firecoReducer.authUser
+            )
+        ),
         ofType(CHAT_MOUNTED),
         mergeMap(action => {
                 return appManager.observeConfigureFirecoChat(
@@ -245,16 +326,34 @@ export const firecoChatEpic = (action$, state$, {appManager}) =>
     );
 
 export const firecoPersistableComponentEpic = (action$, state$, {appManager}) =>
-    zip(
-        action$.pipe(ofType(PERSISTABLE_COMPONENT_MOUNTED),),
-        action$.pipe(ofType(ACTIVATE_FIREPAD_FULFILLED),),
-    ).pipe(
-        mergeMap(actions => {
-                return appManager.observeConfigureFirecoPersistableComponent(
-                    actions[0].path,
-                    actions[0].onFirecoActive,
-                    actions[0].onDispose
-                )
-            }
+    action$.pipe(
+        filter(() =>
+            (state$.value.firecoReducer.authUser)
+        ),
+        ofType(PERSISTABLE_COMPONENT_MOUNTED),
+        switchMap(
+            action => appManager.observeConfigureFirecoPersistableComponent(
+                action.path,
+                action.onFirecoActive,
+                action.onDispose
+            )
+        )
+    );
+
+export const firecoEditorsSetUserIdEpic = (action$, state$, {appManager}) =>
+    action$.pipe(
+        filter(() =>
+            (
+                state$.value.firecoReducer.authUser &&
+                state$.value.monacoEditorsReducer.monacoEditorsToLoad ===
+                state$.value.firecoReducer.readyFirecoEditors
+            )
+        ),
+        ofType(FIRECO_EDITORS_SET_USER_ID),
+        switchMap(
+            action => appManager.observeFirecoEditorsSetUserId(
+                action.userId,
+                action.userColor,
+            )
         )
     );
