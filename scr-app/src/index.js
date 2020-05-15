@@ -9,18 +9,11 @@ import * as serviceWorker from './serviceWorker';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Index from './pages/Index';
-import {disposePastebin} from './redux/modules/pastebin';
 import {getLocationUrlData} from "./utils/scrUtils";
 
 const urlData = getLocationUrlData();
 
-const store = configureStore(urlData);
-const {dispatch} = store;
-
-window.addEventListener("beforeunload", function () {
-    dispatch(disposePastebin());
-}, false);
-
+const store = configureStore(urlData, window);
 
 ReactDOM.render(
     <React.StrictMode>
