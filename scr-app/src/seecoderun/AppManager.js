@@ -4,6 +4,8 @@ import debounce from 'lodash/debounce';
 
 import isString from 'lodash/isString';
 
+import {searchStateChangeFulfilled, searchStateChangeRejected} from '../redux/modules/pastebin';
+
 import {
     configureMonacoModelsFulfilled,
     configureMonacoModelsRejected, loadMonacoFulfilled, loadMonacoRejected,
@@ -43,7 +45,7 @@ import {
 import JSXColoringProvider from '../utils/JSXColoringProvider';
 import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider';
 
-import {defaultExpressionClassName} from '../containers/LiveExpressionStore';
+import {defaultExpressionClassName, HighlightTypes} from '../containers/LiveExpressionStore';
 
 import firebaseConfig from './firebaseConfig';
 import {defaultMonacoEditorLiveExpressionClassName} from "../containers/Editor";
@@ -707,6 +709,40 @@ class AppManager {
             return of(firecoEditorsSetUserIdFulfilled(userId, userColor));
         } catch (error) {
             return of(firecoEditorsSetUserIdRejected(userId, userColor, error));
+        }
+    }
+
+    observeSearchStateChange(searchState = {}) {
+        try {
+            const {
+                value, isRegExp, isCase, isWord, captureMatches = false, searchOnlyEditableRange = false
+            } = searchState;
+            const defaultWordSeparators = isWord ? (this.monaco.editor.EditorOptions &&
+                this.monaco.editor.EditorOptions.wordSeparators &&
+                this.monaco.editor.EditorOptions.wordSeparators.defaultValue)
+                : null;
+            let decorations = [];
+
+            for (const editorId in this.firecoPads) {
+                const firecoPad = this.firecoPads[editorId];
+                const {monacoEditor, prevFindMatchesIds = []} = firecoPad;
+                if (monacoEditor) {
+                    if (value) {
+                        const matches = monacoEditor.getModel().findMatches(
+                            value, searchOnlyEditableRange, isRegExp, isCase, defaultWordSeparators, captureMatches);
+                        decorations  = matches.map(({range}) => ({
+                            range,
+                            options: {className: HighlightTypes.text}
+                        }));
+                        firecoPad.prevFindMatchesIds = monacoEditor.deltaDecorations(prevFindMatchesIds, decorations);
+                    } else {
+                        firecoPad.prevFindMatchesIds = monacoEditor.deltaDecorations(prevFindMatchesIds, []);
+                    }
+                }
+            }
+            return of(searchStateChangeFulfilled({searchState, decorations}));
+        } catch (error) {
+            return of(searchStateChangeRejected(error));
         }
     }
 

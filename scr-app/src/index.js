@@ -1,19 +1,12 @@
-import 'react-resizable/css/styles.css';
-import './utils/react-grid-layout-scr-theme.css';
-
-import {Provider} from 'react-redux';
-import configureStore from './redux/configureStore';
-
-import * as serviceWorker from './serviceWorker';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
+import * as serviceWorker from './serviceWorker';
+import {Provider} from 'react-redux';
+
+import configureStore from './redux/configureStore';
 import Index from './pages/Index';
-import {getLocationUrlData} from "./utils/scrUtils";
 
-const urlData = getLocationUrlData();
-
-const store = configureStore(urlData, window);
+const {store, urlData} = configureStore(window);
 
 ReactDOM.render(
     <React.StrictMode>

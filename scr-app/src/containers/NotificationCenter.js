@@ -2,9 +2,11 @@ import React, {Component} from 'react';
 import PropTypes from "prop-types";
 import Snackbar from '@material-ui/core/Snackbar';
 import Slide from '@material-ui/core/Slide';
-// import {withStyles} from 'material-ui';
+import {withSnackbar} from 'notistack';
 import {withStyles} from '@material-ui/core/styles';
+
 import isString from 'lodash/isString';
+import debounce from 'lodash/debounce';
 
 const styles = () => ({
     snackbarContentNetWorkStatus: {
@@ -23,9 +25,9 @@ class NotificationCenter extends Component {
     state = {
         defaultAutoHideDuration: 4000,
         snackbarMessageId: 'notification-center',
-        snackbarVertical: 'top',
+        snackbarVertical: 'bottom',
         snackbarHorizontal: 'center',
-        snackbarTransition: props => <Slide direction="down" {...props} />,
+        snackbarTransition: props => <Slide direction="up" {...props} />,
         snackbarAutoHideDuration: null,
         isSnackbarOpen: false,
         snackbarMessage: null,
@@ -64,8 +66,8 @@ class NotificationCenter extends Component {
                 return {
                     isSnackbarOpen: true,
                     snackbarMessage: snackbarMessage,
-                    isOnline: isOnline,
-                    isConnected: isConnected,
+                    isOnline,
+                    isConnected,
                     snackbarAutoHideDuration: isOnline && isConnected ?
                         prevState.defaultAutoHideDuration : null,
                 };
@@ -79,35 +81,26 @@ class NotificationCenter extends Component {
                         makeSingleNotification(notification.message, snackbarMessageId)
                         : notification.message,
                     snackbarAutoHideDuration: notification.autoHideDuration ||
-                    prevState.defaultAutoHideDuration,
+                        prevState.defaultAutoHideDuration,
                 };
             }
         }
         return null;
     }
 
+    debouncedEnqueueSnackbar = debounce((enqueueSnackbar, ...params) => enqueueSnackbar(...params), 2000);
+
     render() {
-        const {classes} = this.props;
+        const {
+            classes, enqueueSnackbar, getNetworkStateMessage,
+            isConnected, isOnline,
+        } = this.props;
         const {
             snackbarAutoHideDuration, snackbarVertical, snackbarHorizontal,
             isSnackbarOpen, snackbarTransition, snackbarMessageId,
-            snackbarMessage
         } = this.state;
-        return (<Snackbar
-            anchorOrigin={{
-                vertical: snackbarVertical,
-                horizontal: snackbarHorizontal
-            }}
-            open={isSnackbarOpen}
-            autoHideDuration={snackbarAutoHideDuration}
-            onClose={this.handleClose}
-            TransitionComponent={snackbarTransition}
-            ContentProps={{
-                'aria-describedby': snackbarMessageId,
-                className: classes.snackbarContentNetWorkStatus,
-            }}
-            message={snackbarMessage}
-        />);
+        isSnackbarOpen && this.debouncedEnqueueSnackbar(enqueueSnackbar, getNetworkStateMessage(), {variant: isOnline && isConnected ? 'success' : 'error'});
+        return null;
     }
 
     componentDidMount() {
@@ -132,9 +125,10 @@ NotificationCenter.propTypes = {
     changeShowNetworkState: PropTypes.func.isRequired,
     classes: PropTypes.object.isRequired,
     didMountDisconnectTimeout: PropTypes.number,
+    enqueueSnackbar: PropTypes.func.isRequired,
 };
-NotificationCenter.defaultProps={
+NotificationCenter.defaultProps = {
     didMountDisconnectTimeout: 20000
 };
 
-export default withStyles(styles)(NotificationCenter);
+export default withStyles(styles)(withSnackbar(NotificationCenter));

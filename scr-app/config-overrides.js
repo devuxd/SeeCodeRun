@@ -16,6 +16,5 @@ module.exports = (config /*, env*/) => {
     };
     config.plugins.unshift(new MonacoWebpackPlugin(options));
     // Monaco ESM end
-
     return config;
 };

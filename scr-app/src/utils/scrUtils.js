@@ -25,16 +25,6 @@ export const isNode = (val, win = window) => {
             (typeof val.nodeName === 'string')
 };
 
-export const getLocationUrlData = () => {
-    return {
-        url:
-            process.env.PUBLIC_URL ||
-            `${window.location.origin}`,
-        hash: `${window.location.hash}`
-    };
-};
-
-
 export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
     switch (parser) {
         case 'babylon':

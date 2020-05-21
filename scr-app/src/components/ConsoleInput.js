@@ -14,9 +14,9 @@ import {canDispatch, dispatch, clearConsole, preserveLogs} from "../seecoderun/m
 import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
 
 const mapStateToProps = ({firecoReducer}) => {
-    const {areFirecoEditorsConfigured} = firecoReducer;
+    const {isFirecoEditorsReady} = firecoReducer;
     return {
-        activateConsole: areFirecoEditorsConfigured,
+        activateConsole: isFirecoEditorsReady,
     };
 };
 const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
@@ -132,6 +132,18 @@ const defaultMonacoOptions = {
     lineHeight: 32,
 };
 
+const getHeights = (lineCount) => {
+    const editorHeight = isNaN(lineCount) ? CONSOLE_INPUT_LINE_HEIGHT
+        : Math.min(
+            CONSOLE_INPUT_MAX_HEIGHT,
+            Math.max(lineCount, 1) * CONSOLE_INPUT_LINE_HEIGHT
+        );
+    return {
+        editorHeight,
+        containerHeight: editorHeight + CONSOLE_INPUT_PADDING,
+    }
+};
+
 class ConsoleInput extends Component {
     constructor(props) {
         super(props);
@@ -140,8 +152,8 @@ class ConsoleInput extends Component {
         this.state = {
             commandHistory: [],
             commandCursor: -1,
-            editorHeight: CONSOLE_INPUT_LINE_HEIGHT,
             isPreserveLogs: false,
+            ...(getHeights()),
         };
         this.editor = null;
     }
@@ -171,10 +183,7 @@ class ConsoleInput extends Component {
             const lineCount = editor.getModel().getLineCount();
             if (lineCount !== lastLineCount) {
                 this.setState({
-                    editorHeight: Math.min(
-                        CONSOLE_INPUT_MAX_HEIGHT,
-                        lineCount * CONSOLE_INPUT_LINE_HEIGHT
-                    ),
+                    ...getHeights(lineCount),
                 });
                 this.resizeEditor();
                 lastLineCount = lineCount;
@@ -232,7 +241,9 @@ class ConsoleInput extends Component {
                 });
             }
         });
-
+        const {onHeightChange} = this.props;
+        const {editorHeight, containerHeight} = this.state
+        onHeightChange && onHeightChange(null, {editorHeight, containerHeight});
     };
 
     componentWillUnmount() {
@@ -247,18 +258,20 @@ class ConsoleInput extends Component {
 
     render() {
         const {classes, activateConsole} = this.props;
-        const {isPreserveLogs} = this.state;
+        const {isPreserveLogs, containerHeight} = this.state;
         return (
-            <div style={{height: `${this.state.editorHeight + CONSOLE_INPUT_PADDING}px`}}>
+            <div style={{height: containerHeight}}>
                 <span className={classes.iconContainer}>
                     <ChevronRightIcon className={classes.icon}/>
                 </span>
 
                 <span className={classes.editor}>
-                    {activateConsole && <div
+                    {activateConsole &&
+                    <div
                         ref={this.editorDiv}
                         className={classes.editorDiv}
-                    />}
+                    />
+                    }
                 </span>
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
@@ -283,9 +296,9 @@ class ConsoleInput extends Component {
     }
 
 
-    componentDidUpdate(prevProps) {
-        const {activateConsole} = this.props
-        if(activateConsole && activateConsole !==prevProps.activateConsole){
+    componentDidUpdate(prevProps, prevState) {
+        const {activateConsole, onHeightChange} = this.props
+        if (activateConsole && activateConsole !== prevProps.activateConsole) {
             const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
             const {
                 editorDiv, /*dispatchMouseEvents,*/
@@ -296,6 +309,10 @@ class ConsoleInput extends Component {
                 editorDidMount, isConsole, monacoOptions
             });
         }
+        const {editorHeight, containerHeight} = this.state
+        if (onHeightChange && editorHeight !== prevState.editorHeight) {
+            onHeightChange(null, {editorHeight, containerHeight});
+        }
         this.resizeEditorDebounced();
     }
 }
@@ -304,6 +321,7 @@ ConsoleInput.propTypes = {
     classes: PropTypes.object.isRequired,
     isConsole: PropTypes.bool,
     mountEditorFulfilled: PropTypes.func.isRequired,
+    onHeightChange: PropTypes.func,
 };
 
 ConsoleInput.defaultProps = {

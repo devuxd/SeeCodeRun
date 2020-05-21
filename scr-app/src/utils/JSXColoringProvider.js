@@ -126,7 +126,7 @@ class JSXColoringProvider {
                 // const opts = {...options, ...{hoverMessage: `(${jsxType})`}};
                 decorators.push({
                     range: this.locToMonacoRange(loc),
-                    options: options
+                    options
                 });
             });
         return decorators;

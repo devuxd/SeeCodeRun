@@ -9,6 +9,7 @@ import {
     pastebinReducer,
     pastebinContentEpic,
     pastebinContentRejectedEpic,
+    pastebinSearchStateChangeEpic,
 } from './pastebin';
 
 import {
@@ -17,6 +18,7 @@ import {
     firecoActivateEpic,
     firecoEditorEpic,
     firecoEditorsSetUserIdEpic,
+    firecoEditorsReadyEpic,
     firecoChatEpic,
     firecoPersistableComponentEpic,
 } from './fireco';
@@ -46,10 +48,12 @@ export const rootEpic = combineEpics(
     pastebinEpic,
     pastebinContentEpic,
     pastebinContentRejectedEpic,
+    pastebinSearchStateChangeEpic,
     pastebinTokenEpic,
     pastebinTokenRejectedEpic,
     mountedEditorEpic,
     firecoEditorsSetUserIdEpic,
+    firecoEditorsReadyEpic,
     loadMonacoEpic,
     configureMonacoModelsEpic,
     updateMonacoModelsEpic,

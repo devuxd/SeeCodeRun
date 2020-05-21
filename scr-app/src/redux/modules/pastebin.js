@@ -1,6 +1,6 @@
 import {ofType} from 'redux-observable';
 import {zip, concat, of} from 'rxjs';
-import {mergeMap, delay, map, mapTo, filter, catchError, startWith} from 'rxjs/operators';
+import {mergeMap, delay, map, mapTo, filter, catchError, startWith, debounceTime} from 'rxjs/operators';
 import {ajax} from 'rxjs/ajax';
 import localStorage from 'store';
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
@@ -36,13 +36,20 @@ const FETCH_PASTEBIN_TOKEN = 'FETCH_PASTEBIN_TOKEN';
 export const FETCH_PASTEBIN_TOKEN_FULFILLED = 'FETCH_PASTEBIN_TOKEN_FULFILLED';
 export const FETCH_PASTEBIN_TOKEN_REJECTED = 'FETCH_PASTEBIN_TOKEN_REJECTED';
 
+const SEARCH_STATE_CHANGE = 'SEARCH_STATE_CHANGE';
+const SEARCH_STATE_CHANGE_FULFILLED =
+    'SEARCH_STATE_CHANGE_FULFILLED';
+const SEARCH_STATE_CHANGE_REJECTED =
+    'SEARCH_STATE_CHANGE_REJECTED';
+
 const defaultPasteBinState = {
     pastebinId: null,
     currentGridLayouts: null,
     isNew: false,
     editorsTexts: null,
     pastebinToken: null,
-    contentChangeEditorId: null
+    contentChangeEditorId: null,
+    searchState: null,
 };
 
 export const disposePastebin = () => {
@@ -109,6 +116,21 @@ const fetchPastebinTokenRejected = error => {
     return {type: FETCH_PASTEBIN_TOKEN_REJECTED, error: error}
 };
 
+export const searchStateChange = (searchState) => {
+    return {
+        type: SEARCH_STATE_CHANGE,
+        searchState,
+    }
+};
+export const searchStateChangeFulfilled = result => {
+    return {type: SEARCH_STATE_CHANGE_FULFILLED, result}
+};
+
+export const searchStateChangeRejected = error => {
+    return {type: SEARCH_STATE_CHANGE_REJECTED, error}
+};
+
+
 export const pastebinReducer = (state = defaultPasteBinState, action) => {
     let initialEditorsTexts = null;
     switch (action.type) {
@@ -128,7 +150,7 @@ export const pastebinReducer = (state = defaultPasteBinState, action) => {
             editorsTexts = {...editorsTexts, [action.editorId]: action.text};
             return {
                 ...state,
-                editorsTexts: editorsTexts,
+                editorsTexts,
                 contentChangeEditorId: action.editorId
             };
 
@@ -199,12 +221,12 @@ export const disposePastebinEpic = (action$, state$, {appManager}) =>
                 localStorage.set(
                     `scr_monacoEditorsSavedStates#${
                         state$.value.pastebinReducer.pastebinId
-                        }`,
+                    }`,
                     appManager.getEditorsStates()
                 );
                 localStorage.set(`scr_layoutSavedState#${
                         state$.value.pastebinReducer.pastebinId
-                        }`,
+                    }`,
                     appManager.getCurrentGridLayouts());
                 return appManager.observeDispose();
             }
@@ -226,7 +248,7 @@ export const pastebinLayoutEpic = (action$, state$, {appManager}) =>
                 appManager.restoreGridLayouts(
                     localStorage.get(`scr_layoutSavedState#${
                         state$.value.pastebinReducer.pastebinId
-                        }`));
+                    }`));
                 return of({type: CONFIGURE_PASTEBIN_LAYOUT_FULFILLED});
             } else {
                 return of({type: CONFIGURE_PASTEBIN_LAYOUT_REJECTED});
@@ -273,7 +295,7 @@ export const pastebinEpic = (action$, state$, {appManager}) =>
                 appManager.restoreEditorsStates(
                     localStorage.get(`scr_monacoEditorsSavedStates#${
                         action.pastebinId
-                        }`)
+                    }`)
                 );
                 return of(fetchPastebinFulfilled(
                     action.pastebinId,
@@ -292,7 +314,7 @@ export const pastebinTokenEpic = (action$, state$) =>
             const url =
                 `${getPasteBinTokenUrl}?pastebinId=${
                     state$.value.pastebinReducer.pastebinId
-                    }`;
+                }`;
             return ajax({
                 crossDomain: true,
                 url: url,
@@ -322,7 +344,7 @@ export const pastebinContentEpic = (action$, state$) =>
             const url =
                 `${
                     getPasteBinUrl
-                    }?pastebinId=${state$.value.pastebinReducer.pastebinId}`;
+                }?pastebinId=${state$.value.pastebinReducer.pastebinId}`;
             return ajax({
                 crossDomain: true,
                 url: url,
@@ -342,4 +364,11 @@ export const pastebinContentRejectedEpic = action$ =>
         ofType(FETCH_PASTEBIN_CONTENT_REJECTED),
         delay(2000),
         mapTo(fetchPastebinContent()),
+    );
+
+export const pastebinSearchStateChangeEpic = (action$, state$, {appManager}) =>
+    action$.pipe(
+        ofType(SEARCH_STATE_CHANGE),
+        debounceTime(1000),
+        mergeMap((action)=>appManager.observeSearchStateChange(action.searchState)),
     );

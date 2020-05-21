@@ -1,3 +1,5 @@
+import 'react-resizable/css/styles.css';
+import '../utils/react-grid-layout-scr-theme.css';
 import React, {Component, createContext} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
@@ -607,8 +609,10 @@ class Pastebin extends Component {
         });
     }, 100);
 
-    handleChangeTab = (event, value) => {
-        this.setState({tabIndex: value});
+    handleChangeTab = (event, tabIndex) => {
+        if(tabIndex){
+            this.setState({tabIndex});
+        }
     };
 
     handleChangeSearchValue = e => {
@@ -656,7 +660,7 @@ class Pastebin extends Component {
         liveExpressionStoreChange: this.liveExpressionStoreChange,
         isDebugLoading: false,
         isSelectable: false,
-        tabIndex: 0,
+        tabIndex: 'trace',
         order: 'desc',
         orderBy: 'time',
         selected: [],
@@ -755,11 +759,11 @@ class Pastebin extends Component {
 
     render() {
         const {handleChangePlaying} = this;
-        const { appClasses, classes, appStyle, editorIds} = this.props;
+        const { appClasses, classes, appStyle, editorIds, TopNavigationBarComponent} = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
             autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive,
-            isAutoExpand, pointOfViewTiles
+            isAutoExpand, pointOfViewTiles, isPlaying,
         } = this.state;
         //console.log('isAutoExpand',isAutoExpand,this.state);
         const rowHeight =
@@ -770,11 +774,12 @@ class Pastebin extends Component {
         if (isCompact) {
             return (
                 <div className={appClasses.content}>
-                    <PastebinContext.Provider value={this.state}>
+                    <PastebinContext.Provider value={{...this.state, handleChangePlaying}}>
                         {global.monaco && global.monaco.editor && isAutoExpand &&
                         <Drawer anchor={"bottom"} open={isAutoExpand} onClose={this.handleChangeAutoExpand}>
                             <PointOfView monaco={global.monaco} tiles={pointOfViewTiles}/>
                         </Drawer>}
+                        {TopNavigationBarComponent}
                         <Responsive
                             width={width}
                             breakpoints={gridLayoutFormatter.gridBreakpoints}
@@ -844,14 +849,14 @@ class Pastebin extends Component {
                                    onMouseLeave={event =>
                                        this.handleChangeHoveredCellKey(event, null)}
                             >
-                                <ScrollingList
-                                    ScrollingListRef={this.debugScrollerRef}
-                                    onScrollEnd={this.onScrollEnd}
-                                    onScrollChange={this.onScrollChange}
-                                    classes={appClasses.scroller}
-                                    listLength={data.length}
-                                    isRememberScrollingDisabled={isNew}
-                                >
+                                {/*<ScrollingList*/}
+                                {/*    ScrollingListRef={this.debugScrollerRef}*/}
+                                {/*    onScrollEnd={this.onScrollEnd}*/}
+                                {/*    onScrollChange={this.onScrollChange}*/}
+                                {/*    classes={appClasses.scroller}*/}
+                                {/*    listLength={data.length}*/}
+                                {/*    isRememberScrollingDisabled={isNew}*/}
+                                {/*>*/}
                                     <DebugContainer
                                         appClasses={appClasses}
                                         appStyle={appStyle}
@@ -859,8 +864,9 @@ class Pastebin extends Component {
                                         ScrollingListContainers={this.scrollingListContainers}
                                         handleChangeTab={this.handleChangeTab}
                                         handleChangePlaying={handleChangePlaying}
+                                        isPlaying={isPlaying}
                                     />
-                                </ScrollingList>
+                                {/*</ScrollingList>*/}
 
                                 {isDebugLoading ?
                                     <span className={classes.loadingFeedback}>
@@ -927,14 +933,14 @@ class Pastebin extends Component {
     getSnapshotBeforeUpdate(prevProps, prevState) {
         const {tabIndex} = this.state;
         const scrollSnapshot = this.debugScrollerRefSnapshots[tabIndex];
-        if (tabIndex !== prevState.tabIndex) {
-            if (scrollSnapshot) {
-                return scrollSnapshot.scrollHeight - scrollSnapshot.scrollTop;
-            } else {
-                return this.debugScrollerRef.current.scrollHeight;
-            }
-
-        }
+        // if (tabIndex !== prevState.tabIndex) {
+        //     if (scrollSnapshot) {
+        //         return scrollSnapshot.scrollHeight - scrollSnapshot.scrollTop;
+        //     } else {
+        //         return this.debugScrollerRef.current.scrollHeight;
+        //     }
+        //
+        // }
         return null;
     }
 

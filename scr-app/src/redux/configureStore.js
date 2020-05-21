@@ -4,7 +4,16 @@ import {rootEpic, rootReducer} from './modules/root';
 import configureAppManager from "../seecoderun/AppManager";
 import {disposePastebin} from "./modules/pastebin";
 
-export default function configureStore(urlData, aWindow) {
+export const getLocationUrlData = (aWindow) => {
+    return {
+        url:
+            process.env.PUBLIC_URL ||
+            `${aWindow.location.origin}`,
+        hash: `${aWindow.location.hash}`
+    };
+};
+export default function configureStore(aWindow) {
+    const urlData = getLocationUrlData(aWindow);
     const epicMiddleware = createEpicMiddleware({
         dependencies: {appManager: configureAppManager(urlData)}
     });
@@ -56,5 +65,5 @@ export default function configureStore(urlData, aWindow) {
     }, false);
 
     epicMiddleware.run(rootEpic);
-    return store;
+    return {urlData, store};
 }

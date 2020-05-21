@@ -12,12 +12,12 @@ import {
 const data = {};
 
 const mapStateToProps = ({updateBundleReducer, firecoReducer}) => {
-    const {areFirecoEditorsConfigured} = firecoReducer;
+    const {isFirecoEditorsReady} = firecoReducer;
     const {timestamp, bundle, isFirstBundle} = updateBundleReducer;
     return {
         timestamp,
         bundle,
-        activatePlayground: areFirecoEditorsConfigured && isFirstBundle,
+        activatePlayground: isFirecoEditorsReady && isFirstBundle,
     };
 };
 const mapDispatchToProps = {updatePlaygroundLoadSuccess};

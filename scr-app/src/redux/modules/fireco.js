@@ -16,6 +16,7 @@ const CONFIGURE_FIRECO_EDITOR = 'CONFIGURE_FIRECO_EDITOR';
 const CONFIGURE_FIRECO_EDITOR_FULFILLED = 'CONFIGURE_FIRECO_EDITOR_FULFILLED';
 const CONFIGURE_FIRECO_EDITOR_REJECTED = 'CONFIGURE_FIRECO_EDITOR_REJECTED';
 export const CONFIGURE_FIRECO_EDITOR_READY = 'CONFIGURE_FIRECO_EDITOR_READY';
+const CONFIGURE_FIRECO_EDITORS_READY = 'CONFIGURE_FIRECO_EDITORS_READY';
 const FIRECO_EDITORS_SET_USER_ID = 'FIRECO_EDITORS_SET_USER_ID';
 const FIRECO_EDITORS_SET_USER_ID_FULFILLED = 'FIRECO_EDITORS_SET_USER_ID_FULFILLED';
 const FIRECO_EDITORS_SET_USER_ID_REJECTED = 'FIRECO_EDITORS_SET_USER_ID_REJECTED';
@@ -46,6 +47,7 @@ const defaultState = {
     areFirecoEditorsConfigured: false,
     fulfilledFirecoEditors: 0,
     readyFirecoEditors: 0,
+    isFirecoEditorsReady: false,
     configuredFirecoEditors: {},
     userId: null,
     userColor: null,
@@ -90,6 +92,10 @@ export const configureFirecoEditorRejected = (editorId, error) => ({
 export const configureFirecoEditorReady = editorId => ({
     type: CONFIGURE_FIRECO_EDITOR_READY,
     editorId,
+});
+
+export const configureFirecoEditorsReady = () => ({
+    type: CONFIGURE_FIRECO_EDITORS_READY,
 });
 
 export const firecoEditorsSetUserId =
@@ -245,6 +251,11 @@ export const firecoReducer =
                     isSetUserIdFulfilled: false,
                     error: action.error,
                 };
+            case CONFIGURE_FIRECO_EDITORS_READY:
+                return {
+                    ...state,
+                    isFirecoEditorsReady: true,
+                };
 
             default:
                 return state;
@@ -340,13 +351,23 @@ export const firecoPersistableComponentEpic = (action$, state$, {appManager}) =>
         )
     );
 
+export const firecoEditorsReadyEpic = (action$, state$) =>
+    action$.pipe(
+        ofType(CONFIGURE_FIRECO_EDITOR_READY),
+        filter(() =>
+            (
+                state$.value.firecoReducer.fulfilledFirecoEditors ===
+                state$.value.monacoEditorsReducer.monacoEditorsToLoad
+            )
+        ),
+        mapTo(configureFirecoEditorsReady()),
+    );
+
 export const firecoEditorsSetUserIdEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         filter(() =>
             (
-                state$.value.firecoReducer.authUser &&
-                state$.value.monacoEditorsReducer.monacoEditorsToLoad ===
-                state$.value.firecoReducer.readyFirecoEditors
+                state$.value.firecoReducer.isFirecoEditorsReady
             )
         ),
         ofType(FIRECO_EDITORS_SET_USER_ID),

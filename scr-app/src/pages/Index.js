@@ -2,8 +2,10 @@ import React from 'react';
 import {compose} from 'redux';
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
-
 import {withStyles} from '@material-ui/core/styles';
+import {SnackbarProvider} from 'notistack';
+import {takeUntil} from 'rxjs/operators';
+
 import withThemes, {ThemeContext} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
@@ -11,21 +13,20 @@ import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
 import {online$, end$} from '../utils/scrUtils';
-import {takeUntil} from 'rxjs/operators';
+
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
 import withMediaQuery from "../utils/withMediaQuery";
 
 const mapStateToProps = ({firecoReducer, pastebinReducer, updateBundleReducer}, {url}) => {
-    const {isConnected, authUser, areFirecoEditorsConfigured} = firecoReducer;
-    const {isFirstBundle} = updateBundleReducer;
+    const {isConnected, authUser, isFirecoEditorsReady} = firecoReducer;
     const {pastebinId} = pastebinReducer;
     return {
         pastebinId,
         shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
         authUser,
         isConnected,
-        activateChat: !!authUser && areFirecoEditorsConfigured && isFirstBundle,
+        activateChat: !!authUser && isFirecoEditorsReady,
     }
 };
 
@@ -54,19 +55,18 @@ const styles = theme => {
             overflow: 'auto',
             height: '100%',
             width: '100%',
-            paddingBottom: appStyle.rowHeight
         },
         rootContainerSmall: {
             overflow: 'auto',
             height: '100%',
             width: '100%',
-            paddingBottom: appStyle.rowHeightSmall
         },
         rootContainerNavigationToggled: {
             overflow: 'auto',
             height: '100%',
             width: '100%',
             bottom: 0,
+            paddingBottom: appStyle.margin
         },
         margin: {
             margin: appStyle.margin,
@@ -233,7 +233,7 @@ class Index extends React.Component {
             window.innerWidth > 600 ? appStyle.rowHeight
                 : appStyle.rowHeightSmall;
 
-        const heightAdjust = isTopNavigationToggled ? appStyle.margin : rootContainerBottomMargin + appStyle.margin;
+        const heightAdjust = isTopNavigationToggled ? appStyle.margin : rootContainerBottomMargin + appStyle.margin*2;
         const onHeight = (node, heightAdjust) => {
             const minHeight = minPastebinHeight || 600;
             const newHeight = window.innerHeight - heightAdjust;
@@ -251,43 +251,45 @@ class Index extends React.Component {
                 monacoTheme,
             }}
             >
-                <div className={classes.root}>
-                    <NotificationCenter {...forwardedState}/>
-                    <TopNavigationBar {...forwardedState}
-                                      url={url}
-                                      switchTheme={switchTheme}
-                                      themeType={themeType}
-                    />
-                    <div className={rootContainerClassName}>
-                        <div className={classes.scroller}>
-                            <Pastebin
-                                themeType={themeType}
-                                editorIds={this.editorIds}
-                                setGridLayoutCallbacks={this.setGridLayoutCallbacks}
-                                appClasses={classes}
-                                appStyle={{...appStyle}}
-                                measureBeforeMount={true}
-                                onHeight={onHeight}
-                                heightAdjust={heightAdjust}
-                            />
+                <SnackbarProvider maxSnack={3}>
+                    <div className={classes.root}>
+                        <NotificationCenter {...forwardedState}/>
+                        <div className={rootContainerClassName}>
+                            <div className={classes.scroller}>
+                                <Pastebin
+                                    themeType={themeType}
+                                    editorIds={this.editorIds}
+                                    setGridLayoutCallbacks={this.setGridLayoutCallbacks}
+                                    appClasses={classes}
+                                    appStyle={{...appStyle}}
+                                    measureBeforeMount={true}
+                                    onHeight={onHeight}
+                                    heightAdjust={heightAdjust}
+                                    TopNavigationBarComponent={<TopNavigationBar {...forwardedState}
+                                                                                 url={url}
+                                                                                 switchTheme={switchTheme}
+                                                                                 themeType={themeType}
+                                    />}
+                                />
+                            </div>
                         </div>
+                        {
+                            activateChat &&
+                            <Chat
+                                isTopNavigationToggled={isTopNavigationToggled}
+                                logoClick={this.logoClick}
+                                isChatToggled={isChatToggled}
+                                chatClick={chatClick}
+                                chatTitle={chatTitle}
+                                isNetworkOk={isNetworkOk}
+                                currentLayout={this.currentLayout}
+                                resetLayoutClick={this.resetLayoutClick}
+                                themeType={themeType}
+                                switchTheme={switchTheme}
+                            />
+                        }
                     </div>
-                    {
-                        activateChat &&
-                        <Chat
-                            isTopNavigationToggled={isTopNavigationToggled}
-                            logoClick={this.logoClick}
-                            isChatToggled={isChatToggled}
-                            chatClick={chatClick}
-                            chatTitle={chatTitle}
-                            isNetworkOk={isNetworkOk}
-                            currentLayout={this.currentLayout}
-                            resetLayoutClick={this.resetLayoutClick}
-                            themeType={themeType}
-                            switchTheme={switchTheme}
-                        />
-                    }
-                </div>
+                </SnackbarProvider>
             </ThemeContext.Provider>
         );
     }

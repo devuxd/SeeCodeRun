@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import debounce from 'lodash/debounce';
-import classNames from 'classnames';
 import {withStyles} from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
-import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
 import Badge from '@material-ui/core/Badge';
@@ -33,7 +32,12 @@ import TextField from '@material-ui/core/TextField';
 import {PastebinContext, VisualQueryManager} from '../containers/Pastebin';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {getVisualIdsFromRefs} from "../containers/GraphicalMapper";
+import {searchStateChange} from '../redux/modules/pastebin';
 
+const mapStateToProps = null,
+    mapDispatchToProps = {
+        searchStateChange
+    };
 // const columnTime = [
 //   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
 //
@@ -54,9 +58,6 @@ const toolbarStyles = theme => ({
                 color: theme.palette.text.primary,
                 backgroundColor: theme.palette.secondary.dark,
             },
-    spacer: {
-        flex: '1 0 0%',
-    },
     actions: {
         color: theme.palette.text.secondary,
         flex: '1 0 auto',
@@ -69,9 +70,6 @@ const toolbarStyles = theme => ({
         paddingLeft: theme.spacing(1),
         paddingRight: theme.spacing(1),
     },
-    badge: {
-        //  margin: theme.spacing.unit * 2,
-    },
     chipArray: {
         display: 'flex',
         position: 'relative',
@@ -79,6 +77,7 @@ const toolbarStyles = theme => ({
         justifyContent: 'center',
         flexWrap: 'wrap',
         zIndex: theme.zIndex.appBar,
+        paddingLeft: theme.spacing(1),
     },
     tuneIcon: {
         fontSize: theme.typography.fontSize,
@@ -86,13 +85,8 @@ const toolbarStyles = theme => ({
     chipRoot: {
         fontSize: theme.typography.pxToRem(theme.typography.fontSize * 0.8),
         height: theme.typography.fontSize * 1.75,
-        // margin: theme.spacing(1),
         margin: 0,
         backgroundColor: 'transparent',
-        // '&:first-child': {
-        //     marginLeft: theme.spacing(1),
-        // },
-        marginRight: theme.spacing(1),
     },
     chipAvatar: {
         marginRight: -(theme.typography.fontSize / 2),
@@ -100,36 +94,45 @@ const toolbarStyles = theme => ({
         width: theme.typography.fontSize * 1.75,
         fontSize: theme.typography.pxToRem(theme.typography.fontSize * 0.75),
         backgroundColor: 'transparent',
-        // margin: theme.spacing.unit / 2,
     },
     chipLabel: {
         paddingLeft: theme.spacing(1),
         paddingRight: theme.spacing(0.5),
     },
+    inputProps: {
+        paddingLeft: theme.spacing(0.5),
+    },
+    itemCenter: {
+        minWidth: 400,
+        maxWidth: 1000,
+        width: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        position: 'absolute',             /* new */
+        left: '50%',
+        transform: 'translateX(-50%)',
+    },
 });
 
-class InputEndAdornment extends React.Component {
-    state = {expanded: false};
+const handleChangeExpand = debounce((setExpanded, expanded) => {
+    setExpanded(expanded);
+}, 300);
 
-    handleChangeExpand = debounce((expanded) => {
-        this.setState({expanded: expanded});
-    }, 300);
+function InputEndAdornment(props) {
+    const {classes, searchState} = props;
+    const [expanded, setExpanded] = React.useState(false);
+    const {isCase, isWord, isRegExp, handleFilterClick} = searchState;
 
-    render() {
-        const {classes, searchState} = this.props;
-        const {isCase, isWord, isRegExp, handleFilterClick} = searchState;
-        const {expanded} = this.state;
-
-        const avatarClasses = {
-            root: classes.chipRoot, // class name, e.g. `classes-root-x`
-            avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
-            label: classes.chipLabel,
-        };
-        const hasSelected = isCase || isWord || isRegExp;
-        return (
-            <InputAdornment position="end">
-                <span className={classes.chipArray} onMouseEnter={() => this.handleChangeExpand(true)}
-                      onMouseLeave={() => this.handleChangeExpand(false)}>
+    const avatarClasses = {
+        root: classes.chipRoot, // class name, e.g. `classes-root-x`
+        avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
+        label: classes.chipLabel,
+    };
+    const hasSelected = isCase || isWord || isRegExp;
+    return (
+        <InputAdornment>
+                <span className={classes.chipArray} onMouseEnter={() => handleChangeExpand(setExpanded, true)}
+                      onMouseLeave={() => handleChangeExpand(setExpanded, false)}>
                     {!expanded ? hasSelected ?
                         <TuneIcon color="primary" className={classes.tuneIcon}/>
                         : <TuneIcon className={classes.tuneIcon}/>
@@ -166,31 +169,27 @@ class InputEndAdornment extends React.Component {
                         </Paper>
                     }
                 </span>
-            </InputAdornment>
-        );
-    }
-
+        </InputAdornment>
+    );
 }
 
-class ResultsFilter extends React.Component {
-    state = {expanded: false};
-
-    render() {
-        const {classes, searchState} = this.props;
-        const {isFunctions, isExpressions, isValues, handleFilterClick} = searchState;
-        //const hasSelected = isFunctions || isExpressions || isValues;
-        const avatarClasses = {
-            root: classes.chipRoot, // class name, e.g. `classes-root-x`
-            avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
-            label: classes.chipLabel,
-        };
-        return <React.Fragment>
+function ResultsFilter(props) {
+    const {classes, searchState} = props;
+    const {isFunctions, isExpressions, isValues, handleFilterClick} = searchState;
+    //const hasSelected = isFunctions || isExpressions || isValues;
+    const avatarClasses = {
+        root: classes.chipRoot, // class name, e.g. `classes-root-x`
+        avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
+        label: classes.chipLabel,
+    };
+    return (
+        <React.Fragment>
             <Tooltip title={"Include Functions"} placement="top">
                 <Chip
                     label="f(x)"
                     onClick={() => handleFilterClick('isFunctions')}
                     classes={avatarClasses}
-                    avatar={isFunctions ? <Avatar><CheckBoxIcon color="secondary"/></Avatar> :
+                    avatar={isFunctions ? <Avatar><CheckBoxIcon/></Avatar> :
                         <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                 />
             </Tooltip>
@@ -199,7 +198,7 @@ class ResultsFilter extends React.Component {
                     label="x=y"
                     onClick={() => handleFilterClick('isExpressions')}
                     classes={avatarClasses}
-                    avatar={isExpressions ? <Avatar><CheckBoxIcon color="secondary"/></Avatar> :
+                    avatar={isExpressions ? <Avatar><CheckBoxIcon/></Avatar> :
                         <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                 />
             </Tooltip>
@@ -210,46 +209,47 @@ class ResultsFilter extends React.Component {
                     onClick={() => handleFilterClick('isValues')}
                     classes={avatarClasses}
                     avatar={
-                        isValues ? <Avatar><CheckBoxIcon color="secondary"/></Avatar> :
+                        isValues ? <Avatar><CheckBoxIcon/></Avatar> :
                             <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
                     }
                 />
             </Tooltip>
         </React.Fragment>
-    }
+    );
 }
 
-class EnhancedToolbar extends React.Component {
+function EnhancedToolbar(props) {
     // active={orderBy === column.id}
     // direction={order}
     // onClick={handleSortOnClick}
-    // onClick={this.createSortHandler(column.id)}
-    render() {
-        const {
-            classes,
-            selected,
-            isPlaying, handleChangePlaying, timeline, liveTimeline,
-            searchState, isSelectable, isAutoExpand, handleChangeAutoExpand,
-        } = this.props;
-        const numSelected = selected.length;
-        const newEntries = liveTimeline.length - timeline.length;
-        const playingIcon =
-            isPlaying ? <PauseIcon/> : newEntries ?
-                <Badge className={classes.badge} badgeContent={newEntries > 99 ? '99+' : `${newEntries}`}
-                       color="secondary">
-                    <PlayArrowIcon/>
-                </Badge> : <PlayArrowIcon/>;
-        const playingButton =
-            <IconButton color="primary" onClick={handleChangePlaying}>
-                {playingIcon}
-            </IconButton>;
-
-        return (
-            <Toolbar
-                className={classNames(classes.root, {
-                    [classes.highlight]: numSelected > 0,
-                })}
+    // onClick={createSortHandler(column.id)}
+    const {
+        classes,
+        selected,
+        isPlaying, handleChangePlaying, timeline, liveTimeline,
+        searchState, isSelectable, isAutoExpand, handleChangeAutoExpand,
+        searchStateChange
+    } = props;
+    const numSelected = selected.length;
+    const newEntries = liveTimeline.length - timeline.length;
+    const playingIcon =
+        isPlaying ? <PauseIcon/> : newEntries ?
+            <Badge
+                max={100}
+                badgeContent={newEntries}
+                color="secondary"
             >
+                <PlayArrowIcon/>
+            </Badge> : <PlayArrowIcon/>;
+    const playingButton =
+        <IconButton color="primary" onClick={handleChangePlaying}>
+            {playingIcon}
+        </IconButton>;
+
+    React.useEffect(() => {searchStateChange(searchState)}, [searchState]);
+    return (
+        <React.Fragment>
+            <div className={classes.itemCenter}>
                 {numSelected > 0 ? null : <React.Fragment>
                     <Tooltip
                         title={isPlaying ? 'Pause Updates' : newEntries > 99 ? `${newEntries} new updates` : 'Resume Updates'}
@@ -267,49 +267,51 @@ class EnhancedToolbar extends React.Component {
                     ) : (
                         <TextField
                             fullWidth
+                            variant="outlined"
+                            margin="dense"
                             id="search"
                             label={null}
                             placeholder="Search in trace, ex: color:blue"
                             type="search"
                             className={classes.textField}
-                            margin="normal"
                             InputProps={{
-                                startAdornment: (!!(searchState.visualQuery && searchState.visualQuery.length) &&
-                                    <InputAdornment position="start">
-                                        <Chip
-                                            avatar={
-                                                <Avatar>
-                                                    <CodeTagsCheckIcon color="secondary"/>
-                                                </Avatar>
+                                classes: {root: classes.inputProps},
+                                startAdornment:
+                                    (
+                                        <InputAdornment>
+                                            <ResultsFilter {...props} />
+                                            {searchState.visualQuery && searchState.visualQuery.length ?
+
+                                                <Chip
+                                                    label={<GraphicalQuery
+                                                        outputRefs={searchState.visualQuery}
+                                                        visualIds={getVisualIdsFromRefs(searchState.visualQuery)}
+                                                        selected={true}
+                                                    />}
+                                                    onDelete={() => {
+                                                        VisualQueryManager
+                                                            .onChange(
+                                                                searchState.visualQuery,
+                                                                getVisualIdsFromRefs(searchState.visualQuery), 'click'
+                                                            );
+                                                    }}
+                                                />
+                                                :
+                                                <div className={classes.textField}/>
                                             }
-                                            label={<GraphicalQuery
-                                                outputRefs={searchState.visualQuery}
-                                                visualIds={getVisualIdsFromRefs(searchState.visualQuery)}
-                                                selected={true}
-                                            />}
-                                            onDelete={() => {
-                                                VisualQueryManager
-                                                    .onChange(
-                                                        searchState.visualQuery,
-                                                        getVisualIdsFromRefs(searchState.visualQuery), 'click'
-                                                    );
-                                            }}
-                                        />
-                                    </InputAdornment>
-                                ),
+                                        </InputAdornment>
+                                    ),
                                 endAdornment: <InputEndAdornment {...{classes, searchState}} />
                             }}
                             FormHelperTextProps={{
                                 component: 'span',
                                 margin: 'dense',
                             }}
-                            helperText={<ResultsFilter {...this.props} />}
                             value={searchState.value}
                             onChange={searchState.handleChangeValue}
                         />
                     )}
                 </div>
-                <div className={classes.spacer}/>
                 <Tooltip
                     title={isAutoExpand ? 'Disable Live expression auto-focus' : 'Enable Live expression auto-focus'}
                     placement={'bottom-end'}
@@ -319,41 +321,42 @@ class EnhancedToolbar extends React.Component {
                         <FilterCenterFocusIcon/>
                     </IconButton>
                 </Tooltip>
-                <div className={classes.actions}>
-                    {numSelected > 0 ? (
-                        <React.Fragment>
-                            <Tooltip title="Compare values">
-                                <IconButton aria-label="Compare values">
-                                    <ChangeHistoryIcon/>
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="New Pin">
-                                <IconButton aria-label="New Pin">
-                                    <CallSplitIcon/>
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Add to existing pin">
-                                <IconButton aria-label="Add to existing pin">
-                                    <CallMergeIcon/>
-                                </IconButton>
-                            </Tooltip>
-                        </React.Fragment>
-                    ) : (isSelectable ?
-                            <Tooltip title="Filter list">
-                                <IconButton aria-label="Filter list">
-                                    <FilterListIcon/>
-                                </IconButton>
-                            </Tooltip> : null
-                    )}
-                </div>
-            </Toolbar>
-        );
-    }
+            </div>
+            <div className={classes.actions}>
+                {numSelected > 0 ? (
+                    <React.Fragment>
+                        <Tooltip title="Compare values">
+                            <IconButton aria-label="Compare values">
+                                <ChangeHistoryIcon/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="New Pin">
+                            <IconButton aria-label="New Pin">
+                                <CallSplitIcon/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Add to existing pin">
+                            <IconButton aria-label="Add to existing pin">
+                                <CallMergeIcon/>
+                            </IconButton>
+                        </Tooltip>
+                    </React.Fragment>
+                ) : (isSelectable ?
+                        <Tooltip title="Filter list">
+                            <IconButton aria-label="Filter list">
+                                <FilterListIcon/>
+                            </IconButton>
+                        </Tooltip> : null
+                )}
+            </div>
+        </React.Fragment>
+    );
 }
 
 EnhancedToolbar.propTypes = {
     classes: PropTypes.object.isRequired,
     handleTotalChange: PropTypes.func,
+    handleChangePlaying: PropTypes.func,
 };
 
 EnhancedToolbar.contexTypes = {
@@ -368,4 +371,4 @@ const EnhancedToolbarWithContext = props => (
     </PastebinContext.Consumer>
 );
 const TraceToolbar = withStyles(toolbarStyles)(EnhancedToolbarWithContext);
-export default TraceToolbar;
+export default connect(mapStateToProps, mapDispatchToProps)(TraceToolbar);
