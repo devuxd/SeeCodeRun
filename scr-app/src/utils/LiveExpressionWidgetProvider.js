@@ -3,8 +3,8 @@ import debounce from 'lodash/debounce';
 // import {Subject} from 'rxjs/Subject';
 // import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";
-import {configureCreateMonacoRange, configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
-
+import {configureCreateMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
+import {configureLocToMonacoRange} from 'monaco-jsx-highlighter';
 import AutoLogShift from '../seecoderun/modules/AutoLogShift';
 import LiveExpressionStore, {defaultExpressionClassName} from "../containers/LiveExpressionStore";
 

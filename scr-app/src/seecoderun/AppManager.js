@@ -42,7 +42,7 @@ import {
     configureLineNumbersProvider, monacoProps,
 } from '../utils/monacoUtils';
 
-import JSXColoringProvider from '../utils/JSXColoringProvider';
+import MonacoJSXHighlighter from 'monaco-jsx-highlighter';
 import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider';
 
 import {defaultExpressionClassName, HighlightTypes} from '../containers/LiveExpressionStore';
@@ -137,7 +137,7 @@ class AppManager {
                 language: 'css'
             }
         };
-        this.jsxColoringProvider = null;
+        this.monacoJSXHighlighter = null;
         this.loadJPromise().catch((err) => console.log('j not loaded', err));
     }
 
@@ -330,9 +330,9 @@ class AppManager {
                 firecoPad.j = this.j;
             }
 
-            if (!firecoPad.jsxColoringProvider) {
-                firecoPad.jsxColoringProvider =
-                    new JSXColoringProvider(monaco, this.j, editorId, firecoPad.monacoEditor);
+            if (!firecoPad.monacoJSXHighlighter) {
+                firecoPad.monacoJSXHighlighter =
+                    new MonacoJSXHighlighter(monaco, this.j, firecoPad.monacoEditor, editorId);
                 firecoPad.liveExpressionWidgetProvider =
                     new LiveExpressionWidgetProvider(monaco, this.j, editorId, firecoPad.monacoEditor, defaultExpressionClassName);
             }
@@ -369,7 +369,7 @@ class AppManager {
         firecoPad.enhanceDebounceTime = 100;
         firecoPad.enhanceCode = debounce(() => {
             firecoPad.liveExpressionWidgetProvider.widgetize(firecoPad.astResult);
-            firecoPad.jsxColoringProvider.colorize(firecoPad.astResult.ast);
+            firecoPad.monacoJSXHighlighter.colorize(firecoPad.astResult.ast);
         }, firecoPad.enhanceDebounceTime);
 
         firecoPad.firstBuildAst = () => {
@@ -378,7 +378,7 @@ class AppManager {
                     // console.log('th',ast, astError, astBeforeError);
                     firecoPad.astResult = {code, ast, astError, astBeforeError};
                     firecoPad.liveExpressionWidgetProvider.widgetize(firecoPad.astResult);
-                    firecoPad.jsxColoringProvider.colorize(firecoPad.astResult.ast);
+                    firecoPad.monacoJSXHighlighter.colorize(firecoPad.astResult.ast);
                     firecoPad.onAstBuilt && firecoPad.onAstBuilt(ast, astError, astBeforeError);
                 });
         };
