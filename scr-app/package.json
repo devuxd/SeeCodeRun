@@ -29,7 +29,7 @@
     "memoize-one": "^5.1.1",
     "monaco-editor": "^0.20.0",
     "monaco-editor-webpack-plugin": "^1.9.0",
-    "monaco-jsx-highlighter": "^0.0.8",
+    "monaco-jsx-highlighter": "^0.0.13",
     "notistack": "^0.9.16",
     "parse5": "^6.0.0",
     "prop-types": "^15.7.2",
@@ -65,7 +65,7 @@
     "@babel/plugin-transform-object-assign": "^7.8.3",
     "@babel/plugin-transform-runtime": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
-    "@babel/preset-react": "^7.9.4",
+    "@babel/preset-react": "^7.10.1",
     "@babel/register": "7.9.0",
     "@babel/runtime": "7.9.2",
     "@types/react": "^16.9.34",
@@ -79,6 +79,7 @@
     "babel-plugin-transform-react-constant-elements": "^6.23.0",
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
     "babel-preset-env": "^1.7.0",
+    "bundle-buddy": "^0.2.2",
     "cross-env": "^7.0.2",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.14.0",
@@ -90,8 +91,7 @@
     "redux-devtools-filterable-log-monitor": "^0.8.1",
     "redux-devtools-log-monitor": "^1.4.0",
     "source-map-explorer": "^2.4.2",
-    "typescript": "^3.8.3",
-    "bundle-buddy": "^0.2.2"
+    "typescript": "^3.8.3"
   },
   "scripts": {
     "start": "react-app-rewired start",

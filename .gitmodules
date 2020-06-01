@@ -1,0 +1,3 @@
+[submodule "packages/syntax-highlighter"]
+	path = packages/syntax-highlighter
+	url = https://github.com/luminaxster/syntax-highlighter

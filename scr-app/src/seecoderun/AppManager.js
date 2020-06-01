@@ -332,9 +332,9 @@ class AppManager {
 
             if (!firecoPad.monacoJSXHighlighter) {
                 firecoPad.monacoJSXHighlighter =
-                    new MonacoJSXHighlighter(monaco, this.j, firecoPad.monacoEditor, editorId);
+                    new MonacoJSXHighlighter(monaco, this.j, firecoPad.monacoEditor, {isUseSeparateElementStyles:true});
                 firecoPad.liveExpressionWidgetProvider =
-                    new LiveExpressionWidgetProvider(monaco, this.j, editorId, firecoPad.monacoEditor, defaultExpressionClassName);
+                    new LiveExpressionWidgetProvider(monaco, this.j, firecoPad.monacoEditor, editorId, defaultExpressionClassName);
             }
 
             const code = firecoPad.monacoEditor.getValue();
@@ -369,7 +369,7 @@ class AppManager {
         firecoPad.enhanceDebounceTime = 100;
         firecoPad.enhanceCode = debounce(() => {
             firecoPad.liveExpressionWidgetProvider.widgetize(firecoPad.astResult);
-            firecoPad.monacoJSXHighlighter.colorize(firecoPad.astResult.ast);
+            firecoPad.monacoJSXHighlighter.highlight(firecoPad.astResult.ast);
         }, firecoPad.enhanceDebounceTime);
 
         firecoPad.firstBuildAst = () => {
@@ -378,7 +378,7 @@ class AppManager {
                     // console.log('th',ast, astError, astBeforeError);
                     firecoPad.astResult = {code, ast, astError, astBeforeError};
                     firecoPad.liveExpressionWidgetProvider.widgetize(firecoPad.astResult);
-                    firecoPad.monacoJSXHighlighter.colorize(firecoPad.astResult.ast);
+                    firecoPad.monacoJSXHighlighter.highlight(firecoPad.astResult.ast);
                     firecoPad.onAstBuilt && firecoPad.onAstBuilt(ast, astError, astBeforeError);
                 });
         };
