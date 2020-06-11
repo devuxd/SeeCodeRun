@@ -4,7 +4,9 @@ import debounce from 'lodash/debounce';
 
 import isString from 'lodash/isString';
 
-import {searchStateChangeFulfilled, searchStateChangeRejected} from '../redux/modules/pastebin';
+import {
+    searchStateChangeFulfilled, searchStateChangeRejected
+} from '../redux/modules/pastebin';
 
 import {
     configureMonacoModelsFulfilled,
@@ -43,12 +45,17 @@ import {
 } from '../utils/monacoUtils';
 
 import MonacoJSXHighlighter from 'monaco-jsx-highlighter';
-import LiveExpressionWidgetProvider from '../utils/LiveExpressionWidgetProvider';
+import LiveExpressionWidgetProvider
+    from '../utils/LiveExpressionWidgetProvider';
 
-import {defaultExpressionClassName, HighlightTypes} from '../containers/LiveExpressionStore';
+import {
+    defaultExpressionClassName, HighlightTypes
+} from '../containers/LiveExpressionStore';
 
 import firebaseConfig from './firebaseConfig';
-import {defaultMonacoEditorLiveExpressionClassName} from "../containers/Editor";
+import {
+    defaultMonacoEditorLiveExpressionClassName
+} from "../containers/Editor";
 import configureMonacoDefaults from "../configureMonaco";
 
 const {root, config} = firebaseConfig;
@@ -114,17 +121,21 @@ class AppManager {
         this.pastebinId = null;
         this.monaco = null;
         this.hasSavedEditorsStates = false;
-        this.firecoPads = { // editorIds as in Firebase: pastebinId/content/editorId (e.g. js)
+        this.firecoPads = {
+            // editorIds as in Firebase: pastebinId/content/editorId (e.g. js)
             [editorIds['js']]: {
                 ...defaultFirecoPad,
                 id: editorIds['js'],
                 language: 'javascript',
                 editorOptions: {
                     // glyphMargin: true,
-                    lineHeight: 18 + monacoProps.lineOffSetHeight, // 18 is the default, sync with css: max-height:18px; and padding-top
+                    lineHeight: 18 + monacoProps.lineOffSetHeight,
+                    // 18 is the default, sync with css: max-height:18px;
+                    // and padding-top
                     nativeContextMenu: false,
                     hover: true,
-                    extraEditorClassName: defaultMonacoEditorLiveExpressionClassName,
+                    extraEditorClassName:
+                    defaultMonacoEditorLiveExpressionClassName,
                 },
             },
             [editorIds['html']]: {
@@ -210,7 +221,8 @@ class AppManager {
 
         for (const editorId in this.firecoPads) {
             if (editorsStates[editorId]) {
-                this.firecoPads[editorId].monacoEditorSavedState = editorsStates[editorId];
+                this.firecoPads[editorId]
+                    .monacoEditorSavedState = editorsStates[editorId];
             } else {
                 return;
             }
@@ -225,7 +237,8 @@ class AppManager {
         const initialEditorsTexts = {};
         for (const editorId in this.firecoPads) {
             if (this.firecoPads[editorId].monacoEditorSavedState) {
-                initialEditorsTexts[editorId] = this.firecoPads[editorId].monacoEditorSavedState.text;
+                initialEditorsTexts[editorId] =
+                    this.firecoPads[editorId].monacoEditorSavedState.text;
             } else {
                 return null;
             }
@@ -241,7 +254,11 @@ class AppManager {
     }
 
     restoreGridLayouts(gridLayouts) {
-        if (gridLayouts && this.pastebinLayout && this.pastebinLayout.restoreGridLayouts) {
+        if (
+            gridLayouts &&
+            this.pastebinLayout &&
+            this.pastebinLayout.restoreGridLayouts
+        ) {
             this.pastebinLayout.restoreGridLayouts(gridLayouts);
         }
     }
@@ -262,7 +279,8 @@ class AppManager {
         fireco.usersPath = `${root}/${pastebinId}/users`;
         fireco.persistablePath = `${root}/${pastebinId}/components`;
         for (const editorId in this.firecoPads) {
-            this.firecoPads[editorId].firebasePath = `${root}/${pastebinId}/firecos/${editorId}`;
+            this.firecoPads[editorId].firebasePath =
+                `${root}/${pastebinId}/firecos/${editorId}`;
             this.firecoPads[editorId].isNew = isNew;
         }
     }
@@ -271,7 +289,8 @@ class AppManager {
         try {
             if (monaco) {
                 this.monaco = monaco;
-                this.currentMonacoTheme && this.monaco.editor.setTheme(this.currentMonacoTheme);
+                this.currentMonacoTheme &&
+                this.monaco.editor.setTheme(this.currentMonacoTheme);
                 for (const editorId in this.firecoPads) {
                     const firecoPad = this.firecoPads[editorId];
                     // let text = '';
@@ -292,8 +311,11 @@ class AppManager {
 
                 return of(configureMonacoModelsFulfilled());
             } else {
-                return of(configureMonacoModelsRejected('Error: Monaco is not' +
-                    ' loaded'));
+                return of(
+                    configureMonacoModelsRejected(
+                        'Error: Monaco is not loaded'
+                    )
+                );
             }
         } catch (e) {
             return of(configureMonacoModelsRejected(e));
@@ -305,18 +327,29 @@ class AppManager {
             if (initialEditorsTexts) {
                 for (const editorId in this.firecoPads) {
                     const firecoPad = this.firecoPads[editorId];
-                    if (!firecoPad.isInit && isString(initialEditorsTexts[editorId])) {
-                        //  firecoPad.monacoEditorModel.setValue(initialEditorsTexts[editorId]);
+                    if (
+                        !firecoPad.isInit &&
+                        isString(initialEditorsTexts[editorId])
+                    ) {
+                        //  firecoPad.monacoEditorModel
+                        //  .setValue(initialEditorsTexts[editorId]);
                     } else {
-                        return of(updateMonacoModelsRejected('Error: no ' +
-                            ' text was provided for editor with id: ' + editorId + ', or' +
-                            ' Fireco set it first.'));
+                        return of(
+                            updateMonacoModelsRejected(
+                                'Error: no text was provided for editor' +
+                                ' with id: ' + editorId + ', or' +
+                                ' Fireco set it first.'
+                            )
+                        );
                     }
                 }
                 return of(updateMonacoModelsFulfilled());
             } else {
-                return of(updateMonacoModelsRejected('Error: no editors' +
-                    ' texts was provided'));
+                return of(
+                    updateMonacoModelsRejected(
+                        'Error: no editors texts was provided'
+                    )
+                );
             }
         } catch (e) {
             return of(updateMonacoModelsRejected(e));
@@ -326,20 +359,34 @@ class AppManager {
     addEnhancers(monaco, editorId, firecoPad) {
         firecoPad.astResult = {};
         firecoPad.getAst = async () => {
+            let ast = null, astError = null;
             if (!firecoPad.j) {
                 firecoPad.j = this.j;
             }
 
             if (!firecoPad.monacoJSXHighlighter) {
                 firecoPad.monacoJSXHighlighter =
-                    new MonacoJSXHighlighter(monaco, this.j, firecoPad.monacoEditor, {isUseSeparateElementStyles:true});
+                    new MonacoJSXHighlighter(
+                        monaco,
+                        this.j,
+                        firecoPad.monacoEditor,
+                        {isUseSeparateElementStyles: true}
+                    );
+                firecoPad.monacoJSXHighlighter
+                    .addJSXCommentCommand();
                 firecoPad.liveExpressionWidgetProvider =
-                    new LiveExpressionWidgetProvider(monaco, this.j, firecoPad.monacoEditor, editorId, defaultExpressionClassName);
+                    new LiveExpressionWidgetProvider(
+                        monaco,
+                        this.j,
+                        firecoPad.monacoEditor,
+                        editorId, defaultExpressionClassName);
+
+                const editor = firecoPad.monacoEditor;
             }
 
             const code = firecoPad.monacoEditor.getValue();
             const astBeforeError = firecoPad.astResult.ast || firecoPad.astResult.astBeforeError;
-            let ast = null, astError = null;
+
             try {
                 ast = this.j(code);
                 astError = null;
@@ -730,7 +777,7 @@ class AppManager {
                     if (value) {
                         const matches = monacoEditor.getModel().findMatches(
                             value, searchOnlyEditableRange, isRegExp, isCase, defaultWordSeparators, captureMatches);
-                        decorations  = matches.map(({range}) => ({
+                        decorations = matches.map(({range}) => ({
                             range,
                             options: {className: HighlightTypes.text}
                         }));
