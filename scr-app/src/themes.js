@@ -1,12 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-    unstable_createMuiStrictModeTheme as createMuiTheme,
+    createMuiTheme as stable_createMuiNonStrictModeTheme,
+    unstable_createMuiStrictModeTheme,
     responsiveFontSizes,
 } from '@material-ui/core/styles';
 import {chromeDark, chromeLight} from 'react-inspector';
 import {ThemeProvider} from '@material-ui/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
+
+let createMuiTheme = null;
+if (process.env.NODE_ENV === 'production') {
+    createMuiTheme = stable_createMuiNonStrictModeTheme;
+} else {
+    createMuiTheme = unstable_createMuiStrictModeTheme;
+}
 
 export const ThemeContext = React.createContext({
     switchTheme: null,
