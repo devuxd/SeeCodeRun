@@ -3,21 +3,20 @@ import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
 import {withStyles} from '@material-ui/core/styles';
-import AppBar from '@material-ui/core/AppBar';
+import Tooltip from '@material-ui/core/Tooltip';
+import Badge from '@material-ui/core/Badge';
 import Paper from '@material-ui/core/Paper';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
+import ToggleButton from '@material-ui/lab/ToggleButton';
+import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
-
 import Slide from '@material-ui/core/Slide';
 
 import PlayListPlayIcon from '@material-ui/icons/PlaylistPlay';
 import ConsoleIcon from 'mdi-material-ui/ConsoleLine';
 import TraceTable from './TraceTable';
-import TraceToolbar from './TraceToolbar';
 import ConsoleInput from './ConsoleInput';
 import ConsoleTable from './ConsoleTable';
 
@@ -38,7 +37,7 @@ function TabResultLabel({icon, label, classes, formatText, result, isUpdating}) 
                     root: classes.listItemText,
                     primary: classes.listItemTextPrimary,
                     secondary: isUpdating ?
-                        classes.listItemTextSecondaryUpdate : classes.listItemTextSecondary
+                        classes.colorTransitionStart : classes.colorTransition
                 }}
                 primary={label}
                 secondary={formatText ? formatText(result) : result ? `${result} results` : 'No results'}
@@ -58,18 +57,16 @@ TabResultLabel.propTypes = {
 
 
 const styles = theme => ({
-    appCompact: {
-        minHeight: 38,
-    },
-    appCompactTab: {
-        // minHeight: 42,
-        // height: 42,
+    floatingAction: {
+        zIndex: theme.zIndex.speedDial,
+        position: 'absolute',
+        bottom: theme.spacing(2),
+        right: theme.spacing(2),
+        backgroundColor: theme.palette.background.default,
     },
     root: {
         minWidth: 600,
-        // overflowY: 'hidden',
-        // height: '100%'
-        //  backgroundColor: theme.palette.background.paper,
+        height: '100%',
     },
     listItem: {
         padding: 0,
@@ -79,71 +76,61 @@ const styles = theme => ({
         minHeight: 38,
         height: 38,
         paddingTop: 0,
-        // marginTop: -theme.spacing.unit/4,
         paddingBottom: 0,
     },
     avatar: {
         width: theme.spacing(4),
         height: theme.spacing(4),
     },
-    // listItemText: {
-    //     // maxWidth: '30px',
-    // },
     listItemTextPrimary: {
         color: 'unset',
     },
-    listItemTextSecondary: {
-        maxWidth: 200,
-        textTransform: 'none',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        transition: ['color'],
-        transitionDuration: 1000,
+    colorTransition: {
+        transition: ['background-color'],
+        transitionDuration: 2000,
     },
-    listItemTextSecondaryUpdate: {
-        maxWidth: 200,
-        textTransform: 'none',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        color: theme.palette.secondary.main
+    colorTransitionStart: {
+        backgroundColor: theme.palette.secondary.main
     },
-    consoleInput: {
-        // zIndex: theme.zIndex.appBar
+    opacityTransition: {
+        transition: ['opacity'],
+        transitionDuration: 10000,
+        transitionTimingFunction: 'cubic-bezier(1,0,1,-0.75)',
+        opacity: 0,
+    },
+    opacityTransitionStart: {
+        opacity: 1,
     },
     paper: {
         zIndex: 1,
         position: 'absolute',
         width: 'fill-available',
-        margin: theme.spacing(1),
+        margin: 0,
     },
 });
 
 function a11yProps(index) {
     return {
-        id: `debug-tab-${index}`,
+        id: `debug-table-${index}`,
         'aria-controls': `debug-tabpanel-${index}`,
     };
 }
 
-function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContainers, handleChangePlaying}) {
-    const traceTabIndex = 0;
-    const consoleTabIndex = 1;
+function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContainers, handleChangePlaying, isPlaying, badgeMaxCount = 99}) {
     const [isTraceUpdating, setIsTraceUpdating] = useState(false);
     const [traceTotal, setTraceTotal] = useState(0);
     const [isConsoleUpdating, setIsConsoleUpdating] = useState(false);
     const [consoleTotal, setConsoleTotal] = useState(0);
-
+    const [consoleTableMarginTop, setConsoleTableMarginTop] = useState(0);
     const handleTraceTotalChangeThrottled = throttle((total) => {
         setIsTraceUpdating(true);
         setTraceTotal(total);
-    }, 100, {leading: true});
+    }, 100, {leading: true, trailing: false});
 
     const handleTraceTotalChangeDebounced = debounce((total) => {
         setIsTraceUpdating(false);
         setTraceTotal(total);
-    }, 250);
+    }, 500, {leading: false, trailing: true});
 
     const handleTraceTotalChange = (total) => {
         handleTraceTotalChangeThrottled(total);
@@ -153,64 +140,128 @@ function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContai
     const handleConsoleTotalChangeThrottled = throttle((total) => {
         setIsConsoleUpdating(true);
         setConsoleTotal(total);
-    }, 100, {leading: true});
+    }, 100, {leading: true, trailing: false});
 
     const handleConsoleTotalChangeDebounced = debounce((total) => {
         setIsConsoleUpdating(false);
         setConsoleTotal(total);
-    }, 250);
+    }, 500, {leading: false, trailing: true});
 
     const handleConsoleTotalChange = (total) => {
         handleConsoleTotalChangeThrottled(total);
         handleConsoleTotalChangeDebounced(total);
     };
 
-    return (<div className={classes.root}>
-            <AppBar position="sticky" color="default" className={classes.appCompact} elevation={1}>
-                <TraceToolbar/>
-                <Tabs
-                    value={tabIndex}
-                    onChange={handleChangeTab}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    variant="fullWidth"
-                    centered
-                    className={classes.appCompact}
-                    aria-label="debug tabs"
+    return (
+        <div className={classes.root}>
+            <ToggleButtonGroup
+                value={tabIndex}
+                onChange={handleChangeTab}
+                aria-label="debug tables"
+                exclusive
+                className={classes.floatingAction}
+            >
+                <ToggleButton
+                    value="trace"
+                    aria-label="trace"
+                    {...a11yProps('trace')}
+                    className={isTraceUpdating ?
+                        classes.colorTransitionStart
+                        : classes.colorTransition
+                    }
                 >
-                    <Tab
-                        {...a11yProps(traceTabIndex)}
-                        label={<TabResultLabel result={traceTotal} isUpdating={isTraceUpdating}
-                                               classes={classes} icon={<PlayListPlayIcon/>} label="trace"/>
+                    <Tooltip
+                        title={`Trace: ${traceTotal} total entries`}
+                        placement={'bottom-end'}
+                        enterDelay={300}
+                    >
+                        <Badge
+                            max={badgeMaxCount}
+                            badgeContent={traceTotal}
+                            color="secondary"
+                            classes={{
+                                badge: isTraceUpdating ?
+                                    classes.opacityTransitionStart
+                                    : classes.opacityTransition
+                            }}
+                        >
+                            <PlayListPlayIcon/>
+                        </Badge>
+                    </Tooltip>
+                </ToggleButton>
+                <ToggleButton
+                    value="console"
+                    aria-label="console"
+                    {...a11yProps('console')}
+                    className={isConsoleUpdating ?
+                        classes.colorTransitionStart
+                        : classes.colorTransition
+                    }
+                >
+                    <Tooltip
+                        title={`Console: ${consoleTotal} total entries`}
+                        placement={'bottom-end'}
+                        enterDelay={300}
+                    >
+                        <Badge
+                            max={badgeMaxCount}
+                            badgeContent={consoleTotal}
+                            color="secondary"
+                            classes={{
+                                badge: isConsoleUpdating ?
+                                    classes.opacityTransitionStart
+                                    : classes.opacityTransition
+                            }}
+                        >
+                            <ConsoleIcon/>
+                        </Badge>
+                    </Tooltip>
+                </ToggleButton>
+
+                {/*"Streams"*/}
+                {/*"Visualizations"*/}
+            </ToggleButtonGroup>
+
+            <Slide direction="down" in={tabIndex === 'console'}>
+                <Paper
+                    elevation={2}
+                    className={classes.paper}
+                >
+                    <ConsoleInput
+                        onHeightChange={
+                            (event, {containerHeight}) => setConsoleTableMarginTop(containerHeight)
                         }
                     />
-                    <Tab
-                        {...a11yProps(consoleTabIndex)}
-                        label={<TabResultLabel result={consoleTotal} isUpdating={isConsoleUpdating}
-                                               classes={classes} icon={<ConsoleIcon/>} label="console"/>
-                        }
-                    />
-                    {/*<Tab label="Streams"/>*/}
-                    {/*<Tab label="Visualizations"/>*/}
-                </Tabs>
-            </AppBar>
-            <Slide direction="down" in={consoleTabIndex === tabIndex}>
-                <Paper elevation={2} className={classes.paper}>
-                    <ConsoleInput className={classes.consoleInput}/>
                 </Paper>
             </Slide>
             <TraceTable
                 onHandleTotalChange={handleTraceTotalChange}
                 ScrollingListContainers={ScrollingListContainers}
-                open={tabIndex === traceTabIndex}
+                open={tabIndex === 'trace'}
                 handleChangePlaying={handleChangePlaying}
             />
-            <ConsoleTable
-                onHandleTotalChange={handleConsoleTotalChange}
-                ScrollingListContainers={ScrollingListContainers}
-                open={tabIndex === consoleTabIndex}
-                handleChangePlaying={handleChangePlaying}
-            />
+            <div style={{
+                height: '100%',
+                width: '100%',
+                visibility: tabIndex === 'console' ? 'visible' : 'hidden',
+            }}
+            >
+                <div style={{height: consoleTableMarginTop, width: '100%'}}/>
+                <div style={{
+                    height: `100%`,
+                    width: '100%',
+                }}
+                     onMouseEnter={() => handleChangePlaying('table', false)}
+                     onMouseLeave={() => handleChangePlaying('table', true)}
+                >
+                    <ConsoleTable
+                        headerHeight={consoleTableMarginTop}
+                        onHandleTotalChange={handleConsoleTotalChange}
+                        heightDelta ={consoleTableMarginTop}
+                        autoScroll = {isPlaying}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

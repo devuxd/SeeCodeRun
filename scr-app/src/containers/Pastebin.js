@@ -334,31 +334,43 @@ class Pastebin extends Component {
         this.handleAutomaticLayoutDebounced();
     };
 
-    handleChangeTimeFlow = () => {
+    handleChangeTimeFlow = (event, property, order) => {
         const orderBy = 'time';
         let timeFlow = this.state.timeFlow;
-        let order = timeFlow;
-        if (this.state.orderBy === orderBy) {
-            if (timeFlow === 'desc') {
-                order = 'asc';
-                timeFlow = order;
-            } else {
-                order = 'desc';
-                timeFlow = order;
+        if (!order) {
+            order = timeFlow;
+            if (this.state.orderBy === orderBy) {
+                if (timeFlow === 'desc') {
+                    order = 'asc';
+                    timeFlow = order;
+                } else {
+                    order = 'desc';
+                    timeFlow = order;
+                }
             }
+        } else {
+            timeFlow = order;
         }
+
         const data = this.sortData(this.state.data, orderBy, order);
-        this.setState({data, order, orderBy, timeFlow});
+        const logData = this.sortData(this.state.logData, orderBy, order);
+
+        this.setState({data, logData, order, orderBy, timeFlow});
     };
 
-    handleRequestSort = (event, property) => {
+    handleRequestSort = (event, property, order) => {
         const orderBy = property;
-        let order = 'desc';
-        if (this.state.orderBy === property && this.state.order === 'desc') {
-            order = 'asc';
+        if (!order) {
+            order = 'desc';
+            if (this.state.orderBy === property && this.state.order === 'desc') {
+                order = 'asc';
+            }
         }
+
         const data = this.sortData(this.state.data, orderBy, order);
-        this.setState({data, order, orderBy});
+        const logData = this.sortData(this.state.logData, orderBy, order);
+        console.log('console.log(logData);', logData);
+        this.setState({data, logData, order, orderBy});
     };
 
     sortData = (data, orderBy, order) => {
@@ -544,8 +556,8 @@ class Pastebin extends Component {
                     const data = this.createData(currentTimeline, getEditorTextInLoc);
                     const logData = this.createLogData(currentLogs, getEditorTextInLoc);
                     //console.log(orderBy, order,orderBy === 'time' && order === 'desc');
-                    const sortedData =
-                        orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
+                    const sortedData = this.sortData(data, orderBy, order);
+                    const sortedLogData = this.sortData(logData, orderBy, order);
                     this.setState((prevState) => ({
                         ...rowsLayout, // rowsPerPage, defaulRowsPerPage
                         isNew: isNew,
@@ -556,7 +568,7 @@ class Pastebin extends Component {
                         logs: currentLogs,
                         liveLogs: logs,
                         data: sortedData,
-                        logData,
+                        logData: sortedLogData,
                         HighlightTypes,
                         highlightSingleText,
                         highlightErrors,
@@ -568,7 +580,12 @@ class Pastebin extends Component {
                     }));
                     this.handleChangeDebugLoading(false);
                 } else {
-                    this.setState({...rowsLayout, liveTimeline: timeline, liveLogs: logs, isNew});
+                    this.setState({
+                        ...rowsLayout,
+                        liveTimeline: timeline,
+                        liveLogs: logs,
+                        isNew
+                    });
                 }
             }, 0);
         };
@@ -610,7 +627,7 @@ class Pastebin extends Component {
     }, 100);
 
     handleChangeTab = (event, tabIndex) => {
-        if(tabIndex){
+        if (tabIndex) {
             this.setState({tabIndex});
         }
     };
@@ -624,7 +641,10 @@ class Pastebin extends Component {
 
     handleChangeSearchFilterClick = (filter) => {
         const {searchState} = this.state;
-        const nextSearchState = {...searchState, [filter]: !searchState[filter]};
+        const nextSearchState = {
+            ...searchState,
+            [filter]: !searchState[filter]
+        };
         if (nextSearchState.isWord && nextSearchState.isRegExp) {
             if (filter === 'isWord') {
                 nextSearchState.isRegExp = false;
@@ -759,7 +779,7 @@ class Pastebin extends Component {
 
     render() {
         const {handleChangePlaying} = this;
-        const { appClasses, classes, appStyle, editorIds, TopNavigationBarComponent} = this.props;
+        const {appClasses, classes, appStyle, editorIds, TopNavigationBarComponent} = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
             autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive,
@@ -774,10 +794,13 @@ class Pastebin extends Component {
         if (isCompact) {
             return (
                 <div className={appClasses.content}>
-                    <PastebinContext.Provider value={{...this.state, handleChangePlaying}}>
+                    <PastebinContext.Provider
+                        value={{...this.state, handleChangePlaying}}>
                         {global.monaco && global.monaco.editor && isAutoExpand &&
-                        <Drawer anchor={"bottom"} open={isAutoExpand} onClose={this.handleChangeAutoExpand}>
-                            <PointOfView monaco={global.monaco} tiles={pointOfViewTiles}/>
+                        <Drawer anchor={"bottom"} open={isAutoExpand}
+                                onClose={this.handleChangeAutoExpand}>
+                            <PointOfView monaco={global.monaco}
+                                         tiles={pointOfViewTiles}/>
                         </Drawer>}
                         {TopNavigationBarComponent}
                         <Responsive
@@ -814,7 +837,8 @@ class Pastebin extends Component {
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['js'])}
                                 />
                                 {hoveredCellKey === 'scriptContainer' ?
-                                    null : <LanguageJavaScriptIcon className={classes.icon}/>}
+                                    null : <LanguageJavaScriptIcon
+                                        className={classes.icon}/>}
                             </Paper>
                             <Paper elevation={1}
                                    key="htmlContainer"
@@ -827,7 +851,8 @@ class Pastebin extends Component {
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['html'])}
                                 />
                                 {hoveredCellKey === 'htmlContainer' ?
-                                    null : <LanguageHtml5Icon className={classes.icon}/>}
+                                    null : <LanguageHtml5Icon
+                                        className={classes.icon}/>}
                             </Paper>
                             <Paper elevation={1}
                                    key="cssContainer"
@@ -840,10 +865,12 @@ class Pastebin extends Component {
                                         updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['css'])}
                                 />
                                 {hoveredCellKey === 'cssContainer' ?
-                                    null : <LanguageCss3Icon className={classes.icon}/>}
+                                    null : <LanguageCss3Icon
+                                        className={classes.icon}/>}
                             </Paper>
                             <Paper elevation={1}
-                                   key="debugContainer" className={appClasses.container}
+                                   key="debugContainer"
+                                   className={appClasses.container}
                                    onMouseEnter={event =>
                                        this.handleChangeHoveredCellKey(event, 'debugContainer')}
                                    onMouseLeave={event =>
@@ -857,15 +884,15 @@ class Pastebin extends Component {
                                 {/*    listLength={data.length}*/}
                                 {/*    isRememberScrollingDisabled={isNew}*/}
                                 {/*>*/}
-                                    <DebugContainer
-                                        appClasses={appClasses}
-                                        appStyle={appStyle}
-                                        tabIndex={tabIndex}
-                                        ScrollingListContainers={this.scrollingListContainers}
-                                        handleChangeTab={this.handleChangeTab}
-                                        handleChangePlaying={handleChangePlaying}
-                                        isPlaying={isPlaying}
-                                    />
+                                <DebugContainer
+                                    appClasses={appClasses}
+                                    appStyle={appStyle}
+                                    tabIndex={tabIndex}
+                                    ScrollingListContainers={this.scrollingListContainers}
+                                    handleChangeTab={this.handleChangeTab}
+                                    handleChangePlaying={handleChangePlaying}
+                                    isPlaying={isPlaying}
+                                />
                                 {/*</ScrollingList>*/}
 
                                 {isDebugLoading ?
@@ -894,7 +921,8 @@ class Pastebin extends Component {
                                         raised="true"
                                         onClick={this.handleChangeGraphicalLocator}
                                     >
-                                        <CodeTagsCheckIcon className={classes.locator}/>
+                                        <CodeTagsCheckIcon
+                                            className={classes.locator}/>
                                     </IconButton>
                                 </Tooltip>
                                 <DragHandleIcon className={classes.draggable}/>

@@ -1849,7 +1849,7 @@ class LiveExpressionStore extends Component {
                     };
                     // JsCodeShift silently does nothing while loading its dependencies. Bundling needs retrying
                     // until it is JsCodeShift is ready
-                    console.log(baseAlJs === bundle.alJs);
+                    // console.log(baseAlJs === bundle.alJs);
                     if ((bundle.editorsTexts.js && !bundle.alJs) || baseAlJs === bundle.alJs) {
                         if (retries--) {
                             tm = setTimeout(() => {

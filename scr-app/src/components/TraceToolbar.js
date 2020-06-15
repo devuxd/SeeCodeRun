@@ -20,6 +20,16 @@ import FilterCenterFocusIcon from '@material-ui/icons/FilterCenterFocus';
 import PauseIcon from '@material-ui/icons/Pause';
 // import SearchIcon from '@material-ui/icons/Search';
 // import DeleteIcon from '@material-ui/icons/Delete';
+
+import SortAscendingIcon from 'mdi-material-ui/SortAscending';
+import SortDescendingIcon from 'mdi-material-ui/SortDescending';
+import SortAlphabeticalAscendingIcon
+    from 'mdi-material-ui/SortAlphabeticalAscending';
+import SortAlphabeticalDescendingIcon
+    from 'mdi-material-ui/SortAlphabeticalDescending';
+import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
+import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
+
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CallMergeIcon from '@material-ui/icons/CallMerge';
@@ -42,6 +52,61 @@ const mapStateToProps = null,
 //   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
 //
 // ];
+
+const sortOptions = [
+    {
+        time: true,
+        desc: true,
+        Icon: SortDescendingIcon,
+    },
+    {
+        time: true,
+        asc: true,
+        Icon: SortAscendingIcon,
+
+    },
+    {
+        expression: true,
+        desc: true,
+        Icon: SortAlphabeticalDescendingIcon,
+    },
+    {
+        expression: true,
+        asc: true,
+        Icon: SortAlphabeticalAscendingIcon,
+
+    },
+    {
+        value: true,
+        desc: true,
+        Icon: SortNumericDescendingIcon,
+    },
+    {
+        value: true,
+        asc: true,
+        Icon: SortNumericAscendingIcon,
+
+    }
+];
+
+const getSortIcon = (orderBy, orderFlow) => (
+    (sortOptions[
+        sortOptions.findIndex(
+            sortOption => sortOption[orderBy] && sortOption[orderFlow]
+        )
+        ] || {}).Icon
+);
+
+const getNextSortOption = (orderBy, orderFlow) => (
+    sortOptions[(
+        sortOptions.findIndex(
+            sortOption => sortOption[orderBy] && sortOption[orderFlow]
+        )
+        + 1
+    ) % sortOptions.length] // returns first sort option  if not found
+);
+
+// sortOptions.forEach(value => console.log(value, getNextSortOption(...Object.keys(value))))
 
 const toolbarStyles = theme => ({
     root: {
@@ -118,6 +183,26 @@ const handleChangeExpand = debounce((setExpanded, expanded) => {
     setExpanded(expanded);
 }, 300);
 
+
+const inputFilterOptions = [
+    {
+        title: 'Match Case',
+        label: 'Aa',
+        actionId: 'isCase'
+    },
+    {
+        title: 'Words',
+        label: 'W',
+        actionId: 'isWord'
+    },
+    {
+        title: 'Regex',
+        label: '.*',
+        actionId: 'isRegExp'
+    },
+
+];
+
 function InputEndAdornment(props) {
     const {classes, searchState} = props;
     const [expanded, setExpanded] = React.useState(false);
@@ -131,41 +216,47 @@ function InputEndAdornment(props) {
     const hasSelected = isCase || isWord || isRegExp;
     return (
         <InputAdornment>
-                <span className={classes.chipArray} onMouseEnter={() => handleChangeExpand(setExpanded, true)}
-                      onMouseLeave={() => handleChangeExpand(setExpanded, false)}>
+                <span className={classes.chipArray}
+                      onMouseEnter={
+                          () => handleChangeExpand(setExpanded, true)
+                      }
+                      onMouseLeave={
+                          () => handleChangeExpand(setExpanded, false)
+                      }
+                >
                     {!expanded ? hasSelected ?
-                        <TuneIcon color="primary" className={classes.tuneIcon}/>
+                        <TuneIcon
+                            color="primary"
+                            className={classes.tuneIcon}
+                        />
                         : <TuneIcon className={classes.tuneIcon}/>
                         : <Paper>
-                            <Tooltip title={"Match Case"}>
-                                <Chip
-                                    label="Aa"
-                                    onClick={() => handleFilterClick('isCase')}
-                                    classes={avatarClasses}
-                                    avatar={isCase ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
-                                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
-                                />
-                            </Tooltip>
-
-                            <Tooltip title={"Match Whole Word"}>
-                                <Chip
-                                    label="A a"
-                                    onClick={() => handleFilterClick('isWord')}
-                                    classes={avatarClasses}
-                                    avatar={isWord ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
-                                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
-                                />
-                            </Tooltip>
-
-                            <Tooltip title={"Use Regular Expressions"}>
-                                <Chip
-                                    label=".*"
-                                    onClick={() => handleFilterClick('isRegExp')}
-                                    classes={avatarClasses}
-                                    avatar={isRegExp ? <Avatar><CheckBoxIcon color="primary"/></Avatar> :
-                                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
-                                />
-                            </Tooltip>
+                            {inputFilterOptions.map(filter =>
+                                (<Tooltip
+                                        title={filter.title}
+                                        key={filter.actionId}
+                                    >
+                                        <Chip
+                                            label={filter.label}
+                                            onClick={
+                                                () => handleFilterClick(
+                                                    filter.actionId
+                                                )
+                                            }
+                                            classes={avatarClasses}
+                                            avatar={searchState[
+                                                filter.actionId
+                                                ] ?
+                                                <Avatar>
+                                                    <CheckBoxIcon
+                                                        color="primary"/>
+                                                </Avatar>
+                                                : <Avatar>
+                                                    <CheckBoxOutlineBlankIcon/>
+                                                </Avatar>}
+                                        />
+                                    </Tooltip>
+                                ))}
                         </Paper>
                     }
                 </span>
@@ -174,17 +265,27 @@ function InputEndAdornment(props) {
 }
 
 function ResultsFilter(props) {
-    const {classes, searchState} = props;
-    const {isFunctions, isExpressions, isValues, handleFilterClick} = searchState;
+    const {
+        classes, searchState,
+        order, orderBy, timeFlow, handleChangeTimeFlow, handleRequestSort
+    } = props;
+    const {
+        isFunctions, isExpressions, isValues, handleFilterClick
+    } = searchState;
     //const hasSelected = isFunctions || isExpressions || isValues;
     const avatarClasses = {
         root: classes.chipRoot, // class name, e.g. `classes-root-x`
         avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
         label: classes.chipLabel,
     };
+    const orderFlow = orderBy === 'time' ? timeFlow : order;
+    const SortIcon = getSortIcon(orderBy, orderFlow);
+
     return (
         <React.Fragment>
-            <Tooltip title={"Include Functions"} placement="top">
+            <Tooltip
+                title={"Include Functions"}
+            >
                 <Chip
                     label="f(x)"
                     onClick={() => handleFilterClick('isFunctions')}
@@ -193,7 +294,9 @@ function ResultsFilter(props) {
                         <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                 />
             </Tooltip>
-            <Tooltip title={"Include Expressions"}>
+            <Tooltip
+                title={"Include Expressions"}
+            >
                 <Chip
                     label="x=y"
                     onClick={() => handleFilterClick('isExpressions')}
@@ -202,8 +305,9 @@ function ResultsFilter(props) {
                         <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
                 />
             </Tooltip>
-            < Tooltip
-                title={"Include Values"}>
+            <Tooltip
+                title={"Include Values"}
+            >
                 <Chip
                     label="{...}"
                     onClick={() => handleFilterClick('isValues')}
@@ -211,6 +315,40 @@ function ResultsFilter(props) {
                     avatar={
                         isValues ? <Avatar><CheckBoxIcon/></Avatar> :
                             <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
+                    }
+                />
+            </Tooltip>
+            <Tooltip
+                title={
+                    `Order by ${
+                        orderBy
+                    } ${
+                        orderFlow === 'desc' ? 'descending' : 'ascending'
+                    }`
+                }
+            >
+                <Chip
+                    onClick={
+                        event => {
+                            const nextOptions = getNextSortOption(
+                                orderBy,
+                                orderFlow
+                            );
+                            const nextOptionsKeys = Object.keys(
+                                nextOptions
+                            );
+
+                            if (nextOptions.time) {
+                                handleChangeTimeFlow(event, ...nextOptionsKeys);
+                            } else {
+                                handleRequestSort(event, ...nextOptionsKeys);
+                            }
+                        }}
+                    classes={avatarClasses}
+                    avatar={
+                        <Avatar>
+                            <SortIcon/>
+                        </Avatar>
                     }
                 />
             </Tooltip>
@@ -246,7 +384,9 @@ function EnhancedToolbar(props) {
             {playingIcon}
         </IconButton>;
 
-    React.useEffect(() => {searchStateChange(searchState)}, [searchState]);
+    React.useEffect(() => {
+        searchStateChange(searchState)
+    }, [searchState]);
     return (
         <React.Fragment>
             <div className={classes.itemCenter}>
@@ -297,11 +437,15 @@ function EnhancedToolbar(props) {
                                                     }}
                                                 />
                                                 :
-                                                <div className={classes.textField}/>
+                                                <div
+                                                    className={classes.textField}/>
                                             }
                                         </InputAdornment>
                                     ),
-                                endAdornment: <InputEndAdornment {...{classes, searchState}} />
+                                endAdornment: <InputEndAdornment {...{
+                                    classes,
+                                    searchState
+                                }} />
                             }}
                             FormHelperTextProps={{
                                 component: 'span',
@@ -317,7 +461,8 @@ function EnhancedToolbar(props) {
                     placement={'bottom-end'}
                     enterDelay={300}
                 >
-                    <IconButton color={isAutoExpand ? "primary" : 'default'} onClick={handleChangeAutoExpand}>
+                    <IconButton color={isAutoExpand ? "primary" : 'default'}
+                                onClick={handleChangeAutoExpand}>
                         <FilterCenterFocusIcon/>
                     </IconButton>
                 </Tooltip>

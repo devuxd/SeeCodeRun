@@ -4,81 +4,118 @@ import React, {
     useState,
     memo,
     useRef,
-    useEffect
+    useEffect,
+    useMemo
 } from "react";
 import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
 import memoize from "memoize-one";
 import update from "immutability-helper";
 import AutoSizer from "react-virtualized-auto-sizer";
-import useResizeObserver from "use-resize-observer/polyfilled";
+import useResizeObserver from "use-resize-observer";
 import {VariableSizeList as List, areEqual} from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
-import {withStyles} from '@material-ui/core/styles';
-import Inspector from "react-inspector";
 
 const StickyListContext = createContext();
 StickyListContext.displayName = "StickyListContext";
 
 const createItemData = memoize(props => ({...props}));
 
-const ItemWrapper = ({data, index, style, ...other}) => {
+const ItemWrapper = memo(({data, index, style, ...other}) => {
     const {ItemRenderer, stickyIndices} = data;
-    if (index === 0) {
-        if (stickyIndices.length) {
-            return (
-                <ItemRenderer index={index} style={style} data={data} {...other} />
-            );
-        } else {
-            return null;
-        }
-    }
-    if (stickyIndices && stickyIndices.includes(index)) {
+    if (stickyIndices && index && stickyIndices.includes(index)) {
         return null;
     }
-    return <ItemRenderer index={index} style={style} data={data} {...other} />;
-};
+    const _style = {
+        ...style
+    };
 
-const RowWrapper = memo(({index, style, isScrolling, data, ...other}) => {
+    if (isNaN(style.top)) {
+        _style.top = 0;
+        _style.display = 'none';
+    }
+    return <ItemRenderer index={index} style={_style} data={data} {...other} />;
+}, areEqual);
+
+const RowWrapper = (({
+                         index,
+                         style,
+                         isScrolling,
+                         data,
+                         isIndexSticky = (
+                             index, stickyIndices
+                         ) => stickyIndices.includes(index),
+                         ...other
+                     }) => {
     const {
-        // itemSize,
         StickyComponent,
         RowComponent,
         stickyIndices,
         handleStickyIndex,
         onItemResize,
-        classes,
+        classes = {},
+        RowContainer
     } = data;
 
-    const isSticky = stickyIndices.includes(index);
+    const isSticky = isIndexSticky(index, stickyIndices);
     const {ref} = useResizeObserver({
-        onResize: ({width, height}) => {
+        onResize: ({width = 0, height = 0}) => {
             onItemResize(index, height, width, isScrolling);
         },
         //  onPosition: () => onItemResize(index, itemSize(index))
     });
 
+    const _style = {...style, height: isNaN(style.height) ? 0 : style.height};
+    if (!index) {
+        _style.overflow = 'hidden';
+    }
+
     return (
-        <div className={isSticky ? classes.sticky : classes.row} style={style}>
-            <div ref={ref}>
+        <div className={isSticky ? classes.sticky : classes.row}
+             style={_style}
+        >
+            <RowContainer
+                index={index}
+                isSticky={isSticky}
+                isScrolling={isScrolling}
+                ref={ref}
+                classes={classes}
+            >
                 <StickyComponent
                     isSticky={isSticky}
                     onStickyChange={() => handleStickyIndex(index)}
                 />
-                <RowComponent index={index} style={style} data={data} {...other}/>
-            </div>
+                <RowComponent
+                    index={index}
+                    style={_style}
+                    data={data}
+                    {...other}
+                />
+            </RowContainer>
         </div>
     );
-}, areEqual);
+});
 
-const innerElementType = forwardRef(({children, ...rest}, ref) => (
+const MemoizedRowWrapper = memo(RowWrapper, areEqual);
+
+const innerElementType = forwardRef(({children, style, ...rest}, ref) => (
     <StickyListContext.Consumer>
         {({stickyIndices, itemSize, ...otherData}) => {
             let currentTop = 0;
+            let prevIndex = 0;
             return (
-                <div ref={ref} {...rest}>
+                <div
+                    ref={ref}
+                    style={
+                        {
+                            ...style,
+                            height: isNaN(style.height) ? 0 : style.height
+                        }
+                    }
+                    {...rest}
+                >
                     {stickyIndices.map((index, i) => (
-                        <RowWrapper
+                        <MemoizedRowWrapper
                             data={{
                                 itemSize,
                                 stickyIndices,
@@ -87,10 +124,15 @@ const innerElementType = forwardRef(({children, ...rest}, ref) => (
                             index={index}
                             key={index}
                             style={{
-                                top: (currentTop += i ? isNaN(itemSize(index - 1, true)) ? 0 : itemSize(index - 1, true) : 0),
-                                left: 0,
                                 width: "100%",
-                                height: itemSize(index, true)
+                                height: itemSize(index, true),
+                                top: (currentTop += i ? prevIndex ?
+                                        isNaN(itemSize(prevIndex, true)) ?
+                                            0 : itemSize(prevIndex, true)
+                                        : 0
+                                        : 0
+                                ),
+                                left: (prevIndex = index) || 0,
                             }}
                         />
                     ))}
@@ -117,12 +159,13 @@ const StickyList = ({
                         loadMoreItems,
                         innerElementType,
                         itemCount,
-                        threshold = 100,
-                        minimumBatchSize = 50,
+                        threshold = 1,
+                        minimumBatchSize = 200,
+                        heightDelta = 0,
                         ...otherData
                     }) => (
     <AutoSizer>
-        {({height, width}) => {
+        {({height = 0, width = 0}) => {
             const data = createItemData({
                 ItemRenderer: children,
                 stickyIndices,
@@ -132,8 +175,8 @@ const StickyList = ({
                 RowComponent,
                 handleStickyIndex,
                 onItemResize,
-                rowHeights,
                 classes,
+                rowHeights,
                 ...otherData
             });
             return (
@@ -149,7 +192,7 @@ const StickyList = ({
                         {({onItemsRendered, ref}) => (
                             <List
                                 itemData={data}
-                                height={height}
+                                height={height - heightDelta}
                                 width={width}
                                 itemSize={itemSize}
                                 onItemsRendered={onItemsRendered}
@@ -169,14 +212,11 @@ const StickyList = ({
 
 let _rowHeights = null;
 let _minRowIndex = 0;
-const debouncedHandleItemResize = debounce((callback, ...params) => callback(...params), 50, {
-    leading: false,
-    trailing: true,
-    // maxWait: 30
-})
+let _prevItemCount = 0;
 
 const InfiniteStickyList = (
     {
+        debounceTime = 5,
         items,
         defaultItemSize,
         ref,
@@ -187,25 +227,80 @@ const InfiniteStickyList = (
         stickyIndices: controlledStickyIndices,
         setStickyIndices: controlledSetStickyIndices,
         ignoreIndices = [],
+        heightDelta,
+        autoScroll,
+        autoScrollTop,
+        autoScrollBottom,
         ...rest
     }) => {
-    const [_items] = useState([{}, ...items]);
     const _infinityListRef = useRef();
     const infinityListRef = ref || _infinityListRef;
-    const [_stickyIndices, _setStickyIndices] = useState(controlledStickyIndices && controlledSetStickyIndices ? [] : controlledStickyIndices || []);
 
-    const stickyIndices = controlledStickyIndices && controlledSetStickyIndices ?
-        controlledStickyIndices : _stickyIndices,
+    const debouncedHandleItemResize = React.useMemo(
+        () => debounce(
+            (callback, ...params) => callback(...params),
+            debounceTime,
+            {
+                leading: false,
+                trailing: true,
+                maxWait: 15
+            }), [debounceTime]);
+    const debouncedAutoScroll = React.useMemo(
+        () => debounce(
+            (callback, ...params) => callback(...params),
+            debounceTime * 10,
+            {
+                leading: false,
+                trailing: true,
+            }), [debounceTime]);
+
+    const _items = useMemo(
+        () => debouncedAutoScroll.cancel() || update(
+            items, {$unshift: [{}]}),
+        [items]
+    );
+
+    useEffect(() => {
+            const _autoScrollTop = (autoScroll || autoScrollTop);
+            const isAutoScroll = _autoScrollTop || autoScrollBottom;
+            if (isAutoScroll && items && _prevItemCount !== items.length) {
+                infinityListRef.current &&
+                infinityListRef.current._listRef &&
+                infinityListRef.current._listRef.scrollToItem &&
+                debouncedAutoScroll(
+                    () => infinityListRef.current._listRef.scrollToItem(
+                        autoScrollBottom ? 0 : items.length, "center"
+                    )
+                );
+            }
+            _prevItemCount = items ? items.length : 0;
+        }, [
+            items, infinityListRef,
+            autoScroll, autoScrollBottom, autoScroll, autoScrollTop
+        ]
+    );
+    const [_stickyIndices, _setStickyIndices] =
+        useState(
+            controlledStickyIndices && controlledSetStickyIndices ?
+                [] : controlledStickyIndices || []
+        );
+
+    const stickyIndices =
+            controlledStickyIndices && controlledSetStickyIndices ?
+                controlledStickyIndices : _stickyIndices,
         setStickyIndices = controlledSetStickyIndices || _setStickyIndices;
     const [rowHeights, setRowHeights] = useState(() =>
-        new Array(items.length + 1).fill(true).map(() => defaultItemSize)
+        new Array(items.length + 1)
+            .fill(true)
+            .map(() => defaultItemSize)
     );
-    const itemSize = (index, checkSticky) =>
-        index
-            ? ((!checkSticky && stickyIndices.includes(index))|| ignoreIndices.includes[index+1])
-            ? 0
+    const itemSize = (index, checkSticky) => index ?
+        ((!checkSticky && stickyIndices.includes(index)) ||
+            ignoreIndices.includes[index + 1]) ? 0
             : rowHeights[index]
-            : stickyIndices.reduce((offset, index) => offset + rowHeights[index], 0);
+        : stickyIndices.reduce(
+            (offset, index) => offset + rowHeights[index], 0
+        );
     const handleItemResize = (rowIndex, height, width, isScrolling) => {
         if (!_rowHeights) {
             _rowHeights = rowHeights;
@@ -214,22 +309,28 @@ const InfiniteStickyList = (
         _rowHeights = update(_rowHeights, {
             [rowIndex]: {$set: isNaN(height) ? rowHeights[rowIndex] : height}
         });
-        const _handleItemResize = (rowIndex, height, /*width*/) => {
+        const _handleItemResize = (rowIndex) => {
             setRowHeights(
                 _rowHeights
-                // update(_rowHeights, {
-                //     [rowIndex]: {$set: isNaN(height) ? rowHeights[rowIndex] : height}
-                // })
             );
             _rowHeights = null;
             _minRowIndex = rowHeights.length;
             infinityListRef.current &&
             infinityListRef.current._listRef &&
             infinityListRef.current._listRef.resetAfterIndex &&
-            infinityListRef.current._listRef.resetAfterIndex(rowIndex, shouldForceUpdate);
+            infinityListRef.current._listRef.resetAfterIndex(
+                stickyIndices.includes(rowIndex) ?
+                    0
+                    : rowIndex
+                , shouldForceUpdate
+            );
         };
         if (isScrolling) {
-            debouncedHandleItemResize(_handleItemResize, Math.min(rowIndex, _minRowIndex), height, width);
+            debouncedHandleItemResize(
+                () => _handleItemResize(
+                    Math.min(rowIndex, _minRowIndex), height
+                )
+            );
         } else {
             debouncedHandleItemResize.cancel();
             _handleItemResize(Math.min(rowIndex, _minRowIndex), height);
@@ -245,11 +346,18 @@ const InfiniteStickyList = (
         } else {
             setStickyIndices(update(stickyIndices, {$push: [index]}));
         }
+
+        infinityListRef.current &&
+        infinityListRef.current._listRef &&
+        infinityListRef.current._listRef.resetAfterIndex &&
+        infinityListRef.current._listRef.resetAfterIndex(
+            0, shouldForceUpdate
+        );
     };
     useEffect(() => {
         ref && (ref.current.hooks = {
             handleStickyIndex,
-            getRowHeights: () => [...rowHeights],
+            rowHeights,
             setRowHeights,
             stickyIndices,
             setStickyIndices,
@@ -264,7 +372,6 @@ const InfiniteStickyList = (
         setStickyIndices,
         itemSize,
     ]);
-    console.log(classes)
 
     return (
         <StickyList
@@ -280,6 +387,7 @@ const InfiniteStickyList = (
             onItemResize={handleItemResize}
             rowHeights={rowHeights}
             classes={classes}
+            heightDelta={heightDelta}
             {...rest}
         >
             {RowWrapper}
@@ -310,63 +418,10 @@ InfiniteStickyList.propTypes = {
     minimumBatchSize: PropTypes.number,
     threshold: PropTypes.number,
     ignoreIndices: PropTypes.array,
+    heightDelta: PropTypes.number,
+    autoScroll: PropTypes.bool,
+    autoScrollTop: PropTypes.bool,
+    autoScrollBottom: PropTypes.bool,
 };
 
 export default InfiniteStickyList;
-
-const styles = theme => ({
-    row: {},
-    sticky: {
-        backgroundColor: theme.palette.background.default,
-        position: 'sticky !important',
-        zIndex: 1,
-    },
-});
-
-const defaultItems = new Array(200).fill(true).map((rowHeight, i) => ({
-    label: `(${i})`,
-    i,
-    isActive: false
-}));
-
-const defaultIsItemLoaded = index => !!defaultItems[index];
-const defaultLoadMoreItems = (startIndex, stopIndex) => {
-    for (let index = startIndex; index <= stopIndex; index++) {
-        defaultItems[index] = {loading: true};
-    }
-    return new Promise(resolve =>
-        setTimeout(() => {
-            for (let index = startIndex; index <= stopIndex; index++) {
-                defaultItems[index] = {
-                    label: `(${index})`,
-                    index,
-                    isActive: false
-                };
-            }
-            resolve();
-        }, 0)
-    );
-};
-
-const defaultRow = ({index, style, data}) => <Inspector
-    data={{height: data.itemSize(index), ...data.items[index], ...style}}/>;
-const defaultStickyButton = ({isSticky, onStickyChange}) => (
-    <button
-        style={{position: "absolute", top: 0, left: 0, zIndex: 1}}
-        onClick={onStickyChange}
-    >
-        {isSticky ? "*" : "-"}
-    </button>
-);
-
-export const InfiniteStickyListDemo = withStyles(styles)(InfiniteStickyList);
-
-InfiniteStickyListDemo.defaultProps = {
-    items: defaultItems,
-    defaultItemSize: 30,
-    StickyComponent: defaultStickyButton,
-    RowComponent: defaultRow,
-    isItemLoaded: defaultIsItemLoaded,
-    loadMoreItems: defaultLoadMoreItems,
-    stickyIndices: [],
-}
