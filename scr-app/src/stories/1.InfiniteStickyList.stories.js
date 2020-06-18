@@ -1,7 +1,13 @@
-import React from 'react';
-import InfiniteStickyList from "./InfiniteStickyList";
+import {action} from '@storybook/addon-actions';
+import React, {forwardRef} from 'react';
+import InfiniteStickyList from "../components/InfiniteStickyList";
 import {withStyles} from '@material-ui/core/styles';
 import Inspector from "react-inspector";
+
+export default {
+    title: 'InfiniteStickyList',
+    component: InfiniteStickyList,
+};
 
 const styles = theme => ({
     row: {},
@@ -44,16 +50,16 @@ const defaultRow = ({index, style, data}) => <Inspector
     data={{height: data.itemSize(index), ...data.items[index], ...style}}/>;
 const defaultStickyButton = ({isSticky, onStickyChange}) => (
     <button
-        style={{position: "absolute", top: 0, left: 0, zIndex: 1}}
-        onClick={onStickyChange}
+        style={{position: "absolute", top: 0, left: 0,/* zIndex: 1*/}}
+        onClick={event => action('onClick')(event)|| onStickyChange(event)}
     >
         {isSticky ? "*" : "-"}
     </button>
 );
 
-export const InfiniteStickyListDemo = withStyles(styles)(InfiniteStickyList);
+const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
 
-InfiniteStickyListDemo.defaultProps = {
+StyledInfiniteStickyList.defaultProps = {
     items: defaultItems,
     defaultItemSize: 30,
     StickyComponent: defaultStickyButton,
@@ -64,3 +70,8 @@ InfiniteStickyListDemo.defaultProps = {
     stickyIndices: [],
     heightDelta: 0,
 };
+
+export const InfiniteStickyListWithInspector = () =>
+    (<div style={{height: 800, width: '100%'}}>
+        <StyledInfiniteStickyList/>
+    </div>);

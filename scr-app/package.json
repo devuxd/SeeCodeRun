@@ -56,7 +56,13 @@
     "use-resize-observer": "^6.1.0"
   },
   "devDependencies": {
-    "typescript": "^3.9.5",
+    "@storybook/addon-actions": "^5.3.19",
+    "@storybook/addon-links": "^5.3.19",
+    "@storybook/addons": "^5.3.19",
+    "@storybook/cli": "^5.3.19",
+    "@storybook/preset-create-react-app": "^3.0.1",
+    "@storybook/react": "^5.3.19",
+    "bundle-buddy": "^0.2.2",
     "cross-env": "^7.0.2",
     "react-app-rewired": "^2.1.6",
     "react-scripts": "^3.4.1",
@@ -65,7 +71,7 @@
     "redux-devtools-filterable-log-monitor": "^0.8.1",
     "redux-devtools-log-monitor": "^1.4.0",
     "source-map-explorer": "^2.4.2",
-    "bundle-buddy": "^0.2.2"
+    "typescript": "^3.9.5"
   },
   "scripts": {
     "start": "react-app-rewired start",
@@ -76,7 +82,9 @@
     "analyze-main": "source-map-explorer build/static/js/main.*",
     "analyze-bundle": "bundle-buddy build/static/*.map build/static/*/*.map",
     "test": "react-app-rewired test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "storybook": "start-storybook -p 9009 -s public",
+    "build-storybook": "build-storybook -s public"
   },
   "browserslist": {
     "production": [
