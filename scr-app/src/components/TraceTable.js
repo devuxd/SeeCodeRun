@@ -263,8 +263,7 @@ const configureMatchesFilter = (searchState) => {
             }
             return result;
         }
-    }
-;
+    };
 
 class TraceTable extends React.Component {
     constructor(props) {

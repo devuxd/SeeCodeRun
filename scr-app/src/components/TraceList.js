@@ -1,5 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import isString from 'lodash/isString';
+import JSAN from "jsan";
+
 import {withStyles} from '@material-ui/core/styles';
 import {darken, fade, lighten} from '@material-ui/core/styles/colorManipulator';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
@@ -7,6 +10,8 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import Pin from "mdi-material-ui/Pin";
 import PinOutline from "mdi-material-ui/PinOutline";
 
+import ButtonBase from '@material-ui/core/ButtonBase';
+import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
@@ -19,112 +24,17 @@ import InfiniteStickyList from './InfiniteStickyList';
 import ObjectExplorer from "./ObjectExplorer";
 
 import {PastebinContext, TABLE_ROW_HEIGHT} from "../containers/Pastebin";
-import {HighlightPalette} from '../containers/LiveExpressionStore';
+import {
+    configureGoToTimelineBranch,
+    HighlightPalette
+} from '../containers/LiveExpressionStore';
 import debounce from 'lodash/debounce';
+import OverflowComponent from "./OverflowComponent";
 
 // import {AutoSizer, Column, Table} from 'react-virtualized';
-// import Highlighter from "react-highlight-words";
+import Highlighter from "react-highlight-words";
 
-const columnData = [
-    {
-        id: 'value',
-        numeric: false,
-        className: 'cellPadding',
-        label: ''/*'Value'*/,
-        colSpan: 1
-    },
-];
-
-const columnDataAutosize = [
-    {
-        id: 'value',
-        dataKey: 'entry',
-        numeric: false,
-        className: 'cellPadding',
-        label: ''/*'Value'*/,
-        colSpan: 1,
-        width: (width) => width,
-    },
-];
-
-const createSortHandler = ({onRequestSort}, property) => event => {
-    onRequestSort && onRequestSort(event, property);
-};
-
-
-class ConsoleTableHead extends React.Component {
-    render() {
-        const {
-            isSelectable, onSelectAllClick, order, orderBy, numSelected,
-            rowCount, classes
-        } = this.props;
-
-        return (
-            <TableHead>
-                <TableRow className={classes.tableHeadRow}>
-                    {isSelectable &&
-                    <TableCell padding="checkbox">
-                        <Checkbox
-                            indeterminate={
-                                numSelected > 0 && numSelected < rowCount
-                            }
-                            checked={numSelected === rowCount}
-                            onChange={onSelectAllClick}
-                            padding="none"
-                        />
-                    </TableCell>
-                    }
-                    {columnData.map(column => {
-                        return (
-                            <TableCell
-                                key={column.id}
-                                align={column.numeric ? 'right' : 'inherit'}
-                                className={classes[column.className]}
-                                sortDirection={
-                                    orderBy === column.id ? order : false
-                                }
-                            >
-                                <Tooltip
-                                    title="Sort"
-                                    placement={
-                                        column.numeric ?
-                                            'bottom-end'
-                                            : 'bottom-start'
-                                    }
-                                    enterDelay={300}
-                                >
-                                    <TableSortLabel
-                                        active={orderBy === column.id}
-                                        direction={order}
-                                        onClick={
-                                            createSortHandler(
-                                                this.props,
-                                                column.id)
-                                        }
-                                    >
-                                        {column.label}
-                                    </TableSortLabel>
-                                </Tooltip>
-                            </TableCell>
-                        );
-                    }, this)}
-                </TableRow>
-            </TableHead>
-        );
-    }
-}
-
-ConsoleTableHead.propTypes = {
-    isSelectable: PropTypes.bool.isRequired,
-    numSelected: PropTypes.number.isRequired,
-    onRequestSort: PropTypes.func.isRequired,
-    onSelectAllClick: PropTypes.func.isRequired,
-    order: PropTypes.string.isRequired,
-    orderBy: PropTypes.string.isRequired,
-    rowCount: PropTypes.number.isRequired,
-};
-
-
+let expressionCellMaxWidth = 300;
 const styles = theme => ({
     row: {},
     sticky: {
@@ -175,12 +85,6 @@ const styles = theme => ({
         height: TABLE_ROW_HEIGHT,
     },
     hover: {},
-    valueCell: {
-        overflow: 'hidden',
-        margin: 0,
-        padding: 0,
-        borderBottom: 0,
-    },
     bottomAction: {
         margin: theme.spacing(4),
     },
@@ -232,48 +136,109 @@ const styles = theme => ({
         display: 'flex',
         alignItems: 'center',
         flexFlow: 'row',
+    },
+    hoverObject: {
+        backgroundColor: fade(HighlightPalette.object, 0.05),
+        '&$hover:hover': {
+            backgroundColor: HighlightPalette.object,
+        },
+    },
+    hoverGraphical: {
+        backgroundColor: HighlightPalette.graphical,
+        '&$hover:hover': {
+            backgroundColor: fade(HighlightPalette.graphical, 0.2),
+        }
+    },
+    hoverError: {
+        backgroundColor: fade(HighlightPalette.error, 0.2),
+        '&$hover:hover': {
+            backgroundColor: HighlightPalette.error,
+        },
+    },
+    expressionCellRoot: {
+        borderBottom: 0,
+        overflow: 'hidden',
+        display: 'table-cell',
+        verticalAlign: 'inherit',
+        textAlign: 'left',
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: theme.spacing(2),
+        paddingRight: theme.spacing(1),
+        maxWidth: expressionCellMaxWidth,
+    },
+    valueCell: {
+        // overflow: 'hidden',
+        margin: 0,
+        padding: 0,
+        borderBottom: 0,
+    },
+    expressionCellContent: {
+        overflow: 'auto',
+        position: 'relative',
+        maxWidth: expressionCellMaxWidth,
+        paddingTop: theme.spacing(0.5),
+        paddingBottom: theme.spacing(1),
+        marginBottom: theme.spacing(-1),
+    },
+    expressionCellContentTypography: {
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontWeight: 'normal',
+        fontSize: 11,
+        // lineHeight: 14,
+        letterSpacing: 0,
+    },
+    tableHeadCell: {
+        marginLeft: theme.spacing(35),
+    },
+    cellPadding: {
+        paddingLeft: theme.spacing(6),
     }
 });
 
 const configureMatchesFilter = (searchState) => {
-        const findChunks = (textToHighlight) => {
-            const searchWords = searchState.value.split(' ');
-            return searchState.findChunks(
-                {
-                    searchWords,
-                    textToHighlight
-                }
-            )
+    const findChunks = (textToHighlight) => {
+        const searchWords = searchState.value.split(' ');
+        return searchState.findChunks({searchWords, textToHighlight})
+    };
+
+    return (data) => {
+        const result = {
+            found: false,
+            functions: [],
+            expressions: [],
+            values: [],
         };
 
-        return (data) => {
-            const result = {
-                found: false,
-                functions: [],
-                expressions: [],
-                values: [],
-            };
+        const hasFilters = searchState.isFunctions || searchState.isExpressions || searchState.isValues;
 
+        const isAnyText = !searchState.value.trim().length;
 
-            const isAnyText = !searchState.value.trim().length;
-
-            if (isAnyText) {
-                result.found = true;
-                return result;
-            }
-
-            result.values = findChunks(data.expression);
-            result.found = !!result.values.length;
-
-            if (!result.found) {
-                result.values = findChunks(data.value);
-                result.found = !!result.values.length;
-            }
-
+        if (isAnyText && !hasFilters) {
+            result.found = true;
             return result;
         }
+
+        if (searchState.isFunctions &&
+            searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
+            result.functions = isAnyText ? [] : findChunks(data.expression);
+            result.found = isAnyText || !!result.functions.length;
+        }
+
+        if (searchState.isExpressions &&
+            !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
+            result.expressions = isAnyText ? [] : findChunks(data.expression);
+            result.found = isAnyText || result.found || !!result.expressions.length;
+        }
+
+        if (searchState.isValues &&
+            !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
+            result.values = isAnyText ? [] : findChunks(data.value);
+            result.found = isAnyText || result.found || !!result.values.length;
+        }
+        return result;
     }
-;
+};
 
 function createData(id, entry) {
     return {id, entry};
@@ -296,14 +261,32 @@ const RowContainer = React.forwardRef(
 
 
 const Row = ({index, style, data}) => {
+    if (!index) {
+        return null;
+    }
     const n = (data.items[index] || {}).entry || {};
+    const result = n.chunksResult;
+    // console.log(index, n);
+
     const {
         columnIndex, columns, classes, rowHeight, onRowClick,
         objectNodeRenderer, isRowSelected, highlightSingleText,
-        traceSubscriber, HighlightTypes, setCursorToLocation
+        traceSubscriber, HighlightTypes, setCursorToLocation,
+        searchState, goToTimelineBranch, columnStyles = [
+            {width: '40%'},
+            {width: '60%'},
+        ]
     } = data;
+    // console.log(classes);
     const isSelected = n.id && isRowSelected(n.id);
     // const result = n.chunksResult;
+    parsed[n.id] =
+        parsed[n.id] || {
+            current: (isString(n.value) ?
+                JSAN.parse(n.value) : n.value)
+        };
+
+    const parsedValue = parsed[n.id].current;
     let onMouseEnter = null, onMouseLeave = null, onClick = null;
     if (!n.isFromInput) {
 
@@ -318,62 +301,84 @@ const Row = ({index, style, data}) => {
         onClick = () => setCursorToLocation(n.loc)
     }
     return (
-        <TableCell
-            component="div"
-            classes={{root: classes.valueCell}}
-            onClick={onClick}
-            align={
-                (columnIndex != null
-                    && columns[columnIndex]
-                    && columns[columnIndex].numeric
-                ) || false ?
-                    'right'
-                    : 'left'
-            }
-        >
-            <div className={classes.cellParamContainer}>
-                {n.isFromInput ? n.isResult ?
-                    <ChevronLeftIcon className={classes.icon}/>
-                    : <ChevronRightIcon className={classes.icon}/>
-                    : null
-                }
-                {(n.isFromInput && !n.isResult && !n.isError) ?
-                    <div className={classes.commandText}>
-                        {`${n.value[0]}`}
-                    </div>
-                    : (n.value || []).map((param, i) => {
-                        return (
-                            <div className={classes.cellParam} key={i}>
-                                <ObjectExplorer key={i}
-                                                expressionId={n.expressionId}
-                                                objectNodeRenderer={
-                                                    objectNodeRenderer
-                                                }
-                                                data={param}
-                                />
-                            </div>
-                        );
-                    })
-                }
-            </div>
-        </TableCell>
+        <React.Fragment>
+            <TableCell
+                component="div"
+                classes={{root: classes.expressionCellRoot}}
+                onMouseEnter={() =>
+                    highlightSingleText(n.loc, HighlightTypes.text)}
+                onMouseLeave={() => highlightSingleText()}
+                style={columnStyles[0]}
+            >
+                <OverflowComponent
+                    contentClassName={classes.expressionCellContent}
+                    disableOverflowDetectionY={true}
+                >
+                    <ButtonBase onClick={
+                        () => {
+                            setCursorToLocation(n.loc);
+                            goToTimelineBranch(n.entry);
+                        }
+                    }>
+                        <Typography align={"left"}
+                                    className={classes.expressionCellContentTypography}
+                                    noWrap>
+                            <Highlighter
+                                searchWords={[searchState.value]}
+                                textToHighlight={n.expression}
+                                findChunks={() => result.expressions}
+                            />
+                        </Typography>
+                    </ButtonBase>
+                </OverflowComponent>
+            </TableCell>
+            <TableCell
+                component="div"
+                className={classes.valueCell}
+                onMouseEnter={() =>
+                    highlightSingleText(
+                        n.loc, n.isError ? HighlightTypes.error
+                            : n.isGraphical ?
+                                HighlightTypes.graphical : HighlightTypes.text,
+                        traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.entry.calleeId))}
+                onMouseLeave={() => highlightSingleText()}
+                classes={{
+                    root: n.isError ? classes.hoverError
+                        : n.isGraphical ? classes.hoverGraphical : classes.hoverObject,
+                    // hover: classes.hover
+                }}
+                style={columnStyles[1]}
+            >
+                <ObjectExplorer
+                    expressionId={n.expressionId}
+                    objectNodeRenderer={objectNodeRenderer}
+                    data={parsedValue}
+                    outputRefs={n.entry.outputRefs}
+                />
+            </TableCell>
+        </React.Fragment>
 
     );
 };
 
 export const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
 
+let parsed = {};
+
 function WindowedTable(props) {
     const {
         defaultItemSize = 32,
-        classes, logData: data, handleRequestSort, searchState,
+        classes, data, handleRequestSort, searchState,
         onHandleTotalChange, open, objectNodeRenderer, order, orderBy,
         selected, page, isSelectable,
         handleSelectClick, handleSelectAllClick, isRowSelected,
         HighlightTypes, highlightSingleText, setCursorToLocation,
         traceSubscriber, handleChangePlaying,
-        heightDelta, autoScroll,
+        heightDelta, autoScroll, isNew, highlightErrors
     } = props;
+    if (isNew) {
+        parsed = {};
+    }
     const [stickyIndices, setStickyIndices] = React.useState([]);
     const findChunks = React.useMemo(
         () => configureMatchesFilter(searchState),
@@ -385,24 +390,33 @@ function WindowedTable(props) {
     const matchedData = [];
     data.forEach((n, i) => {
         const newN = {...n, isMatch: true, chunksResult: findChunks(n)};
-        if (
-            !newN.chunksResult.found || (!newN.isFromInput && !newN.expression)
-        ) {
+        if (!newN.chunksResult.found || !newN.expression) {
             newN.isMatch = false;
         }
-        if (newN.isMatch || newN.isFromInput) {
+
+        if (n.isError) {
+            newN.isMatch = true;
+        }
+
+        if (newN.isMatch) {
             matchedData.push(newN);
         } else {
             ignoreIndices.push(i);
         }
     });
+
     totalMatches = matchedData.length;
+
     React.useEffect(
         () => onHandleTotalChange(totalMatches),
         [totalMatches]
     );
     const rows = matchedData.map((entry, i) => createData(i, entry));
+    highlightErrors && highlightErrors();
 
+    // console.log('table', this.totalMatches, data.length);
+
+    const goToTimelineBranch = configureGoToTimelineBranch();
     const isItemLoaded = index => true;//!!rows[index];
     const loadMoreItems = (startIndex, stopIndex) => {
         // for (let index = startIndex; index <= stopIndex; index++) {
@@ -445,6 +459,12 @@ function WindowedTable(props) {
         setCursorToLocation,
         heightDelta,
         autoScroll,
+        handleSelectClick,
+        highlightSingleText,
+        searchState,
+        goToTimelineBranch,
+        HighlightTypes,
+        traceSubscriber,
     };
     return (
         <StyledInfiniteStickyList

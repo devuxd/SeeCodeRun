@@ -19,6 +19,14 @@ import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
 import LanguageCss3Icon from 'mdi-material-ui/LanguageCss3';
 import CodeTagsCheckIcon from 'mdi-material-ui/CodeTagsCheck';
+import SortAscendingIcon from 'mdi-material-ui/SortAscending';
+import SortDescendingIcon from 'mdi-material-ui/SortDescending';
+import SortAlphabeticalAscendingIcon
+    from 'mdi-material-ui/SortAlphabeticalAscending';
+import SortAlphabeticalDescendingIcon
+    from 'mdi-material-ui/SortAlphabeticalDescending';
+import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
+import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
@@ -66,6 +74,64 @@ export const pastebinConfigureLayout =
     };
 
 const mapDispatchToProps = {pastebinConfigureLayout};
+
+
+const sortOptions = [
+    {
+        time: true,
+        desc: true,
+        Icon: SortDescendingIcon,
+    },
+    {
+        time: true,
+        asc: true,
+        Icon: SortAscendingIcon,
+
+    },
+    {
+        expression: true,
+        desc: true,
+        Icon: SortAlphabeticalDescendingIcon,
+    },
+    {
+        expression: true,
+        asc: true,
+        Icon: SortAlphabeticalAscendingIcon,
+
+    },
+    {
+        value: true,
+        desc: true,
+        Icon: SortNumericDescendingIcon,
+    },
+    {
+        value: true,
+        asc: true,
+        Icon: SortNumericAscendingIcon,
+
+    }
+];
+
+const getSortIcon = (orderBy, orderFlow) => (
+    (sortOptions[
+        sortOptions.findIndex(
+            sortOption => sortOption[orderBy] && sortOption[orderFlow]
+        )
+        ] || {}).Icon
+);
+
+const getNextSortOption = (orderBy, orderFlow) => (
+    sortOptions[(
+        sortOptions.findIndex(
+            sortOption => sortOption[orderBy] && sortOption[orderFlow]
+        )
+        + 1
+    ) % sortOptions.length] // returns first sort option  if not found
+);
+
+// sortOptions.forEach(
+// value => console.log(value, getNextSortOption(...Object.keys(value))))
+
 const styles = theme => ({
     layout: {
         overflow: 'visible',
@@ -335,43 +401,77 @@ class Pastebin extends Component {
     };
 
     handleChangeTimeFlow = (event, property, order) => {
-        const orderBy = 'time';
-        let timeFlow = this.state.timeFlow;
-        if (!order) {
-            order = timeFlow;
-            if (this.state.orderBy === orderBy) {
-                if (timeFlow === 'desc') {
+        this.setState((prevState) => {
+            let {timeFlow, data, logData} = prevState;
+            const orderBy = 'time';
+            if (!order) {
+                order = timeFlow;
+                if (prevState.orderBy === orderBy) {
+                    if (timeFlow === 'desc') {
+                        order = 'asc';
+                        timeFlow = order;
+                    } else {
+                        order = 'desc';
+                        timeFlow = order;
+                    }
+                }
+            } else {
+                timeFlow = order;
+            }
+
+            data = this.sortData(data, orderBy, order);
+            logData = this.sortData(logData, orderBy, order);
+            return {data, logData, order, orderBy, timeFlow};
+        });
+    };
+
+    handleRequestSort = (event, orderBy, order) => {
+        this.setState((prevState) => {
+            let {data, logData} = prevState;
+            if (!order) {
+                order = 'desc';
+                if (prevState.orderBy === orderBy &&
+                    prevState.order === 'desc') {
                     order = 'asc';
-                    timeFlow = order;
-                } else {
-                    order = 'desc';
-                    timeFlow = order;
                 }
             }
-        } else {
-            timeFlow = order;
-        }
 
-        const data = this.sortData(this.state.data, orderBy, order);
-        const logData = this.sortData(this.state.logData, orderBy, order);
-
-        this.setState({data, logData, order, orderBy, timeFlow});
+            data = this.sortData(data, orderBy, order);
+            logData = this.sortData(logData, orderBy, order);
+            return {data, logData, order, orderBy};
+        });
     };
 
-    handleRequestSort = (event, property, order) => {
-        const orderBy = property;
-        if (!order) {
-            order = 'desc';
-            if (this.state.orderBy === property && this.state.order === 'desc') {
-                order = 'asc';
-            }
-        }
+    getSortInfo = () => {
+        const {order, orderBy, timeFlow} = this.state;
+        const orderFlow = orderBy === 'time' ?
+            timeFlow : order;
+        return {
+            handleGetNextSortOption: event => {
+                const orderFlow = orderBy === 'time' ? timeFlow : order;
+                const nextOptions = getNextSortOption(
+                    orderBy,
+                    orderFlow
+                );
+                const nextOptionsKeys = Object.keys(
+                    nextOptions
+                );
 
-        const data = this.sortData(this.state.data, orderBy, order);
-        const logData = this.sortData(this.state.logData, orderBy, order);
-        console.log('console.log(logData);', logData);
-        this.setState({data, logData, order, orderBy});
-    };
+                if (nextOptions.time) {
+                    this.handleChangeTimeFlow(event, ...nextOptionsKeys);
+                } else {
+                    this.handleRequestSort(event, ...nextOptionsKeys);
+                }
+            },
+            SortIcon: getSortIcon(orderBy, orderFlow),
+            sortTitle: `Order by ${
+                orderBy
+            } ${
+                orderFlow === 'desc' ?
+                    'descending' : 'ascending'
+            }`
+        };
+    }
 
     sortData = (data, orderBy, order) => {
         return order === 'desc' ?
@@ -778,12 +878,14 @@ class Pastebin extends Component {
     }
 
     render() {
-        const {handleChangePlaying} = this;
-        const {appClasses, classes, appStyle, editorIds, TopNavigationBarComponent} = this.props;
+        const {
+            appClasses, classes, appStyle, editorIds, TopNavigationBarComponent
+        } = this.props;
         const {
             gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
-            autorunDelay, width, height, hoveredCellKey, isGraphicalLocatorActive,
-            isAutoExpand, pointOfViewTiles, isPlaying,
+            autorunDelay, width, height, hoveredCellKey,
+            isGraphicalLocatorActive, isAutoExpand, pointOfViewTiles, isPlaying,
+            order, orderBy, timeFlow,
         } = this.state;
         //console.log('isAutoExpand',isAutoExpand,this.state);
         const rowHeight =
@@ -795,7 +897,11 @@ class Pastebin extends Component {
             return (
                 <div className={appClasses.content}>
                     <PastebinContext.Provider
-                        value={{...this.state, handleChangePlaying}}>
+                        value={{
+                            ...this.state,
+                            handleChangePlaying: this.handleChangePlaying,
+                            getSortInfo: this.getSortInfo,
+                        }}>
                         {global.monaco && global.monaco.editor && isAutoExpand &&
                         <Drawer anchor={"bottom"} open={isAutoExpand}
                                 onClose={this.handleChangeAutoExpand}>
@@ -885,12 +991,9 @@ class Pastebin extends Component {
                                 {/*    isRememberScrollingDisabled={isNew}*/}
                                 {/*>*/}
                                 <DebugContainer
-                                    appClasses={appClasses}
-                                    appStyle={appStyle}
                                     tabIndex={tabIndex}
-                                    ScrollingListContainers={this.scrollingListContainers}
                                     handleChangeTab={this.handleChangeTab}
-                                    handleChangePlaying={handleChangePlaying}
+                                    handleChangePlaying={this.handleChangePlaying}
                                     isPlaying={isPlaying}
                                 />
                                 {/*</ScrollingList>*/}

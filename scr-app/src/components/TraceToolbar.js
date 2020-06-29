@@ -20,16 +20,6 @@ import FilterCenterFocusIcon from '@material-ui/icons/FilterCenterFocus';
 import PauseIcon from '@material-ui/icons/Pause';
 // import SearchIcon from '@material-ui/icons/Search';
 // import DeleteIcon from '@material-ui/icons/Delete';
-
-import SortAscendingIcon from 'mdi-material-ui/SortAscending';
-import SortDescendingIcon from 'mdi-material-ui/SortDescending';
-import SortAlphabeticalAscendingIcon
-    from 'mdi-material-ui/SortAlphabeticalAscending';
-import SortAlphabeticalDescendingIcon
-    from 'mdi-material-ui/SortAlphabeticalDescending';
-import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
-import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
-
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CallMergeIcon from '@material-ui/icons/CallMerge';
@@ -52,61 +42,6 @@ const mapStateToProps = null,
 //   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
 //
 // ];
-
-const sortOptions = [
-    {
-        time: true,
-        desc: true,
-        Icon: SortDescendingIcon,
-    },
-    {
-        time: true,
-        asc: true,
-        Icon: SortAscendingIcon,
-
-    },
-    {
-        expression: true,
-        desc: true,
-        Icon: SortAlphabeticalDescendingIcon,
-    },
-    {
-        expression: true,
-        asc: true,
-        Icon: SortAlphabeticalAscendingIcon,
-
-    },
-    {
-        value: true,
-        desc: true,
-        Icon: SortNumericDescendingIcon,
-    },
-    {
-        value: true,
-        asc: true,
-        Icon: SortNumericAscendingIcon,
-
-    }
-];
-
-const getSortIcon = (orderBy, orderFlow) => (
-    (sortOptions[
-        sortOptions.findIndex(
-            sortOption => sortOption[orderBy] && sortOption[orderFlow]
-        )
-        ] || {}).Icon
-);
-
-const getNextSortOption = (orderBy, orderFlow) => (
-    sortOptions[(
-        sortOptions.findIndex(
-            sortOption => sortOption[orderBy] && sortOption[orderFlow]
-        )
-        + 1
-    ) % sortOptions.length] // returns first sort option  if not found
-);
-
-// sortOptions.forEach(value => console.log(value, getNextSortOption(...Object.keys(value))))
 
 const toolbarStyles = theme => ({
     root: {
@@ -266,8 +201,7 @@ function InputEndAdornment(props) {
 
 function ResultsFilter(props) {
     const {
-        classes, searchState,
-        order, orderBy, timeFlow, handleChangeTimeFlow, handleRequestSort
+        classes, searchState, getSortInfo
     } = props;
     const {
         isFunctions, isExpressions, isValues, handleFilterClick
@@ -278,8 +212,8 @@ function ResultsFilter(props) {
         avatar: classes.chipAvatar, // class name, e.g. `classes-label-x`
         label: classes.chipLabel,
     };
-    const orderFlow = orderBy === 'time' ? timeFlow : order;
-    const SortIcon = getSortIcon(orderBy, orderFlow);
+
+    const {SortIcon, sortTitle, handleGetNextSortOption} = getSortInfo();
 
     return (
         <React.Fragment>
@@ -319,31 +253,10 @@ function ResultsFilter(props) {
                 />
             </Tooltip>
             <Tooltip
-                title={
-                    `Order by ${
-                        orderBy
-                    } ${
-                        orderFlow === 'desc' ? 'descending' : 'ascending'
-                    }`
-                }
+                title={sortTitle}
             >
                 <Chip
-                    onClick={
-                        event => {
-                            const nextOptions = getNextSortOption(
-                                orderBy,
-                                orderFlow
-                            );
-                            const nextOptionsKeys = Object.keys(
-                                nextOptions
-                            );
-
-                            if (nextOptions.time) {
-                                handleChangeTimeFlow(event, ...nextOptionsKeys);
-                            } else {
-                                handleRequestSort(event, ...nextOptionsKeys);
-                            }
-                        }}
+                    onClick={handleGetNextSortOption}
                     classes={avatarClasses}
                     avatar={
                         <Avatar>

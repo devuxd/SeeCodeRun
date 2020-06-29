@@ -150,7 +150,7 @@ class Playground extends Component {
         }
 
         if (alJs) {
-            // console.log("AL");
+            // console.log(alJs);
             autoLog.configureIframe(this.runIframeHandler, updatePlaygroundLoadSuccess, autoLogger, html, css, js, alJs);
             if (data.to) {
                 data.from = data.to;

@@ -1,7 +1,8 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
+
 import {withStyles} from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import Badge from '@material-ui/core/Badge';
@@ -16,9 +17,11 @@ import Slide from '@material-ui/core/Slide';
 
 import PlayListPlayIcon from '@material-ui/icons/PlaylistPlay';
 import ConsoleIcon from 'mdi-material-ui/ConsoleLine';
-import TraceTable from './TraceTable';
+
+import {useLodashDelayable} from '../utils/reactUtils';
+import TraceList from './TraceList';
 import ConsoleInput from './ConsoleInput';
-import ConsoleTable from './ConsoleTable';
+import ConsoleList from './ConsoleList';
 
 function TabResultLabel({icon, label, classes, formatText, result, isUpdating}) {
     return (
@@ -116,41 +119,79 @@ function a11yProps(index) {
     };
 }
 
-function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContainers, handleChangePlaying, isPlaying, badgeMaxCount = 99}) {
+function DebugContainer(
+    {
+        classes,
+        tabIndex,
+        handleChangeTab,
+        handleChangePlaying,
+        isPlaying,
+        badgeMaxCount = 99
+    }
+) {
     const [isTraceUpdating, setIsTraceUpdating] = useState(false);
-    const [traceTotal, setTraceTotal] = useState(0);
     const [isConsoleUpdating, setIsConsoleUpdating] = useState(false);
+    const [traceTotal, setTraceTotal] = useState(0);
     const [consoleTotal, setConsoleTotal] = useState(0);
     const [consoleTableMarginTop, setConsoleTableMarginTop] = useState(0);
-    const handleTraceTotalChangeThrottled = throttle((total) => {
-        setIsTraceUpdating(true);
-        setTraceTotal(total);
-    }, 100, {leading: true, trailing: false});
 
-    const handleTraceTotalChangeDebounced = debounce((total) => {
-        setIsTraceUpdating(false);
-        setTraceTotal(total);
-    }, 500, {leading: false, trailing: true});
+    const [handleTraceTotalChangeThrottled] = useLodashDelayable(
+        throttle,
+        (total) => {
+            setIsTraceUpdating(true);
+            setTraceTotal(total);
+        },
+        1500,
+        {leading: true, trailing: false}
+    );
+    const [handleTraceTotalChangeDebounced] = useLodashDelayable(
+        debounce,
+        (total) => {
+            handleTraceTotalChangeThrottled.cancel();
+            setIsTraceUpdating(false);
+            setTraceTotal(total);
+        },
+        500,
+        {leading: false, trailing: true, maxWait: 1000}
+    );
 
-    const handleTraceTotalChange = (total) => {
-        handleTraceTotalChangeThrottled(total);
-        handleTraceTotalChangeDebounced(total);
-    };
+    const [handleTraceTotalChange] = useLodashDelayable(
+        throttle,
+        (total) => {
+            handleTraceTotalChangeThrottled(total);
+            handleTraceTotalChangeDebounced(total);
+        },
+        0,
+    );
 
-    const handleConsoleTotalChangeThrottled = throttle((total) => {
-        setIsConsoleUpdating(true);
-        setConsoleTotal(total);
-    }, 100, {leading: true, trailing: false});
+    const [handleConsoleTotalChangeThrottled] = useLodashDelayable(
+        throttle,
+        (total) => {
+            setIsConsoleUpdating(true);
+            setConsoleTotal(total);
+        },
+        1500,
+        {leading: true, trailing: false}
+    );
+    const [handleConsoleTotalChangeDebounced] = useLodashDelayable(
+        debounce,
+        (total) => {
+            handleConsoleTotalChangeThrottled.cancel();
+            setIsConsoleUpdating(false);
+            setConsoleTotal(total);
+        },
+        500,
+        {leading: false, trailing: true, maxWait: 1000}
+    );
 
-    const handleConsoleTotalChangeDebounced = debounce((total) => {
-        setIsConsoleUpdating(false);
-        setConsoleTotal(total);
-    }, 500, {leading: false, trailing: true});
-
-    const handleConsoleTotalChange = (total) => {
-        handleConsoleTotalChangeThrottled(total);
-        handleConsoleTotalChangeDebounced(total);
-    };
+    const [handleConsoleTotalChange] = useLodashDelayable(
+        throttle,
+        (total) => {
+            handleConsoleTotalChangeThrottled(total);
+            handleConsoleTotalChangeDebounced(total);
+        },
+        0,
+    );
 
     return (
         <div className={classes.root}>
@@ -234,13 +275,30 @@ function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContai
                     />
                 </Paper>
             </Slide>
-            <TraceTable
-                onHandleTotalChange={handleTraceTotalChange}
-                ScrollingListContainers={ScrollingListContainers}
-                open={tabIndex === 'trace'}
-                handleChangePlaying={handleChangePlaying}
-            />
+            {/*<TraceTable*/}
+            {/*    onHandleTotalChange={handleTraceTotalChange}*/}
+            {/*    ScrollingListContainers={ScrollingListContainers}*/}
+            {/*    open={tabIndex === 'trace'}*/}
+            {/*    handleChangePlaying={handleChangePlaying}*/}
+            {/*/>*/}
             <div style={{
+                position: 'absolute',
+                height: '100%',
+                width: '100%',
+                visibility: tabIndex === 'trace' ? 'visible' : 'hidden',
+            }}
+                 onMouseEnter={() => handleChangePlaying('table', false)}
+                 onMouseLeave={() => handleChangePlaying('table', true)}
+            >
+                <TraceList
+                    headerHeight={0}
+                    onHandleTotalChange={handleTraceTotalChange}
+                    heightDelta={0}
+                    autoScroll={isPlaying}
+                />
+            </div>
+            <div style={{
+                position: 'absolute',
                 height: '100%',
                 width: '100%',
                 visibility: tabIndex === 'console' ? 'visible' : 'hidden',
@@ -254,11 +312,11 @@ function DebugContainer({classes, tabIndex, handleChangeTab, ScrollingListContai
                      onMouseEnter={() => handleChangePlaying('table', false)}
                      onMouseLeave={() => handleChangePlaying('table', true)}
                 >
-                    <ConsoleTable
+                    <ConsoleList
                         headerHeight={consoleTableMarginTop}
                         onHandleTotalChange={handleConsoleTotalChange}
-                        heightDelta ={consoleTableMarginTop}
-                        autoScroll = {isPlaying}
+                        heightDelta={consoleTableMarginTop}
+                        autoScroll={isPlaying}
                     />
                 </div>
             </div>

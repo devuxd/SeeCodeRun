@@ -49,7 +49,7 @@ export const InfiniteStickyListWithInspector = () => {
             }, 10)
         );
     };
-    const defaultRowContainer = forwardRef(({...props}, ref) => (
+    const defaultRowContainer = forwardRef(({isSticky, isScrolling, ...props}, ref) => (
         <div ref={ref} {...props} />));
     const defaultRow = ({index, style, data}) => <Inspector
         data={{height: data.itemSize(index), ...data.items[index], ...style}}/>;
