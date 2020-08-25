@@ -658,6 +658,28 @@ class Pastebin extends Component {
                     //console.log(orderBy, order,orderBy === 'time' && order === 'desc');
                     const sortedData = this.sortData(data, orderBy, order);
                     const sortedLogData = this.sortData(logData, orderBy, order);
+
+                    const configureMappingEventListeners = (n) => {
+                        let onMouseEnter = null, onMouseLeave = null,
+                            onClick = null;
+                        if (!n.isFromInput) {
+                            onMouseEnter = () =>
+                                highlightSingleText(
+                                    n.loc, n.isError ? HighlightTypes.error
+                                        : n.isGraphical ?
+                                            HighlightTypes.graphical
+                                            : HighlightTypes.text,
+                                    traceSubscriber.getMatches(
+                                        n.funcRefId,
+                                        n.dataRefId,
+                                        n.entry.calleeId
+                                    )
+                                )
+                            onMouseLeave = () => highlightSingleText();
+                            onClick = () => setCursorToLocation(n.loc)
+                        }
+                        return {onMouseEnter, onMouseLeave, onClick};
+                    };
                     this.setState((prevState) => ({
                         ...rowsLayout, // rowsPerPage, defaulRowsPerPage
                         isNew: isNew,
@@ -677,6 +699,7 @@ class Pastebin extends Component {
                         colorizeDomElement,
                         objectNodeRenderer,
                         handleChange,
+                        configureMappingEventListeners
                     }));
                     this.handleChangeDebugLoading(false);
                 } else {
@@ -833,6 +856,7 @@ class Pastebin extends Component {
         scrollToTop: this.scrollToTop,
         isGraphicalLocatorActive: false,
         pointOfViewTiles: [],
+        configureMappingEventListeners:()=>()=>{},
     };
 
     handleChangePointOfViewTiles = (...params) => {
@@ -1019,7 +1043,7 @@ class Pastebin extends Component {
                                         'Hide' : 'Show'} visual elements referenced in code`}
                                 >
                                     <IconButton
-                                        color={isGraphicalLocatorActive ? 'secondary' : 'default'}
+                                        color={isGraphicalLocatorActive ? 'secondary' : 'inherit'}
                                         className={classes.locatorButton}
                                         raised="true"
                                         onClick={this.handleChangeGraphicalLocator}

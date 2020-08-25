@@ -27,7 +27,11 @@ const createSimpleEditor = (reactRef, monaco, text, editorModelLanguage, editorO
     return {editor, updateText};
 };
 
-const createDiffEditor = (reactRef, monaco, originalText, modifiedText, editorModelLanguage, editorOptions) => {
+const createDiffEditor = (reactRef, monaco, originalText, modifiedText, editorModelLanguage, editorOptions, showMonacoIds) => {
+    if(!showMonacoIds){
+        originalText = originalText.replace(/'b;[0-9]+'/g, "'*id*'");
+        modifiedText = modifiedText.replace(/'b;[0-9]+'/g, "'*id*'");
+    }
     const originalModel = monaco.editor.createModel(originalText, editorModelLanguage);
     const modifiedModel = monaco.editor.createModel(modifiedText, editorModelLanguage);
 

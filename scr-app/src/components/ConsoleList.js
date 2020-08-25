@@ -9,11 +9,7 @@ import PinOutline from "mdi-material-ui/PinOutline";
 
 import IconButton from '@material-ui/core/IconButton';
 import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
-import Checkbox from '@material-ui/core/Checkbox';
-import Tooltip from '@material-ui/core/Tooltip';
 
 import InfiniteStickyList from './InfiniteStickyList';
 import ObjectExplorer from "./ObjectExplorer";
@@ -38,14 +34,6 @@ const styles = theme => ({
     },
     table: {
         minWidth: 'calc(100%)',
-        // temporary right-to-left patch, waiting for
-        // https://github.com/bvaughn/react-virtualized/issues/454
-        '& .ReactVirtualized__Table__headerRow': {
-            flip: false,
-            paddingRight: theme.direction === 'rtl' ?
-                '0px !important'
-                : undefined,
-        },
     },
     tableWrapper: {
         overflowX: 'auto',
@@ -78,7 +66,7 @@ const styles = theme => ({
     valueCell: {
         overflow: 'hidden',
         margin: 0,
-        padding: 0,
+        padding: theme.spacing(1),
         borderBottom: 0,
     },
     bottomAction: {
@@ -199,29 +187,21 @@ const Row = ({index, style, data}) => {
     const n = (data.items[index] || {}).entry || {};
     const {
         columnIndex, columns, classes, rowHeight, onRowClick,
-        objectNodeRenderer, isRowSelected, highlightSingleText,
-        traceSubscriber, HighlightTypes, setCursorToLocation
+        objectNodeRenderer, isRowSelected,
+        configureMappingEventListeners
     } = data;
     const isSelected = n.id && isRowSelected(n.id);
     // const result = n.chunksResult;
-    let onMouseEnter = null, onMouseLeave = null, onClick = null;
-    if (!n.isFromInput) {
-
-
-        onMouseEnter = () =>
-            highlightSingleText(
-                n.loc, n.isError ? HighlightTypes.error
-                    : n.isGraphical ?
-                        HighlightTypes.graphical : HighlightTypes.text,
-                traceSubscriber.getMatches(n.funcRefId, n.dataRefId))
-        onMouseLeave = () => highlightSingleText();
-        onClick = () => setCursorToLocation(n.loc)
-    }
+    const {
+        onMouseEnter, onMouseLeave, onClick
+    } = configureMappingEventListeners(n);
     return (
         <TableCell
             component="div"
             classes={{root: classes.valueCell}}
-            onClick={onClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            // onClick={onClick}
             align={
                 (columnIndex != null
                     && columns[columnIndex]
@@ -282,15 +262,16 @@ const StickyAction = React.memo(({isSticky, onStickyChange}) => (
 
 function WindowedTable(props) {
     const {
+        defaultItemSize = 32,
         logData: data,
         searchState,
+        configureMappingEventListeners,
         onHandleTotalChange,
         objectNodeRenderer,
         isRowSelected,
         setCursorToLocation,
         heightDelta,
         autoScroll,
-        defaultItemSize = 19,
     } = props;
     const [stickyIndices, setStickyIndices] = React.useState([]);
     const findChunks = React.useMemo(
@@ -347,6 +328,7 @@ function WindowedTable(props) {
         setCursorToLocation,
         heightDelta,
         autoScroll,
+        configureMappingEventListeners,
     };
     return (
         <StyledInfiniteStickyList
@@ -363,33 +345,9 @@ WindowedTable.propTypes = {
     autoScroll: PropTypes.bool,
 };
 
-// const debouncedWindowedTableWithContext = debounce(
-//     (props, context) => {
-//         return <WindowedTable {...props} {...context}/>
-//     }, 50, {maxWait: 100})
-//
-// {context => debouncedWindowedTableWithContext(props, context)}
 const WindowedTableWithContext = props => (
     <PastebinContext.Consumer>
-        {(
-            context
-            // {
-            //     logData,
-            //     searchState,
-            //     objectNodeRenderer,
-            //     isRowSelected,
-            //     setCursorToLocation
-            // }
-        ) => <WindowedTable
-            {...props}
-            {...context}
-            // logData={[] || logData}
-            // searchState={searchState}
-            // objectNodeRenderer={objectNodeRenderer}
-            // isRowSelected={isRowSelected}
-            // setCursorToLocation={setCursorToLocation}
-        />
-        }
+        {(context) => <WindowedTable {...props} {...context}/>}
     </PastebinContext.Consumer>
 );
 

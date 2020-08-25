@@ -167,17 +167,17 @@ class TopNavigationBar extends Component {
             </IconButton>);
 
         return (isTopNavigationToggled ?
-                <AppBar position="sticky" color="default" elevation={2}>
+                <AppBar position="sticky" color="inherit" elevation={2}>
                     <IconButton title={"Show toolbar"}
                                 className={classes.scrIconSticky} aria-label="Menu"
                                 onClick={logoClick}
-                                color="default"
+                                color="inherit"
                     >
                         <ScrIcon {...scrSvg.sticky}/>
                     </IconButton>
                 </AppBar>
                 :
-                <AppBar position="sticky" color="default" className={classes.appCompact} elevation={2}>
+                <AppBar position="sticky" color="inherit"  className={classes.appCompact} elevation={2}>
                     <Toolbar
                         variant="dense"
                         disableGutters
@@ -191,7 +191,7 @@ class TopNavigationBar extends Component {
                             <ScrIcon {...scrSvg.logo}/>
                         </IconButton>
                         <IconButton title={chatTitle} onClick={chatClick}
-                                    color={isChatToggled ? "secondary" : "default"}>
+                                    color={isChatToggled ? "secondary" : "inherit"}>
                             <ChatIcon style={iconStyle}/>
                         </IconButton>
 
@@ -199,7 +199,7 @@ class TopNavigationBar extends Component {
                             aria-owns={shareOpen ? 'menu-appbar' : null}
                             aria-haspopup="true"
                             onClick={handleShareMenu}
-                            color={shareOpen ? "secondary" : "default"}
+                            color={shareOpen ? "secondary" : "inherit"}
                             title={"Share playground"}
                         >
                             <ShareIcon style={iconStyle}/>
@@ -334,7 +334,7 @@ class TopNavigationBar extends Component {
                             aria-owns={infoOpen ? 'appbar-info-menu' : null}
                             aria-haspopup="true"
                             onClick={this.handleInfoMenu}
-                            color={infoOpen ? "secondary" : "default"}
+                            color={infoOpen ? "secondary" : "inherit"}
                             title="Info"
                         >
                             <MoreVertIcon style={iconStyle}/>

@@ -285,7 +285,7 @@ class TraceControls extends React.Component {
         return (
             <div>
                 {hidden && <Fab     mini="true"
-                                   color="default"
+                                   color="primary"
                                    aria-label="seeCode.run configuration"
                                    className={classes.speedDialBackdrop}
                                    onClick={() => this.handleVisibility(true)}

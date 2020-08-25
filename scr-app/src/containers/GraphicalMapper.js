@@ -122,7 +122,7 @@ class GraphicalMapper extends React.Component {
                     IframeAnchorEl, containerRef, handleChangeGraphicalLocator, isSelected, key
                 );
             if (!anchorEls[0]) {
-                return;
+                return {};
             }
             this.anchors = this.anchors || [];
             this.visualEls = this.visualEls || [];

@@ -245,7 +245,7 @@ class LiveExpression extends Component {
                 disableAutoFocus={true}
                 disableEnforceFocus={true}
                 open={isActive}
-                anchorEl={anchorEl}
+                anchorEl={console.log('anchorEl',isBranchNavigator, isActive, anchorEl)||anchorEl}
                 {...origin}
                 onClose={this.handleClose}
                 elevation={2}

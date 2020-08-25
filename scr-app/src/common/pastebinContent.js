@@ -40,7 +40,7 @@ function FlatButtons(props) {
         <Paper className={classes.root}>
             <Button className={classes.button} onClick={doSomething} data-something="Default">
                 Default</Button>
-            <Button color="primary" className={classes.button} onClick={doSomething} data-something="Primary">
+            <Button className={classes.button} onClick={doSomething} data-something="Primary">
                 Primary
             </Button>
                 <Button color="secondary" className={classes.button} onClick={doSomething} data-something="Secondary">

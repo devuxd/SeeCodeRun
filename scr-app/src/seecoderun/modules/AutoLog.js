@@ -1,7 +1,5 @@
 // import {TraceTypes, setAutoLogNames, toAst, wrapCallExpressions, wrapFunctionExpressions} from "../../utils/JsCodeShiftUtils";
 import isString from 'lodash/isString';
-// import DIBabelPlugin from 'babel-plugin-dynamic-import-webpack';
-// import AutoLogShift from 'jscodetracker';
 import AutoLogShift from './AutoLogShift';
 import Trace from './Trace';
 
@@ -182,36 +180,24 @@ export const importLoaders = async () => {
     if (!parse5) {
         parse5 = await import('parse5');
     }
-    if (!Babel) {// lazy loading Babel to improve boot up
-        const presetExcludes =
-            ['flow', 'typescript', 'es2017', 'es2015', 'es2015-loose', 'stage-0', 'stage-1', 'stage-2', 'es2015-no-commonjs'];
+    if (!Babel) {
+        const pluginName = 'dynamic-import-to-require-ensure';
         Babel = await import('@babel/standalone');
-        Babel.registerPlugin('dynamic-import-webpack', DIBabelPlugin);
+        Babel.registerPlugin(pluginName, await import('./DynamicImportBabelPlugin'));
+
         const options = {
-            presets: //[],
-                Object.keys(Babel.availablePresets)
-                    .filter(key => !presetExcludes.includes(key)),
-            plugins: //[],
-                Object.keys(Babel.availablePlugins)
-                    .filter(key => !(
-                        key.includes('-flow')
-                        || key.includes('-typescript')
-                        || key.includes('-strict-mode')
-                        || key.includes('-modules')
-                        || key.includes('external-helpers')
-                        || key.includes('transform-runtime')
-                        || key.includes('-async-to')
-                        || key.includes('-regenerator')
-                        || key.includes('proposal-decorators')
-                        || key.includes('syntax-decorators')
-                        || key.includes('pipeline-operator')
-                    )),
+            presets: [
+                'env',
+                'react',
+            ],
+            plugins: Object.keys(Babel.availablePlugins)
+                .filter(key =>
+                    key === pluginName ||
+                    key.includes('proposal-') &&
+                    !key.includes('proposal-decorators') &&
+                    !key.includes('proposal-pipeline-operator')
+                )
         };
-
-        options.presets.push(['es2015', {
-            modules: "commonjs",
-        }]);
-
         BabelSCR.transform = sourceCode => Babel.transform(sourceCode, options);
     }
 };
@@ -363,7 +349,7 @@ class AutoLog {
             requireConfig.triggerChange = this.appendIframe;
             this.appendIframe();
         }).catch(error => {
-                // todo [semantic] errors
+                // todo [semantic] errors, add retry
                 const {humanUnderstandableError, criticalError} = state;
                 if (humanUnderstandableError) {
                     switch (humanUnderstandableError.type) {

@@ -25,23 +25,6 @@ export const isNode = (val, win = window) => {
             (typeof val.nodeName === 'string')
 };
 
-export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
-    switch (parser) {
-        case 'babylon':
-        default:
-            return loc => {
-                if (!loc || !loc.start) {
-                    return new monaco.Range(1, 1, 1, 1);
-                }
-                return new monaco.Range(loc.start.line
-                    , loc.start.column + 1
-                    , loc.end ? loc.end.line : loc.start.line
-                    , loc.end ? loc.end.column + 1 : loc.start.column + 1,
-                );
-            };
-    }
-};
-
 export const configureCreateMonacoRange = (monaco) => {
     return (startLineNumber, startColumn, endLineNumber, endColumn) => {
         return new monaco.Range(startLineNumber, startColumn, endLineNumber, endColumn);

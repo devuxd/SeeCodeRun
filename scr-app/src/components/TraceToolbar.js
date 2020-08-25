@@ -101,6 +101,7 @@ const toolbarStyles = theme => ({
     },
     inputProps: {
         paddingLeft: theme.spacing(0.5),
+        height: '3em',
     },
     itemCenter: {
         minWidth: 400,
@@ -161,10 +162,12 @@ function InputEndAdornment(props) {
                 >
                     {!expanded ? hasSelected ?
                         <TuneIcon
-                            color="primary"
                             className={classes.tuneIcon}
                         />
-                        : <TuneIcon className={classes.tuneIcon}/>
+                        : <TuneIcon
+                            color="inherit"
+                            className={classes.tuneIcon}
+                        />
                         : <Paper>
                             {inputFilterOptions.map(filter =>
                                 (<Tooltip
@@ -374,7 +377,7 @@ function EnhancedToolbar(props) {
                     placement={'bottom-end'}
                     enterDelay={300}
                 >
-                    <IconButton color={isAutoExpand ? "primary" : 'default'}
+                    <IconButton color={isAutoExpand ? "primary" : 'inherit'}
                                 onClick={handleChangeAutoExpand}>
                         <FilterCenterFocusIcon/>
                     </IconButton>

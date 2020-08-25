@@ -7,7 +7,8 @@ class ScrollingList extends React.Component {
         // Capture the current height of the list so we can adjust scroll later.
         const {ScrollingListRef, listLength} = this.props;
         if (prevProps.listLength < listLength) {
-            return ScrollingListRef.current.scrollHeight;
+            const list =ScrollingListRef.current
+            return list.scrollHeight - list.scrollTop;
         }
         return null;
     }
@@ -17,8 +18,8 @@ class ScrollingList extends React.Component {
         // Adjust scroll so these new items don't push the old ones out of view.
         const {ScrollingListRef} = this.props;
         if (snapshot !== null) {
-            ScrollingListRef.current.scrollTop +=
-                ScrollingListRef.current.scrollHeight - snapshot;
+            const list = ScrollingListRef.current;
+            list.scrollTop = list.scrollHeight - snapshot;
         }
     }
 
@@ -29,7 +30,7 @@ class ScrollingList extends React.Component {
         );
     }
 
-    componentDidMount() {
+    componentDidMountOFF() {
         const {ScrollingListRef, onScrollEnd, onScrollChange} = this.props;
         if (ScrollingListRef.current && (onScrollEnd || onScrollChange)) {
             this.scrollListener = (e) => {
@@ -51,7 +52,7 @@ class ScrollingList extends React.Component {
         }
     };
 
-    componentWillUnmount() {
+    componentWillUnmountFF() {
         const {ScrollingListRef, onScrollEnd} = this.props;
         if (ScrollingListRef.current && onScrollEnd) {
             ScrollingListRef.current.removeEventListener('scroll', this.scrollListener);

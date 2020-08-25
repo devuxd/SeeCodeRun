@@ -1,5 +1,5 @@
-// import j from 'jscodeshift';
 import isString from 'lodash/isString';
+import isArray from 'lodash/isArray';
 
 export const toAst = (source, options) => {
     if (options) {
@@ -117,12 +117,13 @@ class AutoLogShift {
         });
         //console.log('all', allPaths);
         allPaths.reverse().forEach(pathElem => {
+            const {path} = pathElem;
             switch (pathElem.type) {
                 case 'expression':
-                    this.autoLogExpressions(ast, [pathElem.path], locationMap, getLocationId);
+                    this.autoLogExpressions(ast, [path], locationMap, getLocationId);
                     break;
                 default:
-                    this.autoLogBlocks(ast, [pathElem.path], locationMap, getLocationId);
+                    this.autoLogBlocks(ast, [path], locationMap, getLocationId);
             }
         });
         ast.findVariableDeclarators().forEach(
@@ -264,8 +265,7 @@ class AutoLogShift {
             }
             // console.log('JSXAttribute', path.parentPath.parentPath.parentPath,locationMap[id].jsxElements);
         }
-
-        params = params || [
+        params = params ? isArray(params) ? params : [params] : [
             j.callExpression(j.identifier(l.preAutoLogId),
                 [
                     jid,
@@ -274,8 +274,10 @@ class AutoLogShift {
             jValue,
             j.callExpression(j.identifier(l.postAutoLogId), [jid]),
         ];
-
-        const alExpression = j.memberExpression(j.callExpression(j.identifier(l.autoLogId), params), ident, false);
+        /// console.log('PPP', j.identifier(l.autoLogId), params);
+        const val = j.callExpression(j.identifier(l.autoLogId), params.filter(v => v));
+        // console.log('PPP', j.identifier(l.autoLogId), params, val);
+        const alExpression = j.memberExpression(val, ident, false);
         alExpression.autologId = id;
         //  type === j.CallExpression.name && console.log('V', path, j(jValue).toSource(), 'E', j(alExpression).toSource());
         return alExpression;
@@ -304,7 +306,7 @@ class AutoLogShift {
 
     static SupportedBlockExpressions = [
         // 'FunctionExpression', // x= function (...){...}
-        'ArrowFunctionExpression', // (...)=>{...},..., x=>y (without bock syntax)
+        'ArrowFunctionExpression', // (...)=>{...},..., x=>y (without block syntax)
     ];
 
     static SupportedBlocks = [
@@ -396,6 +398,7 @@ class AutoLogShift {
             let objectValue = null, propertyValue = null;
             if (objectId && !object.autologId) {
                 locationMap[objectId] = {
+                    ...(locationMap[objectId] || {}),
                     type: alt.ExpressionIdiom,
                     expressionType: object.type,
                     loc: {...objectLoc},
@@ -412,6 +415,7 @@ class AutoLogShift {
 
             if (propertyId && !property.autologId) {
                 locationMap[propertyId] = {
+                    ...(locationMap[objectId] || {}),
                     type: alt.ExpressionIdiom,
                     expressionType: property.type,
                     loc: {...propertyLoc},
@@ -449,6 +453,7 @@ class AutoLogShift {
 
             if (leftId && !left.autologId) {
                 locationMap[leftId] = {
+                    ...(locationMap[leftId] || {}),
                     type: alt.ExpressionIdiom,
                     expressionType: left.type,
                     loc: {...leftLoc},
@@ -459,6 +464,7 @@ class AutoLogShift {
 
             if (rightId && !right.autologId) {
                 locationMap[rightId] = {
+                    ...(locationMap[rightId] || {}),
                     type: alt.ExpressionIdiom,
                     expressionType: right.type,
                     loc: {...rightLoc},
@@ -496,6 +502,7 @@ class AutoLogShift {
                 let argumentValue = null;
                 if (argumentId) {
                     locationMap[argumentId] = {
+                        ...(locationMap[argumentId] || {}),
                         type: alt.ExpressionIdiom,
                         expressionType: argument.type,
                         loc: {...argumentLoc},
@@ -520,6 +527,7 @@ class AutoLogShift {
 
             if (calleeId && !callee.autologId) {
                 locationMap[calleeId] = {
+                    ...(locationMap[calleeId] || {}),
                     type: alt.ExpressionIdiom,
                     expressionType: callee.type,
                     loc: {...calleeLoc},
@@ -558,8 +566,8 @@ class AutoLogShift {
             const leftId = left.loc ? getLocationId(left.loc, left.type) : left.autologId;
             const leftLoc = left.loc || (locationMap[leftId] || {}).loc;
             const right = path.value ? path.value.init : null;
-            const rightId = right.loc ? getLocationId(right.loc, right.type) : right.autologId;
-            const rightLoc = right.loc || (locationMap[rightId] || {}).loc;
+            const rightId = right && right.loc ? getLocationId(right.loc, right.type) : (right || {}).autologId;
+            const rightLoc = right ? right.loc : (locationMap[rightId] || {}).loc;
             let rightValue = null;
 
             let extraLocs = {
@@ -588,6 +596,7 @@ class AutoLogShift {
             if (leftId) {
                 if (!left.autologId) {
                     locationMap[leftId] = {
+                        ...(locationMap[leftId] || {}),
                         type: alt.ExpressionIdiom,
                         expressionType: left.type,
                         loc: {...leftLoc},
@@ -605,6 +614,7 @@ class AutoLogShift {
 
             if (rightId && !right.autologId) {
                 locationMap[rightId] = {
+                    ...(locationMap[rightId] || {}),
                     type: alt.ExpressionIdiom,
                     expressionType: right.type,
                     loc: {...rightLoc},
@@ -626,7 +636,7 @@ class AutoLogShift {
                 j.identifier(`[true, true]`),
                 j.identifier(`[null, null]`),
             ];
-            // console.log('vd', type, path);
+//            console.log('left', left);
             // path.value.init=this.autoLogExpression(pathSource, id, type, path, p, params);
             return j.variableDeclarator(left, this.autoLogExpression(pathSource, id, type, path, p, params, locationMap));
         },
@@ -750,6 +760,7 @@ class AutoLogShift {
 
                         if (paramIdMain) {
                             locationMap[paramIdMain] = {
+                                ...(locationMap[paramIdMain] || {}),
                                 type: alt.ExpressionIdiom,
                                 expressionType: paramType,
                                 loc: {...paramLoc},
@@ -771,6 +782,7 @@ class AutoLogShift {
 
                         if (paramIdId) {
                             locationMap[paramIdId] = {
+                                ...(locationMap[paramIdId] || {}),
                                 type: alt.ExpressionIdiom,
                                 expressionType: paramIdType,
                                 loc: {...paramIdLoc},
@@ -780,7 +792,7 @@ class AutoLogShift {
                             paramIds = `${paramIds}${paramIds ? ',' : ''}'${paramId.name}'`;
                             paramValues = `${paramValues}${paramValues ? ',' : ''}${paramId.name}`;
                         } else {
-                           // console.log('pi', idPath, idPath.value);
+                            // console.log('pi', idPath, idPath.value);
                         }
                     });
                 });
@@ -889,9 +901,12 @@ class AutoLogShift {
                     start: path.value.id.autologId ?
                         locationMap[path.value.id.autologId].loc.start :
                         path.value.id.loc.start,
-                    end: path.value.init.autologId ?
-                        locationMap[path.value.init.autologId].loc.start :
-                        path.value.init.loc.start
+                    // end: (path.value.init
+                    //     && locationMap[path.value.init.autologId].loc) ?
+                    //     locationMap[path.value.init.autologId].loc.start :
+                    //     path.value.init.loc
+                    //     && path.value.init.autologId ?
+                    //         path.value.init.loc.start : path.value.id.loc.start + 1
                 };
             }
 
@@ -912,7 +927,12 @@ class AutoLogShift {
                 statementEndLoc
             };
             if (this.composedExpressions[type]) {
-                return this.composedExpressions[type]({ast, locationMap, getLocationId, path}, {
+                return this.composedExpressions[type]({
+                    ast,
+                    locationMap,
+                    getLocationId,
+                    path
+                }, {
                     pathSource,
                     id,
                     type,
@@ -968,6 +988,19 @@ class AutoLogShift {
             const parentLoc = parentType ? parentPath.value.loc : null;
             let parentId = parentLoc ? getLocationId(parentLoc, parentType) : null;
             //console.log('vdr', type, path);
+            let isImplicitBlockStatementPath = false;
+            let delayedReplacement = null;
+
+            if (parentType && parentPath && [
+                    'ArrowFunctionExpression',
+                    'IfStatement',
+                    'WhileStatement',
+                ].includes(parentType)
+                && parentPath.value
+                && parentPath.value.body
+                && parentPath.value.body.type !== 'BlockStatement') {
+                 isImplicitBlockStatementPath = true;
+            }
 
             if (id) {
                 if (AutoLogShift.SupportedExpressions.includes(type)) {
@@ -1007,7 +1040,11 @@ class AutoLogShift {
 
 
                     if (isValid) {
-                        j(path).replaceWith(getJReplacer(id, type, path, parentId, parentType, parentPath));
+                        if (isImplicitBlockStatementPath) {
+                            delayedReplacement = () => j(path).replaceWith(getJReplacer(id, type, path, parentId, parentType, parentPath));
+                        } else {
+                            j(path).replaceWith(getJReplacer(id, type, path, parentId, parentType, parentPath));
+                        }
                     } else {
                         // console.log('passing to parent', type, loc, path);
                     }
@@ -1018,6 +1055,10 @@ class AutoLogShift {
                         // console.log('ignored', type, loc, path);
                     }
                 }
+
+                if (isImplicitBlockStatementPath) {
+                    this.autoLogBlocks(ast, [path], locationMap, getLocationId, delayedReplacement);
+                }
             } else {
                 if (!type === j.FunctionExpression.name) {
                     console.log('critical', type, loc, path);
@@ -1027,7 +1068,7 @@ class AutoLogShift {
 
     }
 
-    autoLogBlocks(ast, paths, locationMap, getLocationId) {
+    autoLogBlocks(ast, paths, locationMap, getLocationId, delayedReplacement) {
 
         const getParamMapper = (result, id, loc) => {
             return (param) => {
@@ -1055,6 +1096,8 @@ class AutoLogShift {
             const type = path.value ? path.value.type : null;
             const loc = type ? path.value.loc : null;
             let id = loc ? getLocationId(loc, type) : null;
+            const isNonBlockStatement = type !== 'BlockStatement';
+
 
             if (id) {
                 const parentPath = path.parentPath;
@@ -1110,9 +1153,15 @@ class AutoLogShift {
                                 };
                                 break;
                             case 'ArrowFunctionExpression':
+
                                 extraLocs = {
                                     signature: parentLoc || locationMap[parentPath.value.autologId].loc,
                                 };
+                                console.log('ArrowFunctionExpression', extraLocs, parentId);
+                                // d.log(new Date(), `extraLocs = {
+                                //     signature: parentLoc || locationMap[parentPath.value.autologId].loc,
+                                // };`, null, `${parentLoc}`, `${loc}`);
+
                                 break;
                             case 'TryStatement':
 
@@ -1123,11 +1172,14 @@ class AutoLogShift {
                                         loc: parentLoc || parentPath.value.loc,
                                     }),
                                 };
-                                locationMap[parentId].extraLocs = locationMap[parentId].extraLocs || {};
+                                let prev = locationMap[parentId].extraLocs;
+                                locationMap[parentId].extraLocs = prev || {};
                                 locationMap[parentId].extraLocs[path.name] = {
                                     blockId: id,
                                     blockLoc: loc,
                                 };
+
+                                // d.log(new Date(), `locationMap[parentId].extraLocs = prev || {};`, null, JSON.stringify(prev), JSON.stringify(locationMap[parentId].extraLocs));
 
                                 extraLocs = {
                                     isException: true,
@@ -1178,15 +1230,18 @@ class AutoLogShift {
                                 extraLocs = {};
                         }
 
-
                         locationMap[parentId] = {
                             type: alt.BlockControl,
                             expressionType: parentType,
                             loc: {...parentLoc},
                             blockId: id,
                             blockLoc: loc,
-                            extraLocs
+                            extraLocs:
+                                !Object.keys(extraLocs).length
+                                && locationMap[parentId] ?
+                                    locationMap[parentId].extraLocs : extraLocs
                         };
+
 
                         const jid = j.identifier(`'${parentId}'`);
                         let hasParams = false;
@@ -1196,16 +1251,26 @@ class AutoLogShift {
                         const result = {funcParams: '', funcParamsIds: ''};
                         if (parentPath.value.params) {
                             hasParams = true;
-                            if (parentPath.value.params.length === 1
-                                && parentPath.value.params[0].start === parentPath.value.start) {
+                            if (parentType
+                                &&
+                                    [
+                                        'ArrowFunctionExpression'
+                                    ].includes(parentType)
+
+                                && (parentPath.value.params.length === 1
+                                    && parentPath
+                                        .value
+                                        .params[0]
+                                        .start === parentPath.value.start)) {
                                 needParentheses = true;
                             }
+
                             parentPath.value.params
                                 .forEach(getParamMapper(result, id, loc));
 
                             oriParams = parentPath.value.params;
                             parentPath.value.params =
-                                [j.identifier(needParentheses ?
+                                [j.identifier(needParentheses || delayedReplacement ?
                                     `(...${l.autoLogArguments})` : `...${l.autoLogArguments}`)];
                         }
 
@@ -1234,10 +1299,31 @@ class AutoLogShift {
                         const funcParamsStatement = funcParams.length ? j.expressionStatement(
                             j.identifier(`let [${funcParams}] = ${l.autoLogArguments}`)
                         ) : null;
-                        const enterExpression = this.autoLogExpression(null, id, type, path, null, params, locationMap);
 
-                        const body = path.value.body;
-                        //  console.log('all', path.parentPath.value.loc && path.parentPath.value.loc.start.line);
+                        let enterExpression = null, body = null;
+                        if (isNonBlockStatement) {
+                            const replacedValue = delayedReplacement ?
+                                delayedReplacement().get().value
+                                : parentPath.value.body;
+                            parentPath.value.body = j.blockStatement([
+                                parentType
+                                && parentType === 'ArrowFunctionExpression'
+                                    ? j.returnStatement(replacedValue)
+                                    : j.expressionStatement(replacedValue)
+                            ]);
+                            body = parentPath.value.body.body;
+                            enterExpression =
+                                this.autoLogExpression(
+                                    null, id, 'BlockStatement',
+                                    path, null, params, locationMap);
+                        } else {
+                            body = path.value.body;
+                            enterExpression =
+                                this.autoLogExpression(null, id,
+                                    type, path, null, params, locationMap);
+                        }
+
+
                         if (body.length && j(body[0]).toSource().startsWith('super')) {
                             if (hasParams) {
                                 path.parentPath.value.params = oriParams;
@@ -1261,7 +1347,12 @@ class AutoLogShift {
                                 body.unshift(funcParamsStatement);
                             }
                         }
-                        console.log('pp', parentType, body, parentPath.value.autologId, parentLoc);
+
+                        // parentId === 'b;96' && console.log('extraLocs', extraLocs, parentType, id, parentId, !!locationMap[parentId], body);
+
+
+                        //todo: inspect
+//                        console.log('pp', parentType, body, parentPath.value.autologId, parentLoc);
                         // if (AutoLogShift.SupportedBlocks.includes(parentType)) {
                         //     if (this.composedBlocks[parentType]) {
                         //         return this.composedBlocks[parentType](
@@ -1273,6 +1364,8 @@ class AutoLogShift {
                         // } else {
                         //     // console.log('critical parent', type, loc, path, parentType, parentLoc);
                         // }
+                        console.log('needParentheses',needParentheses, path, parentType, parentPath );
+
                     } else {
                         console.log('ignored', path);
                     }
@@ -1283,7 +1376,8 @@ class AutoLogShift {
                 if (AutoLogShift.SupportedExpressions.includes(type)) {
                     //console.log('block', expressionType, loc, path);
                 } else {
-                    console.log('critical', type, loc, path);
+                    //todo: check this error
+                    // console.log('critical', type, loc, path);
                 }
             }
         }

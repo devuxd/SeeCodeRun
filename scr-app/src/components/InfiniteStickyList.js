@@ -24,7 +24,7 @@ StickyListContext.displayName = "StickyListContext";
 
 const createItemData = memoize(props => ({...props}));
 
-const fixStyle = (style, checkHeight, checkTop) => {
+const fixStyle = (style, checkHeight, checkTop, checkOffset = true) => {
     const _style = {...style};
 
     if (checkHeight && isNaN(style.height)) {
@@ -33,6 +33,10 @@ const fixStyle = (style, checkHeight, checkTop) => {
     if (checkTop && isNaN(style.top)) {
         _style.top = 0;
         _style.display = 'none';
+    }
+
+    if (checkOffset && isNaN(style.offset)) {
+        _style.offset = 0;
     }
     return _style;
 }
@@ -221,7 +225,7 @@ const InfiniteStickyList = (
         debounceTime = 15,
         scrollDebounceTime = 5,
         items,
-        defaultItemSize,
+        defaultItemSize = 0,
         ref,
         shouldForceUpdate,
         StickyComponent,
@@ -310,9 +314,11 @@ const InfiniteStickyList = (
     const itemSize = useCallback((index, checkSticky) => index ?
         ((!checkSticky && stickyIndices.includes(index)) ||
             ignoreIndices.includes[index + 1]) ? 0
-            : rowHeights[index]
+            : isNaN(rowHeights[index]) ? defaultItemSize : rowHeights[index]
         : stickyIndices.reduce(
-            (offset, index) => offset + rowHeights[index], 0
+            (offset, index) => offset + (
+                isNaN(rowHeights[index]) ? defaultItemSize : rowHeights[index]
+            ), 0
         ), [stickyIndices, rowHeights, ignoreIndices]);
 
     const handleItemResize = useCallback(

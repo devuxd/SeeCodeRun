@@ -5,8 +5,6 @@ import JSAN from "jsan";
 
 import {withStyles} from '@material-ui/core/styles';
 import {darken, fade, lighten} from '@material-ui/core/styles/colorManipulator';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import Pin from "mdi-material-ui/Pin";
 import PinOutline from "mdi-material-ui/PinOutline";
 
@@ -14,11 +12,8 @@ import ButtonBase from '@material-ui/core/ButtonBase';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
-import Checkbox from '@material-ui/core/Checkbox';
-import Tooltip from '@material-ui/core/Tooltip';
+
 
 import InfiniteStickyList from './InfiniteStickyList';
 import ObjectExplorer from "./ObjectExplorer";
@@ -28,10 +23,8 @@ import {
     configureGoToTimelineBranch,
     HighlightPalette
 } from '../containers/LiveExpressionStore';
-import debounce from 'lodash/debounce';
 import OverflowComponent from "./OverflowComponent";
 
-// import {AutoSizer, Column, Table} from 'react-virtualized';
 import Highlighter from "react-highlight-words";
 
 let expressionCellMaxWidth = 300;
@@ -48,14 +41,6 @@ const styles = theme => ({
     },
     table: {
         minWidth: 'calc(100%)',
-        // temporary right-to-left patch, waiting for
-        // https://github.com/bvaughn/react-virtualized/issues/454
-        '& .ReactVirtualized__Table__headerRow': {
-            flip: false,
-            paddingRight: theme.direction === 'rtl' ?
-                '0px !important'
-                : undefined,
-        },
     },
     tableWrapper: {
         overflowX: 'auto',
@@ -75,7 +60,7 @@ const styles = theme => ({
         },
     },
     tableRowGraphical: {
-        height: TABLE_ROW_HEIGHT,
+        // height: TABLE_ROW_HEIGHT,
         backgroundColor: fade(HighlightPalette.graphical, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.graphical,
@@ -163,21 +148,20 @@ const styles = theme => ({
         textAlign: 'left',
         paddingTop: 0,
         paddingBottom: 0,
-        paddingLeft: theme.spacing(2),
+        paddingLeft: theme.spacing(1),
         paddingRight: theme.spacing(1),
         maxWidth: expressionCellMaxWidth,
     },
     valueCell: {
-        // overflow: 'hidden',
         margin: 0,
-        padding: 0,
+        padding: theme.spacing(1),
         borderBottom: 0,
     },
     expressionCellContent: {
         overflow: 'auto',
         position: 'relative',
         maxWidth: expressionCellMaxWidth,
-        paddingTop: theme.spacing(0.5),
+        paddingTop: 0,
         paddingBottom: theme.spacing(1),
         marginBottom: theme.spacing(-1),
     },
@@ -193,14 +177,36 @@ const styles = theme => ({
     },
     cellPadding: {
         paddingLeft: theme.spacing(6),
+    },
+    highlight: {
+        backgroundColor: lighten(fade(theme.palette.secondary.main, 1), 0.8),
     }
 });
 
 const configureMatchesFilter = (searchState) => {
+    const searchWords = searchState.value.split(' ').filter(v => v.trim().length);
     const findChunks = (textToHighlight) => {
-        const searchWords = searchState.value.split(' ');
-        return searchState.findChunks({searchWords, textToHighlight})
+        return searchState.findChunks(
+            {searchWords, textToHighlight}
+        );
     };
+    const andFindChunks =
+        (textToHighlight) => searchWords.reduce(
+            (acc, word) => {
+                acc.push(
+                    {
+                        word,
+                        chunks: searchState.findChunks(
+                            {searchWords: [word], textToHighlight}
+                        )
+                    })
+
+                return acc;
+            }
+            , []
+        );
+
+    const isAndFind = (wordChunks) => !(wordChunks.findIndex(wordChunk => !wordChunk.chunks.length) > -1);
 
     return (data) => {
         const result = {
@@ -208,9 +214,15 @@ const configureMatchesFilter = (searchState) => {
             functions: [],
             expressions: [],
             values: [],
+            expressionChunks: [],
+            isCodeMatch: false,
+            isStateMatch: false,
         };
 
-        const hasFilters = searchState.isFunctions || searchState.isExpressions || searchState.isValues;
+        const hasFilters =
+            searchState.isFunctions ||
+            searchState.isExpressions ||
+            searchState.isValues;
 
         const isAnyText = !searchState.value.trim().length;
 
@@ -220,22 +232,46 @@ const configureMatchesFilter = (searchState) => {
         }
 
         if (searchState.isFunctions &&
-            searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
+            searchState.functionLikeExpressions.includes(
+                data.entry.expressionType
+            )) {
             result.functions = isAnyText ? [] : findChunks(data.expression);
-            result.found = isAnyText || !!result.functions.length;
+            result.isCodeMatch = !!result.functions.length;
         }
 
         if (searchState.isExpressions &&
-            !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
+            !searchState.functionLikeExpressions.includes(
+                data.entry.expressionType
+            )) {
             result.expressions = isAnyText ? [] : findChunks(data.expression);
-            result.found = isAnyText || result.found || !!result.expressions.length;
+            result.isCodeMatch = result.isCodeMatch
+                || !!result.expressions.length;
         }
 
-        if (searchState.isValues &&
-            !searchState.functionLikeExpressions.includes(data.entry.expressionType)) {
+        if (searchState.isValues) {
             result.values = isAnyText ? [] : findChunks(data.value);
-            result.found = isAnyText || result.found || !!result.values.length;
+            result.isStateMatch = !!result.values.length;
         }
+
+        result.expressionChunks = result.functions.concat(
+            result.expressions
+        );
+
+        if ((searchState.isFunctions || searchState.isExpressions)
+            && searchState.isValues) {
+            result.found =
+                isAnyText
+                || isAndFind(
+                andFindChunks(data.expression + ' ' + data.value)
+                );
+
+        } else {
+            result.found =
+                isAnyText
+                || (result.isCodeMatch || result.isStateMatch);
+        }
+
+
         return result;
     }
 };
@@ -266,20 +302,16 @@ const Row = ({index, style, data}) => {
     }
     const n = (data.items[index] || {}).entry || {};
     const result = n.chunksResult;
-    // console.log(index, n);
+
 
     const {
-        columnIndex, columns, classes, rowHeight, onRowClick,
-        objectNodeRenderer, isRowSelected, highlightSingleText,
-        traceSubscriber, HighlightTypes, setCursorToLocation,
-        searchState, goToTimelineBranch, columnStyles = [
+        classes, objectNodeRenderer, searchState,
+        goToTimelineBranch, configureMappingEventListeners,
+        columnStyles = [
             {width: '40%'},
             {width: '60%'},
         ]
     } = data;
-    // console.log(classes);
-    const isSelected = n.id && isRowSelected(n.id);
-    // const result = n.chunksResult;
     parsed[n.id] =
         parsed[n.id] || {
             current: (isString(n.value) ?
@@ -287,27 +319,18 @@ const Row = ({index, style, data}) => {
         };
 
     const parsedValue = parsed[n.id].current;
-    let onMouseEnter = null, onMouseLeave = null, onClick = null;
-    if (!n.isFromInput) {
+    const {
+        onMouseEnter, onMouseLeave, onClick
+    } = configureMappingEventListeners(n);
 
 
-        onMouseEnter = () =>
-            highlightSingleText(
-                n.loc, n.isError ? HighlightTypes.error
-                    : n.isGraphical ?
-                        HighlightTypes.graphical : HighlightTypes.text,
-                traceSubscriber.getMatches(n.funcRefId, n.dataRefId))
-        onMouseLeave = () => highlightSingleText();
-        onClick = () => setCursorToLocation(n.loc)
-    }
     return (
         <React.Fragment>
             <TableCell
                 component="div"
                 classes={{root: classes.expressionCellRoot}}
-                onMouseEnter={() =>
-                    highlightSingleText(n.loc, HighlightTypes.text)}
-                onMouseLeave={() => highlightSingleText()}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
                 style={columnStyles[0]}
             >
                 <OverflowComponent
@@ -316,17 +339,21 @@ const Row = ({index, style, data}) => {
                 >
                     <ButtonBase onClick={
                         () => {
-                            setCursorToLocation(n.loc);
+                            onClick();
                             goToTimelineBranch(n.entry);
                         }
                     }>
                         <Typography align={"left"}
-                                    className={classes.expressionCellContentTypography}
+                                    className={
+                                        classes.expressionCellContentTypography
+                                    }
                                     noWrap>
                             <Highlighter
+                                highlightClassName={classes.highlight}
                                 searchWords={[searchState.value]}
                                 textToHighlight={n.expression}
-                                findChunks={() => result.expressions}
+                                autoEscape={true}
+                                findChunks={() => result.expressionChunks}
                             />
                         </Typography>
                     </ButtonBase>
@@ -335,18 +362,14 @@ const Row = ({index, style, data}) => {
             <TableCell
                 component="div"
                 className={classes.valueCell}
-                onMouseEnter={() =>
-                    highlightSingleText(
-                        n.loc, n.isError ? HighlightTypes.error
-                            : n.isGraphical ?
-                                HighlightTypes.graphical : HighlightTypes.text,
-                        traceSubscriber.getMatches(n.funcRefId, n.dataRefId, n.entry.calleeId))}
-                onMouseLeave={() => highlightSingleText()}
                 classes={{
                     root: n.isError ? classes.hoverError
-                        : n.isGraphical ? classes.hoverGraphical : classes.hoverObject,
+                        : n.isGraphical ? classes.hoverGraphical
+                            : classes.hoverObject,
                     // hover: classes.hover
                 }}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
                 style={columnStyles[1]}
             >
                 <ObjectExplorer
@@ -368,13 +391,12 @@ let parsed = {};
 function WindowedTable(props) {
     const {
         defaultItemSize = 32,
-        classes, data, handleRequestSort, searchState,
-        onHandleTotalChange, open, objectNodeRenderer, order, orderBy,
-        selected, page, isSelectable,
-        handleSelectClick, handleSelectAllClick, isRowSelected,
+        data, searchState, onHandleTotalChange, objectNodeRenderer,
+        handleSelectClick, isRowSelected,
         HighlightTypes, highlightSingleText, setCursorToLocation,
-        traceSubscriber, handleChangePlaying,
-        heightDelta, autoScroll, isNew, highlightErrors
+        traceSubscriber,
+        heightDelta, autoScroll, isNew, highlightErrors,
+        configureMappingEventListeners
     } = props;
     if (isNew) {
         parsed = {};
@@ -385,7 +407,6 @@ function WindowedTable(props) {
         [searchState]
     );
     let totalMatches = 0;
-    const windowData = data.map(() => false);
     const ignoreIndices = [];
     const matchedData = [];
     data.forEach((n, i) => {
@@ -414,19 +435,13 @@ function WindowedTable(props) {
     const rows = matchedData.map((entry, i) => createData(i, entry));
     highlightErrors && highlightErrors();
 
-    // console.log('table', this.totalMatches, data.length);
-
     const goToTimelineBranch = configureGoToTimelineBranch();
     const isItemLoaded = index => true;//!!rows[index];
     const loadMoreItems = (startIndex, stopIndex) => {
-        // for (let index = startIndex; index <= stopIndex; index++) {
-        //     windowData[index] = rows[index];
-        // }
         return new Promise(
             resolve => resolve()
         );
     };
-    // console.log("f",rows);
     const StickyAction = React.memo(({isSticky, onStickyChange}) => (
         <IconButton
             onClick={onStickyChange}
@@ -465,27 +480,20 @@ function WindowedTable(props) {
         goToTimelineBranch,
         HighlightTypes,
         traceSubscriber,
+        configureMappingEventListeners
     };
     return (
         <StyledInfiniteStickyList
-            onRequestSort={handleRequestSort}
             {...listProps}
         />
 
     );
 }
 
-// const debouncedWindowedTableWithContext = debounce(
-//     (props, context) => {
-//         return <WindowedTable {...props} {...context}/>
-//     }, 50, {maxWait: 100})
-//
-// {context => debouncedWindowedTableWithContext(props, context)}
 const WindowedTableWithContext = props => (
     <PastebinContext.Consumer>
         {(context) => <WindowedTable {...props} {...context}/>}
     </PastebinContext.Consumer>
 );
-
 
 export default withStyles(styles)(WindowedTableWithContext);
