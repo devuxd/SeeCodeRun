@@ -24,7 +24,7 @@ const styles = theme => ({
         height: 700,
     },
     button: {
-        margin: theme.spacing.unit,
+        margin: 8,
     },
 });
 
