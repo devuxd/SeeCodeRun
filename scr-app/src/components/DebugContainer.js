@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
@@ -7,8 +7,8 @@ import {withStyles} from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import Badge from '@material-ui/core/Badge';
 import Paper from '@material-ui/core/Paper';
-import ToggleButton from '@material-ui/lab/ToggleButton';
-import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
+import ToggleButton from '@material-ui/core/ToggleButton';
+import ToggleButtonGroup from '@material-ui/core/ToggleButtonGroup';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -23,7 +23,14 @@ import TraceList from './TraceList';
 import ConsoleInput from './ConsoleInput';
 import ConsoleList from './ConsoleList';
 
-function TabResultLabel({icon, label, classes, formatText, result, isUpdating}) {
+function TabResultLabel({
+                            icon,
+                            label,
+                            classes,
+                            formatText,
+                            result,
+                            isUpdating
+                        }) {
     return (
         <ListItem
             role={undefined}
@@ -110,6 +117,23 @@ const styles = theme => ({
         width: 'fill-available',
         margin: 0,
     },
+    tabVisible: {
+        position: 'absolute',
+        height: '100%',
+        width: '100%',
+        visibility: 'visible',
+    },
+    tabHidden: {
+        position: 'absolute',
+        height: '100%',
+        width: '100%',
+        visibility: 'hidden',
+    },
+    fillContainer: {
+        height: `100%`,
+        width: '100%',
+    },
+
 });
 
 function a11yProps(index) {
@@ -192,6 +216,41 @@ function DebugContainer(
         },
         0,
     );
+    const onDebugTabEnter = useCallback(
+        () => handleChangePlaying('table', true),
+        [handleChangePlaying]);
+    const onDebugTabExit = useCallback(
+        () => handleChangePlaying('table', false),
+        [handleChangePlaying]);
+
+    const inputOffsetStyle = useMemo(() => ({
+        height: consoleTableMarginTop,
+        width: '100%'
+    }), [consoleTableMarginTop]);
+
+    const onHeightChange = useCallback(
+        (
+            event, {containerHeight}
+        ) => setConsoleTableMarginTop(containerHeight)
+        , [setConsoleTableMarginTop]);
+
+    const traceBadgeClasses = useMemo(
+        () => ({
+            badge: isTraceUpdating ?
+                classes.opacityTransitionStart
+                : classes.opacityTransition
+        })
+        , [isTraceUpdating]
+    );
+
+    const consoleBadgeClasses = useMemo(
+        () => ({
+            badge: isConsoleUpdating ?
+                classes.opacityTransitionStart
+                : classes.opacityTransition
+        })
+        , [isConsoleUpdating]
+    );
 
     return (
         <div className={classes.root}>
@@ -220,11 +279,7 @@ function DebugContainer(
                             max={badgeMaxCount}
                             badgeContent={traceTotal}
                             color="secondary"
-                            classes={{
-                                badge: isTraceUpdating ?
-                                    classes.opacityTransitionStart
-                                    : classes.opacityTransition
-                            }}
+                            classes={traceBadgeClasses}
                         >
                             <PlayListPlayIcon/>
                         </Badge>
@@ -248,11 +303,7 @@ function DebugContainer(
                             max={badgeMaxCount}
                             badgeContent={consoleTotal}
                             color="secondary"
-                            classes={{
-                                badge: isConsoleUpdating ?
-                                    classes.opacityTransitionStart
-                                    : classes.opacityTransition
-                            }}
+                            classes={consoleBadgeClasses}
                         >
                             <ConsoleIcon/>
                         </Badge>
@@ -269,26 +320,17 @@ function DebugContainer(
                     className={classes.paper}
                 >
                     <ConsoleInput
-                        onHeightChange={
-                            (event, {containerHeight}) => setConsoleTableMarginTop(containerHeight)
-                        }
+                        onHeightChange={onHeightChange}
                     />
                 </Paper>
             </Slide>
-            {/*<TraceTable*/}
-            {/*    onHandleTotalChange={handleTraceTotalChange}*/}
-            {/*    ScrollingListContainers={ScrollingListContainers}*/}
-            {/*    open={tabIndex === 'trace'}*/}
-            {/*    handleChangePlaying={handleChangePlaying}*/}
-            {/*/>*/}
-            <div style={{
-                position: 'absolute',
-                height: '100%',
-                width: '100%',
-                visibility: tabIndex === 'trace' ? 'visible' : 'hidden',
-            }}
-                 onMouseEnter={() => handleChangePlaying('table', false)}
-                 onMouseLeave={() => handleChangePlaying('table', true)}
+            <div
+                className={
+                    tabIndex === 'trace' ?
+                        classes.tabVisible : classes.tabHidden
+                }
+                onMouseLeave={onDebugTabEnter}
+                onMouseEnter={onDebugTabExit}
             >
                 <TraceList
                     headerHeight={0}
@@ -297,20 +339,16 @@ function DebugContainer(
                     autoScroll={isPlaying}
                 />
             </div>
-            <div style={{
-                position: 'absolute',
-                height: '100%',
-                width: '100%',
-                visibility: tabIndex === 'console' ? 'visible' : 'hidden',
-            }}
+            <div
+                className={
+                    tabIndex === 'console' ?
+                        classes.tabVisible : classes.tabHidden
+                }
             >
-                <div style={{height: consoleTableMarginTop, width: '100%'}}/>
-                <div style={{
-                    height: `100%`,
-                    width: '100%',
-                }}
-                     onMouseEnter={() => handleChangePlaying('table', false)}
-                     onMouseLeave={() => handleChangePlaying('table', true)}
+                <div style={inputOffsetStyle}/>
+                <div className={classes.fillContainer}
+                     onMouseLeave={onDebugTabEnter}
+                     onMouseEnter={onDebugTabExit}
                 >
                     <ConsoleList
                         headerHeight={consoleTableMarginTop}
@@ -325,7 +363,6 @@ function DebugContainer(
 }
 
 DebugContainer.propTypes = {
-    ScrollingListContainers: PropTypes.object,
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
     handleChangePlaying: PropTypes.func.isRequired,

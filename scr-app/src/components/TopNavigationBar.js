@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
 import ScrIcon from './icons/SCR';
@@ -67,11 +67,19 @@ const styles = (theme) => {
             centered: {
                 justifyContent: 'center',
             },
+            visibleElement: {
+                visibility: 'visible'
+            },
+            hiddenElement: {
+                visibility: 'hidden'
+            },
         }
     }
 ;
 
-class TopNavigationBar extends Component {
+class TopNavigationBar extends PureComponent {
+    handleChangeMemos = {};
+
     state = {
         infoAnchorEl: null,
         checkedLocked: false,
@@ -113,12 +121,24 @@ class TopNavigationBar extends Component {
         };
     };
 
-    handleChange = name => event => {
-        this.setState({[name]: event.target.checked});
+    getMemoHandleChange = name => {
+        if(!this.handleChangeMemos[name]){
+            this.handleChangeMemos[name] = event => this.setState(
+                {[name]: event.target.checked}
+            );
+        }
+        return this.handleChangeMemos[name];
     };
 
     getFinalUrl = shareUrl => {
-        const {checkedLocked, checkedJS, checkedHTML, checkedCSS, checkedConsole, checkedOutput} = this.state;
+        const {
+            checkedLocked,
+            checkedJS,
+            checkedHTML,
+            checkedCSS,
+            checkedConsole,
+            checkedOutput
+        } = this.state;
         if (shareUrl) {
             let query = `${
                 checkedLocked ? '&locked' : ''
@@ -143,6 +163,8 @@ class TopNavigationBar extends Component {
         return null;
     };
 
+    eventPreventDefault = event => event && event.preventDefault();
+
     render() {
         const {
             classes, themeType, switchTheme,
@@ -152,38 +174,59 @@ class TopNavigationBar extends Component {
             shareAnchorEl, shareUrl, handleShareMenu, handleShareClose,
             shareClick, shareClipboardClick,
             resetLayoutClick,
+            MenuProps
         } = this.props;
+
         const shareOpen = !!shareAnchorEl;
-        const {infoAnchorEl} = this.state;
+
+        const {
+            infoAnchorEl,
+            checkedLocked,
+            checkedJS,
+            checkedHTML,
+            checkedCSS,
+            checkedConsole,
+            checkedOutput,
+        } = this.state;
+
         const infoOpen = !!infoAnchorEl;
         const finalUrl = this.getFinalUrl(shareUrl);
         const networkStateIcon = (
             <IconButton
-                style={{visibility: !isNetworkOk() && showNetworkState ? 'visible' : 'hidden'}}
+                className={!isNetworkOk() && showNetworkState ?
+                    classes.visibleElement
+                    : classes.hiddenElement
+                }
+
                 title={showNetworkState ? getNetworkStateMessage() : ''}
                 aria-label="Network State"
-                color="secondary">
+                color="secondary"
+            >
                 <CloudOffIcon style={iconStyle}/>
-            </IconButton>);
+            </IconButton>
+        );
 
         return (isTopNavigationToggled ?
-                <AppBar position="sticky" color="inherit" elevation={2}>
+                <AppBar position="sticky" color="default" elevation={2}>
                     <IconButton title={"Show toolbar"}
-                                className={classes.scrIconSticky} aria-label="Menu"
+                                className={classes.scrIconSticky}
+                                aria-label="Menu"
                                 onClick={logoClick}
-                                color="inherit"
+                                color="default"
                     >
                         <ScrIcon {...scrSvg.sticky}/>
                     </IconButton>
                 </AppBar>
                 :
-                <AppBar position="sticky" color="inherit"  className={classes.appCompact} elevation={2}>
+                <AppBar position="sticky" color="default"
+                        className={classes.appCompact} elevation={2}>
                     <Toolbar
                         variant="dense"
                         disableGutters
                     >
                         <IconButton title={"Hide toolbar"}
-                                    className={classes.scrIcon} aria-label="Menu"
+                                    className={classes.scrIcon}
+                                    aria-label="Menu"
                                     onClick={logoClick}
                                     color="secondary"
                                     classes={{root: classes.iconButton}}
@@ -191,7 +234,7 @@ class TopNavigationBar extends Component {
                             <ScrIcon {...scrSvg.logo}/>
                         </IconButton>
                         <IconButton title={chatTitle} onClick={chatClick}
-                                    color={isChatToggled ? "secondary" : "inherit"}>
+                                    color={isChatToggled ? "secondary" : "default"}>
                             <ChatIcon style={iconStyle}/>
                         </IconButton>
 
@@ -199,7 +242,7 @@ class TopNavigationBar extends Component {
                             aria-owns={shareOpen ? 'menu-appbar' : null}
                             aria-haspopup="true"
                             onClick={handleShareMenu}
-                            color={shareOpen ? "secondary" : "inherit"}
+                            color={shareOpen ? "secondary" : "default"}
                             title={"Share playground"}
                         >
                             <ShareIcon style={iconStyle}/>
@@ -207,23 +250,18 @@ class TopNavigationBar extends Component {
                         <Menu
                             id="menu-appbar"
                             anchorEl={shareAnchorEl}
-                            anchorOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
-                            transformOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'left',
-                            }}
                             open={shareOpen}
                             onClose={handleShareClose}
+                            {...MenuProps}
                         >
                             <MenuItem className={classes.centered}
                                       onClick={finalUrl && shareClick}
                             >{
                                 finalUrl ?
-                                    <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={aStyle.link}
-                                       onClick={e => e.preventDefault()}
+                                    <a href={finalUrl} target="_blank"
+                                       rel="noopener noreferrer"
+                                       style={aStyle.link}
+                                       onClick={this.eventPreventDefault}
                                     >
                                         {finalUrl}
                                     </a> : 'No Pastebin to Share'
@@ -236,8 +274,12 @@ class TopNavigationBar extends Component {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={this.state.checkedLocked}
-                                                    onChange={this.handleChange('checkedLocked')}
+                                                    checked={checkedLocked}
+                                                    onChange={
+                                                        this.getMemoHandleChange(
+                                                            'checkedLocked'
+                                                        )
+                                                    }
                                                     value="checkedLocked"
                                                     color="primary"
                                                 />
@@ -247,8 +289,8 @@ class TopNavigationBar extends Component {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={this.state.checkedJS}
-                                                    onChange={this.handleChange('checkedJS')}
+                                                    checked={checkedJS}
+                                                    onChange={this.getMemoHandleChange('checkedJS')}
                                                     value="checkedJS"
                                                     color="primary"
                                                 />
@@ -258,8 +300,8 @@ class TopNavigationBar extends Component {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={this.state.checkedHTML}
-                                                    onChange={this.handleChange('checkedHTML')}
+                                                    checked={checkedHTML}
+                                                    onChange={this.getMemoHandleChange('checkedHTML')}
                                                     value="checkedHTML"
                                                     color="primary"
                                                 />
@@ -269,8 +311,8 @@ class TopNavigationBar extends Component {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={this.state.checkedCSS}
-                                                    onChange={this.handleChange('checkedCSS')}
+                                                    checked={checkedCSS}
+                                                    onChange={this.getMemoHandleChange('checkedCSS')}
                                                     value="checkedCSS"
                                                     color="primary"
                                                 />
@@ -280,8 +322,8 @@ class TopNavigationBar extends Component {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={this.state.checkedConsole}
-                                                    onChange={this.handleChange('checkedConsole')}
+                                                    checked={checkedConsole}
+                                                    onChange={this.getMemoHandleChange('checkedConsole')}
                                                     value="checkedConsole"
                                                     color="primary"
                                                 />
@@ -291,8 +333,8 @@ class TopNavigationBar extends Component {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={this.state.checkedOutput}
-                                                    onChange={this.handleChange('checkedOutput')}
+                                                    checked={checkedOutput}
+                                                    onChange={this.getMemoHandleChange('checkedOutput')}
                                                     value="checkedOutput"
                                                     color="primary"
                                                 />
@@ -322,6 +364,14 @@ class TopNavigationBar extends Component {
                                     className={classes.flex}>
                         </Typography>
                         <IconButton
+
+                        >
+                            <Brightness4Icon style={
+                                {...iconStyle, color: 'transparent'}
+                            }/>
+
+                        </IconButton>
+                        <IconButton
                             onClick={switchTheme}
                             title={"Switch light/dark theme"}
                         >
@@ -334,7 +384,7 @@ class TopNavigationBar extends Component {
                             aria-owns={infoOpen ? 'appbar-info-menu' : null}
                             aria-haspopup="true"
                             onClick={this.handleInfoMenu}
-                            color={infoOpen ? "secondary" : "inherit"}
+                            color={infoOpen ? "secondary" : "default"}
                             title="Info"
                         >
                             <MoreVertIcon style={iconStyle}/>
@@ -355,8 +405,10 @@ class TopNavigationBar extends Component {
                         >
                             <MenuItem onClick={this.onClick(resetLayoutClick)}>Reset
                                 layout</MenuItem>
-                            <MenuItem onClick={this.onClick(this.helpClick)}>Help</MenuItem>
-                            <MenuItem onClick={this.onClick(this.contactUsClick)}>Contact
+                            <MenuItem
+                                onClick={this.onClick(this.helpClick)}>Help</MenuItem>
+                            <MenuItem
+                                onClick={this.onClick(this.contactUsClick)}>Contact
                                 us</MenuItem>
                             <MenuItem
                                 onClick={this.onClick(this.aboutClick)}>About</MenuItem>
@@ -375,6 +427,20 @@ TopNavigationBar.propTypes = {
     classes: PropTypes.object.isRequired,
     switchTheme: PropTypes.func.isRequired,
     themeType: PropTypes.string.isRequired,
+    MenuProps: PropTypes.object.isRequired
+};
+
+TopNavigationBar.defaultProps = {
+    MenuProps: {
+        anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'right',
+        },
+        transformOrigin: {
+            vertical: 'bottom',
+            horizontal: 'left',
+        }
+    }
 };
 
 export default withStyles(styles)(TopNavigationBar);

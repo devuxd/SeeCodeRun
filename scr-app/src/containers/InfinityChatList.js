@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from 'prop-types';
 import {FixedSizeList as List} from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
+import AutoSizer from "react-virtualized-auto-sizer";
 import Tooltip from '@material-ui/core/Tooltip';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
@@ -11,7 +12,10 @@ import Avatar from '@material-ui/core/Avatar';
 
 export default function InfinityChatList(
     {
-        classes, width, height, chatUserId,
+        classes,
+        widthOffset = 0, heightOffset = 0,
+        overscanCount = 20, itemSize = 60,
+        chatUserId,
         messages, isItemLoaded, loadMoreItems,
         getFormattedTime, getMessageOwner, getUserColor, chatListRef
     }
@@ -82,26 +86,31 @@ export default function InfinityChatList(
             loadMoreItems={loadMoreItems}
         >
             {({onItemsRendered, ref}) => (
-                <List
-                    width={width}
-                    height={height}
-                    itemCount={messages.length}
-                    itemSize={60}
-                    onItemsRendered={onItemsRendered}
-                    ref={ref}
-                    className={classes.root}
-                    overscanCount={10}
-                >
-                    {Row}
-                </List>
-            )
-            }
+                <AutoSizer  ref={ref}>
+                    {({height = 0, width = 0}) => (
+                        <List
+                            width={width + widthOffset}
+                            height={height + heightOffset}
+                            itemCount={messages.length}
+                            itemSize={itemSize}
+                            onItemsRendered={onItemsRendered}
+                            ref={ref}
+                            className={classes.root}
+                            overscanCount={overscanCount}
+                        >
+                            {Row}
+                        </List>)
+                    }
+                </AutoSizer>
+            )}
         </InfiniteLoader>
     );
 }
 InfinityChatList.propTypes = {
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
+    overscanCount: PropTypes.number,
+    itemSize: PropTypes.number,
+    widthOffset: PropTypes.number,
+    heightOffset: PropTypes.number,
     messages: PropTypes.array.isRequired,
     getUserColor: PropTypes.func.isRequired,
     getFormattedTime: PropTypes.func.isRequired,

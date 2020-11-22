@@ -115,6 +115,7 @@ export const getEditorIds = () => ({...editorIds});
 class AppManager {
     constructor(urlData) {
         this.urlData = urlData;
+        this.r = null;
         this.j = null;
         this.currentMonacoTheme = null;
         this.pastebinLayout = null;
@@ -193,6 +194,7 @@ class AppManager {
 
     async loadJPromise() {
         if (!this.j) {
+            this.r = (await import('recast'));
             this.j = (await import('jscodeshift')).default;
             this.activateEnhancers();
         }
@@ -356,11 +358,14 @@ class AppManager {
         }
     }
 
-    addEnhancers(monaco, editorId, firecoPad) {
+    addEnhancers(monaco, editorId, firecoPad, jOptions={
+        sourceFileName: "source.js"
+    }) {
         firecoPad.astResult = {};
         firecoPad.getAst = async () => {
             let ast = null, astError = null;
             if (!firecoPad.j) {
+                firecoPad.r = this.r;
                 firecoPad.j = this.j;
             }
 
@@ -381,18 +386,17 @@ class AppManager {
                         firecoPad.monacoEditor,
                         editorId, defaultExpressionClassName);
 
-                const editor = firecoPad.monacoEditor;
+                // const editor = firecoPad.monacoEditor;
             }
 
             const code = firecoPad.monacoEditor.getValue();
-            const astBeforeError = firecoPad.astResult.ast || firecoPad.astResult.astBeforeError;
-
+            const astBeforeError =
+                firecoPad.astResult.ast || firecoPad.astResult.astBeforeError;
             try {
-                ast = this.j(code);
+                ast = this.j(code, jOptions);
                 astError = null;
-                // console.log(ast);
             } catch (error) {
-                //  console.log(error);
+                 console.log(error);
                 ast = null;
                 astError = error;
                 //todo: needs to be smart and remove errors, then try again.
@@ -605,7 +609,7 @@ class AppManager {
 
                 const loadFire = async () => {
                     if (!fireco.app) {
-                        fireco.firebase = await import('firebase/app');
+                        fireco.firebase = (await import('firebase/app')).default;
                         await import ('firebase/auth');
                         await import ('firebase/database');
                         fireco.Firepad = await import('firepad');

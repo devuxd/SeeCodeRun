@@ -8,7 +8,9 @@ export const usePrevious = (value, ref) => {
     return _ref.current;
 };
 
-export const useLodashDelayable = (lodashDelayable, functionToDelay, wait, options) => {
+export const useLodashDelayable = (
+    lodashDelayable, functionToDelay, wait, options
+) => {
     const [delayable, setDelayable] = useState(() => {
         return lodashDelayable(
             functionToDelay,

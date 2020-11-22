@@ -145,7 +145,7 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
     }
 
     return monaco.editor.createModel(text, language,
-        new monaco.Uri.file(`${editorId}.${extension}`)
+        monaco.Uri.file(`${editorId}.${extension}`)
     );
 }
 

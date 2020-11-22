@@ -8,7 +8,7 @@ import classNames from 'classnames';
 import {withStyles} from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
 import SettingsIcon from '@material-ui/icons/SettingsSharp';
-import Skeleton from '@material-ui/lab/Skeleton';
+import Skeleton from '@material-ui/core/Skeleton';
 
 import {monacoEditorContentChanged, mountEditorFulfilled} from "../redux/modules/monacoEditor";
 import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
@@ -126,6 +126,8 @@ class Editor extends Component {
             };
         }
     }
+    setUpdateLiveExpressionWidgetWidths =updateLiveExpressionWidgetWidths =>
+    this.updateLiveExpressionWidgetWidths = updateLiveExpressionWidgetWidths;
 
     render() {
         const {
@@ -147,12 +149,12 @@ class Editor extends Component {
                 />
                 {observeLiveExpressions &&
                 <LiveExpressionStore
-                    // container={this}
                     editorId={editorId}
                     editorWidth={this.editorWidth}
                     editorHeight={this.editorHeight}
-                    updateLiveExpressionWidgetWidths={updateLiveExpressionWidgetWidths =>
-                        this.updateLiveExpressionWidgetWidths = updateLiveExpressionWidgetWidths}
+                    updateLiveExpressionWidgetWidths={
+                        this.setUpdateLiveExpressionWidgetWidths
+                    }
                     //currentContentWidgetId={currentContentWidgetId}
                     // forceHideWidgets={forceHideWidgets}
                     liveExpressionStoreChange={liveExpressionStoreChange}

@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import SpeedDial from '@material-ui/lab/SpeedDial';
-import SpeedDialIcon from '@material-ui/lab/SpeedDialIcon';
-import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
+import SpeedDial from '@material-ui/core/SpeedDial';
+import SpeedDialIcon from '@material-ui/core/SpeedDialIcon';
+import SpeedDialAction from '@material-ui/core/SpeedDialAction';
 import SettingsIcon from '@material-ui/icons/SettingsSharp';
 import TimerIcon from '@material-ui/icons/Timer';
 import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
@@ -15,15 +15,16 @@ import Menu from '@material-ui/core/Menu';
 import ListItem from '@material-ui/core/ListItem';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
-import Fab from '@material-ui/core/Fab';
+import {alpha} from '@material-ui/core/styles/colorManipulator';
+
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
 import withPersistence from "../containers/withPersistence";
 
-const onDependenciesChange = () => {
-    requireConfig.configureDependencies(requireConfig);
+const onDependenciesChange = async () => {
+    await requireConfig.configureDependencies(requireConfig);
     const codeBundlingDeps = [];
     let isAsync = false;
     Object.keys(requireConfig.dependencies).forEach(dep => {
@@ -38,40 +39,71 @@ const onDependenciesChange = () => {
     Object.keys(requireConfig.asyncDependencies).forEach(dep => {
         const isDuped = !!codeBundlingDeps.find(d => d.name === dep);
         codeBundlingDeps.push(
-            {key: `async:${dep}`, name: dep, url: requireConfig.asyncDependencies[dep], isDuped, isAsync});
+            {
+                key: `async:${dep}`,
+                name: dep,
+                url: requireConfig.asyncDependencies[dep],
+                isDuped,
+                isAsync
+            });
     });
     return codeBundlingDeps;
 };
 
-const styles = theme => ({
-    speedDialBackdrop: {
-        // backgroundColor: 'transparent',
-        position: 'absolute',
-        // width: theme.spacing.unit * 9,
-        // height: theme.spacing.unit * 9,
-        // width: theme.spacing(1),
-        // height: theme.spacing(1),
-        bottom: 0,
-        left: 0,
-        marginLeft: theme.spacing(-2),
-        marginBottom: theme.spacing(-2),
-        fontSize: theme.spacing(0.5),
-        zIndex: theme.zIndex.snackbar,
-    },
-    speedDial: {
-        position: 'absolute',
-        bottom: theme.spacing(3),
-        left: theme.spacing(3),
-    },
-    list: {
-        paddingTop: 0,
-        paddingBottom: 0,
-    },
-    bundleList: {
-        minWidth: 600,
-        maxHeight: 800,
+let iconStyle = {};
+
+const styles = theme => {
+    iconStyle = {
+        fontSize: Math.floor(theme.typography.fontSize * 1.75),
+    };
+    return {
+        speedDialBackdrop: {
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            marginLeft: theme.spacing(-2),
+            marginBottom: theme.spacing(-2),
+            fontSize: theme.spacing(0.5),
+            zIndex: theme.zIndex.snackbar,
+        },
+        speedDial: {
+            position: 'absolute',
+            zIndex: theme.zIndex.snackbar,
+            right: 104,
+            top: 5,
+        },
+        speedDialNavigationToggled: {
+            position: 'absolute',
+            zIndex: theme.zIndex.snackbar,
+            right: 0,
+            top: 0,
+            marginRight: theme.spacing(-1),
+        },
+        speedDialFab: {
+            color: theme.palette.action.active,
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+            '&:hover': {
+                backgroundColor: alpha(
+                    theme.palette.action.active,
+                    theme.palette.action.hoverOpacity
+                ),
+                // Reset on touch devices, it doesn't add specificity
+                '@media (hover: none)': {
+                    backgroundColor: 'transparent',
+                },
+            },
+        },
+        list: {
+            paddingTop: 0,
+            paddingBottom: 0,
+        },
+        bundleList: {
+            minWidth: 600,
+            maxHeight: 800,
+        }
     }
-});
+};
 
 
 const actions = [
@@ -92,13 +124,14 @@ const actions = [
 class TraceControls extends React.Component {
     state = {
         open: false,
-        hidden: true,
+        hidden: false,
         anchorEl: null,
         actionId: null,
         autorunDelay: null,
         codeBundlingDeps: [],
         handleChangeAutorunDelay: null,
         isData: false,
+        isCodeBundlingDeps: false,
     };
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -114,7 +147,10 @@ class TraceControls extends React.Component {
                 const autorunDelay =
                     isNaN(data.current.autorunDelay) ? nextProps.autorunDelay : data.current.autorunDelay;
                 const dependencyOverrides =
-                    data.current.dependencies || {...requireConfig.dependencyOverrides, count: 0};
+                    data.current.dependencies || {
+                        ...requireConfig.dependencyOverrides,
+                        count: 0
+                    };
                 nextProps.changeData(
                     {
                         ...nextProps.data.current,
@@ -145,7 +181,7 @@ class TraceControls extends React.Component {
 
             if (data.current.dependencyOverrides !== requireConfig.dependencyOverrides) {
                 requireConfig.dependencyOverrides = data.current.dependencyOverrides;
-                nextState.codeBundlingDeps = onDependenciesChange();
+                nextState.isCodeBundlingDeps = true;
             }
 
             return nextState;
@@ -226,7 +262,10 @@ class TraceControls extends React.Component {
         if (this.props.changeData && this.props.data.current) {
             dependencyOverrides.count = Object.keys(dependencyOverrides).length - 1;
             this.props.changeData(
-                {...this.props.data.current, dependencyOverrides: dependencyOverrides}
+                {
+                    ...this.props.data.current,
+                    dependencyOverrides: dependencyOverrides
+                }
             );
         } else {
             requireConfig.dependencyOverrides = dependencyOverrides;
@@ -236,11 +275,17 @@ class TraceControls extends React.Component {
     };
 
     render() {
-        const {classes} = this.props;
+        const {classes, isTopNavigationToggled} = this.props;
         const {
-            hidden, open, anchorEl, actionId, codeBundlingDeps, autorunDelay, handleChangeAutorunDelay
+            hidden,
+            open,
+            anchorEl,
+            actionId,
+            codeBundlingDeps,
+            autorunDelay,
+            handleChangeAutorunDelay,
         } = this.state;
-        // console.log(codeBundlingDeps);
+        //console.log(codeBundlingDeps);
         let menuContent;
         let menuClass = {className: classes.list};
         switch (actionId) {
@@ -284,19 +329,18 @@ class TraceControls extends React.Component {
 
         return (
             <div>
-                {hidden && <Fab     mini="true"
-                                   color="primary"
-                                   aria-label="seeCode.run configuration"
-                                   className={classes.speedDialBackdrop}
-                                   onClick={() => this.handleVisibility(true)}
-                                   onMouseEnter={() => this.handleVisibility(true)}
-                                   onMouseLeave={() => this.handleVisibility(false)}
-                > <SettingsIcon/></Fab>}
-                {!hidden && <SpeedDial
+                <SpeedDial
                     ariaLabel="seeCode.run configuration"
-                    className={classes.speedDial}
-                    hidden={hidden}
-                    icon={<SpeedDialIcon icon={<SettingsIcon/>}/>}
+                    className={
+                        isTopNavigationToggled ?
+                            classes.speedDialNavigationToggled
+                            : classes.speedDial
+                    }
+                    classes={{fab: classes.speedDialFab}}
+                    hidden={false} //hidden
+                    icon={<SpeedDialIcon
+                        icon={<SettingsIcon style={iconStyle}/>}
+                    />}
                     onBlur={this.handleClose}
                     onClick={this.handleClick}
                     onClose={this.handleClose}
@@ -304,23 +348,35 @@ class TraceControls extends React.Component {
                     onMouseEnter={this.handleOpen}
                     onMouseLeave={this.handleClose}
                     open={open}
+                    direction={"down"}
+                    FabProps={{
+                        size: isTopNavigationToggled ? "small" : "medium",
+                    }}
                 >
                     {actions.filter(action => action.id).map(action => (
                         <SpeedDialAction
                             key={action.id}
                             icon={action.icon}
                             tooltipTitle={action.name}
-                            onClick={(event) => this.handleAction(action.id, event)}
-                            aria-owns={anchorEl ? `trace-controls-menu-${actionId}` : null}
+                            onClick={
+                                (event) => this.handleAction(action.id, event)
+                            }
+                            aria-owns={
+                                anchorEl ?
+                                    `trace-controls-menu-${actionId}`
+                                    : null
+                            }
                             aria-haspopup="true"
                         />
                     ))}
-                </SpeedDial>}
+                </SpeedDial>
                 <Menu
                     MenuListProps={menuClass}
                     id={`trace-controls-menu-${actionId}`}
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}
+                    onMouseEnter={this.handleOpen}
+                    onMouseLeave={this.handleClose}
                     onClose={this.handleMenuClose}
                 >
                     {menuContent}
@@ -330,9 +386,10 @@ class TraceControls extends React.Component {
     }
 
     onDependenciesChange = () => {
-        this.setState({
-            codeBundlingDeps: onDependenciesChange(),
-        });
+        onDependenciesChange()
+            .then(codeBundlingDeps => this.setState({
+                codeBundlingDeps,
+            }));
     };
 
     componentDidMount() {
@@ -345,12 +402,20 @@ class TraceControls extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState/*, snapshot*/) {
-        if (!prevState.open && this.state.open) {
+        const {isCodeBundlingDeps, open} = this.state;
+        if (!prevState.open && open) {
             this.handleVisibility(true)
         } else {
-            if (prevState.open && !this.state.open) {
+            if (prevState.open && !open) {
                 this.handleVisibility(false)
             }
+        }
+
+        if (!prevState.isCodeBundlingDeps && isCodeBundlingDeps) {
+            this.setState({
+                isCodeBundlingDeps: false,
+            });
+            this.onDependenciesChange();
         }
     }
 

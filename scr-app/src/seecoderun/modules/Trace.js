@@ -3,7 +3,10 @@ import {Subject} from 'rxjs';
 import isString from 'lodash/isString';
 import isObjectLike from 'lodash/isObjectLike';
 import isArrayLike from 'lodash/isArrayLike';
-import {isNode, /*createObjectIterator, hasChildNodes,*/ copifyDOMNode} from '../../utils/scrUtils';
+import {
+    isNode, /*createObjectIterator, hasChildNodes,*/
+    copifyDOMNode
+} from '../../utils/scrUtils';
 import isArray from 'lodash/isArray';
 import isFunction from 'lodash/isFunction';
 import ClassFactory from "./ClassFactory";
@@ -152,7 +155,7 @@ class Trace {
         this.subject.next({
             timeline: [...this.timeline],
             logs: [...this.logs],
-            mainLoadedTimelineI:this.mainLoadedTimelineI,
+            mainLoadedTimelineI: this.mainLoadedTimelineI,
         });
     }
 
@@ -502,6 +505,7 @@ class Trace {
                 areNew[0] ? extraValues[0] : extraIds[0] !== 'null' ?
                     this.findPreviousOccurrence(extraIds[0]).value : value;
             const propertyData = areNew[1] ? extraValues[1] : this.findPreviousOccurrence(extraIds[1]).value;
+            // console.log('MemberExpression', objectData, propertyData, objectData[propertyData]);
             // console.log(pre, value, post, type, extraIds, areNew, extraValues);
             areNew[0] && this.pushEntry({id: extraIds[0]}, objectData, post, type);
             areNew[1] && !isString(propertyData) && this.pushEntry({id: extraIds[1]}, propertyData, post, type);
@@ -519,12 +523,14 @@ class Trace {
                 const errorMessage = `: referencing invalid property: ${propertyData}`;
                 this.pushEntry(
                     {
-                        id: extraIds[1], isError: true, errorMessage: errorMessage,
+                        id: extraIds[1],
+                        isError: true,
+                        errorMessage: errorMessage,
                         errorLoc: this.locationMap[extraIds[1]].loc
                     }, propertyData, post, type);
                 throw errorMessage;
             }
-            //console.log(objectData[propertyData]("x"));
+            // console.log('MemberExpression', objectData[propertyData]("x"));
             return objectData[propertyData];
             // value;
             //  console.log('MemberExpression', this.timeline);
@@ -670,7 +676,16 @@ class Trace {
 
         this.currentExpressionId = id;
         this.currentScope = this.currentScope.enterScope(id);
-        return {id, type, secondaryId, navigationType, calleeId, startTimestamp, blockName, pushArgs};
+        return {
+            id,
+            type,
+            secondaryId,
+            navigationType,
+            calleeId,
+            startTimestamp,
+            blockName,
+            pushArgs
+        };
     };
 
     postAutoLog = (id) => {
@@ -689,31 +704,31 @@ class Trace {
 
     };
 
-    onError = (errors, isBundlingError) => {
+    onError = (errors /*, isBundlingError*/) => {
         //todo runtime errors
         let expression = this.locationMap[this.currentExpressionId] || {};
         if (!isArray(errors)) {
             errors = [errors];
         }
-        if (isBundlingError) {
-            errors.reverse().forEach(error => {
-                let depName = null;
-                const neededByMatches = /needed by: (.+)/.exec(error.message);
-                if (neededByMatches) {
-                    depName = neededByMatches[1];
-                } else {
-                    const depMatches = /"(.+)"/.exec(error.message);
-                    if (depMatches) {
-                        depName = depMatches[1];
-                    }
+        // if (!isBundlingError) {
+        errors.reverse().forEach(error => {
+            let depName = null;
+            const neededByMatches = /needed by: (.+)/.exec(error.message);
+            if (neededByMatches) {
+                depName = neededByMatches[1];
+            } else {
+                const depMatches = /"(.+)"/.exec(error.message);
+                if (depMatches) {
+                    depName = depMatches[1];
                 }
-                const depInfo = this.deps.dependenciesInfo.find(dep => dep.name === depName);
-                if (!depInfo) {
-                    return;
-                }
+            }
+            const depInfo = this.deps.dependenciesInfo.find(dep => dep.name === depName);
+            let errorEntry = null;
+            let i = this.timeline.length;
+            if (depInfo) {
                 const depLocs = this.locationMap[depInfo.id];
-                let i = this.timeline.length;
-                this.timeline.unshift({
+
+                errorEntry = {
                     i,
                     reactKey: this.getReactKey(i),
                     isError: true,
@@ -722,26 +737,33 @@ class Trace {
                     expressionType: depInfo.expressionType,
                     data: this.stringifyE(error),
                     timestamp: Date.now(),
-                });
-            });
+                }
+            } else {
+                errorEntry = {
+                    i,
+                    reactKey: this.getReactKey(i),
+                    isError: true,
+                    id: this.currentExpressionId,
+                    loc: expression.loc,
+                    expressionType: expression.expressionType,
+                    data: this.stringifyE(error),
+                    timestamp: Date.now(),
+                }
+            }
 
-        } else {
-            let i = this.timeline.length;
-            errors = errors.map(this.stringifyE);
+            this.timeline.unshift(errorEntry);
+        });
 
-            errors = errors.length === 1 ? errors[0] : errors;
+        // } else {
+        //     let i = this.timeline.length;
+        //     errors = errors.map(this.stringifyE);
+        //
+        //     errors = errors.length === 1 ? errors[0] : errors;
+        //
+        //     this.timeline.unshift();
+        // }
+        // console.log('errors', errors, this.timeline[0]);
 
-            this.timeline.unshift({
-                i,
-                reactKey: this.getReactKey(i),
-                isError: true,
-                id: this.currentExpressionId,
-                loc: expression.loc,
-                expressionType: expression.expressionType,
-                data: errors,
-                timestamp: Date.now(),
-            });
-        }
 
     };
     stringifyE = (error, isE) => {

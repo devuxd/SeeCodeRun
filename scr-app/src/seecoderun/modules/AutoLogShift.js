@@ -1,11 +1,9 @@
 import isString from 'lodash/isString';
 import isArray from 'lodash/isArray';
 
-export const toAst = (source, options) => {
-    if (options) {
-        return j(source, options);
-    }
-    return j(source);
+export const toAst = (source, options={}) => {
+    const res = j(source, options);
+    return res;
 };
 
 export const alt = {
@@ -51,7 +49,6 @@ class AutoLogShift {
     }
 
     autoLogAst(ast, getLocationId, locationMap = [], deps = {}) {
-        // console.log('al',!!ast, !!locationMap);
         //  wrapFunctionExpressions(ast, locationMap);
         // this.autoLogCallExpressions(ast, locationMap, getLocationId);
         // try {
@@ -382,7 +379,12 @@ class AutoLogShift {
         ];
 
     composedExpressions = {
-        MemberExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
+        MemberExpression: ({ast, locationMap, getLocationId, path}, {
+            pathSource,
+            id,
+            type,
+            p
+        }) => {
             const jid = j.identifier(`'${id}'`);
             const jtype = j.identifier(`'${type}'`);
             const object = path.value.object;//node
@@ -439,7 +441,12 @@ class AutoLogShift {
             ];
             return this.autoLogExpression(pathSource.parent, id, type, path, p, params, locationMap);
         },
-        BinaryExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
+        BinaryExpression: ({ast, locationMap, getLocationId, path}, {
+            pathSource,
+            id,
+            type,
+            p
+        }) => {
             const jid = j.identifier(`'${id}'`);
             const jtype = j.identifier(`'${type}'`);
             const left = path.value ? path.value.left : null;
@@ -488,7 +495,12 @@ class AutoLogShift {
             ];
             return this.autoLogExpression(pathSource, id, type, path, p, params, locationMap);
         },
-        CallExpression: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
+        CallExpression: ({ast, locationMap, getLocationId, path}, {
+            pathSource,
+            id,
+            type,
+            p
+        }) => {
             const jid = j.identifier(`'${id}'`);
             const jtype = j.identifier(`'${type}'`);
             const callee = path.value ? path.value.callee : null;
@@ -559,7 +571,12 @@ class AutoLogShift {
             // console.log('C', calleeValue, jValue);
             return this.autoLogExpression(pathSource, id, type, path, p, params, locationMap);
         },
-        VariableDeclarator: ({ast, locationMap, getLocationId, path}, {pathSource, id, type, p}) => {
+        VariableDeclarator: ({
+                                 ast,
+                                 locationMap,
+                                 getLocationId,
+                                 path
+                             }, {pathSource, id, type, p}) => {
             const jid = j.identifier(`'${id}'`);
             const jtype = j.identifier(`'${type}'`);
             const left = path.value ? path.value.id : null;
@@ -669,7 +686,7 @@ class AutoLogShift {
         let name = path;
         if (firstSlash > -1) {
             name = path.substring(0, firstSlash);
-            error = `Dependency ${name} cannot have paths: RequireJS does not support relative paths: "${path}".`;
+          //  error = `Dependency ${name} cannot have paths: RequireJS does not support relative paths: "${path}".`;
         }
         id && (locationMap[id] = {
             type: alt.DependencyError,
@@ -677,7 +694,14 @@ class AutoLogShift {
             loc,
             expressionLoc
         });
-        return {path, source: `"${name}"`, name, id, error};
+        return {
+            path,
+            source: `"${name}"`,
+            name,
+            id,
+            error,
+            importStatementLoc: expressionPath.loc||expressionLoc,
+        };
     };
 
     static getDependencies = (ast, locationMap, getLocationId) => {
@@ -691,7 +715,7 @@ class AutoLogShift {
             hasErrors = hasErrors || !!dependencyInfo.error;
             dependenciesInfo.push(dependencyInfo);
             const source = dependencyInfo.source;
-            dependencies[source] = [...(dependencies[source] || []), path.value.loc];
+            dependencies[source] = [...(dependencies[source] || []), dependencyInfo.importStatementLoc];
         };
         const handleAsyncImports = path => {
             const isRequire =
@@ -740,7 +764,11 @@ class AutoLogShift {
 
     composedBlocks = {
         FunctionDeclaration:
-            ({ast, locationMap, getLocationId, path}, {id, type}, {parentType, parentLoc, parentId}) => {
+            ({ast, locationMap, getLocationId, path}, {id, type}, {
+                parentType,
+                parentLoc,
+                parentId
+            }) => {
                 // const jid = j.identifier(`'${parentId}'`);
                 // const jValue = j.identifier('arguments');
                 locationMap[parentId] = {
@@ -999,7 +1027,7 @@ class AutoLogShift {
                 && parentPath.value
                 && parentPath.value.body
                 && parentPath.value.body.type !== 'BlockStatement') {
-                 isImplicitBlockStatementPath = true;
+                isImplicitBlockStatementPath = true;
             }
 
             if (id) {
@@ -1157,7 +1185,7 @@ class AutoLogShift {
                                 extraLocs = {
                                     signature: parentLoc || locationMap[parentPath.value.autologId].loc,
                                 };
-                                console.log('ArrowFunctionExpression', extraLocs, parentId);
+                                // console.log('ArrowFunctionExpression', extraLocs, parentId);
                                 // d.log(new Date(), `extraLocs = {
                                 //     signature: parentLoc || locationMap[parentPath.value.autologId].loc,
                                 // };`, null, `${parentLoc}`, `${loc}`);
@@ -1253,9 +1281,9 @@ class AutoLogShift {
                             hasParams = true;
                             if (parentType
                                 &&
-                                    [
-                                        'ArrowFunctionExpression'
-                                    ].includes(parentType)
+                                [
+                                    'ArrowFunctionExpression'
+                                ].includes(parentType)
 
                                 && (parentPath.value.params.length === 1
                                     && parentPath
@@ -1364,7 +1392,7 @@ class AutoLogShift {
                         // } else {
                         //     // console.log('critical parent', type, loc, path, parentType, parentLoc);
                         // }
-                        console.log('needParentheses',needParentheses, path, parentType, parentPath );
+                        // console.log('needParentheses',needParentheses, path, parentType, parentPath );
 
                     } else {
                         console.log('ignored', path);

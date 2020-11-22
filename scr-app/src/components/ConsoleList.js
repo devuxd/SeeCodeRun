@@ -1,25 +1,19 @@
-import React from 'react';
+import React, {useEffect, useMemo, useCallback} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
-import {darken, fade, lighten} from '@material-ui/core/styles/colorManipulator';
+import {darken, alpha, lighten} from '@material-ui/core/styles/colorManipulator';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import Pin from "mdi-material-ui/Pin";
-import PinOutline from "mdi-material-ui/PinOutline";
 
-import IconButton from '@material-ui/core/IconButton';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 
 import InfiniteStickyList from './InfiniteStickyList';
 import ObjectExplorer from "./ObjectExplorer";
+import {StickyAction} from "./TraceList";
 
 import {PastebinContext, TABLE_ROW_HEIGHT} from "../containers/Pastebin";
 import {HighlightPalette} from '../containers/LiveExpressionStore';
-import debounce from 'lodash/debounce';
-
-// import {AutoSizer, Column, Table} from 'react-virtualized';
-// import Highlighter from "react-highlight-words";
 
 const styles = theme => ({
     row: {},
@@ -47,14 +41,14 @@ const styles = theme => ({
     },
     tableRowError: {
         height: TABLE_ROW_HEIGHT,
-        backgroundColor: fade(HighlightPalette.error, 0.25),
+        backgroundColor: alpha(HighlightPalette.error, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.error,
         },
     },
     tableRowGraphical: {
         height: TABLE_ROW_HEIGHT,
-        backgroundColor: fade(HighlightPalette.graphical, 0.25),
+        backgroundColor: alpha(HighlightPalette.graphical, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.graphical,
         }
@@ -64,6 +58,13 @@ const styles = theme => ({
     },
     hover: {},
     valueCell: {
+        overflow: 'hidden',
+        margin: 0,
+        padding: theme.spacing(1),
+        borderBottom: 0,
+    },
+    valueCellFill: {
+        width: '100%',
         overflow: 'hidden',
         margin: 0,
         padding: theme.spacing(1),
@@ -82,15 +83,15 @@ const styles = theme => ({
     },
     icon: {
         fontSize: theme.spacing(2),
-        color: theme.palette.type === 'light'
-            ? lighten(fade(theme.palette.divider, 1), 0.6)
-            : darken(fade(theme.palette.divider, 1), 0.4)
+        color: theme.palette.mode === 'light'
+            ? lighten(alpha(theme.palette.divider, 1), 0.6)
+            : darken(alpha(theme.palette.divider, 1), 0.4)
     },
     bottomValueCell: {
         borderTop: `1px solid ${
-            theme.palette.type === 'light'
-                ? lighten(fade(theme.palette.divider, 1), 0.88)
-                : darken(fade(theme.palette.divider, 1), 0.8)
+            theme.palette.mode === 'light'
+                ? lighten(alpha(theme.palette.divider, 1), 0.88)
+                : darken(alpha(theme.palette.divider, 1), 0.8)
         }`,
     },
     commandText: {
@@ -142,7 +143,6 @@ const configureMatchesFilter = (searchState) => {
                 values: [],
             };
 
-
             const isAnyText = !searchState.value.trim().length;
 
             if (isAnyText) {
@@ -186,19 +186,21 @@ const RowContainer = React.forwardRef(
 const Row = ({index, style, data}) => {
     const n = (data.items[index] || {}).entry || {};
     const {
-        columnIndex, columns, classes, rowHeight, onRowClick,
-        objectNodeRenderer, isRowSelected,
+        columnIndex, columns, classes,
+        objectNodeRenderer,
         configureMappingEventListeners
     } = data;
-    const isSelected = n.id && isRowSelected(n.id);
-    // const result = n.chunksResult;
+
     const {
-        onMouseEnter, onMouseLeave, onClick
+        onMouseEnter, onMouseLeave,
     } = configureMappingEventListeners(n);
+    const tableClasses = useMemo(
+        () => ({root: classes.valueCell}
+        ), [classes]);
     return (
         <TableCell
             component="div"
-            classes={{root: classes.valueCell}}
+            classes={tableClasses}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             // onClick={onClick}
@@ -225,6 +227,7 @@ const Row = ({index, style, data}) => {
                         return (
                             <div className={classes.cellParam} key={i}>
                                 <ObjectExplorer key={i}
+                                                variant={"marker"}
                                                 expressionId={n.expressionId}
                                                 objectNodeRenderer={
                                                     objectNodeRenderer
@@ -241,28 +244,33 @@ const Row = ({index, style, data}) => {
     );
 };
 
+const EmptyRow = withStyles(styles)(({classes}) => {
+    const tableClasses = useMemo(
+        () => ({root: classes.valueCellFill}
+        ), [classes]);
+    return (
+        <TableRow
+            hover
+            component="div"
+            className={classes.rowContainer}
+        >
+            <TableCell
+                component="div"
+                classes={tableClasses}
+                align={'center'}
+            >
+                No console logs yet.
+            </TableCell>
+        </TableRow>
+    );
+});
+
 export const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
-
-
-const StickyAction = React.memo(({isSticky, onStickyChange}) => (
-    <IconButton
-        onClick={onStickyChange}
-        size="small"
-        style={{
-            zIndex: isSticky ? 1 : 0,
-            display: 'flex',
-            alignItems: 'center',
-            flexFlow: 'row',
-        }}
-    >
-        {isSticky ? <Pin style={{fontSize: '.8rem'}}/> :
-            <PinOutline style={{fontSize: '.8rem'}}/>}
-    </IconButton>
-));
 
 function WindowedTable(props) {
     const {
-        defaultItemSize = 32,
+        order,
+        estimatedItemSize = 32,
         logData: data,
         searchState,
         configureMappingEventListeners,
@@ -278,43 +286,60 @@ function WindowedTable(props) {
         () => configureMatchesFilter(searchState),
         [searchState]
     );
-    let totalMatches = 0;
-    const windowData = data.map(() => false);
-    const ignoreIndices = [];
-    const matchedData = [];
-    data.forEach((n, i) => {
-        const newN = {...n, isMatch: true, chunksResult: findChunks(n)};
-        if (
-            !newN.chunksResult.found || (!newN.isFromInput && !newN.expression)
-        ) {
-            newN.isMatch = false;
-        }
-        if (newN.isMatch || newN.isFromInput) {
-            matchedData.push(newN);
-        } else {
-            ignoreIndices.push(i);
-        }
-    });
-    totalMatches = matchedData.length;
-    React.useEffect(
-        () => onHandleTotalChange(totalMatches),
-        [totalMatches]
-    );
-    const rows = matchedData.map((entry, i) => createData(i, entry));
 
-    const isItemLoaded = index => true;//!!rows[index];
-    const loadMoreItems = (startIndex, stopIndex) => {
+    const {
+        totalMatches, ignoreIndices, rows
+    } = useMemo(() => {
+            const windowData = data.map(() => false);
+            const ignoreIndices = [];
+            const matchedData = [];
+            data.forEach((n, i) => {
+                const newN = {...n, isMatch: true, chunksResult: findChunks(n)};
+                if (
+                    !newN.chunksResult.found
+                    || (!newN.isFromInput && !newN.expression)
+                ) {
+                    newN.isMatch = false;
+                }
+                if (newN.isMatch || newN.isFromInput) {
+                    matchedData.push(newN);
+                } else {
+                    ignoreIndices.push(i);
+                }
+            });
+            return {
+                totalMatches: matchedData.length,
+                rows: matchedData
+                    .map((entry, i) => createData(i, entry)),
+                ignoreIndices,
+                windowData
+            }
+        }
+        , [data, findChunks]);
+
+    useEffect(
+        () => {
+            onHandleTotalChange(totalMatches)
+        },
+        [totalMatches, onHandleTotalChange]
+    );
+
+    const isItemLoaded = useCallback(index => true, []);//!!rows[index];
+    const loadMoreItems = useCallback((startIndex, stopIndex) => {
         // for (let index = startIndex; index <= stopIndex; index++) {
         //     windowData[index] = rows[index];
         // }
         return new Promise(
             resolve => resolve()
         );
-    };
+    }, []);
 
-    const listProps = {
+    const autoScrollTo = order === 'asc' ? 'bottom' : 'top';
+
+    const listProps = useMemo(() => ({
+        autoScrollTo,
         items: rows,
-        defaultItemSize,
+        estimatedItemSize,
         StickyComponent: StickyAction,
         RowComponent: Row,
         RowContainer,
@@ -329,12 +354,27 @@ function WindowedTable(props) {
         heightDelta,
         autoScroll,
         configureMappingEventListeners,
-    };
+        EmptyRowComponent: EmptyRow,
+    }), [
+        autoScrollTo,
+        rows,
+        estimatedItemSize,
+        isItemLoaded,
+        loadMoreItems,
+        stickyIndices,
+        setStickyIndices,
+        ignoreIndices,
+        isRowSelected,
+        objectNodeRenderer,
+        setCursorToLocation,
+        heightDelta,
+        autoScroll,
+        configureMappingEventListeners,
+    ]);
     return (
         <StyledInfiniteStickyList
             {...listProps}
         />
-
     );
 }
 

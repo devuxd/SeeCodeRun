@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import {makeStyles} from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Slider from '@material-ui/core/Slider';
-import GridList from '@material-ui/core/GridList';
-import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
+import ImageList from '@material-ui/core/ImageList';
+import ImageListItem from '@material-ui/core/ImageListItem';
+import ImageListItemBar from '@material-ui/core/ImageListItemBar';
 import IconButton from '@material-ui/core/IconButton';
 import MinimizeIcon from '@material-ui/icons/Minimize';
 import MaximizeIcon from '@material-ui/icons/Maximize';
@@ -141,10 +141,10 @@ const TransitionList = (props) => {
     const {windowSize, monaco, tileRefs, selectTile, tilesVisibility, handleTilesVisibilityChange} = props;
     return (
         <div className={classes.root}>
-            <GridList className={classes.gridList} cols={windowSize} spacing={16}>
+            <ImageList className={classes.gridList} cols={windowSize} spacing={16}>
                 {props.tiles.map((tile, i) =>
                     (tilesVisibility[i] && tilesVisibility[i].hidden ?
-                            <GridListTile ref={tileRefs.current[i]} key={tile.id}
+                            <ImageListItem ref={tileRefs.current[i]} key={tile.id}
                                           style={{position: 'relative', width: 48}}>
                                 <IconButton size={'small'}
                                             aria-label={`show '${tile.expression.text}' transition`}
@@ -153,9 +153,9 @@ const TransitionList = (props) => {
                                 >
                                     <MaximizeIcon className={classes.icon}/>
                                 </IconButton>
-                            </GridListTile>
+                            </ImageListItem>
                             :
-                            <GridListTile ref={tileRefs.current[i]} key={tile.id}
+                            <ImageListItem ref={tileRefs.current[i]} key={tile.id}
                                           onMouseOver={(ev) => selectTile(ev, i + 1)}>
                                 <ViewEditor monaco={monaco}
                                             originalText={tile.dataTransition.from}
@@ -163,7 +163,7 @@ const TransitionList = (props) => {
                                             editorModelLanguage={tile.dataTransition.language}
                                             diff
                                 />
-                                <GridListTileBar
+                                <ImageListItemBar
                                     title={<ViewEditor
                                         monaco={monaco}
                                         originalText={tile.expression.text}
@@ -182,10 +182,10 @@ const TransitionList = (props) => {
                                         </IconButton>
                                     }
                                 />
-                            </GridListTile>
+                            </ImageListItem>
                     )
                 )}
-            </GridList>
+            </ImageList>
         </div>
     );
 }

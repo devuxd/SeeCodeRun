@@ -273,7 +273,7 @@ class TimelineBranchManager {
         this.controlBranches = controlBranches;
         this.getBranchByTimelineI = (timelineI) => {
             let functionBranch = null;
-            console.log('f', functionBranches, timelineI);
+            // console.log('f', functionBranches, timelineI);
             for (let fId in functionBranches) {
                 const func = functionBranches[fId];
 
@@ -297,7 +297,7 @@ class TimelineBranchManager {
             return functionBranch;
         };
 
-        console.log('TBM',this);
+        // console.log('TBM',this);
     }
 
 }

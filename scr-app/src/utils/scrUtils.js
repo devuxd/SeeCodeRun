@@ -15,6 +15,22 @@ import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
 import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
 import CodeEqualIcon from 'mdi-material-ui/CodeEqual';
 
+
+export const configureLocalMemo = (
+    currentMemo = null, prevDeps = []
+) => {
+    return (fn, deps) => {
+        for (let i = 0; deps.length; i++) {
+            if (prevDeps[i] !== deps[i]) {
+                currentMemo = fn();
+                break;
+            }
+        }
+        prevDeps = deps;
+        return currentMemo;
+    };
+};
+
 // from is-dom
 export const isNode = (val, win = window) => {
     return (!win || !val || typeof val !== 'object')

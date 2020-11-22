@@ -10,16 +10,12 @@ import Badge from '@material-ui/core/Badge';
 import Chip from '@material-ui/core/Chip';
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
-import CodeTagsCheckIcon from 'mdi-material-ui/CodeTagsCheck';
-
-// import SearchIcon from '@material-ui/icons/Search';
 import TuneIcon from '@material-ui/icons/Tune';
 import ChangeHistoryIcon from '@material-ui/icons/ChangeHistory';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import FilterCenterFocusIcon from '@material-ui/icons/FilterCenterFocus';
+import CenterFocusStrongIcon from '@material-ui/icons/CenterFocusStrong';
+import CenterFocusWeakIcon from '@material-ui/icons/CenterFocusWeak';
 import PauseIcon from '@material-ui/icons/Pause';
-// import SearchIcon from '@material-ui/icons/Search';
-// import DeleteIcon from '@material-ui/icons/Delete';
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CallMergeIcon from '@material-ui/icons/CallMerge';
@@ -31,17 +27,14 @@ import TextField from '@material-ui/core/TextField';
 
 import {PastebinContext, VisualQueryManager} from '../containers/Pastebin';
 import GraphicalQuery from '../components/GraphicalQuery';
-import {getVisualIdsFromRefs} from "../containers/GraphicalMapper";
 import {searchStateChange} from '../redux/modules/pastebin';
+
+const {getVisualIdsFromRefs} = VisualQueryManager;
 
 const mapStateToProps = null,
     mapDispatchToProps = {
         searchStateChange
     };
-// const columnTime = [
-//   {id: 'time', numeric: true, disablePadding: false, label: 'Time'},
-//
-// ];
 
 const toolbarStyles = theme => ({
     root: {
@@ -49,7 +42,7 @@ const toolbarStyles = theme => ({
         paddingRight: theme.spacing(1),
     },
     highlight:
-        theme.palette.type === 'light'
+        theme.palette.mode === 'light'
             ? {
                 color: theme.palette.secondary.main,
                 backgroundColor: lighten(theme.palette.secondary.light, 0.85),
@@ -219,7 +212,7 @@ function ResultsFilter(props) {
     const {SortIcon, sortTitle, handleGetNextSortOption} = getSortInfo();
 
     return (
-        <React.Fragment>
+        <>
             <Tooltip
                 title={"Include Functions"}
             >
@@ -268,7 +261,7 @@ function ResultsFilter(props) {
                     }
                 />
             </Tooltip>
-        </React.Fragment>
+        </>
     );
 }
 
@@ -281,7 +274,7 @@ function EnhancedToolbar(props) {
         classes,
         selected,
         isPlaying, handleChangePlaying, timeline, liveTimeline,
-        searchState, isSelectable, isAutoExpand, handleChangeAutoExpand,
+        searchState, isSelectable, isAutoLogActive, handleChangeAutoExpand,
         searchStateChange
     } = props;
     const numSelected = selected.length;
@@ -302,11 +295,41 @@ function EnhancedToolbar(props) {
 
     React.useEffect(() => {
         searchStateChange(searchState)
-    }, [searchState]);
+    }, [searchState, searchStateChange]);
+
+    const graphicalQuery = (searchState.visualQuery
+    && searchState.visualQuery.length ?
+        <Chip
+            label={
+                <>
+                    {searchState.visualQuery.map(el => {
+                        const query = [el];
+                        const ids = getVisualIdsFromRefs(query);
+                        return (
+                            <GraphicalQuery
+                                key={JSON.stringify(ids)}
+                                outputRefs={query}
+                                visualIds={ids}
+                                selected={true}
+                            />)
+                    })}</>}
+            onDelete={() => {
+                VisualQueryManager
+                    .onChange(
+                        searchState.visualQuery,
+                        getVisualIdsFromRefs(searchState.visualQuery),
+                        'select'
+                    );
+            }}
+        />
+        :
+        <div
+            className={classes.textField}/>);
+
     return (
-        <React.Fragment>
+        <>
             <div className={classes.itemCenter}>
-                {numSelected > 0 ? null : <React.Fragment>
+                {numSelected > 0 ? null : <>
                     <Tooltip
                         title={isPlaying ? 'Pause Updates' : newEntries > 99 ? `${newEntries} new updates` : 'Resume Updates'}
                         placement={'bottom-end'}
@@ -314,7 +337,7 @@ function EnhancedToolbar(props) {
                     >
                         {playingButton}
                     </Tooltip>
-                </React.Fragment>}
+                </>}
                 <div className={classes.title}>
                     {numSelected > 0 ? (
                         <Typography color="inherit" variant="subtitle1">
@@ -323,7 +346,6 @@ function EnhancedToolbar(props) {
                     ) : (
                         <TextField
                             fullWidth
-                            variant="outlined"
                             margin="dense"
                             id="search"
                             label={null}
@@ -336,32 +358,15 @@ function EnhancedToolbar(props) {
                                     (
                                         <InputAdornment>
                                             <ResultsFilter {...props} />
-                                            {searchState.visualQuery && searchState.visualQuery.length ?
-
-                                                <Chip
-                                                    label={<GraphicalQuery
-                                                        outputRefs={searchState.visualQuery}
-                                                        visualIds={getVisualIdsFromRefs(searchState.visualQuery)}
-                                                        selected={true}
-                                                    />}
-                                                    onDelete={() => {
-                                                        VisualQueryManager
-                                                            .onChange(
-                                                                searchState.visualQuery,
-                                                                getVisualIdsFromRefs(searchState.visualQuery), 'click'
-                                                            );
-                                                    }}
-                                                />
-                                                :
-                                                <div
-                                                    className={classes.textField}/>
-                                            }
+                                            {graphicalQuery}
                                         </InputAdornment>
                                     ),
-                                endAdornment: <InputEndAdornment {...{
-                                    classes,
-                                    searchState
-                                }} />
+                                endAdornment: <InputEndAdornment
+                                    {...{
+                                        classes,
+                                        searchState
+                                    }}
+                                />
                             }}
                             FormHelperTextProps={{
                                 component: 'span',
@@ -373,19 +378,20 @@ function EnhancedToolbar(props) {
                     )}
                 </div>
                 <Tooltip
-                    title={isAutoExpand ? 'Disable Live expression auto-focus' : 'Enable Live expression auto-focus'}
+                    title={isAutoLogActive ? 'Deactivate Live Expressions' : 'Activate Live Expressions'}
                     placement={'bottom-end'}
                     enterDelay={300}
                 >
-                    <IconButton color={isAutoExpand ? "primary" : 'inherit'}
+                    <IconButton color={isAutoLogActive ? "primary" : 'inherit'}
                                 onClick={handleChangeAutoExpand}>
-                        <FilterCenterFocusIcon/>
+                        {isAutoLogActive ? <CenterFocusStrongIcon/> :
+                            <CenterFocusWeakIcon/>}
                     </IconButton>
                 </Tooltip>
             </div>
             <div className={classes.actions}>
                 {numSelected > 0 ? (
-                    <React.Fragment>
+                    <>
                         <Tooltip title="Compare values">
                             <IconButton aria-label="Compare values">
                                 <ChangeHistoryIcon/>
@@ -401,7 +407,7 @@ function EnhancedToolbar(props) {
                                 <CallMergeIcon/>
                             </IconButton>
                         </Tooltip>
-                    </React.Fragment>
+                    </>
                 ) : (isSelectable ?
                         <Tooltip title="Filter list">
                             <IconButton aria-label="Filter list">
@@ -410,7 +416,7 @@ function EnhancedToolbar(props) {
                         </Tooltip> : null
                 )}
             </div>
-        </React.Fragment>
+        </>
     );
 }
 

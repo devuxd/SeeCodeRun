@@ -1,22 +1,16 @@
-import React from 'react';
+import React, {
+    createContext, useState, useMemo, useCallback, useEffect
+} from 'react';
 import PropTypes from 'prop-types';
 import {
-    createMuiTheme as stable_createMuiNonStrictModeTheme,
-    unstable_createMuiStrictModeTheme,
+    createMuiTheme,
     responsiveFontSizes,
 } from '@material-ui/core/styles';
 import {chromeDark, chromeLight} from 'react-inspector';
 import {ThemeProvider} from '@material-ui/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
-let createMuiTheme = null;
-if (process.env.NODE_ENV === 'production') {
-    createMuiTheme = stable_createMuiNonStrictModeTheme;
-} else {
-    createMuiTheme = unstable_createMuiStrictModeTheme;
-}
-
-export const ThemeContext = React.createContext({
+export const ThemeContext = createContext({
     switchTheme: null,
     themeType: null,
     muiTheme: null,
@@ -25,7 +19,7 @@ export const ThemeContext = React.createContext({
 });
 
 const palette = {
-    type: 'light',
+    mode: null,
     primary: {
         light: '#5e92f3',
         main: '#1565c0',
@@ -51,22 +45,25 @@ const palette = {
         contrastText: '#000',
     },
 };
-const getLightTheme = () => responsiveFontSizes(createMuiTheme({
-    palette,
-    typography: {
-        useNextVariants: true,
-    },
-}));
 
-const getDarkTheme = () => responsiveFontSizes(createMuiTheme({
+const getMuiThemeOptions = (mode) => ({
+    spacingUnit: x => x * 8,
     palette: {
         ...palette,
-        type: 'dark',
+        mode,
     },
     typography: {
         useNextVariants: true,
     },
-}));
+});
+
+const getLightTheme = () => responsiveFontSizes(
+    createMuiTheme(getMuiThemeOptions('light'))
+);
+
+const getDarkTheme = () => responsiveFontSizes(
+    createMuiTheme(getMuiThemeOptions('dark'))
+);
 
 export const themeTypes = {
     lightTheme: 'lightTheme',
@@ -78,8 +75,13 @@ const getMuiThemes = {
     [themeTypes.darkTheme]: getDarkTheme,
 };
 
-const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
-const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
+const muiChromeLight = {
+    ...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})
+};
+
+const muiChromeDark = {
+    ...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})
+};
 
 export function getThemes(themeType) {
     if (!getMuiThemes[themeType]) {
@@ -87,25 +89,28 @@ export function getThemes(themeType) {
     }
     return {
         muiTheme: getMuiThemes[themeType](),
-        inspectorTheme: themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
-        monacoTheme: themeType === themeTypes.darkTheme ? 'vs-dark' : 'vs-light'
+        inspectorTheme: themeType === themeTypes.darkTheme ?
+            muiChromeDark : muiChromeLight,
+        monacoTheme: themeType === themeTypes.darkTheme ?
+            'vs-dark' : 'vs-light'
     };
 }
 
 export function useThemes(themeType) {
-    return React.useMemo(() => getThemes(themeType), [themeType]);
+    return useMemo(() => getThemes(themeType), [themeType]);
 }
 
 export default function withThemes(Component) {
     return (function WithThemes(props) {
         const {mediaQueryResult: prefersLightMode} = props;
-        const preferredThemeType = prefersLightMode ? themeTypes.lightTheme : themeTypes.darkTheme;
+        const preferredThemeType = prefersLightMode ?
+            themeTypes.lightTheme : themeTypes.darkTheme;
 
-        const [themeUserOverrides, setThemeUserOverrides] = React.useState(null);
-        const [themeType, setThemeType] = React.useState(preferredThemeType);
+        const [themeUserOverrides, setThemeUserOverrides] = useState(null);
+        const [themeType, setThemeType] = useState(preferredThemeType);
 
         const activeThemeType = themeUserOverrides || themeType;
-        const switchTheme = (event, newThemeUserOverrides) => {
+        const switchTheme = useCallback((event, newThemeUserOverrides) => {
 
             if (newThemeUserOverrides && themeTypes[newThemeUserOverrides]) {
                 setThemeUserOverrides(newThemeUserOverrides);
@@ -120,13 +125,23 @@ export default function withThemes(Component) {
                     setThemeType(nextThemeType);
                 }
             }
-        };
+        }, [
+            activeThemeType,
+            setThemeUserOverrides,
+            setThemeType,
+            themeUserOverrides
+        ]);
 
-        React.useEffect(() => {
+        useEffect(() => {
             setThemeType(preferredThemeType);
-        }, [preferredThemeType]);
+        }, [setThemeType, preferredThemeType]);
 
-        const {muiTheme, inspectorTheme, monacoTheme} = useThemes(activeThemeType);
+        const {
+            muiTheme,
+            inspectorTheme,
+            monacoTheme
+        } = useThemes(activeThemeType);
+
         return (
             <ThemeProvider theme={muiTheme}>
                 <CssBaseline/>

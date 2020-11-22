@@ -18,7 +18,7 @@ import TvIcon from '@material-ui/icons/Tv';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
 import LanguageCss3Icon from 'mdi-material-ui/LanguageCss3';
-import CodeTagsCheckIcon from 'mdi-material-ui/CodeTagsCheck';
+import HighlightAltIcon from '@material-ui/icons/HighlightAlt';
 import SortAscendingIcon from 'mdi-material-ui/SortAscending';
 import SortDescendingIcon from 'mdi-material-ui/SortDescending';
 import SortAlphabeticalAscendingIcon
@@ -27,6 +27,8 @@ import SortAlphabeticalDescendingIcon
     from 'mdi-material-ui/SortAlphabeticalDescending';
 import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
 import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
+import isArray from 'lodash/isArray';
+
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 
 import Editor from './Editor';
@@ -39,7 +41,6 @@ import {
     configureDefaultGridLayoutFormatter as configureDefaultGridLayoutCompactFormatter
 } from '../utils/reactGridLayoutCompactUtils';
 import DebugContainer from "../components/DebugContainer";
-import ScrollingList from "../components/ScrollingList";
 import TraceControls from '../components/TraceControls';
 import PointOfView, {createPointOfViewTile} from "../components/PointOfView";
 
@@ -49,15 +50,29 @@ let gridLayoutFormatter = isCompact ?
 
 export const PastebinContext = createContext({});
 export const VisualQueryManager = {
+    visualElements: [],
+    visualQuery: [],
+    getVisualIdsFromRefs: refsArray => {
+        if (isArray(refsArray) && isArray(VisualQueryManager.visualElements)) {
+            return refsArray.map(
+                ref => VisualQueryManager.visualElements.indexOf(ref)
+            ).filter(e => e >= 0);
+        } else {
+            return [];
+        }
+    },
     onChange: (els, keys, event) => {
     },
-    visualElements: [],
+    isGraphicalElementSelected:
+        domEl => VisualQueryManager.visualQuery.includes(domEl),
 };
 export const d = {
     //Matches PointOfView.createPointOfViewTile(...)
     log: (id, expressionText, expressionLanguage = 'typescript', fromData, toData, dataLanguage = 'json') => {
     },
 };
+
+const isDebug = false;
 
 const animationId = `scr-a-id-${Date.now()}`;
 
@@ -154,18 +169,19 @@ const styles = theme => ({
     locatorButton: {
         position: 'absolute',
         zIndex: theme.zIndex.snackbar,
-        bottom: theme.spacing(3),
+        bottom: theme.spacing(4),
         right: 0,
     },
     locator: {
-        fontSize: theme.spacing(2),
+        fontSize: theme.spacing(2.5),
     },
     draggable: {
         position: 'absolute',
         zIndex: theme.zIndex.snackbar,
-        bottom: theme.spacing(2),
+        bottom: 0,
         right: theme.spacing(4),
-        color: 'rgba(30, 144, 255, 0.7)', // same as utils/react-grid-layout-scr-theme.css
+        color: 'rgba(30, 144, 255, 0.7)',
+        // same as utils/react-grid-layout-scr-theme.css
         fontSize: theme.spacing(2),
         cursor: 'grab',
         '&:active': {
@@ -195,10 +211,9 @@ let automaticLayout = 0;
 class Pastebin extends Component {
     constructor(props) {
         super(props);
-        this.debugScrollerRef = React.createRef();
+        this.gridRef = React.createRef();
         this.updateMonacoEditorLayouts = {};
         this.debugScrollerRefSnapshots = {};
-        this.scrollingListContainers = {};
         VisualQueryManager.onChange = this.onVisualQueryChange;
         d.log = this.handleChangePointOfViewTiles;
     }
@@ -214,58 +229,52 @@ class Pastebin extends Component {
         return null;
     }
 
-    onVisualQueryChange = (visualQuery, visualIds, event) => {
-        this.setState(prevState => {
-            let visualQueryHover = prevState.searchState.visualQueryHover || [];
-            let selectedVisualQueries = prevState.searchState.selectedVisualQueries || [];
-            switch (event) {
-                case 'click':
-                    if (selectedVisualQueries === visualQuery) {
-                        selectedVisualQueries = [];
-                    } else {
-                        selectedVisualQueries = visualQuery;
-                    }
-                    // if (selectedVisualQueries.includes(visualQuery)) {
-                    //     selectedVisualQueries = [...selectedVisualQueries].filter(s => s !== visualQuery);
-                    // } else {
-                    //     selectedVisualQueries = [...selectedVisualQueries];
-                    //     selectedVisualQueries.push(visualQuery);
-                    // }
+    onVisualQueryChange = (newVisualQuery = [], visualIds, action) => {
+        this.setState(({searchState = {}}) => {
+            let {visualQueryPreview = [], visualQuery = []} = searchState;
+            switch (action) {
+                case 'select':
+                    const newQuery = [...visualQuery, ...newVisualQuery];
+                    visualQuery = newQuery.filter(
+                        (el, i) => (
+                            !(newVisualQuery.indexOf(el) >= 0
+                                && visualQuery.indexOf(el) >= 0)
+                        )
+                    );
                     break;
-                case 'mouseenter':
-                    visualQueryHover = visualQuery;
+                case 'preview':
+                    visualQueryPreview = newVisualQuery === visualQueryPreview ?
+                        []
+                        : newVisualQuery;
                     break;
                 default:
-                    visualQueryHover = [];
+                    console.warn(
+                        "Unknown onVisualQueryChange action", action
+                    );
             }
 
-            // let newVisualQuery = selectedVisualQueries.reduce((r, q) => {
-            //     q.forEach(e => r.push(e))
-            //     return r;
-            // }, []);
-            let newVisualQuery =
-                visualQueryHover && visualQueryHover.length ? visualQueryHover : selectedVisualQueries;
-            // let newVisualQuery = selectedVisualQueries.concat(visualQueryHover);
-            // newVisualQuery = newVisualQuery.reduce((r, e) => {
-            //     if (!r.includes(e)) {
-            //         r.push(e);
-            //     }
-            //     return r;
-            // }, []);
-            const newSearchState = {
-                ...this.state.searchState,
-                visualQuery: newVisualQuery,
-                visualQueryHover,
-                selectedVisualQueries
+            searchState = {
+                ...searchState,
+                visualQuery,
+                visualQueryPreview,
             };
-            const {orderBy, order, isPlaying, timeline, getEditorTextInLoc} = this.state;
-            const data = this.createData(timeline, getEditorTextInLoc, newSearchState);
-            // console.log(orderBy, order, orderBy === 'time' && order === 'desc');
+            const {
+                orderBy,
+                order,
+                isPlaying,
+                timeline,
+                getEditorTextInLoc
+            } = this.state;
+
+            const data = this.createData(
+                timeline, getEditorTextInLoc, searchState
+            );
             const sortedData =
-                orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
+                orderBy === 'time' && order === 'desc' ?
+                    data : this.sortData(data, orderBy, order);
             return {
                 data: sortedData,
-                searchState: newSearchState
+                searchState
             }
         });
     };
@@ -302,34 +311,8 @@ class Pastebin extends Component {
 
     };
 
-    getRowsLayout = (isNew) => {
-        if (this.debugScrollerRef.current) {
-            // console.log(
-            // 'this.debugScrollerRef.current.scrollHeight',
-            // , this.debugScrollerRef.current.scrollHeight, this.debugScrollerRef.current.style);
-            const defaultRowsPerPage = (
-                parseInt(this.debugScrollerRef.current.getBoundingClientRect().height / TABLE_ROW_HEIGHT, 10)
-            );
-            const rowsPerPage = isNew ?
-                defaultRowsPerPage : Math.max(
-                    this.state.rowsPerPage,
-                    defaultRowsPerPage
-                );
-            if (rowsPerPage !== this.state.rowsPerPage
-                || defaultRowsPerPage !== this.state.defaultRowsPerPage) {
-                return {rowsPerPage, defaultRowsPerPage};
-            } else {
-                return null;
-            }
-        }
-        return {defaultRowsPerPage: this.state.minRows};
-    };
 
     debouncedOnDebugContainerResizeEnd = debounce((isNew) => {
-        const rowsLayout = this.getRowsLayout(isNew);
-        if (rowsLayout) {
-            this.setState(rowsLayout);
-        }
         this.handleChangeDebugLoading(false);
     }, 50);
 
@@ -364,6 +347,8 @@ class Pastebin extends Component {
         automaticLayout++;
         this.handleAutomaticLayoutThrottled();
     };
+
+    setOnResize = onResize => (this.onResize = onResize);
 
     onResizeStop = (layout, oldItem, newItem
                     /*, placeholder, e, element*/) => {
@@ -511,87 +496,18 @@ class Pastebin extends Component {
 
     isSelected = id => this.state.selected.indexOf(id) !== -1;
 
-    onScrollChange = (e, scrollData) => {
-        //todo fix stop scroll  on end of conatiner
-        // const listContainer = this.scrollingListContainers[this.state.tabIndex];
-        // if (listContainer && listContainer.current && this.debugScrollerRef.current) {
-        //     const scroller = this.debugScrollerRef.current;
-        //     const scrollPos =  scroller.scrollHeight - scroller.scrollTop;
-        //     const elementHeight = listContainer.current.offsetHeight;
-        //     console.log(this.state.tabIndex, scrollPos, elementHeight, scrollData);
-        //     if (scroller && scrollPos > elementHeight) {
-        //
-        //         scroller.scrollTop = scrollPos;
-        //        scrollData.scrollTop = scroller.scrollTop;
-        //     }
-        //     // console.log(this.state.tabIndex, listContainer.current);
-        // }
-        this.debugScrollerRefSnapshots[this.state.tabIndex] = scrollData;
-    }
-
-    handleScrollEnd = (isBottom) => {
-        const rowsLayout = this.getRowsLayout(false);
-        if (rowsLayout) {
-            rowsLayout.rowsPerPage = isBottom ?
-                Math.min(
-                    this.state.rowsPerPage + this.state.rowsPerPageIncrement,
-                    Math.max(
-                        (this.state.timeline || []).length,
-                        rowsLayout.defaultRowsPerPage || this.state.defaultRowsPerPage)
-                )
-                : (rowsLayout.defaultRowsPerPage || this.state.defaultRowsPerPage);
-            if (rowsLayout.rowsPerPage !== this.state.rowsPerPage) {
-                this.setState({rowsPerPage: rowsLayout.rowsPerPage});
-            }
-        } else {
-            const rowsPerPage = isBottom ?
-                Math.min(
-                    this.state.rowsPerPage + this.state.rowsPerPageIncrement,
-                    Math.max(
-                        (this.state.timeline || []).length,
-                        this.state.defaultRowsPerPage)
-                )
-                : this.state.defaultRowsPerPage;
-            if (rowsPerPage !== this.state.rowsPerPage) {
-                this.setState({rowsPerPage});
-            }
-        }
-
-        this.handleChangeDebugLoading(false);
-    };
-
-    debouncedScrollEnd = debounce(this.handleScrollEnd, 50);
-
-    onScrollEnd = (e, isBottom) => {
-        if (this.state.tabIndex !== 0) {
-            return;
-        }
-
-        if (isBottom) {
-            this.handleChangeDebugLoading(true);
-            this.debouncedScrollEnd(isBottom);
-        } else {
-            const {rowsPerPage, defaultRowsPerPage} = this.state;
-            if (rowsPerPage > defaultRowsPerPage * 3) {
-                this.handleChangeDebugLoading(true);
-                setTimeout(() => {
-                    this.handleScrollEnd(isBottom);
-                }, 500);
-            }
-        }
-    };
-
-    scrollToTop = () => {
-        if (this.state.tabIndex !== 0) {
-            return;
-        }
-        this.debugScrollerRef.current && (this.debugScrollerRef.current.scrollTop = 0);
-    }
-
-    createData(timeline, getEditorTextInLoc, searchState = this.state.searchState) {
+    createData(
+        timeline, getEditorTextInLoc, searchState = this.state.searchState
+    ) {
         let tl = timeline || [];
-        return tl.filter(entry => (entry.isError || !searchState.visualQuery || !searchState.visualQuery.length) ||
-            (entry.isOutput && searchState.visualQuery.find(q => entry.outputRefs.includes(q)))
+        return tl.filter(
+            entry => (entry.isError
+                || !searchState.visualQuery
+                || !searchState.visualQuery.length
+            ) || (entry.isOutput
+                && searchState.visualQuery.find(
+                    q => entry.outputRefs.includes(q)
+                ))
         ).map((entry, i) => ({
             id: entry.reactKey,
             time: entry.i,
@@ -642,13 +558,14 @@ class Pastebin extends Component {
     }
 
     liveExpressionStoreChange =
-        (traceSubscriber, timeline, logs, isNew, HighlightTypes, highlightSingleText, highlightErrors,
+        (traceSubscriber, timeline, logs, isNew, HighlightTypes,
+         highlightSingleText, highlightErrors,
          setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
          objectNodeRenderer, handleChange) => {
             const {orderBy, order, isPlaying} = this.state;
-            // console.log('sta', this.state.searchState.visualQuery);
+
             isPlaying && this.handleChangeDebugLoading(true);
-            const rowsLayout = this.getRowsLayout(isNew) || {};
+
             setTimeout(() => {
                 if (isPlaying || isNew) {
                     let currentTimeline = isPlaying ? timeline : this.state.timeline;
@@ -681,7 +598,6 @@ class Pastebin extends Component {
                         return {onMouseEnter, onMouseLeave, onClick};
                     };
                     this.setState((prevState) => ({
-                        ...rowsLayout, // rowsPerPage, defaulRowsPerPage
                         isNew: isNew,
                         isPlaying: isNew ? true : prevState.isPlaying,
                         traceSubscriber,
@@ -704,7 +620,6 @@ class Pastebin extends Component {
                     this.handleChangeDebugLoading(false);
                 } else {
                     this.setState({
-                        ...rowsLayout,
                         liveTimeline: timeline,
                         liveLogs: logs,
                         isNew
@@ -714,38 +629,49 @@ class Pastebin extends Component {
         };
 
     handleChangePlaying = debounce((id, play) => {
-        let {isPlaying, lastHandleChangePlayingId} = this.state;
-        if (id === 'table') {
-            if (!isPlaying && !lastHandleChangePlayingId) {
-                return;
+        this.setState((prevState) => {
+            let {
+                isPlaying, lastHandleChangePlayingId
+            } = prevState;
+            const {
+                orderBy,
+                order,
+                timeline,
+                liveTimeline,
+                logs,
+                liveLogs,
+                getEditorTextInLoc
+            } = prevState;
+
+            if (id === 'table') {
+                if (!isPlaying && !lastHandleChangePlayingId) {
+                    return;
+                }
+
+                if (play) {
+                    lastHandleChangePlayingId = null;
+                    isPlaying = false;
+                } else {
+                    lastHandleChangePlayingId = id;
+                    isPlaying = true;
+                }
+
             }
+            let currentTimeline = isPlaying ? timeline : liveTimeline;
+            let currentLogs = isPlaying ? logs : liveLogs;
+            const data = this.createData(currentTimeline, getEditorTextInLoc);
+            const logData = this.createLogData(currentLogs, getEditorTextInLoc);
+            const sortedData =
+                orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
 
-            if (play) {
-                lastHandleChangePlayingId = null;
-                isPlaying = false;
-            } else {
-                lastHandleChangePlayingId = id;
-                isPlaying = true;
-            }
-
-        }
-
-        const {
-            orderBy, order, timeline, liveTimeline, logs, liveLogs, getEditorTextInLoc
-        } = this.state;
-        let currentTimeline = isPlaying ? timeline : liveTimeline;
-        let currentLogs = isPlaying ? logs : liveLogs;
-        const data = this.createData(currentTimeline, getEditorTextInLoc);
-        const logData = this.createLogData(currentLogs, getEditorTextInLoc);
-        const sortedData =
-            orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
-        this.setState({
-            isPlaying: !isPlaying,
-            lastHandleChangePlayingId,
-            timeline: currentTimeline,
-            logs: currentLogs,
-            data: sortedData,
-            logData
+            return {
+                isPlaying: !isPlaying,
+                lastHandleChangePlayingId,
+                timeline: currentTimeline,
+                logs: currentLogs,
+                data: sortedData,
+                logData
+            };
         });
     }, 100);
 
@@ -757,9 +683,9 @@ class Pastebin extends Component {
 
     handleChangeSearchValue = e => {
         const value = e.target.value || '';
-        this.setState({
-            searchState: {...this.state.searchState, value: value}
-        })
+        this.setState(prevState => ({
+            searchState: {...prevState.searchState, value}
+        }));
     };
 
     handleChangeSearchFilterClick = (filter) => {
@@ -793,7 +719,7 @@ class Pastebin extends Component {
     };
 
     handleChangeAutoExpand = () => {
-        this.setState(prevState => ({isAutoExpand: !prevState.isAutoExpand}));
+        this.setState(prevState => ({isAutoLogActive: !prevState.isAutoLogActive}));
     };
 
     state = {
@@ -833,7 +759,7 @@ class Pastebin extends Component {
         isPlaying: true,
         timeFlow: 'desc',
         handleChangeTimeFlow: this.handleChangeTimeFlow,
-        isAutoExpand: false,
+        isAutoLogActive: true,
         handleChangeAutoExpand: this.handleChangeAutoExpand,
         searchState: {
             functionLikeExpressions: functionLikeExpressions,
@@ -847,16 +773,16 @@ class Pastebin extends Component {
             isRegExp: false,
             handleFilterClick: this.handleChangeSearchFilterClick,
             findChunks: configureFindChunks(true),
-            visualQuery: null,
+            visualQuery: [],
             visualKey: null,
         },
         width: 800,
         height: 600,
         hoveredCellKey: null,
-        scrollToTop: this.scrollToTop,
         isGraphicalLocatorActive: false,
         pointOfViewTiles: [],
-        configureMappingEventListeners:()=>()=>{},
+        configureMappingEventListeners: () => () => {
+        },
     };
 
     handleChangePointOfViewTiles = (...params) => {
@@ -890,7 +816,7 @@ class Pastebin extends Component {
                 searchState.isExpressionsTemp = searchState.isExpressions;
                 searchState.isExpressions = true;
             } else {
-                searchState.visualQuery = null;
+                searchState.visualQuery = [];
                 searchState.visualId = null;
                 searchState.isExpressions = searchState.isExpressionsTemp;
             }
@@ -903,15 +829,35 @@ class Pastebin extends Component {
 
     render() {
         const {
-            appClasses, classes, appStyle, editorIds, TopNavigationBarComponent
+            appClasses, classes, appStyle, editorIds, TopNavigationBarComponent,
+            isTopNavigationToggled
         } = this.props;
         const {
-            gridLayouts, isDebugLoading, tabIndex, data, isNew, traceAvailable,
-            autorunDelay, width, height, hoveredCellKey,
-            isGraphicalLocatorActive, isAutoExpand, pointOfViewTiles, isPlaying,
-            order, orderBy, timeFlow,
+            gridLayouts,
+            isDebugLoading,
+            tabIndex,
+            data,
+            isNew,
+            traceAvailable,
+            autorunDelay,
+            width,
+            height,
+            hoveredCellKey,
+            isGraphicalLocatorActive,
+            isAutoLogActive,
+            pointOfViewTiles,
+            isPlaying,
+            order,
+            orderBy,
+            timeFlow,
+            searchState,
         } = this.state;
-        //console.log('isAutoExpand',isAutoExpand,this.state);
+
+
+        VisualQueryManager.visualQuery =
+            (searchState && searchState.visualQuery) || [];
+
+
         const rowHeight =
             Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
         gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] =
@@ -926,29 +872,30 @@ class Pastebin extends Component {
                             handleChangePlaying: this.handleChangePlaying,
                             getSortInfo: this.getSortInfo,
                         }}>
-                        {global.monaco && global.monaco.editor && isAutoExpand &&
-                        <Drawer anchor={"bottom"} open={isAutoExpand}
+                        {isDebug && global.monaco && global.monaco.editor && isAutoLogActive &&
+                        <Drawer anchor={"bottom"} open={isAutoLogActive}
                                 onClose={this.handleChangeAutoExpand}>
                             <PointOfView monaco={global.monaco}
                                          tiles={pointOfViewTiles}/>
                         </Drawer>}
                         {TopNavigationBarComponent}
                         <Responsive
+                            innerRef={this.gridRef}
                             width={width}
                             breakpoints={gridLayoutFormatter.gridBreakpoints}
                             layouts={gridLayouts}
                             cols={gridLayoutFormatter.grid.cols}
-                            // verticalCompact={true}
+                            verticalCompact={true}
                             compactType={'vertical'}
                             autoSize={true}
-                            margin={[appStyle.margin, appStyle.margin]}
-                            containerPadding={[appStyle.margin, appStyle.margin]}
+                            margin={appStyle.marginArray}
+                            containerPadding={appStyle.marginArray}
                             rowHeight={gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint]}
                             onResizeStart={this.onResizeStart}
                             onResize={this.onResize}
                             onResizeStop={this.onResizeStop}
                             draggableHandle={`.${classes.draggable}`}
-                            // onDragStart={this.onDragStart}
+                            onDragStart={this.onDragStart}
                             onDrag={this.onDrag}
                             onDragStop={this.onDragStop}
                             onLayoutChange={this.onLayoutChange}
@@ -1006,21 +953,14 @@ class Pastebin extends Component {
                                    onMouseLeave={event =>
                                        this.handleChangeHoveredCellKey(event, null)}
                             >
-                                {/*<ScrollingList*/}
-                                {/*    ScrollingListRef={this.debugScrollerRef}*/}
-                                {/*    onScrollEnd={this.onScrollEnd}*/}
-                                {/*    onScrollChange={this.onScrollChange}*/}
-                                {/*    classes={appClasses.scroller}*/}
-                                {/*    listLength={data.length}*/}
-                                {/*    isRememberScrollingDisabled={isNew}*/}
-                                {/*>*/}
+
                                 <DebugContainer
                                     tabIndex={tabIndex}
                                     handleChangeTab={this.handleChangeTab}
                                     handleChangePlaying={this.handleChangePlaying}
                                     isPlaying={isPlaying}
                                 />
-                                {/*</ScrollingList>*/}
+
 
                                 {isDebugLoading ?
                                     <span className={classes.loadingFeedback}>
@@ -1048,17 +988,21 @@ class Pastebin extends Component {
                                         raised="true"
                                         onClick={this.handleChangeGraphicalLocator}
                                     >
-                                        <CodeTagsCheckIcon
+                                        <HighlightAltIcon
                                             className={classes.locator}/>
                                     </IconButton>
                                 </Tooltip>
                                 <DragHandleIcon className={classes.draggable}/>
-                                <Playground editorIds={editorIds}
-                                            appClasses={appClasses}
-                                            appStyle={appStyle}
-                                            onResize={(onResize) => (this.onResize = onResize)}
-                                            isGraphicalLocatorActive={isGraphicalLocatorActive}
-                                            handleChangeGraphicalLocator={this.handleChangeGraphicalLocator}
+                                <Playground
+                                    editorIds={editorIds}
+                                    isAutoLogActive={isAutoLogActive}
+                                    isGraphicalLocatorActive={
+                                        isGraphicalLocatorActive
+                                    }
+                                    handleChangeGraphicalLocator={
+                                        this.handleChangeGraphicalLocator
+                                    }
+                                    onResize={this.setOnResize}
                                 />
                                 {hoveredCellKey === 'playgroundContainer' ?
                                     null : <TvIcon className={classes.icon}/>}
@@ -1066,6 +1010,7 @@ class Pastebin extends Component {
                         </Responsive>
                     </PastebinContext.Provider>
                     {traceAvailable && <TraceControls
+                        isTopNavigationToggled={isTopNavigationToggled}
                         persistablePath={'traceControls'}
                         autorunDelay={autorunDelay}
                         handleChangeAutorunDelay={this.handleChangeAutorunDelay}
@@ -1078,6 +1023,7 @@ class Pastebin extends Component {
     }
 
     componentDidMount() {
+
         const {setGridLayoutCallbacks, pastebinConfigureLayout} = this.props;
         setGridLayoutCallbacks(this.resetGridLayout, this.getCurrentGridLayouts);
 
@@ -1085,26 +1031,12 @@ class Pastebin extends Component {
         this.onDebugContainerResizeEnd();
     }
 
-    getSnapshotBeforeUpdate(prevProps, prevState) {
-        const {tabIndex} = this.state;
-        const scrollSnapshot = this.debugScrollerRefSnapshots[tabIndex];
-        // if (tabIndex !== prevState.tabIndex) {
-        //     if (scrollSnapshot) {
-        //         return scrollSnapshot.scrollHeight - scrollSnapshot.scrollTop;
-        //     } else {
-        //         return this.debugScrollerRef.current.scrollHeight;
-        //     }
-        //
-        // }
-        return null;
-    }
-
     componentDidUpdate(prevProps, prevState, snapshot) {
         this.handleAutomaticLayoutDebounced();
-        if (snapshot !== null) {
-            const list = this.debugScrollerRef.current;
-            list.scrollTop = list.scrollHeight - snapshot;
-        }
+    }
+
+    componentWillUnmount() {
+        VisualQueryManager.visualQuery = [];
     }
 
 

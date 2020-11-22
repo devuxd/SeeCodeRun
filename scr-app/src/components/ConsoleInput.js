@@ -9,8 +9,16 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import CancelIcon from 'mdi-material-ui/Cancel';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 
-import {mountEditorFulfilled, monacoEditorContentChanged} from "../redux/modules/monacoEditor";
-import {canDispatch, dispatch, clearConsole, preserveLogs} from "../seecoderun/modules/Trace";
+import {
+    mountEditorFulfilled,
+    monacoEditorContentChanged
+} from "../redux/modules/monacoEditor";
+import {
+    canDispatch,
+    dispatch,
+    clearConsole,
+    preserveLogs
+} from "../seecoderun/modules/Trace";
 import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
 
 const mapStateToProps = ({firecoReducer}) => {
@@ -41,13 +49,22 @@ const styles = theme => ({
         [`.${defaultMonacoConsoleClassName} .mtk12.PropertyAssignment`]: {
             color: '#99c794',
         },
-        [`.${defaultMonacoConsoleClassName} .mtk12.PropertyAssignment.PropertyAccessExpression`]: {
+        [`.${
+            defaultMonacoConsoleClassName
+        } .mtk12.PropertyAssignment.PropertyAccessExpression`]: {
             color: '#fac863',
         },
-        [`.${defaultMonacoConsoleClassName} .Identifier.CallExpression .OpenParenToken.CallExpression .Identifier.CallExpression`]: {
+        [
+        `.${
+            defaultMonacoConsoleClassName
+        } .Identifier.CallExpression .OpenParenToken.CallExpression` +
+        ' .Identifier.CallExpression'
+            ]: {
             color: '#fac863 !important',
         },
-        [`.${defaultMonacoConsoleClassName}.monaco-editor .cursors-layer > .cursor`]: {
+        [`.${
+            defaultMonacoConsoleClassName
+        }.monaco-editor .cursors-layer > .cursor`]: {
             maxHeight: 18,
             marginTop: 7,
         }
@@ -74,7 +91,7 @@ const styles = theme => ({
         top: 0,
         left: theme.spacing(3),
         height: `calc(100%)`,
-        width: `calc(100% - ${theme.spacing(10)}px)`
+        width: `calc(100% - ${theme.spacing(10)})`
     },
     iconContainer: {
         display: 'inline-flex',
@@ -156,6 +173,7 @@ class ConsoleInput extends Component {
             ...(getHeights()),
         };
         this.editor = null;
+        this.containerStyle = {height: this.state.containerHeight};
     }
 
     preserveLogs = () => {
@@ -234,7 +252,8 @@ class ConsoleInput extends Component {
                     return;
                 }
 
-                const newCursor = Math.max(this.state.commandCursor - 1, -1);
+                const newCursor =
+                    Math.max(this.state.commandCursor - 1, -1);
                 editor.setValue(this.state.commandHistory[newCursor] || '');
                 this.setState({
                     commandCursor: newCursor,
@@ -258,9 +277,9 @@ class ConsoleInput extends Component {
 
     render() {
         const {classes, activateConsole} = this.props;
-        const {isPreserveLogs, containerHeight} = this.state;
+        const {isPreserveLogs} = this.state;
         return (
-            <div style={{height: containerHeight}}>
+            <div style={this.containerStyle}>
                 <span className={classes.iconContainer}>
                     <ChevronRightIcon className={classes.icon}/>
                 </span>
@@ -275,7 +294,8 @@ class ConsoleInput extends Component {
                 </span>
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
-                        <IconButton aria-label="Clear Console" className={classes.clearActionIconContainer}
+                        <IconButton aria-label="Clear Console"
+                                    className={classes.clearActionIconContainer}
                                     onClick={clearConsole}>
                             <CancelIcon
                                 className={classes.actionIcon}
@@ -283,10 +303,14 @@ class ConsoleInput extends Component {
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Preserve Logs">
-                        <IconButton aria-label="Preserve Logs" className={classes.actionIconContainer}
+                        <IconButton aria-label="Preserve Logs"
+                                    className={classes.actionIconContainer}
                                     onClick={this.preserveLogs}>
                             <DeleteSweepIcon
-                                className={isPreserveLogs ? classes.actionIcon : classes.actionIconInactive}
+                                className={isPreserveLogs ?
+                                    classes.actionIcon
+                                    : classes.actionIconInactive
+                                }
                             />
                          </IconButton>
                     </Tooltip>
@@ -299,7 +323,12 @@ class ConsoleInput extends Component {
     componentDidUpdate(prevProps, prevState) {
         const {activateConsole, onHeightChange} = this.props
         if (activateConsole && activateConsole !== prevProps.activateConsole) {
-            const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
+            const {
+                editorId,
+                mountEditorFulfilled,
+                monacoEditorContentChanged,
+                isConsole
+            } = this.props;
             const {
                 editorDiv, /*dispatchMouseEvents,*/
                 editorDidMount, monacoOptions
@@ -310,7 +339,9 @@ class ConsoleInput extends Component {
             });
         }
         const {editorHeight, containerHeight} = this.state
-        if (onHeightChange && editorHeight !== prevState.editorHeight) {
+        if (editorHeight !== prevState.editorHeight) {
+            this.containerStyle.height = containerHeight;
+            onHeightChange &&
             onHeightChange(null, {editorHeight, containerHeight});
         }
         this.resizeEditorDebounced();
@@ -329,4 +360,7 @@ ConsoleInput.defaultProps = {
     isConsole: true,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(ConsoleInput));
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(withStyles(styles)(ConsoleInput));
