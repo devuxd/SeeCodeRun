@@ -1,36 +1,63 @@
-import classnames from 'classnames';
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
+import classnames from 'classnames';
+import {of} from 'rxjs';
+import debounce from 'lodash/debounce';
 import localStorage from 'store';
 import isEqual from 'lodash/isEqual';
 import {withStyles} from '@material-ui/core/styles';
-import ListSubheader from '@material-ui/core/ListSubheader';
+import ButtonBase from '@material-ui/core/ButtonBase';
+import Tooltip from '@material-ui/core/Tooltip';
 import List from '@material-ui/core/List';
+import ListSubheader from '@material-ui/core/ListSubheader';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
-import CardHeader from '@material-ui/core/CardHeader';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
-import ChatIcon from '@material-ui/icons/Chat';
+import MenuItem from '@material-ui/core/MenuItem';
+import SendIcon from '@material-ui/icons/Send';
+import CloseIcon from '@material-ui/icons/Close';
 import TextField from '@material-ui/core/TextField';
+import Divider from '@material-ui/core/Divider';
+import Skeleton from '@material-ui/core/Skeleton';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Typography from '@material-ui/core/Typography';
+
 import randomColor from "randomcolor";
+import update from 'immutability-helper';
+import {motion} from 'framer-motion';
+import {ResizableBox} from 'react-resizable';
 
 import {configureFirecoChat} from '../redux/modules/fireco';
-import AutoComplete from '../components/AutoComplete';
+import {firecoEditorsSetUserId} from '../redux/modules/fireco';
+import PromiseAutoComplete from '../components/PromiseAutoComplete';
+import InfinityChatList from './InfinityChatList';
 
-let $ = null;
+const mapDispatchToProps = {configureFirecoChat, firecoEditorsSetUserId};
 
+const LIST_SUBHEADER_HEIGHT = 72 + 1; //1 from divider
+// const LIST_ITEM_HEIGHT = 60; //1 from divider
+const LIST_ITEM_SKELETON_HEIGHT = 48; //1 from divider
 const defaultChatStyle = {
-    minWidth: 300,
-    minHeight: 88,
-    left: 100,
+    minWidth: LIST_SUBHEADER_HEIGHT * 4,
+    minHeight: LIST_SUBHEADER_HEIGHT * 2,
+    left: 'unset',
     right: 'unset',
     top: 'unset',
-    bottom: 0,
-    width: 300,
-    height: 168,
+    bottom: 'unset',
+    width: 'unset',
+    height: 'unset',
 };
+
+const defaultChatLayout = {
+    width: LIST_SUBHEADER_HEIGHT * 4,
+    height: LIST_SUBHEADER_HEIGHT * 2,
+    left: LIST_SUBHEADER_HEIGHT * 4,
+    top: LIST_SUBHEADER_HEIGHT * 2,
+}
 
 const styles = theme => ({
     backdrop: {
@@ -42,6 +69,9 @@ const styles = theme => ({
         backgroundColor: theme.palette.action.disabledBackground,
     },
     chat: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
         boxShadow: theme.shadows[7],
         overflow: 'hidden',
     },
@@ -50,8 +80,10 @@ const styles = theme => ({
     },
     avatarMenu: {
         overflow: 'auto',
+        maxHeight: 'calc(100% - 32px)',
     },
     avatar: {
+        alignItems: 'center',
         backgroundColor: theme.palette.grey[400],
     },
     avatarSet: {
@@ -61,30 +93,110 @@ const styles = theme => ({
         width: '100%',
         height: '100%',
         backgroundColor: theme.palette.background.paper,
+    },
+    list: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: theme.palette.background.paper,
         position: 'relative',
-        overflow: 'auto',
-        padding: theme.spacing( 1.2),
-        paddingTop: 0,
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
+        marginBottom: theme.spacing(-.25),
     },
     chatMessageSticky: {
-        paddingTop: theme.spacing(1),
-        paddingLeft: 0,
+        bottom: 0,
+        top: 'unset',
+        zIndex: 0,
+    },
+    listItemTextField: {
         paddingRight: theme.spacing(1),
     },
-    chatMessageCardHeader: {
-        padding: 0,
-    },
+    closeIcon: {
+        backgroundColor: theme.palette.background.paper,
+        position: 'absolute',
+        top: theme.spacing(1),
+        right: theme.spacing(1),
+        zIndex: theme.zIndex.speedDial,
+        '&:hover': {
+            backgroundColor: theme.palette.background.default,
+        },
+
+    }
 });
 
+const getMessageLoadingSkeletons = (classes, getCount = () => 4) => {
+    const count = getCount();
+    const skeletons = [];
+    const ListItemTextSkeleton = ({alignRight}) => (
+        <ListItemText
+            primary={
+                <Skeleton
+                    animation="wave"
+                    height={10}
+                    width={!!alignRight ? "100%" : "80%"}
+                    style={{marginBottom: 6}}
+                />}
+            secondary={
+                <Skeleton
+                    animation="wave"
+                    height={10}
+                    width={!!alignRight ? null : "40%"}
+                    style={!!alignRight ? {marginLeft: "40%"} : null}
+                />}
+        />);
+    for (let i = 0; i < count; i++) {
+        skeletons.push(
+            <ListItem
+                button={false}
+                disableGutters
+                key={i}
+            >
+                <ListItemAvatar>
+                    <Skeleton animation="wave" variant="circular" width={40}
+                              height={40}/>
+                </ListItemAvatar>
+                {i % 2 ?
+                    <ListItemSecondaryAction style={{width: '50%'}}>
+                        <ListItemTextSkeleton alignRight={true}/>
+                    </ListItemSecondaryAction>
+                    : <ListItemTextSkeleton/>
+                }
+
+            </ListItem>);
+    }
+    return skeletons;
+};
+
+const LOADING = 1;
+const LOADED = 2;
+let itemStatusMap = {};
+
+const isItemLoaded = index => !!itemStatusMap[index];
+const loadMoreItems = (startIndex, stopIndex) => {
+    for (let index = startIndex; index <= stopIndex; index++) {
+        itemStatusMap[index] = LOADING;
+    }
+    return new Promise(resolve => {
+        for (let index = startIndex; index <= stopIndex; index++) {
+            itemStatusMap[index] = LOADED;
+        }
+        resolve();
+    });
+};
+
 class Chat extends Component {
-
-
     constructor(props) {
         super(props);
         this.chatEl = React.createRef();
+        this.chatListRef = React.createRef();
+        this.chatAvatarEl = React.createRef();
+        this.inputContainerRef = React.createRef();
+        this.inputContainerResizeObserver = new window.ResizeObserver(
+            this.updateHeightOffset
+        );
         this.state = {
             ...defaultChatStyle,
-            avatarAnchorEl: null,
+            isAvatarMenuOpen: false,
             chatUserId: null,
             chatUserName: '',
             chatMessageText: '',
@@ -93,9 +205,12 @@ class Chat extends Component {
             chatError: null,
             users: null,
             messages: [],
-            // restoreHeight: defaultChatStyle.height,
             self: this,
             backdrop: false,
+            isChatMessagesLoading: true,
+            isChatUsersLoading: true,
+            chatMessagesLimit: 100,
+            heightOffset: 0,
         };
 
         this.prevUsers = null;
@@ -110,18 +225,30 @@ class Chat extends Component {
         this.dayOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
     }
 
+    updateHeightOffset = (entry) => {
+        const height =
+            this.inputContainerRef.current.getBoundingClientRect().height;
+        this.setState(
+            {
+                heightOffset: LIST_SUBHEADER_HEIGHT > height ?
+                    LIST_SUBHEADER_HEIGHT : height
+            }
+        )
+    };
+
     handleMessageTextChange = e => {
         const chatMessageText = e.target.value || '';
         this.setState({
             chatMessageText: chatMessageText,
-            chatAvatarWarning: this.state.chatUserId ? null : this.state.chatAvatarWarning,
+            chatAvatarWarning: this.state.chatUserId ?
+                null : this.state.chatAvatarWarning,
             chatMessageWarning: null,
             chatError: null,
         })
     };
 
     handleMessageInputEnter = e => {
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             this.handleSendMessage();
         }
     };
@@ -163,21 +290,36 @@ class Chat extends Component {
         }
     };
 
-    getFormattedTime(timestamp) {
+    getFormattedTime = (timestamp) => {
         if (!timestamp) {
             return '';
         }
         const date = new Date(timestamp);
         const currentTime = new Date();
         const elapsedTimeInMs = currentTime.getTime() - date.getTime();
-        const hours = date.getHours() > 9 ? date.getHours() : `0${date.getHours()}`;
-        const minutes = date.getMinutes() > 9 ? date.getMinutes() : `0${date.getMinutes()}`;
+        const hours = date.getHours() > 9 ?
+            date.getHours() : `0${date.getHours()}`;
+        const minutes = date.getMinutes() > 9 ?
+            date.getMinutes() : `0${date.getMinutes()}`;
         let formattedTime = `at ${hours}:${minutes}`;
         if (elapsedTimeInMs > 86400000 * 7) {//WeekInMs
-            formattedTime = `${date.getMonth()}/${date.getDay()}${date.getFullYear() === currentTime.getFullYear() ? '' : '/' + date.getFullYear()} ${formattedTime}`;
+            formattedTime = `${
+                date.getMonth()
+            }/${
+                date.getDay()
+            }${
+                date.getFullYear() === currentTime.getFullYear() ?
+                    '' : '/' + date.getFullYear()
+            } ${
+                formattedTime
+            }`;
         } else {
             if (elapsedTimeInMs > 86400000) {//dayInMs
-                formattedTime = `${this.dayOfTheWeek[date.getDay()]} ${formattedTime}`;
+                formattedTime = `${
+                    this.dayOfTheWeek[date.getDay()]
+                } ${
+                    formattedTime
+                }`;
             } else {
                 if (elapsedTimeInMs < 60000) {//minuteInMs
                     formattedTime = 'some seconds ago...'
@@ -192,33 +334,32 @@ class Chat extends Component {
         }
 
         return formattedTime;
-    }
-
-    onFirecoActive = (firecoChat, firecoUsers, SERVER_TIMESTAMP, chatUserIdLocalStoragePath) => {
-        this.firecoChat = firecoChat;
-        this.firecoUsers = firecoUsers;
-        this.SERVER_TIMESTAMP = SERVER_TIMESTAMP;
-        this.chatUserIdLocalStoragePath = chatUserIdLocalStoragePath;
-        this.listenToChatUsersData();
     };
 
+
     setUserId = (chatUserId, saveLocally = true) => {
-        saveLocally && localStorage.set(this.chatUserIdLocalStoragePath, chatUserId);
+        saveLocally && localStorage.set(
+            this.chatUserIdLocalStoragePath,
+            chatUserId,
+        );
         this.setState({
-            chatUserId: chatUserId,
+            chatUserId,
             chatAvatarWarning: chatUserId ? null : 'Please select an user.',
         });
     };
 
-    handleAvatarMenu = event => {
-        this.setState({avatarAnchorEl: event.currentTarget});
+    handleAvatarMenu = () => {
+        this.setState(
+            prevState => ({isAvatarMenuOpen: !prevState.isAvatarMenuOpen})
+        );
     };
 
     handleAvatarClose = () => {
         let {chatUserId, chatUserName, users} = this.state;
         this.setState({
-            avatarAnchorEl: null,
+            isAvatarMenuOpen: false,
         });
+
         if (!chatUserName.trim().length) {
             if (chatUserId && users[chatUserId].chatUserName) {
                 this.setState({
@@ -235,18 +376,19 @@ class Chat extends Component {
             if (chatUserId) {
                 if (users[chatUserId].chatUserName !== chatUserName) {
                     this.firecoUsers.child(`${chatUserId}`).update({
-                        chatUserName: chatUserName,
+                        chatUserName,
                     }, error => {
                         this.setState({
                             chatAvatarWarning: null,
                             chatMessageWarning: null,
-                            chatError: error ? 'Could not save name change.' : null,
+                            chatError: error ?
+                                'Could not save name change.' : null,
                         });
                     });
                 }
             } else {
                 const firecoChatUserPushPromise = this.firecoUsers.push({
-                    chatUserName: chatUserName,
+                    chatUserName,
                     color: this.getValidColor(),
                     layout: {
                         creationTimestamp: this.SERVER_TIMESTAMP,
@@ -266,7 +408,7 @@ class Chat extends Component {
     };
 
     handleAvatarInputEnter = e => {
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             this.handleAvatarClose();
         }
     };
@@ -280,43 +422,58 @@ class Chat extends Component {
     };
 
     updateLayout = (layout) => {
-        if (layout) {
-            const {
-                themeType, switchTheme,
-                isChatToggled, chatClick, isTopNavigationToggled, logoClick, currentLayout, resetLayoutClick
-            } = this.props;
+        if (!layout) {
+            return;
+        }
 
-            if (chatClick && layout.isChatToggled && !isChatToggled) {
-                chatClick(null, true);
-            }
-            if (logoClick && layout.isTopNavigationToggled && !isTopNavigationToggled) {
-                logoClick(null, true);
-            }
-            const grid = currentLayout && currentLayout();
-            const layoutGrid = layout.gridString ? JSON.parse(layout.gridString) : null;
-            if (resetLayoutClick && grid && layoutGrid && !isEqual(layoutGrid, grid)) {
-                resetLayoutClick(layoutGrid);
-            }
+        const {
+            themeType,
+            switchTheme,
+            isChatToggled,
+            chatClick,
+            isTopNavigationToggled,
+            logoClick,
+            currentLayout,
+            resetLayoutClick
+        } = this.props;
 
-            if (switchTheme && layout.themeType && layout.themeType !== themeType) {
-                switchTheme(layout.themeType);
-            }
+        if (chatClick && layout.isChatToggled && !isChatToggled) {
+            chatClick(null, true);
+        }
+        if (logoClick
+            && layout.isTopNavigationToggled
+            && !isTopNavigationToggled) {
+            logoClick(null, true);
+        }
+        const grid = currentLayout && currentLayout();
+        const layoutGrid = layout.gridString ?
+            JSON.parse(layout.gridString) : null;
+        if (resetLayoutClick
+            && grid
+            && layoutGrid
+            && !isEqual(layoutGrid, grid)) {
+            resetLayoutClick(layoutGrid);
+        }
+        if (switchTheme && layout.themeType && layout.themeType !== themeType) {
+            switchTheme(null, layout.themeType);
+        }
 
-            if (this.chatEl.current && layout.chatBoundingClientRect) {
-                if (layout.chatBoundingClientRect.left > window.innerWidth
-                    || layout.chatBoundingClientRect.top > window.innerHeight) {
-                    layout.chatBoundingClientRect.left = defaultChatStyle.left;
-                    layout.chatBoundingClientRect.top = defaultChatStyle.top;
-                    layout.chatBoundingClientRect.bottom = defaultChatStyle.bottom;
-                }
-                this.setState({
-                    ...layout.chatBoundingClientRect
-                });
+        if (this.chatEl.current && layout.chatBoundingClientRect) {
+            if (layout.chatBoundingClientRect.left > window.innerWidth
+                || layout.chatBoundingClientRect.top > window.innerHeight) {
+                layout.chatBoundingClientRect.left = defaultChatLayout.left;
+                layout.chatBoundingClientRect.top = defaultChatLayout.top;
             }
+            this.setState({
+                ...layout.chatBoundingClientRect
+            });
+
         }
     };
 
     listenToChatUsersData = () => {
+        //const {isChatToggled} = this.props;
+        const {chatMessagesLimit} = this.state;
         if (!this.firecoChat || !this.firecoUsers) {
             console.log('this.firecoChat and this.firecoUsers must be set');
             return;
@@ -332,7 +489,9 @@ class Chat extends Component {
             users[snapshot.key] = data;
             if (this.userColors[data.color]) {
                 if (this.userColors[data.color] !== snapshot.key) {
-                    this.firecoUsers.child(`${snapshot.key}`).update({color: this.getValidColor()});
+                    this.firecoUsers.child(
+                        `${snapshot.key}`
+                    ).update({color: this.getValidColor()});
                 }
             } else {
                 this.userColors[data.color] = snapshot.key;
@@ -352,7 +511,7 @@ class Chat extends Component {
             let {users} = this.state;
             users = users ? {...users} : {};
             pushUser(users, snapshot);
-            this.setState({users: users});
+            this.setState({users});
         };
 
         this.firecoUsers
@@ -362,7 +521,7 @@ class Chat extends Component {
                 snapshot.forEach(data => {
                     pushUser(users, data);
                 });
-                this.setState({users: users});
+                this.setState({users, isChatUsersLoading: false});
             });
 
         this.firecoUsers
@@ -371,22 +530,45 @@ class Chat extends Component {
             .on('child_changed', onChildData);
         //so far, users cannot be deleted
 
+        let chatMessagesLoadingTimeout = setTimeout(() => {
+            this.setState({
+                ...defaultChatLayout,
+                isChatMessagesLoading: false,
+            });
+        }, 2000);
+
+        let batchedState = null;
+        const debouncedSetState = debounce(() => {
+            this.setState(batchedState);
+            batchedState = null;
+            this.scrollToBottom();
+        }, 2000, {leading: false, trailing: true, maxWait: 4000});
+
         this.firecoChat
             .child('messages')
-            .limitToLast(100)
+            .limitToLast(chatMessagesLimit)
             .on('child_added', snapshot => {
+                chatMessagesLoadingTimeout &&
+                (chatMessagesLoadingTimeout =
+                    clearTimeout(chatMessagesLoadingTimeout));
                 const chatMessage = snapshot.val();
-                this.setState((prevState) => ({
+                const {messages} = this.state;
+                batchedState = {
+                    isChatMessagesLoading: false,
                     lastMessageReceivedOwnerId: chatMessage.chatUserId,
                     lastMessageReceivedTimestamp: chatMessage.timestamp,
-                    messages: [...prevState.messages, {
-                        key: snapshot.key,
-                        chatUserId: chatMessage.chatUserId,
-                        text: chatMessage.text,
-                        timestamp: chatMessage.timestamp,
-                        color: chatMessage.color
-                    }]
-                }));
+                    messages: update(batchedState ?
+                        batchedState.messages : messages, {
+                        $push: [{
+                            key: snapshot.key,
+                            chatUserId: chatMessage.chatUserId,
+                            text: chatMessage.text,
+                            timestamp: chatMessage.timestamp,
+                            color: chatMessage.color
+                        }],
+                    }),
+                };
+                debouncedSetState();
             });
     };
 
@@ -408,92 +590,35 @@ class Chat extends Component {
         this.userSuggestions = userSuggestions;
     };
 
-    getChatUserSuggestions = value => {
-        const inputValue = value.trim().toLowerCase();
-        const inputLength = inputValue.length;
-        let count = 0;
-
-        const suggestions = inputLength === 0
-            ? [...this.userSuggestions]
-            : this.userSuggestions.filter(suggestion => {
-                const keep =
-                    count < 5 && suggestion.label.toLowerCase().slice(0, inputLength) === inputValue;
-
-                if (keep) {
-                    count += 1;
-                }
-                return keep;
-            });
-
-        return {suggestions: suggestions, isShowAll: !inputLength};
-    };
-
-    getChatUserSuggestion = suggestion => suggestion;
-
-    handleChatUserChange = (event, autoCompleteEvent) => {
-        const {newValue, method} = autoCompleteEvent;
-        let {chatUserId, chatUserName, chatAvatarWarning} = this.state;
-        switch (method) {
-            case 'type':
-                chatUserName = newValue;
-                chatAvatarWarning = newValue.trim().length ? null : 'Name cannot be empty.';
-                break;
-            case 'click':
-                chatUserId = newValue.id;
-                chatUserName = newValue.label;
-                chatAvatarWarning = null;
-                break;
-            case 'enter':
-                chatUserId = newValue.id;
-                chatUserName = newValue.label;
-                chatAvatarWarning = null;
-                break;
-            default:
-                return;
+    handleChatUserChange = (event, option, reason) => {
+        const {id: chatUserId, label: chatUserName} = option;
+        let chatAvatarWarning = chatUserName.trim().length ?
+            '' : 'Name cannot be empty.';
+        if (chatUserId && reason === 'input') {
+            chatAvatarWarning =
+                `${
+                    (chatAvatarWarning || '')}${(chatAvatarWarning ? '. ' : '')
+                }Editing user name.`;
         }
 
-        chatUserId && this.setUserId(chatUserId);
+        this.setUserId(chatUserId);
         this.setState({
-            chatUserName: chatUserName,
-            chatAvatarWarning: chatAvatarWarning,
+            chatUserName,
+            chatAvatarWarning,
         });
     };
 
-    showBackdrop = () => {
-        this.setState({backdrop: true})
-    };
-    hideBackdrop = () => {
-        this.setState({backdrop: false})
-    };
-
-    makeDraggableAndResizable = async () => {
-        if (!$) { //todo jquery chunks is severely duplicated
-            $ = (await import('jquery')).default;
-            await import( 'jquery-ui/ui/core');
-            await Promise.all([
-                import('jquery-ui/ui/widgets/draggable'),
-                import('jquery-ui/ui/widgets/resizable'),
-                import('jquery-ui/themes/base/core.css'),
-                import('jquery-ui/themes/base/theme.css'),
-                import('jquery-ui/themes/base/draggable.css'),
-                import('jquery-ui/themes/base/resizable.css')
-            ]);
+    handleChangeBackdrop = (backdrop, isResizing, layoutData) => {
+        const nextState = {backdrop, isResizing};
+        if (layoutData && layoutData.point) {
+            nextState.left = layoutData.point.x;
+            nextState.top = layoutData.point.y;
         }
-        if (!this.isDraggableAndResizable || !this.chatEl.current) {
-            setTimeout(() => {
-                $(this.chatEl.current).draggable({
-                    start: this.showBackdrop,
-                    stop: this.hideBackdrop,
-                });
-                $(this.chatEl.current).resizable({
-                    containment: false,
-                    handles: "w, s, e",
-                    start: this.showBackdrop,
-                    stop: this.hideBackdrop,
-                });
-                this.isDraggableAndResizable = true;
-            }, 500);
+        if (layoutData && layoutData.size) {
+            nextState.width = layoutData.size.width;
+            nextState.height = layoutData.size.height;
         }
+        this.setState(nextState);
     };
 
     getMessageOwner = chatUserId => {
@@ -554,228 +679,433 @@ class Chat extends Component {
         const {
             chatUserId, chatAvatarWarning, chatError, chatMessageWarning,
         } = this.state;
-        return !!(!chatUserId || chatAvatarWarning || chatError || chatMessageWarning);
-    };
-
-    chatPreHideLayout = (isChatToggled) => {
-        if (isChatToggled || !this.chatEl.current) {
-            return;
-        }
-        let elBoundingClientRect = this.chatEl.current.getBoundingClientRect();
-
-        this.preHideChatEl = {
-            left: elBoundingClientRect.left,
-            right: elBoundingClientRect.right,
-            top: elBoundingClientRect.top,
-            bottom: elBoundingClientRect.bottom,
-            width: elBoundingClientRect.width,
-            height: elBoundingClientRect.height,
-        };
+        return !!(
+            !chatUserId || chatAvatarWarning || chatError || chatMessageWarning
+        );
     };
 
     render() {
-        const {classes, isChatToggled, chatClick, chatTitle} = this.props;
+        const {
+            classes,
+            isChatToggled,
+            chatClick,
+            chatTitle,
+            dragConstraintsRef
+        } = this.props;
 
         const {
-            left, right, top, bottom, height, width, backdrop,
-            chatUserId, chatUserName, chatMessageText, avatarAnchorEl, users, messages
+            left, top, height, width, backdrop,
+            chatUserId, chatUserName, chatMessageText,
+            isAvatarMenuOpen,
+            users, messages, isChatMessagesLoading,
+            chatMessageWarning, isChatUsersLoading,
+            heightOffset, isResizing
         } = this.state;
-
         const errors = this.hasErrors();
-
-        const avatarMenuOpen = !!avatarAnchorEl;
-
-        const chatCurrentStyle = {
-            position: 'fixed',
-            left: left,
-            right: right,
-            top: top,
-            bottom: bottom,
-            height: height,
-            width: width
-        };
 
 
         this.handleChatUsersToSuggestions(users);
 
         const chatUserNameInputProps = {
-            classes,
-            value: chatUserName,
-            onChange: this.handleChatUserChange,
+            classes: {
+                input: classes.input,
+            },
             onKeyUp: this.handleAvatarInputEnter,
         };
 
-        const renderChatUserNameInput = inputProps => {
-            const {classes, ref, ...other} = inputProps;
+        const renderChatUserNameInput = ({InputProps, ...rest}) => {
             return (
                 <TextField
-                    fullWidth
+                    {...rest}
                     error={!chatUserName}
-                    label={chatUserName ? 'Chat Name' : 'Enter your chat name'}
-                    inputRef={ref}
+                    label={chatUserName ?
+                        chatUserId ? 'Editing your chat name'
+                            : 'Your chat name' : 'Enter your chat name'
+                    }
                     InputProps={{
-                        classes: {
-                            input: classes.input,
-                        },
-                        ...other,
+                        ...InputProps,
+                        ...chatUserNameInputProps,
+                        endAdornment: (
+                            <>
+                                {isChatUsersLoading ?
+                                    <CircularProgress color="inherit"
+                                                      size={20}/> : null}
+                                {InputProps.endAdornment}
+                            </>
+                        ),
                     }}
                 />
             );
         };
 
-        this.chatPreHideLayout(isChatToggled/*, expanded*/);
-        isChatToggled && this.scrollToBottom();
-        return (
-            <React.Fragment>
-                {backdrop && <div className={classes.backdrop} onClick={this.hideBackdrop}/>}
-                <div className={isChatToggled ? classes.chat : classes.hidden}
-                     style={chatCurrentStyle}
-                     ref={this.chatEl}>
-                    {
-                        (this.firecoChat && this.firecoUsers) &&
-                        <List className={classes.root}
-                              subheader={<li/>}
-                              dense={true}
-                        >
-                            <ListSubheader className={classes.chatMessageSticky}>
-                                <CardHeader className={classes.chatMessageCardHeader}
-                                            avatar={
-                                                <div>
-                                                    <Avatar
-                                                        aria-label="name"
-                                                        className={
-                                                            classnames(classes.avatar, {
-                                                                [classes.avatarSet]: !!chatUserName,
-                                                            })
-                                                        }
-                                                        onClick={this.handleAvatarMenu}
+        let key = false;
+        const initialDragValue = {};
 
-                                                        aria-owns={avatarMenuOpen ? 'menu-avatar' : null}
-                                                        aria-haspopup="true"
-                                                        title={chatUserName || "click to type you user name"}
-                                                    >
-                                                        {chatUserName ? chatUserName[0].toUpperCase() : '?'}
-                                                    </Avatar>
-                                                    <Menu
-                                                        id="menu-avatar"
-                                                        className={classes.avatarMenu}
-                                                        anchorEl={avatarAnchorEl}
-                                                        anchorOrigin={{
-                                                            vertical: 'top',
-                                                            horizontal: 'right',
-                                                        }}
-                                                        transformOrigin={{
-                                                            vertical: 'top',
-                                                            horizontal: 'right',
-                                                        }}
-                                                        open={avatarMenuOpen}
-                                                        onClose={this.handleAvatarClose}
-                                                    >
-                                                        <AutoComplete
-                                                            renderInputComponent={renderChatUserNameInput}
-                                                            inputProps={chatUserNameInputProps}
-                                                            getSuggestions={this.getChatUserSuggestions}
-                                                            getSuggestionValue={this.getChatUserSuggestion}
-                                                        />
-                                                    </Menu>
-                                                </div>
-                                            }
-                                            action={
-                                                <IconButton title={chatTitle}
-                                                            onClick={chatClick}
-                                                            color={isChatToggled ? "secondary" : "default"}>
-                                                    <ChatIcon/>
-                                                </IconButton>
-                                            }
-                                            title={
-                                                <TextField
-                                                    fullWidth
-                                                    error={errors}
-                                                    placeholder="type message..."
-                                                    value={chatMessageText}
-                                                    onChange={this.handleMessageTextChange}
-                                                    onKeyUp={this.handleMessageInputEnter}
-                                                />
-                                            }
-                                            subheader={this.getLastActivityMessage()}
-                                />
-                            </ListSubheader>
-                            {messages.map((message, i, array) => {
-                                    const skipInfo = i && message.chatUserId === array[i - 1].chatUserId;
-                                    const skipTime = i && ((new Date(message.timestamp)).getTime() - (new Date(array[i - 1].timestamp).getTime())) < 30000;
-                                    const messageOwner = this.getMessageOwner(message.chatUserId);
-                                    return <div key={message.key}
-                                                ref={ref => {
-                                                    this.chatListEl = ref
-                                                }}
-                                                onMouseEnter={() => this.ignoreChatListElScroll = true}
-                                                onMouseLeave={() => this.ignoreChatListElScroll = false}
-                                    >
-                                        <ListItem button={true}
-                                                  disableGutters={true}
-                                                  dense
-                                        >
-                                            {chatUserId === message.chatUserId || skipInfo ?
-                                                <Avatar/>
-                                                : <Avatar
-                                                    title={messageOwner}
-                                                    style={{backgroundColor: this.getUserColor(message.chatUserId)}}
-                                                >
-                                                    {messageOwner ? messageOwner[0].toUpperCase() : '?'}
-                                                </Avatar>
-                                            }
-                                            {chatUserId === message.chatUserId ?
-                                                <ListItemSecondaryAction>
-                                                    <ListItemText primary={message.text}
-                                                                  secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
-                                                    />
-                                                </ListItemSecondaryAction>
-                                                : <ListItemText primary={message.text}
-                                                                secondary={skipTime ? null : this.getFormattedTime(message.timestamp)}
-                                                />
-                                            }
-                                        </ListItem>
-                                    </div>;
-                                }
-                            )}
-                        </List>
+        if (!(isNaN(top) || isNaN(left))) {
+            key = true;
+            initialDragValue.x = Math.max(
+                left - defaultChatLayout.left,
+                defaultChatLayout.left
+            );
+            initialDragValue.y = Math.max(
+                top - defaultChatLayout.top,
+                defaultChatLayout.top
+            );
+        } else {
+            initialDragValue.x = defaultChatLayout.left;
+            initialDragValue.y = defaultChatLayout.top;
+        }
+
+        const currentResizeValue = {};
+
+        if (!(isNaN(width) || isNaN(height))) {
+            currentResizeValue.width = width;
+            currentResizeValue.height = height;
+        } else {
+            currentResizeValue.width = defaultChatLayout.width;
+            currentResizeValue.height = defaultChatLayout.height;
+        }
+
+        const getSkeletonCount = () => Math.max(Math.floor(
+            currentResizeValue.height / LIST_ITEM_SKELETON_HEIGHT
+        ), 2);
+        return (
+            <div>
+                {backdrop &&
+                <div className={classes.backdrop}
+                     onClick={this.hideBackdrop}/>}
+
+                <motion.div
+                    key={key}
+                    initial={initialDragValue}
+                    drag={!isResizing}
+                    dragConstraints={dragConstraintsRef}
+                    dragMomentum={false}
+                    className={isChatToggled ? classes.chat : classes.hidden}
+                    onDragStart={
+                        (event, info) => this.handleChangeBackdrop(
+                            true, false, info
+                        )
                     }
-                </div>
-            </React.Fragment>
+                    onDragEnd={
+                        (event, info) => this.handleChangeBackdrop(
+                            false, false, info
+                        )
+                    }
+                    ref={this.chatEl}
+                >
+                    <ResizableBox
+                        {...currentResizeValue}
+                        handleSize={[5, 5]}
+                        resizeHandles={['ne', 'se', 'sw', 'nw']}
+                        onResizeStart={
+                            (e, data) => this.handleChangeBackdrop(
+                                true,
+                                true,
+                                data,
+                            )
+                        }
+                        onResizeStop={
+                            (e, data) => this.handleChangeBackdrop(
+                                false,
+                                false,
+                                data,
+                            )
+                        }
+                        minConstraints={
+                            [LIST_SUBHEADER_HEIGHT * 2,
+                                LIST_SUBHEADER_HEIGHT * 2]
+                        }
+                    >
+                        <>
+                            {
+                                (this.firecoChat && this.firecoUsers) &&
+                                <List
+                                    dense
+                                    className={classes.list}
+                                    onMouseEnter={
+                                        () => this
+                                            .ignoreChatListElScroll = true
+                                    }
+                                    onMouseLeave={
+                                        () => this
+                                            .ignoreChatListElScroll = false
+                                    }
+                                >
+                                    {isChatMessagesLoading ?
+                                        getMessageLoadingSkeletons(
+                                            classes,
+                                            getSkeletonCount
+                                        ) :
+                                        messages.length ?
+                                            <InfinityChatList
+                                                heightOffset={-heightOffset}
+                                                messages={messages}
+                                                chatUserId={chatUserId}
+                                                getMessageOwner={
+                                                    this.getMessageOwner
+                                                }
+                                                chatListRef={this.chatListRef}
+                                                getUserColor={this.getUserColor}
+                                                getFormattedTime={
+                                                    this.getFormattedTime
+                                                }
+                                                classes={classes}
+                                                isItemLoaded={isItemLoaded}
+                                                loadMoreItems={loadMoreItems}
+                                            />
+                                            : <ListItem
+                                                button={false}
+                                                disableGutters
+                                            >
+                                                <ListItemAvatar>
+                                                    <Avatar/>
+                                                </ListItemAvatar>
+                                                <ListItemText
+                                                    primary={'No messages yet'}
+                                                    secondary={''}
+                                                />
+                                            </ListItem>
+                                    }
+                                    <ListItem/>
+                                </List>
+
+                            }
+                            <ListSubheader
+                                ref={this.inputContainerRef}
+                                component={'div'}
+                                className={classes.chatMessageSticky}
+                                style={{
+                                    visibility: isChatMessagesLoading ?
+                                        'hidden' : 'visible'
+                                }}
+                            >
+                                <Divider variant="middle"/>
+                                <ListItem
+                                    disableGutters
+                                    dense
+                                >
+                                    <ListItemAvatar
+                                        ref={this.chatAvatarEl}>
+                                        <Tooltip
+                                            title={
+                                                chatUserName
+                                                || 'Tap to type your user name'
+                                            }
+                                        >
+                                            <ButtonBase>
+                                                <Avatar
+                                                    className={
+                                                        classnames(
+                                                            classes.avatar,
+                                                            {
+                                                                [classes.avatarSet]:
+                                                                    !!chatUserName,
+                                                            })
+                                                    }
+                                                    onClick={
+                                                        this.handleAvatarMenu
+                                                    }
+                                                >
+                                                    {
+                                                        chatUserName ?
+                                                            chatUserName[0]
+                                                                .toUpperCase()
+                                                            : '?'}
+
+                                                </Avatar>
+                                            </ButtonBase>
+                                        </Tooltip>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                        className={classes.listItemTextField}
+                                        primary={<TextField
+                                            variant="standard"
+                                            autoFocus
+                                            fullWidth
+                                            error={errors}
+                                            placeholder="type message..."
+                                            value={chatMessageText}
+                                            onChange={
+                                                this.handleMessageTextChange
+                                            }
+                                            onKeyUp={
+                                                this.handleMessageInputEnter
+                                            }
+                                        />}
+                                        secondary={
+                                            <Typography
+                                                variant="body2"
+                                                color="textSecondary"
+                                                display="block"
+                                                noWrap
+                                            >
+                                                {this.getLastActivityMessage()}
+                                            </Typography>
+                                        }
+                                    />
+                                    <ListItemSecondaryAction>
+                                        <IconButton
+                                            title={chatTitle}
+                                            onClick={this.handleSendMessage}
+                                            color={
+                                                chatMessageWarning ?
+                                                    "secondary" : "primary"
+                                            }
+                                            edge="end"
+                                            aria-label="send"
+                                        >
+                                            <SendIcon/>
+                                        </IconButton>
+                                    </ListItemSecondaryAction>
+                                </ListItem>
+                            </ListSubheader>
+                            <IconButton
+                                size="small"
+                                color="secondary"
+                                component="span"
+                                onClick={chatClick}
+                                aria-label="close chat"
+                                classes={{root: classes.closeIcon}}
+                            >
+                                <CloseIcon/>
+                            </IconButton>
+                            <Menu
+                                classes={{paper: classes.avatarMenu}}
+                                anchorEl={this.chatAvatarEl.current}
+                                container={this.chatEl.current}
+                                open={isAvatarMenuOpen}
+                                onClose={this.handleAvatarClose}
+                            >
+                                <MenuItem
+                                    dense
+                                >
+                                    <PromiseAutoComplete
+                                        PopperProps={{
+                                            container:
+                                                () => this.chatEl.current,
+                                            disablePortal: false,
+                                            placement: "top-start",
+                                            modifiers: [
+                                                {
+                                                    name: 'offset',
+                                                    options: {
+                                                        offset: [
+                                                            0,
+                                                            4
+                                                        ],
+                                                    },
+                                                },
+                                                {
+                                                    name: 'flip',
+                                                    enabled: false,
+                                                },
+                                                {
+                                                    name: 'preventOverflow',
+                                                    enabled: false,
+                                                    options: {
+                                                        // altAxis: true,
+                                                        altBoundary: true,
+                                                        // tether: false,
+                                                        rootBoundary: 'viewport',
+                                                        // padding: 8
+                                                    }
+                                                }
+                                            ],
+                                        }}
+                                        freeSolo
+                                        fullWidth
+                                        includeInputInList
+                                        style={{width: 300}}
+                                        defaultValue={{
+                                            label: chatUserName,
+                                            id: chatUserId
+                                        }}
+                                        filterOptions={
+                                            (options, params, filter) => {
+                                                const filtered = filter(
+                                                    options,
+                                                    params.label,
+                                                    {keys: ['label']}
+                                                );
+                                                if (params.label !== ''
+                                                    && !filtered.length) {
+                                                    filtered.push({
+                                                        id: null,
+                                                        inputValue:
+                                                        params.label,
+                                                        label: `Add "${
+                                                            params.label
+                                                        }"`,
+                                                    });
+                                                }
+
+                                                return filtered;
+                                            }}
+                                        renderInput={renderChatUserNameInput}
+                                        getOptionsPromise={
+                                            of(() => [
+                                                ...this.userSuggestions
+                                            ]).toPromise()
+                                        }
+                                        getOptionSelected={
+                                            (
+                                                option,
+                                                value
+                                            ) => option.id === value.id
+                                        }
+                                        onInputOrOptionChange={
+                                            this.handleChatUserChange
+                                        }
+                                    />
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    </ResizableBox>
+                </motion.div>
+            </div>
         );
     }
 
+    onFirecoActive = (
+        firecoChat,
+        firecoUsers,
+        SERVER_TIMESTAMP,
+        chatUserIdLocalStoragePath
+    ) => {
+        this.firecoChat = firecoChat;
+        this.firecoUsers = firecoUsers;
+        this.SERVER_TIMESTAMP = SERVER_TIMESTAMP;
+        this.chatUserIdLocalStoragePath = chatUserIdLocalStoragePath;
+        this.listenToChatUsersData();
+    };
+
     onDispose = () => {
-        const {isTopNavigationToggled, themeType, isChatToggled, currentLayout} = this.props;
-        const {chatUserId} = this.state;
-        if (chatUserId && this.firecoChat && this.chatEl.current) {
-            let elBoundingClientRect = this.preHideChatEl;
-            if (isChatToggled) {
-                elBoundingClientRect = this.chatEl.current.getBoundingClientRect();
-            }
-            const chatBoundingClientRect = {
-                left: elBoundingClientRect.left,
-                // right: elBoundingClientRect.right,
-                top: elBoundingClientRect.top,
-                // bottom: elBoundingClientRect.bottom,
-                width: elBoundingClientRect.width,
-                height: elBoundingClientRect.height,
-            };
+        const {
+            isTopNavigationToggled,
+            themeType,
+            isChatToggled,
+            currentLayout
+        } = this.props;
+        const {
+            chatUserId,
+            left, top,
+            height, width,
+        } = this.state;
+        if (chatUserId && this.firecoUsers) {
 
             const newLayout = {
                 gridString: JSON.stringify(currentLayout()),
-                isTopNavigationToggled: isTopNavigationToggled,
-                themeType: themeType,
-                isChatToggled: isChatToggled,
+                isTopNavigationToggled,
+                themeType,
+                isChatToggled,
             };
 
-            if (!chatBoundingClientRect.left
-                && !chatBoundingClientRect.right
-                && !chatBoundingClientRect.top
-                && !chatBoundingClientRect.height) {
-                //never used case
-            } else {
-                newLayout.chatBoundingClientRect = chatBoundingClientRect;
+            if (!(isNaN(left) || isNaN(top) || isNaN(height) || isNaN(width))) {
+                newLayout.chatBoundingClientRect = {
+                    left, top,
+                    height, width,
+                };
             }
 
             this.firecoUsers
@@ -787,15 +1117,24 @@ class Chat extends Component {
     };
 
     componentDidMount() {
-        const {dispatch} = this.props;
-        dispatch(configureFirecoChat(this.onFirecoActive, this.onDispose));
-        this.makeDraggableAndResizable().catch(e => console.log('chat error', e));
+        this
+            .inputContainerResizeObserver
+            .observe(this.inputContainerRef.current);
+        this.updateHeightOffset();
+        const {configureFirecoChat} = this.props;
+        configureFirecoChat(this.onFirecoActive, this.onDispose);
     }
 
-    componentDidUpdate() {
-        const {isChatToggled} = this.props;
-        if (this.isChatToggled !== isChatToggled) {
-            this.isChatToggled = isChatToggled;
+    componentWillUnmount() {
+        this
+            .inputContainerResizeObserver
+            .unobserve(this.inputContainerRef.current);
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        const {isChatToggled, firecoEditorsSetUserId} = this.props;
+        const {users, chatUserId} = this.state;
+        if (prevProps.isChatToggled !== isChatToggled) {
             clearInterval(this.updateMessagesInterval);
             if (isChatToggled) {
                 this.updateMessagesInterval = setInterval(() => {
@@ -803,18 +1142,38 @@ class Chat extends Component {
                         messages: prevState.messages
                     }));
                 }, this.updateMessagesIntervalTime);
+                this.scrollToBottom();
             }
         }
-        this.scrollToBottom();
+
+        if (prevState.chatUserId !== chatUserId) {
+            this.isFirecoEditorsSetUserIdPending = true;
+        }
+
+        if (this.isFirecoEditorsSetUserIdPending && users) {
+            const userColor = users[chatUserId] ?
+                users[chatUserId].color : null;
+            firecoEditorsSetUserId(chatUserId, userColor);
+            this.isFirecoEditorsSetUserIdPending = false;
+        }
+
     }
 
-    scrollToBottom() {
+    scrollToBottom = () => {
         clearTimeout(this.scrollToBottomTimeout);
         this.scrollToBottomTimeout = setTimeout(() => {
-            (!this.ignoreChatListElScroll) && this.chatListEl && this.chatListEl.scrollIntoView({behavior: 'smooth'});
+            const {messages} = this.state;
+            const shouldScroll = (!this.ignoreChatListElScroll
+                && messages && messages.length);
+            const currentRef = (this.chatListRef.current
+                && this.chatListRef.current._listRef);
+            (shouldScroll && currentRef && currentRef.scrollToItem
+                && currentRef.scrollToItem(messages.length - 1, "center"));
         }, 500);
-    }
+    };
 
 }
 
-export default withStyles(styles)(Chat);
+export default React.memo(connect(null, mapDispatchToProps)(
+    withStyles(styles, {withTheme: true})(Chat)
+));

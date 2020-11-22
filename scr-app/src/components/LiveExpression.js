@@ -6,12 +6,13 @@ import JSAN from 'jsan';
 import isString from 'lodash/isString';
 import debounce from 'lodash.debounce';
 
-import ObjectExplorer from './ObjectExplorer';
+import ObjectExplorer, {hasOwnTooltip} from './ObjectExplorer';
 import BranchNavigator from "./BranchNavigator";
 
-import {getVisualIdsFromRefs} from '../containers/GraphicalMapper';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {VisualQueryManager} from "../containers/Pastebin";
+
+const {getVisualIdsFromRefs} = VisualQueryManager;
 
 const defaultCloseDelay = 1000;
 
@@ -99,11 +100,16 @@ class LiveExpression extends Component {
         return event => {
             let {timeout} = this.state;
             clearTimeout(timeout);
+            if (!isHovered) {
+                timeout = setTimeout(
+                    () => this.handleClose(event), 1000
+                );
+            }
             this.setState({
                 isHovered: isHovered,
                 wasHovered: true,
+                timeout
             });
-            (!isHovered) && setTimeout(() => this.handleClose(event), 0);
         };
     };
 
@@ -187,25 +193,52 @@ class LiveExpression extends Component {
         }
         this.setState({sliderRange: [sliderMax + 1]});
     }, 250);
-
+    tm = null;
     configureHandleSliderChange = (branchNavigatorChange) => {
         const {data} = this.props;
         return (event, change) => {
             if (data && data.length) {
-                // console.log(data, change);
-                branchNavigatorChange(data[change], change, change - 1 > -1 ? data[change - 1] : 0);
-                this.handleSliderChange(change);
+                // console.log('SC', data, change);
+                // this.handleSliderChange(change);
+                // clearTimeout(this.tm);
+                // this.tm =setTimeout(
+                //     ()=>
+                branchNavigatorChange(data[change], change, change - 1 > -1 ? data[change - 1] : 0)
+                // ,1500);
             }
         };
     };
 
+    onMouseEnter = this.handleChange(true);
+
+    onMouseLeave = this.handleChange(false);
+
     render() {
-        const {classes, style, data, objectNodeRenderer, expressionId, handleChange, branchNavigatorChange, color} = this.props;
+        const {
+            classes,
+            style,
+            data,
+            objectNodeRenderer,
+            expressionId,
+            handleChange,
+            branchNavigatorChange,
+            color,
+            sliderRange
+        } = this.props;
         const {anchorEl} = this.state;
         const isBranchNavigator = !!branchNavigatorChange;
+        // const {anchorEl: currentAnchorEl} = this.state;
+        // this.anchorEl = currentAnchorEl ||this.anchorEl;
+        // const {anchorEl} = this;
         const isActive = this.open || !!anchorEl && (!isBranchNavigator || (isBranchNavigator && data && data.length > 1));
         // this.open = isActive; // debug
-        const {datum, sliderMin, sliderMax, rangeStart, outputRefs} = isBranchNavigator ?
+        const {
+            datum,
+            sliderMin,
+            sliderMax,
+            rangeStart,
+            outputRefs
+        } = isBranchNavigator ?
             this.getBranchDatum(data) : this.getDatum(data);
         const handleSliderChange = isBranchNavigator ?
             this.configureHandleSliderChange(branchNavigatorChange) : this.handleSliderChange;
@@ -213,60 +246,63 @@ class LiveExpression extends Component {
         // if (outputRefs && outputRefs.length) {
         //     console.log('or', data, outputRefs);
         // }
+        const isPop = hasOwnTooltip(datum);
         const explorer = isBranchNavigator ? null // todo function params vs arguments + return explorer
             : <div className={classes.objectExplorer}>
-                {!!(outputRefs && outputRefs.length) &&
-                <GraphicalQuery
-                    outputRefs={outputRefs}
-                    visualIds={getVisualIdsFromRefs(outputRefs)}
-                    selected={false}
-                    />
-                }
                 <ObjectExplorer
                     expressionId={expressionId}
                     objectNodeRenderer={objectNodeRenderer}
                     data={datum}
                     handleChange={handleChange}
+                    outputRefs={outputRefs}
                 />
             </div>;
-        let navigatorStyle = {...style, overflow: 'auto', minWidth: branchNavigatorChange ? 200 : 50};
-        const defaultValue = rangeStart;//[rangeStart, rangeEnd,];
-        const showSlider = isBranchNavigator && (sliderMin > 1 || sliderMax > 1);
+        let navigatorStyle = {
+            ...style,
+            overflow: 'auto',
+            minWidth: branchNavigatorChange ? 200 : 50
+        };
+        const defaultValue = isBranchNavigator ? sliderRange[0] : rangeStart;//[rangeStart, rangeEnd,];
+
+        // console.log('bn',datum, sliderMin, sliderMax, rangeStart, outputRefs);
+
         return (
-            <Popover
-                className={classes.popover}
-                classes={{
-                    paper: classes.popoverPaper,
-                }}
-                style={style}
-                modal={null}
-                hideBackdrop={true}
-                disableBackdropClick={true}
-                disableAutoFocus={true}
-                disableEnforceFocus={true}
-                open={isActive}
-                anchorEl={anchorEl}
-                {...origin}
-                onClose={this.handleClose}
-                elevation={2}
-            >
-                <div onMouseEnter={this.handleChange(true)}
-                     onMouseLeave={this.handleChange(false)}
-                     style={navigatorStyle}
+            isBranchNavigator && (sliderMin > 1 || sliderMax > 1) ?
+                <BranchNavigator
+                    min={sliderMin}
+                    max={sliderMax}
+                    value={defaultValue}
+                    handleSliderChange={handleSliderChange}
+                    color={color}
+                    hideLabel={isBranchNavigator}
+                    // onMouseEnter={this.onMouseEnter}
+                    // onMouseLeave={this.onMouseLeave}
+                />
+                : <Popover
+                    className={classes.popover}
+                    classes={{
+                        paper: classes.popoverPaper,
+                    }}
+                    style={style}
+                    modal={null}
+                    hideBackdrop={true}
+                    disableBackdropClick={true}
+                    disableAutoFocus={true}
+                    disableEnforceFocus={true}
+                    open={isPop && isActive}
+                    anchorEl={anchorEl}
+                    {...origin}
+                    onClose={this.handleClose}
+                    elevation={2}
                 >
-                    {showSlider &&
-                    <BranchNavigator
-                        min={sliderMin}
-                        max={sliderMax}
-                        value={defaultValue}
-                        handleSliderChange={handleSliderChange}
-                        color={color}
-                        hideLabel={isBranchNavigator}
-                    />
-                    }
-                    {explorer}
-                </div>
-            </Popover>
+                    <div
+                        onMouseEnter={this.onMouseEnter}
+                        onMouseLeave={this.onMouseLeave}
+                        style={navigatorStyle}
+                    >
+                        {explorer}
+                    </div>
+                </Popover>
         );
     }
 
@@ -290,4 +326,4 @@ LiveExpression.propTypes = {
     data: PropTypes.any,
 };
 
-export default LiveExpression;
+export default React.memo(LiveExpression);

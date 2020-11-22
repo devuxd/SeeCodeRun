@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import {withStyles} from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
@@ -8,8 +9,25 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import CancelIcon from 'mdi-material-ui/Cancel';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 
-import {mountEditorFulfilled} from "../redux/modules/monacoEditor";
-import {canDispatch, dispatch, clearConsole, preserveLogs} from "../seecoderun/modules/Trace";
+import {
+    mountEditorFulfilled,
+    monacoEditorContentChanged
+} from "../redux/modules/monacoEditor";
+import {
+    canDispatch,
+    dispatch,
+    clearConsole,
+    preserveLogs
+} from "../seecoderun/modules/Trace";
+import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
+
+const mapStateToProps = ({firecoReducer}) => {
+    const {isFirecoEditorsReady} = firecoReducer;
+    return {
+        activateConsole: isFirecoEditorsReady,
+    };
+};
+const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
 
 const CONSOLE_INPUT_TOP_PADDING = 6;
 const CONSOLE_INPUT_BOTTOM_PADDING = 6;
@@ -31,13 +49,22 @@ const styles = theme => ({
         [`.${defaultMonacoConsoleClassName} .mtk12.PropertyAssignment`]: {
             color: '#99c794',
         },
-        [`.${defaultMonacoConsoleClassName} .mtk12.PropertyAssignment.PropertyAccessExpression`]: {
+        [`.${
+            defaultMonacoConsoleClassName
+        } .mtk12.PropertyAssignment.PropertyAccessExpression`]: {
             color: '#fac863',
         },
-        [`.${defaultMonacoConsoleClassName} .Identifier.CallExpression .OpenParenToken.CallExpression .Identifier.CallExpression`]: {
+        [
+        `.${
+            defaultMonacoConsoleClassName
+        } .Identifier.CallExpression .OpenParenToken.CallExpression` +
+        ' .Identifier.CallExpression'
+            ]: {
             color: '#fac863 !important',
         },
-        [`.${defaultMonacoConsoleClassName}.monaco-editor .cursors-layer > .cursor`]: {
+        [`.${
+            defaultMonacoConsoleClassName
+        }.monaco-editor .cursors-layer > .cursor`]: {
             maxHeight: 18,
             marginTop: 7,
         }
@@ -64,7 +91,7 @@ const styles = theme => ({
         top: 0,
         left: theme.spacing(3),
         height: `calc(100%)`,
-        width: `calc(100% - ${theme.spacing(10)}px)`
+        width: `calc(100% - ${theme.spacing(10)})`
     },
     iconContainer: {
         display: 'inline-flex',
@@ -114,32 +141,24 @@ const styles = theme => ({
 });
 
 const defaultMonacoOptions = {
+    ...defaultSimpleMonacoOptions,
     extraEditorClassName: defaultMonacoConsoleClassName,
-    wordWrap: 'on',
-    overviewRulerLanes: 0,
-    glyphMargin: false,
-    lineNumbers: 'off',
-    folding: false,
-    selectOnLineNumbers: false,
-    selectionHighlight: false,
-    cursorStyle: 'line',
-    cursorWidth: 1,
-    scrollbar: {
-        useShadows: false,
-        horizontal: 'hidden',
-        verticalScrollbarSize: 9,
-    },
-    lineDecorationsWidth: 0,
-    scrollBeyondLastLine: false,
-    renderLineHighlight: 'none',
-    minimap: {
-        enabled: false,
-    },
-    contextmenu: false,
     ariaLabel: 'ConsoleInput',
     fontFamily: 'Menlo, monospace',
     fontSize: 12,
     lineHeight: 32,
+};
+
+const getHeights = (lineCount) => {
+    const editorHeight = isNaN(lineCount) ? CONSOLE_INPUT_LINE_HEIGHT
+        : Math.min(
+            CONSOLE_INPUT_MAX_HEIGHT,
+            Math.max(lineCount, 1) * CONSOLE_INPUT_LINE_HEIGHT
+        );
+    return {
+        editorHeight,
+        containerHeight: editorHeight + CONSOLE_INPUT_PADDING,
+    }
 };
 
 class ConsoleInput extends Component {
@@ -150,10 +169,11 @@ class ConsoleInput extends Component {
         this.state = {
             commandHistory: [],
             commandCursor: -1,
-            editorHeight: CONSOLE_INPUT_LINE_HEIGHT,
             isPreserveLogs: false,
+            ...(getHeights()),
         };
         this.editor = null;
+        this.containerStyle = {height: this.state.containerHeight};
     }
 
     preserveLogs = () => {
@@ -181,10 +201,7 @@ class ConsoleInput extends Component {
             const lineCount = editor.getModel().getLineCount();
             if (lineCount !== lastLineCount) {
                 this.setState({
-                    editorHeight: Math.min(
-                        CONSOLE_INPUT_MAX_HEIGHT,
-                        lineCount * CONSOLE_INPUT_LINE_HEIGHT
-                    ),
+                    ...getHeights(lineCount),
                 });
                 this.resizeEditor();
                 lastLineCount = lineCount;
@@ -194,8 +211,7 @@ class ConsoleInput extends Component {
         editor.onKeyDown(event => {
             const e = event.browserEvent;
 
-            if (e.keyCode === 13) {
-                // Enter
+            if (e.key === 'Enter' || e.keyCode === 13) {
                 if (e.shiftKey) {
                     return;
                 }
@@ -215,8 +231,7 @@ class ConsoleInput extends Component {
                     commandCursor: -1,
                     commandHistory: [command, ...this.state.commandHistory],
                 });
-            } else if (e.keyCode === 38) {
-                // Up arrow
+            } else if (e.key === 'ArrowUp' || e.keyCode === 38) {
                 const lineNumber = editor.getPosition().lineNumber;
                 if (lineNumber !== 1) {
                     return;
@@ -230,22 +245,24 @@ class ConsoleInput extends Component {
                 this.setState({
                     commandCursor: newCursor,
                 });
-            } else if (e.keyCode === 40) {
-                // Down arrow
+            } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
                 const lineNumber = editor.getPosition().lineNumber;
                 const lineCount = editor.getModel().getLineCount();
                 if (lineNumber !== lineCount) {
                     return;
                 }
 
-                const newCursor = Math.max(this.state.commandCursor - 1, -1);
+                const newCursor =
+                    Math.max(this.state.commandCursor - 1, -1);
                 editor.setValue(this.state.commandHistory[newCursor] || '');
                 this.setState({
                     commandCursor: newCursor,
                 });
             }
         });
-
+        const {onHeightChange} = this.props;
+        const {editorHeight, containerHeight} = this.state
+        onHeightChange && onHeightChange(null, {editorHeight, containerHeight});
     };
 
     componentWillUnmount() {
@@ -259,23 +276,26 @@ class ConsoleInput extends Component {
     };
 
     render() {
-        const {classes} = this.props;
+        const {classes, activateConsole} = this.props;
         const {isPreserveLogs} = this.state;
         return (
-            <div style={{height: `${this.state.editorHeight + CONSOLE_INPUT_PADDING}px`}}>
+            <div style={this.containerStyle}>
                 <span className={classes.iconContainer}>
                     <ChevronRightIcon className={classes.icon}/>
                 </span>
 
                 <span className={classes.editor}>
+                    {activateConsole &&
                     <div
                         ref={this.editorDiv}
                         className={classes.editorDiv}
                     />
+                    }
                 </span>
                 <span className={classes.actionContainer}>
                     <Tooltip title="Clear Console">
-                        <IconButton aria-label="Clear Console" className={classes.clearActionIconContainer}
+                        <IconButton aria-label="Clear Console"
+                                    className={classes.clearActionIconContainer}
                                     onClick={clearConsole}>
                             <CancelIcon
                                 className={classes.actionIcon}
@@ -283,10 +303,14 @@ class ConsoleInput extends Component {
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Preserve Logs">
-                        <IconButton aria-label="Preserve Logs" className={classes.actionIconContainer}
+                        <IconButton aria-label="Preserve Logs"
+                                    className={classes.actionIconContainer}
                                     onClick={this.preserveLogs}>
                             <DeleteSweepIcon
-                                className={isPreserveLogs ? classes.actionIcon : classes.actionIconInactive}
+                                className={isPreserveLogs ?
+                                    classes.actionIcon
+                                    : classes.actionIconInactive
+                                }
                             />
                          </IconButton>
                     </Tooltip>
@@ -295,26 +319,40 @@ class ConsoleInput extends Component {
         );
     }
 
-    dispatchComponentMounted = (editorId, component) => {
-        const {store} = this.context;
-        store.dispatch(mountEditorFulfilled(editorId, component));
-    };
 
-    componentDidMount() {
-        this.dispatchComponentMounted(this.props.editorId, this);
-    }
-
-    componentDidUpdate() {
+    componentDidUpdate(prevProps, prevState) {
+        const {activateConsole, onHeightChange} = this.props
+        if (activateConsole && activateConsole !== prevProps.activateConsole) {
+            const {
+                editorId,
+                mountEditorFulfilled,
+                monacoEditorContentChanged,
+                isConsole
+            } = this.props;
+            const {
+                editorDiv, /*dispatchMouseEvents,*/
+                editorDidMount, monacoOptions
+            } = this;
+            mountEditorFulfilled(editorId, {
+                editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
+                editorDidMount, isConsole, monacoOptions
+            });
+        }
+        const {editorHeight, containerHeight} = this.state
+        if (editorHeight !== prevState.editorHeight) {
+            this.containerStyle.height = containerHeight;
+            onHeightChange &&
+            onHeightChange(null, {editorHeight, containerHeight});
+        }
         this.resizeEditorDebounced();
     }
 }
 
 ConsoleInput.propTypes = {
     classes: PropTypes.object.isRequired,
-};
-
-ConsoleInput.contextTypes = {
-    store: PropTypes.object.isRequired
+    isConsole: PropTypes.bool,
+    mountEditorFulfilled: PropTypes.func.isRequired,
+    onHeightChange: PropTypes.func,
 };
 
 ConsoleInput.defaultProps = {
@@ -322,4 +360,7 @@ ConsoleInput.defaultProps = {
     isConsole: true,
 };
 
-export default withStyles(styles)(ConsoleInput);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(withStyles(styles)(ConsoleInput));

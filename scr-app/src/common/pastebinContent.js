@@ -1,4 +1,3 @@
-// module.exports = function getDefaultTextForLanguage(language) {
 export function getDefaultTextForLanguage(language) {
     switch (language) {
         case 'javascript':
@@ -25,7 +24,7 @@ const styles = theme => ({
         height: 700,
     },
     button: {
-        margin: theme.spacing.unit,
+        margin: 8,
     },
 });
 
@@ -41,7 +40,7 @@ function FlatButtons(props) {
         <Paper className={classes.root}>
             <Button className={classes.button} onClick={doSomething} data-something="Default">
                 Default</Button>
-            <Button color="primary" className={classes.button} onClick={doSomething} data-something="Primary">
+            <Button className={classes.button} onClick={doSomething} data-something="Primary">
                 Primary
             </Button>
                 <Button color="secondary" className={classes.button} onClick={doSomething} data-something="Secondary">
@@ -67,8 +66,7 @@ ReactDOM.render(<App />, document.querySelector("#root"));
 const htmlDefaultText = `<!DOCTYPE html>
 <html>
 <head>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
-	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
 </head>
 <body>
 	<div id="root"></div>

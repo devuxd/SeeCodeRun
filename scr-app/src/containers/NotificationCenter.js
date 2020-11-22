@@ -1,17 +1,8 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import PropTypes from "prop-types";
-import Snackbar from '@material-ui/core/Snackbar';
-import Slide from '@material-ui/core/Slide';
-// import {withStyles} from 'material-ui';
-import {withStyles} from '@material-ui/core/styles';
-import isString from 'lodash/isString';
+import {withSnackbar} from 'notistack';
 
-const styles = () => ({
-    snackbarContentNetWorkStatus: {
-        // minWidth: 360,
-        // width: 360,
-    }
-});
+import isString from 'lodash/isString';
 
 const makeSingleNotification = (message, snackbarMessageId) => {
     return (<span id={snackbarMessageId}>
@@ -19,13 +10,12 @@ const makeSingleNotification = (message, snackbarMessageId) => {
     </span>);
 };
 
-class NotificationCenter extends Component {
+class NotificationCenter extends PureComponent {
     state = {
         defaultAutoHideDuration: 4000,
         snackbarMessageId: 'notification-center',
-        snackbarVertical: 'top',
+        snackbarVertical: 'bottom',
         snackbarHorizontal: 'center',
-        snackbarTransition: props => <Slide direction="down" {...props} />,
         snackbarAutoHideDuration: null,
         isSnackbarOpen: false,
         snackbarMessage: null,
@@ -42,13 +32,17 @@ class NotificationCenter extends Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         const {
-            isOnline, isConnected, changeShowNetworkState, getNetworkStateMessage,
+            isOnline, isConnected,
+            changeShowNetworkState, getNetworkStateMessage,
             notification
         } = nextProps;
         const {snackbarMessageId, disconnectedTimeout} = prevState;
 
-        const snackbarMessage = makeSingleNotification(getNetworkStateMessage(), snackbarMessageId);
-        if (prevState.isConnected !== isConnected && prevState.isOnline !== isOnline) {
+        const snackbarMessage = makeSingleNotification(
+            getNetworkStateMessage(), snackbarMessageId
+        );
+        if (prevState.isConnected !== isConnected
+            && prevState.isOnline !== isOnline) {
             if (prevState.isSnackbarFirstOnlineConnected) {
                 if (isOnline && isConnected) {
                     clearTimeout(disconnectedTimeout);
@@ -64,8 +58,8 @@ class NotificationCenter extends Component {
                 return {
                     isSnackbarOpen: true,
                     snackbarMessage: snackbarMessage,
-                    isOnline: isOnline,
-                    isConnected: isConnected,
+                    isOnline,
+                    isConnected,
                     snackbarAutoHideDuration: isOnline && isConnected ?
                         prevState.defaultAutoHideDuration : null,
                 };
@@ -76,10 +70,12 @@ class NotificationCenter extends Component {
                     notification: notification,
                     isSnackbarOpen: true,
                     snackbarMessage: isString(notification.message) ?
-                        makeSingleNotification(notification.message, snackbarMessageId)
+                        makeSingleNotification(
+                            notification.message, snackbarMessageId
+                        )
                         : notification.message,
                     snackbarAutoHideDuration: notification.autoHideDuration ||
-                    prevState.defaultAutoHideDuration,
+                        prevState.defaultAutoHideDuration,
                 };
             }
         }
@@ -87,42 +83,59 @@ class NotificationCenter extends Component {
     }
 
     render() {
-        const {classes} = this.props;
+        return null;
+    }
+
+    componentDidUpdate() {
         const {
-            snackbarAutoHideDuration, snackbarVertical, snackbarHorizontal,
-            isSnackbarOpen, snackbarTransition, snackbarMessageId,
-            snackbarMessage
+            enqueueSnackbar, closeSnackbar, getNetworkStateMessage,
+            isConnected, isOnline
+        } = this.props;
+        const {
+            isSnackbarOpen, defaultAutoHideDuration,
         } = this.state;
-        return (<Snackbar
-            anchorOrigin={{
-                vertical: snackbarVertical,
-                horizontal: snackbarHorizontal
-            }}
-            open={isSnackbarOpen}
-            autoHideDuration={snackbarAutoHideDuration}
-            onClose={this.handleClose}
-            TransitionComponent={snackbarTransition}
-            ContentProps={{
-                'aria-describedby': snackbarMessageId,
-                className: classes.snackbarContentNetWorkStatus,
-            }}
-            message={snackbarMessage}
-        />);
+        if (isSnackbarOpen) {
+            const isSuccess = isOnline && isConnected;
+            this.prevId && closeSnackbar(this.prevId);
+            const options = {
+                key: isSuccess ? 'success' : 'error',
+                variant: isSuccess ? 'success' : 'error',
+                persist: true,
+            };
+            const notiId = enqueueSnackbar(getNetworkStateMessage(), options);
+            if (isSuccess) {
+                setTimeout(() => {
+                    closeSnackbar(notiId);
+                }, defaultAutoHideDuration);
+            } else {
+                this.prevId = notiId;
+            }
+
+        }
     }
 
     componentDidMount() {
-        const {changeShowNetworkState, getNetworkStateMessage, didMountDisconnectTimeout} = this.props;
+        const {
+            changeShowNetworkState,
+            getNetworkStateMessage,
+            didMountDisconnectTimeout
+        } = this.props;
+
         const {snackbarMessageId} = this.state;
 
-        const disconnectedTimeout = setTimeout(() => {
-            const snackbarMessage = makeSingleNotification(getNetworkStateMessage(), snackbarMessageId);
-            this.setState({
-                isSnackbarOpen: true,
-                snackbarMessage: snackbarMessage,
-                isSnackbarFirstOnlineConnected: false,
-            });
-            changeShowNetworkState(true);
-        }, didMountDisconnectTimeout);
+        const disconnectedTimeout = setTimeout(
+            () => {
+                const snackbarMessage = makeSingleNotification(
+                    getNetworkStateMessage(), snackbarMessageId
+                );
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: snackbarMessage,
+                    isSnackbarFirstOnlineConnected: false,
+                });
+                changeShowNetworkState(true);
+            }, didMountDisconnectTimeout
+        );
         this.setState({disconnectedTimeout});
     }
 }
@@ -130,11 +143,13 @@ class NotificationCenter extends Component {
 NotificationCenter.propTypes = {
     getNetworkStateMessage: PropTypes.func.isRequired,
     changeShowNetworkState: PropTypes.func.isRequired,
-    classes: PropTypes.object.isRequired,
     didMountDisconnectTimeout: PropTypes.number,
-};
-NotificationCenter.defaultProps={
-    didMountDisconnectTimeout: 20000
+    enqueueSnackbar: PropTypes.func.isRequired,
+    closeSnackbar: PropTypes.func.isRequired,
 };
 
-export default withStyles(styles)(NotificationCenter);
+NotificationCenter.defaultProps = {
+    didMountDisconnectTimeout: 20000,
+};
+
+export default withSnackbar(NotificationCenter);

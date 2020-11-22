@@ -1,64 +1,66 @@
-import React, {Component, createContext, /*, StrictMode*/} from 'react';
+import React, {PureComponent} from 'react';
+import {compose} from 'redux';
+import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
-import {chromeDark, chromeLight} from "react-inspector";
-import withRoot, {themeTypes} from '../components/withRoot';
+import {SnackbarProvider} from 'notistack';
+import {takeUntil} from 'rxjs/operators';
+
+import withThemes, {ThemeContext} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
-import {getShareUrl} from '../redux/modules/pastebin';
 import {online$, end$} from '../utils/scrUtils';
-import {takeUntil} from 'rxjs/operators';
+
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
+import withMediaQuery from "../utils/withMediaQuery";
 
-const muiChromeLight = {...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
-const muiChromeDark = {...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})};
+const mapStateToProps = ({
+                             firecoReducer,
+                             pastebinReducer,
+                             updateBundleReducer
+                         }, {url}) => {
+    const {isConnected, authUser, isFirecoEditorsReady} = firecoReducer;
+    const {pastebinId} = pastebinReducer;
+    const {isFirstBundle, errors} = updateBundleReducer;
+    return {
+        pastebinId,
+        shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
+        authUser,
+        isConnected,
+        loadChat:
+            !!authUser &&
+            isFirecoEditorsReady &&
+            (isFirstBundle || !!errors),
+    }
+};
 
-export const ThemeContext = createContext({});
+const mapDispatchToProps = {switchMonacoTheme};
 
 let appStyle = {margin: 0};
 const styles = theme => {
     appStyle = {
-        margin: theme.spacing(1),
+        margin: theme.spacingUnit(1),
         rowHeightSmall: APP_BAR_HEIGHT,
         rowHeight: APP_BAR_HEIGHT,
-        // rowHeightSmall: theme
-        //     .mixins.toolbar['@media (min-width:0px) and (orientation: landscape)']
-        //     .minHeight,
-        // rowHeight: theme.mixins.toolbar['@media (min-width:600px)'].minHeight
     };
+    appStyle.marginArray = [appStyle.margin, appStyle.margin];
     return {
         root: {
             display: 'block',
             position: 'fixed',
-            height: '100%',
-            width: '100%',
             top: 0,
             right: 0,
             bottom: 0,
             left: 0,
-            overflow: 'hidden',
-        },
-        rootContainer: {
-            overflow: 'auto',
-            height: '100%',
-            width: '100%',
-            paddingBottom: appStyle.rowHeight
-        },
-        rootContainerSmall: {
-            overflow: 'auto',
-            height: '100%',
-            width: '100%',
-            paddingBottom: appStyle.rowHeightSmall
-        },
-        rootContainerNavigationToggled: {
-            overflow: 'auto',
-            height: '100%',
-            width: '100%',
-            bottom: 0,
+            minWidth: 800,
+            minHeight: 600,
+            // height: '100%', // fixes unwanted scrollbars after RGL update
+            // width: '100%',
+            // overflow: 'auto',
         },
         margin: {
             margin: appStyle.margin,
@@ -87,34 +89,40 @@ const styles = theme => {
     }
 };
 
-class Index extends Component {
-    prevThemeType = 'lightTheme';
-    editorIds = getEditorIds();
-    storeUnsubscribe = null;
+class Index extends PureComponent {
+
+    constructor(props) {
+        super(props);
+        this.pastebinRef = React.createRef();
+        this.editorIds = getEditorIds();
+    }
 
     sendNotification = (message, autoHideDuration) => {
         this.setState({
             notification: {
-                message: message,
-                autoHideDuration: autoHideDuration
+                message,
+                autoHideDuration
             }
         });
     };
     logoClick = (event, isTopNavigationToggled) => {
-        this.setState({
-            isTopNavigationToggled: event ? !this.state.isTopNavigationToggled : isTopNavigationToggled,
-        });
+        this.setState((prevState) => ({
+            isTopNavigationToggled:
+                event ?
+                    !prevState.isTopNavigationToggled
+                    : isTopNavigationToggled,
+        }));
     };
 
     changeShowNetworkState = showNetworkState => {
         this.setState({
-            showNetworkState: showNetworkState
+            showNetworkState
         });
     };
 
     handleShareMenu = event => {
         this.setState({
-            shareAnchorEl: event.currentTarget,
+            shareAnchorEl: event?.currentTarget,
         });
     };
 
@@ -122,39 +130,44 @@ class Index extends Component {
         this.setState({shareAnchorEl: null});
     };
 
-    shareClick = e => {
-        e.preventDefault();
-        const {shareUrl} = this.state;
+    shareClick = event => {
+        event && event.preventDefault();
+        const {shareUrl} = this.props;
         shareUrl && window.open(shareUrl, '_blank');
         this.handleShareClose();
     };
 
     shareClipboardClick = (/*link*/) => {
-        this.sendNotification('Pastebin URL for sharing has been copied' +
-            ' to your clipboard.');
+        this.sendNotification(
+            'Pastebin URL for sharing has been copied' +
+            ' to your clipboard.'
+        );
         this.handleShareClose();
     };
 
     chatClick = (event, isChatToggled) => {
         this.setState((prevState) => ({
-                isChatToggled: event ? !prevState.isChatToggled : isChatToggled,
-                // chatTitle: prevState.isChatToggled ? 'Open Chat' : 'Close Chat',
+                isChatToggled: event ?
+                    !prevState.isChatToggled
+                    : isChatToggled,
             })
         );
     };
 
     isNetworkOk = () => {
-        const {isConnected, isOnline} = this.state;
+        const {isConnected} = this.props;
+        const {isOnline} = this.state;
         return isConnected && isOnline;
     };
 
     getNetworkStateMessage = () => {
-        const {isConnected, isOnline} = this.state;
+        const {isConnected} = this.props;
+        const {isOnline} = this.state;
         return `${
             isOnline && isConnected ? 'Update' : 'Error'
-            }: ${
+        }: ${
             isOnline ? 'Online.' : 'Offline'
-            } ${
+        } ${
             isConnected ? 'Pastebin in sync.' : 'Pastebin not in sync.'}`;
     };
 
@@ -180,166 +193,187 @@ class Index extends Component {
         this.resetGridLayout(layout);
     };
 
+    onHeight = (node, heightAdjust) => {
+        const {minPastebinHeight} = this.props;
+        const minHeight = minPastebinHeight || 600;
+        const newHeight = window.innerHeight - heightAdjust;
+        return Math.max(minHeight, newHeight);
+    };
+
     state = {
         isTopNavigationToggled: false,
         copied: false,
-        onCopy: this.onCopy,
         pastebinId: null,
         shareUrl: null,
         shareAnchorEl: null,
+        showNetworkState: false,
+        isOnline: true,
+        isConnected: false,
+        isChatToggled: false,
+        chatTitle: 'Chat',
+        activateChat: false,
+    };
+
+    stateSetters = {
+        onCopy: this.onCopy,
         handleShareMenu: this.handleShareMenu,
         handleShareClose: this.handleShareClose,
         shareClick: this.shareClick,
         shareClipboardClick: this.shareClipboardClick,
         logoClick: this.logoClick,
-        showNetworkState: false,
-        isOnline: true,
-        isConnected: false,
         changeShowNetworkState: this.changeShowNetworkState,
         isNetworkOk: this.isNetworkOk,
         getNetworkStateMessage: this.getNetworkStateMessage,
-        authUser: null,
-        isChatToggled: false,
-        chatTitle: 'Chat',
         chatClick: this.chatClick,
         resetLayoutClick: this.resetLayoutClick,
     };
 
     render() {
-        const {store} = this.context;
+        const {
+            props, state, stateSetters,
+            pastebinRef, editorIds,
+            currentLayout, resetLayoutClick,
+            logoClick, chatClick, isNetworkOk, onHeight, setGridLayoutCallbacks,
+        } = this;
+
         const {
             classes,
-            url, themeType, switchTheme, minPastebinHeight
-        } = this.props;
-        const {
-            isTopNavigationToggled,
-            authUser, isChatToggled, chatClick, chatTitle, isNetworkOk
-        } = this.state;
-        const activateChat = !!authUser;
+            url, pastebinId, shareUrl, authUser, isConnected,
+            themeType, muiTheme, inspectorTheme, monacoTheme, switchTheme,
+        } = props;
 
-        const rootContainerClassName = isTopNavigationToggled ?
-            classes.rootContainerNavigationToggled :
-            window.innerWidth > 600 ? classes.rootContainer
-                : classes.rootContainerSmall;
+        const {
+            isTopNavigationToggled, isChatToggled, chatTitle, activateChat,
+        } = state;
 
         const rootContainerBottomMargin = isTopNavigationToggled ? 0 :
             window.innerWidth > 600 ? appStyle.rowHeight
                 : appStyle.rowHeightSmall;
 
-        const heightAdjust = isTopNavigationToggled ? appStyle.margin : rootContainerBottomMargin + appStyle.margin;
-        const onHeight = (node, heightAdjust) => {
-            const minHeight = minPastebinHeight || 600;
-            const newHeight = window.innerHeight - heightAdjust;
-            return Math.max(minHeight, newHeight);
+        const heightAdjust = isTopNavigationToggled ?
+            appStyle.margin : rootContainerBottomMargin + appStyle.margin * 2;
+
+        const forwardedState = {
+            ...state,
+            ...stateSetters,
+            pastebinId,
+            url,
+            shareUrl,
+            authUser,
+            isConnected,
+            themeType,
+            switchTheme,
         };
+
         return (
-            //<StrictMode>
             <ThemeContext.Provider value={{
-                themeType: themeType,
-                inspectorTheme: themeType === themeTypes.darkTheme ? muiChromeDark : muiChromeLight,
+                switchTheme,
+                themeType,
+                muiTheme,
+                inspectorTheme,
+                monacoTheme,
             }}
             >
-                <div className={classes.root}>
-                    <NotificationCenter {...this.state}/>
-                    <TopNavigationBar {...this.state}
-                                      url={url}
-                                      themeType={themeType}
-                                      switchTheme={switchTheme}
-
-                    />
-                    <div className={rootContainerClassName}>
-                        <div className={classes.scroller}>
-                            <Pastebin
-                                themeType={themeType}
-                                editorIds={this.editorIds}
-                                setGridLayoutCallbacks={this.setGridLayoutCallbacks}
-                                appClasses={classes}
-                                appStyle={{...appStyle}}
-                                measureBeforeMount={true}
-                                onHeight={onHeight}
-                                heightAdjust={heightAdjust}
-                            />
-                        </div>
-                    </div>
-                    {
-                        activateChat &&
-                        <Chat dispatch={store.dispatch}
-                              isTopNavigationToggled={isTopNavigationToggled}
-                              logoClick={this.logoClick}
-                              isChatToggled={isChatToggled}
-                              chatClick={chatClick}
-                              chatTitle={chatTitle}
-                              isNetworkOk={isNetworkOk}
-                              currentLayout={this.currentLayout}
-                              resetLayoutClick={this.resetLayoutClick}
-                              themeType={themeType}
-                              switchTheme={switchTheme}
+                <SnackbarProvider maxSnack={3} preventDuplicate>
+                    <NotificationCenter {...forwardedState}/>
+                    <div
+                        className={classes.root}
+                        ref={pastebinRef}
+                    >
+                        <Pastebin
+                            isTopNavigationToggled={
+                                isTopNavigationToggled
+                            }
+                            themeType={themeType}
+                            editorIds={editorIds}
+                            setGridLayoutCallbacks={
+                                setGridLayoutCallbacks
+                            }
+                            appClasses={classes}
+                            appStyle={appStyle}
+                            measureBeforeMount={true}
+                            onHeight={onHeight}
+                            heightAdjust={heightAdjust}
+                            TopNavigationBarComponent={
+                                <TopNavigationBar
+                                    {...forwardedState}
+                                />
+                            }
                         />
-                    }
-                </div>
+                        {
+                            activateChat &&
+                            <Chat
+                                isTopNavigationToggled={isTopNavigationToggled}
+                                logoClick={logoClick}
+                                isChatToggled={isChatToggled}
+                                chatClick={chatClick}
+                                chatTitle={chatTitle}
+                                isNetworkOk={isNetworkOk}
+                                currentLayout={currentLayout}
+                                resetLayoutClick={resetLayoutClick}
+                                themeType={themeType}
+                                switchTheme={switchTheme}
+                                dragConstraintsRef={pastebinRef}
+                            />
+                        }
+                    </div>
+                </SnackbarProvider>
             </ThemeContext.Provider>
-            // </StrictMode>
         );
     }
 
     componentDidMount() {
-        const {store} = this.context;
-        this.storeUnsubscribe = store.subscribe(() => {
-            const isConnected = store.getState().firecoReducer.isConnected;
-            if (this.state.isConnected !== isConnected) {
-                this.setState({isConnected: isConnected});
-            }
-
-            const pastebinId = store.getState().pastebinReducer.pastebinId;
-            if (this.state.pastebinId !== pastebinId) {
-                const {url} = this.props;
-                this.setState({
-                    pastebinId: pastebinId,
-                    shareUrl: getShareUrl(url, pastebinId)
-                });
-            }
-
-            const authUser = store.getState().firecoReducer.authUser;
-            if (this.state.authUser !== authUser) {
-                this.setState({
-                    authUser: authUser,
-                });
-            }
-        });
-
         this.online$ = online$();
         this.online$.subscribe(isOnline => {
             if (this.state.isOnline !== isOnline) {
-                this.setState({isOnline: isOnline});
+                this.setState({isOnline});
             }
         });
+        this.switchMonacoTheme();
     }
 
-    componentDidUpdate() {
-        const {themeType} = this.props;
-        if (this.prevThemeType !== themeType) {
-            this.prevThemeType = themeType;
-            const {store} = this.context;
-            store.dispatch(switchMonacoTheme(themeType));
+    componentDidUpdate(prevProps) {
+        const {monacoTheme, loadChat, loadChatDelay} = this.props;
+
+        if (monacoTheme !== prevProps.monacoTheme) {
+            this.switchMonacoTheme();
+        }
+
+        if (loadChat && loadChat !== prevProps.loadChat) {
+            setTimeout(() => {
+                this.setState({activateChat: true});
+            }, loadChatDelay)
+
         }
     }
 
     componentWillUnmount() {
-        if (this.storeUnsubscribe) {
-            this.storeUnsubscribe();
-        }
         this.online$ && this.online$.pipe(takeUntil(end$()));
+    }
+
+    switchMonacoTheme = () => {
+        const {switchMonacoTheme, monacoTheme} = this.props;
+        switchMonacoTheme && switchMonacoTheme(monacoTheme);
     }
 }
 
 Index.propTypes = {
     url: PropTypes.string.isRequired,
     classes: PropTypes.object.isRequired,
-    switchTheme: PropTypes.func.isRequired,
-    themeType: PropTypes.string.isRequired,
-};
-Index.contextTypes = {
-    store: PropTypes.object.isRequired
+    mediaQuery: PropTypes.string,
+    switchMonacoTheme: PropTypes.func,
+    loadChatDelay: PropTypes.number,
 };
 
-export default withRoot(withStyles(styles)(Index));
+Index.defaultProps = {
+    loadChatDelay: 3000,
+};
+
+const enhance =
+    compose(
+        withMediaQuery,
+        withThemes,
+        withStyles(styles),
+        connect(mapStateToProps, mapDispatchToProps)
+    );
+export default enhance(Index);

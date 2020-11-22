@@ -1,13 +1,14 @@
 import difference from 'lodash/difference';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 // import {Subject} from 'rxjs/Subject';
 // import {Observable} from 'rxjs/Observable';
 import {monacoProps} from "./monacoUtils";
-import {configureCreateMonacoRange, configureLocToMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
-
+import {configureCreateMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
+import {configureLocToMonacoRange} from 'monaco-jsx-highlighter';
 import AutoLogShift from '../seecoderun/modules/AutoLogShift';
 import LiveExpressionStore, {defaultExpressionClassName} from "../containers/LiveExpressionStore";
 
+import './LiveExpressionWidgetProvider.css';
 
 export const jExpressions = [];
 const jIgnoreExpressions =
@@ -19,7 +20,7 @@ let j = null;
 
 
 class LiveExpressionWidgetProvider {
-    constructor(monaco, jRef, editorId, monacoEditor, defaultExpressionClassName, throttleTime = 500) {
+    constructor(monaco, jRef, monacoEditor, editorId, defaultExpressionClassName, throttleTime = 500) {
         this.monaco = monaco;
         j = jRef;
 

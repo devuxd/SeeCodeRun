@@ -1,7 +1,7 @@
 import {of, fromEvent, merge} from 'rxjs';
 import {mapTo} from 'rxjs/operators';
 import isNumber from 'lodash/isNumber';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash/debounce';
 import isString from 'lodash/isString';
 import AppleKeyboardOptionIcon from 'mdi-material-ui/AppleKeyboardOption';
 import CallMadeIcon from '@material-ui/icons/CallMade';
@@ -10,10 +10,26 @@ import CallMergeIcon from '@material-ui/icons/CallMerge';
 import LooksIcon from '@material-ui/icons/Looks';
 import ChevronDoubleLeftIcon from 'mdi-material-ui/ChevronDoubleLeft';
 import ChevronDoubleRightIcon from 'mdi-material-ui/ChevronDoubleRight';
-import JsonIcon from 'mdi-material-ui/Json';
+import JsonIcon from 'mdi-material-ui/CodeJson';
 import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
 import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
 import CodeEqualIcon from 'mdi-material-ui/CodeEqual';
+
+
+export const configureLocalMemo = (
+    currentMemo = null, prevDeps = []
+) => {
+    return (fn, deps) => {
+        for (let i = 0; deps.length; i++) {
+            if (prevDeps[i] !== deps[i]) {
+                currentMemo = fn();
+                break;
+            }
+        }
+        prevDeps = deps;
+        return currentMemo;
+    };
+};
 
 // from is-dom
 export const isNode = (val, win = window) => {
@@ -23,33 +39,6 @@ export const isNode = (val, win = window) => {
             ? (val instanceof win.Node)
             : (typeof val.nodeType === 'number') &&
             (typeof val.nodeName === 'string')
-};
-
-export const getLocationUrlData = () => {
-    return {
-        url:
-            process.env.PUBLIC_URL ||
-            `${window.location.origin}`,
-        hash: `${window.location.hash}`
-    };
-};
-
-
-export const configureLocToMonacoRange = (monaco, parser = 'babylon') => {
-    switch (parser) {
-        case 'babylon':
-        default:
-            return loc => {
-                if (!loc || !loc.start) {
-                    return new monaco.Range(1, 1, 1, 1);
-                }
-                return new monaco.Range(loc.start.line
-                    , loc.start.column + 1
-                    , loc.end ? loc.end.line : loc.start.line
-                    , loc.end ? loc.end.column + 1 : loc.start.column + 1,
-                );
-            };
-    }
 };
 
 export const configureCreateMonacoRange = (monaco) => {

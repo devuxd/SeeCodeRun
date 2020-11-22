@@ -8,6 +8,33 @@ export const monacoProps = {
     lineOffSetHeight: 14, //sync with css padding-top: lineOffSetHeight/2
     widgetBackgroundColor: 'transparent',
 };
+
+export const defaultSimpleMonacoOptions = {
+    wordWrap: 'on',
+    overviewRulerBorder:false,
+    overviewRulerLanes: 0,
+    glyphMargin: false,
+    lineNumbers: 'off',
+    folding: false,
+    selectOnLineNumbers: false,
+    selectionHighlight: false,
+    cursorStyle: 'line',
+    cursorWidth: 1,
+    scrollbar: {
+        useShadows: false,
+        horizontal: 'hidden',
+        verticalScrollbarSize: 9,
+        alwaysConsumeMouseWheel: false,
+    },
+    lineDecorationsWidth: 0,
+    scrollBeyondLastLine: false,
+    renderLineHighlight: 'none',
+    minimap: {
+        enabled: false,
+    },
+    contextmenu: false,
+};
+
 export const monacoEditorDefaultOptions = {
     model: null,  // handled in FirecoObservable
     glyphMargin: false,
@@ -41,6 +68,7 @@ export const monacoEditorDefaultOptions = {
         verticalScrollbarSize: 4,
         horizontalScrollbarSize: 4,
         arrowSize: 4,
+        alwaysConsumeMouseWheel: false,
     },
     renderLineHighlight: 'gutter',
     // smoothScrolling: true,
@@ -117,7 +145,7 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
     }
 
     return monaco.editor.createModel(text, language,
-        new monaco.Uri.file(`${editorId}.${extension}`)
+        monaco.Uri.file(`${editorId}.${extension}`)
     );
 }
 

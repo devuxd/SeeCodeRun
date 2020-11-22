@@ -1,134 +1,134 @@
-/* eslint-disable react/prop-types */
-// import 'rc-slider/assets/index.css';
 import React, {Component} from 'react';
-// import Range from 'rc-slider';
-// import Slider from 'rc-slider/lib/Slider';
-import Slider from '@material-ui/lab/Slider';
+import Slider from '@material-ui/core/Slider';
 import PropTypes from "prop-types";
 import {withStyles} from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import {fade, darken} from '@material-ui/core/styles/colorManipulator';
-// import Slider from "./@material/Slider";
+import Paper from '@material-ui/core/Paper';
+import {alpha, darken} from '@material-ui/core/styles/colorManipulator';
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
     const value = `${'0'.repeat(max.toString().length - aValue.toString().length)}${aValue}`;
     return `${value}/${max}`;
 };
 
-
-let sliderStyles = {primary: {}, secondary: {}, default: {}};
-const styles = theme => {
-    sliderStyles['primary'].handleStyle = {
-        backgroundColor: theme.palette.primary.main,
-        borderColor: theme.palette.primary.main,
-    };
-    sliderStyles['secondary'].handleStyle = {
-        backgroundColor: theme.palette.secondary.main,
-        borderColor: theme.palette.secondary.main,
-    };
-    sliderStyles['default'].handleStyle = {
-        backgroundColor: fade(theme.palette.action.active, 1),
-        borderColor: theme.palette.action.active,
-    };
-
-    sliderStyles['primary'].trackStyle = {
-        backgroundColor: darken(theme.palette.primary.main, 0.05),
-    };
-    sliderStyles['secondary'].trackStyle = {
-        backgroundColor: darken(theme.palette.secondary.main, 0.05),
-    };
-    sliderStyles['default'].trackStyle = {
-        backgroundColor: darken(theme.palette.action.active, 0.05),
-    };
-
-    sliderStyles['primary'].railStyle = {
-        backgroundColor: darken(theme.palette.background.default, 0.25),
-    };
-    sliderStyles['secondary'].railStyle = {
-        backgroundColor: darken(theme.palette.background.default, 0.25),
-    };
-    sliderStyles['default'].railStyle = {
-        backgroundColor: darken(theme.palette.background.default, 0.25),
-    };
-
-    return {
-        '@global': {
-            '.rc-slider': {
-                padding: '6px 0',
-            },
-            '.rc-slider-step': {
-                height: '2px',
-            },
-            '.rc-slider-track': {
-                height: '2px',
-            },
-            '.rc-slider-rail': {
-                height: '2px',
+const PrimarySlider = withStyles(theme => ({
+    root: {
+        color: theme.palette.primary.main,
+    },
+    thumb: {
+        height: 8,
+        width: 8,
+        marginTop: -3,
+        marginLeft: -4,
+        '&:hover, &$focusVisible': {
+            boxShadow: `0px 0px 0px 6px ${alpha(theme.palette.primary.main, 0.16)}`,
+            '@media (hover: none)': {
+                boxShadow: 'none',
             },
         },
-        text: {
-            marginLeft: theme.spacing(1),
+        '&$active': {
+            boxShadow: `0px 0px 0px 9px ${alpha(theme.palette.primary.main, 0.16)}`,
         },
-        slider: {
-            marginLeft: theme.spacing(2),
-            // padding: 0,
+    },
+    active: {},
+    focusVisible: {},
+}))(Slider);
+
+const SecondarySlider = withStyles(theme => ({
+    root: {
+        color: theme.palette.secondary.main,
+    },
+    thumb: {
+        height: 8,
+        width: 8,
+        marginTop: -3,
+        marginLeft: -4,
+        '&:hover, &$focusVisible': {
+            boxShadow: `0px 0px 0px 6px ${alpha(theme.palette.secondary.main, 0.16)}`,
+            '@media (hover: none)': {
+                boxShadow: 'none',
+            },
         },
-        sliderWithLabel: {
-            marginLeft: theme.spacing(2),
-        }
-    }
+        '&$active': {
+            boxShadow: `0px 0px 0px 9px ${alpha(theme.palette.secondary.main, 0.16)}`,
+        },
+    },
+    active: {},
+    focusVisible: {},
+}))(Slider);
+
+
+const styles = theme => ({
+    root: {
+        width: theme.spacing(50), //todo: make size relative to editor width
+        maxWidth: theme.spacing(50),
+        height: '100%',
+        paddingLeft: 14,
+        paddingRight: 14,
+    },
+    text: {
+        fontWeight: 'bold',
+    },
+});
+
+const BranchNavigator = ({
+                             classes, min, max, value,
+                             handleSliderChange, handleSliderChangeCommitted,
+                             color, hideLabel, onMouseEnter, onMouseLeave
+                         }) => {
+    const CustomSlider = color === 'primary' ? PrimarySlider : SecondarySlider;
+    const [v, sv] = React.useState(0);
+
+    React.useEffect(() => {
+           v && handleSliderChange(null, v);
+        },
+        [v, handleSliderChange]);
+
+    return (
+        <Paper className={classes.root}
+               elevation={2}
+               onMouseEnter={onMouseEnter}
+               onMouseLeave={onMouseLeave}
+        >
+            {hideLabel ?
+                null
+                : <Typography
+                    className={classes.text}>{formatBranchValue(value, max)}</Typography>
+            }
+            <CustomSlider
+                aria-label="branch navigator slider"
+                valueLabelDisplay="auto"
+                step={1}
+                min={min}
+                max={max}
+                // value={value}
+                // onChange={handleSliderChange}
+                // onChangeCommitted={handleSliderChange}
+
+                // min={1}
+                // max={10}
+                // defaultValue={1}
+
+                // defaultValue={value}
+
+                value={v}
+                onChange={(e, v) => sv(v)}
+            />
+        </Paper>
+    );
+
 };
-
-const getSliderStyle = (color) => {
-    switch (color) {
-        case 'primary':
-            return sliderStyles['primary'];
-        case 'secondary':
-            return sliderStyles['secondary'];
-        default:
-            return sliderStyles['default'];
-    }
-};
-
-class BranchNavigator extends Component {
-    render() {
-        const {classes, min, max, value, handleSliderChange, color, hideLabel} = this.props;
-        const sliderStyle = getSliderStyle(color);
-        return (
-            <ListItem>
-                {hideLabel ?
-                    null
-                    : <Typography className={classes.text}>{formatBranchValue(value, max)}</Typography>
-                }
-                <ListItemText className={hideLabel ? classes.slider : classes.sliderWithLabel}>
-                    <Slider
-                        min={min}
-                        max={max}
-                        step={1}
-                        color={'secondary'}
-                        // defaultValue={defaultValue}
-                        value={value}
-                        onChange={handleSliderChange}
-                        // handleStyle={sliderStyle.handleStyle}
-                        // trackStyle={sliderStyle.trackStyle}
-                        // railStyle={sliderStyle.railStyle}
-                    />
-                </ListItemText>
-            </ListItem>
-        );
-    }
-}
 
 BranchNavigator.propTypes = {
     min: PropTypes.number.isRequired,
     max: PropTypes.number.isRequired,
     value: PropTypes.number.isRequired,
-    //defaultValue: PropTypes.array.isRequired,
     handleSliderChange: PropTypes.func.isRequired,
+    handleSliderChangeCommitted: PropTypes.func,
     hideLabel: PropTypes.bool
 };
 
-export default withStyles(styles)(BranchNavigator);
+export default React.memo(withStyles(styles)(BranchNavigator));
+
+
 

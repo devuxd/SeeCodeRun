@@ -33,30 +33,30 @@ export const loadMonacoFulfilled = monaco => ({
 });
 export const loadMonacoRejected = error => ({
     type: LOAD_MONACO_REJECTED,
-    error: error
+    error
 });
 
 export const configureMonacoModelsFulfilled = () => ({type: CONFIGURE_MONACO_MODELS_FULFILLED});
 export const configureMonacoModelsRejected = error => ({
     type: CONFIGURE_MONACO_MODELS_REJECTED,
-    error: error
+    error
 });
 
 export const updateMonacoModelsFulfilled = () => ({type: UPDATE_MONACO_MODELS_FULFILLED});
 export const updateMonacoModelsRejected = error => ({
     type: UPDATE_MONACO_MODELS_REJECTED,
-    error: error
+    error
 });
 
-export const switchMonacoTheme = previousThemeType => ({
+export const switchMonacoTheme = monacoTheme => ({
     type: SWITCH_MONACO_THEME,
-    previousThemeType: previousThemeType
+    monacoTheme
 });
 
 export const switchMonacoThemeFulfilled = () => ({type: SWITCH_MONACO_THEME_FULFILLED});
 export const switchMonacoThemeRejected = error => ({
     type: SWITCH_MONACO_THEME_REJECTED,
-    error: error
+    error
 });
 
 export const monacoReducer =
@@ -106,13 +106,21 @@ export const monacoReducer =
         }
     };
 
+export const loadMonacoEpic = (action$, state$, {appManager}) =>
+    action$.pipe(
+        ofType(LOAD_MONACO),
+        mergeMap(() =>
+            appManager.observeLoadMonaco()
+        ),
+        startWith(loadMonaco()),
+    );
+
 export const configureMonacoModelsEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         ofType(LOAD_MONACO_FULFILLED),
         mergeMap(action =>
             appManager.observeConfigureMonacoModels(action.monaco)
         ),
-        startWith(loadMonaco()),
     );
 
 export const updateMonacoModelsEpic = (action$, state$, {appManager}) =>
@@ -130,6 +138,6 @@ export const configureMonacoThemeSwitchEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         ofType(SWITCH_MONACO_THEME),
         mergeMap(action =>
-            appManager.observeSwitchMonacoTheme(action.previousThemeType)
+            appManager.observeSwitchMonacoTheme(action.monacoTheme)
         )
     );
