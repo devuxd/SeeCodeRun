@@ -49,8 +49,10 @@ export const InfiniteStickyListWithInspector = () => {
             }, 10)
         );
     };
-    const defaultRowContainer = forwardRef(({isSticky, isScrolling, ...props}, ref) => (
-        <div ref={ref} {...props} />));
+    const defaultRowContainer = forwardRef(
+        ({isSticky, isScrolling, ...props}, ref
+        ) => (
+            <div ref={ref} {...props} />));
     const defaultRow = ({index, style, data}) => <Inspector
         data={{height: data.itemSize(index), ...data.items[index], ...style}}/>;
     const defaultStickyButton = ({isSticky, onStickyChange}) => (
@@ -64,7 +66,7 @@ export const InfiniteStickyListWithInspector = () => {
 
     const defaultProps = {
         items: defaultItems,
-        defaultItemSize: 30,
+        estimatedItemSize: 30,
         StickyComponent: defaultStickyButton,
         RowComponent: defaultRow,
         RowContainer: defaultRowContainer,
