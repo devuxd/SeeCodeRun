@@ -261,7 +261,7 @@ class Pastebin extends Component {
             const {
                 orderBy,
                 order,
-                isPlaying,
+                // isPlaying,
                 timeline,
                 getEditorTextInLoc
             } = this.state;
@@ -836,8 +836,8 @@ class Pastebin extends Component {
             gridLayouts,
             isDebugLoading,
             tabIndex,
-            data,
-            isNew,
+            // data,
+            // isNew,
             traceAvailable,
             autorunDelay,
             width,
@@ -847,9 +847,9 @@ class Pastebin extends Component {
             isAutoLogActive,
             pointOfViewTiles,
             isPlaying,
-            order,
-            orderBy,
-            timeFlow,
+            // order,
+            // orderBy,
+            // timeFlow,
             searchState,
         } = this.state;
 

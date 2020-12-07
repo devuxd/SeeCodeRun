@@ -277,7 +277,7 @@ class TraceControls extends React.Component {
     render() {
         const {classes, isTopNavigationToggled} = this.props;
         const {
-            hidden,
+            // hidden,
             open,
             anchorEl,
             actionId,

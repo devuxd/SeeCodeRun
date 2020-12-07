@@ -83,7 +83,7 @@ const styles = theme => ({
         color: 'white',
         fontWeight: 'bold',
         backgroundColor: theme.palette.mode === 'light' ?
-            'rgb( 26,156, 22)' : 'rgb(63,186,  59)',
+            'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
     },
     falseValue: {
         fontFamily: 'Menlo, monospace',

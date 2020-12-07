@@ -50,7 +50,11 @@ function TabResultLabel({
                         classes.colorTransitionStart : classes.colorTransition
                 }}
                 primary={label}
-                secondary={formatText ? formatText(result) : result ? `${result} results` : 'No results'}
+                secondary={
+                    formatText ?
+                        formatText(result)
+                        : result ? `${result} results` : 'No results'
+                }
             />
         </ListItem>
     );
@@ -153,6 +157,10 @@ function DebugContainer(
         badgeMaxCount = 99
     }
 ) {
+    const {
+        colorTransition, colorTransitionStart,
+        opacityTransition, opacityTransitionStart,
+    } = classes;
     const [isTraceUpdating, setIsTraceUpdating] = useState(false);
     const [isConsoleUpdating, setIsConsoleUpdating] = useState(false);
     const [traceTotal, setTraceTotal] = useState(0);
@@ -236,20 +244,17 @@ function DebugContainer(
 
     const traceBadgeClasses = useMemo(
         () => ({
-            badge: isTraceUpdating ?
-                classes.opacityTransitionStart
-                : classes.opacityTransition
+            badge: isTraceUpdating ? opacityTransitionStart : opacityTransition
         })
-        , [isTraceUpdating]
+        , [isTraceUpdating, opacityTransition, opacityTransitionStart]
     );
 
     const consoleBadgeClasses = useMemo(
         () => ({
             badge: isConsoleUpdating ?
-                classes.opacityTransitionStart
-                : classes.opacityTransition
+                opacityTransitionStart : opacityTransition
         })
-        , [isConsoleUpdating]
+        , [isConsoleUpdating, opacityTransition, opacityTransitionStart]
     );
 
     return (
@@ -265,9 +270,8 @@ function DebugContainer(
                     value="trace"
                     aria-label="trace"
                     {...a11yProps('trace')}
-                    className={isTraceUpdating ?
-                        classes.colorTransitionStart
-                        : classes.colorTransition
+                    className={
+                        isTraceUpdating ? colorTransitionStart : colorTransition
                     }
                 >
                     <Tooltip
@@ -289,9 +293,9 @@ function DebugContainer(
                     value="console"
                     aria-label="console"
                     {...a11yProps('console')}
-                    className={isConsoleUpdating ?
-                        classes.colorTransitionStart
-                        : classes.colorTransition
+                    className={
+                        isConsoleUpdating ?
+                            colorTransitionStart : colorTransition
                     }
                 >
                     <Tooltip

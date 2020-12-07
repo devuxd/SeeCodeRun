@@ -5,12 +5,15 @@ import React, {
     useMemo,
     useCallback
 } from 'react';
-import PropTypes from 'prop-types';
 import isString from 'lodash/isString';
 import JSAN from "jsan";
 
 import {withStyles} from '@material-ui/core/styles';
-import {darken, alpha, lighten} from '@material-ui/core/styles/colorManipulator';
+import {
+    darken,
+    alpha,
+    lighten
+} from '@material-ui/core/styles/colorManipulator';
 import Pin from "mdi-material-ui/Pin";
 import PinOutline from "mdi-material-ui/PinOutline";
 
@@ -450,7 +453,7 @@ const Row = ({index, style, data}) => {
                                 <Highlighter
                                     highlightClassName={classes.highlight}
                                     searchWords={searchWords}
-                                    textToHighlight={n.expression||''}
+                                    textToHighlight={n.expression || ''}
                                     autoEscape={true}
                                     findChunks={findChunks}
                                 />
@@ -577,7 +580,7 @@ function WindowedTable(props) {
             items: matchedData.map((entry, i) => createData(i, entry)),
             ignoreIndices,
         }
-    }, [data, findChunks, order, orderBy]);
+    }, [data, findChunks]);
 
     const _prevItems = usePrevious(items);
     const _prevOrder = usePrevious(order);
@@ -636,7 +639,7 @@ function WindowedTable(props) {
     highlightErrors && highlightErrors();
 
     const goToTimelineBranch = useMemo(() => configureGoToTimelineBranch()
-        , [configureGoToTimelineBranch]);
+        , []);
     const isItemLoaded = useCallback((/*index*/) => true, []);//!!items[index];
     const loadMoreItems = useCallback((/*startIndex, stopIndex*/) => {
         return new Promise(resolve => resolve());

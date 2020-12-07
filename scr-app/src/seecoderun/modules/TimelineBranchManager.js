@@ -20,8 +20,8 @@ class TimelineBranchManager {
         const currentLocalBranchId = localBranchSelection.currentBranchId;
         const currentLocalBranchTimelineId =
             localBranchSelection.currentBranchTimelineId;
-        const currentLocalBranchTimelineIdStart =
-            (branchSelections[NavigationTypes.Global] || {}).prevTimelineI;
+        // const currentLocalBranchTimelineIdStart =
+        //     (branchSelections[NavigationTypes.Global] || {}).prevTimelineI;
         // const prevLocalTimelineI = localBranchSelection.prevTimelineI;
         // console.log(
         // "BM", currentLocalBranchTimelineIdStart, branchSelections,
@@ -124,7 +124,10 @@ class TimelineBranchManager {
             });
 
             branches.forEach(branch => {
-                const {id, timelineI, navigationType, loc, blockLoc} = branch;
+                const {
+                    id, timelineI, navigationType,
+                    // loc, blockLoc
+                } = branch;
 
                 if (navigationType === NavigationTypes.Global) {
                     absoluteGlobalBranches[id] =
@@ -212,33 +215,36 @@ class TimelineBranchManager {
             });
             let functionBranch = {start: 0, end: 0},
                 functionBranchFound = false;
+
+            const funcBranch = fBranch => {
+
+                //todo: inspect here
+                const fBranchLoc = fBranch.blockLoc;
+                // console.log(
+                // 'f block', fBranch, branch.blockLoc, fBranch.blockLoc,
+                // fBranch.loc
+                // );
+
+                if (functionBranch.start < fBranch.start
+                    && fBranch.start < timelineI
+                    && timelineI < fBranch.end
+                    && (fBranchLoc && !(fBranchLoc
+                        && fBranchLoc.start.line
+                        <= branch.blockLoc.start.line
+                        && fBranchLoc.start.column
+                        <= branch.blockLoc.start.column
+                        && fBranchLoc.end.line
+                        >= branch.blockLoc.end.line
+                        && fBranchLoc.end.column
+                        >= branch.blockLoc.end.column))
+                ) {
+                    functionBranch = fBranch;
+                }
+            };
+
             for (let fId in functionBranches) {
                 const func = functionBranches[fId];
-                func.branches.forEach(fBranch => {
-
-                    //todo: inspect here
-                    const fBranchLoc = fBranch.blockLoc;
-                    // console.log(
-                    // 'f block', fBranch, branch.blockLoc, fBranch.blockLoc,
-                    // fBranch.loc
-                    // );
-
-                    if (functionBranch.start < fBranch.start
-                        && fBranch.start < timelineI
-                        && timelineI < fBranch.end
-                        && (!fBranchLoc || fBranchLoc
-                            && fBranchLoc.start.line
-                            <= branch.blockLoc.start.line
-                            && fBranchLoc.start.column
-                            <= branch.blockLoc.start.column
-                            && fBranchLoc.end.line
-                            >= branch.blockLoc.end.line
-                            && fBranchLoc.end.column
-                            >= branch.blockLoc.end.column)
-                    ) {
-                        functionBranch = fBranch;
-                    }
-                });
+                func.branches.forEach(funcBranch);
             }
             branched[id].branches[newLength - 1].functionBranch =
                 functionBranchFound ? functionBranch : null;
@@ -274,25 +280,23 @@ class TimelineBranchManager {
         this.getBranchByTimelineI = (timelineI) => {
             let functionBranch = null;
             // console.log('f', functionBranches, timelineI);
-            for (let fId in functionBranches) {
-                const func = functionBranches[fId];
-
-                func.branches.forEach(fBranch => {
-                    if (functionBranch) {
-                        if (
-                            functionBranch.start < fBranch.start
-                            && fBranch.start < timelineI
-                            && timelineI < fBranch.end
-                        ) {
-                            functionBranch = fBranch;
-                        }
-                    } else {
+            const funcEach = fBranch => {
+                if (functionBranch) {
+                    if (
+                        functionBranch.start < fBranch.start
+                        && fBranch.start < timelineI
+                        && timelineI < fBranch.end
+                    ) {
                         functionBranch = fBranch;
                     }
+                } else {
+                    functionBranch = fBranch;
+                }
 
-                });
-
-
+            };
+            for (let fId in functionBranches) {
+                const func = functionBranches[fId];
+                func.branches.forEach(funcEach);
             }
             return functionBranch;
         };

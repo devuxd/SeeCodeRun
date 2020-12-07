@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import Popover from '@material-ui/core/Popover';
-import Button from '@material-ui/core/Button';
+// import Button from '@material-ui/core/Button';
 import JSAN from 'jsan';
 import isString from 'lodash/isString';
 import debounce from 'lodash.debounce';
@@ -9,10 +9,10 @@ import debounce from 'lodash.debounce';
 import ObjectExplorer, {hasOwnTooltip} from './ObjectExplorer';
 import BranchNavigator from "./BranchNavigator";
 
-import GraphicalQuery from '../components/GraphicalQuery';
-import {VisualQueryManager} from "../containers/Pastebin";
+// import GraphicalQuery from '../components/GraphicalQuery';
+// import {VisualQueryManager} from "../containers/Pastebin";
 
-const {getVisualIdsFromRefs} = VisualQueryManager;
+// const {getVisualIdsFromRefs} = VisualQueryManager;
 
 const defaultCloseDelay = 1000;
 
@@ -113,7 +113,10 @@ class LiveExpression extends Component {
         };
     };
 
-    handleClose = event => {
+    handleClose = (event, reason) => {
+        if (reason === 'backdropClick') {
+            return;
+        }
         const {closeDelay, isOpen} = this.props;
         let {timeout, wasHovered, isHovered} = this.state;
         clearTimeout(timeout);
@@ -230,7 +233,12 @@ class LiveExpression extends Component {
         // const {anchorEl: currentAnchorEl} = this.state;
         // this.anchorEl = currentAnchorEl ||this.anchorEl;
         // const {anchorEl} = this;
-        const isActive = this.open || !!anchorEl && (!isBranchNavigator || (isBranchNavigator && data && data.length > 1));
+        const isActive = !this.open &&
+            !(!!anchorEl &&
+                (isBranchNavigator &&
+                    !(isBranchNavigator && data && data.length > 1)
+                )
+            );
         // this.open = isActive; // debug
         const {
             datum,
@@ -286,7 +294,6 @@ class LiveExpression extends Component {
                     style={style}
                     modal={null}
                     hideBackdrop={true}
-                    disableBackdropClick={true}
                     disableAutoFocus={true}
                     disableEnforceFocus={true}
                     open={isPop && isActive}

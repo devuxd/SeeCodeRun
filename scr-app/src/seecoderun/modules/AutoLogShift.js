@@ -1,7 +1,7 @@
 import isString from 'lodash/isString';
 import isArray from 'lodash/isArray';
 
-export const toAst = (source, options={}) => {
+export const toAst = (source, options = {}) => {
     const res = j(source, options);
     return res;
 };
@@ -61,66 +61,86 @@ class AutoLogShift {
         // console.log(variableDeclaratorPaths);
         const blockPaths = [];
         // ast.findVariableDeclarators().forEach(
-        //     path => variableDeclaratorPaths.unshift({type: 'expression', path})
+        //     path => variableDeclaratorPaths
+        //     .unshift({type: 'expression', path})
         // );
         ast.find(j.BlockStatement).forEach(
             path => blockPaths.unshift({type: 'block', path})
         );
 
-        const allPaths = expressionPaths.concat(variableDeclaratorPaths).concat(blockPaths).sort((a, b) => {
-            const aPath = a.path, bPath = b.path;
-            if (aPath.value && bPath.value && aPath.value.loc && bPath.value.loc) {
-                const aLoc = aPath.value.loc;
-                const bLoc = bPath.value.loc;
-                if (aLoc.start.line < bLoc.start.line) {
-                    return -1;
-                } else {
-                    if (aLoc.start.line > bLoc.start.line) {
-                        return 1;
+        const allPaths = expressionPaths
+            .concat(variableDeclaratorPaths)
+            .concat(blockPaths).sort((a, b) => {
+                const aLoc = a?.path?.value?.loc;
+                const bLoc = b?.path?.value?.loc;
+                if (aLoc && bLoc) {
+                    if (aLoc.start.line < bLoc.start.line) {
+                        return -1;
                     } else {
-                        if (aLoc.start.column < bLoc.start.column) {
-                            return -1;
+                        if (aLoc.start.line > bLoc.start.line) {
+                            return 1;
                         } else {
-                            if (aLoc.start.column > bLoc.start.column) {
-                                return 1;
+                            if (aLoc.start.column < bLoc.start.column) {
+                                return -1;
                             } else {
-                                if (aLoc.end.line < bLoc.end.line) {
+                                if (aLoc.start.column > bLoc.start.column) {
                                     return 1;
                                 } else {
-                                    if (aLoc.end.line > bLoc.end.line) {
-                                        return -1;
+                                    if (aLoc.end.line < bLoc.end.line) {
+                                        return 1;
                                     } else {
-                                        if (aLoc.end.column < bLoc.end.column) {
-                                            return 1;
+                                        if (aLoc.end.line > bLoc.end.line) {
+                                            return -1;
                                         } else {
-                                            if (aLoc.end.column > bLoc.end.column) {
-                                                return -1;
+                                            if (aLoc.end.column
+                                                < bLoc.end.column) {
+                                                return 1;
                                             } else {
-                                                return 0;
+                                                if (aLoc.end.column
+                                                    > bLoc.end.column) {
+                                                    return -1;
+                                                } else {
+                                                    return 0;
+                                                }
                                             }
                                         }
+
                                     }
-
                                 }
-                            }
 
+                            }
+                        }
+
+                    }
+                } else {
+                    console.warn(
+                        `This path in AutoLog sorting
+                         is missing location data: ${aLoc ? a : b}`
+                    );
+                    if (aLoc) {
+                        return -1;
+                    } else {
+                        if (bLoc) {
+                            return 1;
+                        } else {
+                            return 0;
                         }
                     }
-
                 }
-            } else {
-                return 0;
-            }
-        });
+            });
         //console.log('all', allPaths);
         allPaths.reverse().forEach(pathElem => {
             const {path} = pathElem;
             switch (pathElem.type) {
                 case 'expression':
-                    this.autoLogExpressions(ast, [path], locationMap, getLocationId);
+                    this.autoLogExpressions(
+                        ast, [path], locationMap, getLocationId
+                    );
                     break;
                 default:
-                    this.autoLogBlocks(ast, [path], locationMap, getLocationId);
+                    this.autoLogBlocks(
+                        ast, [path], locationMap, getLocationId
+                    );
             }
         });
         ast.findVariableDeclarators().forEach(
@@ -143,20 +163,28 @@ class AutoLogShift {
         const jtype = j.identifier(`'${type}'`);
         const jValue = isString(expression) ? j.identifier(expression) : expression;
         // const jValue = type === j.CallExpression.name ?
-        //     j.memberExpression(j.identifier(expression.callee), j.callExpression(j.identifier('call'), expression.arguments), false)
+        //     j.memberExpression(
+        //     j.identifier(expression.callee), j.callExpression(
+        //     j.identifier('call'), expression.arguments), false)
         //     :isString(expression) ? j.identifier(expression) : expression;
         let ident = j.identifier('_');
-        // if (type === j.CallExpression.name && path.callee && path.callee.type === j.MemberExpression.name) {
+        // if (type === j.CallExpression.name && path.callee &&
+        // path.callee.type === j.MemberExpression.name) {
         //     path.callee.property = j.identifier('_.call');
         //     //path.callee.object.arguments[1].name
-        //     path.arguments = [j.identifier('this'), j.arrayExpression(path.arguments)];
+        //     path.arguments = [j.identifier('this'),
+        //     j.arrayExpression(path.arguments)];
         // }
-        if (path.parentPath && path.parentPath.parentPath && path.parentPath.parentPath.value.type === 'JSXAttribute') {
+        if (
+            path.parentPath &&
+            path.parentPath.parentPath &&
+            path.parentPath.parentPath.value.type === 'JSXAttribute'
+        ) {
             locationMap[id].isJSX = true;
             try {
                 const parents = [];
                 const children = [];
-                let parentPath = path.parentPath.parentPath.parentPath.parentPath.parentPath;
+                let parentPath = path?.parentPath?.parentPath?.parentPath?.parentPath?.parentPath;
                 while (parentPath) {
                     const untrackedParent = parentPath.value;
                     if (untrackedParent.type === 'JSXElement' && untrackedParent.openingElement && untrackedParent.openingElement.attributes.length === 0) {
@@ -585,7 +613,7 @@ class AutoLogShift {
             const right = path.value ? path.value.init : null;
             const rightId = right && right.loc ? getLocationId(right.loc, right.type) : (right || {}).autologId;
             const rightLoc = right ? right.loc : (locationMap[rightId] || {}).loc;
-            let rightValue = null;
+            // let rightValue = null;
 
             let extraLocs = {
                 value: {...rightLoc},
@@ -637,7 +665,7 @@ class AutoLogShift {
                     loc: {...rightLoc},
                     parentId: id,
                 };
-                rightValue = j(right).toSource();
+                // rightValue = j(right).toSource();
             }
             const jValue = isString(right) ? j.identifier(right) : right;
             const params = [
@@ -686,7 +714,7 @@ class AutoLogShift {
         let name = path;
         if (firstSlash > -1) {
             name = path.substring(0, firstSlash);
-          //  error = `Dependency ${name} cannot have paths: RequireJS does not support relative paths: "${path}".`;
+            //  error = `Dependency ${name} cannot have paths: RequireJS does not support relative paths: "${path}".`;
         }
         id && (locationMap[id] = {
             type: alt.DependencyError,
@@ -700,7 +728,7 @@ class AutoLogShift {
             name,
             id,
             error,
-            importStatementLoc: expressionPath.loc||expressionLoc,
+            importStatementLoc: expressionPath.loc || expressionLoc,
         };
     };
 
@@ -1005,6 +1033,16 @@ class AutoLogShift {
             }
         });
 
+        const getReplaceWith = (
+            isDelayed, id, type, path, parentId, parentType, parentPath
+        ) => {
+            const replaceWith = () => j(path).replaceWith(
+                getJReplacer(id, type, path, parentId, parentType, parentPath)
+            );
+
+            return isDelayed ? replaceWith : replaceWith();
+        };
+
         for (const i in paths) {
             const path = paths[i];
             const type = path.value ? path.value.type : null;
@@ -1069,9 +1107,9 @@ class AutoLogShift {
 
                     if (isValid) {
                         if (isImplicitBlockStatementPath) {
-                            delayedReplacement = () => j(path).replaceWith(getJReplacer(id, type, path, parentId, parentType, parentPath));
+                            delayedReplacement = getReplaceWith(true, id, type, path, parentId, parentType, parentPath);
                         } else {
-                            j(path).replaceWith(getJReplacer(id, type, path, parentId, parentType, parentPath));
+                            getReplaceWith(false, id, type, path, parentId, parentType, parentPath);
                         }
                     } else {
                         // console.log('passing to parent', type, loc, path);

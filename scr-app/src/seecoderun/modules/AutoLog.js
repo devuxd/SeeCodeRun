@@ -4,7 +4,7 @@ import AutoLogShift from './AutoLogShift';
 import Trace from './Trace';
 
 import {decodeBabelError} from "../../utils/scrUtils";
-import GraphicalMapper from "../../containers/GraphicalMapper";
+// import GraphicalMapper from "../../containers/GraphicalMapper";
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
@@ -46,7 +46,13 @@ const defaultRequireOnLoadString = `scrLoader.requirejsLoad = requirejs.load;
 export const jsDelivrResolver = (depName) => { //similar: unpkg, cdnjs
     switch (depName) {
         default:
-            return `https://cdn.jsdelivr.net/npm/${depName}`; //todo find version obtained
+            return `https://cdn.jsdelivr.net/npm/${depName}`;
+    }
+};
+export const jsDelivrVersionResolver = (depName) => { //similar: unpkg, cdnjs
+    switch (depName) {
+        default:
+            return `https://data.jsdelivr.com/v1/package/npm/${depName}`;
     }
 };
 
@@ -90,6 +96,7 @@ export const doJsDelivrFallbackPaths = (name, url) => {
 export const requireConfig = {
     isDisabled: false,
     cdnResolver: jsDelivrResolver,
+    cdnVersionResolver: jsDelivrVersionResolver,
     requireString: defaultRequireString,
     requireOnErrorString: defaultRequireOnErrorString,
     requireOnLoadString: defaultRequireOnLoadString,
@@ -121,54 +128,65 @@ export const AutoLogErrors = {
     require: 'require'
 };
 
-const configureDependencies = (deps) => {
-    const newDependencies = {};
-    requireConfig.requireSync = [];
-    Object.keys(deps.dependencies || {}).forEach(dep => {
-        dep = dep.replace(/["' ]/g, '');
-        if (!dep) {
-            return;
-        }
-        if (!newDependencies[dep]) {
-            requireConfig.requireSync.push(dep);
-        }
-        if (requireConfig.dependencyOverrides[dep]) {
-            newDependencies[dep] = requireConfig.dependencyOverrides[dep];
-        } else {
-            newDependencies[dep] = requireConfig.cdnResolver(dep);
-        }
-    });
-    requireConfig.dependencies = newDependencies;
+const configureDependencies = async (deps) => {
+        const newDependencies = {};
+        requireConfig.requireSync = [];
+        for (let dep in (deps.dependencies || {})) {
+            dep = dep.replace(/["' ]/g, '');
+            const versionResponse = await fetch(requireConfig.cdnVersionResolver(dep));
+            if (versionResponse.ok) {
+                const jVal = await versionResponse.json();
+                console.log(deps, jVal);
+            } else {
+                console.log(dep, 'error');
+            }
 
-    const newAsyncDependencies = {};
-    Object.keys(deps.asyncDependencies || {}).forEach(dep => {
-        dep = dep.replace(/["' ]/g, '');
-        if (!dep) {
-            return;
+            if (!dep) {
+                continue;
+            }
+            if (!newDependencies[dep]) {
+                requireConfig.requireSync.push(dep);
+            }
+            if (requireConfig.dependencyOverrides[dep]) {
+                newDependencies[dep] = requireConfig.dependencyOverrides[dep];
+            } else {
+                newDependencies[dep] = requireConfig.cdnResolver(dep);
+            }
         }
-        if (requireConfig.dependencyOverrides[dep]) {
-            newAsyncDependencies[dep] = requireConfig.dependencyOverrides[dep];
-        } else {
-            newAsyncDependencies[dep] = requireConfig.cdnResolver(dep);
+
+        requireConfig.dependencies = newDependencies;
+
+        const newAsyncDependencies = {};
+        Object.keys(deps.asyncDependencies || {}).forEach(dep => {
+            dep = dep.replace(/["' ]/g, '');
+            if (!dep) {
+                return;
+            }
+            if (requireConfig.dependencyOverrides[dep]) {
+                newAsyncDependencies[dep] = requireConfig.dependencyOverrides[dep];
+            } else {
+                newAsyncDependencies[dep] = requireConfig.cdnResolver(dep);
+            }
+        });
+        requireConfig.asyncDependencies = newAsyncDependencies;
+        requireConfig.config.paths = {...requireConfig.dependencies, ...requireConfig.asyncDependencies};
+        for (const name in requireConfig.config.paths) {
+            const url = requireConfig.config.paths[name];
+            requireConfig.config.paths[name] = doJsDelivrFallbackPaths(name, url)
+                || appendTrailingInterrogation(url);
         }
-    });
-    requireConfig.asyncDependencies = newAsyncDependencies;
-    requireConfig.config.paths = {...requireConfig.dependencies, ...requireConfig.asyncDependencies};
-    for (const name in requireConfig.config.paths) {
-        const url = requireConfig.config.paths[name];
-        requireConfig.config.paths[name] = doJsDelivrFallbackPaths(name, url)
-            || appendTrailingInterrogation(url);
+// console.log('paths', requireConfig.config.paths);
     }
-    // console.log('paths', requireConfig.config.paths);
-};
+;
 
 requireConfig.configureDependencies = configureDependencies;
 
 export const updateDeps = (deps) => {
     requireConfig.on = true;
     if (deps) {
-        configureDependencies(deps);
-        requireConfig.onDependenciesChange && requireConfig.onDependenciesChange();
+        configureDependencies(deps).then(
+            () => requireConfig?.onDependenciesChange?.()
+        );
     }
 };
 
@@ -181,9 +199,9 @@ export const importLoaders = async () => {
         parse5 = await import('parse5');
     }
     if (!Babel) {
-        const pluginName = 'dynamic-import-to-require-ensure';
+        // const pluginName = 'dynamic-import-to-require-ensure';
         Babel = await import('@babel/standalone');
-        Babel.registerPlugin(pluginName, await import('./DynamicImportBabelPlugin'));
+        // Babel.registerPlugin(pluginName, await import('./DynamicImportBabelPlugin'));
 
         const options = {
             presets: [
@@ -192,7 +210,7 @@ export const importLoaders = async () => {
             ],
             plugins: Object.keys(Babel.availablePlugins)
                 .filter(key =>
-                    key === pluginName ||
+                    // key === pluginName ||
                     key.includes('proposal-') &&
                     !key.includes('proposal-decorators') &&
                     !key.includes('proposal-pipeline-operator')
@@ -240,23 +258,23 @@ class AutoLog {
     }
 
     async transformWithLocationIds(ast, getLocationId) {
-        let res = this.autoLogShift.autoLogAst(ast, getLocationId);
-        let {locationMap, deps, functionBranches, controlBranches} = res;
+        const {
+            locationMap, deps, ...rest
+        } = this.autoLogShift.autoLogAst(ast, getLocationId);
         return {
-            locationMap: locationMap,
-            trace: new Trace(locationMap, deps),
-            getCode: () => ast.toSource(),
+            ...rest,
+            locationMap,
             deps,
-            functionBranches,
-            controlBranches,
+            trace: new Trace(locationMap, deps),
+            getCode: (options) => ast?.toSource?.(options),
         };
     }
 
     static transform(ast) {
         return {
             ...ast,
-            trace: new Trace(ast.locationMap),
-            code: ast.ast.toSource()
+            trace: new Trace(ast?.locationMap),
+            code: ast?.ast?.toSource?.()
         };
     }
 
@@ -274,20 +292,23 @@ class AutoLog {
         requireConfig.triggerChange = null;
         this.appendHtml(state, html, css, js, alJs).then(() => {
             const sandboxIframe = () => {
-                const runIframe = runIframeHandler.createIframe();
-                runIframe.sandbox =
-                    'allow-forms' +
-                    ' allow-popups' +
-                    ' allow-scripts' +
-                    ' allow-same-origin' +
-                    ' allow-modals';
-                runIframe.style =
-                    'overflow: auto;' +
-                    ' height: 100%;' +
-                    ' width: 100%;' +
-                    ' margin: 0;' +
-                    ' padding: 0;' +
-                    ' border: 0;';
+                const runIframe = runIframeHandler?.createIframe();
+                if (runIframe) {
+                    runIframe.sandbox =
+                        'allow-forms' +
+                        ' allow-popups' +
+                        ' allow-scripts' +
+                        ' allow-same-origin' +
+                        ' allow-modals';
+                    runIframe.style =
+                        'overflow: auto;' +
+                        ' height: 100%;' +
+                        ' width: 100%;' +
+                        ' margin: 0;' +
+                        ' padding: 0;' +
+                        ' border: 0;';
+                }
+
                 return runIframe;
             };
 
@@ -305,7 +326,7 @@ class AutoLog {
                                         requireConfig.fallbackOverrides = {...fallbackOverrides};
                                     }
                                 } else {
-                                    autoLogger.trace.onError(errors, true); // isBundlingError
+                                    autoLogger.trace.onError(errors, /*true*/);
                                 }
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
@@ -318,7 +339,7 @@ class AutoLog {
                                         requireConfig.fallbackOverrides = {...fallbackOverrides};
                                     }
                                 } else {
-                                    autoLogger.trace.onError(errors, true); // isBundlingError
+                                    autoLogger.trace.onError(errors, /*true*/); // isBundlingError
                                 }
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;

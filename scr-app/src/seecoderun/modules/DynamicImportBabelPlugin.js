@@ -1,4 +1,5 @@
-// rom: https://raw.githubusercontent.com/airbnb/babel-plugin-dynamic-import-webpack/master/src/index.js
+// from:
+// https://raw.githubusercontent.com/airbnb/babel-plugin-dynamic-import-webpack/master/src/index.js
 export default ({ template }) => {
     const buildImport = template(`
   (new Promise((resolve) => {

@@ -42,7 +42,7 @@ export default function PromiseAutoComplete({
         return () => {
             active = false;
         };
-    }, [loading]);
+    }, [loading, getOptionsPromise]);
 
     useEffect(() => {
         if (!open) {
@@ -65,7 +65,7 @@ export default function PromiseAutoComplete({
                 </li>
             );
         },
-        [open]);
+        []);
 
     const onChange = useCallback((event, newValue, reason) => {
             const option = newValue ? newValue.inputValue ? {

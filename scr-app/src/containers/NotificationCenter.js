@@ -98,8 +98,9 @@ class NotificationCenter extends PureComponent {
             const isSuccess = isOnline && isConnected;
             this.prevId && closeSnackbar(this.prevId);
             const options = {
-                key: isSuccess ? 'success' : 'error',
-                variant: isSuccess ? 'success' : 'error',
+                // success (green) v error(red)  is not colorblind compliant
+                key: isSuccess ? 'info' : 'warning',
+                variant: isSuccess ? 'info' : 'warning',
                 persist: true,
             };
             const notiId = enqueueSnackbar(getNetworkStateMessage(), options);

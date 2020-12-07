@@ -5,8 +5,9 @@ import debounce from 'lodash/debounce';
 import {monacoProps} from "./monacoUtils";
 import {configureCreateMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
 import {configureLocToMonacoRange} from 'monaco-jsx-highlighter';
-import AutoLogShift from '../seecoderun/modules/AutoLogShift';
-import LiveExpressionStore, {defaultExpressionClassName} from "../containers/LiveExpressionStore";
+// import AutoLogShift from '../seecoderun/modules/AutoLogShift';
+//LiveExpressionStore,
+import  {defaultExpressionClassName} from "../containers/LiveExpressionStore";
 
 import './LiveExpressionWidgetProvider.css';
 
@@ -385,8 +386,8 @@ class LiveExpressionWidgetProvider {
         const lineNumber = sourceDecorator.range.startLineNumber;
         const {lineNumberDecorators} = this.getLineNumberExpressions(lineNumber);
 
-        let prev = null;
-        const domys = [];
+        // let prev = null;
+        // const domys = [];
         lineNumberDecorators.forEach((decorator, i) => {
             if (decorator.contentWidget) {
                 const domNode = decorator.contentWidget.domNode;
@@ -417,8 +418,7 @@ class LiveExpressionWidgetProvider {
                 }
                 // lineNumber === 11 && console.log('W', el.style.width, domNode.style.maxWidth, domNode, el, document.querySelectorAll(decorator.selector));
                 //
-                prev = {expressionType: decorator.expressionType, domNode, el};
-
+                // prev = {expressionType: decorator.expressionType, domNode, el};
 
             }
 

@@ -21,20 +21,15 @@ import withMediaQuery from "../utils/withMediaQuery";
 const mapStateToProps = ({
                              firecoReducer,
                              pastebinReducer,
-                             updateBundleReducer
                          }, {url}) => {
     const {isConnected, authUser, isFirecoEditorsReady} = firecoReducer;
     const {pastebinId} = pastebinReducer;
-    const {isFirstBundle, errors} = updateBundleReducer;
     return {
         pastebinId,
         shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
         authUser,
         isConnected,
-        loadChat:
-            !!authUser &&
-            isFirecoEditorsReady &&
-            (isFirstBundle || !!errors),
+        loadChat: !!authUser && isFirecoEditorsReady,
     }
 };
 
@@ -150,6 +145,7 @@ class Index extends PureComponent {
                 isChatToggled: event ?
                     !prevState.isChatToggled
                     : isChatToggled,
+                activateChatReason: event ?'user': 'system',
             })
         );
     };
@@ -211,7 +207,7 @@ class Index extends PureComponent {
         isConnected: false,
         isChatToggled: false,
         chatTitle: 'Chat',
-        activateChat: false,
+        activateChatReason: null,
     };
 
     stateSetters = {
@@ -238,12 +234,13 @@ class Index extends PureComponent {
 
         const {
             classes,
-            url, pastebinId, shareUrl, authUser, isConnected,
+            url, pastebinId, shareUrl, authUser, isConnected, loadChat,
             themeType, muiTheme, inspectorTheme, monacoTheme, switchTheme,
         } = props;
 
         const {
-            isTopNavigationToggled, isChatToggled, chatTitle, activateChat,
+            isTopNavigationToggled, isChatToggled,
+            chatTitle, activateChatReason,
         } = state;
 
         const rootContainerBottomMargin = isTopNavigationToggled ? 0 :
@@ -300,22 +297,23 @@ class Index extends PureComponent {
                                 />
                             }
                         />
-                        {
-                            activateChat &&
-                            <Chat
-                                isTopNavigationToggled={isTopNavigationToggled}
-                                logoClick={logoClick}
-                                isChatToggled={isChatToggled}
-                                chatClick={chatClick}
-                                chatTitle={chatTitle}
-                                isNetworkOk={isNetworkOk}
-                                currentLayout={currentLayout}
-                                resetLayoutClick={resetLayoutClick}
-                                themeType={themeType}
-                                switchTheme={switchTheme}
-                                dragConstraintsRef={pastebinRef}
-                            />
-                        }
+
+                        <Chat
+                            isTopNavigationToggled={isTopNavigationToggled}
+                            logoClick={logoClick}
+                            isChatToggled={isChatToggled}
+                            chatClick={chatClick}
+                            chatTitle={chatTitle}
+                            isNetworkOk={isNetworkOk}
+                            currentLayout={currentLayout}
+                            resetLayoutClick={resetLayoutClick}
+                            themeType={themeType}
+                            switchTheme={switchTheme}
+                            dragConstraintsRef={pastebinRef}
+                            activateChatReason={activateChatReason}
+                            loadChat={loadChat}
+                        />
+
                     </div>
                 </SnackbarProvider>
             </ThemeContext.Provider>
@@ -333,17 +331,10 @@ class Index extends PureComponent {
     }
 
     componentDidUpdate(prevProps) {
-        const {monacoTheme, loadChat, loadChatDelay} = this.props;
+        const {monacoTheme} = this.props;
 
         if (monacoTheme !== prevProps.monacoTheme) {
             this.switchMonacoTheme();
-        }
-
-        if (loadChat && loadChat !== prevProps.loadChat) {
-            setTimeout(() => {
-                this.setState({activateChat: true});
-            }, loadChatDelay)
-
         }
     }
 
@@ -362,11 +353,6 @@ Index.propTypes = {
     classes: PropTypes.object.isRequired,
     mediaQuery: PropTypes.string,
     switchMonacoTheme: PropTypes.func,
-    loadChatDelay: PropTypes.number,
-};
-
-Index.defaultProps = {
-    loadChatDelay: 3000,
 };
 
 const enhance =

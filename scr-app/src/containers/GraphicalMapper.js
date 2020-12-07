@@ -81,16 +81,16 @@ const GraphicalMapper = (({
                               visualElements,
                               containerRef,
                               // handleChangeGraphicalLocator,
-                              searchState,
+                              // searchState,
                           }) => {
     VisualQueryManager.visualElements = visualElements;
 
-    const {visualQuery} = searchState;
+    // const {visualQuery} = searchState;
     const [portalEl] = useState(() => document.createElement('div'));
     useLayoutEffect(() => {
         document.body.appendChild(portalEl);
         return () => document.body.removeChild(portalEl);
-    }, []);
+    }, [portalEl]);
 
     const locators = useMemo(() => {
             const locatedEls = [];
@@ -106,18 +106,19 @@ const GraphicalMapper = (({
                     return;
                 }
 
-                const box = domEl.getBoundingClientRect();
-                let hidden = domEl.style
-                    && (domEl.style.visibility === 'hidden'
-                        || domEl.style.display === 'none'
-                        || (
-                            box &&
-                            box.top === 0 &&
-                            box.left === 0 &&
-                            box.right === 0 &&
-                            box.bottom === 0
-                        )
-                    );
+                // const box = domEl.getBoundingClientRect();
+                //todo: show them on the side?
+                // let hidden = domEl.style
+                //     && (domEl.style.visibility === 'hidden'
+                //         || domEl.style.display === 'none'
+                //         || (
+                //             box &&
+                //             box.top === 0 &&
+                //             box.left === 0 &&
+                //             box.right === 0 &&
+                //             box.bottom === 0
+                //         )
+                //     );
 
                 const getStyle = () => {
                     const clientRect =
@@ -139,9 +140,9 @@ const GraphicalMapper = (({
                                               observeMutations = false
                                           }) => {
                     const [style, setStyle] = useState(getStyle);
-                    const onResize = useCallback((entry) => {
+                    const onResize = useCallback((/*entry*/) => {
                         setStyle(getStyle());
-                    }, [style, setStyle]);
+                    }, [setStyle]);
                     const [resizeObserver] = useState(
                         () => observeResizes && WindowResizeObserver &&
                             new WindowResizeObserver(onResize)
@@ -151,10 +152,8 @@ const GraphicalMapper = (({
                             new WindowMutationObserver(onResize)
                     );
                     useEffect(() => {
-                        resizeObserver &&
-                        resizeObserver.observe(domEl);
-                        mutationObserver &&
-                        mutationObserver.observe(domEl,
+                        resizeObserver && resizeObserver.observe(domEl);
+                        mutationObserver && mutationObserver.observe(domEl,
                             {
                                 attributes: true,
                                 childList: false,
@@ -162,13 +161,11 @@ const GraphicalMapper = (({
                             }
                         );
                         return (() => (
-                                (resizeObserver
-                                    && resizeObserver.unobserve(domEl))
-                                || (mutationObserver
-                                    && mutationObserver.disconnect())
+                                (resizeObserver?.unobserve(domEl))
+                                || (mutationObserver?.disconnect())
                             )
                         );
-                    }, [domEl, resizeObserver]);
+                    }, [resizeObserver, mutationObserver]);
                     const clientRect =
                         containerRef.current.getBoundingClientRect();
                     const containerOffsetTopPos = clientRect.y;
@@ -261,7 +258,6 @@ const GraphicalMapper = (({
             isGraphicalLocatorActive,
             containerRef,
             classes,
-            visualQuery,
         ]);
 
     return ReactDOM.createPortal(<div>{locators}</div>, portalEl);

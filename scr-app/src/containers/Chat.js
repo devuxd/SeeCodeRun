@@ -1,4 +1,5 @@
-import React, {Component} from 'react';
+import React, {Component, useState, useEffect} from 'react';
+import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import classnames from 'classnames';
 import {of} from 'rxjs';
@@ -214,7 +215,7 @@ class Chat extends Component {
         };
 
         this.prevUsers = null;
-        this.userSuggestions = null;
+        this.userSuggestions = [];
         this.userColors = {};
 
         this.firecoChat = null;
@@ -588,6 +589,7 @@ class Chat extends Component {
             }
         }
         this.userSuggestions = userSuggestions;
+        this.getOptionsPromise = of(() => [...this.userSuggestions]).toPromise();
     };
 
     handleChatUserChange = (event, option, reason) => {
@@ -684,13 +686,38 @@ class Chat extends Component {
         );
     };
 
+    filterOptions = (options, params, filter) => {
+        const filtered = filter(
+            options,
+            params.label,
+            {keys: ['label']}
+        );
+        if (params.label !== ''
+            && !filtered.length) {
+            filtered.push({
+                id: null,
+                inputValue:
+                params.label,
+                label: `Add "${
+                    params.label
+                }"`,
+            });
+        }
+
+        return filtered;
+    };
+
+    getOptionSelected = (option, value) => option.id === value.id;
+
+    getOptionsPromise = of(() => [...this.userSuggestions]).toPromise();
+
     render() {
         const {
             classes,
             isChatToggled,
             chatClick,
             chatTitle,
-            dragConstraintsRef
+            dragConstraintsRef,
         } = this.props;
 
         const {
@@ -1021,38 +1048,13 @@ class Chat extends Component {
                                             label: chatUserName,
                                             id: chatUserId
                                         }}
-                                        filterOptions={
-                                            (options, params, filter) => {
-                                                const filtered = filter(
-                                                    options,
-                                                    params.label,
-                                                    {keys: ['label']}
-                                                );
-                                                if (params.label !== ''
-                                                    && !filtered.length) {
-                                                    filtered.push({
-                                                        id: null,
-                                                        inputValue:
-                                                        params.label,
-                                                        label: `Add "${
-                                                            params.label
-                                                        }"`,
-                                                    });
-                                                }
-
-                                                return filtered;
-                                            }}
+                                        filterOptions={this.filterOptions}
                                         renderInput={renderChatUserNameInput}
                                         getOptionsPromise={
-                                            of(() => [
-                                                ...this.userSuggestions
-                                            ]).toPromise()
+                                            this.getOptionsPromise
                                         }
                                         getOptionSelected={
-                                            (
-                                                option,
-                                                value
-                                            ) => option.id === value.id
+                                            this.getOptionSelected
                                         }
                                         onInputOrOptionChange={
                                             this.handleChatUserChange
@@ -1117,15 +1119,18 @@ class Chat extends Component {
     };
 
     componentDidMount() {
-        this
-            .inputContainerResizeObserver
-            .observe(this.inputContainerRef.current);
-        this.updateHeightOffset();
+        if (this.inputContainerRef?.current) {
+            this
+                .inputContainerResizeObserver
+                .observe(this.inputContainerRef.current);
+            this.updateHeightOffset();
+        }
         const {configureFirecoChat} = this.props;
         configureFirecoChat(this.onFirecoActive, this.onDispose);
     }
 
     componentWillUnmount() {
+        this.inputContainerRef?.current &&
         this
             .inputContainerResizeObserver
             .unobserve(this.inputContainerRef.current);
@@ -1174,6 +1179,53 @@ class Chat extends Component {
 
 }
 
+const LazyChat = (
+    {activateChatReason, loadChat, loadChatDelay, ...props}
+) => {
+    const [activateChat, setActivateChat] = useState(false);
+    const [activateTimeout, setActivateTimeout] = useState(null);
+
+    useEffect(() => {
+            if (activateChat) {
+                return;
+            }
+
+            if (activateChatReason === 'user') {
+                setActivateChat(true);
+                return;
+            }
+
+            if (
+                activateChatReason === 'system' && loadChat && !activateTimeout
+            ) {
+                setActivateTimeout(
+                    setTimeout(
+                        () => setActivateChat(true)
+                        , loadChatDelay)
+                );
+                return;
+            }
+        },
+        [
+            activateChatReason, loadChat, loadChatDelay,
+            activateChat, setActivateChat,
+            activateTimeout, setActivateTimeout
+        ]
+    );
+
+    return (activateChat && <Chat {...props}/>)
+};
+
+LazyChat.propTypes = {
+    activateChatReason: PropTypes.string,
+    loadChat: PropTypes.bool,
+    loadChatDelay: PropTypes.number,
+};
+
+LazyChat.defaultProps = {
+    loadChatDelay: 5000,
+};
+
 export default React.memo(connect(null, mapDispatchToProps)(
-    withStyles(styles, {withTheme: true})(Chat)
+    withStyles(styles, {withTheme: true})(LazyChat)
 ));

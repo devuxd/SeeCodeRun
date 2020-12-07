@@ -90,19 +90,7 @@ const Playground = ({
             return true;
         },
         getIframe: () => iFrameRef.current,
-    }), [playgroundRef, iFrameRef]);
-
-    useEffect(() => {
-        // console.log(bundle, activatePlayground)
-        setKey(key + 1);
-        setVisualElements([]);
-
-    }, [bundle]);
-
-    useEffect(() => {
-        iFrameRefHandler.removeIframe();
-        updateIframe(bundle);
-    }, [key]);
+    }), [documentObj, playgroundRef, iFrameRef]);
 
     /**
      *
@@ -199,15 +187,32 @@ const Playground = ({
                 console.log("CRITICAL:updatePlaygroundLoadFailure");
             }
         }
-    }, [playgroundRef,
+    }, [
+        iFrameRefHandler,
+        playgroundRef,
         editorIds,
         updatePlaygroundLoadSuccess,
+        updatePlaygroundLoadFailure,
         isAutoLogActive]);
 
     const onResizeFalse = useCallback(
         () => (onResize && onResize(null)),
         [onResize]
     );
+
+    useEffect(() => {
+        setKey(key => key + 1);
+        setVisualElements([]);
+
+    }, [bundle]);
+
+    useEffect(() => {
+        if (!key) {
+            return;
+        }
+        iFrameRefHandler.removeIframe();
+        bundle && updateIframe(bundle);
+    }, [key, iFrameRefHandler, updateIframe, bundle]);
 
     return activatePlayground &&
         (<>

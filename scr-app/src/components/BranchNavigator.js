@@ -1,10 +1,10 @@
-import React, {Component} from 'react';
+import React, {memo, useState, useEffect} from 'react';
 import Slider from '@material-ui/core/Slider';
 import PropTypes from "prop-types";
 import {withStyles} from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
-import {alpha, darken} from '@material-ui/core/styles/colorManipulator';
+import {alpha} from '@material-ui/core/styles/colorManipulator';
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
     const value = `${'0'.repeat(max.toString().length - aValue.toString().length)}${aValue}`;
@@ -77,10 +77,10 @@ const BranchNavigator = ({
                              color, hideLabel, onMouseEnter, onMouseLeave
                          }) => {
     const CustomSlider = color === 'primary' ? PrimarySlider : SecondarySlider;
-    const [v, sv] = React.useState(0);
+    const [v, sv] = useState(0);
 
-    React.useEffect(() => {
-           v && handleSliderChange(null, v);
+    useEffect(() => {
+            v && handleSliderChange(null, v);
         },
         [v, handleSliderChange]);
 
@@ -128,7 +128,7 @@ BranchNavigator.propTypes = {
     hideLabel: PropTypes.bool
 };
 
-export default React.memo(withStyles(styles)(BranchNavigator));
+export default memo(withStyles(styles)(BranchNavigator));
 
 
 

@@ -270,7 +270,7 @@ export const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
 function WindowedTable(props) {
     const {
         order,
-        estimatedItemSize = 32,
+        estimatedItemSize = 29,
         logData: data,
         searchState,
         configureMappingEventListeners,
