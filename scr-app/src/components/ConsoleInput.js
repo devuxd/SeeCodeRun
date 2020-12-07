@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, createRef} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
@@ -164,7 +164,7 @@ const getHeights = (lineCount) => {
 class ConsoleInput extends Component {
     constructor(props) {
         super(props);
-        this.editorDiv = React.createRef();
+        this.editorDiv = createRef();
         this.monacoOptions = {...defaultMonacoOptions};
         this.state = {
             commandHistory: [],

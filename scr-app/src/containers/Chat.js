@@ -1,4 +1,10 @@
-import React, {Component, useState, useEffect} from 'react';
+import React, {
+    memo,
+    createRef,
+    PureComponent,
+    useState,
+    useEffect
+} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import classnames from 'classnames';
@@ -185,13 +191,13 @@ const loadMoreItems = (startIndex, stopIndex) => {
     });
 };
 
-class Chat extends Component {
+class Chat extends PureComponent {
     constructor(props) {
         super(props);
-        this.chatEl = React.createRef();
-        this.chatListRef = React.createRef();
-        this.chatAvatarEl = React.createRef();
-        this.inputContainerRef = React.createRef();
+        this.chatEl = createRef();
+        this.chatListRef = createRef();
+        this.chatAvatarEl = createRef();
+        this.inputContainerRef = createRef();
         this.inputContainerResizeObserver = new window.ResizeObserver(
             this.updateHeightOffset
         );
@@ -1226,6 +1232,6 @@ LazyChat.defaultProps = {
     loadChatDelay: 5000,
 };
 
-export default React.memo(connect(null, mapDispatchToProps)(
+export default memo(connect(null, mapDispatchToProps)(
     withStyles(styles, {withTheme: true})(LazyChat)
 ));

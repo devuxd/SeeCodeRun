@@ -1,4 +1,5 @@
 import React, {
+    forwardRef,
     useState,
     useLayoutEffect,
     useEffect,
@@ -364,7 +365,7 @@ function createData(id, entry) {
     return {id, entry};
 }
 
-const RowContainer = React.forwardRef(
+const RowContainer = forwardRef(
     ({isSticky, classes, children}, ref) =>
         (
             <TableRow
@@ -527,7 +528,7 @@ function WindowedTable(props) {
     } = props;
 
     const [parsed, setParsed] = useState({})
-    const [stickyIndices, setStickyIndices] = React.useState([]);
+    const [stickyIndices, setStickyIndices] = useState([]);
 
     useEffect(
         () => {
@@ -547,7 +548,7 @@ function WindowedTable(props) {
         [classes]);
 
 
-    const findChunks = React.useMemo(
+    const findChunks = useMemo(
         () => configureMatchesFilter(searchState),
         [searchState]
     );

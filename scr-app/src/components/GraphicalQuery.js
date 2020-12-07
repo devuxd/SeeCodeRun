@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {memo} from 'react';
 import PropTypes from 'prop-types';
 
 import {withStyles} from '@material-ui/core/styles';
@@ -92,4 +92,4 @@ GraphicalQuery.propTypes = {
     color: PropTypes.string,
 };
 
-export default React.memo(withStyles(styles)(GraphicalQuery));
+export default memo(withStyles(styles)(GraphicalQuery));

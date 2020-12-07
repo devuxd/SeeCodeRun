@@ -1,6 +1,6 @@
 import 'react-resizable/css/styles.css';
 import '../utils/react-grid-layout-scr-theme.css';
-import React, {Component, createContext} from 'react';
+import React, {createRef, PureComponent, createContext} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
@@ -208,10 +208,10 @@ const styles = theme => ({
 
 let automaticLayout = 0;
 
-class Pastebin extends Component {
+class Pastebin extends PureComponent {
     constructor(props) {
         super(props);
-        this.gridRef = React.createRef();
+        this.gridRef = createRef();
         this.updateMonacoEditorLayouts = {};
         this.debugScrollerRefSnapshots = {};
         VisualQueryManager.onChange = this.onVisualQueryChange;

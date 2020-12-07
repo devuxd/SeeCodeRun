@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {PureComponent} from 'react';
 // import PropTypes from 'prop-types';
 // import {withStyles} from '@material-ui/core/styles';
 
@@ -14,7 +14,7 @@ import IconButton from '@material-ui/core/IconButton';
 import FolderIcon from '@material-ui/icons/Folder';
 import DeleteIcon from '@material-ui/icons/Delete';
 
-class ExpressionInspector extends React.Component {
+class ExpressionInspector extends PureComponent {
   state = {
     dense: false,
     secondary: false,

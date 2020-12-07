@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, memo} from 'react';
 import PropTypes from 'prop-types';
 import Popover from '@material-ui/core/Popover';
 // import Button from '@material-ui/core/Button';
@@ -333,4 +333,4 @@ LiveExpression.propTypes = {
     data: PropTypes.any,
 };
 
-export default React.memo(LiveExpression);
+export default memo(LiveExpression);

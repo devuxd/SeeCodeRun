@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import debounce from 'lodash/debounce';
@@ -134,7 +134,7 @@ const inputFilterOptions = [
 
 function InputEndAdornment(props) {
     const {classes, searchState} = props;
-    const [expanded, setExpanded] = React.useState(false);
+    const [expanded, setExpanded] = useState(false);
     const {isCase, isWord, isRegExp, handleFilterClick} = searchState;
 
     const avatarClasses = {
@@ -293,7 +293,7 @@ function EnhancedToolbar(props) {
             {playingIcon}
         </IconButton>;
 
-    React.useEffect(() => {
+    useEffect(() => {
         searchStateChange(searchState)
     }, [searchState, searchStateChange]);
 

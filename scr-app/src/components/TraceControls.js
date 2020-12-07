@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
 import SpeedDial from '@material-ui/core/SpeedDial';
@@ -121,7 +121,7 @@ const actions = [
     },
 ];
 
-class TraceControls extends React.Component {
+class TraceControls extends PureComponent {
     state = {
         open: false,
         hidden: false,

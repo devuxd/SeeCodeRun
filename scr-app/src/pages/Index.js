@@ -1,4 +1,4 @@
-import React, {PureComponent} from 'react';
+import React, {PureComponent, createRef} from 'react';
 import {compose} from 'redux';
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
@@ -88,7 +88,7 @@ class Index extends PureComponent {
 
     constructor(props) {
         super(props);
-        this.pastebinRef = React.createRef();
+        this.pastebinRef = createRef();
         this.editorIds = getEditorIds();
     }
 

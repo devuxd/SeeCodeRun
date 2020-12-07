@@ -1,4 +1,10 @@
-import React, {memo, useState, useMemo, useCallback} from 'react';
+import React, {
+    PureComponent,
+    memo,
+    useState,
+    useMemo,
+    useCallback
+} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -611,7 +617,7 @@ EnhancedInspector.propTypes = {
 //     });
 // };
 
-class ObjectExplorer extends React.Component {
+class ObjectExplorer extends PureComponent {
     state = {
         isInit: false,
         prevData: null,
@@ -661,4 +667,4 @@ ObjectExplorer.propTypes = {
     variant: PropTypes.oneOf(["marker", "default"]),
 };
 
-export default React.memo(ObjectExplorer);
+export default memo(ObjectExplorer);

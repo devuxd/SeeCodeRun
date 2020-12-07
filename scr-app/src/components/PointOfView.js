@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {PureComponent, createRef, useState, useRef} from 'react';
 import PropTypes from 'prop-types';
 import {makeStyles} from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
@@ -28,7 +28,7 @@ const createSimpleEditor = (reactRef, monaco, text, editorModelLanguage, editorO
 };
 
 const createDiffEditor = (reactRef, monaco, originalText, modifiedText, editorModelLanguage, editorOptions, showMonacoIds) => {
-    if(!showMonacoIds){
+    if (!showMonacoIds) {
         originalText = originalText.replace(/'b;[0-9]+'/g, "'*id*'");
         modifiedText = modifiedText.replace(/'b;[0-9]+'/g, "'*id*'");
     }
@@ -55,21 +55,35 @@ const createDiffEditor = (reactRef, monaco, originalText, modifiedText, editorMo
     return {diffEditor, diffNavigator, updateOriginalText, updateModifiedText};
 };
 
-class ViewEditor extends React.Component {
+class ViewEditor extends PureComponent {
     constructor(props) {
         super(props);
-        this.editorDiv = React.createRef();
+        this.editorDiv = createRef();
     }
 
     render() {
-        return <div ref={this.editorDiv} style={{height: '100%', width: '100%'}}/>;
+        return <div ref={this.editorDiv}
+                    style={{height: '100%', width: '100%'}}/>;
     }
 
     componentDidMount() {
-        const {diff, monaco, originalText, modifiedText, editorModelLanguage, editorOptions, readOnly} = this.props;
+        const {
+            diff,
+            monaco,
+            originalText,
+            modifiedText,
+            editorModelLanguage,
+            editorOptions,
+            readOnly
+        } = this.props;
         const options = {...editorOptions, readOnly};
         if (diff) {
-            const {diffEditor, diffNavigator, updateOriginalText, updateModifiedText} = createDiffEditor(
+            const {
+                diffEditor,
+                diffNavigator,
+                updateOriginalText,
+                updateModifiedText
+            } = createDiffEditor(
                 this.editorDiv.current, monaco, originalText, modifiedText, editorModelLanguage, options
             );
             this.editor = diffEditor;
@@ -138,25 +152,41 @@ const useStylesTransitionList = makeStyles((theme) => ({
 
 const TransitionList = (props) => {
     const classes = useStylesTransitionList();
-    const {windowSize, monaco, tileRefs, selectTile, tilesVisibility, handleTilesVisibilityChange} = props;
+    const {
+        windowSize,
+        monaco,
+        tileRefs,
+        selectTile,
+        tilesVisibility,
+        handleTilesVisibilityChange
+    } = props;
     return (
         <div className={classes.root}>
-            <ImageList className={classes.gridList} cols={windowSize} spacing={16}>
+            <ImageList className={classes.gridList} cols={windowSize}
+                       spacing={16}>
                 {props.tiles.map((tile, i) =>
                     (tilesVisibility[i] && tilesVisibility[i].hidden ?
-                            <ImageListItem ref={tileRefs.current[i]} key={tile.id}
-                                          style={{position: 'relative', width: 48}}>
+                            <ImageListItem ref={tileRefs.current[i]}
+                                           key={tile.id}
+                                           style={{
+                                               position: 'relative',
+                                               width: 48
+                                           }}>
                                 <IconButton size={'small'}
                                             aria-label={`show '${tile.expression.text}' transition`}
                                             onClick={() => handleTilesVisibilityChange(i, {hidden: false})}
-                                            style={{position: 'absolute', bottom: 0}}
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: 0
+                                            }}
                                 >
                                     <MaximizeIcon className={classes.icon}/>
                                 </IconButton>
                             </ImageListItem>
                             :
-                            <ImageListItem ref={tileRefs.current[i]} key={tile.id}
-                                          onMouseOver={(ev) => selectTile(ev, i + 1)}>
+                            <ImageListItem ref={tileRefs.current[i]}
+                                           key={tile.id}
+                                           onMouseOver={(ev) => selectTile(ev, i + 1)}>
                                 <ViewEditor monaco={monaco}
                                             originalText={tile.dataTransition.from}
                                             modifiedText={tile.dataTransition.to}
@@ -176,9 +206,11 @@ const TransitionList = (props) => {
                                         title: classes.title,
                                     }}
                                     actionIcon={
-                                        <IconButton aria-label={`hide '${tile.expression.text}' transition`}
-                                                    onClick={() => handleTilesVisibilityChange(i, {hidden: true})}>
-                                            <MinimizeIcon className={classes.icon}/>
+                                        <IconButton
+                                            aria-label={`hide '${tile.expression.text}' transition`}
+                                            onClick={() => handleTilesVisibilityChange(i, {hidden: true})}>
+                                            <MinimizeIcon
+                                                className={classes.icon}/>
                                         </IconButton>
                                     }
                                 />
@@ -240,17 +272,21 @@ TransitionSlider.defaultProps = {
 const PointOfView = (props) => {
     const {monaco, tiles} = props;
     const tilesLength = tiles.length;
-    const tileRefs = React.useRef([]);
+    const tileRefs = useRef([]);
     const [selectedTile, setSelectedTile] = useState(tilesLength);
     const [tilesVisibility, handleTilesVisibilityChange] = useState({});
     if (tileRefs.current.length !== tilesLength) {
-        tileRefs.current = Array(tilesLength).fill().map((_, i) => tileRefs.current[i] || React.createRef());
+        tileRefs.current = Array(tilesLength).fill().map((_, i) => tileRefs.current[i] || createRef());
     }
 
     const selectTile = (ev, i) => {
         setSelectedTile(i);
         selectedTile !== i && tileRefs.current && tileRefs.current[i - 1] &&
-        tileRefs.current[i - 1].current.scrollIntoView({behavior: "smooth", block: "start", inline: "center"});
+        tileRefs.current[i - 1].current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "center"
+        });
     };
     return <Container width={"md"}>
         <TransitionList tiles={tiles} monaco={monaco}
@@ -263,7 +299,8 @@ const PointOfView = (props) => {
                             handleTilesVisibilityChange(newState);
                         }}
         />
-        <TransitionSlider value={selectedTile} max={tiles.length} onChangeCommitted={selectTile}/>
+        <TransitionSlider value={selectedTile} max={tiles.length}
+                          onChangeCommitted={selectTile}/>
     </Container>;
 
 }

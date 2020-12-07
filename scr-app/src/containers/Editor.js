@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {PureComponent, createRef} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from "prop-types";
 import debounce from 'lodash/debounce';
@@ -80,11 +80,11 @@ const styles = theme => ({
     },
 });
 
-class Editor extends Component {
+class Editor extends PureComponent {
 
     constructor(props) {
         super(props);
-        this.editorDiv = React.createRef();
+        this.editorDiv = createRef();
         this.state = {
             focused: false,
             settingsOpen: false,

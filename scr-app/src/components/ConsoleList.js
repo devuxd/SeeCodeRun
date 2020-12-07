@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useCallback} from 'react';
+import React, {useState, useEffect, useMemo, useCallback, forwardRef} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
 import {darken, alpha, lighten} from '@material-ui/core/styles/colorManipulator';
@@ -167,7 +167,7 @@ function createData(id, entry) {
     return {id, entry};
 }
 
-const RowContainer = React.forwardRef(
+const RowContainer = forwardRef(
     ({isSticky, classes, children}, ref) =>
         (
             <TableRow
@@ -281,8 +281,8 @@ function WindowedTable(props) {
         heightDelta,
         autoScroll,
     } = props;
-    const [stickyIndices, setStickyIndices] = React.useState([]);
-    const findChunks = React.useMemo(
+    const [stickyIndices, setStickyIndices] = useState([]);
+    const findChunks = useMemo(
         () => configureMatchesFilter(searchState),
         [searchState]
     );
