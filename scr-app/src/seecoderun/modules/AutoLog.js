@@ -1,10 +1,8 @@
-// import {TraceTypes, setAutoLogNames, toAst, wrapCallExpressions, wrapFunctionExpressions} from "../../utils/JsCodeShiftUtils";
 import isString from 'lodash/isString';
 import AutoLogShift from './AutoLogShift';
 import Trace from './Trace';
 
 import {decodeBabelError} from "../../utils/scrUtils";
-// import GraphicalMapper from "../../containers/GraphicalMapper";
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,

@@ -7,7 +7,9 @@ import Paper from '@material-ui/core/Paper';
 import {alpha} from '@material-ui/core/styles/colorManipulator';
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
-    const value = `${'0'.repeat(max.toString().length - aValue.toString().length)}${aValue}`;
+    const value = `${
+        '0'.repeat(max.toString().length - aValue.toString().length)
+    }${aValue}`;
     return `${value}/${max}`;
 };
 
@@ -21,13 +23,17 @@ const PrimarySlider = withStyles(theme => ({
         marginTop: -3,
         marginLeft: -4,
         '&:hover, &$focusVisible': {
-            boxShadow: `0px 0px 0px 6px ${alpha(theme.palette.primary.main, 0.16)}`,
+            boxShadow: `0px 0px 0px 6px ${
+                alpha(theme.palette.primary.main, 0.16)
+            }`,
             '@media (hover: none)': {
                 boxShadow: 'none',
             },
         },
         '&$active': {
-            boxShadow: `0px 0px 0px 9px ${alpha(theme.palette.primary.main, 0.16)}`,
+            boxShadow: `0px 0px 0px 9px ${
+                alpha(theme.palette.primary.main, 0.16)
+            }`,
         },
     },
     active: {},
@@ -44,13 +50,17 @@ const SecondarySlider = withStyles(theme => ({
         marginTop: -3,
         marginLeft: -4,
         '&:hover, &$focusVisible': {
-            boxShadow: `0px 0px 0px 6px ${alpha(theme.palette.secondary.main, 0.16)}`,
+            boxShadow: `0px 0px 0px 6px ${
+                alpha(theme.palette.secondary.main, 0.16)
+            }`,
             '@media (hover: none)': {
                 boxShadow: 'none',
             },
         },
         '&$active': {
-            boxShadow: `0px 0px 0px 9px ${alpha(theme.palette.secondary.main, 0.16)}`,
+            boxShadow: `0px 0px 0px 9px ${
+                alpha(theme.palette.secondary.main, 0.16)
+            }`,
         },
     },
     active: {},
@@ -93,7 +103,9 @@ const BranchNavigator = ({
             {hideLabel ?
                 null
                 : <Typography
-                    className={classes.text}>{formatBranchValue(value, max)}</Typography>
+                    className={classes.text}>
+                    {formatBranchValue(value, max)}
+                </Typography>
             }
             <CustomSlider
                 aria-label="branch navigator slider"

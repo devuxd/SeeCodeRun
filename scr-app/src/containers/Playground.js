@@ -53,7 +53,7 @@ const Playground = ({
                         isGraphicalLocatorActive,
                         handleChangeGraphicalLocator,
                         activatePlayground,
-                        onResize,
+                        resizeListener,
                         classes,
                         documentObj = document
                     }) => {
@@ -64,9 +64,9 @@ const Playground = ({
     const [visualElements, setVisualElements] = useState([]);
 
     useEffect(() => {
-        onResize && onResize(setIsResizing);
-        return () => onResize && onResize(null);
-    }, [onResize, setIsResizing]);
+        resizeListener && resizeListener(setIsResizing);
+        return () => resizeListener?.(null);
+    }, [resizeListener, setIsResizing]);
 
     const iFrameRefHandler = useMemo(() => ({
         removeIframe: () => {
@@ -196,8 +196,10 @@ const Playground = ({
         isAutoLogActive]);
 
     const onResizeFalse = useCallback(
-        () => (onResize && onResize(null)),
-        [onResize]
+        () => {
+            setIsResizing(false);
+        },
+        [setIsResizing]
     );
 
     useEffect(() => {
@@ -213,6 +215,8 @@ const Playground = ({
         iFrameRefHandler.removeIframe();
         bundle && updateIframe(bundle);
     }, [key, iFrameRefHandler, updateIframe, bundle]);
+
+    const isShowBackDrop = isResizing;
 
     return activatePlayground &&
         (<>
@@ -232,7 +236,7 @@ const Playground = ({
                 className={classes.iframeContainer}
             />
             {
-                isResizing &&
+                isShowBackDrop &&
                 <div className={classes.resizeBackdrop}
                      onClick={onResizeFalse}/>
             }

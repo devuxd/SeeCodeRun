@@ -64,7 +64,9 @@ export const VisualQueryManager = {
     onChange: (els, keys, event) => {
     },
     isGraphicalElementSelected:
-        domEl => VisualQueryManager.visualQuery.includes(domEl),
+        (domEl, visualQuery) => (
+            visualQuery || VisualQueryManager.visualQuery
+        ).includes(domEl),
 };
 export const d = {
     //Matches PointOfView.createPointOfViewTile(...)
@@ -279,10 +281,7 @@ class Pastebin extends PureComponent {
         });
     };
 
-    onGridResize = (isResizing) => {
-        const {onResize} = this;
-        onResize && onResize(isResizing);
-    }
+    onGridResize = (isResizing) => this.resizeListener?.(isResizing);
 
     handleChangeDebugLoading = (isLoading) => {
         this.setState({isDebugLoading: isLoading});
@@ -348,7 +347,9 @@ class Pastebin extends PureComponent {
         this.handleAutomaticLayoutThrottled();
     };
 
-    setOnResize = onResize => (this.onResize = onResize);
+    setResizeListener = resizeListener => (
+        this.resizeListener = resizeListener
+    );
 
     onResizeStop = (layout, oldItem, newItem
                     /*, placeholder, e, element*/) => {
@@ -854,8 +855,7 @@ class Pastebin extends PureComponent {
         } = this.state;
 
 
-        VisualQueryManager.visualQuery =
-            (searchState && searchState.visualQuery) || [];
+        VisualQueryManager.visualQuery = searchState?.visualQuery || [];
 
 
         const rowHeight =
@@ -1002,7 +1002,7 @@ class Pastebin extends PureComponent {
                                     handleChangeGraphicalLocator={
                                         this.handleChangeGraphicalLocator
                                     }
-                                    onResize={this.setOnResize}
+                                    resizeListener={this.setResizeListener}
                                 />
                                 {hoveredCellKey === 'playgroundContainer' ?
                                     null : <TvIcon className={classes.icon}/>}

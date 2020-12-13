@@ -18,7 +18,7 @@ import {
     pulseStartOutline
 } from "../components/UI";
 
-const styles = () => ({
+const styles = (theme) => ({
     locator: {
         position: 'absolute',
         margin: 0,
@@ -80,17 +80,22 @@ const GraphicalMapper = (({
                               isGraphicalLocatorActive,
                               visualElements,
                               containerRef,
-                              // handleChangeGraphicalLocator,
-                              // searchState,
+                              handleChangeGraphicalLocator,
+                              searchState,
                           }) => {
     VisualQueryManager.visualElements = visualElements;
 
-    // const {visualQuery} = searchState;
+    const {visualQuery} = searchState;
     const [portalEl] = useState(() => document.createElement('div'));
     useLayoutEffect(() => {
         document.body.appendChild(portalEl);
         return () => document.body.removeChild(portalEl);
     }, [portalEl]);
+
+    const handleClose = useCallback(() => {
+            isGraphicalLocatorActive && handleChangeGraphicalLocator();
+        }
+        , [handleChangeGraphicalLocator, isGraphicalLocatorActive]);
 
     const locators = useMemo(() => {
             const locatedEls = [];
@@ -100,7 +105,9 @@ const GraphicalMapper = (({
                     return;
                 }
                 const isSelected =
-                    VisualQueryManager.isGraphicalElementSelected(domEl);
+                    VisualQueryManager.isGraphicalElementSelected(
+                        domEl, visualQuery
+                    );
 
                 if (!isGraphicalLocatorActive && !isSelected) {
                     return;
@@ -161,8 +168,8 @@ const GraphicalMapper = (({
                             }
                         );
                         return (() => (
-                                (resizeObserver?.unobserve(domEl))
-                                || (mutationObserver?.disconnect())
+                                (resizeObserver?.unobserve?.(domEl))
+                                || (mutationObserver?.disconnect?.())
                             )
                         );
                     }, [resizeObserver, mutationObserver]);
@@ -254,13 +261,21 @@ const GraphicalMapper = (({
             return locatedEls;
         }
         , [
+            visualQuery,
             visualElements,
             isGraphicalLocatorActive,
             containerRef,
             classes,
         ]);
 
-    return ReactDOM.createPortal(<div>{locators}</div>, portalEl);
+    return ReactDOM.createPortal(
+        <div
+            onClick={handleClose}
+        >
+            {locators}
+        </div>,
+        portalEl
+    );
 
 });
 

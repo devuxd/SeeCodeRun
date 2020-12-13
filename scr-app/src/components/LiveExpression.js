@@ -1,18 +1,12 @@
 import React, {Component, memo} from 'react';
 import PropTypes from 'prop-types';
 import Popover from '@material-ui/core/Popover';
-// import Button from '@material-ui/core/Button';
 import JSAN from 'jsan';
 import isString from 'lodash/isString';
 import debounce from 'lodash.debounce';
 
 import ObjectExplorer, {hasOwnTooltip} from './ObjectExplorer';
 import BranchNavigator from "./BranchNavigator";
-
-// import GraphicalQuery from '../components/GraphicalQuery';
-// import {VisualQueryManager} from "../containers/Pastebin";
-
-// const {getVisualIdsFromRefs} = VisualQueryManager;
 
 const defaultCloseDelay = 1000;
 
@@ -28,7 +22,7 @@ const handleOpen = (anchorEl, prevState) => {
     clearTimeout(timeout);
     if (anchorEl) {
         return {
-            anchorEl: anchorEl,
+            anchorEl,
             timeout: null,
         };
     } else {
@@ -148,7 +142,8 @@ class LiveExpression extends Component {
     getDatum = (data) => {
         const {sliderRange} = this.state;
         let datum, outputRefs = [];
-        let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];//, rangeEnd = sliderRange[1];
+        let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];
+        //, rangeEnd = sliderRange[1];
 
         if (data) {
             if (data.length) {
@@ -158,7 +153,9 @@ class LiveExpression extends Component {
                 rangeStart = Math.min(rangeStart, sliderMax);
                 // rangeStart = Math.min(rangeStart, sliderMax);
                 //   rangeEnd = Math.min(rangeEnd, sliderMax);
-                datum = isString(data[rangeStart - 1].data) ? JSAN.parse(data[rangeStart - 1].data) : data[rangeStart - 1].data;
+                datum = isString(data[rangeStart - 1].data) ?
+                    JSAN.parse(data[rangeStart - 1].data)
+                    : data[rangeStart - 1].data;
                 if (data[rangeStart - 1].outputRefs) {
                     outputRefs = data[rangeStart - 1].outputRefs;
                 }
@@ -172,7 +169,8 @@ class LiveExpression extends Component {
     getBranchDatum = (data) => {
         const {sliderRange} = this.state;
         let datum;
-        let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];//, rangeEnd = sliderRange[1];
+        let sliderMin = 0, sliderMax = 0, rangeStart = sliderRange[0];
+        //, rangeEnd = sliderRange[1];
 
         if (data) {
             if (data.length) {
@@ -191,7 +189,7 @@ class LiveExpression extends Component {
     };
 
     updateSliderMax = debounce((sliderMax) => {
-        if (this.state.navigated && this.state.data && sliderMax <= this.state.data.length) {
+        if (this.state.navigated && sliderMax <= this.state.data?.length) {
             return;
         }
         this.setState({sliderRange: [sliderMax + 1]});
@@ -206,7 +204,11 @@ class LiveExpression extends Component {
                 // clearTimeout(this.tm);
                 // this.tm =setTimeout(
                 //     ()=>
-                branchNavigatorChange(data[change], change, change - 1 > -1 ? data[change - 1] : 0)
+                branchNavigatorChange(
+                    data[change],
+                    change,
+                    change - 1 > -1 ? data[change - 1] : 0
+                )
                 // ,1500);
             }
         };
@@ -233,12 +235,10 @@ class LiveExpression extends Component {
         // const {anchorEl: currentAnchorEl} = this.state;
         // this.anchorEl = currentAnchorEl ||this.anchorEl;
         // const {anchorEl} = this;
-        const isActive = !this.open &&
-            !(!!anchorEl &&
-                (isBranchNavigator &&
-                    !(isBranchNavigator && data && data.length > 1)
-                )
-            );
+        const shouldBeActive = !!anchorEl &&
+            (!!isBranchNavigator &&
+                !(isBranchNavigator && data && data.length > 1));
+        const isActive = this.open || shouldBeActive;
         // this.open = isActive; // debug
         const {
             datum,
@@ -249,13 +249,15 @@ class LiveExpression extends Component {
         } = isBranchNavigator ?
             this.getBranchDatum(data) : this.getDatum(data);
         const handleSliderChange = isBranchNavigator ?
-            this.configureHandleSliderChange(branchNavigatorChange) : this.handleSliderChange;
+            this.configureHandleSliderChange(branchNavigatorChange)
+            : this.handleSliderChange;
         const origin = isBranchNavigator ? branchPopoverOrigin : popoverOrigin;
         // if (outputRefs && outputRefs.length) {
         //     console.log('or', data, outputRefs);
         // }
         const isPop = hasOwnTooltip(datum);
-        const explorer = isBranchNavigator ? null // todo function params vs arguments + return explorer
+        // todo function params vs arguments + return explorer
+        const explorer = isBranchNavigator ? null
             : <div className={classes.objectExplorer}>
                 <ObjectExplorer
                     expressionId={expressionId}
@@ -270,9 +272,11 @@ class LiveExpression extends Component {
             overflow: 'auto',
             minWidth: branchNavigatorChange ? 200 : 50
         };
-        const defaultValue = isBranchNavigator ? sliderRange[0] : rangeStart;//[rangeStart, rangeEnd,];
+        const defaultValue = isBranchNavigator ? sliderRange[0] : rangeStart;
+        //[rangeStart, rangeEnd,];
 
-        // console.log('bn',datum, sliderMin, sliderMax, rangeStart, outputRefs);
+        // console
+        // .log('bn',datum, sliderMin, sliderMax, rangeStart, outputRefs);
 
         return (
             isBranchNavigator && (sliderMin > 1 || sliderMax > 1) ?

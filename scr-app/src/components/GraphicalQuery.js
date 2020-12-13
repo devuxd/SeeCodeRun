@@ -1,4 +1,4 @@
-import React, {memo} from 'react';
+import React, {memo, useCallback} from 'react';
 import PropTypes from 'prop-types';
 
 import {withStyles} from '@material-ui/core/styles';
@@ -61,21 +61,25 @@ const GraphicalQuery = ({
                             outputRefs,
                             visualIds,
                             selected,
-                            color,
+                            color= 'secondary',
                             ...rest
                         }) => {
+    const handleClick = useCallback((event) => {
+            event.stopPropagation();
+            VisualQueryManager
+                .onChange(outputRefs, visualIds, 'select')
+        },
+        [outputRefs, visualIds]);
+
     return (
-        <Fab color={color || 'secondary'}
+        <Fab color={color}
              variant="extended"
              aria-label={`visual element number ${visualIds}`}
              elevation={0}
-             className={selected ?
-                 classes.buttonRootSelected : classes.buttonRoot
+             className={
+                 selected ? classes.buttonRootSelected : classes.buttonRoot
              }
-             onClick={() => {
-                 VisualQueryManager
-                     .onChange(outputRefs, visualIds, 'select');
-             }}
+             onClick={handleClick}
              {...rest}
         >
             {`${visualIds}`}
