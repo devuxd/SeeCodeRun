@@ -1,3 +1,6 @@
 [submodule "packages/syntax-highlighter"]
 	path = packages/syntax-highlighter
 	url = https://github.com/luminaxster/syntax-highlighter
+[submodule "packages/react-inspector"]
+    	path = packages/react-inspector
+    	url = https://github.com/luminaxster/react-inspector
