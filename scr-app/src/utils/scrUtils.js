@@ -1,8 +1,8 @@
-import {of, fromEvent, merge} from 'rxjs';
+import {fromEvent, merge, of} from 'rxjs';
 import {mapTo} from 'rxjs/operators';
 import isNumber from 'lodash/isNumber';
-// import debounce from 'lodash/debounce';
-// import isString from 'lodash/isString';
+import matchSorterMatch from 'autosuggest-highlight/match';
+import Fuse from 'fuse.js';
 import AppleKeyboardOptionIcon from 'mdi-material-ui/AppleKeyboardOption';
 import CallMadeIcon from '@material-ui/icons/CallMade';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
@@ -15,6 +15,10 @@ import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
 import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
 import CodeEqualIcon from 'mdi-material-ui/CodeEqual';
 
+
+export const fuseMatch = (words, pattern, options) => (
+    new Fuse(words, options)
+).search(pattern);
 
 export const configureLocalMemo = (
     currentMemo = null, prevDeps = []
@@ -41,11 +45,11 @@ export const isNode = (val, win = window) => {
             (typeof val.nodeName === 'string')
 };
 
-export const configureCreateMonacoRange = (monaco) => {
-    return (startLineNumber, startColumn, endLineNumber, endColumn) => {
-        return new monaco.Range(startLineNumber, startColumn, endLineNumber, endColumn);
-    };
-};
+export const configureCreateMonacoRange = (monaco) => (
+    startLineNumber, startColumn, endLineNumber, endColumn
+) => new monaco.Range(
+    startLineNumber, startColumn, endLineNumber, endColumn
+);
 
 export const configureMonacoRangeToClassName = (prefix = 'r') => {
     return (monacoRange) => {
@@ -57,11 +61,15 @@ export const configureMonacoRangeToClassName = (prefix = 'r') => {
     };
 };
 
-//https://github.com/xyc/react-inspector/blob/master/src/object-inspector/ObjectInspector.js
+//https://github.com/xyc/react-inspector/blob/master/src/
+// object-inspector/ObjectInspector.js
 export const createObjectIterator = (showNonenumerable, sortObjectKeys) => {
     // return objectIterator;
     return function* (data) {
-        const shouldIterate = (typeof data === 'object' && data !== null) || typeof data === 'function';
+        const shouldIterate =
+            (typeof data === 'object' && data !== null) ||
+            typeof data === 'function';
+
         if (!shouldIterate) return;
 
         // iterable objects (except arrays)
@@ -98,9 +106,14 @@ export const createObjectIterator = (showNonenumerable, sortObjectKeys) => {
                         data: propertyValue,
                     };
                 } else if (showNonenumerable) {
-                    // To work around the error (happens some time when propertyName === 'caller' || propertyName === 'arguments')
-                    // 'caller' and 'arguments' are restricted function properties and cannot be accessed in this context
-                    // http://stackoverflow.com/questions/31921189/caller-and-arguments-are-restricted-function-properties-and-cannot-be-access
+                    // To work around the error (happens some time when
+                    // propertyName === 'caller' ||
+                    // propertyName === 'arguments')
+                    // 'caller' and 'arguments' are restricted function
+                    // properties and cannot be accessed in this context
+                    // http://stackoverflow.com/questions/31921189/
+                    // caller-and-arguments-are-restricted-
+                    // function-properties-and-cannot-be-access
                     let propertyValue;
                     try {
                         propertyValue = data[propertyName];
@@ -120,7 +133,10 @@ export const createObjectIterator = (showNonenumerable, sortObjectKeys) => {
 
             // [[Prototype]] of the object: `Object.getPrototypeOf(data)`
             // the property name is shown as "__proto__"
-            if (showNonenumerable && data !== Object.prototype /* already added */) {
+            if (
+                showNonenumerable && data !== Object.prototype
+                /* already added */
+            ) {
                 yield {
                     name: '__proto__',
                     data: Object.getPrototypeOf(data),
@@ -135,7 +151,8 @@ export const hasChildNodes = (data, dataIterator) => {
     return !dataIterator(data).next().done;
 };
 
-//https://github.com/xyc/react-inspector/blob/master/src/dom-inspector/DOMNodePreview.js
+//https://github.com/xyc/react-inspector/blob/master/src/
+// dom-inspector/DOMNodePreview.js
 const newDOMElement = (element) => {
     const {tagName, attributes, style, dataset, children} = element;
     const domData = new ElementNode();
@@ -166,7 +183,8 @@ const newDOMElement = (element) => {
     if (style) {
         let styleProps = {};
         for (const prop in style) {
-            (isNumber(style[prop]) || style[prop]) && (styleProps[prop] = style[prop]);
+            (isNumber(style[prop]) ||
+                style[prop]) && (styleProps[prop] = style[prop]);
         }
         domData.style = styleProps;
     }
@@ -187,7 +205,8 @@ const nameByNodeType = {
     7: 'PROCESSING_INSTRUCTION_NODE',
     8: 'COMMENT_NODE',
     9: 'DOCUMENT_NODE',
-    10: 'DOCUMENT_TYPE_NODE', // http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript
+    10: 'DOCUMENT_TYPE_NODE', // http://stackoverflow.com/questions/6088972/
+    // get-doctype-of-an-html-as-string-with-javascript
     11: 'DOCUMENT_FRAGMENT_NODE',
 };
 
@@ -270,13 +289,25 @@ export const configureFindChunks =
         autoEscape,
         caseSensitive,
         isExactWord,
+        disableAdvanceMatching,
+        useMatchSorter
     ) =>
         (({
               searchWords,
               textToHighlight,
               sanitize = identity,
+              minMatchCharLengthDelta = 2
           }) => {
+
             textToHighlight = sanitize(textToHighlight);
+
+            if (!textToHighlight) {
+                return [];
+            }
+
+            const textToHighlightMin =
+                textToHighlight.length - minMatchCharLengthDelta;
+
             return searchWords
                 .filter(searchWord => searchWord) // Remove empty words
                 .reduce((chunks, searchWord) => {
@@ -285,9 +316,70 @@ export const configureFindChunks =
                     if (autoEscape) {
                         searchWord = escapeRegExpFn(searchWord)
                     }
-                    const finalSearchWord = isExactWord ? `(^${searchWord}$)|([\\W|\\s]${searchWord}$)|(^${searchWord}[\\W|\\s])|([\\W|\\s]${searchWord}[\\W|\\s])` : searchWord;
 
-                    const regex = new RegExp(finalSearchWord, caseSensitive ? 'g' : 'gi')
+                    if (!disableAdvanceMatching &&
+                        autoEscape && !isExactWord) {
+
+                        if (useMatchSorter) {
+                            if (!caseSensitive) {
+                                const matches = matchSorterMatch(
+                                    textToHighlight, searchWord
+                                );
+                                matches.forEach(entry => chunks.push(
+                                    {start: entry[0], end: entry[1]}
+                                ))
+                                return chunks;
+                            }
+
+                        } else {
+                            const options = {
+                                isCaseSensitive: caseSensitive,
+                                // includeScore: false,
+                                shouldSort: false,
+                                includeMatches: true,
+                                findAllMatches: true,
+                                minMatchCharLength: Math.max(
+                                    Math.min(
+                                        (searchWord.length -
+                                            minMatchCharLengthDelta),
+                                        textToHighlightMin
+                                    ),
+                                    1
+                                ),
+                                // location: 0,
+                                // threshold: 0.6,
+                                // distance: 100,
+                                // useExtendedSearch: false,
+                                ignoreLocation: true,
+                                // ignoreFieldNorm: false,
+                            };
+                            const fuseResults = fuseMatch(
+                                [textToHighlight],
+                                searchWord,
+                                options
+                            );
+                            fuseResults.forEach(
+                                item => item.matches?.forEach(
+                                    match => match.indices?.forEach(
+                                        entry => chunks.push(
+                                            {start: entry[0], end: entry[1] + 1}
+                                        )
+                                    )));
+                            return chunks;
+                        }
+                    }
+
+
+                    const finalSearchWord =
+                        isExactWord ?
+                            `(^${searchWord}$)|([\\W|\\s]${searchWord}$)|(^${
+                                searchWord
+                            }[\\W|\\s])|([\\W|\\s]${searchWord}[\\W|\\s])`
+                            : searchWord;
+
+                    const regex = new RegExp(
+                        finalSearchWord, caseSensitive ? 'g' : 'gi'
+                    );
 
                     let match;
                     while ((match = regex.exec(textToHighlight))) {
@@ -298,14 +390,15 @@ export const configureFindChunks =
                             chunks.push({start, end})
                         }
 
-                        // Prevent browsers like Firefox from getting stuck in an infinite loop
-                        // See http://www.regexguru.com/2008/04/watch-out-for-zero-length-matches/
+                        // Prevent browsers like Firefox from
+                        // getting stuck in an infinite loop
+                        // See http://www.regexguru.com/
+                        // 2008/04/watch-out-for-zero-length-matches/
                         // eslint-disable-next-line eqeqeq
                         if (match.index == regex.lastIndex) {
                             regex.lastIndex++
                         }
                     }
-                    // console.log(finalSearchWord, caseSensitive, searchWords, textToHighlight, chunks);
                     return chunks;
                 }, []);
         });
@@ -371,7 +464,9 @@ export const mapUIconFromExpressionType = (expressionType) => {
     }
 };
 
-export const decodeBabelError = (babelError = '', offsetAfterDivider = 2) => {
+export const decodeBabelError = (
+    babelError = '', offsetAfterDivider = 2
+) => {
     const lines = babelError.message.split('\n');
     const errorInfo = lines.reduce((location, line, i) => {
         if (location.found) {
@@ -381,13 +476,20 @@ export const decodeBabelError = (babelError = '', offsetAfterDivider = 2) => {
         if (indicatorColumn > -1) {
             const dividerColumn = line.indexOf('|');
             if (dividerColumn > -1 && indicatorColumn < dividerColumn) {
-                const lineNumber = parseInt(line.substring(indicatorColumn + 1, dividerColumn).trim(), 10);
+                const lineNumber = parseInt(
+                    line.substring(indicatorColumn + 1, dividerColumn).trim(),
+                    10
+                );
                 if (!isNaN(lineNumber)) {
                     location.lineNumber = lineNumber;
                     const nextLineDividerColumn = lines[i + 1].indexOf('|');
                     const rawColumn = lines[i + 1].indexOf('^');
                     if (nextLineDividerColumn < rawColumn) {
-                        location.column = rawColumn - nextLineDividerColumn - offsetAfterDivider; //-#-|--code
+                        location.column = (
+                            rawColumn
+                            - nextLineDividerColumn
+                            - offsetAfterDivider
+                        ); //-#-|--code
                         location.found = true;
                     }
                 }
@@ -399,65 +501,84 @@ export const decodeBabelError = (babelError = '', offsetAfterDivider = 2) => {
     return errorInfo;
 };
 
-// const customFirepadHeadlessMonacoSync = (fireco, firecoPad, editorId, editorText) => {
-//     firecoPad.headlessFirepad = new fireco.Firepad.Headless(firecoPad.firebaseRef);
-//     firecoPad.preventStarvation = debounce(() => {
-//         firecoPad.mutex = false;
-//     }, 5000);
-//
-//     firecoPad.getFirecoText = () => firecoPad.headlessFirepad.getText((text) => {
-//         firecoPad.isInit = true;
-//         this.setEditorText(editorId, text);
-//     });
-//     firecoPad.getFirecoTextDebounced = debounce(firecoPad.getFirecoText, 50, {maxWait: 100});
-//
-//     firecoPad.setFirecoText = (text, isChain) => {
-//         // Prevents Firepad mutex starvation when Firebase is not connected.
-//         firecoPad.preventStarvation();
-//
-//         if (firecoPad.mutex && !isChain) {
-//             // chains all pending editor changes
-//             firecoPad
-//                 .nextSetFirecoTexts
-//                 .unshift(
-//                     () => firecoPad.setFirecoText(null, true)
-//                 );
-//             return;
-//         }
-//
-//         firecoPad.mutex = true;
-//         firecoPad.headlessFirepad.setText(text || firecoPad.monacoEditor.getValue(), (/*error, committed*/) => {
-//             if (firecoPad.nextSetFirecoTexts.length) {
-//                 // only send the most recent change, discard the rest
-//                 firecoPad.nextSetFirecoTexts[0]();
-//                 firecoPad.nextSetFirecoTexts = [];
-//             } else {
-//                 firecoPad.preventStarvation.cancel();
-//                 firecoPad.mutex = false;
-//             }
-//         });
-//     };
-//
-//     if (firecoPad.isNew && isString(editorText)) {
-//         firecoPad.setFirecoText(editorText);
-//         firecoPad.monacoEditor.setValue(editorText);
-//     } else {
-//         firecoPad.getFirecoText();
-//     }
-//
-//     firecoPad.firebaseRef
-//         .child('history')
-//         .limitToLast(1)
-//         .on('child_added', snapshot => {
-//             if (snapshot.exists() && firecoPad.headlessFirepad.firebaseAdapter_.userId_ !== snapshot.val().a) {
-//                 firecoPad.getFirecoTextDebounced();
-//             } else {
-//                 firecoPad.getFirecoTextDebounced.cancel();
-//             }
-//         });
-//
-//     firecoPad.onContentChanged = () => {
-//         firecoPad.setFirecoText();
-//     };
-// };
+/* // old firebase sync before Firepad supported Monaco.
+// After any change, it submits the whole file to the server instead of the edits
+const customFirepadHeadlessMonacoSync = (
+fireco, firecoPad, editorId, editorText
+) => {
+    firecoPad.headlessFirepad =
+    new fireco.Firepad.Headless(firecoPad.firebaseRef);
+    firecoPad.preventStarvation = debounce(() => {
+        firecoPad.mutex = false;
+    }, 5000);
+
+    firecoPad.getFirecoText =
+    () => firecoPad.headlessFirepad.getText((text) => {
+        firecoPad.isInit = true;
+        this.setEditorText(editorId, text);
+    });
+    firecoPad.getFirecoTextDebounced = debounce(
+    firecoPad.getFirecoText, 50, {maxWait: 100}
+    );
+
+    firecoPad.setFirecoText = (text, isChain) => {
+        // Prevents Firepad mutex starvation when Firebase is not connected.
+        firecoPad.preventStarvation();
+
+        if (firecoPad.mutex && !isChain) {
+            // chains all pending editor changes
+            firecoPad
+                .nextSetFirecoTexts
+                .unshift(
+                    () => firecoPad.setFirecoText(null, true)
+                );
+            return;
+        }
+
+        firecoPad.mutex = true;
+        firecoPad
+        .headlessFirepad
+        .setText(
+        text || firecoPad.monacoEditor.getValue()
+        , (
+        //error, committed
+        ) => {
+            if (firecoPad.nextSetFirecoTexts.length) {
+                // only send the most recent change, discard the rest
+                firecoPad.nextSetFirecoTexts[0]();
+                firecoPad.nextSetFirecoTexts = [];
+            } else {
+                firecoPad.preventStarvation.cancel();
+                firecoPad.mutex = false;
+            }
+        }
+        );
+    };
+
+    if (firecoPad.isNew && isString(editorText)) {
+        firecoPad.setFirecoText(editorText);
+        firecoPad.monacoEditor.setValue(editorText);
+    } else {
+        firecoPad.getFirecoText();
+    }
+
+    firecoPad.firebaseRef
+        .child('history')
+        .limitToLast(1)
+        .on('child_added', snapshot => {
+            if (snapshot.exists()
+            && firecoPad.headlessFirepad.firebaseAdapter_.userId_
+              !== snapshot.val().a
+            ) {
+                firecoPad.getFirecoTextDebounced();
+            } else {
+                firecoPad.getFirecoTextDebounced.cancel();
+            }
+        });
+
+    firecoPad.onContentChanged = () => {
+        firecoPad.setFirecoText();
+    };
+};
+*/
 

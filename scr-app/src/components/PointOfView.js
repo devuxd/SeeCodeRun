@@ -1,4 +1,4 @@
-import React, {PureComponent, createRef, useState, useRef} from 'react';
+import React, {createRef, PureComponent, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {makeStyles} from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
@@ -9,7 +9,7 @@ import ImageListItemBar from '@material-ui/core/ImageListItemBar';
 import IconButton from '@material-ui/core/IconButton';
 import MinimizeIcon from '@material-ui/icons/Minimize';
 import MaximizeIcon from '@material-ui/icons/Maximize';
-import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
+import {defaultSimpleMonacoOptions} from '../utils/monacoUtils';
 
 
 const createSimpleEditor = (reactRef, monaco, text, editorModelLanguage, editorOptions) => {

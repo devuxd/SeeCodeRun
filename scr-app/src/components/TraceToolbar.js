@@ -1,8 +1,8 @@
-import React, {useState, useEffect} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import debounce from 'lodash/debounce';
-import {withStyles} from '@material-ui/core/styles';
+
+import {lighten, withStyles} from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -21,15 +21,12 @@ import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CallMergeIcon from '@material-ui/icons/CallMerge';
 import CallSplitIcon from '@material-ui/icons/CallSplit';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import {lighten} from '@material-ui/core/styles/colorManipulator';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import TextField from '@material-ui/core/TextField';
 
-import {PastebinContext, VisualQueryManager} from '../containers/Pastebin';
+import {PastebinContext} from '../containers/Pastebin';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {searchStateChange} from '../redux/modules/pastebin';
-
-const {getVisualIdsFromRefs} = VisualQueryManager;
 
 const mapStateToProps = null,
     mapDispatchToProps = {
@@ -94,7 +91,7 @@ const toolbarStyles = theme => ({
     },
     inputProps: {
         paddingLeft: theme.spacing(0.5),
-        height: '3em',
+        height: '3rem',
     },
     itemCenter: {
         minWidth: 400,
@@ -108,9 +105,9 @@ const toolbarStyles = theme => ({
     },
 });
 
-const handleChangeExpand = debounce((setExpanded, expanded) => {
-    setExpanded(expanded);
-}, 300);
+// const handleChangeExpand = debounce((setExpanded, expanded) => {
+//     setExpanded(expanded);
+// }, 300);
 
 
 const inputFilterOptions = [
@@ -134,7 +131,7 @@ const inputFilterOptions = [
 
 function InputEndAdornment(props) {
     const {classes, searchState} = props;
-    const [expanded, setExpanded] = useState(false);
+    const [expanded /*, setExpanded*/] = useState(true);
     const {isCase, isWord, isRegExp, handleFilterClick} = searchState;
 
     const avatarClasses = {
@@ -146,12 +143,12 @@ function InputEndAdornment(props) {
     return (
         <InputAdornment>
                 <span className={classes.chipArray}
-                      onMouseEnter={
-                          () => handleChangeExpand(setExpanded, true)
-                      }
-                      onMouseLeave={
-                          () => handleChangeExpand(setExpanded, false)
-                      }
+                    // onMouseEnter={
+                    //     () => handleChangeExpand(setExpanded, true)
+                    // }
+                    // onMouseLeave={
+                    //     () => handleChangeExpand(setExpanded, false)
+                    // }
                 >
                     {!expanded ? hasSelected ?
                         <TuneIcon
@@ -275,12 +272,22 @@ function EnhancedToolbar(props) {
         selected,
         isPlaying, handleChangePlaying, timeline, liveTimeline,
         searchState, isSelectable, isAutoLogActive, handleChangeAutoExpand,
-        searchStateChange
+        searchStateChange,
+        formHelperTextProps = {
+            component: 'span',
+            margin: 'dense',
+        },
+        searchDelay = 500,
+        VisualQueryManager,
     } = props;
+    const {getVisualIdsFromRefs} = VisualQueryManager;
+
+    const {visualQuery, value, handleChangeValue, placeholder} = searchState;
+
     const numSelected = selected.length;
     const newEntries = liveTimeline.length - timeline.length;
     const playingIcon =
-        isPlaying ? <PauseIcon/> : newEntries ?
+        isPlaying ? <PauseIcon/> : newEntries > 0 ?
             <Badge
                 max={100}
                 badgeContent={newEntries}
@@ -297,41 +304,83 @@ function EnhancedToolbar(props) {
         searchStateChange(searchState)
     }, [searchState, searchStateChange]);
 
-    const graphicalQuery = (searchState.visualQuery
-    && searchState.visualQuery.length ?
-        <Chip
-            label={
-                <>
-                    {searchState.visualQuery.map(el => {
-                        const query = [el];
-                        const ids = getVisualIdsFromRefs(query);
-                        return (
-                            <GraphicalQuery
-                                key={JSON.stringify(ids)}
-                                outputRefs={query}
-                                visualIds={ids}
-                                selected={true}
-                            />)
-                    })}</>}
-            onDelete={() => {
-                VisualQueryManager
-                    .onChange(
-                        searchState.visualQuery,
-                        getVisualIdsFromRefs(searchState.visualQuery),
-                        'select'
-                    );
-            }}
-        />
-        :
-        <div
-            className={classes.textField}/>);
+
+    const graphicalQuery = useMemo(() => (
+            visualQuery?.length ?
+                <Chip
+                    label={
+                        <>
+                            {visualQuery.map(el => {
+                                const query = [el];
+                                const ids = getVisualIdsFromRefs(query);
+                                return (
+                                    <GraphicalQuery
+                                        key={JSON.stringify(ids)}
+                                        outputRefs={query}
+                                        visualIds={ids}
+                                        selected={true}
+                                    />)
+                            })}</>}
+                    onDelete={() => {
+                        VisualQueryManager
+                            .onChange(
+                                visualQuery,
+                                getVisualIdsFromRefs(visualQuery),
+                                'select'
+                            );
+                    }}
+                />
+                :
+                <div
+                    className={classes.textField}/>),
+        [visualQuery, classes]
+    );
+
+    const InputProps = useMemo(() => ({
+            autoComplete: 'off',
+            classes: {root: classes.inputProps},
+            startAdornment:
+                (
+                    <InputAdornment>
+                        <ResultsFilter {...props} />
+                        {graphicalQuery}
+                    </InputAdornment>
+                ),
+            endAdornment: <InputEndAdornment
+                {...{
+                    classes,
+                    searchState
+                }}
+            />
+        })
+        , [props, classes, searchState, graphicalQuery]);
+
+    const [searchValue, setSearchValue] = useState(value);
+
+    const onSearchValueChange = useCallback((event) => {
+        setSearchValue(event.target.value || '');
+    }, [setSearchValue]);
+
+    useEffect(() => {
+        if (searchValue !== value) {
+            const tid = setTimeout(
+                () => handleChangeValue(searchValue),
+                searchDelay
+            );
+            return () => clearTimeout(tid);
+        }
+    }, [searchValue, searchDelay, handleChangeValue]);
+
 
     return (
         <>
             <div className={classes.itemCenter}>
                 {numSelected > 0 ? null : <>
                     <Tooltip
-                        title={isPlaying ? 'Pause Updates' : newEntries > 99 ? `${newEntries} new updates` : 'Resume Updates'}
+                        title={
+                            isPlaying ? 'Pause Updates' : newEntries > 99 ?
+                                `${newEntries} new updates` : 'Resume Updates'
+                        }
                         placement={'bottom-end'}
                         enterDelay={300}
                     >
@@ -349,36 +398,22 @@ function EnhancedToolbar(props) {
                             margin="dense"
                             id="search"
                             label={null}
-                            placeholder="Search in trace, ex: color:blue"
+                            placeholder={placeholder}
                             type="search"
                             className={classes.textField}
-                            InputProps={{
-                                classes: {root: classes.inputProps},
-                                startAdornment:
-                                    (
-                                        <InputAdornment>
-                                            <ResultsFilter {...props} />
-                                            {graphicalQuery}
-                                        </InputAdornment>
-                                    ),
-                                endAdornment: <InputEndAdornment
-                                    {...{
-                                        classes,
-                                        searchState
-                                    }}
-                                />
-                            }}
-                            FormHelperTextProps={{
-                                component: 'span',
-                                margin: 'dense',
-                            }}
-                            value={searchState.value}
-                            onChange={searchState.handleChangeValue}
+                            InputProps={InputProps}
+                            FormHelperTextProps={formHelperTextProps}
+                            value={searchValue}
+                            onChange={onSearchValueChange}
                         />
                     )}
                 </div>
                 <Tooltip
-                    title={isAutoLogActive ? 'Deactivate Live Expressions' : 'Activate Live Expressions'}
+                    title={
+                        isAutoLogActive ?
+                            'Deactivate Live Expressions'
+                            : 'Activate Live Expressions'
+                    }
                     placement={'bottom-end'}
                     enterDelay={300}
                 >

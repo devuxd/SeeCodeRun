@@ -1,4 +1,4 @@
-import React, {PureComponent, createRef} from 'react';
+import React, {createRef, PureComponent} from 'react';
 import {compose} from 'redux';
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
@@ -12,11 +12,11 @@ import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
 import {getEditorIds} from '../seecoderun/AppManager';
-import {online$, end$} from '../utils/scrUtils';
+import {end$, online$} from '../utils/scrUtils';
 
 import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
-import withMediaQuery from "../utils/withMediaQuery";
+import withMediaQuery from '../utils/withMediaQuery';
 
 const mapStateToProps = ({
                              firecoReducer,
@@ -145,7 +145,7 @@ class Index extends PureComponent {
                 isChatToggled: event ?
                     !prevState.isChatToggled
                     : isChatToggled,
-                activateChatReason: event ?'user': 'system',
+                activateChatReason: event ? 'user' : 'system',
             })
         );
     };
@@ -233,10 +233,13 @@ class Index extends PureComponent {
         } = this;
 
         const {
-            classes,
+            classes, themes,
             url, pastebinId, shareUrl, authUser, isConnected, loadChat,
-            themeType, muiTheme, inspectorTheme, monacoTheme, switchTheme,
         } = props;
+
+        const {
+            themeType, switchTheme,
+        } = themes;
 
         const {
             isTopNavigationToggled, isChatToggled,
@@ -263,13 +266,8 @@ class Index extends PureComponent {
         };
 
         return (
-            <ThemeContext.Provider value={{
-                switchTheme,
-                themeType,
-                muiTheme,
-                inspectorTheme,
-                monacoTheme,
-            }}
+            <ThemeContext.Provider
+                value={themes}
             >
                 <SnackbarProvider maxSnack={3} preventDuplicate>
                     <NotificationCenter {...forwardedState}/>
@@ -278,6 +276,7 @@ class Index extends PureComponent {
                         ref={pastebinRef}
                     >
                         <Pastebin
+                            disableGridAutomaticEditorLayout={true}
                             isTopNavigationToggled={
                                 isTopNavigationToggled
                             }
@@ -297,7 +296,6 @@ class Index extends PureComponent {
                                 />
                             }
                         />
-
                         <Chat
                             isTopNavigationToggled={isTopNavigationToggled}
                             logoClick={logoClick}
@@ -320,30 +318,38 @@ class Index extends PureComponent {
         );
     }
 
+    handleChangeIsOnline = isOnline => {
+        if (this.state.isOnline !== isOnline) {
+            this.setState({isOnline});
+        }
+    };
+
     componentDidMount() {
         this.online$ = online$();
-        this.online$.subscribe(isOnline => {
-            if (this.state.isOnline !== isOnline) {
-                this.setState({isOnline});
-            }
-        });
+        this.online$subscriber = this.online$.subscribe(
+            this.handleChangeIsOnline
+        );
+
         this.switchMonacoTheme();
     }
 
     componentDidUpdate(prevProps) {
-        const {monacoTheme} = this.props;
+        const {themes} = this.props;
+        const {monacoTheme} = themes;
 
-        if (monacoTheme !== prevProps.monacoTheme) {
+        if (monacoTheme !== prevProps.themes.monacoTheme) {
             this.switchMonacoTheme();
         }
     }
 
     componentWillUnmount() {
-        this.online$ && this.online$.pipe(takeUntil(end$()));
+        this.online$subscriber.unsubscribe();
+        this.online$.pipe(takeUntil(end$()));
     }
 
     switchMonacoTheme = () => {
-        const {switchMonacoTheme, monacoTheme} = this.props;
+        const {themes, switchMonacoTheme} = this.props;
+        const {monacoTheme} = themes;
         switchMonacoTheme && switchMonacoTheme(monacoTheme);
     }
 }
@@ -353,6 +359,7 @@ Index.propTypes = {
     classes: PropTypes.object.isRequired,
     mediaQuery: PropTypes.string,
     switchMonacoTheme: PropTypes.func,
+    themes: PropTypes.object.isRequired,
 };
 
 const enhance =

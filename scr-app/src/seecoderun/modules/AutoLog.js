@@ -2,7 +2,7 @@ import isString from 'lodash/isString';
 import AutoLogShift from './AutoLogShift';
 import Trace from './Trace';
 
-import {decodeBabelError} from "../../utils/scrUtils";
+import {decodeBabelError} from '../../utils/scrUtils';
 
 export const SCRLoader = {
     headScript: `<script>var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,

@@ -1,16 +1,24 @@
 //Adapted from https://github.com/Flow11/zelda-botw-starter
-import React from "react";
+import React, {useMemo} from 'react';
 import classnames from 'classnames';
-import {motion} from "framer-motion";
+import {motion} from 'framer-motion';
 import {withStyles} from '@material-ui/core/styles';
 
 export const pulseOutlineAnimationId = `scr-a-graphicalHighlight-${Date.now()}`;
 export const outlineWidth = 1;
 export const contrastColor = '#FFBF47';
-export const backgroundColorAnimationId = `scr-a-buttonGraphicalHighLight-${Date.now()}`;
-export const pulseOutlineAnimation = `${pulseOutlineAnimationId} 0.75s 0.75s infinite`;
-export const pulseStartOutline = `${outlineWidth}px solid ${contrastColor}`;
-export const backgroundColorAnimation = `${backgroundColorAnimationId} 0.75s 0.75s infinite`;
+export const backgroundColorAnimationId =
+    `scr-a-buttonGraphicalHighLight-${Date.now()}`;
+export const pulseOutlineAnimation =
+    `${pulseOutlineAnimationId} 0.75s 0.75s infinite`;
+export const pulseStartOutline = {
+    outlineWidth,
+    outlineColor: contrastColor,
+    outlineStyle: 'solid',
+    outlineOffset: -1
+};
+export const backgroundColorAnimation =
+    `${backgroundColorAnimationId} 0.75s 0.75s infinite`;
 const triangleStyles = (theme) => ({
     '@global': {
         [`@keyframes ${backgroundColorAnimationId}`]: {
@@ -24,11 +32,11 @@ const triangleStyles = (theme) => ({
             },
         },
         [`@keyframes ${pulseOutlineAnimationId}`]: {
-            '0%': {
-                outline: pulseStartOutline,
-            },
+            '0%': pulseStartOutline,
             '100%': {
-                outline: `2px solid ${theme.palette.secondary.main}`
+                ...pulseStartOutline,
+                outlineWidth: 2,
+                outlineColor: theme.palette.secondary.main,
             },
         },
     },
@@ -112,106 +120,159 @@ const lineStyles = (theme) => ({
     }
 });
 
+const TrianglesBox = withStyles(triangleStyles)(
+    ({
+         classes,
+         travelValue = 1.25,
+         transition = {
+             repeat: Infinity,
+             repeatType: "mirror",
+             ease: "easeIn",
+             duration: 0.25,
+         },
+         transitions,
+     }) => {
+        const animateParams = useMemo(() => ({
+                topLeft: {
+                    rotate: [-45, -45],
+                    x: [0, -travelValue],
+                    y: [0, -travelValue],
+                },
+                topRight: {
+                    rotate: [45, 45],
+                    x: [0, travelValue],
+                    y: [0, -travelValue],
+                },
+                bottomLeft: {
+                    rotate: [45, 45],
+                    x: [0, -travelValue],
+                    y: [0, travelValue],
+                },
+                bottomRight: {
+                    rotate: [-45, -45],
+                    x: [0, travelValue],
+                    y: [0, travelValue]
+                },
+            }),
+            [travelValue]
+        );
 
-const Unit = ({animateParams, className}) => (
-    <motion.div
-        initial={false}
-        animate={animateParams}
-        transition={{
-            loop: Infinity,
-            ease: "easeIn",
-            duration: 1,
-        }}
-        className={className}
-    />
+        const classNames = useMemo(() => ({
+                topLeft: classnames(classes.triangleUp, classes.topLeft),
+                topRight: classnames(classes.triangleUp, classes.topRight),
+                bottomLeft:
+                    classnames(classes.triangleDown, classes.bottomLeft),
+                bottomRight:
+                    classnames(classes.triangleDown, classes.bottomRight),
+            }),
+            [classes]
+        );
+
+        return (
+            <>
+                <motion.div
+                    animate={animateParams.topLeft}
+                    className={classNames.topLeft}
+                    transition={transitions?.topLeft || transition}
+                />
+                <motion.div
+                    animate={animateParams.topRight}
+                    className={classNames.topRight}
+                    transition={transitions?.topRight || transition}
+                />
+                <motion.div
+                    animate={animateParams.bottomLeft}
+                    className={classNames.bottomLeft}
+                    transition={transitions?.bottomLeft || transition}
+                />
+                <motion.div
+                    animate={animateParams.bottomRight}
+                    className={classNames.bottomRight}
+                    transition={transitions?.bottomRight || transition}
+                />
+            </>
+        );
+    }
 );
 
-const TrianglesBox = withStyles(triangleStyles)
-(({
-      classes,
-      travelValue = 1,
-  }) => (
-    <>
-        <Unit
-            animateParams={{
-                rotate: "-45deg",
-                x: [0, -travelValue, 0],
-                y: [0, -travelValue, 0],
-            }}
-            className={classnames(classes.triangleUp, classes.topLeft)}
-        />
-        <Unit
-            animateParams={{
-                rotate: "45deg",
-                x: [0, travelValue, 0],
-                y: [0, -travelValue, 0],
-            }}
-            className={classnames(classes.triangleUp, classes.topRight)}
-        />
-        <Unit
-            animateParams={{
-                rotate: "45deg",
-                x: [0, -travelValue, 0],
-                y: [0, travelValue, 0],
-            }}
-            className={classnames(classes.triangleDown, classes.bottomLeft)}
-        />
-        <Unit
-            animateParams={{
-                rotate: "-45deg",
-                x: [0, travelValue, 0],
-                y: [0, travelValue, 0]
-            }}
-            className={classnames(classes.triangleDown, classes.bottomRight)}
-        />
-    </>
-));
+export const LinesBox = withStyles(lineStyles)(
+    ({
+         classes,
+         travelValue = 0,
+         scale = [1, 1.25, 1],
+         transition = {
+             repeat: Infinity,
+             repeatType: "mirror",
+             duration: 1
+         }
+     }) => {
+        const animateParams = useMemo(
+            () => ({
+                topLeft: {
+                    scale,
+                    rotate: [0, 0, 0],
+                    x: [0, -travelValue, 0],
+                    y: [0, -travelValue, 0]
+                },
+                topRight: {
+                    scale,
+                    rotate: [90, 90, 90],
+                    x: [0, travelValue, 0],
+                    y: [0, -travelValue, 0]
+                },
+                bottomLeft: {
+                    scale,
+                    rotate: [270, 270, 270],
+                    x: [0, -travelValue, 0],
+                    y: [0, travelValue, 0]
+                },
+                bottomRight: {
+                    scale,
+                    rotate: [180, 180, 180],
+                    x: [0, travelValue, 0],
+                    y: [0, travelValue, 0]
+                }
+            }),
+            [travelValue, scale]
+        );
 
-export const LinesBox = withStyles(lineStyles)
-(({
-      classes,
-      travelValue = 0,
-      scale = [0.8, 1.10, 0.8],
-  }) => (
-    <>
-        <Unit
-            animateParams={{
-                rotate: "0deg",
-                scale,
-                x: [0, -travelValue, 0],
-                y: [0, -travelValue, 0],
-            }}
-            className={classnames(classes.cornerLine, classes.topLeft)}
-        />
-        <Unit
-            animateParams={{
-                rotate: "90deg",
-                scale,
-                x: [0, travelValue, 0],
-                y: [0, -travelValue, 0],
-            }}
-            className={classnames(classes.cornerLine, classes.topRight)}
-        />
-        <Unit
-            animateParams={{
-                rotate: "-90deg",
-                scale,
-                x: [0, -travelValue, 0],
-                y: [0, travelValue, 0],
-            }}
-            className={classnames(classes.cornerLine, classes.bottomLeft)}
-        />
-        <Unit
-            animateParams={{
-                rotate: "-180deg",
-                scale,
-                x: [0, travelValue, 0],
-                y: [0, travelValue, 0]
-            }}
-            className={classnames(classes.cornerLine, classes.bottomRight)}
-        />
-    </>
-));
+        const classNames = useMemo(
+            () => ({
+                topLeft: classnames(classes.cornerLine, classes.topLeft),
+                topRight: classnames(classes.cornerLine, classes.topRight),
+                bottomLeft: classnames(classes.cornerLine, classes.bottomLeft),
+                bottomRight: classnames(classes.cornerLine, classes.bottomRight)
+            }),
+            [classes]
+        );
+
+        return (
+            <>
+                <motion.div
+                    layout
+                    animate={animateParams.topLeft}
+                    className={classNames.topLeft}
+                    transition={transition}
+                />
+                <motion.div
+                    animate={animateParams.topRight}
+                    className={classNames.topRight}
+                    transition={transition}
+                />
+                <motion.div
+                    animate={animateParams.bottomLeft}
+                    className={classNames.bottomLeft}
+                    transition={transition}
+                />
+                <motion.div
+                    animate={animateParams.bottomRight}
+                    className={classNames.bottomRight}
+                    transition={transition}
+                />
+            </>
+        );
+    }
+);
 
 export const FocusBox =
     (({

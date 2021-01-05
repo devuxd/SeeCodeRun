@@ -1,6 +1,6 @@
-import React, {PureComponent, createRef} from 'react';
+import React, {createRef, PureComponent} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
@@ -10,11 +10,14 @@ import Fab from '@material-ui/core/Fab';
 import SettingsIcon from '@material-ui/icons/SettingsSharp';
 import Skeleton from '@material-ui/core/Skeleton';
 
-import {monacoEditorContentChanged, mountEditorFulfilled} from "../redux/modules/monacoEditor";
-import {monacoEditorMouseEventTypes} from "../utils/monacoUtils";
-import {end$} from "../utils/scrUtils";
+import {
+    monacoEditorContentChanged,
+    mountEditorFulfilled
+} from "../redux/modules/monacoEditor";
+import {monacoEditorMouseEventTypes} from '../utils/monacoUtils';
+import {end$} from '../utils/scrUtils';
 import LiveExpressionStore from './LiveExpressionStore';
-import Notification from "../components/Notification";
+import Notification from '../components/Notification';
 
 const mapStateToProps = (state) => {
     const {updateBundleReducer, updatePlaygroundReducer} = state;
@@ -27,10 +30,13 @@ const mapStateToProps = (state) => {
 };
 const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
 
-export const defaultMonacoEditorLiveExpressionClassName = 'monaco-editor-live-expression';
+export const defaultMonacoEditorLiveExpressionClassName =
+    'monaco-editor-live-expression';
 const styles = theme => ({
     '@global': {
-        [`.${defaultMonacoEditorLiveExpressionClassName}.monaco-editor .cursors-layer > .cursor`]: {
+        [`.${
+            defaultMonacoEditorLiveExpressionClassName
+        }.monaco-editor .cursors-layer > .cursor`]: {
             maxHeight: 18,
             marginTop: 7,
         }
@@ -93,7 +99,6 @@ class Editor extends PureComponent {
             mouseEvent: null,
             currentContentWidgetId: null,
             forceHideWidgets: false,
-            automaticLayout: false,
             firecoPad: null,
             isEditorContentFirstRender: true,
         };
@@ -116,9 +121,12 @@ class Editor extends PureComponent {
 
     static getDerivedStateFromProps(props) {
         const {runtimeErrors, bundleErrors, editorId} = props;
-        if ((runtimeErrors && runtimeErrors[editorId]) || (bundleErrors && bundleErrors[editorId])) {
+        if ((runtimeErrors && runtimeErrors[editorId])
+            || (bundleErrors && bundleErrors[editorId])) {
             return {
-                errors: (runtimeErrors && runtimeErrors[editorId]) || (bundleErrors && bundleErrors[editorId]),
+                errors: (runtimeErrors &&
+                    runtimeErrors[editorId])
+                    || (bundleErrors && bundleErrors[editorId]),
             };
         } else {
             return {
@@ -126,23 +134,36 @@ class Editor extends PureComponent {
             };
         }
     }
-    setUpdateLiveExpressionWidgetWidths =updateLiveExpressionWidgetWidths =>
-    this.updateLiveExpressionWidgetWidths = updateLiveExpressionWidgetWidths;
+
+    setUpdateLiveExpressionWidgetWidths = updateLiveExpressionWidgetWidths => {
+        this.updateLiveExpressionWidgetWidths =
+            updateLiveExpressionWidgetWidths
+    };
 
     render() {
         const {
-            editorId, classes, observeLiveExpressions, liveExpressionStoreChange, isConsole
+            editorId,
+            classes,
+            observeLiveExpressions,
+            liveExpressionStoreChange,
+            isConsole
         } = this.props;
         const {
-            settingsOpen, errorSnackbarOpen, errors, firecoPad, isEditorContentFirstRender
+            settingsOpen,
+            errorSnackbarOpen,
+            errors,
+            firecoPad,
+            isEditorContentFirstRender
             //currentContentWidgetId,// forceHideWidgets
         } = this.state;
         const fabClassName =
             classNames(
-                classes.fab, errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown
+                classes.fab,
+                errorSnackbarOpen ? classes.fabMoveUp : classes.fabMoveDown
             );
         const notificationType = errors ? 'error' : ''
-        const isLoading = !isConsole && (isEditorContentFirstRender || !firecoPad);
+        const isLoading = !isConsole &&
+            (isEditorContentFirstRender || !firecoPad);
         return (<div className={classes.container}>
                 <div ref={this.editorDiv}
                      className={classes.editor}
@@ -195,12 +216,12 @@ class Editor extends PureComponent {
     firecoPadDidMount = (firecoPad) => {
         const {updateMonacoEditorLayout} = this.props;
         const {updateLiveExpressionWidgetWidths} = this;
-        const {monacoEditor} = firecoPad || {};
-        updateMonacoEditorLayout && updateMonacoEditorLayout(() => {
-            monacoEditor && monacoEditor.layout();
-        });
+        const {monacoEditor} = firecoPad;
+        updateMonacoEditorLayout && updateMonacoEditorLayout(
+            () => monacoEditor?.layout()
+        );
         updateLiveExpressionWidgetWidths &&
-        monacoEditor && monacoEditor.onDidScrollChange(updateLiveExpressionWidgetWidths);
+        monacoEditor?.onDidScrollChange(updateLiveExpressionWidgetWidths);
         this.setState({firecoPad});
     };
 
@@ -209,16 +230,24 @@ class Editor extends PureComponent {
     }
 
     componentDidMount() {
-        const {editorId, mountEditorFulfilled, monacoEditorContentChanged, isConsole} = this.props;
+        const {
+            editorId,
+            mountEditorFulfilled,
+            monacoEditorContentChanged,
+            isConsole
+        } = this.props;
+
         const {
             editorDiv, /*dispatchMouseEvents,*/
             firecoPadDidMount, monacoOptions, onEditorContentFirstRender
         } = this;
+
         mountEditorFulfilled(editorId, {
             editorDiv, monacoEditorContentChanged, /*dispatchMouseEvents,*/
             firecoPadDidMount, isConsole, monacoOptions,
             onEditorContentFirstRender
         });
+
         this.updateEditorDimensions();
     }
 
@@ -234,10 +263,12 @@ class Editor extends PureComponent {
     }
 
     componentWillUnmount() {
-        this.monacoEditorMouseEventsObservable && this.monacoEditorMouseEventsObservable.takeUntil(end$);
+        this.monacoEditorMouseEventsObservable
+        && this.monacoEditorMouseEventsObservable.takeUntil(end$);
         const {contentWidgetMouseEventSubjects} = this;
         contentWidgetMouseEventSubjects &&
-        (contentWidgetMouseEventSubjects.mouseMove.complete() || contentWidgetMouseEventSubjects.mouseLeave.complete());
+        (contentWidgetMouseEventSubjects.mouseMove.complete() ||
+            contentWidgetMouseEventSubjects.mouseLeave.complete());
 
         const {updateMonacoEditorLayout} = this.props;
         updateMonacoEditorLayout && updateMonacoEditorLayout(null);
@@ -247,7 +278,8 @@ class Editor extends PureComponent {
     dispatchMouseEvents = monacoEditorMouseEventsObservable => {
         const {observeMouseEvents} = this.props;
         if (monacoEditorMouseEventsObservable) {
-            this.monacoEditorMouseEventsObservable = monacoEditorMouseEventsObservable;
+            this.monacoEditorMouseEventsObservable =
+                monacoEditorMouseEventsObservable;
         }
 
         if (!observeMouseEvents
@@ -277,8 +309,8 @@ class Editor extends PureComponent {
             });
 
         this.contentWidgetMouseEventSubjects = contentWidgetMouseEventSubjects;
-
-        this.monacoEditorMouseEventsObservable // debounce or throttle will mess mouseleave, blur, and focus
+// debounce or throttle will mess mouseleave, blur, and focus
+        this.monacoEditorMouseEventsObservable
             .subscribe(mouseEvent => {
                 if (this.props.mouseEventsDisabled) {
                     return;
@@ -300,20 +332,25 @@ class Editor extends PureComponent {
                         });
                         return;
                     case monacoEditorMouseEventTypes.mouseMove:
-                        if (mouseEvent.event.target.type ===
-                            window.monaco.editor.MouseTargetType.CONTENT_WIDGET) {
+                        if (
+                            mouseEvent.event.target.type ===
+                            window.monaco.editor.MouseTargetType.CONTENT_WIDGET
+                        ) {
                             // console.log('m', 'CONTENT_WIDGET',
                             //   mouseEvent.event.target.detail
                             // );
-                            contentWidgetMouseEventSubjects.mouseMove.next({
-                                currentContentWidgetId: mouseEvent.event.target.detail,
-                                forceHideWidgets: false
-                            });
+                            contentWidgetMouseEventSubjects.mouseMove.next(
+                                {
+                                    currentContentWidgetId:
+                                    mouseEvent.event.target.detail,
+                                    forceHideWidgets: false
+                                });
                         } else {
-                            contentWidgetMouseEventSubjects.mouseLeave.next({
-                                currentContentWidgetId: null,
-                                forceHideWidgets: false
-                            });
+                            contentWidgetMouseEventSubjects.mouseLeave.next(
+                                {
+                                    currentContentWidgetId: null,
+                                    forceHideWidgets: false
+                                });
                         }
 
                         if (!this.state.focused) {
@@ -365,4 +402,9 @@ Editor.propTypes = {
     mountEditorFulfilled: PropTypes.func.isRequired,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(Editor));
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(
+    withStyles(styles)(Editor)
+);

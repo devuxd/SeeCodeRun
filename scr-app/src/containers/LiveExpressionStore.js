@@ -1,14 +1,14 @@
 import React, {
-    PureComponent,
-    memo,
     createRef,
-    useRef,
-    useState,
+    PureComponent,
+    useCallback,
+    useEffect,
     useMemo,
-    useEffect
+    useRef,
+    useState
 } from 'react';
 import {connect} from 'react-redux';
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
 import throttle from 'lodash/throttle';
 import isString from 'lodash/isString';
@@ -16,37 +16,33 @@ import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
 import JSAN from 'jsan';
 
-import {withStyles} from '@material-ui/core/styles';
-import MUITooltip from '@material-ui/core/Tooltip';
-
+import {alpha, withStyles} from '@material-ui/core/styles';
+import Portal from '@material-ui/core/Portal';
+import Tooltip from '@material-ui/core/Tooltip';
 import Button from '@material-ui/core/Button';
-
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
-import {alpha} from '@material-ui/core/styles/colorManipulator';
 
-import {
-    ObjectRootLabel/*, ObjectLabel*/,
-    createLiveObjectNodeRenderer
-} from '../components/ObjectExplorer';
-
-import LiveExpression from '../components/LiveExpression';
-import AutoLog from "../seecoderun/modules/AutoLog";
+import AutoLog from '../seecoderun/modules/AutoLog';
 import {
     updateBundle,
     updateBundleFailure,
     updateBundleSuccess
 } from "../redux/modules/liveExpressionStore";
 
-import Portal from '@material-ui/core/Portal';
-
-import {PastebinContext, VisualQueryManager} from './Pastebin';
-import OverflowComponent from "../components/OverflowComponent";
+import {
+    createLiveObjectNodeRenderer,
+    ExplorerTooltip,
+    ExplorerTooltipContainer,
+    hasOwnTooltip,
+    ObjectRootLabel,
+} from '../components/ObjectExplorer';
+import LiveExpression from '../components/LiveExpression';
+import {PastebinContext} from './Pastebin';
+import OverflowComponent from '../components/OverflowComponent';
 import {NavigationTypes} from '../seecoderun/modules/AutoLogShift';
-import {monacoProps} from "../utils/monacoUtils";
+import {monacoProps} from '../utils/monacoUtils';
 import GraphicalQuery from '../components/GraphicalQuery';
-import TimelineBranchManager from "../seecoderun/modules/TimelineBranchManager";
-
-const {getVisualIdsFromRefs} = VisualQueryManager;
+import TimelineBranchManager from '../seecoderun/modules/TimelineBranchManager';
 
 let monaco = null;
 
@@ -71,7 +67,7 @@ const mapDispatchToProps = {
     updateBundleSuccess
 };
 
-const goToTimelineBranchInactive = (timelineI) => {
+const goToTimelineBranchInactive = (/*timelineI*/) => {
 };
 let goToTimelineBranch = goToTimelineBranchInactive;
 
@@ -115,7 +111,7 @@ export let HighlightPalette = {
 const BRANCH_LINE_DECORATION_WIDTH = 3;
 
 let navigatorSpacing = 0;
-const Tooltip = withStyles((theme) => ({
+const NavigatorTooltip = withStyles((theme) => ({
     tooltip: {
         backgroundColor: theme.palette.background.paper,
         maxWidth: "none",
@@ -124,7 +120,7 @@ const Tooltip = withStyles((theme) => ({
         margin: 0,
         marginBottom: 18,
     },
-}))(MUITooltip);
+}))(Tooltip);
 
 const styles = (theme) => {
     navigatorSpacing = theme.spacingUnit(2);
@@ -134,21 +130,9 @@ const styles = (theme) => {
         object: alpha(theme.palette.primary.main, 0.2),
         graphical: alpha(theme.palette.secondary.main, 0.08),
         error: alpha(theme.palette.error.main, 0.08),
-        //   callback: alpha(theme.palette.secondary.main, 0.08),
         globalBranch: alpha(theme.palette.primary.main, 0.08),
         localBranch: alpha(theme.palette.secondary.main, 0.08),
     };
-    // let baseAlpha = 0.04;
-    // HighlightPalette.text = {
-    //     baseAlpha,
-    //     enabled: alpha(theme.palette.primary.light, baseAlpha),
-    //     hover: alpha(theme.palette.primary.light, baseAlpha*2),
-    //     focus: alpha(theme.palette.primary.light, baseAlpha),
-    //     selected: alpha(theme.palette.primary.light, baseAlpha),
-    //     activated: alpha(theme.palette.primary.light, baseAlpha),
-    //     pressed: alpha(theme.palette.primary.light, baseAlpha),
-    //     dragged: alpha(theme.palette.primary.light, baseAlpha),
-    // };
 
     return {
         '@global': {
@@ -290,10 +274,7 @@ const styles = (theme) => {
             width: 0,
             height: 0,
         },
-        objectExplorer: {
-            minWidth: 200,
-            margin: theme.spacing(0.25),
-        },
+
         rangeSlider: {
             padding: theme.spacing(1),
         },
@@ -389,51 +370,87 @@ const styles = (theme) => {
         updating: {
             color: theme.palette.secondary.main
         },
+        navigatorLabelIndex: {
+            fontSize: 11,
+        },
+        navigatorLabelTotal: {
+            fontSize: 9,
+            paddingTop: 3
+        },
     }
 };
 
 // const objectIterator = createObjectIterator();
 
-const TimelineNavigation = memo(({
-                                     firecoPad,
-                                     branchSelections,
-                                     traceSubscriber,
-                                     locationMap,
-                                     timeline,
-                                     prevTimelineI,
-                                     currentBranchId,
-                                     currentBranchTimelineId,
-                                     classes,
-                                     style,
-                                     liveExpressionContainerClassName,
-                                     decorators,
-                                     currentContentWidgetId,
-                                     configureNavigators,
-                                     highlightLiveExpressions,
-                                     getGoToTimelineBranch,
-                                     handleBranchChange,
-                                     objectNodeRenderer,
-                                     searchState,
-                                     highlightSingleText,
-                                     handleCurrentContentWidgetId,
-                                     adjustWidth,
-                                     setOnAdjustWidths,
-                                     highlightErrors
-                                 }) => {
+const TimelineNavigation = (({
+                                 firecoPad,
+                                 branchSelections,
+                                 traceSubscriber,
+                                 locationMap,
+                                 timeline,
+                                 prevTimelineI,
+                                 currentBranchId,
+                                 currentBranchTimelineId,
+                                 classes,
+                                 style,
+                                 liveExpressionContainerClassName,
+                                 decorators,
+                                 currentContentWidgetId,
+                                 Navigators,
+                                 highlightLiveExpressions,
+                                 unHighlightLiveExpressions,
+                                 getGoToTimelineBranch,
+                                 handleBranchChange,
+                                 objectNodeRenderer,
+                                 searchState,
+                                 highlightSingleText,
+                                 handleCurrentContentWidgetId,
+                                 adjustWidth,
+                                 setOnAdjustWidths,
+                                 // highlightErrors,
+                                 monacoRangesRef = {},
+                                 VisualQueryManager,
+                             }) => {
+    const {getVisualIdsFromRefs} = VisualQueryManager;
 
     const locToMonacoRange =
         firecoPad && firecoPad.liveExpressionWidgetProvider.locToMonacoRange;
-    const tbm = useMemo(() => new TimelineBranchManager(
-        branchSelections,
-        traceSubscriber, timeline, prevTimelineI,
-        currentBranchId, currentBranchTimelineId),
+
+    const rangesRef = useRef(monacoRangesRef);
+    const [tbm, liveRanges, ignoreRanges, defaultArray] = useMemo(() => {
+            unHighlightLiveExpressions();
+            return [
+                new TimelineBranchManager(
+                    branchSelections,
+                    traceSubscriber, timeline, prevTimelineI,
+                    currentBranchId, currentBranchTimelineId),
+                [],
+                [],
+                [],
+            ];
+        },
         [
+            unHighlightLiveExpressions,
             branchSelections,
             traceSubscriber, timeline, prevTimelineI,
-            currentBranchId, currentBranchTimelineId
+            currentBranchId, currentBranchTimelineId,
         ]);
 
     const timelineBranchManager = tbm;
+
+    const navRanges = useMemo(() => {
+        timelineBranchManager.branches.map(branch => {
+            const navLoc = {
+                start: branch.loc.start, end: {...branch.loc.start}
+            };
+            navLoc.end.column = navLoc.end.column + 1;
+            // console.log('navRanges', branch, navLoc, branch.loc);
+            return locToMonacoRange(navLoc);
+        });
+    }, [
+        timelineBranchManager,
+        locToMonacoRange,
+    ]);
     // console.log(timeline);
 
     useEffect(() => {
@@ -443,34 +460,49 @@ const TimelineNavigation = memo(({
     }, [getGoToTimelineBranch, timeline, timelineBranchManager, handleBranchChange]);
 
 
-    const liveRanges = [], ignoreRanges = [];
-
     const currentTimeline = useMemo(() => (currentBranchId && currentBranchTimelineId) ?
         timeline.slice(timeline.length - currentBranchTimelineId) : timeline,
         [currentBranchId, currentBranchTimelineId, timeline]);
 
     const navigatorWidgetIds = {};
-    const globalNavigators =
-        configureNavigators(
-            NavigationTypes.Global,
-            tbm.branches, tbm.globalBranches, tbm.absoluteGlobalBranches,
-            tbm.currentGlobalBranches,
-            'primary', classes, style, liveExpressionContainerClassName,
-            liveRanges, ignoreRanges, locationMap, navigatorWidgetIds
-        );
-    const localNavigators =
-        configureNavigators(
-            NavigationTypes.Local,
-            tbm.branches, tbm.localBranches, null,
-            null, 'secondary',
-            classes, style, liveExpressionContainerClassName, liveRanges,
-            ignoreRanges, locationMap, navigatorWidgetIds
-        );
-    // console.log(
-    // currentBranchId, currentBranchTimelineId, currentTimeline,
-    // timeline.length
-    // );
-    // console.log('---------');
+    const globalNavigators = !!firecoPad && (<Navigators
+        firecoPad={firecoPad}
+        navigationType={NavigationTypes.Global}
+        _branches={tbm.branches}
+        branched={tbm.globalBranches}
+        absoluteBranched={tbm.absoluteGlobalBranches}
+        currentBranched={tbm.currentGlobalBranches}
+        color={'primary'}
+        classes={classes}
+        style={style}
+        liveExpressionContainerClassName={liveExpressionContainerClassName}
+        rangesRef={rangesRef}
+        locationMap={locationMap}
+        navigatorWidgetIds={navigatorWidgetIds}
+        decorators={decorators}
+        branchSelections={branchSelections}
+        currentContentWidgetId={currentContentWidgetId}
+    />);
+
+    const localNavigators = !!firecoPad && (<Navigators
+        firecoPad={firecoPad}
+        navigationType={NavigationTypes.Local}
+        _branches={tbm.branches}
+        branched={tbm.localBranches}
+        absoluteBranched={null}
+        currentBranched={null}
+        color={'secondary'}
+        classes={classes}
+        style={style}
+        liveExpressionContainerClassName={liveExpressionContainerClassName}
+        rangesRef={rangesRef}
+        locationMap={locationMap}
+        navigatorWidgetIds={navigatorWidgetIds}
+        decorators={decorators}
+        branchSelections={branchSelections}
+        currentContentWidgetId={currentContentWidgetId}
+    />);
+
     const liveExpressionWidgets = {};
     // (tbm.globalBranchLocs && tbm.globalBranchLocs.loc) ?
     //     this.highlightBranch(
@@ -623,36 +655,36 @@ const TimelineNavigation = memo(({
                                 container={widget.contentWidget.domNode}>
                             {
                                 <div
-                                    style={{
-                                        // zIndex: 9999,
-                                        color: 'red',
-                                        border: '1px red solid',
-                                        // marginTop: 1,
-                                        // marginLeft: 0,
-                                        // marginBottom: 0,
-                                        // paddingBottom: 0,
-                                    }}
+                                    // style={{
+                                    //     // zIndex: 9999,
+                                    //     color: 'red',
+                                    //     border: '1px red solid',
+                                    //     // marginTop: 1,
+                                    //     // marginLeft: 0,
+                                    //     // marginBottom: 0,
+                                    //     // paddingBottom: 0,
+                                    // }}
                                     ref={contentRef}
-                                    // onMouseEnter={() => {
-                                    //     // console.log(entry);
-                                    //     highlightSingleText(
-                                    //         n.loc, n.isError ?
-                                    //             HighlightTypes.error
-                                    //             : n.isGraphical ?
-                                    //                 HighlightTypes.graphical
-                                    //                 : HighlightTypes.text,
-                                    //         traceSubscriber
-                                    //             .getMatches(
-                                    //                 n.funcRefId,
-                                    //                 n.dataRefId,
-                                    //                 n.calleeId
-                                    //             ), false);
-                                    //     handleCurrentContentWidgetId(widget.id);
-                                    // }}
-                                    // onMouseLeave={() => {
-                                    //     highlightSingleText();
-                                    //     handleCurrentContentWidgetId();
-                                    // }}
+                                    onMouseEnter={() => {
+                                        // console.log(entry);
+                                        highlightSingleText(
+                                            n.loc, n.isError ?
+                                                HighlightTypes.error
+                                                : n.isGraphical ?
+                                                    HighlightTypes.graphical
+                                                    : HighlightTypes.text,
+                                            traceSubscriber
+                                                .getMatches(
+                                                    n.funcRefId,
+                                                    n.dataRefId,
+                                                    n.calleeId
+                                                ), false);
+                                        handleCurrentContentWidgetId(widget.id);
+                                    }}
+                                    onMouseLeave={() => {
+                                        highlightSingleText();
+                                        handleCurrentContentWidgetId();
+                                    }}
                                     // className=
                                     // {n.expressionType === 'CallExpression' ?
                                     // classes
@@ -709,7 +741,7 @@ const TimelineNavigation = memo(({
                 continue;
             }
             let ignore = range && ignoreRanges.find(r => {
-                return r.containsRange(range);
+                return r?.containsRange?.(range);
             });
             // ignore = n.isError? false: ignore;
 
@@ -1139,6 +1171,7 @@ const TimelineNavigation = memo(({
                     && tbm.branches.find(branch => branch.id === widget.id));
 
                 const contentRef = createRef();
+                const showTooltip = hasOwnTooltip(datum);
                 liveWidgets.push({
                     contentRef,
                     n,
@@ -1148,77 +1181,96 @@ const TimelineNavigation = memo(({
                         <Portal key={widget.id}
                                 container={widget.contentWidget.domNode}>
                             {isOmitLabel ? null :
-                                <div
-                                    ref={contentRef}
-                                    onMouseEnter={() => {
-                                        // console.log(entry);
-                                        highlightSingleText(
-                                            n.loc, n.isError ?
-                                                HighlightTypes.error
-                                                : n.isGraphical ?
-                                                    HighlightTypes.graphical
-                                                    : HighlightTypes.text,
-                                            traceSubscriber
-                                                .getMatches(
-                                                    n.funcRefId,
-                                                    n.dataRefId,
-                                                    n.calleeId
-                                                ), false);
-                                        handleCurrentContentWidgetId(widget.id);
-                                    }}
-                                    onMouseLeave={() => {
-                                        highlightSingleText();
-                                        handleCurrentContentWidgetId();
-                                    }}
-                                    // className=
-                                    // {n.expressionType === 'CallExpression' ?
-                                    // classes
-                                    // .liveExpressionCallExpressionContainerUpdated
-                                    // : liveExpressionContainerClassName}
-                                    className={liveExpressionContainerClassName}
+                                <ExplorerTooltip
+                                    key={showTooltip}
+                                    placement="bottom-start"
+                                    {...(showTooltip ? {} : {open: false})}
+                                    title={
+                                        <ExplorerTooltipContainer>
+                                            <LiveExpression
+                                                // style={style}
+                                                expressionId={widget.id}
+                                                classes={classes}
+                                                // widget={widget}
+                                                isDatum={true}
+                                                datum={datum}
+                                                objectNodeRenderer={objectNodeRenderer}
+                                            />
+                                        </ExplorerTooltipContainer>
+                                    }
                                 >
-                                    <OverflowComponent
-                                        overflowXClassName={
-                                            classes.liveExpressionRoot
-                                        }
-                                        contentClassName={
-                                            classes.liveExpressionContent
-                                        }
-                                        disableOverflowDetectionY={true}
-                                        contentAlign={isAlignLeft ?
-                                            'left' : 'center'
-                                        }
-                                        overflowXAdornment={<MoreHorizIcon
-                                            className={classes.overflowXIcon}/>}
-                                        //  placeholder={
-                                        //  <Typography>Yo</Typography>
-                                        //  }
-                                        //  placeholderClassName={
-                                        //  classes.expressionCellContent
-                                        //  }
-                                        // placeholderDisableGutters={true}
+                                    <div
+                                        ref={contentRef}
+                                        onMouseEnter={() => {
+                                            // console.log(entry);
+                                            highlightSingleText(
+                                                n.loc, n.isError ?
+                                                    HighlightTypes.error
+                                                    : n.isGraphical ?
+                                                        HighlightTypes.graphical
+                                                        : HighlightTypes.text,
+                                                traceSubscriber
+                                                    .getMatches(
+                                                        n.funcRefId,
+                                                        n.dataRefId,
+                                                        n.calleeId
+                                                    ), false);
+                                            handleCurrentContentWidgetId(widget.id);
+                                        }}
+                                        onMouseLeave={() => {
+                                            highlightSingleText();
+                                            handleCurrentContentWidgetId();
+                                        }}
+                                        // className=
+                                        // {n.expressionType === 'CallExpression' ?
+                                        // classes
+                                        // .liveExpressionCallExpressionContainerUpdated
+                                        // : liveExpressionContainerClassName}
+                                        className={liveExpressionContainerClassName}
                                     >
-                                        {/*<div>{n.expressionType}</div>*/}
-                                        {isOutput ?
-                                            <GraphicalQuery
-                                                outputRefs={n.outputRefs}
-                                                visualIds={
-                                                    getVisualIdsFromRefs(
-                                                        n.outputRefs
-                                                    )
-                                                }
-                                                selected={!!isSelected}
-                                            />
-                                            :
-                                            <ObjectRootLabel
-                                                data={datum}
-                                                compact={true}
-                                                expressionType={n.expressionType}
-                                                iconify={isIcon}
-                                            />
-                                        }
-                                    </OverflowComponent>
-                                </div>
+                                        <OverflowComponent
+                                            overflowXClassName={
+                                                classes.liveExpressionRoot
+                                            }
+                                            contentClassName={
+                                                classes.liveExpressionContent
+                                            }
+                                            disableOverflowDetectionY={true}
+                                            contentAlign={isAlignLeft ?
+                                                'left' : 'center'
+                                            }
+                                            overflowXAdornment={<MoreHorizIcon
+                                                className={classes.overflowXIcon}/>}
+                                            //  placeholder={
+                                            //  <Typography>Yo</Typography>
+                                            //  }
+                                            //  placeholderClassName={
+                                            //  classes.expressionCellContent
+                                            //  }
+                                            // placeholderDisableGutters={true}
+                                        >
+                                            {/*<div>{n.expressionType}</div>*/}
+                                            {isOutput ?
+                                                <GraphicalQuery
+                                                    outputRefs={n.outputRefs}
+                                                    visualIds={
+                                                        getVisualIdsFromRefs(
+                                                            n.outputRefs
+                                                        )
+                                                    }
+                                                    selected={!!isSelected}
+                                                />
+                                                :
+                                                <ObjectRootLabel
+                                                    data={datum}
+                                                    compact={true}
+                                                    expressionType={n.expressionType}
+                                                    iconify={isIcon}
+                                                />
+                                            }
+                                        </OverflowComponent>
+                                    </div>
+                                </ExplorerTooltip>
                             }
                         </Portal>
                 });
@@ -1253,21 +1305,48 @@ const TimelineNavigation = memo(({
     onAdjustWidths();
     setOnAdjustWidths(onAdjustWidths);
 
-    const navRanges = [];
+    const globalLiveRanges = (
+        rangesRef.current[NavigationTypes.Global]?.liveRanges || defaultArray
+    );
+    const localLiveRanges = (
+        rangesRef.current[NavigationTypes.Local]?.liveRanges || defaultArray
+    );
+    const globalIgnoreRanges = (
+        rangesRef.current[NavigationTypes.Global]?.ignoreRanges || defaultArray
+    );
+    const localIgnoreRanges = (
+        rangesRef.current[NavigationTypes.Local]?.ignoreRanges || defaultArray
+    );
+    // console.log("A");
+    // useMemo(() => {
+    //         console.log("B");
+    unHighlightLiveExpressions();
+    highlightLiveExpressions(
+        [
+            ...liveRanges,
+            ...globalLiveRanges,
+            ...localLiveRanges,
+        ]
+        , [
+            ...ignoreRanges,
+            ...globalIgnoreRanges,
+            ...localIgnoreRanges,
+        ]
+        , navRanges
+    );
+    // }
+    // , [
+    //     highlightLiveExpressions,
+    //     unHighlightLiveExpressions,
+    //     liveRanges,
+    //     globalLiveRanges,
+    //     localLiveRanges,
+    //     ignoreRanges,
+    //     globalIgnoreRanges,
+    //     localIgnoreRanges,
+    //     navRanges,
+    // ]);
 
-    timelineBranchManager.branches.forEach(branch => {
-        const navLoc = {
-            start: branch.loc.start, end: {...branch.loc.start}
-        };
-        navLoc.end.column = navLoc.end.column + 1;
-        navRanges.push(locToMonacoRange(navLoc));
-        // console.log('navRanges', branch, navLoc, branch.loc);
-    });
-
-    // console.log('navRanges', navRanges);
-    // console.log('globalNavigators', globalNavigators);
-    highlightLiveExpressions(liveRanges, ignoreRanges, navRanges);
-    // console.log('highlightLiveExpressions', liveRanges.filter(r=>r.startLineNumber === 1), ignoreRanges, navRanges);
     return <>
         {globalNavigators}
         {localNavigators}
@@ -1277,10 +1356,29 @@ const TimelineNavigation = memo(({
     </>
 });
 
-const LazyTimelineNavigation = ({afterWidgetize, ...props}) => {
-    const {firecoPad} = props;
+const LazyTimelineNavigation = ({
+                                    afterWidgetize,
+                                    editorHeight,
+                                    editorWidth,
+                                    ...props
+                                }) => {
+    const {firecoPad, unHighlightLiveExpressions} = props;
     const [isProviderReady, setIsProviderReady] = useState(false);
     const [isProviderReadyInterval, setIsProviderReadyInterval] = useState(0);
+    const style = useMemo(() => {
+            const _style = {
+                width: 'calc(100%)',
+            };
+            if (editorHeight && editorWidth) {
+                _style.maxWidth = `${editorWidth}px`;
+                _style.maxHeight = `${Math.ceil(editorHeight / 2)}px`;
+            }
+            return _style;
+        },
+        [editorHeight, editorWidth]
+    );
+
+
     useEffect(() => {
             !!firecoPad
             && !isProviderReady
@@ -1291,9 +1389,10 @@ const LazyTimelineNavigation = ({afterWidgetize, ...props}) => {
                         firecoPad
                             .liveExpressionWidgetProvider
                             .afterWidgetize(afterWidgetize);
+                        unHighlightLiveExpressions();
                         setIsProviderReady(true);
                     }
-                }, 1000)
+                }, 100)
             );
 
             isProviderReady
@@ -1304,13 +1403,13 @@ const LazyTimelineNavigation = ({afterWidgetize, ...props}) => {
 
             return () => clearInterval(isProviderReadyInterval);
         }, [
-            firecoPad, afterWidgetize,
+            firecoPad, unHighlightLiveExpressions, afterWidgetize,
             isProviderReadyInterval, setIsProviderReadyInterval,
             isProviderReady, setIsProviderReady
         ]
     );
 
-    return isProviderReady && <TimelineNavigation {...props} />;
+    return isProviderReady && <TimelineNavigation {...props} style={style}/>;
 };
 
 class LiveExpressionStore extends PureComponent {
@@ -1415,48 +1514,524 @@ class LiveExpressionStore extends PureComponent {
             }
         };
 
-    handleBranchChange = (
-        navigationType,
-        currentBranchId,
-        currentBranchTimelineId,
-        navigatorIndex,
-        prevTimelineI,
-    ) => {
-        clearTimeout(this.timeoutBR);
-        this.timeoutBR = setTimeout(() => {
-            this.setState((prevState) => {
-                // console.log('na',
-                //     navigationType,
-                //     currentBranchId,
-                //     currentBranchTimelineId,
-                //     navigatorIndex,
-                //     prevTimelineI);
-                let {branchSelections} = prevState;
-                const globalB = (
-                    branchSelections[NavigationTypes.Global] || {}
-                );
-                const globalCurrentBranchId = globalB.currentBranchId;
-                branchSelections = {
-                    ...branchSelections, [navigationType]: {
-                        currentBranchId,
-                        currentBranchTimelineId,
-                        navigatorIndex,
-                        prevTimelineI,
-                        globalCurrentBranchId,
+    Navigators = (({
+                       firecoPad,
+                       navigationType,
+                       _branches,
+                       branched,
+                       absoluteBranched,
+                       // currentBranched,
+                       color,
+                       classes,
+                       style,
+                       liveExpressionContainerClassName,
+                       // liveRanges,
+                       // ignoreRanges,
+                       locationMap,
+                       decorators,
+                       branchSelections,
+                       currentContentWidgetId,
+                       // navigatorWidgetIds = {},
+                       rangesRef = {current: {}},
+                   }) => {
+
+        rangesRef.current[navigationType] = {
+            liveRanges: [],
+            ignoreRanges: [],
+        };
+        const {
+            liveRanges,
+            ignoreRanges,
+        } = rangesRef.current[navigationType];
+        const locToMonacoRange =
+            firecoPad.liveExpressionWidgetProvider.locToMonacoRange;
+
+        const {
+            /*currentBranchId,*/ currentBranchTimelineId, navigatorIndex,
+            /*prevTimelineI,*/
+        } = (branchSelections[navigationType] || {});
+
+        this.prevbranches = _branches;
+        const branches = _branches;
+        const navigators = [];
+        const liveExpressions = [];
+        for (const id in branched) {
+            // console.log('branched', branched);
+
+            const decorator = (decorators || []).find(dec => dec.id === id);
+            if (decorator?.contentWidget) {
+                //  const {datum, widget} = this.prevLiveExpressionWidgets[i];
+                //   console.log('bn', decorator);
+                // console.log(id, branched[id])
+                //decorator.contentWidget.adjustWidth(true, true);
+                const isSelected = currentContentWidgetId === id;
+                // const branchIndex = branched[id]
+                //     .indexOf(currentBranchTimelineId);
+                // const branchSelection =
+                // currentBranched && currentBranched[id] ?
+                //     currentBranched[id].length
+                //     : branched[id].length; //branchIndex >= 0 ?
+                //     branchIndex :
+                const branchTotal =
+                    absoluteBranched?.[id]?.length || branched?.[id]?.length;
+                // const branchLabel = `${branchSelection}/${branchTotal}`;
+
+                // console.log(`${branchSelection}/${branchTotal}`)
+                const branchNavigatorWidgetClassName =
+                    classes.branchNavigatorWidget;
+                const n = currentBranchTimelineId ?
+                    this.timeline[
+                    this.timeline.length - currentBranchTimelineId
+                        ] || {} : {};
+                const branch = (branches || []).find(b => b.id === id);
+                //console.log('PF-', branch, locationMap[id], !!branch?.expression);
+                if (branch?.expression && !branch.expression.extraLocs) {
+                    const location = locationMap[id];
+                    if (location?.extraLocs) {
+                        branch.expression.extraLocs = location.extraLocs;
+                        // console.log(
+                        // 'PF-',
+                        // branch === branched[id], branch, branched[id]
+                        // );
                     }
-                };
-
-                if (globalCurrentBranchId
-                    && branchSelections[
-                        NavigationTypes.Local
-                        ]?.globalCurrentBranchId !== globalCurrentBranchId) {
-                    branchSelections[NavigationTypes.Local] = null;
                 }
-                return {branchSelections};
-            });
-        }, 1000);
+                //console.log(
+                // 'PF-', branch === branched[id], branch, branched[id]
+                // );
+                let isE = false;
 
-    };
+                if (branch.expression.extraLocs?.isException) {
+                    const tryLocs = branch.expression.extraLocs.tryLocs;
+                    if (tryLocs) {
+                        switch (branch.expression.extraLocs.name) {
+                            case 'block':
+                                this.getTryBlockLocs(tryLocs).forEach(
+                                    loc => {
+                                        const range = locToMonacoRange(loc);
+                                        range && liveRanges.push(range);
+                                    }
+                                );
+
+                                break;
+
+                            case 'finalizer':
+                                this.getTryFinalizerLocs(tryLocs).forEach(
+                                    loc => {
+                                        const range = locToMonacoRange(loc);
+                                        range && liveRanges.push(range);
+                                    }
+                                );
+
+                                break;
+                            default:// handler
+                                // console.log('h', branch);
+                                this.getTryBlockLocs(tryLocs).forEach(
+                                    loc => {
+                                        const range = locToMonacoRange(loc);
+                                        const index = range
+                                            && liveRanges.findIndex(
+                                                r => r.equalsRange(range)
+                                            );
+                                        index >= 0
+                                        && liveRanges.splice(index, 1);
+                                    }
+                                );
+
+                                this.getTryHandlerLocs(tryLocs).forEach(
+                                    loc => {
+                                        const range = locToMonacoRange(loc);
+                                        range && liveRanges.push(range);
+                                    }
+                                );
+                                isE = true;
+                        }
+                        if (!isE) {
+                            continue;
+                        }
+                    }
+                }
+                // if (color === 'secondary') {
+                // console.log('lo',
+                // branch, decorator,
+                // this.timeline[this.timeline.length
+                // - currentBranchTimelineId], branched[id]);
+                // }
+                // if(branch.expression.expressionType === 'IfStatement'){
+                //     console.log('cont', branch);
+                // }
+                // console.log("branch.expression",
+                //     branch.expression,
+                //     branch.expression?.expressionType,
+                //     branch.expression?.extraLocs,
+                //     );
+                if (branch && branch.expression &&
+                    branch.expression.expressionType !== 'IfStatement'
+                    && branch.expression.extraLocs
+                    && (branch.expression.extraLocs.signature ||
+                        branch.expression.extraLocs.test)) {
+                    if (branch.expression.extraLocs.signature) {
+                        // (branch.expression.extraLocs.signature.start.line
+                        // === 1) &&
+                        // console.log("L1",
+                        // branch.expression.extraLocs.signature)
+                        const controlLParLoc = {
+                            start: {
+                                line: branch
+                                    .expression
+                                    .extraLocs.signature.start.line,
+                                column: branch
+                                    .expression
+                                    .extraLocs.signature.start.column,
+                            },
+                            end: {
+                                line: branch.expression.blockLoc.start.line,
+                                column: branch
+                                    .expression.blockLoc.start.column + 1,
+                            }
+                        };
+                        const controlLParRange =
+                            locToMonacoRange(controlLParLoc);
+                        liveRanges.push(controlLParRange);
+
+                        const controlRParLoc = {
+                            start: {
+                                line: branch.expression.blockLoc.end.line,
+                                column: branch
+                                    .expression.blockLoc.end.column - 1,
+                            },
+                            end: {
+                                line: branch.expression.blockLoc.end.line,
+                                column: branch
+                                    .expression.blockLoc.end.column,
+                            }
+                        };
+                        const controlRParRange =
+                            locToMonacoRange(controlRParLoc);
+                        liveRanges.push(controlRParRange);
+                    }
+
+                    if (branch.expression.extraLocs.test) {
+                        // console.log('>TE', branch);
+                        const controlLParLoc = {
+                            start: {
+                                line: branch.expression.loc.start.line,
+                                column: branch.expression.loc.start.column,
+                            },
+                            end: {
+                                line: branch
+                                    .expression.extraLocs.test.start.line,
+                                column: branch
+                                    .expression.extraLocs.test.start.column,
+                            }
+                        };
+                        const controlLParRange =
+                            locToMonacoRange(controlLParLoc);
+                        liveRanges.push(controlLParRange);
+
+                        const controlRParLoc = {
+                            start: {
+                                line: branch
+                                    .expression.extraLocs.test.end.line,
+                                column: branch
+                                    .expression.extraLocs.test.end.column,
+                            },
+                            end: {
+                                line: branch.expression.blockLoc.start.line,
+                                column: branch
+                                    .expression.blockLoc.start.column + 1,
+                            }
+                        };
+                        const controlRParRange =
+                            locToMonacoRange(controlRParLoc);
+                        liveRanges.push(controlRParRange);
+
+                        const controlEndLoc = {
+                            start: {
+                                line: branch.expression.blockLoc.end.line,
+                                column: branch
+                                    .expression.blockLoc.end.column - 1,
+                            },
+                            end: {
+                                line: branch.expression.blockLoc.end.line,
+                                column: branch
+                                    .expression.blockLoc.end.column,
+                            }
+                        };
+                        const controlEndRange =
+                            locToMonacoRange(controlEndLoc);
+                        liveRanges.push(controlEndRange);
+                        // console.log(
+                        //     'while ranges',
+                        //     controlLParLoc,
+                        //     controlRParRange, controlEndRange
+                        // );
+                    }
+                }
+
+
+                if (branch && branch.type === 'IfStatement' &&
+                    branch.expression?.extraLocs?.test) {
+                    // console.log('>IF', branch);
+                    //{start:{line:0, column:0}, end:{line:0, column:0}};
+                    // const controlLParLoc = {
+                    //     start: {
+                    //         line: branch.expression.loc.start.line,
+                    //         column: branch.expression.loc.start.column,
+                    //     },
+                    //     end: {
+                    //         line: branch
+                    //             .expression.extraLocs.test.start.line,
+                    //         column: branch
+                    //             .expression.extraLocs.test.start.column,
+                    //     }
+                    // };
+                    // // const controlLParRange =
+                    // //     locToMonacoRange(controlLParLoc);
+                    // // //  liveRanges.push(controlLParRange);
+                    //
+                    // const controlRParLoc = {
+                    //     start: {
+                    //         line: branch
+                    //             .expression.extraLocs.test.end.line,
+                    //         column: branch
+                    //             .expression.extraLocs.test.end.column,
+                    //     },
+                    //     end: {
+                    //         line: branch.expression.extraLocs.test.end.line,
+                    //         column: branch
+                    //             .expression.extraLocs.test.end.column + 1,
+                    //     }
+                    // };
+                    // const controlRParRange =
+                    //     locToMonacoRange(controlRParLoc);
+                    //    liveRanges.push(controlRParRange);
+                    // fix do while
+                    // if (branch.type === 'IfStatement') {
+                    //     const ignoreName =
+                    //         branch.blockName === 'consequent' ?
+                    //             'alternate' : 'consequent';
+                    //     // const range =
+                    //     //     branch.expression.extraLocs[ignoreName] ?
+                    //     //         locToMonacoRange(
+                    //     //             branch
+                    //     //             .expression.extraLocs[ignoreName]
+                    //     //         ) : null;
+                    //     //  console.log('control:',
+                    //     // branch.blockName,
+                    //     // 'ommitting', ignoreName,
+                    //     // branch.expression.extraLocs, range,);
+                    //     //  range && ignoreRanges.push(range);
+                    // }
+
+                    if (/*branch.type === 'IfStatement' && */
+                        (branch.blockName === 'alternate')) {
+                        // const controlRParLoc = {
+                        //     start: {
+                        //         line: branch
+                        //             .expression.extraLocs.test.end.line,
+                        //         column: branch
+                        //             .expression.extraLocs.test.end.column + 1,
+                        //     },
+                        //     end: {
+                        //         line: branch
+                        //             .expression
+                        //             .extraLocs.consequent.end.line,
+                        //         column: branch
+                        //             .expression
+                        //             .extraLocs.consequent.end.column,
+                        //     }
+                        // };
+                        // const controlRParRange =
+                        //     locToMonacoRange(controlRParLoc);
+                        //   liveRanges.push(controlRParRange);
+
+                        // const controlOpenBracketLoc = {
+                        //     start: {
+                        //         line:
+                        //         branch
+                        //             .expression
+                        //             .extraLocs.consequent.end.line,
+                        //         column:
+                        //         branch
+                        //             .expression
+                        //             .extraLocs.consequent.end.column,
+                        //     },
+                        //     end: {
+                        //         line:
+                        //         branch
+                        //             .expression
+                        //             .extraLocs.alternate.end.line,
+                        //         column: branch
+                        //             .expression
+                        //             .extraLocs.alternate.end.column + 1,
+                        //     }
+                        // };
+                        // const controlOpenBracketRange =
+                        //     locToMonacoRange(controlOpenBracketLoc);
+                        // //  liveRanges.push(controlOpenBracketRange);
+
+                        // const controlCloseBracketLoc = {
+                        //     start: {
+                        //         line: branch.expression.loc.end.line,
+                        //         column: branch.expression.loc.end.column,
+                        //     },
+                        //     end: {
+                        //         line: branch.expression.loc.end.line,
+                        //         column: branch.expression.loc.end.column + 1,
+                        //     }
+                        // };
+                        // const controlCloseBracketRange =
+                        //     locToMonacoRange(controlCloseBracketLoc);
+                        // //   liveRanges.push(controlCloseBracketRange);
+
+
+                    } else {
+                        if (branch.type !== 'DoWhileStatement') {
+                            // const content =
+                            //     branch.type === 'IfStatement'
+                            //         ? 'consequent' : 'body';
+                            // const controlRParOpenBracketLoc = {
+                            //     start: {
+                            //         line:
+                            //         branch
+                            //             .expression.extraLocs.test.end.line,
+                            //         column:
+                            //             branch
+                            //                 .expression
+                            //                 .extraLocs.test.end.column + 1,
+                            //     },
+                            //     end: {
+                            //         line:
+                            //         branch
+                            //             .expression
+                            //             .extraLocs[content].start.line,
+                            //         column:
+                            //         branch
+                            //             .expression
+                            //             .extraLocs[content].start.column,
+                            //     }
+                            // };
+                            // const controlRParOpenBracketRange =
+                            //     locToMonacoRange(
+                            //     controlRParOpenBracketLoc
+                            //     );
+                            // //  liveRanges.push(
+                            // controlRParOpenBracketRange
+                            // );
+
+                        }
+                    }
+
+
+                    // branch.expression.
+// console.log('loce', branch.expression.extraLocs[branch.blockName]);
+//                         const locO = branch
+//                             .expression.extraLocs[branch.blockName] ? {
+//                             start: {
+//                                 line: branch
+//                                     .expression
+//                                     .extraLocs[branch.blockName].start.line,
+//                                 column: branch
+//                                     .expression
+//                                     .extraLocs[branch.blockName].start.column,
+//                             },
+//                             end: {
+//                                 line: branch
+//                                     .expression
+//                                     .extraLocs[branch.blockName].start.line,
+//                                 column: branch
+//                                     .expression
+//                                     .extraLocs[
+//                                         branch.blockName
+//                                     ].start.column + 1,
+//                             }
+//                         } : null;
+                    // const rangeO = locO ? locToMonacoRange(locO) : null;
+                    // rangeO && liveRanges.push(rangeO);
+                    // const locC = branch.expression.extraLocs[branch.blockName] ? {
+                    //     start: {
+                    //         line: branch.expression.extraLocs[branch.blockName].end.line,
+                    //         column: branch.expression.extraLocs[branch.blockName].end.column ?
+                    //             branch.expression.extraLocs[branch.blockName].end.column - 1
+                    //             : branch.expression.extraLocs[branch.blockName].end.column,
+                    //     },
+                    //     end: {
+                    //         line: branch.expression.extraLocs[branch.blockName].end.line,
+                    //         column: branch.expression.extraLocs[branch.blockName].end.column,
+                    //     }
+                    // } : null;
+                    // const rangeC = locC ? locToMonacoRange(locC) : null;
+                    //    rangeC && liveRanges.push(rangeC);
+                    // console.log(branch.expression.extraLocs,
+                    // branch.blockName, branch.expression.extraLocs[branch.blockName]);
+                    //     this.highlightBranch(NavigationTypes.Local,
+                    // branch.expression.extraLocs[branch.blockName])
+                    //   : this.highlightBranch(NavigationTypes.Local);
+
+                } else {
+
+                    if (!isE) {
+                        const Navigator = this.Navigator;
+                        navigators.push(<Navigator
+                            isSelected={isSelected}
+                            key={id}
+                            navigationType={navigationType}
+                            id={id}
+                            container={decorator.contentWidget.domNode}
+                            objectNodeRenderer={this.objectNodeRenderer}
+                            data={branched[id]}
+                            widget={decorator}
+                            navigatorIndex={navigatorIndex}
+                            branchTotal={branchTotal}
+                            classes={classes}
+                            style={style}
+                            color={color}
+                            branchNavigatorWidgetClassName={branchNavigatorWidgetClassName}
+                        />);
+
+                    } else {
+                        liveExpressions.push((
+                            <Portal
+                                key={id}
+                                container={decorator.contentWidget.domNode}>
+                                <div
+                                    // style={console.log('n.isError', n.isError) || n.isError ? {
+                                    //     zIndex: 9999,
+                                    //     color: 'red'
+                                    // } : {}}
+                                    onMouseEnter={() => {
+                                        // console.log(n);
+                                        this.highlightSingleText(
+                                            n.loc, n.isError ? HighlightTypes.error
+                                                : n.isGraphical ?
+                                                    HighlightTypes.graphical : HighlightTypes.text,
+                                            this.traceSubscriber
+                                                .getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
+                                        this.handleCurrentContentWidgetId(id, n.range);
+                                    }}
+                                    onMouseLeave={() => {
+                                        this.highlightSingleText();
+                                        this.handleCurrentContentWidgetId();
+                                    }}
+                                    className={liveExpressionContainerClassName}
+                                >
+                                    <ObjectRootLabel
+                                        data={branch?.e?.data}
+                                        compact={true}
+                                        expressionType={n.expressionType}
+                                        iconify={false}
+                                    />
+                                </div>
+                            </Portal>
+                        ));
+
+                    }
+                }
+            }
+
+        }
+        return <>{navigators}{liveExpressions}</>;
+    });
 
     getTryBlockLocs = (tryLocs) => {
         const lParLoc = {
@@ -1530,610 +2105,141 @@ class LiveExpressionStore extends PureComponent {
         return [lParLoc, rParLoc];
     };
 
-    configureNavigators = ((
-        navigationType, _branches, branched, absoluteBranched, currentBranched,
-        color, classes, style, liveExpressionContainerClassName,
-        liveRanges, ignoreRanges, locationMap, navigatorWidgetIds = {}) => {
-        const {firecoPad} = this.props;
-        if (!firecoPad) {
-            return;
-        }
-        const locToMonacoRange =
-            firecoPad.liveExpressionWidgetProvider.locToMonacoRange;
-        const {
-            decorators, branchSelections, currentContentWidgetId,
-        } = this.state;
-        const {
-            /*currentBranchId,*/ currentBranchTimelineId, navigatorIndex,
-            /*prevTimelineI,*/
-        } = (branchSelections[navigationType] || {});
-
-        // let i = 0;
-        const liveExpressionKeys = {};
-        const branches = _branches;
-
-        this.prevbranches = branches;
-
-        const navigators = [];
-
-        this.prevn = navigators;
-        for (const id in branched) {
-            // console.log('branched', branched);
-            const liveExpressionKey = `${id}:${navigationType}`;
-            if (liveExpressionKeys[liveExpressionKey]) {
-                continue;
-            } else {
-                liveExpressionKeys[liveExpressionKey] = true;
-            }
-
-            const decorator = (decorators || []).find(dec => dec.id === id);
-            let sliderRange = [];
-            if (decorator) {
-                //  const {datum, widget} = this.prevLiveExpressionWidgets[i];
-                //   console.log('bn', decorator);
-                if (decorator && decorator.contentWidget) {
-                    // console.log(id, branched[id])
-                    //decorator.contentWidget.adjustWidth(true, true);
-                    const isSelected = currentContentWidgetId === id;
-                    // const branchIndex = branched[id]
-                    //     .indexOf(currentBranchTimelineId);
-                    // const branchSelection =
-                    // currentBranched && currentBranched[id] ?
-                    //     currentBranched[id].length
-                    //     : branched[id].length; //branchIndex >= 0 ?
-                    //     branchIndex :
-                    const branchTotal =
-                        absoluteBranched && absoluteBranched[id] ?
-                            absoluteBranched[id].length : branched[id].length;
-                    // const branchLabel = `${branchSelection}/${branchTotal}`;
-                    const branchLabel = (
-                        <>
-                            <span style={{fontSize: 11}}>
-                                {navigatorIndex || branchTotal}
-                            </span>
-                            <span style={{fontSize: 9, paddingTop: 3}}>
-                                /{branchTotal}
-                            </span>
-                        </>
-                    );
-                    // console.log(`${branchSelection}/${branchTotal}`)
-                    sliderRange = [navigatorIndex || branchTotal];
-                    const branchNavigatorWidgetClassName =
-                        classes.branchNavigatorWidget;
-                    const n = currentBranchTimelineId ?
-                        this.timeline[
-                        this.timeline.length - currentBranchTimelineId
-                            ] || {} : {};
-                    const branch = (branches || []).find(b => b.id === id);
-                    // console.log('PF-', branch, locationMap[id]);
-                    if (branch?.expression && !branch.expression.extraLocs) {
-                        const location = locationMap[id];
-                        if (location && location.extraLocs) {
-                            branch.expression.extraLocs = location.extraLocs;
-                            //   console.log(
-                            //   'PF-',
-                            //   branch === branched[id], branch, branched[id]
-                            //   );
-                        }
-                    }
-                    //console.log(
-                    // 'PF-', branch === branched[id], branch, branched[id]
-                    // );
-                    let isE = false;
-
-                    if (branch.expression.extraLocs
-                        && branch.expression.extraLocs.isException) {
-                        const tryLocs = branch.expression.extraLocs.tryLocs;
-                        if (tryLocs) {
-                            switch (branch.expression.extraLocs.name) {
-                                case 'block':
-                                    this.getTryBlockLocs(tryLocs).forEach(
-                                        loc => {
-                                            const range = locToMonacoRange(loc);
-                                            range && liveRanges.push(range);
-                                        }
-                                    );
-
-                                    break;
-
-                                case 'finalizer':
-                                    this.getTryFinalizerLocs(tryLocs).forEach(
-                                        loc => {
-                                            const range = locToMonacoRange(loc);
-                                            range && liveRanges.push(range);
-                                        }
-                                    );
-
-                                    break;
-                                default:// handler
-                                    // console.log('h', branch);
-                                    this.getTryBlockLocs(tryLocs).forEach(
-                                        loc => {
-                                            const range = locToMonacoRange(loc);
-                                            const index = range
-                                                && liveRanges.findIndex(
-                                                    r => r.equalsRange(range)
-                                                );
-                                            index >= 0
-                                            && liveRanges.splice(index, 1);
-                                        }
-                                    );
-
-                                    this.getTryHandlerLocs(tryLocs).forEach(
-                                        loc => {
-                                            const range = locToMonacoRange(loc);
-                                            range && liveRanges.push(range);
-                                        }
-                                    );
-                                    isE = true;
-                            }
-                            if (!isE) {
-                                continue;
-                            }
-                        }
-                    }
-                    if (color === 'secondary') {
-                        // console.log('lo',
-                        // branch, decorator,
-                        // this.timeline[this.timeline.length
-                        // - currentBranchTimelineId], branched[id]);
-                    }
-                    // if(branch.expression.expressionType === 'IfStatement'){
-                    //     console.log('cont', branch);
-                    // }
-                    // console.log("branch.expression", branch.expression);
-                    if (branch && branch.expression &&
-                        branch.expression.expressionType !== 'IfStatement'
-                        && branch.expression.extraLocs
-                        && (branch.expression.extraLocs.signature ||
-                            branch.expression.extraLocs.test)) {
-                        if (branch.expression.extraLocs.signature) {
-                            // (branch.expression.extraLocs.signature.start.line
-                            // === 1) &&
-                            // console.log("L1",
-                            // branch.expression.extraLocs.signature)
-                            const controlLParLoc = {
-                                start: {
-                                    line: branch
-                                        .expression
-                                        .extraLocs.signature.start.line,
-                                    column: branch
-                                        .expression
-                                        .extraLocs.signature.start.column,
-                                },
-                                end: {
-                                    line: branch.expression.blockLoc.start.line,
-                                    column: branch
-                                        .expression.blockLoc.start.column + 1,
-                                }
-                            };
-                            const controlLParRange =
-                                locToMonacoRange(controlLParLoc);
-                            liveRanges.push(controlLParRange);
-
-                            const controlRParLoc = {
-                                start: {
-                                    line: branch.expression.blockLoc.end.line,
-                                    column: branch
-                                        .expression.blockLoc.end.column - 1,
-                                },
-                                end: {
-                                    line: branch.expression.blockLoc.end.line,
-                                    column: branch
-                                        .expression.blockLoc.end.column,
-                                }
-                            };
-                            const controlRParRange =
-                                locToMonacoRange(controlRParLoc);
-                            liveRanges.push(controlRParRange);
-                        }
-
-                        if (branch.expression.extraLocs.test) {
-                            const controlLParLoc = {
-                                start: {
-                                    line: branch.expression.loc.start.line,
-                                    column: branch.expression.loc.start.column,
-                                },
-                                end: {
-                                    line: branch
-                                        .expression.extraLocs.test.start.line,
-                                    column: branch
-                                        .expression.extraLocs.test.start.column,
-                                }
-                            };
-                            const controlLParRange =
-                                locToMonacoRange(controlLParLoc);
-                            liveRanges.push(controlLParRange);
-
-                            const controlRParLoc = {
-                                start: {
-                                    line: branch
-                                        .expression.extraLocs.test.end.line,
-                                    column: branch
-                                        .expression.extraLocs.test.end.column,
-                                },
-                                end: {
-                                    line: branch.expression.blockLoc.start.line,
-                                    column: branch
-                                        .expression.blockLoc.start.column + 1,
-                                }
-                            };
-                            const controlRParRange =
-                                locToMonacoRange(controlRParLoc);
-                            liveRanges.push(controlRParRange);
-
-                            const controlEndLoc = {
-                                start: {
-                                    line: branch.expression.blockLoc.end.line,
-                                    column: branch
-                                        .expression.blockLoc.end.column - 1,
-                                },
-                                end: {
-                                    line: branch.expression.blockLoc.end.line,
-                                    column: branch
-                                        .expression.blockLoc.end.column,
-                                }
-                            };
-                            const controlEndRange =
-                                locToMonacoRange(controlEndLoc);
-                            liveRanges.push(controlEndRange);
-                            //     console.log(
-                            //     'while ranges',
-                            //     controlLParLoc,
-                            //     controlRParRange, controlEndRange
-                            //     );
-                        }
-                    }
-
-
-                    if (branch && branch.type === 'IfStatement' &&
-                        branch.expression?.extraLocs?.test) {
-                        //{start:{line:0, column:0}, end:{line:0, column:0}};
-                        // const controlLParLoc = {
-                        //     start: {
-                        //         line: branch.expression.loc.start.line,
-                        //         column: branch.expression.loc.start.column,
-                        //     },
-                        //     end: {
-                        //         line: branch
-                        //             .expression.extraLocs.test.start.line,
-                        //         column: branch
-                        //             .expression.extraLocs.test.start.column,
-                        //     }
-                        // };
-                        // // const controlLParRange =
-                        // //     locToMonacoRange(controlLParLoc);
-                        // // //  liveRanges.push(controlLParRange);
-                        //
-                        // const controlRParLoc = {
-                        //     start: {
-                        //         line: branch
-                        //             .expression.extraLocs.test.end.line,
-                        //         column: branch
-                        //             .expression.extraLocs.test.end.column,
-                        //     },
-                        //     end: {
-                        //         line: branch.expression.extraLocs.test.end.line,
-                        //         column: branch
-                        //             .expression.extraLocs.test.end.column + 1,
-                        //     }
-                        // };
-                        // const controlRParRange =
-                        //     locToMonacoRange(controlRParLoc);
-                        //    liveRanges.push(controlRParRange);
-                        // fix do while
-                        // if (branch.type === 'IfStatement') {
-                        //     const ignoreName =
-                        //         branch.blockName === 'consequent' ?
-                        //             'alternate' : 'consequent';
-                        //     // const range =
-                        //     //     branch.expression.extraLocs[ignoreName] ?
-                        //     //         locToMonacoRange(
-                        //     //             branch
-                        //     //             .expression.extraLocs[ignoreName]
-                        //     //         ) : null;
-                        //     //  console.log('control:',
-                        //     // branch.blockName,
-                        //     // 'ommitting', ignoreName,
-                        //     // branch.expression.extraLocs, range,);
-                        //     //  range && ignoreRanges.push(range);
-                        // }
-
-                        if (/*branch.type === 'IfStatement' && */
-                            (branch.blockName === 'alternate')) {
-                            // const controlRParLoc = {
-                            //     start: {
-                            //         line: branch
-                            //             .expression.extraLocs.test.end.line,
-                            //         column: branch
-                            //             .expression.extraLocs.test.end.column + 1,
-                            //     },
-                            //     end: {
-                            //         line: branch
-                            //             .expression
-                            //             .extraLocs.consequent.end.line,
-                            //         column: branch
-                            //             .expression
-                            //             .extraLocs.consequent.end.column,
-                            //     }
-                            // };
-                            // const controlRParRange =
-                            //     locToMonacoRange(controlRParLoc);
-                            //   liveRanges.push(controlRParRange);
-
-                            // const controlOpenBracketLoc = {
-                            //     start: {
-                            //         line:
-                            //         branch
-                            //             .expression
-                            //             .extraLocs.consequent.end.line,
-                            //         column:
-                            //         branch
-                            //             .expression
-                            //             .extraLocs.consequent.end.column,
-                            //     },
-                            //     end: {
-                            //         line:
-                            //         branch
-                            //             .expression
-                            //             .extraLocs.alternate.end.line,
-                            //         column: branch
-                            //             .expression
-                            //             .extraLocs.alternate.end.column + 1,
-                            //     }
-                            // };
-                            // const controlOpenBracketRange =
-                            //     locToMonacoRange(controlOpenBracketLoc);
-                            // //  liveRanges.push(controlOpenBracketRange);
-
-                            // const controlCloseBracketLoc = {
-                            //     start: {
-                            //         line: branch.expression.loc.end.line,
-                            //         column: branch.expression.loc.end.column,
-                            //     },
-                            //     end: {
-                            //         line: branch.expression.loc.end.line,
-                            //         column: branch.expression.loc.end.column + 1,
-                            //     }
-                            // };
-                            // const controlCloseBracketRange =
-                            //     locToMonacoRange(controlCloseBracketLoc);
-                            // //   liveRanges.push(controlCloseBracketRange);
-
-
-                        } else {
-                            if (branch.type !== 'DoWhileStatement') {
-                                // const content =
-                                //     branch.type === 'IfStatement'
-                                //         ? 'consequent' : 'body';
-                                // const controlRParOpenBracketLoc = {
-                                //     start: {
-                                //         line:
-                                //         branch
-                                //             .expression.extraLocs.test.end.line,
-                                //         column:
-                                //             branch
-                                //                 .expression
-                                //                 .extraLocs.test.end.column + 1,
-                                //     },
-                                //     end: {
-                                //         line:
-                                //         branch
-                                //             .expression
-                                //             .extraLocs[content].start.line,
-                                //         column:
-                                //         branch
-                                //             .expression
-                                //             .extraLocs[content].start.column,
-                                //     }
-                                // };
-                                // const controlRParOpenBracketRange =
-                                //     locToMonacoRange(
-                                //     controlRParOpenBracketLoc
-                                //     );
-                                // //  liveRanges.push(
-                                // controlRParOpenBracketRange
-                                // );
-
-                            }
-                        }
-
-
-                        // branch.expression.
-// console.log('loce', branch.expression.extraLocs[branch.blockName]);
-//                         const locO = branch
-//                             .expression.extraLocs[branch.blockName] ? {
-//                             start: {
-//                                 line: branch
-//                                     .expression
-//                                     .extraLocs[branch.blockName].start.line,
-//                                 column: branch
-//                                     .expression
-//                                     .extraLocs[branch.blockName].start.column,
-//                             },
-//                             end: {
-//                                 line: branch
-//                                     .expression
-//                                     .extraLocs[branch.blockName].start.line,
-//                                 column: branch
-//                                     .expression
-//                                     .extraLocs[
-//                                         branch.blockName
-//                                     ].start.column + 1,
-//                             }
-//                         } : null;
-                        // const rangeO = locO ? locToMonacoRange(locO) : null;
-                        // rangeO && liveRanges.push(rangeO);
-                        // const locC = branch.expression.extraLocs[branch.blockName] ? {
-                        //     start: {
-                        //         line: branch.expression.extraLocs[branch.blockName].end.line,
-                        //         column: branch.expression.extraLocs[branch.blockName].end.column ?
-                        //             branch.expression.extraLocs[branch.blockName].end.column - 1
-                        //             : branch.expression.extraLocs[branch.blockName].end.column,
-                        //     },
-                        //     end: {
-                        //         line: branch.expression.extraLocs[branch.blockName].end.line,
-                        //         column: branch.expression.extraLocs[branch.blockName].end.column,
-                        //     }
-                        // } : null;
-                        // const rangeC = locC ? locToMonacoRange(locC) : null;
-                        //    rangeC && liveRanges.push(rangeC);
-                        // console.log(branch.expression.extraLocs,
-                        // branch.blockName, branch.expression.extraLocs[branch.blockName]);
-                        //     this.highlightBranch(NavigationTypes.Local,
-                        // branch.expression.extraLocs[branch.blockName])
-                        //   : this.highlightBranch(NavigationTypes.Local);
-
-                    } else {
-
-
-                        const Navigator = () => {
-                            const NavButton = () => {
-                                const ref = useRef();
-                                useEffect(() => {
-                                    const afterRenderChildren =
-                                        setTimeout(() => {
-                                            // console.log(decorator.contentWidget.domNode, ref);
-                                            if (!ref.current) {
-                                                return;
-                                            }
-                                            // const width = ref
-                                            //     .current.getBoundingClientRect().width;
-                                            // decorator
-                                            //     .contentWidget
-                                            //     .domNode.style
-                                            //     .marginRight = `${width + 2}px`;
-                                            // console.log(width, decorator.contentWidget.domNode, ref.current);
-                                        }, 0);
-
-                                    return () => clearTimeout(
-                                        afterRenderChildren
-                                    );
-                                }, []);
-                                // isSelected &&
-                                // console.log(decorator.contentWidget.domNode);
-
-                                return (
-                                    <Portal
-                                        container={decorator.contentWidget.domNode}>
-                                        <Tooltip title={
-                                            <LiveExpression
-                                                style={style}
-                                                color={color}
-                                                expressionId={id}
-                                                classes={classes}
-                                                widget={decorator}
-                                                data={[...branched[id]]}
-                                                isOpen={isSelected}
-                                                objectNodeRenderer={this.objectNodeRenderer}
-                                                sliderRange={sliderRange}
-                                                branchNavigatorChange={(timelineI, navigatorIndex, prevTimelineI) =>
-                                                    this.handleBranchChange(
-                                                        navigationType, id, timelineI, navigatorIndex, prevTimelineI
-                                                    )}
-                                                //handleChange={this.handleObjectExplorerExpand}
-                                            />
-                                        }
-                                                 placement="top-start"
-                                                 arrow
-                                                 disableInteractive={isSelected}
-                                                 {...(isSelected ? {open: true} : {})}
-                                            //      enterDelay={500}
-                                            //      leaveDelay={500}
-                                            //      PopperProps={{keeMounted:true}}
-                                        >
-                                            <Button
-                                                ref={ref}
-                                                variant="contained"
-                                                color={color}
-                                                className={branchNavigatorWidgetClassName}
-                                                // style={{marginRight: 20}}
-                                            >
-                                                {branchLabel}
-                                            </Button>
-                                        </Tooltip>
-                                    </Portal>
-
-                                );
-                            }
-
-                            return (!isE ? <NavButton/> :
-                                    <>
-
-                                        <Portal
-                                            container={decorator.contentWidget.domNode}>
-                                            <div
-                                                // style={console.log('n.isError', n.isError) || n.isError ? {
-                                                //     zIndex: 9999,
-                                                //     color: 'red'
-                                                // } : {}}
-                                                onMouseEnter={() => {
-                                                    // console.log(n);
-                                                    this.highlightSingleText(
-                                                        n.loc, n.isError ? HighlightTypes.error
-                                                            : n.isGraphical ?
-                                                                HighlightTypes.graphical : HighlightTypes.text,
-                                                        this.traceSubscriber
-                                                            .getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
-                                                    this.handleCurrentContentWidgetId(id, n.range);
-                                                }}
-                                                onMouseLeave={() => {
-                                                    this.highlightSingleText();
-                                                    this.handleCurrentContentWidgetId();
-                                                }}
-                                                className={liveExpressionContainerClassName}
-                                            >
-                                                {isE ?
-                                                    <ObjectRootLabel
-                                                        data={branch.e.data}
-                                                        compact={true}
-                                                        expressionType={n.expressionType}
-                                                        iconify={false}
-                                                    />
-                                                    : <NavButton/>
-                                                }
-                                            </div>
-                                        </Portal>
-                                        {isE ? null
-                                            : <LiveExpression
-                                                style={style}
-                                                color={color}
-                                                expressionId={id}
-                                                classes={classes}
-                                                widget={decorator}
-                                                data={[...branched[id]]}
-                                                isOpen={isSelected && branched[id].length > 0}
-                                                objectNodeRenderer={this.objectNodeRenderer}
-                                                sliderRange={sliderRange}
-                                                branchNavigatorChange={(timelineI, navigatorIndex, prevTimelineI) =>
-                                                    this.handleBranchChange(
-                                                        navigationType, id, timelineI, navigatorIndex, prevTimelineI
-                                                    )}
-                                                //handleChange={this.handleObjectExplorerExpand}
-                                            />}
-                                    </>
-                            );
-                        };
-
-                        navigatorWidgetIds[id] = true;
-                        navigators.push(<Navigator
-                            key={liveExpressionKey}/>);
-
-
-                    }
+    handleBranchChange = (
+        navigationType,
+        currentBranchId,
+        currentBranchTimelineId,
+        navigatorIndex,
+        prevTimelineI,
+    ) => {
+        this.setState((prevState) => {
+            let {branchSelections} = prevState;
+            const globalB = (
+                branchSelections[NavigationTypes.Global] || {}
+            );
+            const globalCurrentBranchId = globalB.currentBranchId;
+            branchSelections = {
+                ...branchSelections, [navigationType]: {
+                    currentBranchId,
+                    currentBranchTimelineId,
+                    navigatorIndex,
+                    prevTimelineI,
+                    globalCurrentBranchId,
                 }
+            };
+
+            if (globalCurrentBranchId
+                && branchSelections[
+                    NavigationTypes.Local
+                    ]?.globalCurrentBranchId !== globalCurrentBranchId) {
+                branchSelections[NavigationTypes.Local] = null;
             }
-        }
-        return navigators;
-        // }, [branched, decorators,]);
+            return {branchSelections};
+        });
+    };
+
+    Navigator = ({
+                     navigationType,
+                     id,
+                     container,
+                     objectNodeRenderer,
+                     data,
+                     widget,
+                     navigatorIndex,
+                     branchTotal,
+                     classes,
+                     style,
+                     color,
+                     branchNavigatorWidgetClassName,
+                     // isSelected,
+                 }) => {
+        const ref = useRef();
+        const handleChange = useCallback(
+            (timelineI, navigatorIndex, prevTimelineI) =>
+                this.handleBranchChange(
+                    navigationType, id,
+                    timelineI, navigatorIndex, prevTimelineI
+                ),
+            [navigationType, id]
+        );
+        const sliderRange = useMemo(() => [navigatorIndex || branchTotal]
+            , [
+                navigatorIndex,
+                branchTotal,
+            ]
+        );
+
+
+        // useEffect(() => {
+        //     const afterRenderChildren =
+        //         setTimeout(() => {
+        //             // console.log(decorator.contentWidget.domNode, ref);
+        //             if (!ref.current) {
+        //                 return;
+        //             }
+        //             // const width = ref
+        //             //     .current.getBoundingClientRect().width;
+        //             // decorator
+        //             //     .contentWidget
+        //             //     .domNode.style
+        //             //     .marginRight = `${width + 2}px`;
+        //             // console.log(width, decorator.contentWidget.domNode, ref.current);
+        //         }, 0);
         //
-        // return navi;
-        // };
-        //
-        //
-        // return navigators;
-        // return <B _branches={_branches}/>;
-    });
+        //     return () => clearTimeout(
+        //         afterRenderChildren
+        //     );
+        // }, []);
+        // isSelected &&
+        // let isSelected = true;
+        // console.log(decorator.contentWidget.domNode, isSelected);
+        //{...(isSelected ? {open: true} : {disableInteractive:true})}
+        const showNavigatorTooltip = branchTotal > 1;
+        return (
+            <Portal
+                container={container}>
+                <NavigatorTooltip
+                    key={showNavigatorTooltip}
+                    title={
+                        <LiveExpression
+                            style={style}
+                            color={color}
+                            expressionId={id}
+                            classes={classes}
+                            widget={widget}
+                            data={data}
+                            objectNodeRenderer={objectNodeRenderer}
+                            sliderRange={sliderRange}
+                            branchNavigatorChange={handleChange}
+                        />
+                    }
+                    placement="top-start"
+                    {...(showNavigatorTooltip ? {arrow: true} : {open: false})}
+                    enterDelay={500}
+                    leaveDelay={500}
+                >
+                    <Button
+                        ref={ref}
+                        variant="contained"
+                        color={color}
+                        className={branchNavigatorWidgetClassName}
+                    >
+                        <span
+                            className={classes.navigatorLabelIndex}
+                        >
+                            {navigatorIndex || branchTotal}
+                        </span>
+                        <span
+                            className={classes.navigatorLabelTotal}
+                        >
+                            /{branchTotal}
+                        </span>
+                    </Button>
+                </NavigatorTooltip>
+            </Portal>
+
+        );
+    };
 
     findFuncRefs(timeline, branches) {
         let branchSource = null, startIndex = 0;
@@ -2420,7 +2526,8 @@ class LiveExpressionStore extends PureComponent {
             timeline,
             searchState,
             firecoPad,
-            isAutoLogActive
+            isAutoLogActive,
+            VisualQueryManager,
         } = this.props;
         const {getLocationId} = this.state;
         if (!isAutoLogActive) {
@@ -2445,14 +2552,6 @@ class LiveExpressionStore extends PureComponent {
         );
         //todo: pass all baranchSelections to Branch Manager
 
-        const style = {
-            width: 'calc(100%)',
-        };
-
-        if (editorHeight && editorWidth) {
-            style.maxWidth = `${editorWidth}px`;
-            style.maxHeight = `${Math.ceil(editorHeight / 2)}px`;
-        }
         // const lee =
         // document.querySelectorAll(`.${defaultExpressionClassName}`);
         // if(firecoPad){
@@ -2472,14 +2571,16 @@ class LiveExpressionStore extends PureComponent {
         // }
 
 
-        this.unHighlightLiveExpressions();
         // this.unHighlightErrors();
-        this.unHighlightBranches();
+        // this.unHighlightBranches();
 
         this.prevLiveExpressionWidgets = this.liveExpressionWidgets;
 
 
         const navProps = {
+            VisualQueryManager,
+            editorWidth,
+            editorHeight,
             afterWidgetize: this.afterWidgetize,
             getLocationId,
             firecoPad,
@@ -2489,15 +2590,15 @@ class LiveExpressionStore extends PureComponent {
             currentBranchId,
             currentBranchTimelineId,
             classes,
-            style,
             liveExpressionContainerClassName,
             decorators,
             currentContentWidgetId,
             searchState,
             traceSubscriber: this.traceSubscriber,
             locationMap: this.locationMap,
-            configureNavigators: this.configureNavigators,
+            Navigators: this.Navigators,
             highlightLiveExpressions: this.highlightLiveExpressions,
+            unHighlightLiveExpressions: this.unHighlightLiveExpressions,
             getGoToTimelineBranch: this.getGoToTimelineBranch,
             handleBranchChange: this.handleBranchChange,
             objectNodeRenderer: this.objectNodeRenderer,
@@ -2533,18 +2634,34 @@ class LiveExpressionStore extends PureComponent {
     };
 
 
-    getGoToTimelineBranch = (timeline, timelineBranchManager, handleBranchChange) => (entry) => {
-        const timelineI = timeline ? timeline.length - timeline.indexOf(entry) : -1;
-        if (entry && timelineI > 0 && timelineBranchManager) {
-            const branch = timelineBranchManager.getBranchByTimelineI(timelineI);
-            //   console.log('tri', NavigationTypes.Global, entry.id, timelineI, branch);
+    getGoToTimelineBranch = (
+        timeline, timelineBranchManager, handleBranchChange
+    ) => (
+        entry
+    ) => {
+        const timelineI = entry ? entry.i : -1;
 
+        if (entry && timelineI > -1 && timelineBranchManager) {
+            const branchResult =
+                timelineBranchManager.getBranchByTimelineI(timelineI);
+            const {
+                branch, isGlobal, navigatorIndex, prevTimelineI
+            } = branchResult;
             if (branch) {
-                const prevTimelineI = branch.branches && branch.branches.length > 1 ?
-                    branch.branches.find((ti, i) => (ti > timelineI && timelineI < branch.branches[i - 1])) : 0;
-                //       console.log('tri', NavigationTypes.Global, entry.id, timelineI, '*'/*navigatorIndex*/, prevTimelineI);
+                console.log(
+                    'tri',
+                    branch,
+                    isGlobal,
+                    timelineI,
+                    navigatorIndex,
+                    prevTimelineI
+                );
                 handleBranchChange(
-                    NavigationTypes.Global, entry.id, timelineI, '*'/*navigatorIndex*/, prevTimelineI
+                    isGlobal ? NavigationTypes.Global : NavigationTypes.Local,
+                    entry.id,
+                    timelineI,
+                    navigatorIndex,
+                    prevTimelineI
                 );
             }
 
@@ -2744,18 +2861,16 @@ class LiveExpressionStore extends PureComponent {
 
     unHighlightLiveExpressions = () => {
         const {firecoPad} = this.props;
-        if (!firecoPad) {
+        if (!firecoPad?.monacoEditor) {
             return;
         }
-        if (this.prevDecorationIds && this.prevDecorationIds.length) {
+        if (this.prevDecorationIds?.length) {
             this.prevDecorationIds =
                 firecoPad.monacoEditor.deltaDecorations(
                     this.prevDecorationIds, []
                 );
         }
-        if (
-            this.prevIgnoreDecorationIds && this.prevIgnoreDecorationIds.length
-        ) {
+        if (this.prevIgnoreDecorationIds?.length) {
             this.prevIgnoreDecorationIds =
                 firecoPad.monacoEditor.deltaDecorations(
                     this.prevIgnoreDecorationIds, []
@@ -3020,14 +3135,20 @@ class LiveExpressionStore extends PureComponent {
     getEditorTextInLoc = (loc) => {
         const {firecoPad} = this.props;
 
-        if (!firecoPad || !loc) {
-            return;
+        if (!firecoPad?.monacoEditor?.getModel
+            || !firecoPad?.liveExpressionWidgetProvider?.locToMonacoRange) {
+            console.warn("Monaco editor's text in loc not ready.");
+            return '';
         }
 
-        return firecoPad
-            .monacoEditor
-            .getModel()
-            .getValueInRange(firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc));
+        if (!loc) {
+            console.log("No text location provided.");
+            return '';
+        }
+
+        return firecoPad.monacoEditor.getModel().getValueInRange(
+            firecoPad.liveExpressionWidgetProvider.locToMonacoRange(loc)
+        );
     };
 
     colorizeDomElement = (ref) => {

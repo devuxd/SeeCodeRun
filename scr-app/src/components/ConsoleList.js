@@ -1,18 +1,24 @@
-import React, {useState, useEffect, useMemo, useCallback, forwardRef} from 'react';
+import React, {
+    forwardRef,
+    useCallback,
+    useEffect,
+    useMemo,
+    useState
+} from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core/styles';
-import {darken, alpha, lighten} from '@material-ui/core/styles/colorManipulator';
+import {alpha, darken, lighten, withStyles} from '@material-ui/core/styles';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
+import Typography from '@material-ui/core/Typography';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 
 import InfiniteStickyList from './InfiniteStickyList';
-import ObjectExplorer from "./ObjectExplorer";
-import {StickyAction} from "./TraceList";
+import ObjectExplorer from './ObjectExplorer';
+import {StickyAction} from './TraceList';
 
-import {PastebinContext, TABLE_ROW_HEIGHT} from "../containers/Pastebin";
+import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
 import {HighlightPalette} from '../containers/LiveExpressionStore';
 
 const styles = theme => ({
@@ -33,37 +39,36 @@ const styles = theme => ({
         overflowX: 'auto',
     },
     tableRow: {
-        height: TABLE_ROW_HEIGHT,
         '&$hover:hover': {
             backgroundColor: HighlightPalette.text,
         },
         cursor: 'pointer',
     },
     tableRowError: {
-        height: TABLE_ROW_HEIGHT,
         backgroundColor: alpha(HighlightPalette.error, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.error,
         },
     },
     tableRowGraphical: {
-        height: TABLE_ROW_HEIGHT,
         backgroundColor: alpha(HighlightPalette.graphical, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.graphical,
         }
     },
     tableRowInput: {
-        height: TABLE_ROW_HEIGHT,
+        // height: TABLE_ROW_HEIGHT,
     },
     hover: {},
     valueCell: {
         overflow: 'hidden',
         margin: 0,
-        padding: theme.spacing(1),
+        padding: 0,
         borderBottom: 0,
+        minHeight: TABLE_ROW_HEIGHT,
     },
     valueCellFill: {
+        minHeight: TABLE_ROW_HEIGHT,
         width: '100%',
         overflow: 'hidden',
         margin: 0,
@@ -74,6 +79,7 @@ const styles = theme => ({
         margin: theme.spacing(4),
     },
     cellParamContainer: {
+        minHeight: TABLE_ROW_HEIGHT,
         display: 'flex',
         alignItems: 'center',
         flexFlow: 'row',
@@ -82,7 +88,7 @@ const styles = theme => ({
         marginLeft: theme.spacing(1),
     },
     icon: {
-        fontSize: theme.spacing(2),
+        fontSize: theme.typography.pxToRem(16),
         color: theme.palette.mode === 'light'
             ? lighten(alpha(theme.palette.divider, 1), 0.6)
             : darken(alpha(theme.palette.divider, 1), 0.4)
@@ -96,7 +102,7 @@ const styles = theme => ({
     },
     commandText: {
         fontFamily: 'Menlo, monospace',
-        fontSize: 12,
+        fontSize: theme.typography.pxToRem(12),
     },
     tableHeadRow: {
         height: TABLE_ROW_HEIGHT + 16,
@@ -123,45 +129,6 @@ const styles = theme => ({
         flexFlow: 'row',
     }
 });
-
-const configureMatchesFilter = (searchState) => {
-        const findChunks = (textToHighlight) => {
-            const searchWords = searchState.value.split(' ');
-            return searchState.findChunks(
-                {
-                    searchWords,
-                    textToHighlight
-                }
-            )
-        };
-
-        return (data) => {
-            const result = {
-                found: false,
-                functions: [],
-                expressions: [],
-                values: [],
-            };
-
-            const isAnyText = !searchState.value.trim().length;
-
-            if (isAnyText) {
-                result.found = true;
-                return result;
-            }
-
-            result.values = findChunks(data.expression);
-            result.found = !!result.values.length;
-
-            if (!result.found) {
-                result.values = findChunks(data.value);
-                result.found = !!result.values.length;
-            }
-
-            return result;
-        }
-    }
-;
 
 function createData(id, entry) {
     return {id, entry};
@@ -220,9 +187,13 @@ const Row = ({index, style, data}) => {
                     : null
                 }
                 {(n.isFromInput && !n.isResult && !n.isError) ?
-                    <div className={classes.commandText}>
+                    <Typography
+                        align='left'
+                        noWrap
+                        variant='code'
+                    >
                         {`${n.value[0]}`}
-                    </div>
+                    </Typography>
                     : (n.value || []).map((param, i) => {
                         return (
                             <div className={classes.cellParam} key={i}>
@@ -259,7 +230,13 @@ const EmptyRow = withStyles(styles)(({classes}) => {
                 classes={tableClasses}
                 align={'center'}
             >
-                No console logs yet.
+                <Typography
+                    noWrap
+                    variant='code'
+                >
+                    No console logs yet.
+                </Typography>
+
             </TableCell>
         </TableRow>
     );
@@ -270,7 +247,6 @@ export const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
 function WindowedTable(props) {
     const {
         order,
-        estimatedItemSize = 29,
         logData: data,
         searchState,
         configureMappingEventListeners,
@@ -282,10 +258,7 @@ function WindowedTable(props) {
         autoScroll,
     } = props;
     const [stickyIndices, setStickyIndices] = useState([]);
-    const findChunks = useMemo(
-        () => configureMatchesFilter(searchState),
-        [searchState]
-    );
+    const findChunks = searchState.matchesFilterConsole;
 
     const {
         totalMatches, ignoreIndices, rows
@@ -337,9 +310,9 @@ function WindowedTable(props) {
     const autoScrollTo = order === 'asc' ? 'bottom' : 'top';
 
     const listProps = useMemo(() => ({
+        estimatedItemSize: TABLE_ROW_HEIGHT,
         autoScrollTo,
         items: rows,
-        estimatedItemSize,
         StickyComponent: StickyAction,
         RowComponent: Row,
         RowContainer,
@@ -358,7 +331,6 @@ function WindowedTable(props) {
     }), [
         autoScrollTo,
         rows,
-        estimatedItemSize,
         isItemLoaded,
         loadMoreItems,
         stickyIndices,

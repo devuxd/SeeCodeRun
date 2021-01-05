@@ -1,13 +1,9 @@
 import React, {PureComponent} from 'react';
-// import PropTypes from 'prop-types';
-// import {withStyles} from '@material-ui/core/styles';
-
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-// import ListItemIcon from '@material-ui/core/ListItemIcon';
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
 
@@ -21,7 +17,7 @@ class ExpressionInspector extends PureComponent {
   };
 
   render() {
-    const {classes} = this.props;
+    // const {classes} = this.props;
     const {dense, secondary} = this.state;
     return <List dense={dense}>
       <ListItem>

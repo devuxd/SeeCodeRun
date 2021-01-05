@@ -1,9 +1,8 @@
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
-import throttle from 'lodash/throttle';
-import debounce from 'lodash/debounce';
 
 import {withStyles} from '@material-ui/core/styles';
+import Grow from '@material-ui/core/Grow';
 import Tooltip from '@material-ui/core/Tooltip';
 import Badge from '@material-ui/core/Badge';
 import Paper from '@material-ui/core/Paper';
@@ -18,7 +17,7 @@ import Slide from '@material-ui/core/Slide';
 import PlayListPlayIcon from '@material-ui/icons/PlaylistPlay';
 import ConsoleIcon from 'mdi-material-ui/ConsoleLine';
 
-import {useLodashDelayable} from '../utils/reactUtils';
+import {useLodashThrocer} from '../utils/reactUtils';
 import TraceList from './TraceList';
 import ConsoleInput from './ConsoleInput';
 import ConsoleList from './ConsoleList';
@@ -31,6 +30,15 @@ function TabResultLabel({
                             result,
                             isUpdating
                         }) {
+    const _classes = useMemo(() => ({
+            primary: classes.listItemTextPrimary,
+            secondary: isUpdating ?
+                classes.colorTransitionStart : classes.colorTransition
+        }),
+        [
+            classes, isUpdating
+        ]
+    );
     return (
         <ListItem
             role={undefined}
@@ -43,12 +51,7 @@ function TabResultLabel({
                 <Avatar children={icon}/>
             </ListItemAvatar>
             <ListItemText
-                classes={{
-                    root: classes.listItemText,
-                    primary: classes.listItemTextPrimary,
-                    secondary: isUpdating ?
-                        classes.colorTransitionStart : classes.colorTransition
-                }}
+                classes={_classes}
                 primary={label}
                 secondary={
                     formatText ?
@@ -106,15 +109,6 @@ const styles = theme => ({
     colorTransitionStart: {
         backgroundColor: theme.palette.secondary.main
     },
-    opacityTransition: {
-        transition: ['opacity'],
-        transitionDuration: 10000,
-        transitionTimingFunction: 'cubic-bezier(1,0,1,-0.75)',
-        opacity: 0,
-    },
-    opacityTransitionStart: {
-        opacity: 1,
-    },
     paper: {
         zIndex: 1,
         position: 'absolute',
@@ -147,6 +141,12 @@ function a11yProps(index) {
     };
 }
 
+const defaultGrowTimeout = {
+    appear: 0,
+    enter: 2000,
+    exit: 0
+};
+
 function DebugContainer(
     {
         classes,
@@ -154,76 +154,64 @@ function DebugContainer(
         handleChangeTab,
         handleChangePlaying,
         isPlaying,
-        badgeMaxCount = 99
+        badgeMaxCount = 99,
+        growTimeout = defaultGrowTimeout,
     }
 ) {
     const {
         colorTransition, colorTransitionStart,
-        opacityTransition, opacityTransitionStart,
     } = classes;
+
     const [isTraceUpdating, setIsTraceUpdating] = useState(false);
     const [isConsoleUpdating, setIsConsoleUpdating] = useState(false);
     const [traceTotal, setTraceTotal] = useState(0);
     const [consoleTotal, setConsoleTotal] = useState(0);
     const [consoleTableMarginTop, setConsoleTableMarginTop] = useState(0);
 
-    const [handleTraceTotalChangeThrottled] = useLodashDelayable(
-        throttle,
-        (total) => {
-            setIsTraceUpdating(true);
-            setTraceTotal(total);
-        },
-        1500,
-        {leading: true, trailing: false}
-    );
-    const [handleTraceTotalChangeDebounced] = useLodashDelayable(
-        debounce,
-        (total) => {
-            handleTraceTotalChangeThrottled.cancel();
-            setIsTraceUpdating(false);
-            setTraceTotal(total);
-        },
-        500,
-        {leading: false, trailing: true, maxWait: 1000}
+    const [
+        handleTraceTotalChangeThrottled,
+        handleTraceTotalChangeDebounced
+    ] = useMemo(
+        () => ([
+            (total) => {
+                setIsTraceUpdating(true);
+                setTraceTotal(total);
+            },
+            (total) => {
+                setIsTraceUpdating(false);
+                setTraceTotal(total);
+            }
+        ]),
+        [setIsTraceUpdating, setTraceTotal]
     );
 
-    const [handleTraceTotalChange] = useLodashDelayable(
-        throttle,
-        (total) => {
-            handleTraceTotalChangeThrottled(total);
-            handleTraceTotalChangeDebounced(total);
-        },
-        0,
+    const handleTraceTotalChange = useLodashThrocer(
+        handleTraceTotalChangeThrottled,
+        handleTraceTotalChangeDebounced
     );
 
-    const [handleConsoleTotalChangeThrottled] = useLodashDelayable(
-        throttle,
-        (total) => {
-            setIsConsoleUpdating(true);
-            setConsoleTotal(total);
-        },
-        1500,
-        {leading: true, trailing: false}
-    );
-    const [handleConsoleTotalChangeDebounced] = useLodashDelayable(
-        debounce,
-        (total) => {
-            handleConsoleTotalChangeThrottled.cancel();
-            setIsConsoleUpdating(false);
-            setConsoleTotal(total);
-        },
-        500,
-        {leading: false, trailing: true, maxWait: 1000}
+    const [
+        handleConsoleTotalChangeThrottled,
+        handleConsoleTotalChangeDebounced
+    ] = useMemo(
+        () => ([
+            (total) => {
+                setIsConsoleUpdating(true);
+                setConsoleTotal(total);
+            },
+            (total) => {
+                setIsConsoleUpdating(false);
+                setConsoleTotal(total);
+            }
+        ]),
+        [setIsConsoleUpdating, setConsoleTotal]
     );
 
-    const [handleConsoleTotalChange] = useLodashDelayable(
-        throttle,
-        (total) => {
-            handleConsoleTotalChangeThrottled(total);
-            handleConsoleTotalChangeDebounced(total);
-        },
-        0,
+    const handleConsoleTotalChange = useLodashThrocer(
+        handleConsoleTotalChangeThrottled,
+        handleConsoleTotalChangeDebounced
     );
+
     const onDebugTabEnter = useCallback(
         () => handleChangePlaying('table', true),
         [handleChangePlaying]);
@@ -242,20 +230,39 @@ function DebugContainer(
         ) => setConsoleTableMarginTop(containerHeight)
         , [setConsoleTableMarginTop]);
 
-    const traceBadgeClasses = useMemo(
-        () => ({
-            badge: isTraceUpdating ? opacityTransitionStart : opacityTransition
-        })
-        , [isTraceUpdating, opacityTransition, opacityTransitionStart]
+    const [isTraceBadgeInvisible, setIsTraceBadgeInvisible] = useState(true);
+    const setIsTraceBadgeInvisibleTrue = useCallback(
+        () => setIsTraceBadgeInvisible(true),
+        [setIsTraceBadgeInvisible]
     );
 
-    const consoleBadgeClasses = useMemo(
-        () => ({
-            badge: isConsoleUpdating ?
-                opacityTransitionStart : opacityTransition
-        })
-        , [isConsoleUpdating, opacityTransition, opacityTransitionStart]
+    const [
+        isConsoleBadgeInvisible, setIsConsoleBadgeInvisible
+    ] = useState(true);
+    const setIsConsoleBadgeInvisibleTrue = useCallback(
+        () => setIsConsoleBadgeInvisible(true),
+        [setIsConsoleBadgeInvisible]
     );
+
+    useEffect(() => {
+        traceTotal
+        && isTraceUpdating
+        && isTraceBadgeInvisible
+        && setIsTraceBadgeInvisible(false);
+    }, [
+        traceTotal, isTraceUpdating,
+        isTraceBadgeInvisible, setIsTraceBadgeInvisible
+    ]);
+
+    useEffect(() => {
+        consoleTotal
+        && isConsoleUpdating
+        && isConsoleBadgeInvisible
+        && setIsConsoleBadgeInvisible(false);
+    }, [
+        consoleTotal, isConsoleUpdating,
+        isConsoleBadgeInvisible, setIsConsoleBadgeInvisible
+    ]);
 
     return (
         <div className={classes.root}>
@@ -278,15 +285,18 @@ function DebugContainer(
                         title={`Trace: ${traceTotal} total entries`}
                         placement={'bottom-end'}
                         enterDelay={300}
+                        onOpen={setIsTraceBadgeInvisibleTrue}
                     >
-                        <Badge
-                            max={badgeMaxCount}
-                            badgeContent={traceTotal}
-                            color="secondary"
-                            classes={traceBadgeClasses}
-                        >
-                            <PlayListPlayIcon/>
-                        </Badge>
+                        <Grow in={!isTraceUpdating} timeout={growTimeout}>
+                            <Badge
+                                invisible={isTraceBadgeInvisible}
+                                max={badgeMaxCount}
+                                badgeContent={traceTotal}
+                                color="secondary"
+                            >
+                                <PlayListPlayIcon/>
+                            </Badge>
+                        </Grow>
                     </Tooltip>
                 </ToggleButton>
                 <ToggleButton
@@ -302,15 +312,18 @@ function DebugContainer(
                         title={`Console: ${consoleTotal} total entries`}
                         placement={'bottom-end'}
                         enterDelay={300}
+                        onOpen={setIsConsoleBadgeInvisibleTrue}
                     >
-                        <Badge
-                            max={badgeMaxCount}
-                            badgeContent={consoleTotal}
-                            color="secondary"
-                            classes={consoleBadgeClasses}
-                        >
-                            <ConsoleIcon/>
-                        </Badge>
+                        <Grow in={!isConsoleUpdating} timeout={growTimeout}>
+                            <Badge
+                                invisible={isConsoleBadgeInvisible}
+                                max={badgeMaxCount}
+                                badgeContent={consoleTotal}
+                                color="secondary"
+                            >
+                                <ConsoleIcon/>
+                            </Badge>
+                        </Grow>
                     </Tooltip>
                 </ToggleButton>
 

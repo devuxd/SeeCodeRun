@@ -4,19 +4,20 @@ import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
 
-import {VisualQueryManager} from '../containers/Pastebin';
-import {backgroundColorAnimation as animation} from "./UI";
+import {VisualQueryManager} from '../seecoderun/modules/VisualQueryManager';
+import {backgroundColorAnimation as animation} from './UI';
 
 const styles = theme => ({
     buttonRoot: {
         boxShadow: 'unset',
         minHeight: 'unset',
         minWidth: 'unset',
-        margin: '0',
+        margin: 0,
+        marginTop: -1,
         paddingLeft: theme.spacing(0.5),
         paddingRight: theme.spacing(0.5),
-        height: 14,
-        fontSize: 10,
+        height: theme.typography.pxToRem(14),
+        fontSize: theme.typography.pxToRem(10),
         lineHeight: 1,
         border: `1px solid ${theme.palette.secondary.main}`,
         color: theme.palette.secondary.main,
@@ -30,11 +31,12 @@ const styles = theme => ({
         boxShadow: 'unset',
         minHeight: 'unset',
         minWidth: 'unset',
-        margin: '0',
+        margin: 0,
+        marginTop: -1,
         paddingLeft: theme.spacing(0.5),
         paddingRight: theme.spacing(0.5),
-        height: 14,
-        fontSize: 10,
+        height: theme.typography.pxToRem(14),
+        fontSize: theme.typography.pxToRem(10),
         lineHeight: 1,
         border: `1px solid ${theme.palette.secondary.main}`,
         zIndex: theme.zIndex.tooltip,
@@ -44,11 +46,12 @@ const styles = theme => ({
         boxShadow: 'unset',
         minHeight: 'unset',
         minWidth: 'unset',
-        margin: '0',
+        margin: 0,
+        marginTop: -1,
         paddingLeft: theme.spacing(0.5),
         paddingRight: theme.spacing(0.5),
-        height: 14,
-        fontSize: 10,
+        height: theme.typography.pxToRem(14),
+        fontSize: theme.typography.pxToRem(10),
         lineHeight: 1,
         border: `1px solid ${theme.palette.secondary.main}`,
         zIndex: theme.zIndex.tooltip,
@@ -66,8 +69,7 @@ const GraphicalQuery = ({
                         }) => {
     const handleClick = useCallback((event) => {
             event.stopPropagation();
-            VisualQueryManager
-                .onChange(outputRefs, visualIds, 'select')
+            VisualQueryManager.onChange(outputRefs, visualIds, 'select');
         },
         [outputRefs, visualIds]);
 

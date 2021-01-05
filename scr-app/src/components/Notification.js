@@ -15,7 +15,7 @@ function TransitionDown(props) {
     return <Slide {...props} direction="down"/>;
 }
 
-const styles = (theme) => ({
+const styles = () => ({
     snackbar: {},
     snackbarContent: {
         maxWidth: 'inherit',

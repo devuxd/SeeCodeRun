@@ -2,12 +2,15 @@ import difference from 'lodash/difference';
 import debounce from 'lodash/debounce';
 // import {Subject} from 'rxjs/Subject';
 // import {Observable} from 'rxjs/Observable';
-import {monacoProps} from "./monacoUtils";
-import {configureCreateMonacoRange, configureMonacoRangeToClassName} from "./scrUtils";
+import {monacoProps} from './monacoUtils';
+import {
+    configureCreateMonacoRange,
+    configureMonacoRangeToClassName
+} from './scrUtils';
 import {configureLocToMonacoRange} from 'monaco-jsx-highlighter';
 // import AutoLogShift from '../seecoderun/modules/AutoLogShift';
 //LiveExpressionStore,
-import  {defaultExpressionClassName} from "../containers/LiveExpressionStore";
+import {defaultExpressionClassName} from '../containers/LiveExpressionStore';
 
 import './LiveExpressionWidgetProvider.css';
 

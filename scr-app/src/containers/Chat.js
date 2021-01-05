@@ -1,9 +1,9 @@
 import React, {
-    memo,
     createRef,
+    memo,
     PureComponent,
-    useState,
-    useEffect
+    useEffect,
+    useState
 } from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -33,13 +33,15 @@ import Skeleton from '@material-ui/core/Skeleton';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 
-import randomColor from "randomcolor";
+import randomColor from 'randomcolor';
 import update from 'immutability-helper';
 import {motion} from 'framer-motion';
 import {ResizableBox} from 'react-resizable';
 
-import {configureFirecoChat} from '../redux/modules/fireco';
-import {firecoEditorsSetUserId} from '../redux/modules/fireco';
+import {
+    configureFirecoChat,
+    firecoEditorsSetUserId
+} from '../redux/modules/fireco';
 import PromiseAutoComplete from '../components/PromiseAutoComplete';
 import InfinityChatList from './InfinityChatList';
 
@@ -1040,7 +1042,8 @@ class Chat extends PureComponent {
                                                         // altAxis: true,
                                                         altBoundary: true,
                                                         // tether: false,
-                                                        rootBoundary: 'viewport',
+                                                        rootBoundary:
+                                                            'viewport',
                                                         // padding: 8
                                                     }
                                                 }

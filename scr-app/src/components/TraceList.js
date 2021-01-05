@@ -1,22 +1,16 @@
 import React, {
     forwardRef,
-    useState,
-    useLayoutEffect,
+    useCallback,
     useEffect,
     useMemo,
-    useCallback
+    useState
 } from 'react';
 import isString from 'lodash/isString';
-import JSAN from "jsan";
+import JSAN from 'jsan';
 
-import {withStyles} from '@material-ui/core/styles';
-import {
-    darken,
-    alpha,
-    lighten
-} from '@material-ui/core/styles/colorManipulator';
-import Pin from "mdi-material-ui/Pin";
-import PinOutline from "mdi-material-ui/PinOutline";
+import {alpha, darken, lighten, withStyles} from '@material-ui/core/styles';
+import Pin from 'mdi-material-ui/Pin';
+import PinOutline from 'mdi-material-ui/PinOutline';
 
 import ButtonBase from '@material-ui/core/ButtonBase';
 import Typography from '@material-ui/core/Typography';
@@ -26,17 +20,17 @@ import TableRow from '@material-ui/core/TableRow';
 
 
 import InfiniteStickyList from './InfiniteStickyList';
-import ObjectExplorer from "./ObjectExplorer";
+import ObjectExplorer from './ObjectExplorer';
 
-import {PastebinContext, TABLE_ROW_HEIGHT} from "../containers/Pastebin";
+import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
 import {
     configureGoToTimelineBranch,
     HighlightPalette
 } from '../containers/LiveExpressionStore';
-import OverflowComponent from "./OverflowComponent";
+import OverflowComponent from './OverflowComponent';
 
-import Highlighter from "react-highlight-words";
-import {usePrevious} from "../utils/reactUtils";
+import Highlighter from 'react-highlight-words';
+import {usePrevious} from '../utils/reactUtils';
 
 const actionStyles = () => ({
     stickyButton: {
@@ -52,14 +46,29 @@ const actionStyles = () => ({
         flexFlow: 'row',
     },
 });
-const stickyPin = <Pin style={{fontSize: '.8rem'}}/>;
-const stickyPinHover = <PinOutline style={{fontSize: '.8rem'}}/>;
 
-const defaultPin = <PinOutline style={{
-    fontSize: '.8rem',
-    color: 'grey',
-    opacity: 0.1,
-}}/>;
+const getStyledComponent = (
+    Component = Pin,
+    styles = {className: {fontSize: '.8rem'}}
+) => withStyles(styles)(
+    ({classes}) => (<Component className={classes.className}/>)
+);
+
+const StickyPin = getStyledComponent();
+const StickyPinHover = getStyledComponent(PinOutline);
+const DefaultPin = getStyledComponent(
+    PinOutline,
+    {
+        className: {
+            fontSize: '.8rem',
+            color: 'grey',
+            opacity: 0.1,
+        }
+    });
+
+const stickyPin = <StickyPin/>;
+const stickyPinHover = <StickyPinHover/>;
+const defaultPin = <DefaultPin/>;
 
 export const StickyAction = withStyles(actionStyles)(
     ({classes, isSticky, onStickyChange}
@@ -103,11 +112,23 @@ const styles = theme => ({
     sticky: {
         backgroundColor: theme.palette.background.default,
         position: 'sticky !important',
-        zIndex: 1,
+        zIndex: 2,
     },
     root: {
         width: '100%',
         height: '100%',
+    },
+    tableCell: {
+        margin: 0,
+        padding: theme.spacing(0.5),
+    },
+    valueCell: {
+        margin: 0,
+        padding: theme.spacing(0.5),
+        borderBottom: 0,
+        maxWidth: valueCellMaxWidth,
+        minWidth: valueCellMinWidth,
+        minHeight: TABLE_ROW_HEIGHT,
     },
     table: {
         minWidth: 'calc(100%)',
@@ -116,28 +137,25 @@ const styles = theme => ({
         overflowX: 'auto',
     },
     tableRow: {
-        height: TABLE_ROW_HEIGHT,
         '&$hover:hover': {
             backgroundColor: HighlightPalette.text,
         },
         cursor: 'pointer',
     },
     tableRowError: {
-        height: TABLE_ROW_HEIGHT,
         backgroundColor: alpha(HighlightPalette.error, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.error,
         },
     },
     tableRowGraphical: {
-        // height: TABLE_ROW_HEIGHT,
         backgroundColor: alpha(HighlightPalette.graphical, 0.25),
         '&$hover:hover': {
             backgroundColor: HighlightPalette.graphical,
         }
     },
     tableRowInput: {
-        height: TABLE_ROW_HEIGHT,
+        // height: TABLE_ROW_HEIGHT,
     },
     hover: {},
     bottomAction: {
@@ -181,9 +199,6 @@ const styles = theme => ({
             backgroundColor: theme.palette.grey[200],
         },
     },
-    tableCell: {
-        flex: 1,
-    },
     noClick: {
         cursor: 'initial',
     },
@@ -222,15 +237,10 @@ const styles = theme => ({
         paddingRight: theme.spacing(1),
         maxWidth: expressionCellMaxWidth,
         minWidth: expressionCellMinWidth,
-    },
-    valueCell: {
-        margin: 0,
-        padding: theme.spacing(1),
-        borderBottom: 0,
-        maxWidth: valueCellMaxWidth,
-        minWidth: valueCellMinWidth,
+        minHeight: TABLE_ROW_HEIGHT,
     },
     valueCellFill: {
+        flex: 'auto',
         width: '100%',
         overflow: 'hidden',
         margin: 0,
@@ -239,19 +249,13 @@ const styles = theme => ({
     },
     expressionCellContent: {
         overflow: 'auto',
-        position: 'relative',
-        paddingTop: 0,
-        paddingBottom: theme.spacing(1),
-        marginBottom: theme.spacing(-1),
         maxWidth: expressionCellMaxWidth,
         minWidth: expressionCellMinWidth,
-    },
-    expressionCellContentTypography: {
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-        fontWeight: 'normal',
-        fontSize: 11,
-        // lineHeight: 14,
-        letterSpacing: 0,
+        '&::-webkit-scrollbar': {
+            display: 'none' /* Hide scrollbar for IE, Edge and Firefox */
+        },
+        msOverflowStyle: 'none',  /* IE and Edge */
+        scrollbarWidth: 'none',  /* Firefox */
     },
     tableHeadCell: {
         marginLeft: theme.spacing(35),
@@ -263,103 +267,6 @@ const styles = theme => ({
         backgroundColor: lighten(alpha(theme.palette.secondary.main, 1), 0.8),
     }
 });
-
-const configureMatchesFilter = (searchState) => {
-    const searchWords =
-        searchState.value.split(' ').filter(v => v.trim().length);
-    const findChunks = (textToHighlight) => {
-        return searchState.findChunks(
-            {searchWords, textToHighlight}
-        );
-    };
-    const andFindChunks =
-        (textToHighlight) => searchWords.reduce(
-            (acc, word) => {
-                acc.push(
-                    {
-                        word,
-                        chunks: searchState.findChunks(
-                            {searchWords: [word], textToHighlight}
-                        )
-                    })
-
-                return acc;
-            }
-            , []
-        );
-
-    const isAndFind =
-        (
-            wordChunks
-        ) => !(wordChunks.findIndex(wordChunk => !wordChunk.chunks.length) > -1);
-
-    return (data) => {
-        const result = {
-            found: false,
-            functions: [],
-            expressions: [],
-            values: [],
-            expressionChunks: [],
-            isCodeMatch: false,
-            isStateMatch: false,
-        };
-
-        const hasFilters =
-            searchState.isFunctions ||
-            searchState.isExpressions ||
-            searchState.isValues;
-
-        const isAnyText = !searchState.value.trim().length;
-
-        if (isAnyText && !hasFilters) {
-            result.found = true;
-            return result;
-        }
-
-        if (searchState.isFunctions &&
-            searchState.functionLikeExpressions.includes(
-                data.entry.expressionType
-            )) {
-            result.functions = isAnyText ? [] : findChunks(data.expression);
-            result.isCodeMatch = !!result.functions.length;
-        }
-
-        if (searchState.isExpressions &&
-            !searchState.functionLikeExpressions.includes(
-                data.entry.expressionType
-            )) {
-            result.expressions = isAnyText ? [] : findChunks(data.expression);
-            result.isCodeMatch = result.isCodeMatch
-                || !!result.expressions.length;
-        }
-
-        if (searchState.isValues) {
-            result.values = isAnyText ? [] : findChunks(data.value);
-            result.isStateMatch = !!result.values.length;
-        }
-
-        result.expressionChunks = result.functions.concat(
-            result.expressions
-        );
-
-        if ((searchState.isFunctions || searchState.isExpressions)
-            && searchState.isValues) {
-            result.found =
-                isAnyText
-                || isAndFind(
-                andFindChunks(data.expression + ' ' + data.value)
-                );
-
-        } else {
-            result.found =
-                isAnyText
-                || (result.isCodeMatch || result.isStateMatch);
-        }
-
-
-        return result;
-    }
-};
 
 function createData(id, entry) {
     return {id, entry};
@@ -382,20 +289,20 @@ const RowContainer = forwardRef(
 
 const rowColumnStylesDefault = ([
     {
-        width: '50%',
+        flex: 1,
     },
     {
-        width: '100%',
+        flex: 3,
     },
 ]);
 
-
-const Row = ({index, style, data}) => {
+const Row = ({index, data}) => {
     const {
         classes, objectClasses,
         objectNodeRenderer, searchWords,
         goToTimelineBranch, configureMappingEventListeners,
-        columnStyles = rowColumnStylesDefault, parsed
+        columnStyles = rowColumnStylesDefault, parsed,
+        itemsCache,
     } = data;
 
     const item = useMemo(() => (data.items[index] || {}), [data, index]);
@@ -414,21 +321,42 @@ const Row = ({index, style, data}) => {
 
     const buttonClick = useCallback(() => {
         onClick();
-        _n && goToTimelineBranch(_n.entry);
+        _n && goToTimelineBranch()(_n.entry);
     }, [onClick, goToTimelineBranch, _n]);
 
     if (index) {
         const n = _n || {};
 
-        parsed[n.id] =
-            parsed[n.id] || {
-                current: (isString(n.value) ?
-                    JSAN.parse(n.value) : n.value)
-            };
-        const parsedValue = parsed[n.id].current;
+
+        let objectExplorer = null;
+
+        if (itemsCache?.[index]) {
+            objectExplorer = itemsCache[index];
+        }
+
+        if (!itemsCache || !itemsCache[index]) {
+            parsed[n.id] =
+                parsed[n.id] || {
+                    current: (isString(n.value) ?
+                        JSAN.parse(n.value) : n.value)
+                };
+            const parsedValue = parsed[n.id].current;
 
 
-        const outputRefs = (n.entry && n.entry.outputRefs) || [];
+            const outputRefs = (n.entry && n.entry.outputRefs) || [];
+            objectExplorer = (<ObjectExplorer
+                variant={"marker"}
+                expressionId={n.expressionId}
+                objectNodeRenderer={objectNodeRenderer}
+                data={parsedValue}
+                outputRefs={outputRefs}
+            />);
+
+            if (itemsCache) {
+                itemsCache[index] = objectExplorer
+            }
+        }
+
         return (<>
                 <TableCell
                     component="div"
@@ -445,11 +373,9 @@ const Row = ({index, style, data}) => {
                             onClick={buttonClick}
                         >
                             <Typography
-                                align={"left"}
+                                align='left'
                                 noWrap
-                                className={
-                                    classes.expressionCellContentTypography
-                                }
+                                variant='code'
                             >
                                 <Highlighter
                                     highlightClassName={classes.highlight}
@@ -474,13 +400,7 @@ const Row = ({index, style, data}) => {
                     onMouseLeave={onMouseLeave}
                     style={columnStyles[1]}
                 >
-                    <ObjectExplorer
-                        variant={"marker"}
-                        expressionId={n.expressionId}
-                        objectNodeRenderer={objectNodeRenderer}
-                        data={parsedValue}
-                        outputRefs={outputRefs}
-                    />
+                    {objectExplorer}
                 </TableCell>
             </>
 
@@ -505,7 +425,12 @@ const EmptyRow = withStyles(styles)(({classes}) => {
                 classes={tableClasses}
                 align={'center'}
             >
-                No trace entries yet.
+                <Typography
+                    noWrap
+                    variant='code'
+                >
+                    No trace entries yet.
+                </Typography>
             </TableCell>
         </TableRow>
     );
@@ -517,7 +442,6 @@ function WindowedTable(props) {
     const {
         order,
         orderBy,
-        estimatedItemSize = 30,
         data, searchState, onHandleTotalChange, objectNodeRenderer,
         handleSelectClick, isRowSelected,
         HighlightTypes, highlightSingleText, setCursorToLocation,
@@ -527,12 +451,15 @@ function WindowedTable(props) {
         classes,
     } = props;
 
-    const [parsed, setParsed] = useState({})
+
+    const [parsed, setParsed] = useState({});
+    const [itemsCache, setItemsCache] = useState(null);
     const [stickyIndices, setStickyIndices] = useState([]);
 
     useEffect(
         () => {
             isNew && setParsed({});
+            isNew && setItemsCache(null);
             //hard to know expression id between code edits
             isNew && setStickyIndices([]);
         }
@@ -547,20 +474,17 @@ function WindowedTable(props) {
         }),
         [classes]);
 
-
-    const findChunks = useMemo(
-        () => configureMatchesFilter(searchState),
-        [searchState]
-    );
-    const searchWords = useMemo(() => [searchState.value], [searchState]);
-
     const {
-        totalMatches, ignoreIndices, items
+        totalMatches, ignoreIndices, items, searchWords
     } = useMemo(() => {
+        const {value, matchesFilterTrace} = searchState;
         const ignoreIndices = [];
         const matchedData = [];
         data.forEach((n, i) => {
-            const newN = {...n, isMatch: true, chunksResult: findChunks(n)};
+            const newN = {
+                ...n, isMatch: true, chunksResult: matchesFilterTrace(n)
+            };
+
             if (!newN.chunksResult.found || !newN.expression) {
                 newN.isMatch = false;
             }
@@ -580,13 +504,14 @@ function WindowedTable(props) {
             totalMatches: matchedData.length,
             items: matchedData.map((entry, i) => createData(i, entry)),
             ignoreIndices,
+            searchWords: [value],
         }
-    }, [data, findChunks]);
+    }, [data, searchState]);
 
     const _prevItems = usePrevious(items);
     const _prevOrder = usePrevious(order);
     const _prevOrderBy = usePrevious(orderBy);
-    useLayoutEffect(
+    useEffect(
         () => {
             if (!_prevItems || !items) {
                 return;
@@ -609,7 +534,7 @@ function WindowedTable(props) {
         , [stickyIndices, setStickyIndices, items, _prevItems, order, orderBy]
     );
 
-    useLayoutEffect(
+    useEffect(
         () => {
             if (orderBy === 'time') {
                 if (order !== _prevOrder) {
@@ -639,8 +564,8 @@ function WindowedTable(props) {
 
     highlightErrors && highlightErrors();
 
-    const goToTimelineBranch = useMemo(() => configureGoToTimelineBranch()
-        , []);
+    const goToTimelineBranch = configureGoToTimelineBranch;
+
     const isItemLoaded = useCallback((/*index*/) => true, []);//!!items[index];
     const loadMoreItems = useCallback((/*startIndex, stopIndex*/) => {
         return new Promise(resolve => resolve());
@@ -649,10 +574,11 @@ function WindowedTable(props) {
     const autoScrollTo = order === 'asc' ? 'bottom' : 'top';
 
     const listProps = {
+        estimatedItemSize: TABLE_ROW_HEIGHT,
+        itemsCache,
         parsed,
         items,
         autoScrollTo,
-        estimatedItemSize,
         StickyComponent: StickyAction,
         RowComponent: Row,
         RowContainer,

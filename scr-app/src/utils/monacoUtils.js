@@ -1,6 +1,7 @@
 import {Observable} from 'rxjs';
 
 export const monacoProps = {
+    fixedOverflowWidgets: true,
     fontSize: 12,
     widgetFontSize: 9,
     widgetOffsetHeight: 7,
@@ -40,8 +41,8 @@ export const monacoEditorDefaultOptions = {
     glyphMargin: false,
     selectOnLineNumbers: true,
     nativeContextMenu: true,
-    // automaticLayout: true,
-    automaticLayout: false,
+    automaticLayout: true,
+    // automaticLayout: false,
     fontLigatures: true,
     folding: true,
     hover: true,

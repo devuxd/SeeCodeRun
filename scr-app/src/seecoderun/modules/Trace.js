@@ -3,14 +3,11 @@ import {Subject} from 'rxjs';
 import isString from 'lodash/isString';
 import isObjectLike from 'lodash/isObjectLike';
 import isArrayLike from 'lodash/isArrayLike';
-import {
-    isNode, /*createObjectIterator, hasChildNodes,*/
-    copifyDOMNode
-} from '../../utils/scrUtils';
+import {copifyDOMNode, isNode} from '../../utils/scrUtils';
 import isArray from 'lodash/isArray';
 import isFunction from 'lodash/isFunction';
-import ClassFactory from "./ClassFactory";
-import {NavigationTypes} from "./AutoLogShift";
+import ClassFactory from './ClassFactory';
+import {NavigationTypes} from './AutoLogShift';
 
 let listener = null;
 export const listen = (lis) => {

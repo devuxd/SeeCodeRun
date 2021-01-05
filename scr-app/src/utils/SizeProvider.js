@@ -1,7 +1,7 @@
 // based on react-grid-layout's WidthProvider
-import React, {PureComponent, createRef} from "react";
+import React, {createRef, PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {fromEvent, asyncScheduler} from 'rxjs';
+import {asyncScheduler, fromEvent} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 
 export default function SizeProvider(ComposedComponent) {

@@ -10,18 +10,17 @@ import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CodeIcon from '@material-ui/icons/Code';
 import PencilIcon from 'mdi-material-ui/Pencil';
 
-import {withStyles} from '@material-ui/core/styles';
+import {alpha, withStyles} from '@material-ui/core/styles';
 import Menu from '@material-ui/core/Menu';
 import ListItem from '@material-ui/core/ListItem';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
-import {alpha} from '@material-ui/core/styles/colorManipulator';
 
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../seecoderun/modules/AutoLog';
-import withPersistence from "../containers/withPersistence";
+import withPersistence from '../containers/withPersistence';
 
 const onDependenciesChange = async () => {
     await requireConfig.configureDependencies(requireConfig);

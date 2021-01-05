@@ -1,4 +1,4 @@
-import {NavigationTypes} from "./AutoLogShift";
+import {NavigationTypes} from './AutoLogShift';
 
 class TimelineBranchManager {
     globalBranches = {};
@@ -279,8 +279,13 @@ class TimelineBranchManager {
         this.controlBranches = controlBranches;
         this.getBranchByTimelineI = (timelineI) => {
             let functionBranch = null;
-            // console.log('f', functionBranches, timelineI);
+            let isGlobal = true;
+            // console.log('f', localBranches, controlBranches, functionBranches,);
+            let navigatorIndex = 0;
+            let prevTimelineI = 0;//timeline.length;
+
             const funcEach = fBranch => {
+                navigatorIndex++;
                 if (functionBranch) {
                     if (
                         functionBranch.start < fBranch.start
@@ -296,9 +301,31 @@ class TimelineBranchManager {
             };
             for (let fId in functionBranches) {
                 const func = functionBranches[fId];
+                navigatorIndex = 0;
                 func.branches.forEach(funcEach);
             }
-            return functionBranch;
+            if (!functionBranch) {
+                isGlobal = false;
+                for (let fId in controlBranches) {
+                    const func = controlBranches[fId];
+                    navigatorIndex = 0;
+                    func.branches.forEach(funcEach);
+                }
+            }
+
+            if (!functionBranch) {
+                isGlobal = true;
+                navigatorIndex = 0;
+            }
+
+            // prevTimelineI = functionBranch?.end || prevTimelineI;
+
+            return {
+                branch: functionBranch,
+                isGlobal,
+                navigatorIndex,
+                prevTimelineI
+            };
         };
 
         // console.log('TBM',this);

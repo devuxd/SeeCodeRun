@@ -1,13 +1,11 @@
 import 'react-resizable/css/styles.css';
-import '../utils/react-grid-layout-scr-theme.css';
-import React, {createRef, PureComponent, createContext} from 'react';
+import React, {createContext, createRef, PureComponent} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
 import {Responsive} from 'react-grid-layout';
-import {withStyles} from '@material-ui/core/styles';
-import {darken} from '@material-ui/core/styles/colorManipulator';
+import {darken, hexToRgb, withStyles} from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
@@ -27,60 +25,54 @@ import SortAlphabeticalDescendingIcon
     from 'mdi-material-ui/SortAlphabeticalDescending';
 import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
 import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
-import isArray from 'lodash/isArray';
+import JSAN from 'jsan';
 
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
+import {VisualQueryManager} from '../seecoderun/modules/VisualQueryManager';
 
 import Editor from './Editor';
 import Playground from './Playground';
 import SizeProvider from '../utils/SizeProvider';
+import {configureDefaultGridLayoutFormatter} from '../utils/reactGridLayoutUtils';
 import {
     configureDefaultGridLayoutFormatter
-} from '../utils/reactGridLayoutUtils';
-import {
-    configureDefaultGridLayoutFormatter as configureDefaultGridLayoutCompactFormatter
+        as configureDefaultGridLayoutCompactFormatter
 } from '../utils/reactGridLayoutCompactUtils';
-import DebugContainer from "../components/DebugContainer";
+import DebugContainer from '../components/DebugContainer';
 import TraceControls from '../components/TraceControls';
-import PointOfView, {createPointOfViewTile} from "../components/PointOfView";
-
-let isCompact = true;
-let gridLayoutFormatter = isCompact ?
-    configureDefaultGridLayoutCompactFormatter() : configureDefaultGridLayoutFormatter();
-
-export const PastebinContext = createContext({});
-export const VisualQueryManager = {
-    visualElements: [],
-    visualQuery: [],
-    getVisualIdsFromRefs: refsArray => {
-        if (isArray(refsArray) && isArray(VisualQueryManager.visualElements)) {
-            return refsArray.map(
-                ref => VisualQueryManager.visualElements.indexOf(ref)
-            ).filter(e => e >= 0);
-        } else {
-            return [];
-        }
-    },
-    onChange: (els, keys, event) => {
-    },
-    isGraphicalElementSelected:
-        (domEl, visualQuery) => (
-            visualQuery || VisualQueryManager.visualQuery
-        ).includes(domEl),
-};
-export const d = {
-    //Matches PointOfView.createPointOfViewTile(...)
-    log: (id, expressionText, expressionLanguage = 'typescript', fromData, toData, dataLanguage = 'json') => {
-    },
-};
+import PointOfView, {createPointOfViewTile} from '../components/PointOfView';
 
 const isDebug = false;
 
+export const TimeoutDelay = {
+    NOW: 0,
+    FAST: 10,
+    NORMAL: 100,
+    SLOW: 1000,
+};
+export const TABLE_ROW_HEIGHT = 22;
+export const PastebinContext = createContext({});
+
+export const d = {
+    //Matches PointOfView.createPointOfViewTile(...)
+    log: (
+        id, expressionText, expressionLanguage = 'typescript',
+        fromData, toData, dataLanguage = 'json',
+    ) => {
+    },
+};
+
+const defaultSearchPlaceholderGreet = 'Search in trace,';
+const defaultSearchPlaceholder = `${defaultSearchPlaceholderGreet} color:blue`;
+let isCompact = true;
+let gridLayoutFormatter = isCompact ?
+    configureDefaultGridLayoutCompactFormatter()
+    : configureDefaultGridLayoutFormatter();
+
 const animationId = `scr-a-id-${Date.now()}`;
 
-export const TABLE_ROW_HEIGHT = 32;
-
 const CONFIGURE_PASTEBIN_LAYOUT = 'CONFIGURE_PASTEBIN_LAYOUT';
+
 export const pastebinConfigureLayout =
     (restoreGridLayouts, getCurrentGridLayouts) => {
         return {
@@ -146,10 +138,92 @@ const getNextSortOption = (orderBy, orderFlow) => (
     ) % sortOptions.length] // returns first sort option  if not found
 );
 
-// sortOptions.forEach(
-// value => console.log(value, getNextSortOption(...Object.keys(value))))
-
 const styles = theme => ({
+    '@global': {
+        ".react-grid-layout": {
+            position: "relative",
+            transition: "height 200ms ease",
+        },
+        ".react-grid-item": {
+            transition: "all 200ms ease",
+            transitionProperty: "left, top",
+        },
+        ".react-grid-item.cssTransforms": {
+            transitionProperty: "transform",
+        },
+        ".react-grid-item.resizing": {
+            zIndex: 1,
+            willChange: "width, height",
+        },
+        ".react-grid-item.react-draggable-dragging": {
+            transition: "none",
+            zIndex: 3,
+            willChange: "transform",
+        },
+        ".react-grid-item > .react-resizable-handle": {
+            position: "absolute",
+            width: "5px",
+            height: "100%",
+            bottom: "0",
+            right: "0",
+            marginRight: "-6px",
+            cursor: "ew-resize",
+            background: "transparent",
+            zIndex: 9999,
+        },
+        ".react-grid-item > .react-resizable-handle::after": {
+            content: '""',
+            position: "absolute",
+            right: "4px",
+            bottom: "4px",
+            marginRight: "6px",
+            width: "24px",
+            height: "24px",
+            background: `url(\'data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="24" height="24" viewBox="0 0 24 24"><path fill="${
+                hexToRgb(theme.palette.primary.main)
+            }" d="M22,22H20V20H22V22M22,18H20V16H22V18M18,22H16V20H18V22M18,18H16V16H18V18M14,22H12V20H14V22M22,14H20V12H22V14Z" /></svg>\')`,
+            cursor: "se-resize",
+        },
+        ".react-grid-item.react-grid-placeholder": {
+            background: theme.palette.primary.main,
+            opacity: 0.2,
+            transitionDuration: "100ms",
+            zIndex: 2,
+            WebkitUserSelect: "none",
+            MozUserSelect: "none",
+            msUserSelect: "none",
+            OUserSelect: "none",
+            userSelect: "none",
+        },
+    },
+    draggable: {
+        position: 'absolute',
+        zIndex: theme.zIndex.snackbar,
+        bottom: 0,
+        right: theme.spacing(4),
+        color: theme.palette.primary.main,
+        fontSize: theme.spacing(2),
+        cursor: 'grab',
+        '&:active': {
+            cursor: 'grabbing',
+        }
+    },
+    [`@keyframes ${animationId}`]: {
+        to: {
+            visibility: 'visible',
+        },
+        from: {
+            visibility: 'hidden',
+        }
+    },
+    loadingFeedback: {
+        position: 'absolute',
+        bottom: theme.spacing(1),
+        left: '50%',
+        color: theme.palette.secondary.main,
+        visibility: 'hidden',
+        animation: `${animationId} 1s linear 1s infinite alternate`,
+    },
     layout: {
         overflow: 'visible',
     },
@@ -177,59 +251,92 @@ const styles = theme => ({
     locator: {
         fontSize: theme.spacing(2.5),
     },
-    draggable: {
-        position: 'absolute',
-        zIndex: theme.zIndex.snackbar,
-        bottom: 0,
-        right: theme.spacing(4),
-        color: 'rgba(30, 144, 255, 0.7)',
-        // same as utils/react-grid-layout-scr-theme.css
-        fontSize: theme.spacing(2),
-        cursor: 'grab',
-        '&:active': {
-            cursor: 'grabbing',
-        }
-    },
-    [`@keyframes ${animationId}`]: {
-        to: {
-            visibility: 'visible',
-        },
-        from: {
-            visibility: 'hidden',
-        }
-    },
-    loadingFeedback: {
-        position: 'absolute',
-        bottom: theme.spacing(1),
-        left: '50%',
-        color: theme.palette.secondary.main,
-        visibility: 'hidden',
-        animation: `${animationId} 1s linear 1s infinite alternate`,
-    },
 });
 
-let automaticLayout = 0;
 
 class Pastebin extends PureComponent {
+    debouncedOnDebugContainerResizeEnd = debounce(() => {
+        this.handleChangeDebugLoading(false);
+    }, 50);
+    firstNotNullCaseId = -1;
+
+    onGridResize = (isResizing) => this.resizeListener?.(isResizing);
+
+    handleChangeDebugLoading = (isLoading) => {
+        this.setState({isDebugLoading: isLoading});
+    };
+
+    getCurrentGridLayouts = () => {
+        return gridLayoutFormatter.currentGridLayouts;
+    };
+    firstNotNullCaseEntry = null;
+    prevLiveExpressionStoreIsNew = false;
+    handleChangePlaying = debounce((id, play) => {
+        this.setState((prevState) => {
+            let {
+                isPlaying, lastHandleChangePlayingId
+            } = prevState;
+            const {
+                orderBy,
+                order,
+                timeline,
+                liveTimeline,
+                logs,
+                liveLogs,
+            } = prevState;
+
+            if (id === 'table') {
+                if (!isPlaying && !lastHandleChangePlayingId) {
+                    return;
+                }
+
+                if (play) {
+                    lastHandleChangePlayingId = null;
+                    isPlaying = false;
+                } else {
+                    lastHandleChangePlayingId = id;
+                    isPlaying = true;
+                }
+
+            }
+            let currentTimeline = isPlaying ? timeline : liveTimeline;
+            let currentLogs = isPlaying ? logs : liveLogs;
+            const data = this.createData(currentTimeline);
+            const logData = this.createLogData(currentLogs);
+            const sortedData =
+                orderBy === 'time' && order === 'desc' ? data
+                    : this.sortData(data, orderBy, order);
+
+            return {
+                isPlaying: !isPlaying,
+                lastHandleChangePlayingId,
+                timeline: currentTimeline,
+                logs: currentLogs,
+                data: sortedData,
+                logData
+            };
+        });
+    }, 100);
+
     constructor(props) {
         super(props);
         this.gridRef = createRef();
+        this.setUpdateMonacoEditorLayouts = {};
         this.updateMonacoEditorLayouts = {};
         this.debugScrollerRefSnapshots = {};
         VisualQueryManager.onChange = this.onVisualQueryChange;
         d.log = this.handleChangePointOfViewTiles;
+        this.textInLocCacheResetThreshold = 1000;
+        this.cleanEditorTextInLocCache();
     }
 
-    static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.width !== prevState.width || nextProps.height !== prevState.height) {
-            automaticLayout++;
-            return {
-                width: nextProps.width,
-                height: nextProps.height,
-            };
-        }
-        return null;
-    }
+    //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,
+    // placeholder: LayoutItem, e: MouseEvent, element: HTMLElement
+    onResizeStart = (layout, oldItem, newItem,
+                     placeholder, e, element) => {
+        // gridLayoutFormatter.formatLayout(layout, oldItem, newItem);
+        this.onGridResize(true);
+    };
 
     onVisualQueryChange = (newVisualQuery = [], visualIds, action) => {
         this.setState(({searchState = {}}) => {
@@ -260,81 +367,32 @@ class Pastebin extends PureComponent {
                 visualQuery,
                 visualQueryPreview,
             };
-            const {
-                orderBy,
-                order,
-                // isPlaying,
-                timeline,
-                getEditorTextInLoc
-            } = this.state;
 
-            const data = this.createData(
-                timeline, getEditorTextInLoc, searchState
-            );
-            const sortedData =
-                orderBy === 'time' && order === 'desc' ?
-                    data : this.sortData(data, orderBy, order);
+            setTimeout(() => {
+                this.setState(state => {
+                    const {
+                        orderBy,
+                        order,
+                        timeline,
+                        getEditorTextInLoc
+                    } = state;
+
+                    const defaultData = this.createData(timeline);
+                    const data = orderBy === 'time' && order === 'desc' ?
+                        defaultData
+                        : this.sortData(defaultData, orderBy, order);
+
+                    return {
+                        data,
+                    };
+                });
+
+            }, TimeoutDelay.NOW);
+
             return {
-                data: sortedData,
                 searchState
             }
         });
-    };
-
-    onGridResize = (isResizing) => this.resizeListener?.(isResizing);
-
-    handleChangeDebugLoading = (isLoading) => {
-        this.setState({isDebugLoading: isLoading});
-    };
-
-    getCurrentGridLayouts = () => {
-        return gridLayoutFormatter.currentGridLayouts;
-    };
-
-    restoreGridLayouts = gridLayouts => {
-        gridLayouts =
-            gridLayoutFormatter.validateLayout(gridLayouts, gridLayoutFormatter.currentBreakPoint);
-        this.setState({
-            gridLayouts: gridLayouts,
-        });
-        gridLayoutFormatter.currentGridLayouts = gridLayouts;
-        automaticLayout++;
-        this.onDebugContainerResizeEnd(false);
-    };
-
-    resetGridLayout = layout => {
-        this.restoreGridLayouts(gridLayoutFormatter.getLayoutDummy(layout));
-        setTimeout(() => {
-            this.restoreGridLayouts(layout || gridLayoutFormatter.getDefaultGridLayouts());
-        }, 0);
-
-    };
-
-
-    debouncedOnDebugContainerResizeEnd = debounce((isNew) => {
-        this.handleChangeDebugLoading(false);
-    }, 50);
-
-    onDebugContainerResizeEnd = (isNew) => {
-        this.handleChangeDebugLoading(true);
-        this.debouncedOnDebugContainerResizeEnd(isNew);
-    };
-
-    //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,
-    // placeholder: LayoutItem, e: MouseEvent, element: HTMLElement
-    onResizeStart = (layout, oldItem, newItem,
-                     placeholder, e, element) => {
-        // gridLayoutFormatter.formatLayout(layout, oldItem, newItem);
-        this.onGridResize(true);
-    };
-
-    handleAutomaticLayout = () => {
-        if (this.automaticLayout !== automaticLayout) {
-            this.automaticLayout = automaticLayout;
-            for (const editorId in this.updateMonacoEditorLayouts) {
-                this.updateMonacoEditorLayouts[editorId] && this.updateMonacoEditorLayouts[editorId]();
-            }
-        }
     };
 
     handleAutomaticLayoutThrottled = throttle(this.handleAutomaticLayout, 100);
@@ -343,7 +401,6 @@ class Pastebin extends PureComponent {
     onResize = (layout, oldItem, newItem
                 /*, placeholder, e, element*/) => {
         gridLayoutFormatter.formatLayout(layout, oldItem, newItem);
-        automaticLayout++;
         this.handleAutomaticLayoutThrottled();
     };
 
@@ -357,7 +414,6 @@ class Pastebin extends PureComponent {
         // if (newItem.i === 'debugContainer') {
         this.onDebugContainerResizeEnd(false);
         // }
-        automaticLayout++;
         this.handleAutomaticLayoutDebounced();
         this.onGridResize(false);
     };
@@ -428,36 +484,14 @@ class Pastebin extends PureComponent {
         });
     };
 
-    getSortInfo = () => {
-        const {order, orderBy, timeFlow} = this.state;
-        const orderFlow = orderBy === 'time' ?
-            timeFlow : order;
-        return {
-            handleGetNextSortOption: event => {
-                const orderFlow = orderBy === 'time' ? timeFlow : order;
-                const nextOptions = getNextSortOption(
-                    orderBy,
-                    orderFlow
-                );
-                const nextOptionsKeys = Object.keys(
-                    nextOptions
-                );
-
-                if (nextOptions.time) {
-                    this.handleChangeTimeFlow(event, ...nextOptionsKeys);
-                } else {
-                    this.handleRequestSort(event, ...nextOptionsKeys);
-                }
-            },
-            SortIcon: getSortIcon(orderBy, orderFlow),
-            sortTitle: `Order by ${
-                orderBy
-            } ${
-                orderFlow === 'desc' ?
-                    'descending' : 'ascending'
-            }`
-        };
-    }
+    restoreGridLayouts = gridLayouts => {
+        gridLayouts = gridLayoutFormatter.validateLayout(
+            gridLayouts, gridLayoutFormatter.currentBreakPoint
+        );
+        this.setState({gridLayouts});
+        gridLayoutFormatter.currentGridLayouts = gridLayouts;
+        this.onDebugContainerResizeEnd(false);
+    };
 
     sortData = (data, orderBy, order) => {
         return order === 'desc' ?
@@ -497,23 +531,106 @@ class Pastebin extends PureComponent {
 
     isSelected = id => this.state.selected.indexOf(id) !== -1;
 
+    resetGridLayout = layout => {
+        this.restoreGridLayouts(gridLayoutFormatter.getLayoutDummy(layout));
+        setTimeout(() => {
+            this.restoreGridLayouts(
+                layout || gridLayoutFormatter.getDefaultGridLayouts()
+            );
+        }, TimeoutDelay.NOW);
+
+    };
+
+    onDebugContainerResizeEnd = (isUpdate) => {
+        this.handleChangeDebugLoading(true);
+        this.debouncedOnDebugContainerResizeEnd(isUpdate);
+    };
+
+    handleAutomaticLayout = () => {
+        if (this.props.disableGridAutomaticEditorLayout) {
+            return;
+        }
+        for (const editorId in this.updateMonacoEditorLayouts) {
+            this.updateMonacoEditorLayouts[editorId]
+            && this.updateMonacoEditorLayouts[editorId]();
+        }
+    };
+
+    getSortInfo = () => {
+        const {order, orderBy, timeFlow} = this.state;
+        const orderFlow = orderBy === 'time' ?
+            timeFlow : order;
+        return {
+            handleGetNextSortOption: event => {
+                const orderFlow = orderBy === 'time' ? timeFlow : order;
+                const nextOptions = getNextSortOption(
+                    orderBy,
+                    orderFlow
+                );
+                const nextOptionsKeys = Object.keys(
+                    nextOptions
+                );
+
+                if (nextOptions.time) {
+                    this.handleChangeTimeFlow(event, ...nextOptionsKeys);
+                } else {
+                    this.handleRequestSort(event, ...nextOptionsKeys);
+                }
+            },
+            SortIcon: getSortIcon(orderBy, orderFlow),
+            sortTitle: `Order by ${
+                orderBy
+            } ${
+                orderFlow === 'desc' ?
+                    'descending' : 'ascending'
+            }`
+        };
+    };
+
+    timelineSearchFilter = entry => {
+        const {searchState} = this.state;
+        return (entry.isError || !searchState.visualQuery?.length) ||
+            (entry.isOutput && searchState.visualQuery.find(
+                    q => entry.outputRefs?.includes(q)
+                )
+            )
+    };
+
+    cleanEditorTextInLocCache = () => {
+        if (!this.textInLocCacheResetCounter) {
+            this.textInLocCache = {};
+            this.textInLocCacheResetCounter = this.textInLocCacheResetThreshold;
+        }
+        this.textInLocCacheResetCounter--;
+    }
+
+    getEditorTextInLoc = () => {
+        console.warn("Monaco editor's must replace this placeholder");
+        return '';
+    }
+
+    getEditorTextInLocCache = (id, loc) => {
+        const {textInLocCache, getEditorTextInLoc} = this;
+
+        if (!textInLocCache[id] || textInLocCache[id].loc !== loc) {
+            textInLocCache[id] = {
+                loc,
+                text: getEditorTextInLoc(loc),
+            };
+        }
+        return textInLocCache[id].text;
+    };
+
     createData(
-        timeline, getEditorTextInLoc, searchState = this.state.searchState
+        timeline
     ) {
-        let tl = timeline || [];
-        return tl.filter(
-            entry => (entry.isError
-                || !searchState.visualQuery
-                || !searchState.visualQuery.length
-            ) || (entry.isOutput
-                && searchState.visualQuery.find(
-                    q => entry.outputRefs.includes(q)
-                ))
+        return (timeline || []).filter(
+            this.timelineSearchFilter
         ).map((entry, i) => ({
             id: entry.reactKey,
             time: entry.i,
             // time: entry.timestamp,
-            expression: getEditorTextInLoc(entry.loc),
+            expression: this.getEditorTextInLocCache(entry.id, entry.loc),
             value: entry.data,
             loc: {...entry.loc},
             expressionId: entry.id,
@@ -525,15 +642,15 @@ class Pastebin extends PureComponent {
         }));
     }
 
-    createLogData(log, getEditorTextInLoc) {
-        let l = log || [];
-        return l.map((entry, i) => {
+    createLogData(log) {
+        return (log || []).map((entry, i) => {
             if (entry.isLog) {
                 return {
                     id: entry.reactKey,
                     time: entry.i,
                     // time: entry.timestamp,
-                    expression: getEditorTextInLoc(entry.loc),
+                    expression:
+                        this.getEditorTextInLocCache(entry.id, entry.loc),
                     value: entry.data,
                     loc: {...entry.loc},
                     expressionId: entry.id,
@@ -558,123 +675,133 @@ class Pastebin extends PureComponent {
         });
     }
 
-    liveExpressionStoreChange =
-        (traceSubscriber, timeline, logs, isNew, HighlightTypes,
-         highlightSingleText, highlightErrors,
-         setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
-         objectNodeRenderer, handleChange) => {
-            const {orderBy, order, isPlaying} = this.state;
+    findSearchPlaceholderExample = (sortedData) => {
+        let {searchState} = this.state;
 
-            isPlaying && this.handleChangeDebugLoading(true);
+        if (this.firstNotNullCaseEntry) {
+            this.firstNotNullCaseId =
+                sortedData.indexOf(this.firstNotNullCaseEntry);
+        }
 
-            setTimeout(() => {
-                if (isPlaying || isNew) {
-                    let currentTimeline = isPlaying ? timeline : this.state.timeline;
-                    let currentLogs = isPlaying ? logs : this.state.logs;
-                    const data = this.createData(currentTimeline, getEditorTextInLoc);
-                    const logData = this.createLogData(currentLogs, getEditorTextInLoc);
-                    //console.log(orderBy, order,orderBy === 'time' && order === 'desc');
-                    const sortedData = this.sortData(data, orderBy, order);
-                    const sortedLogData = this.sortData(logData, orderBy, order);
+        if (this.firstNotNullCaseId < 0) {
 
-                    const configureMappingEventListeners = (n) => {
-                        let onMouseEnter = null, onMouseLeave = null,
-                            onClick = null;
-                        if (!n.isFromInput) {
-                            onMouseEnter = () =>
-                                highlightSingleText(
-                                    n.loc, n.isError ? HighlightTypes.error
-                                        : n.isGraphical ?
-                                            HighlightTypes.graphical
-                                            : HighlightTypes.text,
-                                    traceSubscriber.getMatches(
-                                        n.funcRefId,
-                                        n.dataRefId,
-                                        n.entry.calleeId
-                                    )
+            this.firstNotNullCaseId = sortedData.findIndex(
+                (entry) => {
+                    const noExpressionMatchesVarDefiniton =
+                        entry?.expression?.match(
+                            /[let|const|var]\s+/
+                        ) === null;
+                    const value = JSAN.parse(entry.value);
+                    const isInvalidValue = value === null;
+                    // (!value && value !== false && value !== 0);
+                    return (
+                        noExpressionMatchesVarDefiniton &&
+                        isInvalidValue
+                    );
+                }
+            );
+        }
+
+        if (this.firstNotNullCaseId > -1) {
+            this.firstNotNullCaseEntry =
+                sortedData[this.firstNotNullCaseId];
+        }
+
+        if (this.firstNotNullCaseEntry) {
+            const {expression = ''} = this.firstNotNullCaseEntry;
+            const placeholder = `${
+                defaultSearchPlaceholderGreet
+            } ${expression.split(/[^\w+]|null/)[0]} null`;
+            searchState = {...searchState, placeholder};
+        }
+        return searchState;
+    };
+
+    liveExpressionStoreChange = (
+        traceSubscriber, timeline, logs, isNew, HighlightTypes,
+        highlightSingleText, highlightErrors,
+        setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
+        objectNodeRenderer, handleChange
+    ) => {
+        this.getEditorTextInLoc = getEditorTextInLoc;
+        isNew && !timeline.length && this.cleanEditorTextInLocCache();
+
+        const {orderBy, order, isPlaying} = this.state;
+        isPlaying && this.handleChangeDebugLoading(true);
+
+        this.prevLiveExpressionStoreIsNew && clearTimeout(
+            this.liveExpressionStoreChangeTimeout
+        );
+        this.prevLiveExpressionStoreIsNew = isNew;
+
+        this.liveExpressionStoreChangeTimeout = setTimeout(() => {
+            if (isPlaying || isNew) {
+                let currentTimeline = isPlaying ?
+                    timeline : this.state.timeline;
+                let currentLogs = isPlaying ? logs : this.state.logs;
+                const data = this.createData(currentTimeline);
+                const logData = this.createLogData(currentLogs);
+
+                const sortedData = this.sortData(data, orderBy, order);
+                const sortedLogData = this.sortData(
+                    logData, orderBy, order
+                );
+
+                const searchState = this.findSearchPlaceholderExample(
+                    sortedData
+                );
+
+                const configureMappingEventListeners = (n) => {
+                    let onMouseEnter = null, onMouseLeave = null,
+                        onClick = null;
+                    if (!n.isFromInput) {
+                        onMouseEnter = () =>
+                            highlightSingleText(
+                                n.loc, n.isError ? HighlightTypes.error
+                                    : n.isGraphical ?
+                                        HighlightTypes.graphical
+                                        : HighlightTypes.text,
+                                traceSubscriber.getMatches(
+                                    n.funcRefId,
+                                    n.dataRefId,
+                                    n.entry.calleeId
                                 )
-                            onMouseLeave = () => highlightSingleText();
-                            onClick = () => setCursorToLocation(n.loc)
-                        }
-                        return {onMouseEnter, onMouseLeave, onClick};
-                    };
-                    this.setState((prevState) => ({
-                        isNew: isNew,
-                        isPlaying: isNew ? true : prevState.isPlaying,
-                        traceSubscriber,
-                        timeline: currentTimeline,
-                        liveTimeline: timeline,
-                        logs: currentLogs,
-                        liveLogs: logs,
-                        data: sortedData,
-                        logData: sortedLogData,
-                        HighlightTypes,
-                        highlightSingleText,
-                        highlightErrors,
-                        setCursorToLocation,
-                        getEditorTextInLoc,
-                        colorizeDomElement,
-                        objectNodeRenderer,
-                        handleChange,
-                        configureMappingEventListeners
-                    }));
-                    this.handleChangeDebugLoading(false);
-                } else {
-                    this.setState({
-                        liveTimeline: timeline,
-                        liveLogs: logs,
-                        isNew
-                    });
-                }
-            }, 0);
-        };
-
-    handleChangePlaying = debounce((id, play) => {
-        this.setState((prevState) => {
-            let {
-                isPlaying, lastHandleChangePlayingId
-            } = prevState;
-            const {
-                orderBy,
-                order,
-                timeline,
-                liveTimeline,
-                logs,
-                liveLogs,
-                getEditorTextInLoc
-            } = prevState;
-
-            if (id === 'table') {
-                if (!isPlaying && !lastHandleChangePlayingId) {
-                    return;
-                }
-
-                if (play) {
-                    lastHandleChangePlayingId = null;
-                    isPlaying = false;
-                } else {
-                    lastHandleChangePlayingId = id;
-                    isPlaying = true;
-                }
-
+                            )
+                        onMouseLeave = () => highlightSingleText();
+                        onClick = () => setCursorToLocation(n.loc)
+                    }
+                    return {onMouseEnter, onMouseLeave, onClick};
+                };
+                this.setState((prevState) => ({
+                    searchState,
+                    isNew,
+                    isPlaying: isNew ? true : prevState.isPlaying,
+                    traceSubscriber,
+                    timeline: currentTimeline,
+                    liveTimeline: timeline,
+                    logs: currentLogs,
+                    liveLogs: logs,
+                    data: sortedData,
+                    logData: sortedLogData,
+                    HighlightTypes,
+                    highlightSingleText,
+                    highlightErrors,
+                    setCursorToLocation,
+                    colorizeDomElement,
+                    objectNodeRenderer,
+                    handleChange,
+                    configureMappingEventListeners
+                }));
+                this.handleChangeDebugLoading(false);
+            } else {
+                this.setState({
+                    liveTimeline: timeline,
+                    liveLogs: logs,
+                    isNew
+                });
             }
-            let currentTimeline = isPlaying ? timeline : liveTimeline;
-            let currentLogs = isPlaying ? logs : liveLogs;
-            const data = this.createData(currentTimeline, getEditorTextInLoc);
-            const logData = this.createLogData(currentLogs, getEditorTextInLoc);
-            const sortedData =
-                orderBy === 'time' && order === 'desc' ? data : this.sortData(data, orderBy, order);
-
-            return {
-                isPlaying: !isPlaying,
-                lastHandleChangePlayingId,
-                timeline: currentTimeline,
-                logs: currentLogs,
-                data: sortedData,
-                logData
-            };
-        });
-    }, 100);
+        }, isNew ? TimeoutDelay.NOW : TimeoutDelay.NORMAL);
+    };
 
     handleChangeTab = (event, tabIndex) => {
         if (tabIndex) {
@@ -682,8 +809,7 @@ class Pastebin extends PureComponent {
         }
     };
 
-    handleChangeSearchValue = e => {
-        const value = e.target.value || '';
+    handleChangeSearchValue = value => {
         this.setState(prevState => ({
             searchState: {...prevState.searchState, value}
         }));
@@ -703,31 +829,173 @@ class Pastebin extends PureComponent {
             }
         }
 
-        const hasFilter =
-            nextSearchState.isFunctions || nextSearchState.isExpressions || nextSearchState.isValues;
+        const hasFilter = nextSearchState.isFunctions
+            || nextSearchState.isExpressions || nextSearchState.isValues;
 
         if (!hasFilter) {
-            if (filter === 'isFunctions' || filter === 'isExpressions' || filter === 'isValues') {
+            if (filter === 'isFunctions'
+                || filter === 'isExpressions'
+                || filter === 'isValues') {
                 nextSearchState[filter] = true;
             } else {
                 nextSearchState.isFunctions = true;
             }
         }
 
-        nextSearchState.findChunks =
-            configureFindChunks(!nextSearchState.isRegExp, nextSearchState.isCase, nextSearchState.isWord);
+        nextSearchState.findChunks = configureFindChunks(
+            !nextSearchState.isRegExp,
+            nextSearchState.isCase,
+            nextSearchState.isWord
+        );
         this.setState({searchState: nextSearchState});
     };
 
     handleChangeAutoExpand = () => {
-        this.setState(prevState => ({isAutoLogActive: !prevState.isAutoLogActive}));
+        this.setState(
+            prevState => ({isAutoLogActive: !prevState.isAutoLogActive})
+        );
+    };
+
+    matchesFilterConsole = (data) => {
+        const {searchState} = this.state;
+        const {value, findChunks, isWord, isRegExp} = searchState;
+        const _findChunks = (textToHighlight) => {
+            const searchWords = isWord || isRegExp ?
+                [value] : value.split(' ');
+            return findChunks({
+                searchWords,
+                textToHighlight
+            })
+        };
+        const result = {
+            found: false,
+            functions: [],
+            expressions: [],
+            values: [],
+        };
+
+        const isAnyText = !value.trim().length;
+
+        if (isAnyText) {
+            result.found = true;
+            return result;
+        }
+
+        result.values = _findChunks(data.expression);
+        result.found = !!result.values.length;
+
+        if (!result.found) {
+            result.values = _findChunks(data.value);
+            result.found = !!result.values.length;
+        }
+
+        return result;
+    };
+
+    matchesFilterTrace = (data) => {
+        const {searchState} = this.state;
+        const {
+            value,
+            findChunks: _findChunks,
+            isWord,
+            isRegExp,
+            isFunctions,
+            isExpressions,
+            isValues,
+            functionLikeExpressions,
+        } = searchState;
+        const searchWords = isWord || isRegExp ? [value] :
+            value.split(' ').filter(v => v.trim().length);
+        const findChunks = (textToHighlight) => {
+            return _findChunks(
+                {searchWords, textToHighlight}
+            );
+        };
+        const andFindChunks =
+            (textToHighlight) => searchWords.reduce(
+                (acc, word) => {
+                    acc.push({
+                        word,
+                        chunks: _findChunks(
+                            {
+                                searchWords: [word],
+                                textToHighlight
+                            }
+                        )
+                    })
+                    return acc;
+                }
+                , []
+            );
+
+        const isAndFind = (
+            wordChunks
+        ) => !(wordChunks.findIndex(wordChunk => !wordChunk.chunks.length) > -1);
+
+        const result = {
+            found: false,
+            functions: [],
+            expressions: [],
+            values: [],
+            expressionChunks: [],
+            isCodeMatch: false,
+            isStateMatch: false,
+        };
+
+        const hasFilters = isFunctions || isExpressions || isValues;
+
+        const isAnyText = !value.trim().length;
+
+        if (isAnyText && !hasFilters) {
+            result.found = true;
+            return result;
+        }
+
+        if (isFunctions && functionLikeExpressions.includes(
+            data.entry.expressionType
+        )) {
+            result.functions = isAnyText ? [] : findChunks(data.expression);
+            result.isCodeMatch = !!result.functions.length;
+        }
+
+        if (isExpressions &&
+            !functionLikeExpressions.includes(data.entry.expressionType)
+        ) {
+            result.expressions = isAnyText ? [] : findChunks(data.expression);
+            result.isCodeMatch = result.isCodeMatch
+                || !!result.expressions.length;
+        }
+
+        if (isValues) {
+            result.values = isAnyText ? [] : findChunks(data.value);
+            result.isStateMatch = !!result.values.length;
+        }
+
+        result.expressionChunks = result.functions.concat(
+            result.expressions
+        );
+
+        if ((isFunctions || isExpressions) && isValues) {
+            result.found =
+                isAnyText
+                || isAndFind(
+                andFindChunks(data.expression + ' ' + data.value)
+                );
+
+        } else {
+            result.found =
+                isAnyText
+                || (result.isCodeMatch || result.isStateMatch);
+        }
+
+        return result;
     };
 
     state = {
+        VisualQueryManager,
+        gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
         traceAvailable: true,
         autorunDelay: 2000,
-        gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
-        liveExpressionStoreChange: this.liveExpressionStoreChange,
         isDebugLoading: false,
         isSelectable: false,
         tabIndex: 'trace',
@@ -741,77 +1009,93 @@ class Pastebin extends PureComponent {
         minRows: 10,
         defaultRowsPerPage: 10,
         rowsPerPageIncrement: 100,
-        handleChangeDebugLoading: this.handleChangeDebugLoading,
-        handleSelectClick: this.handleSelectClick,
-        handleSelectAllClick: this.handleSelectAllClick,
-        handleRequestSort: this.handleRequestSort,
-        isRowSelected: this.isSelected,
-        highlightSingleText: () => {
-        },
-        getEditorTextInLoc: () => {
-            return '';
-        },
-        colorizeDomElement: () => {
-        },
         timeline: [],
         logs: [],
         liveTimeline: [],
         liveLogs: [],
         isPlaying: true,
         timeFlow: 'desc',
-        handleChangeTimeFlow: this.handleChangeTimeFlow,
         isAutoLogActive: true,
-        handleChangeAutoExpand: this.handleChangeAutoExpand,
-        searchState: {
-            functionLikeExpressions: functionLikeExpressions,
-            value: '',
-            handleChangeValue: this.handleChangeSearchValue,
-            isFunctions: true,
-            isExpressions: false,
-            isValues: false,
-            isCase: false,
-            isWord: false,
-            isRegExp: false,
-            handleFilterClick: this.handleChangeSearchFilterClick,
-            findChunks: configureFindChunks(true),
-            visualQuery: [],
-            visualKey: null,
-        },
         width: 800,
         height: 600,
         hoveredCellKey: null,
         isGraphicalLocatorActive: false,
         pointOfViewTiles: [],
+        liveExpressionStoreChange: this.liveExpressionStoreChange,
+        handleChangeDebugLoading: this.handleChangeDebugLoading,
+        handleSelectClick: this.handleSelectClick,
+        handleSelectAllClick: this.handleSelectAllClick,
+        handleRequestSort: this.handleRequestSort,
+        isRowSelected: this.isSelected,
+        handleChangePlaying: this.handleChangePlaying,
+        getSortInfo: this.getSortInfo,
+        handleChangeTimeFlow: this.handleChangeTimeFlow,
+        handleChangeAutoExpand: this.handleChangeAutoExpand,
+        highlightSingleText: () => {
+        },
+        colorizeDomElement: () => {
+        },
         configureMappingEventListeners: () => () => {
+        },
+        searchState: {
+            placeholder: defaultSearchPlaceholder,
+            disableMultiWord: false,
+            isFunctions: true,
+            isExpressions: true,
+            isValues: true,
+            isCase: false,
+            isWord: false,
+            isRegExp: false,
+            visualQuery: [],
+            visualKey: null,
+            value: '',
+            handleChangeValue: this.handleChangeSearchValue,
+            handleFilterClick: this.handleChangeSearchFilterClick,
+            matchesFilterTrace: this.matchesFilterTrace,
+            matchesFilterConsole: this.matchesFilterConsole,
+            findChunks: configureFindChunks(true),
+            functionLikeExpressions: functionLikeExpressions,
         },
     };
 
     handleChangePointOfViewTiles = (...params) => {
         if (params.length) {
-            this.setState(prevState => ({
-                pointOfViewTiles: [...prevState.pointOfViewTiles, createPointOfViewTile(...params)]
-            }));
+            this.setState(
+                prevState => ({
+                    pointOfViewTiles: [
+                        ...prevState.pointOfViewTiles,
+                        createPointOfViewTile(...params)
+                    ]
+                }));
         } else {
             this.setState({pointOfViewTiles: []});
         }
     };
 
 
-    handleChangeAutorunDelay = autorunDelay => {
-        this.setState({autorunDelay: autorunDelay ? parseInt(autorunDelay, 10) : 0});
-    };
+    handleChangeAutorunDelay = autorunDelay => this.setState({
+        autorunDelay: autorunDelay ? parseInt(autorunDelay, 10) : 0
+    });
 
-    updateMonacoEditorLayout = (editorId) => (monacoEditor) => {
-        this.updateMonacoEditorLayouts[editorId] = monacoEditor;
+    updateMonacoEditorLayout = (editorId) => {
+        if (!this.setUpdateMonacoEditorLayouts[editorId]) {
+            this.setUpdateMonacoEditorLayouts[editorId] =
+                (monacoEditorLayout) => {
+                    this.updateMonacoEditorLayouts[editorId] =
+                        monacoEditorLayout;
+                }
+        }
+        return this.setUpdateMonacoEditorLayouts[editorId];
     };
 
     handleChangeHoveredCellKey = (event, hoveredCellKey) => {
         this.setState({hoveredCellKey});
     }
 
-    handleChangeGraphicalLocator = () => {
-        this.setState(prevState => {
-            const isGraphicalLocatorActive = !prevState.isGraphicalLocatorActive;
+    handleChangeGraphicalLocator = () => this.setState(
+        prevState => {
+            const isGraphicalLocatorActive =
+                !prevState.isGraphicalLocatorActive;
             const searchState = {...prevState.searchState};
             if (isGraphicalLocatorActive) {
                 searchState.isExpressionsTemp = searchState.isExpressions;
@@ -826,58 +1110,90 @@ class Pastebin extends PureComponent {
                 searchState
             }
         });
-    }
+
+    handleChangeEnterCellScriptContainer =
+        event => this.handleChangeHoveredCellKey(
+            event, 'scriptContainer'
+        );
+    handleChangeLeaveCellScriptContainer =
+        event => this.handleChangeHoveredCellKey(event, null);
+    handleChangeEnterCellHtmlContainer =
+        event => this.handleChangeHoveredCellKey(
+            event, 'htmlContainer'
+        );
+    handleChangeLeaveCellHtmlContainer =
+        event => this.handleChangeHoveredCellKey(event, null)
+    handleChangeEnterCellCssContainer =
+        event => this.handleChangeHoveredCellKey(
+            event, 'cssContainer'
+        );
+    handleChangeLeaveCellCssContainer =
+        event => this.handleChangeHoveredCellKey(event, null);
+    handleChangeEnterCellDebugContainer =
+        event => this.handleChangeHoveredCellKey(
+            event, 'debugContainer'
+        );
+    handleChangeLeaveCellDebugContainer =
+        event => this.handleChangeHoveredCellKey(event, null);
+    handleChangeEnterCellPlaygroundContainer =
+        event => this.handleChangeHoveredCellKey(
+            event, 'playgroundContainer'
+        );
+    handleChangeLeaveCellPlaygroundContainer =
+        event => this.handleChangeHoveredCellKey(event, null);
 
     render() {
         const {
             appClasses, classes, appStyle, editorIds, TopNavigationBarComponent,
-            isTopNavigationToggled
+            isTopNavigationToggled,
+            width,
+            height,
         } = this.props;
         const {
             gridLayouts,
             isDebugLoading,
             tabIndex,
-            // data,
-            // isNew,
             traceAvailable,
             autorunDelay,
-            width,
-            height,
             hoveredCellKey,
             isGraphicalLocatorActive,
             isAutoLogActive,
             pointOfViewTiles,
             isPlaying,
-            // order,
-            // orderBy,
-            // timeFlow,
             searchState,
         } = this.state;
 
-
         VisualQueryManager.visualQuery = searchState?.visualQuery || [];
 
+        const rowHeight = Math.floor(
+            height / gridLayoutFormatter.grid.rows[
+                gridLayoutFormatter.currentBreakPoint
+                ]
+        );
+        gridLayoutFormatter.rowHeights[
+            gridLayoutFormatter.currentBreakPoint
+            ] = rowHeight - appStyle.margin;
 
-        const rowHeight =
-            Math.floor(height / gridLayoutFormatter.grid.rows[gridLayoutFormatter.currentBreakPoint]);
-        gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint] =
-            rowHeight - appStyle.margin;
-        // console.log('l', this.state.defaultRowsPerPage, this.state.rowsPerPage);
+        const debugDrawer = (isDebug && global.monaco && global.monaco.editor
+            && isAutoLogActive &&
+            <Drawer anchor={"bottom"} open={isAutoLogActive}
+                    onClose={this.handleChangeAutoExpand}>
+                <PointOfView monaco={global.monaco}
+                             tiles={pointOfViewTiles}/>
+            </Drawer>);
+
+        const _rowHeight = gridLayoutFormatter.rowHeights[
+            gridLayoutFormatter.currentBreakPoint
+            ];
         if (isCompact) {
             return (
-                <div className={appClasses.content}>
+                <div
+                    className={appClasses.content}
+                >
                     <PastebinContext.Provider
-                        value={{
-                            ...this.state,
-                            handleChangePlaying: this.handleChangePlaying,
-                            getSortInfo: this.getSortInfo,
-                        }}>
-                        {isDebug && global.monaco && global.monaco.editor && isAutoLogActive &&
-                        <Drawer anchor={"bottom"} open={isAutoLogActive}
-                                onClose={this.handleChangeAutoExpand}>
-                            <PointOfView monaco={global.monaco}
-                                         tiles={pointOfViewTiles}/>
-                        </Drawer>}
+                        value={this.state}
+                    >
+                        {debugDrawer}
                         {TopNavigationBarComponent}
                         <Responsive
                             innerRef={this.gridRef}
@@ -890,7 +1206,7 @@ class Pastebin extends PureComponent {
                             autoSize={true}
                             margin={appStyle.marginArray}
                             containerPadding={appStyle.marginArray}
-                            rowHeight={gridLayoutFormatter.rowHeights[gridLayoutFormatter.currentBreakPoint]}
+                            rowHeight={_rowHeight}
                             onResizeStart={this.onResizeStart}
                             onResize={this.onResize}
                             onResizeStop={this.onResizeStop}
@@ -901,98 +1217,150 @@ class Pastebin extends PureComponent {
                             onLayoutChange={this.onLayoutChange}
                             onBreakpointChange={this.onBreakpointChange}
                         >
-                            <Paper elevation={1}
-                                   key="scriptContainer"
-                                   onMouseEnter={event =>
-                                       this.handleChangeHoveredCellKey(event, 'scriptContainer')}
-                                   onMouseLeave={event =>
-                                       this.handleChangeHoveredCellKey(event, null)}
+                            <Paper
+                                elevation={1}
+                                key="scriptContainer"
+                                onMouseEnter={
+                                    this.handleChangeEnterCellScriptContainer
+                                }
+                                onMouseLeave={
+                                    this.handleChangeLeaveCellScriptContainer
+                                }
                             >
-                                <Editor editorId={editorIds['js']}
-                                        observeMouseEvents
-                                        observeLiveExpressions={true}
-                                        updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['js'])}
+                                <Editor
+                                    editorId={editorIds['js']}
+                                    observeMouseEvents
+                                    observeLiveExpressions={true}
+                                    updateMonacoEditorLayout={
+                                        this.updateMonacoEditorLayout(
+                                            editorIds['js']
+                                        )
+                                    }
                                 />
                                 {hoveredCellKey === 'scriptContainer' ?
-                                    null : <LanguageJavaScriptIcon
-                                        className={classes.icon}/>}
+                                    null
+                                    : <LanguageJavaScriptIcon
+                                        className={classes.icon}
+                                    />
+                                }
                             </Paper>
-                            <Paper elevation={1}
-                                   key="htmlContainer"
-                                   onMouseEnter={event =>
-                                       this.handleChangeHoveredCellKey(event, 'htmlContainer')}
-                                   onMouseLeave={event =>
-                                       this.handleChangeHoveredCellKey(event, null)}
+                            <Paper
+                                elevation={1}
+                                key="htmlContainer"
+                                onMouseEnter={
+                                    this.handleChangeEnterCellHtmlContainer
+                                }
+                                onMouseLeave={
+                                    this.handleChangeLeaveCellHtmlContainer
+                                }
                             >
                                 <Editor editorId={editorIds['html']}
-                                        updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['html'])}
+                                        updateMonacoEditorLayout={
+                                            this.updateMonacoEditorLayout(
+                                                editorIds['html']
+                                            )
+                                        }
                                 />
                                 {hoveredCellKey === 'htmlContainer' ?
-                                    null : <LanguageHtml5Icon
-                                        className={classes.icon}/>}
+                                    null
+                                    : <LanguageHtml5Icon
+                                        className={classes.icon}
+                                    />
+                                }
                             </Paper>
-                            <Paper elevation={1}
-                                   key="cssContainer"
-                                   onMouseEnter={event =>
-                                       this.handleChangeHoveredCellKey(event, 'cssContainer')}
-                                   onMouseLeave={event =>
-                                       this.handleChangeHoveredCellKey(event, null)}
+                            <Paper
+                                elevation={1}
+                                key="cssContainer"
+                                onMouseEnter={
+                                    this.handleChangeEnterCellCssContainer
+                                }
+                                onMouseLeave={
+                                    this.handleChangeLeaveCellCssContainer
+                                }
                             >
-                                <Editor editorId={editorIds['css']}
-                                        updateMonacoEditorLayout={this.updateMonacoEditorLayout(editorIds['css'])}
+                                <Editor
+                                    editorId={editorIds['css']}
+                                    updateMonacoEditorLayout={
+                                        this.updateMonacoEditorLayout(
+                                            editorIds['css']
+                                        )
+                                    }
                                 />
                                 {hoveredCellKey === 'cssContainer' ?
-                                    null : <LanguageCss3Icon
-                                        className={classes.icon}/>}
+                                    null
+                                    : <LanguageCss3Icon
+                                        className={classes.icon}
+                                    />
+                                }
                             </Paper>
-                            <Paper elevation={1}
-                                   key="debugContainer"
-                                   className={appClasses.container}
-                                   onMouseEnter={event =>
-                                       this.handleChangeHoveredCellKey(event, 'debugContainer')}
-                                   onMouseLeave={event =>
-                                       this.handleChangeHoveredCellKey(event, null)}
+                            <Paper
+                                elevation={1}
+                                key="debugContainer"
+                                className={appClasses.container}
+                                onMouseEnter={
+                                    this.handleChangeEnterCellDebugContainer
+                                }
+                                onMouseLeave={
+                                    this.handleChangeLeaveCellDebugContainer
+                                }
                             >
 
                                 <DebugContainer
                                     tabIndex={tabIndex}
                                     handleChangeTab={this.handleChangeTab}
-                                    handleChangePlaying={this.handleChangePlaying}
+                                    handleChangePlaying={
+                                        this.handleChangePlaying
+                                    }
                                     isPlaying={isPlaying}
                                 />
 
 
                                 {isDebugLoading ?
-                                    <span className={classes.loadingFeedback}>
+                                    <span
+                                        className={classes.loadingFeedback}
+                                    >
                                         <MoreHorizIcon/>
                                     </span>
                                     : null}
-                                {/*hoveredCellKey === 'debugContainer' ?
-                                    null : <SlowMotionVideoIcon className={classes.icon}/>*/}
                             </Paper>
-                            <Paper elevation={1}
-                                   key="playgroundContainer"
-                                   className={appClasses.container}
-                                   onMouseEnter={event =>
-                                       this.handleChangeHoveredCellKey(event, 'playgroundContainer')}
-                                   onMouseLeave={event =>
-                                       this.handleChangeHoveredCellKey(event, null)}
+                            <Paper
+                                elevation={1}
+                                key="playgroundContainer"
+                                className={appClasses.container}
+                                onMouseEnter={
+                                    this.handleChangeEnterCellPlaygroundContainer
+                                }
+                                onMouseLeave={
+                                    this.handleChangeLeaveCellPlaygroundContainer
+                                }
                             >
                                 <Tooltip
-                                    title={`${isGraphicalLocatorActive ?
-                                        'Hide' : 'Show'} visual elements referenced in code`}
+                                    title={
+                                        `${
+                                            isGraphicalLocatorActive ?
+                                                'Hide' : 'Show'
+                                        } visual elements referenced in code`
+                                    }
                                 >
                                     <IconButton
-                                        color={isGraphicalLocatorActive ? 'secondary' : 'inherit'}
+                                        color={
+                                            isGraphicalLocatorActive ?
+                                                'secondary' : 'inherit'
+                                        }
                                         className={classes.locatorButton}
                                         raised="true"
-                                        onClick={this.handleChangeGraphicalLocator}
+                                        onClick={
+                                            this.handleChangeGraphicalLocator
+                                        }
                                     >
                                         <HighlightAltIcon
-                                            className={classes.locator}/>
+                                            className={classes.locator}
+                                        />
                                     </IconButton>
                                 </Tooltip>
-                                <DragHandleIcon className={classes.draggable}/>
+                                <DragHandleIcon
+                                    className={classes.draggable}
+                                />
                                 <Playground
                                     editorIds={editorIds}
                                     isAutoLogActive={isAutoLogActive}
@@ -1005,11 +1373,16 @@ class Pastebin extends PureComponent {
                                     resizeListener={this.setResizeListener}
                                 />
                                 {hoveredCellKey === 'playgroundContainer' ?
-                                    null : <TvIcon className={classes.icon}/>}
+                                    null
+                                    : <TvIcon
+                                        className={classes.icon}
+                                    />
+                                }
                             </Paper>
                         </Responsive>
                     </PastebinContext.Provider>
-                    {traceAvailable && <TraceControls
+                    {traceAvailable &&
+                    <TraceControls
                         isTopNavigationToggled={isTopNavigationToggled}
                         persistablePath={'traceControls'}
                         autorunDelay={autorunDelay}
@@ -1023,11 +1396,14 @@ class Pastebin extends PureComponent {
     }
 
     componentDidMount() {
-
         const {setGridLayoutCallbacks, pastebinConfigureLayout} = this.props;
-        setGridLayoutCallbacks(this.resetGridLayout, this.getCurrentGridLayouts);
+        setGridLayoutCallbacks(
+            this.resetGridLayout, this.getCurrentGridLayouts
+        );
 
-        pastebinConfigureLayout(this.restoreGridLayouts, this.getCurrentGridLayouts);
+        pastebinConfigureLayout(
+            this.restoreGridLayouts, this.getCurrentGridLayouts
+        );
         this.onDebugContainerResizeEnd();
     }
 
@@ -1046,6 +1422,10 @@ Pastebin.propTypes = {
     classes: PropTypes.object.isRequired,
     editorIds: PropTypes.object.isRequired,
     setGridLayoutCallbacks: PropTypes.func.isRequired,
+    disableGridAutomaticEditorLayout: PropTypes.bool,
 };
 
-export default connect(null, mapDispatchToProps)(withStyles(styles)(SizeProvider(Pastebin)));
+export default connect(
+    null,
+    mapDispatchToProps)(withStyles(styles)(SizeProvider(Pastebin))
+);

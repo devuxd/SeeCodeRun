@@ -1,8 +1,8 @@
-import {compose, createStore, applyMiddleware} from 'redux';
+import {applyMiddleware, compose, createStore} from 'redux';
 import {createEpicMiddleware} from 'redux-observable';
 import {rootEpic, rootReducer} from './modules/root';
-import configureAppManager from "../seecoderun/AppManager";
-import {disposePastebin} from "./modules/pastebin";
+import configureAppManager from '../seecoderun/AppManager';
+import {disposePastebin} from './modules/pastebin';
 
 export const getLocationUrlData = (aWindow) => {
     return {

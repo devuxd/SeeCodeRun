@@ -1,10 +1,10 @@
-import React, {useRef, useState, useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core';
+import {withStyles} from '@material-ui/core/styles';
 import isString from 'lodash/isString';
 import GraphicalMapper from './GraphicalMapper';
-import {d} from "./Pastebin";
+import {d} from './Pastebin';
 import {
     updatePlaygroundLoadFailure,
     updatePlaygroundLoadSuccess

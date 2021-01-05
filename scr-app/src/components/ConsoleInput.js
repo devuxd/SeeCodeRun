@@ -10,16 +10,16 @@ import CancelIcon from 'mdi-material-ui/Cancel';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 
 import {
-    mountEditorFulfilled,
-    monacoEditorContentChanged
+    monacoEditorContentChanged,
+    mountEditorFulfilled
 } from "../redux/modules/monacoEditor";
 import {
     canDispatch,
-    dispatch,
     clearConsole,
+    dispatch,
     preserveLogs
 } from "../seecoderun/modules/Trace";
-import {defaultSimpleMonacoOptions} from "../utils/monacoUtils";
+import {defaultSimpleMonacoOptions} from '../utils/monacoUtils';
 
 const mapStateToProps = ({firecoReducer}) => {
     const {isFirecoEditorsReady} = firecoReducer;
@@ -44,15 +44,15 @@ const styles = theme => ({
             overflow: 'visible !important',
         },
         [`.${defaultMonacoConsoleClassName} .mtk5`]: {
-            color: '#99c794 !important',
+            color: `${theme.palette.success.light} !important`,
         },
         [`.${defaultMonacoConsoleClassName} .mtk12.PropertyAssignment`]: {
-            color: '#99c794',
+            color: theme.palette.success.light,
         },
         [`.${
             defaultMonacoConsoleClassName
         } .mtk12.PropertyAssignment.PropertyAccessExpression`]: {
-            color: '#fac863',
+            color: theme.palette.warning.light,
         },
         [
         `.${
@@ -60,7 +60,7 @@ const styles = theme => ({
         } .Identifier.CallExpression .OpenParenToken.CallExpression` +
         ' .Identifier.CallExpression'
             ]: {
-            color: '#fac863 !important',
+            color: `${theme.palette.warning.light} !important`,
         },
         [`.${
             defaultMonacoConsoleClassName
@@ -102,7 +102,7 @@ const styles = theme => ({
     },
     icon: {
         color: theme.palette.primary.main,
-        fontSize: theme.spacing(2),
+        fontSize: theme.typography.pxToRem(16),
     },
     actionContainer: {
         position: 'absolute',

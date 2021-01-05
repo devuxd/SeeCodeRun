@@ -1,9 +1,9 @@
 import {action} from '@storybook/addon-actions';
-import {withKnobs, text, number} from "@storybook/addon-knobs";
+import {number, text, withKnobs} from '@storybook/addon-knobs';
 import React, {forwardRef} from 'react';
-import InfiniteStickyList from "../components/InfiniteStickyList";
+import InfiniteStickyList from '../components/InfiniteStickyList';
 import {withStyles} from '@material-ui/core/styles';
-import Inspector from "react-inspector";
+import Inspector from 'react-inspector';
 
 export default {
     title: 'InfiniteStickyList',

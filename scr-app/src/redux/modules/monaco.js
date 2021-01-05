@@ -2,7 +2,7 @@ import {ofType} from 'redux-observable';
 import {zip} from 'rxjs';
 import {mergeMap, startWith} from 'rxjs/operators';
 
-import {FETCH_PASTEBIN_CONTENT_FULFILLED} from "./pastebin";
+import {FETCH_PASTEBIN_CONTENT_FULFILLED} from './pastebin';
 
 const LOAD_MONACO = 'LOAD_MONACO';
 const LOAD_MONACO_FULFILLED = 'LOAD_MONACO_FULFILLED';

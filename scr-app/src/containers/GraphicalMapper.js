@@ -1,16 +1,16 @@
 import React, {
-    useState,
-    useLayoutEffect,
+    useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
-    useCallback
+    useState
 } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
 import Popper from '@material-ui/core/Popper';
 import Tooltip from '@material-ui/core/Tooltip';
-import {VisualQueryManager, PastebinContext} from './Pastebin';
+import {PastebinContext} from './Pastebin';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {
     FocusBox,
@@ -18,12 +18,11 @@ import {
     pulseStartOutline
 } from "../components/UI";
 
-const styles = (theme) => ({
+const styles = () => ({
     locator: {
+        ...pulseStartOutline,
         position: 'absolute',
         margin: 0,
-        padding: 0,
-        outline: pulseStartOutline,
         animation,
     },
 });
@@ -75,6 +74,141 @@ function getOverlayStyles(
 //     console.log('gm', ...p)
 // }
 
+const GraphicalLocator = ({
+                              id,
+                              observeResizes = true,
+                              observeMutations = false,
+                              mutationObserverOptions = {
+                                  attributes: true,
+                                  childList: false,
+                                  subtree: false
+                              },
+                              getStyle,
+                              domEl,
+                              containerRef,
+                              isSelected,
+                              classes,
+                              TooltipProps = {
+                                  enterDelay: 100,
+                                  enterNextDelay: 100,
+                                  leaveDelay: 100
+                              },
+                          }) => {
+    const [style, setStyle] = useState(getStyle);
+    const onResize = useCallback((/*entry*/) => {
+        setStyle(getStyle());
+    }, [setStyle, getStyle]);
+    const [resizeObserver] = useState(
+        () => (observeResizes && WindowResizeObserver &&
+            new WindowResizeObserver(onResize))
+    );
+    const [mutationObserver] = useState(
+        () => (observeMutations && WindowMutationObserver &&
+            new WindowMutationObserver(onResize))
+    );
+    useEffect(() => {
+            resizeObserver && resizeObserver.observe(domEl);
+            mutationObserver && mutationObserver.observe(
+                domEl,
+                mutationObserverOptions
+            );
+            return (() => {
+                    resizeObserver && resizeObserver.unobserve(domEl);
+                    mutationObserver && mutationObserver.disconnect();
+                }
+            );
+        },
+        [resizeObserver, mutationObserver, mutationObserverOptions, domEl]
+    );
+    const clientRect =
+        containerRef.current.getBoundingClientRect();
+    const containerOffsetTopPos = clientRect.y;
+    const containerOffsetLeftPos = clientRect.x;
+
+    const popperModifiers = useMemo(() => (
+        [
+            {
+                name: 'offset',
+                options: {
+                    offset: [
+                        containerOffsetLeftPos,
+                        containerOffsetTopPos
+                    ],
+                },
+            },
+            {
+                name: 'flip',
+                enabled: false,
+            },
+            {
+                name: 'preventOverflow',
+                enabled: true,
+                options: {
+                    boundary: containerRef.current,
+                }
+            },
+            {
+                name: 'hide',
+                enabled: true,
+            },
+            {
+                name: 'arrow',
+                enabled: false,
+                // element: arrowRef,
+            },
+        ]
+    ), [
+        containerOffsetLeftPos,
+        containerOffsetTopPos,
+        containerRef
+    ]);
+
+    return (
+        <LocatorTooltip
+            key={`${isSelected}`}
+            title={
+                // <BranchNavigator
+                //     min={1}
+                //     max={key}
+                //     value={1}
+                //     handleSliderChange={()=>1}
+                //     // color={color}
+                //     // onMouseEnter={this.onMouseEnter}
+                //     // onMouseLeave={this.onMouseLeave}
+                // />
+                <GraphicalQuery
+                    outputRefs={[domEl]}
+                    visualIds={[id]}
+                    selected={!!isSelected}
+                />
+            }
+            placement="bottom-end"
+            {...(isSelected ? {disableInteractive: true, open: true} : {})}
+            {...TooltipProps}
+        >
+            <Popper
+                placement="bottom-end"
+                disablePortal={false}
+                modifiers={popperModifiers}
+                anchorEl={domEl || {}}
+                container={containerRef.current}
+                open={true}
+            >
+                <div
+                    className={classes.locator}
+                    style={style}
+
+                >
+                    <FocusBox
+                        variant={isSelected ? 'Triangle' : 'Line'}
+                    />
+                </div>
+            </Popper>
+
+        </LocatorTooltip>
+    )
+};
+
 const GraphicalMapper = (({
                               classes,
                               isGraphicalLocatorActive,
@@ -82,11 +216,15 @@ const GraphicalMapper = (({
                               containerRef,
                               handleChangeGraphicalLocator,
                               searchState,
+                              VisualQueryManager
                           }) => {
     VisualQueryManager.visualElements = visualElements;
 
     const {visualQuery} = searchState;
-    const [portalEl] = useState(() => document.createElement('div'));
+    const portalEl = useMemo(
+        () => document.createElement('div'),
+        []
+    );
     useLayoutEffect(() => {
         document.body.appendChild(portalEl);
         return () => document.body.removeChild(portalEl);
@@ -142,120 +280,19 @@ const GraphicalMapper = (({
                     return overlayStyles[0];
                 };
 
-                const GraphicalLocator = ({
-                                              observeResizes = true,
-                                              observeMutations = false
-                                          }) => {
-                    const [style, setStyle] = useState(getStyle);
-                    const onResize = useCallback((/*entry*/) => {
-                        setStyle(getStyle());
-                    }, [setStyle]);
-                    const [resizeObserver] = useState(
-                        () => observeResizes && WindowResizeObserver &&
-                            new WindowResizeObserver(onResize)
-                    );
-                    const [mutationObserver] = useState(
-                        () => observeMutations && WindowMutationObserver &&
-                            new WindowMutationObserver(onResize)
-                    );
-                    useEffect(() => {
-                        resizeObserver && resizeObserver.observe(domEl);
-                        mutationObserver && mutationObserver.observe(domEl,
-                            {
-                                attributes: true,
-                                childList: false,
-                                subtree: false
-                            }
-                        );
-                        return (() => (
-                                (resizeObserver?.unobserve?.(domEl))
-                                || (mutationObserver?.disconnect?.())
-                            )
-                        );
-                    }, [resizeObserver, mutationObserver]);
-                    const clientRect =
-                        containerRef.current.getBoundingClientRect();
-                    const containerOffsetTopPos = clientRect.y;
-                    const containerOffsetLeftPos = clientRect.x;
-                    return (
-                        <LocatorTooltip
-                            title={
-                                // <BranchNavigator
-                                //     min={1}
-                                //     max={key}
-                                //     value={1}
-                                //     handleSliderChange={()=>1}
-                                //     // color={color} /
-                                //     hideLabel={true}
-                                //     // onMouseEnter={this.onMouseEnter}
-                                //     // onMouseLeave={this.onMouseLeave}
-                                // />
-                                <GraphicalQuery
-                                    outputRefs={[domEl]}
-                                    visualIds={[key]}
-                                    selected={!!isSelected}
-                                />
-                            }
-                            placement="bottom-end"
-                            disableInteractive={isSelected}
-                            {...(isSelected ? {open: true} : {})}
-                            enterDelay={100}
-                            enterNextDelay={100}
-                            leaveDelay={100}
-                        >
-                            <Popper
-                                placement="bottom-end"
-                                disablePortal={false}
-                                modifiers={[
-                                    {
-                                        name: 'offset',
-                                        options: {
-                                            offset: [
-                                                containerOffsetLeftPos,
-                                                containerOffsetTopPos
-                                            ],
-                                        },
-                                    },
-                                    {
-                                        name: 'flip',
-                                        enabled: false,
-                                    },
-                                    {
-                                        name: 'preventOverflow',
-                                        enabled: true,
-                                        options: {
-                                            boundary: containerRef.current,
-                                        }
-                                    },
-                                    {
-                                        name: 'hide',
-                                        enabled: true,
-                                    },
-                                    {
-                                        name: 'arrow',
-                                        enabled: false,
-                                        // element: arrowRef,
-                                    },
-                                ]}
-                                anchorEl={domEl || {}}
-                                container={containerRef.current}
-                                open={true}
-                            >
-                                <div
-                                    className={classes.locator}
-                                    style={style}
-
-                                >
-                                    <FocusBox variant={
-                                        isSelected ? 'Triangle' : 'Line'
-                                    }/>
-                                </div>
-                            </Popper>
-
-                        </LocatorTooltip>
-                    )
-                };
-                locatedEls.push(<GraphicalLocator key={key}/>);
+                locatedEls.push(
+                    <GraphicalLocator
+                        key={key}
+                        {...{
+                            id: key,
+                            getStyle,
+                            domEl,
+                            containerRef,
+                            isSelected,
+                            classes,
+                        }}
+                    />
+                );
 
             });
             return locatedEls;

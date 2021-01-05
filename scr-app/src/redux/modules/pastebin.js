@@ -1,11 +1,20 @@
 import {ofType} from 'redux-observable';
-import {zip, concat, of} from 'rxjs';
-import {mergeMap, delay, map, mapTo, filter, catchError, startWith, debounceTime} from 'rxjs/operators';
+import {concat, of, zip} from 'rxjs';
+import {
+    catchError,
+    debounceTime,
+    delay,
+    filter,
+    map,
+    mapTo,
+    mergeMap,
+    startWith
+} from 'rxjs/operators';
 import {ajax} from 'rxjs/ajax';
 import localStorage from 'store';
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
 import {ACTIVATE_FIREPAD_EXPIRED} from './fireco';
-import {MONACO_EDITOR_CONTENT_CHANGED} from "./monacoEditor";
+import {MONACO_EDITOR_CONTENT_CHANGED} from './monacoEditor';
 import firebaseConfig from '../../seecoderun/firebaseConfig';
 
 const {cloudFunctionsPath} = firebaseConfig;

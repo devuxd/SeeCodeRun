@@ -19,7 +19,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {themeTypes} from '../themes';
-import TraceToolbar from "./TraceToolbar";
+import TraceToolbar from './TraceToolbar';
 
 export const APP_BAR_HEIGHT = 48;
 let iconStyle = {};

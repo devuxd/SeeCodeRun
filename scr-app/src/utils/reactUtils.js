@@ -1,35 +1,79 @@
-import {useRef, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef} from 'react';
+import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
 
 export const usePrevious = (value, ref) => {
-    const _ref = useRef(ref);
-    useEffect(() => {
-        _ref.current = value;
-    }, [value]);
-    return _ref.current;
+    const _ref = useRef(null);
+    const _ref_ = ref || _ref;
+    useEffect(
+        () => {
+            _ref_.current = value;
+        },
+        [value]
+    );
+    return _ref_.current;
 };
 
-export const useLodashDelayable = (
-    lodashDelayable, functionToDelay, wait, options
-) => {
-    const [delayable, setDelayable] = useState(() => {
-        return lodashDelayable(
-            functionToDelay,
-            wait,
-            options
-        );
-    });
+const defaultThrottleOptions = {
+    leading: true,
+    trailing: false,
+};
 
-    return [delayable, (
-        _lodashDelayable = lodashDelayable,
-        _functionToDelay = functionToDelay,
-        _wait = wait,
-        _options = options
-    ) => {
-        delayable && delayable.cancel();
-        setDelayable(_lodashDelayable(
-            _functionToDelay,
-            _wait,
-            _options
-        ));
-    }];
+const defaultDebounceOptions = {
+    leading: false,
+    trailing: true,
+    // maxWait: 1000,
+};
+
+export const useLodashThrocer = (
+    throttledCallback,
+    debounceCallback,
+    throttleWait = 500,
+    throttleOptions = defaultThrottleOptions,
+    debounceWait = 1000,
+    debounceOptions = defaultDebounceOptions,
+) => {
+
+    const debounced = useMemo(
+        () => debounce(
+            debounceCallback,
+            debounceWait,
+            debounceOptions
+        ),
+        [debounceCallback, debounceWait, debounceOptions]
+    );
+
+    const throttled = useMemo(
+        () => throttle(
+            throttledCallback,
+            throttleWait,
+            throttleOptions
+        ),
+        [throttledCallback, throttleWait, throttleOptions]
+    );
+
+    const refs = useRef({});
+    refs.current.funcs = {debounced, throttled};
+
+    useEffect(
+        () => {
+            refs.current.cancel = () => {
+                const {debounced, throttled} = refs.current.funcs;
+                throttled.cancel();
+                debounced.cancel();
+            };
+
+            return refs.current.cancel;
+        },
+        []
+    );
+
+    return useCallback(
+        (...params) => {
+            throttled(...params);
+            debounced(...params);
+            return refs.current;
+        },
+        [debounced, throttled]
+    );
 };
