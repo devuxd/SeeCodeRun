@@ -395,9 +395,6 @@ class Pastebin extends PureComponent {
         });
     };
 
-    handleAutomaticLayoutThrottled = throttle(this.handleAutomaticLayout, 100);
-    handleAutomaticLayoutDebounced = debounce(this.handleAutomaticLayout, 100);
-
     onResize = (layout, oldItem, newItem
                 /*, placeholder, e, element*/) => {
         gridLayoutFormatter.formatLayout(layout, oldItem, newItem);
@@ -555,6 +552,11 @@ class Pastebin extends PureComponent {
             && this.updateMonacoEditorLayouts[editorId]();
         }
     };
+
+    handleAutomaticLayoutThrottled =
+        throttle(() => this.handleAutomaticLayout(), 250);
+    handleAutomaticLayoutDebounced =
+        debounce(() => this.handleAutomaticLayout(), 250);
 
     getSortInfo = () => {
         const {order, orderBy, timeFlow} = this.state;
