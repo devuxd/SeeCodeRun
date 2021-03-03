@@ -1,12 +1,12 @@
-import React, {Component, memo} from 'react';
+import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import JSAN from 'jsan';
 import isString from 'lodash/isString';
 
+import JSEN from '../utils/JSEN';
 import ObjectExplorer from './ObjectExplorer';
 import BranchNavigator from './BranchNavigator';
 
-class LiveExpression extends Component {
+class LiveExpression extends PureComponent {
 
     state = {
         sliderRange: [1],
@@ -32,7 +32,7 @@ class LiveExpression extends Component {
                 // rangeStart = Math.min(rangeStart, sliderMax);
                 //   rangeEnd = Math.min(rangeEnd, sliderMax);
                 datum = isString(data[rangeStart - 1].data) ?
-                    JSAN.parse(data[rangeStart - 1].data)
+                    JSEN.parse(data[rangeStart - 1].data)
                     : data[rangeStart - 1].data;
                 if (data[rangeStart - 1].outputRefs) {
                     outputRefs = data[rangeStart - 1].outputRefs;
@@ -95,7 +95,8 @@ class LiveExpression extends Component {
             handleChange,
             branchNavigatorChange,
             color,
-            sliderRange
+            sliderRange,
+            entry,
         } = this.props;
 
         if (!!branchNavigatorChange) {
@@ -130,6 +131,7 @@ class LiveExpression extends Component {
             // todo function params vs arguments + return explorer
             return (
                 <ObjectExplorer
+                    cacheId={entry?.i}
                     expressionId={expressionId}
                     objectNodeRenderer={objectNodeRenderer}
                     data={datum}
@@ -146,4 +148,4 @@ LiveExpression.propTypes = {
     data: PropTypes.any,
 };
 
-export default memo(LiveExpression);
+export default LiveExpression;

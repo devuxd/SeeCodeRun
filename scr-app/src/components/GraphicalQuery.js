@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
 
-import {VisualQueryManager} from '../seecoderun/modules/VisualQueryManager';
-import {backgroundColorAnimation as animation} from './UI';
+import {VisualQueryManager} from '../core/modules/VisualQueryManager';
+import {backgroundColorAnimation as animation} from '../common/UI';
 
 const styles = theme => ({
     buttonRoot: {

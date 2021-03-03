@@ -18,7 +18,7 @@ import {
     clearConsole,
     dispatch,
     preserveLogs
-} from "../seecoderun/modules/Trace";
+} from "../core/modules/Trace";
 import {defaultSimpleMonacoOptions} from '../utils/monacoUtils';
 
 const mapStateToProps = ({firecoReducer}) => {
@@ -349,15 +349,11 @@ class ConsoleInput extends Component {
 }
 
 ConsoleInput.propTypes = {
-    classes: PropTypes.object.isRequired,
+    editorId: PropTypes.string,
     isConsole: PropTypes.bool,
+    classes: PropTypes.object.isRequired,
     mountEditorFulfilled: PropTypes.func.isRequired,
     onHeightChange: PropTypes.func,
-};
-
-ConsoleInput.defaultProps = {
-    editorId: 'consoleInput',
-    isConsole: true,
 };
 
 export default connect(

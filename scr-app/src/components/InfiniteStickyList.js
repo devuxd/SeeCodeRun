@@ -398,7 +398,6 @@ const InfiniteStickyList = (
         onScrollChange = defaultOnScrollChange,
         ...rest
     }) => {
-
     const isAutoScrollBottom = autoScrollTo === 'bottom';
 
     const _infinityListRef = useRef(null);

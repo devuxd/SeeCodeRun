@@ -1,7 +1,7 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
-import ScrIcon from './icons/SCR';
+import ScrIcon from '../common/icons/SCR';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
@@ -99,19 +99,19 @@ class TopNavigationBar extends PureComponent {
     };
 
     helpClick = () => {
-        window.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');
+        global.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');
     };
 
     contactUsClick = () => {
-        window.open('mailto:contact@seecode.run', '_blank');
+        global.open('mailto:contact@seecode.run', '_blank');
     };
 
     aboutClick = () => {
-        window.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');
+        global.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');
     };
 
     repoClick = () => {
-        window.open('https://github.com/devuxd/SeeCodeRun', '_blank');
+        global.open('https://github.com/devuxd/SeeCodeRun', '_blank');
     };
 
     onClick = callback => {

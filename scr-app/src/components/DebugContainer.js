@@ -338,6 +338,8 @@ function DebugContainer(
                 >
                     <ConsoleInput
                         onHeightChange={onHeightChange}
+                        editorId='consoleInput'
+                        isConsole
                     />
                 </Paper>
             </Slide>

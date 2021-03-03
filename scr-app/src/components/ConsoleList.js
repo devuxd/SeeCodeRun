@@ -16,12 +16,14 @@ import TableRow from '@material-ui/core/TableRow';
 
 import InfiniteStickyList from './InfiniteStickyList';
 import ObjectExplorer from './ObjectExplorer';
-import {StickyAction} from './TraceList';
+import {StickyAction} from './StickyAction';
 
 import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
-import {HighlightPalette} from '../containers/LiveExpressionStore';
+import {ThemesRef} from "../themes";
 
-const styles = theme => ({
+const styles = theme => {
+    const {highlighting: HighlightPalette} = ThemesRef.current;
+    return ({
     row: {},
     sticky: {
         backgroundColor: theme.palette.background.default,
@@ -128,7 +130,8 @@ const styles = theme => ({
         alignItems: 'center',
         flexFlow: 'row',
     }
-});
+})
+};
 
 function createData(id, entry) {
     return {id, entry};
@@ -150,7 +153,7 @@ const RowContainer = forwardRef(
 );
 
 
-const Row = ({index, style, data}) => {
+const Row = ({index, data, /*style*/}) => {
     const n = (data.items[index] || {}).entry || {};
     const {
         columnIndex, columns, classes,
@@ -197,13 +200,15 @@ const Row = ({index, style, data}) => {
                     : (n.value || []).map((param, i) => {
                         return (
                             <div className={classes.cellParam} key={i}>
-                                <ObjectExplorer key={i}
-                                                variant={"marker"}
-                                                expressionId={n.expressionId}
-                                                objectNodeRenderer={
-                                                    objectNodeRenderer
-                                                }
-                                                data={param}
+                                <ObjectExplorer
+                                    cacheId={n.entry?.i}
+                                    key={i}
+                                    variant={"marker"}
+                                    expressionId={n.expressionId}
+                                    objectNodeRenderer={
+                                        objectNodeRenderer
+                                    }
+                                    data={param}
                                 />
                             </div>
                         );

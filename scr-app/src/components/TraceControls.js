@@ -19,7 +19,7 @@ import TextField from '@material-ui/core/TextField';
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 
-import {requireConfig} from '../seecoderun/modules/AutoLog';
+import {requireConfig} from '../core/modules/AutoLog';
 import withPersistence from '../containers/withPersistence';
 
 const onDependenciesChange = async () => {
