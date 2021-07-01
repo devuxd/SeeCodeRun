@@ -14,15 +14,16 @@ import throttle from 'lodash/throttle';
 import isString from 'lodash/isString';
 import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
-import JSAN from 'jsan';
 
-import {alpha, withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
+import {alpha} from '@material-ui/core/styles';
 import Portal from '@material-ui/core/Portal';
 import Tooltip from '@material-ui/core/Tooltip';
 import Button from '@material-ui/core/Button';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 
-import AutoLog from '../seecoderun/modules/AutoLog';
+import JSEN from '../utils/JSEN';
+import AutoLog from '../core/modules/AutoLog';
 import {
     updateBundle,
     updateBundleFailure,
@@ -39,10 +40,15 @@ import {
 import LiveExpression from '../components/LiveExpression';
 import {PastebinContext} from './Pastebin';
 import OverflowComponent from '../components/OverflowComponent';
-import {NavigationTypes} from '../seecoderun/modules/AutoLogShift';
+import {NavigationTypes} from '../core/modules/AutoLogShift';
 import {monacoProps} from '../utils/monacoUtils';
 import GraphicalQuery from '../components/GraphicalQuery';
-import TimelineBranchManager from '../seecoderun/modules/TimelineBranchManager';
+import TimelineBranchManager from '../core/modules/TimelineBranchManager';
+import {
+    MonacoExpressionClassNames,
+    MonacoHighlightTypes,
+    ThemesRef,
+} from '../themes';
 
 let monaco = null;
 
@@ -76,41 +82,9 @@ export const configureGoToTimelineBranch = () => {
 };
 
 
-export const HighlightTypes = {
-    text: 'monaco-editor-decoration-les-textHighlight-text',
-    error: 'monaco-editor-decoration-les-textHighlight-error',
-    graphical: 'monaco-editor-decoration-les-textHighlight-graphical',
-    globalBranch: 'monaco-editor-decoration-les-textHighlight-global-branch',
-    localBranch: 'monaco-editor-decoration-les-textHighlight-local-branch',
-};
-
-export const defaultExpressionClassName =
-    'monaco-editor-decoration-les-expression';
-export const deadExpressionClassName =
-    'monaco-editor-decoration-les-expressionDead';
-export const liveExpressionClassName =
-    'monaco-editor-decoration-les-expressionLive';
-export const liveExpressionNavClassName =
-    'monaco-editor-decoration-les-expressionNavLive';
-export const errorExpressionClassName =
-    'monaco-editor-decoration-les-expressionError';
-export const branchExpressionClassName =
-    'monaco-editor-decoration-les-expressionBranch';
-
-export const liveExpressionDependencyClassName =
-    'monaco-editor-decoration-les-expressionDependencyLive';
-
-export let HighlightPalette = {
-    text: {},
-    error: {},
-    graphical: {},
-    globalBranch: {},
-    localBranch: {},
-};
 
 const BRANCH_LINE_DECORATION_WIDTH = 3;
 
-let navigatorSpacing = 0;
 const NavigatorTooltip = withStyles((theme) => ({
     tooltip: {
         backgroundColor: theme.palette.background.paper,
@@ -123,29 +97,20 @@ const NavigatorTooltip = withStyles((theme) => ({
 }))(Tooltip);
 
 const styles = (theme) => {
-    navigatorSpacing = theme.spacingUnit(2);
-
-    HighlightPalette = {
-        text: theme.palette.action.hover,
-        object: alpha(theme.palette.primary.main, 0.2),
-        graphical: alpha(theme.palette.secondary.main, 0.08),
-        error: alpha(theme.palette.error.main, 0.08),
-        globalBranch: alpha(theme.palette.primary.main, 0.08),
-        localBranch: alpha(theme.palette.secondary.main, 0.08),
-    };
+    const {highlighting: HighlightPalette} = ThemesRef.current;
 
     return {
         '@global': {
             '.monaco-editor div.margin': {
                 zIndex: '1000 !important',
             },
-            [`.${defaultExpressionClassName}`]: {
+            [`.${MonacoExpressionClassNames.defaultExpressionClassName}`]: {
                 opacity: 0.4,
                 filter: 'greyscale(85%)',
                 // fontWeight: 100,
             },
-            [`.${deadExpressionClassName}`]: {
-                opacity: '0.4 !important',
+            [`.${MonacoExpressionClassNames.deadExpressionClassName}`]: {
+                opacity: '0.467 !important',
                 filter: 'greyscale(85%) !important',
                 fontWeight: '100 !important',
                 // opacity: 0.4,
@@ -153,7 +118,7 @@ const styles = (theme) => {
                 // fontWeight: 100,
                 //  border: '2px solid red'
             },
-            [`.${liveExpressionClassName}`]: {
+            [`.${MonacoExpressionClassNames.liveExpressionClassName}`]: {
                 opacity: '1',
                 filter: 'unset',
                 fontWeight: 'normal',
@@ -161,11 +126,13 @@ const styles = (theme) => {
                 transition: ['opacity', 'filter', 'fontWeight'],
                 transitionDuration: 2000,
             },
-            [`.${liveExpressionNavClassName}`]: {
-                paddingLeft: navigatorSpacing,
+            [`.${MonacoExpressionClassNames.liveExpressionNavClassName}`]: {
+                paddingLeft: theme.spacingUnit(2),
                 // zIndex: theme.zIndex.tooltip,
             },
-            [`.${liveExpressionDependencyClassName}`]: {
+            [`.${
+                MonacoExpressionClassNames.liveExpressionDependencyClassName
+            }`]: {
                 opacity: '1 !important',
                 filter: 'unset',
                 fontWeight: 'bolder',
@@ -173,7 +140,7 @@ const styles = (theme) => {
                 transition: ['opacity', 'filter', 'fontWeight'],
                 transitionDuration: 2000,
             },
-            [`.${errorExpressionClassName}`]: {
+            [`.${MonacoExpressionClassNames.errorExpressionClassName}`]: {
                 opacity: '1',
                 filter: 'unset',
                 fontWeight: 'bolder',
@@ -181,40 +148,42 @@ const styles = (theme) => {
                 borderBottom: '2px solid red',
                 backgroundColor: HighlightPalette.error,
             },
-            [`.${errorExpressionClassName}-lineDecoration`]: {
+            [`.${
+                MonacoExpressionClassNames.errorExpressionClassName
+            }-lineDecoration`]: {
                 backgroundColor: 'red',
                 margin: theme.spacing(1),
                 top: theme.spacing(0.5),
                 height: `${theme.spacing(1)} !important`,
                 width: `${theme.spacing(1)} !important`,
             },
-            [`.${branchExpressionClassName}`]: {
+            [`.${MonacoExpressionClassNames.branchExpressionClassName}`]: {
                 opacity: 1,
                 filter: 'unset !important',
                 fontWeight: 700,
             },
-            [`.${HighlightTypes.text}`]: {
+            [`.${MonacoHighlightTypes.text}`]: {
                 backgroundColor: HighlightPalette.text,
             },
-            [`.${HighlightTypes.text}-match`]: {
+            [`.${MonacoHighlightTypes.text}-match`]: {
                 backgroundColor: alpha(theme.palette.primary.light, 0.15),
             },
-            [`.${HighlightTypes.error}`]: {
+            [`.${MonacoHighlightTypes.error}`]: {
                 backgroundColor: HighlightPalette.error,
                 border: '1px solid red',
             },
-            [`.${HighlightTypes.graphical}`]: {
+            [`.${MonacoHighlightTypes.graphical}`]: {
                 backgroundColor: alpha(HighlightPalette.graphical, 0.35),
             },
-            [`.${HighlightTypes.graphical}-match`]: {
+            [`.${MonacoHighlightTypes.graphical}-match`]: {
                 backgroundColor: alpha(theme.palette.secondary.light, 0.25),
             },
-            [`.${HighlightTypes.globalBranch}`]: {
+            [`.${MonacoHighlightTypes.globalBranch}`]: {
                 //  backgroundColor: HighlightPalette.globalBranch,
                 // borderTop: `1px solid${theme.palette.primary.main}`,
                 // borderBottom: `1px solid${theme.palette.primary.main}`,
             },
-            [`.${HighlightTypes.globalBranch}-decoration`]: {
+            [`.${MonacoHighlightTypes.globalBranch}-decoration`]: {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(90deg, ${
                     theme.palette.primary.main
@@ -222,12 +191,12 @@ const styles = (theme) => {
                     HighlightPalette.globalBranch
                 } ${BRANCH_LINE_DECORATION_WIDTH}px)`,
             },
-            [`.${HighlightTypes.globalBranch}-default-decoration`]: {
+            [`.${MonacoHighlightTypes.globalBranch}-default-decoration`]: {
                 //  marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `red`,
                 zIndex: 10000,
             },
-            [`.${HighlightTypes.globalBranch}-delimiter-decoration`]: {
+            [`.${MonacoHighlightTypes.globalBranch}-delimiter-decoration`]: {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(0deg,  ${
                     'transparent'
@@ -239,12 +208,12 @@ const styles = (theme) => {
                     monacoProps.lineOffSetHeight + BRANCH_LINE_DECORATION_WIDTH
                 }px)`,
             },
-            [`.${HighlightTypes.localBranch}`]: {
+            [`.${MonacoHighlightTypes.localBranch}`]: {
                 //  backgroundColor: HighlightPalette.localBranch,
                 // borderTop: `1px solid${theme.palette.secondary.main}`,
                 // borderBottom: `1px solid${theme.palette.secondary.main}`,
             },
-            [`.${HighlightTypes.localBranch}-decoration`]: {
+            [`.${MonacoHighlightTypes.localBranch}-decoration`]: {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(90deg, ${
                     theme.palette.secondary.main
@@ -252,7 +221,7 @@ const styles = (theme) => {
                     HighlightPalette.localBranch
                 } ${BRANCH_LINE_DECORATION_WIDTH}px)`,
             },
-            [`.${HighlightTypes.localBranch}-delimiter-decoration`]: {
+            [`.${MonacoHighlightTypes.localBranch}-delimiter-decoration`]: {
                 marginLeft: BRANCH_LINE_DECORATION_WIDTH,
                 background: `linear-gradient(0deg,  ${
                     HighlightPalette.localBranch
@@ -538,7 +507,7 @@ const TimelineNavigation = (({
                 datum =
                     data[data.length - 1].isError ?
                         data[data.length - 1].data
-                        : JSAN.parse(data[data.length - 1].data);
+                        : JSEN.parse(data[data.length - 1].data);
                 entry = data[data.length - 1];
                 // datum = isString(data[data.length - 1].data) ?
                 // JSAN.parse(data[data.length - 1].data)
@@ -603,6 +572,7 @@ const TimelineNavigation = (({
         // widget.contentWidget.domNode.style.borderTop = '2px solid blue';
 
         return (<LiveExpression
+            entry={widget}
             style={style}
             key={widget.id}
             expressionId={widget.id}
@@ -639,7 +609,7 @@ const TimelineNavigation = (({
                 widget.contentWidget.domNode.dataset.isError = 'true';
 
                 highlightSingleText(
-                    n.loc, HighlightTypes.error,
+                    n.loc, MonacoHighlightTypes.error,
                     traceSubscriber
                         .getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
 
@@ -669,10 +639,10 @@ const TimelineNavigation = (({
                                         // console.log(entry);
                                         highlightSingleText(
                                             n.loc, n.isError ?
-                                                HighlightTypes.error
+                                                MonacoHighlightTypes.error
                                                 : n.isGraphical ?
-                                                    HighlightTypes.graphical
-                                                    : HighlightTypes.text,
+                                                    MonacoHighlightTypes.graphical
+                                                    : MonacoHighlightTypes.text,
                                             traceSubscriber
                                                 .getMatches(
                                                     n.funcRefId,
@@ -1188,6 +1158,7 @@ const TimelineNavigation = (({
                                     title={
                                         <ExplorerTooltipContainer>
                                             <LiveExpression
+                                                entry={n.entry}
                                                 // style={style}
                                                 expressionId={widget.id}
                                                 classes={classes}
@@ -1205,10 +1176,10 @@ const TimelineNavigation = (({
                                             // console.log(entry);
                                             highlightSingleText(
                                                 n.loc, n.isError ?
-                                                    HighlightTypes.error
+                                                    MonacoHighlightTypes.error
                                                     : n.isGraphical ?
-                                                        HighlightTypes.graphical
-                                                        : HighlightTypes.text,
+                                                        MonacoHighlightTypes.graphical
+                                                        : MonacoHighlightTypes.text,
                                                 traceSubscriber
                                                     .getMatches(
                                                         n.funcRefId,
@@ -2002,9 +1973,9 @@ class LiveExpressionStore extends PureComponent {
                                     onMouseEnter={() => {
                                         // console.log(n);
                                         this.highlightSingleText(
-                                            n.loc, n.isError ? HighlightTypes.error
+                                            n.loc, n.isError ? MonacoHighlightTypes.error
                                                 : n.isGraphical ?
-                                                    HighlightTypes.graphical : HighlightTypes.text,
+                                                    MonacoHighlightTypes.graphical : MonacoHighlightTypes.text,
                                             this.traceSubscriber
                                                 .getMatches(n.funcRefId, n.dataRefId, n.calleeId), false);
                                         this.handleCurrentContentWidgetId(id, n.range);
@@ -2258,7 +2229,7 @@ class LiveExpressionStore extends PureComponent {
                 for (let i = timeline.length - startIndex; i > timeline.length - branch.timelineI; i--) {
 
                     if (timeline[i] && timeline[i].type === 'AssignmentExpression') {
-                        if (timeline[i].objectClassName === 'Function') {
+                        if (timeline[i].objectClassName === 'function') {
                             //      console.log(timeline[i]);
                             //   console.log('other refs', timeline.filter(t => t.value === timeline[i].value));
                         }
@@ -2817,7 +2788,8 @@ class LiveExpressionStore extends PureComponent {
         const res = this.highlightTexts(
             liveRanges,
             {
-                inlineClassName: liveExpressionClassName
+                inlineClassName:
+                MonacoExpressionClassNames.liveExpressionClassName
             },
             this.prevDecorationIds,
             isReveal,
@@ -2827,7 +2799,8 @@ class LiveExpressionStore extends PureComponent {
         const res2 = this.highlightTexts(
             ignoreRanges,
             {
-                inlineClassName: deadExpressionClassName,
+                inlineClassName:
+                MonacoExpressionClassNames.deadExpressionClassName,
             },
             this.prevIgnoreDecorationIds,
             isReveal,
@@ -2838,7 +2811,8 @@ class LiveExpressionStore extends PureComponent {
         const res3 = this.highlightTexts(
             navRanges,
             {
-                inlineClassName: liveExpressionNavClassName
+                inlineClassName:
+                MonacoExpressionClassNames.liveExpressionNavClassName
             },
             this.prevNavDecorationIds,
             isReveal,
@@ -2849,7 +2823,8 @@ class LiveExpressionStore extends PureComponent {
         const dependencyHighlightIds = this.highlightTexts(
             dependencyRanges,
             {
-                inlineClassName: liveExpressionDependencyClassName
+                inlineClassName:
+                MonacoExpressionClassNames.liveExpressionDependencyClassName
             },
             this.prevDependencyHighlightIds,
             isReveal,
@@ -2898,9 +2873,10 @@ class LiveExpressionStore extends PureComponent {
         const res = this.highlightTexts(
             liveRanges,
             {
-                inlineClassName: errorExpressionClassName,
+                inlineClassName:
+                MonacoExpressionClassNames.errorExpressionClassName,
                 linesDecorationsClassName: `${
-                    errorExpressionClassName
+                   MonacoExpressionClassNames.errorExpressionClassName
                 }-lineDecoration`,
             },
             this.prevErrorDecorationIds,
@@ -2928,7 +2904,7 @@ class LiveExpressionStore extends PureComponent {
             return;
         }
         const type = NavigationTypes.Global === navigationType ?
-            HighlightTypes.globalBranch : HighlightTypes.localBranch;
+            MonacoHighlightTypes.globalBranch : MonacoHighlightTypes.localBranch;
 
         this.prevBranch[navigationType] = {
             single: this.highlightTexts(
@@ -2979,7 +2955,7 @@ class LiveExpressionStore extends PureComponent {
             return;
         }
         const type = NavigationTypes.Global === navigationType ?
-            HighlightTypes.globalBranch : HighlightTypes.localBranch;
+            MonacoHighlightTypes.globalBranch : MonacoHighlightTypes.localBranch;
 
         this.prevBranches[navigationType] = {
             single: this.highlightTexts(
@@ -3040,7 +3016,7 @@ class LiveExpressionStore extends PureComponent {
     };
 
 
-    highlightSingleText = (loc, type = HighlightTypes.text, matches, isReveal = true) => {
+    highlightSingleText = (loc, type = MonacoHighlightTypes.text, matches, isReveal = true) => {
         if (!loc) {
             this.unHighlightSingleText();
             return;
@@ -3168,25 +3144,10 @@ class LiveExpressionStore extends PureComponent {
                 this.didUpdate = false;
                 this.prevTimeline = this.timeline;
                 this.prevLogs = this.logs;
-
                 // this.validTimeline =
-                //     this.timeline && this.timeline.length? this.timeline:this.validTimeline||[];
-
-                this.props.liveExpressionStoreChange &&
-                this.props.liveExpressionStoreChange(
-                    this.traceSubscriber,
-                    this.timeline,
-                    this.logs,
-                    this.isNew,
-                    HighlightTypes,
-                    this.highlightSingleText,
-                    this.highlightErrors,
-                    this.setCursorToLocation,
-                    this.getEditorTextInLoc,
-                    this.colorizeDomElement,
-                    this.objectNodeRenderer,
-                    // this.handleObjectExplorerExpand
-                );//set via props
+                //     this.timeline && this.timeline.length?
+                //     this.timeline:this.validTimeline||[];
+                this.props.liveExpressionStoreChange?.(this, this.isNew);//set via props
                 this.isNew = false;
             }
         }

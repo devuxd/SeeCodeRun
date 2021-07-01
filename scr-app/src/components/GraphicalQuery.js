@@ -1,7 +1,7 @@
 import React, {memo, useCallback} from 'react';
 import PropTypes from 'prop-types';
 
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import Fab from '@material-ui/core/Fab';
 
 import {VisualQueryManager} from '../core/modules/VisualQueryManager';

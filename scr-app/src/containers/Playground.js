@@ -1,10 +1,10 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import isString from 'lodash/isString';
 import GraphicalMapper from './GraphicalMapper';
-import {d} from './Pastebin';
+
 import {
     updatePlaygroundLoadFailure,
     updatePlaygroundLoadSuccess
@@ -132,21 +132,7 @@ const Playground = ({
                 js,
                 isAutoLogActive ? alJs : js
             );
-            if (data.to) {
-                data.from = data.to;
-                data.to = alJs;
-                d.log(
-                    new Date(),
-                    `autoLog.configureIframe(
-                    this.iFrameRefHandler,
-                     store, autoLogger, html, css, js, alJs
-                    );`,
-                    null, data.from, data.to);
-                data.to = null;
 
-            } else {
-                data.to = alJs;
-            }
             // d.log(new Date(), `locationMap[parentId].extraLocs = prev || {};`
             // , null, JSON.stringify(prev),
             // JSON.stringify(locationMap[parentId].extraLocs));

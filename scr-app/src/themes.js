@@ -1,226 +1,252 @@
 import React, {
-    createContext,
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
+   createContext, useCallback, useEffect, useMemo, useState,
 } from 'react';
 import PropTypes from 'prop-types';
 import {
-    createMuiTheme,
-    CssBaseline,
-    responsiveFontSizes,
-    StylesProvider,
-    ThemeProvider,
+   ThemeProvider,
+   StyledEngineProvider,
+   CssBaseline,
 } from '@material-ui/core';
+// import { StylesProvider } from '@material-ui/styles'; // breaks theme
+import {
+   createTheme,
+   responsiveFontSizes,
+   alpha,
+} from '@material-ui/core/styles';
 
-import {chromeDark, chromeLight} from 'react-inspector';
 import indigo from '@material-ui/core/colors/indigo';
 import deepOrange from '@material-ui/core/colors/deepOrange';
 
+import {chromeDark, chromeLight} from 'react-inspector';
+
 export const ThemeContext = createContext({
-    switchTheme: null,
-    themeType: null,
-    muiTheme: null,
-    inspectorTheme: null,
-    inspectorCompactTheme: null,
-    monacoTheme: null,
+   switchTheme: null,
+   themeType: null,
+   muiTheme: null,
+   inspectorTheme: null,
+   inspectorCompactTheme: null,
+   monacoTheme: null,
 });
 
-// const palette = { // oldPalette
-// primary: {
-//     light: '#5e92f3',
-//     main: '#1565c0',
-//     dark: '#003c8f',
-//     contrastText: '#fff',
-// },
-// secondary: {
-//     light: '#ff8a50',
-//     main: '#ff5722',
-//     dark: '#c41c00',
-//     contrastText: '#000',
-// },
-// tertiary: {
-//     light: '#ffff6e',
-//     main: '#cddc39',
-//     dark: '#99aa00',
-//     contrastText: '#000',
-// },
-// quaternary: {
-//     light: '#ff6090',
-//     main: '#e91e63',
-//     dark: '#b0003a',
-//     contrastText: '#000',
-// },
-// };
-
 const lightPalette = {
-    mode: 'light',
-    primary: {
-        main: indigo['A700'],
-    },
-    secondary: {
-        main: deepOrange['900'],
-    },
+   mode: 'light',
+   primary: {
+      main: indigo['A700'],
+   },
+   secondary: {
+      main: deepOrange['900'],
+   },
 };
 
 const darkPalette = {
-    mode: 'dark',
-    primary: {
-        main: indigo['A100'],
-    },
-    secondary: {
-        main: deepOrange['A200'],
-    },
+   mode: 'dark',
+   primary: {
+      main: indigo['A100'],
+   },
+   secondary: {
+      main: deepOrange['A200'],
+   },
 };
 
 const spacingUnit = x => x * 8;
 
 const typography = {
-    code: {
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-        fontWeight: 'normal',
-        fontSize: 12,//'0.75rem', // Monaco does not support REM
-        fontFeatureSettings: '"liga", "calt"',
-        letterSpacing: 'normal',
-        textSizeAdjust: '100%',
-        whiteSpace: 'nowrap',
-        WebkitFontSmoothing: 'antialiased',
-    }
+   code: {
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontWeight: 'normal',
+      fontSize: 12,//'0.75rem', // Monaco does not support REM
+      fontFeatureSettings: '"liga", "calt"',
+      letterSpacing: 'normal',
+      textSizeAdjust: '100%',
+      whiteSpace: 'nowrap',
+      WebkitFontSmoothing: 'antialiased',
+   },
+   navigatorIndex: {
+      fontSize: 11,
+   },
+   navigatorMax: {
+      fontSize: 9,
+      paddingTop: 3,
+   }
 };
 
 const getMuiThemeOptions = (palette) => ({
-    spacingUnit,
-    palette,
-    typography,
+   spacingUnit,
+   palette,
+   typography,
 });
 
 const getLightTheme = () => responsiveFontSizes(
-    createMuiTheme(getMuiThemeOptions(lightPalette))
+   createTheme(getMuiThemeOptions(lightPalette))
 );
 
 const getDarkTheme = () => responsiveFontSizes(
-    createMuiTheme(getMuiThemeOptions(darkPalette))
+   createTheme(getMuiThemeOptions(darkPalette))
 );
 
 export const themeTypes = {
-    lightTheme: 'lightTheme',
-    darkTheme: 'darkTheme',
+   lightTheme: 'lightTheme',
+   darkTheme: 'darkTheme',
 };
 
 const getMuiThemes = {
-    [themeTypes.lightTheme]: getLightTheme,
-    [themeTypes.darkTheme]: getDarkTheme,
+   [themeTypes.lightTheme]: getLightTheme,
+   [themeTypes.darkTheme]: getDarkTheme,
 };
 
 const muiChromeLight = {
-    ...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})
+   ...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})
 };
 
 const muiChromeLightCompact = {
-    ...muiChromeLight, ...({
-        BASE_FONT_SIZE: '9px',
-        TREENODE_FONT_SIZE: "9px",
-    })
+   ...muiChromeLight, ...({
+      BASE_FONT_SIZE: '9px',
+      TREENODE_FONT_SIZE: "9px",
+   })
 };
 
 const muiChromeDark = {
-    ...chromeDark, ...({BASE_BACKGROUND_COLOR: 'transparent'})
+   ...chromeDark, ...({
+      BASE_BACKGROUND_COLOR: 'transparent',
+      OBJECT_VALUE_STRING_COLOR: 'rgb(206,145,120)',
+   })
 };
+// console.log(muiChromeDark);
 
 const muiChromeDarkCompact = {
-    ...muiChromeDark, ...({
-        BASE_FONT_SIZE: '9px',
-        TREENODE_FONT_SIZE: "9px",
-    })
+   ...muiChromeDark, ...({
+      BASE_FONT_SIZE: '9px',
+      TREENODE_FONT_SIZE: "9px",
+   })
 };
 
-export function getThemes(themeType) {
-    if (!getMuiThemes[themeType]) {
-        return;
-    }
-    return {
-        themeType,
-        muiTheme: getMuiThemes[themeType](),
-        inspectorTheme: themeType === themeTypes.darkTheme ?
-            muiChromeDark : muiChromeLight,
-        inspectorCompactTheme: themeType === themeTypes.darkTheme ?
-            muiChromeDarkCompact : muiChromeLightCompact,
-        monacoTheme: themeType === themeTypes.darkTheme ?
-            'vs-dark' : 'vs-light'
-    };
+export const MonacoHighlightTypes = {
+   text: 'monaco-editor-decoration-les-textHighlight-text',
+   error: 'monaco-editor-decoration-les-textHighlight-error',
+   graphical: 'monaco-editor-decoration-les-textHighlight-graphical',
+   globalBranch: 'monaco-editor-decoration-les-textHighlight-global-branch',
+   localBranch: 'monaco-editor-decoration-les-textHighlight-local-branch',
+};
+
+export const MonacoExpressionClassNames = {
+   defaultExpressionClassName: 'monaco-editor-decoration-les-expression',
+   deadExpressionClassName: 'monaco-editor-decoration-les-expressionDead',
+   liveExpressionClassName: 'monaco-editor-decoration-les-expressionLive',
+   liveExpressionNavClassName: 'monaco-editor-decoration-les-expressionNavLive',
+   errorExpressionClassName: 'monaco-editor-decoration-les-expressionError',
+   branchExpressionClassName: 'monaco-editor-decoration-les-expressionBranch',
+   liveExpressionDependencyClassName:
+      'monaco-editor-decoration-les-expressionDependencyLive',
+   
+};
+
+export const ThemesRef = {
+   current: {
+      highlighting: {
+         text: {},
+         error: {},
+         graphical: {},
+         globalBranch: {},
+         localBranch: {},
+      },
+   },
+};
+
+function makeThemes(themeType) {
+   if (!getMuiThemes[themeType]) {
+      return;
+   }
+   const theme = getMuiThemes[themeType]();
+   const inspectorTheme = themeType === themeTypes.darkTheme ?
+      muiChromeDark : muiChromeLight;
+   const inspectorCompactTheme = themeType === themeTypes.darkTheme ?
+      muiChromeDarkCompact : muiChromeLightCompact;
+   
+   ThemesRef.current = {
+      highlighting: {
+         text: theme.palette.action.hover,
+         object: alpha(theme.palette.primary.main, 0.1),
+         graphical: alpha(theme.palette.secondary.main, 0.08),
+         error: alpha(theme.palette.error.main, 0.08),
+         globalBranch: alpha(theme.palette.primary.main, 0.08),
+         localBranch: alpha(theme.palette.secondary.main, 0.08),
+      },
+      themeType,
+      muiTheme: theme,
+      inspectorTheme,
+      inspectorCompactTheme,
+      monacoTheme: themeType === themeTypes.darkTheme ?
+         'vs-dark' : 'vs-light',
+      inspectorGraphicalTheme: {
+         ...inspectorTheme,
+         ARROW_COLOR: theme.palette.secondary.main
+      },
+      inspectorCompactGraphicalTheme: {
+         ...inspectorCompactTheme,
+         ARROW_COLOR: theme.palette.secondary.main
+      },
+   }
+   return ThemesRef.current;
 }
 
-export function useThemes(themeType) {
-    return useMemo(() => getThemes(themeType), [themeType]);
+export function useThemes(themeType, switchTheme) {
+   const themes = useMemo(() => makeThemes(themeType), [themeType]);
+   themes.switchTheme = switchTheme;
+   return themes;
 }
 
 export default function withThemes(Component) {
-    return (function WithThemes(props) {
-        const {mediaQueryResult: prefersLightMode} = props;
-        const preferredThemeType = prefersLightMode ?
-            themeTypes.lightTheme : themeTypes.darkTheme;
-
-        const [themeUserOverrides, setThemeUserOverrides] = useState(null);
-        const [_themeType, _setThemeType] = useState(preferredThemeType);
-
-        const themeType = themeUserOverrides || _themeType;
-        const switchTheme = useCallback((event, newThemeUserOverrides) => {
-            if (newThemeUserOverrides && themeTypes[newThemeUserOverrides]) {
-                setThemeUserOverrides(newThemeUserOverrides);
-            } else {
-                const nextThemeType = themeType === themeTypes.darkTheme ?
-                    themeTypes.lightTheme
-                    : themeType === themeTypes.lightTheme ?
-                        themeTypes.darkTheme : themeTypes.lightTheme;
-                if (themeUserOverrides) {
-                    setThemeUserOverrides(nextThemeType);
-                } else {
-                    _setThemeType(nextThemeType);
-                }
-            }
-        }, [
-            themeType,
-            setThemeUserOverrides,
-            _setThemeType,
-            themeUserOverrides
-        ]);
-
-        useEffect(() => {
-            _setThemeType(preferredThemeType);
-        }, [_setThemeType, preferredThemeType]);
-
-        const _themes = useThemes(themeType);
-
-        const themes = useMemo(() => ({
-                ..._themes,
-                inspectorGraphicalTheme: {
-                    ..._themes.inspectorTheme,
-                    ARROW_COLOR: _themes.muiTheme.palette.secondary.main
-                },
-                inspectorCompactGraphicalTheme: {
-                    ..._themes.inspectorCompactTheme,
-                    ARROW_COLOR: _themes.muiTheme.palette.secondary.main
-                },
-                switchTheme
-            }),
-            [_themes, switchTheme]
-        );
-
-        return (
-            <StylesProvider injectFirst>
-                <ThemeProvider theme={themes.muiTheme}>
-                    <CssBaseline/>
-                    <Component
-                        themes={themes}
-                        {...props}
-                    />
-                </ThemeProvider>
-            </StylesProvider>
-        );
-    });
+   return (function WithThemes(props) {
+      const {mediaQueryResult: prefersLightMode} = props;
+      const preferredThemeType = prefersLightMode ?
+         themeTypes.lightTheme : themeTypes.darkTheme;
+      
+      const [themeUserOverrides, setThemeUserOverrides] = useState(null);
+      const [_themeType, _setThemeType] = useState(preferredThemeType);
+      
+      const themeType = themeUserOverrides || _themeType;
+      const switchTheme = useCallback((event, newThemeUserOverrides) => {
+         if (newThemeUserOverrides && themeTypes[newThemeUserOverrides]) {
+            setThemeUserOverrides(newThemeUserOverrides);
+         } else {
+            const nextThemeType = themeType === themeTypes.darkTheme ?
+               themeTypes.lightTheme
+               : themeType === themeTypes.lightTheme ?
+                  themeTypes.darkTheme : themeTypes.lightTheme;
+            
+            setThemeUserOverrides(themeUserOverrides => {
+               if (themeUserOverrides) {
+                  return nextThemeType;
+               }
+               _setThemeType(nextThemeType);
+               return null;
+            });
+            
+         }
+      }, [
+         themeType,
+      ]);
+      
+      useEffect(() => {
+         _setThemeType(preferredThemeType);
+      }, [preferredThemeType]);
+      
+      const themes = useThemes(themeType, switchTheme);
+      
+      return (
+         <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={themes.muiTheme}>
+               <CssBaseline/>
+               <Component
+                  themes={themes}
+                  {...props}
+               />
+            </ThemeProvider>
+         </StyledEngineProvider>
+      );
+   });
 };
 
 withThemes.propTypes = {
-    mediaQueryResult: PropTypes.any.isRequired,
+   mediaQueryResult: PropTypes.any.isRequired,
 };

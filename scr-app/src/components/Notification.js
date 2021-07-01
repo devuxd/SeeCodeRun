@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import CloseIcon from '@material-ui/icons/Close';
 // import WarningIcon from '@material-ui/icons/Warning';
 import ErrorIcon from '@material-ui/icons/Error';

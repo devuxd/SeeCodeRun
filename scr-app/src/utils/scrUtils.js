@@ -581,4 +581,3 @@ fireco, firecoPad, editorId, editorText
     };
 };
 */
-

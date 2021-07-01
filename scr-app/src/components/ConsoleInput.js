@@ -2,7 +2,7 @@ import React, {Component, createRef} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';

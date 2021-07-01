@@ -15,7 +15,7 @@ import localStorage from 'store';
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
 import {ACTIVATE_FIREPAD_EXPIRED} from './fireco';
 import {MONACO_EDITOR_CONTENT_CHANGED} from './monacoEditor';
-import firebaseConfig from '../../seecoderun/firebaseConfig';
+import firebaseConfig from '../../core/firebaseConfig';
 
 const {cloudFunctionsPath} = firebaseConfig;
 

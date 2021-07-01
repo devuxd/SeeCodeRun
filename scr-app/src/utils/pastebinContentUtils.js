@@ -1,4 +1,4 @@
-import {getEditorIds} from '../seecoderun/AppManager';
+import {getEditorIds} from '../core/AppManager';
 import {getDefaultTextForLanguage} from '../common/pastebinContent';
 
 export function getDefaultPastebinContent() {

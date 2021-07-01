@@ -1,8 +1,7 @@
 // based on react-grid-layout's WidthProvider
 import React, {createRef, PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {asyncScheduler, fromEvent} from 'rxjs';
-import {throttleTime} from 'rxjs/operators';
+import debounce from 'lodash/debounce';
 
 export default function SizeProvider(ComposedComponent) {
     return class SizeProvider extends PureComponent {
@@ -23,22 +22,21 @@ export default function SizeProvider(ComposedComponent) {
                 height: 1024,
             };
             this.mounted = false;
-            this.windowResizeSubscription = null;
             this.reactRef = createRef();
         }
 
 
         componentDidMount() {
             this.mounted = true;
-            this.windowResizeSubscription =
-                fromEvent(window, 'resize').pipe(throttleTime(250, asyncScheduler, {leading: false, trailing: true}))
-                    .subscribe(() => this.onWindowResize());
+            this._onWindowResize = debounce(this.onWindowResize, 250, {maxWait: 1000});
+            window.addEventListener('resize', this._onWindowResize );
             this.onWindowResize();
         }
 
         componentWillUnmount() {
             this.mounted = false;
-            this.windowResizeSubscription.unsubscribe();
+            window.removeEventListener('resize', this._onWindowResize );
+            this._onWindowResize.cancel();
         }
 
         onWindowResize = () => {

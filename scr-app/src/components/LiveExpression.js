@@ -97,6 +97,7 @@ class LiveExpression extends PureComponent {
             color,
             sliderRange,
             entry,
+            cacheId
         } = this.props;
 
         if (!!branchNavigatorChange) {
@@ -131,7 +132,7 @@ class LiveExpression extends PureComponent {
             // todo function params vs arguments + return explorer
             return (
                 <ObjectExplorer
-                    cacheId={entry?.i}
+                    cacheId={cacheId??entry?.i}
                     expressionId={expressionId}
                     objectNodeRenderer={objectNodeRenderer}
                     data={datum}

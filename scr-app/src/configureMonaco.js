@@ -11,9 +11,10 @@ const configureMonacoDefaults = (
         monaco.languages.typescript.ModuleResolutionKind.NodeJs,
         module: hasNativeTypescript
             ? monaco.languages.typescript.ModuleKind.ES2015
-            : monaco.languages.typescript.ModuleKind.System,
+            : monaco.languages.typescript.ModuleKind.CommonJS,
         experimentalDecorators: true,
         noEmit: true,
+        esModuleInterop: true,
         allowJs: true,
         typeRoots: ["node_modules/@types/react"],
         forceConsistentCasingInFileNames: hasNativeTypescript,

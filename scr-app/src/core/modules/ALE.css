@@ -1,0 +1,87 @@
+.ale.branch.function.normal {
+    font-size: 90%;
+    font-weight: normal;
+    opacity: 0.647;
+    color: lightcoral;
+}
+
+.ale.branch.function.active {
+    font-size: 110%;
+    font-weight: bold;
+    opacity: 1;
+    color: tomato;
+}
+
+.ale.branch.function.hover {
+    font-size: 110%;
+    font-weight: bold;
+    opacity: 1;
+    color: tomato;
+}
+
+.ale.branch.control.normal {
+    font-size: 90%;
+    font-weight: normal;
+    opacity: 0.647;
+    color: lightcoral;
+}
+
+.ale.branch.control.active {
+    font-size: 110%;
+    font-weight: bold;
+    opacity: 1;
+    color: tomato;
+}
+
+ .ale.branch.control.hover {
+     font-size: 110%;
+     font-weight: bold;
+     opacity: 1;
+     color: tomato;
+ }
+
+.ale.value.normal {
+    font-size: 95%;
+    filter: contrast(0.647);
+    color: coral;
+}
+
+.ale.value.active {
+    font-size: 100%;
+    filter: contrast(1);
+    color: darkslateblue;
+}
+
+.ale.expression.hover {
+    font-size: 100%;
+    font-weight: bold;
+}
+
+.ale.import {
+    font-size: 95%;
+    filter: contrast(0.647);
+    font-weight: normal;
+    color: cornflowerblue;
+}
+
+.ale.import.active {
+    font-size: 100%;
+    filter: contrast(1);
+    font-weight: bold;
+}
+
+.ale.import.hover {
+    font-size: 100%;
+    font-weight: bold;
+}
+
+
+.ale.contentWidgetDomNode {
+    min-width: 8px;
+    max-height: 14px;
+    overflow: hidden;
+}
+
+.ale.contentWidgetDomNode.hover {
+    background: rgba(234, 166, 123, 0.35);
+}

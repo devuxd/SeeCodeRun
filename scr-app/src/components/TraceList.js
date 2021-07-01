@@ -7,8 +7,8 @@ import React, {
    useContext
 } from 'react';
 import isString from 'lodash/isString';
-
-import {alpha, darken, lighten, withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
+import {alpha, darken, lighten} from '@material-ui/core/styles';
 
 import ButtonBase from '@material-ui/core/ButtonBase';
 import Typography from '@material-ui/core/Typography';

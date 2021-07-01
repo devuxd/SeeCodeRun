@@ -10,7 +10,8 @@ import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CodeIcon from '@material-ui/icons/Code';
 import PencilIcon from 'mdi-material-ui/Pencil';
 
-import {alpha, withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
+import {alpha} from '@material-ui/core/styles';
 import Menu from '@material-ui/core/Menu';
 import ListItem from '@material-ui/core/ListItem';
 import MenuItem from '@material-ui/core/MenuItem';

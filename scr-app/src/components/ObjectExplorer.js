@@ -2,7 +2,7 @@ import React, {
    memo, useCallback, useEffect, useMemo, useState, useContext,
 } from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import Paper from '@material-ui/core/Paper';
 import Tooltip from '@material-ui/core/Tooltip';
 import TableChartIcon from '@material-ui/icons/TableChart';

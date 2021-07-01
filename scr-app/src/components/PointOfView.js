@@ -1,6 +1,6 @@
 import React, {createRef, PureComponent, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
-import {makeStyles} from '@material-ui/core/styles';
+import {makeStyles} from '@material-ui/styles';
 import Container from '@material-ui/core/Container';
 import Slider from '@material-ui/core/Slider';
 import ImageList from '@material-ui/core/ImageList';

@@ -2,7 +2,7 @@ import React, {createRef, PureComponent} from 'react';
 import {compose} from 'redux';
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import {SnackbarProvider} from 'notistack';
 import {takeUntil} from 'rxjs/operators';
 
@@ -11,7 +11,7 @@ import NotificationCenter from '../containers/NotificationCenter';
 import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
-import {getEditorIds} from '../seecoderun/AppManager';
+import {getEditorIds} from '../core/AppManager';
 import {end$, online$} from '../utils/scrUtils';
 
 import Chat from '../containers/Chat';
@@ -75,11 +75,11 @@ const styles = theme => {
             padding: 0,
         },
         content: {
-            overflow: 'visible',
-            height: '100%',
-            width: '100%',
-            margin: 0,
-            padding: 0,
+            // overflow: 'visible',
+            // height: '100%',
+            // width: '100%',
+            // margin: 0,
+            // padding: 0,
         }
     }
 };
@@ -128,7 +128,7 @@ class Index extends PureComponent {
     shareClick = event => {
         event && event.preventDefault();
         const {shareUrl} = this.props;
-        shareUrl && window.open(shareUrl, '_blank');
+        shareUrl && global.open(shareUrl, '_blank');
         this.handleShareClose();
     };
 
@@ -192,7 +192,7 @@ class Index extends PureComponent {
     onHeight = (node, heightAdjust) => {
         const {minPastebinHeight} = this.props;
         const minHeight = minPastebinHeight || 600;
-        const newHeight = window.innerHeight - heightAdjust;
+        const newHeight = global.innerHeight - heightAdjust;
         return Math.max(minHeight, newHeight);
     };
 
@@ -247,7 +247,7 @@ class Index extends PureComponent {
         } = state;
 
         const rootContainerBottomMargin = isTopNavigationToggled ? 0 :
-            window.innerWidth > 600 ? appStyle.rowHeight
+            global.innerWidth > 600 ? appStyle.rowHeight
                 : appStyle.rowHeightSmall;
 
         const heightAdjust = isTopNavigationToggled ?

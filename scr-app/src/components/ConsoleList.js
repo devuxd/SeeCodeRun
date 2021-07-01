@@ -6,7 +6,8 @@ import React, {
     useState
 } from 'react';
 import PropTypes from 'prop-types';
-import {alpha, darken, lighten, withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
+import {alpha, darken, lighten} from '@material-ui/core/styles';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 

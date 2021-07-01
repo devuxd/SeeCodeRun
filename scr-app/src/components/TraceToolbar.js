@@ -2,7 +2,8 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 
-import {lighten, withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
+import {lighten} from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -141,7 +142,7 @@ function InputEndAdornment(props) {
     };
     const hasSelected = isCase || isWord || isRegExp;
     return (
-        <InputAdornment>
+        <InputAdornment position="end">
                 <span className={classes.chipArray}
                     // onMouseEnter={
                     //     () => handleChangeExpand(setExpanded, true)
@@ -341,7 +342,7 @@ function EnhancedToolbar(props) {
             classes: {root: classes.inputProps},
             startAdornment:
                 (
-                    <InputAdornment>
+                    <InputAdornment position="start">
                         <ResultsFilter {...props} />
                         {graphicalQuery}
                     </InputAdornment>

@@ -5,7 +5,7 @@ import debounce from 'lodash/debounce';
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 import classNames from 'classnames';
-import {withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/styles';
 import Fab from '@material-ui/core/Fab';
 import SettingsIcon from '@material-ui/icons/SettingsSharp';
 import Skeleton from '@material-ui/core/Skeleton';
@@ -18,6 +18,7 @@ import {monacoEditorMouseEventTypes} from '../utils/monacoUtils';
 import {end$} from '../utils/scrUtils';
 import LiveExpressionStore from './LiveExpressionStore';
 import Notification from '../components/Notification';
+import {MonacoOptions} from "../core/modules/ALE";
 
 const mapStateToProps = (state) => {
     const {updateBundleReducer, updatePlaygroundReducer} = state;
@@ -30,12 +31,10 @@ const mapStateToProps = (state) => {
 };
 const mapDispatchToProps = {mountEditorFulfilled, monacoEditorContentChanged};
 
-export const defaultMonacoEditorLiveExpressionClassName =
-    'monaco-editor-live-expression';
 const styles = theme => ({
     '@global': {
         [`.${
-            defaultMonacoEditorLiveExpressionClassName
+            MonacoOptions.defaultMonacoEditorLiveExpressionClassName
         }.monaco-editor .cursors-layer > .cursor`]: {
             maxHeight: 18,
             marginTop: 7,
@@ -334,7 +333,7 @@ class Editor extends PureComponent {
                     case monacoEditorMouseEventTypes.mouseMove:
                         if (
                             mouseEvent.event.target.type ===
-                            window.monaco.editor.MouseTargetType.CONTENT_WIDGET
+                            global.monaco.editor.MouseTargetType.CONTENT_WIDGET
                         ) {
                             // console.log('m', 'CONTENT_WIDGET',
                             //   mouseEvent.event.target.detail
