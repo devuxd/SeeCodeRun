@@ -1,24 +1,26 @@
 import 'react-resizable/css/styles.css';
-import React, {createContext, createRef, PureComponent} from 'react';
+import React, {
+   createContext, createRef, PureComponent, useContext
+} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
 import {Responsive} from 'react-grid-layout';
 
-import {withStyles} from '@material-ui/styles';
-import {darken, hexToRgb} from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import Tooltip from '@material-ui/core/Tooltip';
-import IconButton from '@material-ui/core/IconButton';
-import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
-import DragHandleIcon from '@material-ui/icons/DragHandle';
-import Drawer from '@material-ui/core/Drawer';
-import TvIcon from '@material-ui/icons/Tv';
+import {withStyles} from '@mui/styles';
+import {darken, hexToRgb} from '@mui/material/styles';
+import Paper from '@mui/material/Paper';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
+import Drawer from '@mui/material/Drawer';
+import TvIcon from '@mui/icons-material/Tv';
 import LanguageHtml5Icon from 'mdi-material-ui/LanguageHtml5';
 import LanguageJavaScriptIcon from 'mdi-material-ui/LanguageJavascript';
 import LanguageCss3Icon from 'mdi-material-ui/LanguageCss3';
-import HighlightAltIcon from '@material-ui/icons/HighlightAlt';
+import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import SortAscendingIcon from 'mdi-material-ui/SortAscending';
 import SortDescendingIcon from 'mdi-material-ui/SortDescending';
 import SortAlphabeticalAscendingIcon
@@ -28,7 +30,15 @@ import SortAlphabeticalDescendingIcon
 import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
 import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
 import Highlighter from 'react-highlight-words';
-import {useStyles} from 'react-inspector';
+
+import {
+   Inspector as BaseInspector,
+   ObjectName as InspectorObjectName,
+   ObjectValue as InspectorObjectValue,
+   useStyles
+} from 'react-inspector';
+
+import ALE, {GraphicalQueryBase, MonacoOptions} from '../core/modules/ALE';
 
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 import {VisualQueryManager} from '../core/modules/VisualQueryManager';
@@ -48,11 +58,79 @@ import DebugContainer from '../components/DebugContainer';
 import TraceControls from '../components/TraceControls';
 import PointOfView, {createPointOfViewTile} from '../components/PointOfView';
 import ObjectExplorersContext, {
-   getNewObjectExplorersCache, objectValueFormatter
-} from '../components/ObjectExplorersContext';
+   objectExplorersAcceptor,
+   useStateWithRestorer,
+   objectValueFormatter
+} from '../contexts/ObjectExplorersContext';
 import {MonacoHighlightTypes} from '../themes';
 import {makeGetExpandedPaths} from '../utils/pathUtils';
 import JSEN from '../utils/JSEN';
+
+import PastebinContext from '../contexts/PastebinContext';
+import {ThemeContext} from '../themes';
+import ALEContext from "../core/modules/RALE/ALEContext";
+
+const withPastebinSearchContext = Component => {
+   return props => {
+      const context = useContext(PastebinContext);
+      const searchValueHighlighter =
+         context.searchState?.searchValueHighlighter;
+      return (
+         <Component
+            propertyValueFormatter={searchValueHighlighter}
+            {...props}
+         />
+      );
+   };
+};
+const ObjectValue = withPastebinSearchContext(InspectorObjectValue);
+const ObjectName = withPastebinSearchContext(InspectorObjectName);
+
+const withPastebinSearchVisualQueryContext = Component => {
+   return props => {
+      const context = useContext(PastebinContext);
+      // console.log("VQ", context.VisualQueryManager, props);
+      return (
+         <Component
+            visualQuery={context.searchState?.visualQuery}
+            {...props}
+         />
+      );
+   };
+};
+
+// fix bas einspector
+
+export const Inspector = (
+   {
+      inspectorThemeName,
+      cacheId,
+      ...props
+   }
+) => {
+   const themeContext = useContext(ThemeContext);
+   const pastebinContext = useContext(PastebinContext);
+   const {obtainRestorer} = useContext(ObjectExplorersContext);
+   
+   const expandedPaths = useStateWithRestorer(obtainRestorer(cacheId));
+   
+   return (<BaseInspector
+      theme={themeContext[inspectorThemeName] ?? themeContext?.inspectorTheme}
+      getExpandedPaths={pastebinContext?.searchState?.getExpandedPaths}
+      expandedPaths={expandedPaths}
+      {...props}
+   />);
+   
+};
+
+export const GraphicalQuery =
+   withPastebinSearchVisualQueryContext(GraphicalQueryBase);
+
+Inspector.propTypes = {
+   data: PropTypes.any,
+   name: PropTypes.string,
+   table: PropTypes.bool,
+};
 
 const isDebug = false;
 
@@ -63,7 +141,7 @@ export const TimeoutDelay = {
    SLOW: 1000,
 };
 export const TABLE_ROW_HEIGHT = 22;
-export const PastebinContext = createContext({});
+
 
 export const d = {
    //Matches PointOfView.createPointOfViewTile(...)
@@ -152,6 +230,12 @@ const getNextSortOption = (orderBy, orderFlow) => (
 
 const styles = theme => ({
    '@global': {
+      [`.${
+         MonacoOptions.defaultMonacoEditorLiveExpressionClassName
+      }.monaco-editor .cursors-layer > .cursor`]: {
+         maxHeight: 18,
+         marginTop: 7,
+      },
       ".react-grid-layout": {
          position: "relative",
          transition: "height 200ms ease",
@@ -360,7 +444,6 @@ class Pastebin extends PureComponent {
    
    constructor(props) {
       super(props);
-      this.objectExplorersCache = getNewObjectExplorersCache();
       this.gridRef = createRef();
       this.setUpdateMonacoEditorLayouts = {};
       this.updateMonacoEditorLayouts = {};
@@ -673,7 +756,8 @@ class Pastebin extends PureComponent {
          id: entry.reactKey,
          time: entry.i,
          // time: entry.timestamp,
-         expression: this.getEditorTextInLocCache(entry.id, entry.loc),
+         // expression: this.getEditorTextInLocCache(entry.id, entry.loc),
+         expression: entry.expression,
          value: entry.data,
          loc: {...entry.loc},
          expressionId: entry.id,
@@ -762,10 +846,14 @@ class Pastebin extends PureComponent {
       return searchState;
    };
    
+   traceSubscriber = {
+      getMatches: () => null,
+   };
+   
    liveExpressionStoreChange = ( // liveExpressionStore obj's ref
       {
-         traceSubscriber,
-         timeline,
+         traceSubscriber = this.traceSubscriber,
+         timeline: pureTimeline,
          logs,
          highlightSingleText, highlightErrors,
          setCursorToLocation, getEditorTextInLoc, colorizeDomElement,
@@ -773,6 +861,29 @@ class Pastebin extends PureComponent {
       },
       isNew
    ) => {
+      const zones = this.state.aleContext?.aleInstance.zale?.zones;
+      // console.log("liveExpressionStoreChange", pureTimeline, isNew, zones);
+      
+      const getSourceText = expressionId => zones?.[expressionId]?.sourceText;
+      const timeline = pureTimeline.filter(e => !!e.pre).map((entry, i) => {
+         
+         const expressionId = entry?.pre?.expressionId;
+         return ({
+            
+            reactKey: i,
+            i,
+            // time: entry.timestamp,
+            expression: getSourceText(expressionId),
+            value: entry?.logValue?.serialized,
+            loc: {...(entry?.node?.loc ?? {})},
+            expressionId: expressionId,
+            entry: entry,
+            isError: entry.isError,
+            isGraphical: entry.isDOM,
+            funcRefId: entry.funcRefId,
+            dataRefId: entry.dataRefId,
+         })
+      });
       this.getEditorTextInLoc = getEditorTextInLoc;
       isNew && !timeline.length && this.cleanEditorTextInLocCache();
       
@@ -1086,6 +1197,45 @@ class Pastebin extends PureComponent {
       ).length > 0;
    }
    
+   setAleInstance = (aleInstance) => {
+      this.setState(({aleContext}) => {
+         if (aleContext.VisualQueryManager) {
+            aleContext.VisualQueryManager.visualQuery = [];
+         }
+         return {
+            aleContext: {...aleContext, aleInstance}
+         };
+      });
+   }
+   
+   onOutputChange = ()=>{
+      this._onOutputChange?.();
+   };
+   
+   activateAleInstance= (monacoEditor, onOutputChange)=>{
+      this._onOutputChange = onOutputChange;
+      
+      const onError = (type, source, e) => {
+         console.log(type, source);
+         // throw e;
+      };
+   
+      const aleInstance = ALE(
+         null,
+         null,
+         global.top ?? global,
+         true,
+         onError,
+      );
+   
+      aleInstance.activateTraceChanges();
+   
+   
+      aleInstance.setOnOutputChange(this.onOutputChange);
+      aleInstance.attachDALE(global.monaco, monacoEditor, ()=>{}, console.log);
+      this.setAleInstance(aleInstance);
+   };
+   
    state = {
       VisualQueryManager,
       gridLayouts: gridLayoutFormatter.getDefaultGridLayouts(),
@@ -1158,7 +1308,22 @@ class Pastebin extends PureComponent {
          findChunks: configureFindChunks(true),
          functionLikeExpressions: functionLikeExpressions,
       },
+      aleContext: {
+         Inspector,
+         ObjectValue,
+         ObjectName,
+         useStyles,
+         GraphicalQuery,
+         aleInstance: null,
+         setAleInstance: this.setAleInstance,
+         activateAleInstance: this.activateAleInstance,
+         locToMonacoRange: (...p)=>this.state.aleContext.aleInstance?.dale?.locToMonacoRange(...p),
+         // getTheme:this.getTheme,
+         VisualQueryManager,
+      }
    };
+   
+   // getTheme = ()=>this.props.muiTheme;
    
    handleChangePointOfViewTiles = (...params) => {
       if (params.length) {
@@ -1263,6 +1428,7 @@ class Pastebin extends PureComponent {
          pointOfViewTiles,
          isPlaying,
          searchState,
+         aleContext,
       } = this.state;
       
       VisualQueryManager.visualQuery = searchState?.visualQuery || [];
@@ -1289,12 +1455,10 @@ class Pastebin extends PureComponent {
          ];
       
       return (
-         <ObjectExplorersContext.Provider
-           value={this.objectExplorersCache.current}
+         <PastebinContext.Provider
+            value={this.state}
          >
-            <PastebinContext.Provider
-               value={this.state}
-            >
+            <ALEContext.Provider value={aleContext}>
                {debugDrawer}
                {TopNavigationBarComponent}
                <Responsive
@@ -1482,15 +1646,15 @@ class Pastebin extends PureComponent {
                      }
                   </Paper>
                </Responsive>
-            </PastebinContext.Provider>
-            {traceAvailable &&
-            <TraceControls
-               isTopNavigationToggled={isTopNavigationToggled}
-               persistablePath={'traceControls'}
-               autorunDelay={autorunDelay}
-               handleChangeAutorunDelay={this.handleChangeAutorunDelay}
-            />}
-         </ObjectExplorersContext.Provider>
+               {traceAvailable &&
+               <TraceControls
+                  isTopNavigationToggled={isTopNavigationToggled}
+                  persistablePath={'traceControls'}
+                  autorunDelay={autorunDelay}
+                  handleChangeAutorunDelay={this.handleChangeAutorunDelay}
+               />}
+            </ALEContext.Provider>
+         </PastebinContext.Provider>
       );
    }
    
@@ -1508,10 +1672,6 @@ class Pastebin extends PureComponent {
    
    componentDidUpdate(prevProps, prevState, snapshot) {
       this.handleAutomaticLayoutDebounced();
-      const {isNew} = this.state;
-      if (isNew && isNew !== prevState.isNew) {
-         getNewObjectExplorersCache();
-      }
    }
    
    componentWillUnmount() {
@@ -1530,5 +1690,5 @@ Pastebin.propTypes = {
 
 export default connect(
    null,
-   mapDispatchToProps)(withStyles(styles)(SizeProvider(Pastebin))
+   mapDispatchToProps)(withStyles(styles)(SizeProvider(objectExplorersAcceptor(Pastebin)))
 );

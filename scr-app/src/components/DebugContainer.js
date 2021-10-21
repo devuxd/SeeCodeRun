@@ -1,20 +1,20 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
 
-import {withStyles} from '@material-ui/styles';
-import Grow from '@material-ui/core/Grow';
-import Tooltip from '@material-ui/core/Tooltip';
-import Badge from '@material-ui/core/Badge';
-import Paper from '@material-ui/core/Paper';
-import ToggleButton from '@material-ui/core/ToggleButton';
-import ToggleButtonGroup from '@material-ui/core/ToggleButtonGroup';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import ListItemText from '@material-ui/core/ListItemText';
-import Avatar from '@material-ui/core/Avatar';
-import Slide from '@material-ui/core/Slide';
+import {withStyles} from '@mui/styles';
+import Grow from '@mui/material/Grow';
+import Tooltip from '@mui/material/Tooltip';
+import Badge from '@mui/material/Badge';
+import Paper from '@mui/material/Paper';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import ListItem from '@mui/material/ListItem';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemText from '@mui/material/ListItemText';
+import Avatar from '@mui/material/Avatar';
+import Slide from '@mui/material/Slide';
 
-import PlayListPlayIcon from '@material-ui/icons/PlaylistPlay';
+import PlayListPlayIcon from '@mui/icons-material/PlaylistPlay';
 import ConsoleIcon from 'mdi-material-ui/ConsoleLine';
 
 import {useLodashThrocer} from '../utils/reactUtils';

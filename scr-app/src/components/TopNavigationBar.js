@@ -1,22 +1,22 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/styles';
+import {withStyles} from '@mui/styles';
 import ScrIcon from '../common/icons/SCR';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import IconButton from '@material-ui/core/IconButton';
-import ChatIcon from '@material-ui/icons/Chat';
-import ShareIcon from '@material-ui/icons/Share';
-import CloudOffIcon from '@material-ui/icons/CloudOff';
-import LightModeIcon from '@material-ui/icons/LightMode';
-import DarkModeIcon from '@material-ui/icons/DarkMode';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormGroup from '@material-ui/core/FormGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Checkbox from '@material-ui/core/Checkbox';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import ChatIcon from '@mui/icons-material/Chat';
+import ShareIcon from '@mui/icons-material/Share';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {themeTypes} from '../themes';
 import TraceToolbar from './TraceToolbar';
@@ -364,7 +364,7 @@ class TopNavigationBar extends PureComponent {
                               className={classes.flex}>
                   </Typography>
                   <IconButton
-                  
+                     disableRipple
                   >
                      <LightModeIcon style={
                         {...iconStyle, color: 'transparent'}

@@ -2,7 +2,7 @@
 import React, {useMemo} from 'react';
 import classnames from 'classnames';
 import {motion} from 'framer-motion';
-import {withStyles} from '@material-ui/styles';
+import {withStyles} from '@mui/styles';
 
 export const pulseOutlineAnimationId = `scr-a-graphicalHighlight-${Date.now()}`;
 export const outlineWidth = 1;

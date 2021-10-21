@@ -1,14 +1,12 @@
 import React, {useRef, useState, useMemo, useCallback, useEffect} from 'react';
 
-import JSEN from '../../utils/JSEN';
-
 import deferComponentRender, {
    makeTaskQueue
-} from '../../utils/renderingUtils'
+} from '../../../utils/renderingUtils'
 
 
 import VALE from './VALE';
-import {LiveZoneTypes} from "./ALE";
+import {LiveZoneTypes} from "../ALE";
 
 const getAllCurrentScopes = (navigationStates) => {
    const allCurrentScopes = {};
@@ -29,134 +27,126 @@ const getAllCurrentScopes = (navigationStates) => {
    return allCurrentScopes;
 };
 
-
-const useNavigationStates = (keys, contentWidgets, timestamp) => {
-   const [selectedBranchEntry, setSelectedBranchEntry] = useState({});
-   const {allBranchNavigators, allBranches, resetTimeBranches} = useMemo(
-      () => {
-         const allBranchNavigators = {timestamp};
-         const allBranches = [];
-         const resetAllTimeBranches = [];
-         keys.forEach(key => {
-            const branchNavigator =
-               contentWidgets[key]?.locLiveZoneActiveDecoration?.getBranchNavigator();
-            
-            if (!branchNavigator) {
-               return;
-            }
-            const branches = [];
-            branchNavigator.paths().forEach((path, pathI) => {
-               path.forEach((branch, branchI) => {
-                  branches.push({
-                     key,
-                     path,
-                     pathI,
-                     branch,
-                     branchI,
-                     toString: () =>
-                        `{key:'${key}',pathI:'${pathI}',branchI:'${branchI}'}`,
-                     parentBranch: null, // isAbsolute
-                     childrenBranches: [], // isLeaf
-                  });
-               });
-            });
-            
-            const branchNavigatorEntry = {
-               branchNavigator,
-               branches,
-               relativeBranches: {},
-               containingParents: {},
-               pastBranches: [],
-               presentBranches: [],
-               futureBranches: [],
-            };
-            
-            branchNavigatorEntry.resetTimeBranches = () => {
-               branchNavigatorEntry.pastBranches = [];
-               branchNavigatorEntry.presentBranches = [];
-               branchNavigatorEntry.futureBranches = [];
-            };
-            
-            resetAllTimeBranches.push(branchNavigatorEntry.resetTimeBranches);
-            allBranchNavigators[key] = branchNavigatorEntry;
-            allBranches.push(...branches);
-         });
-         
-         allBranches.forEach(branchEntry => {
-            if (branchEntry.branch.out < 0) {
-               return;
-            }
-            
-            allBranches.forEach(_branchEntry => {
-               if (_branchEntry.branch.out < 0) {
-                  return;
-               }
-               if (branchEntry?.toString() === _branchEntry?.toString()) {
-                  return;
-               }
-               
-               let parentBranchEntry = null;
-               let parentBranchEntryString = null;
-               let childBranchEntry = null;
-               let childBranchEntryString = null;
-               if (
-                  branchEntry.branch.in <= _branchEntry.branch.in &&
-                  _branchEntry.branch.out <= branchEntry.branch.out
-               ) {
-                  parentBranchEntry = branchEntry;
-                  parentBranchEntryString = parentBranchEntry.toString();
-                  childBranchEntry = _branchEntry;
-                  childBranchEntryString = childBranchEntry.toString();
-               }
-               
-               if (parentBranchEntry) {
-                  let relativeBranches =
-                     allBranchNavigators[childBranchEntry.key]
-                        .relativeBranches[parentBranchEntry.key];
-                  if (!relativeBranches) {
-                     relativeBranches = {};
-                     allBranchNavigators[childBranchEntry.key]
-                        .relativeBranches[parentBranchEntry.key] = relativeBranches;
-                  }
-                  
-                  relativeBranches[childBranchEntryString] = childBranchEntry;
-                  
-                  allBranchNavigators[childBranchEntry.key]
-                     .containingParents[parentBranchEntryString] = parentBranchEntry;
-                  
-                  const isSmallestParentBranch =
-                     !childBranchEntry.parentBranch || (
-                        parentBranchEntry.branch.in < childBranchEntry.parentBranch.branch.in
-                        &&
-                        childBranchEntry.parentBranch.branch.out <= parentBranchEntry.branch.out
-                     );
-                  
-                  if (isSmallestParentBranch) {
-                     const index =
-                        childBranchEntry.parentBranch?.childrenBranches.indexOf(
-                           childBranchEntry
-                        );
-                     if (index > -1) {
-                        childBranchEntry.parentBranch.childrenBranches.splice(
-                           index, 1
-                        );
-                     }
-                     childBranchEntry.parentBranch = parentBranchEntry;
-                     parentBranchEntry.childrenBranches.push(childBranchEntry);
-                  }
-               }
+const makeBranchesStates = (keys, contentWidgets, timestamp) => {
+   const allBranchNavigators = {timestamp};
+   const allBranches = [];
+   const resetAllTimeBranches = [];
+   keys.forEach(key => {
+      const branchNavigator =
+         contentWidgets[key]?.locLiveZoneActiveDecoration?.getBranchNavigator();
+      
+      if (!branchNavigator) {
+         return;
+      }
+      const branches = [];
+      branchNavigator.paths().forEach((path, pathI) => {
+         path.forEach((branch, branchI) => {
+            branches.push({
+               key,
+               path,
+               pathI,
+               branch,
+               branchI,
+               toString: () =>
+                  `{key:'${key}',pathI:'${pathI}',branchI:'${branchI}'}`,
+               parentBranch: null, // isAbsolute
+               childrenBranches: [], // isLeaf
             });
          });
-         
-         const resetTimeBranches = () => {
-            resetAllTimeBranches.forEach(r => r());
-         };
-         return {allBranchNavigators, allBranches, resetTimeBranches};
-      },
-      [keys, contentWidgets, timestamp]
-   );
+      });
+      
+      const branchNavigatorEntry = {
+         branchNavigator,
+         branches,
+         relativeBranches: {},
+         containingParents: {},
+         pastBranches: [],
+         presentBranches: [],
+         futureBranches: [],
+      };
+      
+      branchNavigatorEntry.resetTimeBranches = () => {
+         branchNavigatorEntry.pastBranches = [];
+         branchNavigatorEntry.presentBranches = [];
+         branchNavigatorEntry.futureBranches = [];
+      };
+      
+      resetAllTimeBranches.push(branchNavigatorEntry.resetTimeBranches);
+      allBranchNavigators[key] = branchNavigatorEntry;
+      allBranches.push(...branches);
+   });
    
-   return useMemo(() => {
+   allBranches.forEach(branchEntry => {
+      if (branchEntry.branch.out < 0) {
+         return;
+      }
+      
+      allBranches.forEach(_branchEntry => {
+         if (_branchEntry.branch.out < 0) {
+            return;
+         }
+         if (branchEntry?.toString() === _branchEntry?.toString()) {
+            return;
+         }
+         
+         let parentBranchEntry = null;
+         let parentBranchEntryString = null;
+         let childBranchEntry = null;
+         let childBranchEntryString = null;
+         if (
+            branchEntry.branch.in <= _branchEntry.branch.in &&
+            _branchEntry.branch.out <= branchEntry.branch.out
+         ) {
+            parentBranchEntry = branchEntry;
+            parentBranchEntryString = parentBranchEntry.toString();
+            childBranchEntry = _branchEntry;
+            childBranchEntryString = childBranchEntry.toString();
+         }
+         
+         if (parentBranchEntry) {
+            let relativeBranches =
+               allBranchNavigators[childBranchEntry.key]
+                  .relativeBranches[parentBranchEntry.key];
+            if (!relativeBranches) {
+               relativeBranches = {};
+               allBranchNavigators[childBranchEntry.key]
+                  .relativeBranches[parentBranchEntry.key] = relativeBranches;
+            }
+            
+            relativeBranches[childBranchEntryString] = childBranchEntry;
+            
+            allBranchNavigators[childBranchEntry.key]
+               .containingParents[parentBranchEntryString] = parentBranchEntry;
+            
+            const isSmallestParentBranch =
+               !childBranchEntry.parentBranch || (
+                  parentBranchEntry.branch.in < childBranchEntry.parentBranch.branch.in
+                  &&
+                  childBranchEntry.parentBranch.branch.out <= parentBranchEntry.branch.out
+               );
+            
+            if (isSmallestParentBranch) {
+               const index =
+                  childBranchEntry.parentBranch?.childrenBranches.indexOf(
+                     childBranchEntry
+                  );
+               if (index > -1) {
+                  childBranchEntry.parentBranch.childrenBranches.splice(
+                     index, 1
+                  );
+               }
+               childBranchEntry.parentBranch = parentBranchEntry;
+               parentBranchEntry.childrenBranches.push(childBranchEntry);
+            }
+         }
+      });
+   });
+   
+   const resetTimeBranches = () => {
+      resetAllTimeBranches.forEach(r => r());
+   };
+   
+   const updateBranches = (selectedBranchEntry, setSelectedBranchEntry) => {
       const {
          in: pastI = -1,
          out: futureI = Infinity
@@ -186,9 +176,7 @@ const useNavigationStates = (keys, contentWidgets, timestamp) => {
          
          allBranchNavigators[key].presentBranches.push(branchEntry);
       });
-      
       const navigationStates = {};
-      
       keys.forEach(k => {
          const branchNavigatorEntry = allBranchNavigators[k] ?? {};
          const {
@@ -253,7 +241,7 @@ const useNavigationStates = (keys, contentWidgets, timestamp) => {
             
             
             currentBranchEntry = _selectedBranchEntry;
-            isSelected && console.log('branchNavigatorEntry', branchNavigatorEntry, absoluteIndex, relativeMaxNavigationIndex);
+            // isSelected && console.log('branchNavigatorEntry', branchNavigatorEntry, absoluteIndex, relativeMaxNavigationIndex);
          } else {
             
             if (pastBranches.length === absoluteMaxNavigationIndex) {
@@ -314,12 +302,41 @@ const useNavigationStates = (keys, contentWidgets, timestamp) => {
             branchNavigatorEntry,
          };
       });
-      return {
-         navigationStates,
-         allCurrentScopes: getAllCurrentScopes(navigationStates)
-      };
       
-   }, [keys, allBranchNavigators, allBranches, resetTimeBranches, selectedBranchEntry]);
+      return navigationStates;
+   };
+   return {
+      allBranchNavigators,
+      allBranches,
+      resetTimeBranches,
+      updateBranches
+   };
+};
+
+
+const useNavigationStates = (keys, contentWidgets, timestamp) => {
+   const [selectedBranchEntry, setSelectedBranchEntry] = useState({});
+   
+   const branchesStates = useMemo(
+      () => {
+         return makeBranchesStates(keys, contentWidgets, timestamp);
+      },
+      [keys, contentWidgets, timestamp]
+   );
+   
+   return useMemo(
+      () => {
+         const navigationStates =
+            branchesStates.updateBranches(selectedBranchEntry, setSelectedBranchEntry);
+         
+         return {
+            navigationStates,
+            allCurrentScopes: getAllCurrentScopes(navigationStates)
+         };
+         
+      },
+      [branchesStates, selectedBranchEntry]
+   );
 };
 
 export function RALE(
@@ -338,6 +355,8 @@ export function RALE(
       scr,
       branchNavigatorManager,
    } = aleInstance?.getModel() ?? {};
+   
+   const objectNodeRenderer = scr?.objectNodeRenderer;
    
    const programUID = branchNavigatorManager?.programUID();
    const contentWidgets = dale?.contentWidgetManager?.getContentWidgets();
@@ -485,13 +504,15 @@ export function RALE(
       [timelineData, resizeContentWidgets]
    );
    
-  // console.log("BI", contentWidgetKeys.filter((key) => !!(contentWidgets[key]?.locLiveZoneActiveDecoration?.zone.type === "BinaryExpression")));
+   // console.log("BI", contentWidgetKeys.filter((key) => !!(contentWidgets[key]?.locLiveZoneActiveDecoration?.zone.type === "BinaryExpression")));
    return (<>
          <div>{progress}%</div>
          {contentWidgetKeys.map((key) => {
             const contentWidget = contentWidgets[key];
             const domNode = contentWidget.getDomNode();
-            let data = undefined;
+            let data = null;
+            let aleObject = null;
+            let zone = null;
             let currentEntry = null;
             const navigationState = navigationStates[key] ?? {};
             
@@ -501,10 +522,10 @@ export function RALE(
             if (variant === 'block') {
                forceVisible = true;
             } else {
-               const {zone = {}, logValues = []} =
+               const {zone: _zone = {}, logValues = []} =
                contentWidget.locLiveZoneActiveDecoration ?? {};
                
-               const {uid, type, parentType} = zone;
+               const {uid, type, parentType} = _zone;
                
                let isUseful = true;
                if (parentType === 'BinaryExpression' || parentType === 'LogicalExpression') {
@@ -532,37 +553,22 @@ export function RALE(
                   if (currentEntry) {
                      forceVisible = true;
                      data = currentEntry.getValue();
+                     aleObject = currentEntry.entry?.logValue;
+                     zone = _zone;
                   }
                }
                
-               // console.log(
-               //    {
-               //       key,
-               //       uid,
-               //       type,
-               //       parentType,
-               //       contentWidget,
-               //       // timelineData[key],
-               //       // allCurrentScopes,
-               //       // lastEntry,
-               //       // currentBranchEntry,
-               //       // entries,
-               //       // // data,
-               //       // currentEntry,
-               //       // allCurrentScopes,
-               //       // X:deltaTimelineDataRef.current
-               //    }
-               // );
             }
             
-            return <VALE
+            return <VisualizerComponent
                key={key}
                container={domNode}
                visible={forceVisible}
                data={data}
                isLoading={isUpdating}
                variant={variant}
-               entry={currentEntry}
+               aleObject={aleObject}
+               zone={zone}
                navigationState={navigationState}
             />;
          })}

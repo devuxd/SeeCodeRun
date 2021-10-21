@@ -2,11 +2,11 @@ import React, {
    memo, useCallback, useEffect, useMemo, useState, useContext,
 } from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/styles';
-import Paper from '@material-ui/core/Paper';
-import Tooltip from '@material-ui/core/Tooltip';
-import TableChartIcon from '@material-ui/icons/TableChart';
-import TableChartOutlinedIcon from '@material-ui/icons/TableChartOutlined';
+import {withStyles} from '@mui/styles';
+import Paper from '@mui/material/Paper';
+import Tooltip from '@mui/material/Tooltip';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import {
    Inspector,
    ObjectName as InspectorObjectName,
@@ -21,7 +21,7 @@ import {configureLocalMemo, isNode} from '../utils/scrUtils';
 import {ThemeContext} from '../themes';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {VisualQueryManager} from '../core/modules/VisualQueryManager';
-import {PastebinContext} from '../containers/Pastebin';
+import PastebinContext from '../contexts/PastebinContext';
 
 const withPastebinSearchContext = Component => {
    return props => {
@@ -40,8 +40,6 @@ const ObjectValue = withPastebinSearchContext(InspectorObjectValue);
 const ObjectName = withPastebinSearchContext(InspectorObjectName);
 
 const TIMEOUT_DEBOUNCE_MS = 100;
-
-const {getVisualIdsFromRefs, isGraphicalElementSelected} = VisualQueryManager;
 
 //start
 // https://github.com/xyc/react-inspector/tree/master/src/object-inspector
@@ -212,8 +210,9 @@ export const ObjectPreview = (withStyles(styles)(
        iconTooltipDelay = 300
     }) => {
       const styles = useStyles('ObjectPreview');
-      const liveRef = currentLiveObjectNodeRenderer?.parseLiveRefs(data);
-      if (!liveRef || liveRef.isLive) {
+      const parseLiveRefs = currentLiveObjectNodeRenderer?.parseLiveRefs;
+      const liveRef = parseLiveRefs?.(data);
+      if (parseLiveRefs && (!liveRef || liveRef.isLive)) {
          return null;
       }
       
@@ -529,6 +528,67 @@ export const createLiveObjectNodeRenderer = (traceProvider) => {
    return currentLiveObjectNodeRenderer;
 };
 
+
+export const createALEObjectNodeRenderer = (aleInstance, getWindowRef) => {
+   
+   const render = ({depth, data, ...rest}) => {
+      //console.log('lo', data?.getSnapshot)
+      const snapshotData = data;//?.getSnapshot();
+      const isRoot = depth === 0;
+      const objectLabel = isRoot ?
+         <ObjectRootLabeler data={snapshotData} {...rest}/>
+         : <ObjectLabel data={snapshotData} {...rest}/>;
+      
+      return data.isLive ?
+         isRoot ?
+            objectLabel :
+            <ul style={ulStyle}>
+               <Inspector data={data}
+                          nodeRenderer={render}
+                          windowRef={getWindowRef}
+                          {...rest}
+               />
+            </ul>
+         : objectLabel;
+   };
+   
+   const ALEExplorer = (
+      {
+         data,
+         expressionId,
+         // outputRefs,
+         // expandedPathsRef,
+         // getExpandedPaths,
+         //showNonenumerable
+         ...rest
+      }
+   ) => {
+      
+      return (
+         <EnhancedInspector
+            key={expressionId}
+            data={data}
+            nodeRenderer={render}
+            windowRef={getWindowRef}
+            {...rest}
+         />
+      );
+   };
+   
+   const liveObjectNodeRenderer = {
+      getWindowRef,
+      handleChange: null,
+      hideLiveRefs: false,
+      render,
+      ALEExplorer
+   };
+   
+   console.log(aleInstance);
+   
+   currentLiveObjectNodeRenderer = liveObjectNodeRenderer;
+   return currentLiveObjectNodeRenderer;
+};
+
 const inspectorStyles = theme => ({
    container: {
       paddingLeft: theme.spacing(4.5),
@@ -721,8 +781,8 @@ const MemoizedInspector = ((
          if (isGraphical) {
             const theRefs = outputRefs?.length ? outputRefs : [data];
             const isSelected =
-               !!theRefs.find(el => isGraphicalElementSelected(el));
-            const visualIds = getVisualIdsFromRefs(theRefs);
+               !!theRefs.find(el => VisualQueryManager.isGraphicalElementSelected(el));
+            const visualIds = VisualQueryManager.getVisualIdsFromRefs(theRefs);
             graphicalProps = {
                containerClassName:
                   isMarker ? classes.containerMarker : classes.container,
@@ -789,6 +849,7 @@ EnhancedInspector.propTypes = {
    table: PropTypes.bool,
    outputRefs: PropTypes.array,
 };
+
 
 const ObjectExplorer = memo((
    {

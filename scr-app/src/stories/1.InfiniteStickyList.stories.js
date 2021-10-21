@@ -1,17 +1,31 @@
-import {number, text, withKnobs} from '@storybook/addon-knobs';
+import {
+   StyledEngineProvider,
+   ThemeProvider,
+   CssBaseline,
+} from '@mui/material';
+
+import {
+   createTheme,
+} from '@mui/material/styles';
+
 import React, {
    forwardRef,
    useMemo,
 } from 'react';
 
 import Inspector from 'react-inspector';
-import {withStyles} from '@material-ui/styles';
+import {withStyles} from '@mui/styles';
 
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 
 import InfiniteStickyList from '../components/InfiniteStickyList';
 import {StickyAction} from '../components/StickyAction';
+
+const muiTheme = createTheme({
+   spacingUnit: x => x * 8,
+   // palette:{},
+});
 
 const RowContainer = forwardRef(
    (
@@ -89,8 +103,14 @@ const DefaultRow = ({index, style, data}) => {
 
 const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
 
-export const InfiniteStickyListWithInspector = () => {
-   const defaultItems = new Array(number('Default items size', 200))
+export const InfiniteStickyListWithInspector = (
+   {
+      height,
+      width,
+      itemsSize,
+   }
+) => {
+   const defaultItems = new Array(itemsSize)
       .fill(true)
       .map((rowHeight, i) => ({
          label: `(${i})`,
@@ -128,16 +148,42 @@ export const InfiniteStickyListWithInspector = () => {
       heightDelta: 0,
    };
    
-   return (<div style={{
-      height: number('Container Height', 800),
-      width: text('Container Width', '100%')
-   }}>
-      <StyledInfiniteStickyList {...defaultProps}/>
-   </div>)
+   return (
+      <StyledEngineProvider injectFirst>
+         <ThemeProvider theme={muiTheme}>
+            <CssBaseline/>
+            <div style={{
+               height,
+               width,
+            }}>
+               <StyledInfiniteStickyList {...defaultProps}/>
+            </div>
+         </ThemeProvider>
+      </StyledEngineProvider>
+   )
 };
 
 export default {
    title: 'InfiniteStickyList',
-   component: InfiniteStickyList,
-   decorators: [ withKnobs ],
+   component: InfiniteStickyListWithInspector,
+   argTypes: {
+      height: {
+         control: {
+            type: 'range', min: 400, max: 1200, step: 50
+         },
+         defaultValue: 800,
+      },
+      itemsSize: {
+         control: {
+            type: 'range', min: 0, max: 999999, step: 5
+         },
+         defaultValue: 200,
+      },
+      width: {
+         defaultValue: "100%",
+         control: {
+            type: {name: 'string', required: true},
+         },
+      },
+   },
 }

@@ -1,21 +1,21 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
-import SpeedDial from '@material-ui/core/SpeedDial';
-import SpeedDialIcon from '@material-ui/core/SpeedDialIcon';
-import SpeedDialAction from '@material-ui/core/SpeedDialAction';
-import SettingsIcon from '@material-ui/icons/SettingsSharp';
-import TimerIcon from '@material-ui/icons/Timer';
-import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
-import CodeIcon from '@material-ui/icons/Code';
+import SpeedDial from '@mui/material/SpeedDial';
+import SpeedDialIcon from '@mui/material/SpeedDialIcon';
+import SpeedDialAction from '@mui/material/SpeedDialAction';
+import SettingsIcon from '@mui/icons-material/SettingsSharp';
+import TimerIcon from '@mui/icons-material/Timer';
+import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay';
+import CodeIcon from '@mui/icons-material/Code';
 import PencilIcon from 'mdi-material-ui/Pencil';
 
-import {withStyles} from '@material-ui/styles';
-import {alpha} from '@material-ui/core/styles';
-import Menu from '@material-ui/core/Menu';
-import ListItem from '@material-ui/core/ListItem';
-import MenuItem from '@material-ui/core/MenuItem';
-import TextField from '@material-ui/core/TextField';
+import {withStyles} from '@mui/styles';
+import {alpha} from '@mui/material/styles';
+import Menu from '@mui/material/Menu';
+import ListItem from '@mui/material/ListItem';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
@@ -69,7 +69,7 @@ const styles = theme => {
         speedDial: {
             position: 'absolute',
             zIndex: theme.zIndex.snackbar,
-            right: 104,
+            right: theme.spacing(10),
             top: 5,
         },
         speedDialNavigationToggled: {

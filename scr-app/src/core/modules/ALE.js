@@ -54,6 +54,7 @@ import {getScopeUID} from "../../utils/babelUtils";
 
 export const ScopeTypes = {
    N: "none",
+   L: "locator",
    P: "program",
    F: "function",
    A: "any",
@@ -146,10 +147,11 @@ export const parseOptions = {
 
 export const generateOptions = {
    comments: false,
-   compact: false,
-   concise: false,
+   compact: true,
+   concise: true,
    jsonCompatibleStrings: true,
-   minified: false,
+   minified: true,
+   retainFunctionParens: true,
    retainLines: true,
    sourceMaps: true,
    sourceFileName: "ale.js"
@@ -1037,6 +1039,82 @@ const ALE = (
 
 export default ALE;
 
+export class ALEObject {
+   live = null;
+   serialized = null;
+   objectType = null;
+   objectClassName = null;
+   error = null;
+   isIterable = false;
+   isDOM = false;
+   isOutput = false;
+   graphicalId = -1;
+   outputRefs = [];
+   scrObjectRefs = [];
+   windowRootsRefs = [];
+   nativesRefs = [];
+   objectsRefs = [];
+   functionsRefs = [];
+   domNodesRefs = [];
+   liveRefs = [];
+   domLiveRefs = [];
+   domLiveRefsToLiveRef = {};
+   
+   constructor(value) {
+      this.live = value;
+   }
+   
+   getValue = () => {
+      return this.live;
+   };
+   
+   isIterable = () => {
+      return this.isIterable;
+   };
+   
+   isGraphical = () => {
+      return this.isOutput;
+   };
+   
+   getGraphicalId = () => {
+      return this.graphicalId;
+   };
+   
+   getOutputRefs = () => {
+      return this.outputRefs;
+   };
+   
+   addLiveRef = (ref) => {
+      return this.liveRefs.push(ref) - 1;
+   };
+   
+   isLiveRef = (ref) => {
+      return this.liveRefs.indexOf(ref) > -1;
+   };
+   
+   addDomLiveRef = (domLiveRef, liveRefI) => {
+      const j = this.domLiveRefs.push(domLiveRef) - 1;
+      this.domLiveRefsToLiveRef[j] = liveRefI;
+      return j;
+   };
+   
+   indexOfDomLiveRef = (ref) => {
+      return this.domLiveRefs.indexOf(ref);
+   };
+   
+   getLiveRefOfDomLiveRef = (ref) => {
+      return this.liveRefs[
+         this.domLiveRefsToLiveRef[
+            this.indexOfDomLiveRef(ref)
+            ]
+         ];
+   };
+   
+   isDomLiveRef = (ref) => {
+      return this.indexOfDomLiveRef(ref) > -1;
+   };
+}
+
 export {
    default as BALE,
    setAutoLogIdentifiers,
@@ -1053,7 +1131,10 @@ export {
 } from './DALE';
 
 export {
-   default as RALE,
+   RALE,
+   VALE,
+   ALEContext,
+   GraphicalQueryBase
 } from './RALE';
 
 export {

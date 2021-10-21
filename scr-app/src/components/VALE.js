@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import Portal from '@material-ui/core/Portal';
+import Portal from '@mui/material/Portal';
 import ObjectExplorer, {
    ExplorerTooltip,
    ExplorerTooltipContainer,

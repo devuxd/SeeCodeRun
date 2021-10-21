@@ -6,7 +6,7 @@ export const monacoProps = {
     widgetFontSize: 9,
     widgetOffsetHeight: 7,
     widgetMaxHeight: 14,
-    widgetMinWidth: 8,
+    widgetMinWidth: 7,
     lineOffSetHeight: 14, //sync with css padding-top: lineOffSetHeight/2
     widgetBackgroundColor: 'transparent',
 };

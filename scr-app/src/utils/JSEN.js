@@ -74,10 +74,9 @@ export default class JSEN {
    static reviver = (key, value) => {
       if (typeof value === "string" && value.startsWith(JSEN.MAGIC_TAG)) {
          const [, objectClassName, val] = value.split(JSEN.MAGIC_TAG);
-         return {
-            ...jsan.parse(val),
-            constructor: { name: objectClassName }
-         };
+         const ref = jsan.parse(val);
+         ref.constructor = {name: objectClassName};
+         return ref;
       }
       return value;
    };
@@ -97,10 +96,9 @@ export default class JSEN {
       if (typeof str === "string" && str.startsWith(JSEN.MAGIC_TAG)) {
          const tagI = str.indexOf(JSEN.MAGIC_TAG, JSEN.MAGIC_TAG.length);
          const objectClassName = str.substring(JSEN.MAGIC_TAG.length, tagI);
-         return {
-            ...jsan.parse(str.substring(tagI + JSEN.MAGIC_TAG.length)),
-            constructor: { name: objectClassName }
-         };
+         const ref = jsan.parse(str.substring(tagI + JSEN.MAGIC_TAG.length), reviver);
+         ref.constructor = {name: objectClassName};
+         return ref;
       }
       return jsan.parse(str, reviver);
    }

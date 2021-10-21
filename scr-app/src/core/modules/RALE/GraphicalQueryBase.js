@@ -1,19 +1,18 @@
-import React, {memo, useCallback, useMemo} from 'react';
+import React, {
+   useMemo, useCallback,
+} from 'react';
 import PropTypes from 'prop-types';
-
 import {withStyles} from '@mui/styles';
 import Fab from '@mui/material/Fab';
+import {backgroundColorAnimation as animation} from "../../../common/UI";
 
-import {VisualQueryManager} from '../core/modules/VisualQueryManager';
-import {backgroundColorAnimation as animation} from '../common/UI';
-
-const styles = theme => ({
+const graphicalQueryStyles = theme => ({
    buttonRoot: {
       boxShadow: 'unset',
       minHeight: 'unset',
       minWidth: 'unset',
       margin: 0,
-      marginTop: -1,
+      // marginTop: -1,
       paddingLeft: theme.spacing(0.5),
       paddingRight: theme.spacing(0.5),
       height: theme.typography.pxToRem(14),
@@ -32,7 +31,7 @@ const styles = theme => ({
       minHeight: 'unset',
       minWidth: 'unset',
       margin: 0,
-      marginTop: -1,
+      // marginTop: -1,
       paddingLeft: theme.spacing(0.5),
       paddingRight: theme.spacing(0.5),
       height: theme.typography.pxToRem(14),
@@ -47,7 +46,7 @@ const styles = theme => ({
       minHeight: 'unset',
       minWidth: 'unset',
       margin: 0,
-      marginTop: -1,
+      // marginTop: -1,
       paddingLeft: theme.spacing(0.5),
       paddingRight: theme.spacing(0.5),
       height: theme.typography.pxToRem(14),
@@ -59,33 +58,48 @@ const styles = theme => ({
    }
 });
 
-const GraphicalQuery = ({
-                           classes,
-                           outputRefs,
-                           visualIds,
-                           selected,
-                           color = 'secondary',
-                           ...rest
-                        }) => {
-   const handleClick = useCallback((event) => {
+export const UnStyledGraphicalQuery = ({
+                                          classes,
+                                          outputRefs,
+                                          visualIds,
+                                          visualQuery,
+                                          VisualQueryManager,
+                                          FabProps = {}
+                                       }) => {
+   const fabClasses = useMemo(
+      () => {
+         const selected = !!outputRefs.find((domEl) => {
+            return VisualQueryManager?.isGraphicalElementSelected(
+               domEl, visualQuery
+            );
+         });
+         
+         return {
+            root: selected ? classes.buttonRootSelected : classes.buttonRoot
+         };
+      },
+      [VisualQueryManager, visualQuery, outputRefs, classes]
+   );
+   
+   const onClick = useCallback(
+      (event) => {
+         if (!VisualQueryManager) {
+            return;
+         }
          event.stopPropagation();
          VisualQueryManager.onChange(outputRefs, visualIds, 'select');
       },
-      [outputRefs, visualIds]);
-   
-   const fabClasses = useMemo(
-      () => ({root: selected ? classes.buttonRootSelected : classes.buttonRoot}),
-      [selected, classes]
+      [VisualQueryManager, outputRefs, visualIds]
    );
    
    return (
-      <Fab color={color}
+      <Fab color="secondary"
            variant="extended"
            aria-label={`visual element number ${visualIds}`}
            elevation={0}
            classes={fabClasses}
-           onClick={handleClick}
-           {...rest}
+           onClick={onClick}
+           {...FabProps}
       >
          {`${visualIds}`}
       </Fab>
@@ -93,12 +107,16 @@ const GraphicalQuery = ({
    
 };
 
-GraphicalQuery.propTypes = {
+UnStyledGraphicalQuery.propTypes = {
    classes: PropTypes.object.isRequired,
    outputRefs: PropTypes.array.isRequired,
    visualIds: PropTypes.array.isRequired,
-   selected: PropTypes.bool,
-   color: PropTypes.string,
+   visualQuery: PropTypes.array,
+   VisualQueryManager: PropTypes.object,
+   FabProps: PropTypes.object,
 };
 
-export default memo(withStyles(styles)(GraphicalQuery));
+const GraphicalQueryBase =
+   withStyles(graphicalQueryStyles)(UnStyledGraphicalQuery);
+
+export default GraphicalQueryBase;

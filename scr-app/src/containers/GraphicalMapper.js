@@ -7,10 +7,10 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/styles';
-import Popper from '@material-ui/core/Popper';
-import Tooltip from '@material-ui/core/Tooltip';
-import {PastebinContext} from './Pastebin';
+import {withStyles} from '@mui/styles';
+import Popper from '@mui/material/Popper';
+import Tooltip from '@mui/material/Tooltip';
+import PastebinContext from '../contexts/PastebinContext';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {
    FocusBox,

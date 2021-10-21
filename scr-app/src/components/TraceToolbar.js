@@ -2,32 +2,33 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 
-import {withStyles} from '@material-ui/styles';
-import {lighten} from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import Typography from '@material-ui/core/Typography';
-import Tooltip from '@material-ui/core/Tooltip';
-import Badge from '@material-ui/core/Badge';
-import Chip from '@material-ui/core/Chip';
-import Avatar from '@material-ui/core/Avatar';
-import IconButton from '@material-ui/core/IconButton';
-import TuneIcon from '@material-ui/icons/Tune';
-import ChangeHistoryIcon from '@material-ui/icons/ChangeHistory';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import CenterFocusStrongIcon from '@material-ui/icons/CenterFocusStrong';
-import CenterFocusWeakIcon from '@material-ui/icons/CenterFocusWeak';
-import PauseIcon from '@material-ui/icons/Pause';
-import CheckBoxIcon from '@material-ui/icons/CheckBox';
-import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
-import CallMergeIcon from '@material-ui/icons/CallMerge';
-import CallSplitIcon from '@material-ui/icons/CallSplit';
-import FilterListIcon from '@material-ui/icons/FilterList';
-import InputAdornment from '@material-ui/core/InputAdornment';
-import TextField from '@material-ui/core/TextField';
+import {withStyles} from '@mui/styles';
+import {lighten} from '@mui/material/styles';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
+import Badge from '@mui/material/Badge';
+import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import TuneIcon from '@mui/icons-material/Tune';
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
+import PauseIcon from '@mui/icons-material/Pause';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CallMergeIcon from '@mui/icons-material/CallMerge';
+import CallSplitIcon from '@mui/icons-material/CallSplit';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import InputAdornment from '@mui/material/InputAdornment';
+import TextField from '@mui/material/TextField';
 
-import {PastebinContext} from '../containers/Pastebin';
+import PastebinContext from '../contexts/PastebinContext';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {searchStateChange} from '../redux/modules/pastebin';
+import {VisualQueryManager} from "../core/modules/VisualQueryManager";
 
 const mapStateToProps = null,
     mapDispatchToProps = {
@@ -281,7 +282,6 @@ function EnhancedToolbar(props) {
         searchDelay = 500,
         VisualQueryManager,
     } = props;
-    const {getVisualIdsFromRefs} = VisualQueryManager;
 
     const {visualQuery, value, handleChangeValue, placeholder} = searchState;
 
@@ -313,7 +313,8 @@ function EnhancedToolbar(props) {
                         <>
                             {visualQuery.map(el => {
                                 const query = [el];
-                                const ids = getVisualIdsFromRefs(query);
+                                const ids =
+                                   VisualQueryManager.getVisualIdsFromRefs(query);
                                 return (
                                     <GraphicalQuery
                                         key={JSON.stringify(ids)}
@@ -326,7 +327,7 @@ function EnhancedToolbar(props) {
                         VisualQueryManager
                             .onChange(
                                 visualQuery,
-                                getVisualIdsFromRefs(visualQuery),
+                               VisualQueryManager.getVisualIdsFromRefs(visualQuery),
                                 'select'
                             );
                     }}

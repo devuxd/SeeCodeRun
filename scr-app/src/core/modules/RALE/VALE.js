@@ -1,49 +1,36 @@
-import React, {useCallback, useMemo, useRef, useState,} from 'react';
+import React, {
+   useRef, useMemo, useCallback, useEffect, useState, useContext,
+} from 'react';
 /** @jsxImportSource @emotion/react */
 import {jsx, css} from '@emotion/react';
-import Slider from '@material-ui/core/Slider';
-import Tooltip, {tooltipClasses} from '@material-ui/core/Tooltip';
-import Button from '@material-ui/core/Button';
 import PropTypes from 'prop-types';
+import Slider from '@mui/material/Slider';
+import Tooltip, {tooltipClasses} from '@mui/material/Tooltip';
+import Button from '@mui/material/Button';
+
 import {
    darken,
    styled,
-} from '@material-ui/core/styles';
-import {withStyles} from '@material-ui/styles';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import Input from '@material-ui/core/Input';
-import InputAdornment from '@material-ui/core/InputAdornment';
+} from '@mui/material/styles';
+import {withStyles} from '@mui/styles';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import Input from '@mui/material/Input';
+import InputAdornment from '@mui/material/InputAdornment';
 
-import Portal from '@material-ui/core/Portal';
-import Inspector from "react-inspector";
-import {FocusBox} from "../../common/UI";
-import {ScopeTypes} from "./ALE";
-import {StickyAction} from "../../components/StickyAction";
-// import ObjectExplorer, {
-//    ExplorerTooltip,
-//    ExplorerTooltipContainer,
-//    ObjectRootLabel
-// } from "./ObjectExplorer";
-//
-// import GraphicalQuery from "./GraphicalQuery";
+import Portal from '@mui/material/Portal';
+
+import {FocusBox} from "../../../common/UI";
+import {ScopeTypes} from "../ALE";
+import {StickyAction} from "../../../components/StickyAction";
+import ALEInspector from "./ALEInspector";
+
 
 export const formatBlockValue = (aValue = '-', max = '-') => {
-   const value = `${
+   return `${
       '0'.repeat(max.toString().length - aValue.toString().length)
    }${aValue}`;
-   return `${value}/${max}`;
 };
-
-const SecondarySlider = styled(Slider)(
-   ({theme}) => ({
-         color: theme.palette.secondary.main,
-         ':hover': {
-            color: darken(theme.palette.secondary.main, 0.2)
-         }
-      }
-   )
-);
 
 const SliderContainer = styled(Paper)(({theme}) => ({
    width: theme.spacing(50), //todo: make size relative to editor width
@@ -53,22 +40,31 @@ const SliderContainer = styled(Paper)(({theme}) => ({
    paddingRight: theme.spacing(),
 }));
 
+const SliderPropsDefault = {};
+const PaperPropsDefault = {elevation: 0, square: true, variant: "outlined"};
+
 const BlockNavigator = (
    {
-      min, max, value,
-      showLabel, color = 'primary',
+      min,
+      max,
+      value,
+      showLabel,
+      color = 'primary',
       handleSliderChange,
-      SliderProps = {},
-      PaperProps = {elevation: 0, square: true, variant: "outlined"},
+      SliderProps = SliderPropsDefault,
+      PaperProps = PaperPropsDefault,
       ...rest
    }
 ) => {
+   const sliderSx = useMemo(
+      () => ({color: `${color ?? 'primary'}.main`}),
+      [color]
+   );
    const [isSticky, setIsSticky] = useState(false);
    const handleChangeIsSticky = useCallback(
       () => setIsSticky(isSticky => !isSticky),
       []
    );
-   const CustomSlider = color === 'primary' ? Slider : SecondarySlider;
    
    const [onChange, handleInputChange, handleBlur] = useMemo(
       () => {
@@ -92,6 +88,14 @@ const BlockNavigator = (
       [value, handleSliderChange]
    );
    
+   const inputProps = {
+      step: 1,
+      min,
+      max,
+      type: 'number',
+      'aria-labelledby': "branch-slider",
+   };
+   
    return (
       <SliderContainer
          {...PaperProps}
@@ -105,7 +109,8 @@ const BlockNavigator = (
                />
             </Grid>
             <Grid item xs>
-               <CustomSlider
+               <Slider
+                  sx={sliderSx}
                   aria-label="branch navigator slider"
                   valueLabelDisplay="auto"
                   step={1}
@@ -124,24 +129,13 @@ const BlockNavigator = (
                   size="small"
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  inputProps={{
-                     step: 1,
-                     min,
-                     max,
-                     type: 'number',
-                     'aria-labelledby': "branch-slider",
-                  }}
+                  inputProps={inputProps}
                   endAdornment={
                      <InputAdornment position="end">
-                        / {max}
+                        | {max}
                      </InputAdornment>
                   }
                />
-               {/*{showLabel &&*/}
-               {/*<Typography>*/}
-               {/*   {formatBlockValue(value, max)}*/}
-               {/*</Typography>*/}
-               {/*}*/}
             </Grid>
          </Grid>
       </SliderContainer>
@@ -158,69 +152,6 @@ BlockNavigator.propTypes = {
    handleSliderChangeCommitted: PropTypes.func,
    showLabel: PropTypes.bool
 };
-
-// function VALELE(
-//    {
-//       visible,
-//       container,
-//       isOmitLabel,
-//       showTooltip,
-//       objectNodeRenderer,
-//       isOutput,
-//       value,
-//       isIcon,
-//       expressionType,
-//       expressionId,
-//       selected,
-//       outputRefs,
-//       getVisualIdsFromRefs,
-//       cacheId,
-//       onChange
-//    }
-// ) {
-//
-//
-//    return <Portal container={container}>
-//       {visible && (isOmitLabel ? null :
-//          <ExplorerTooltip
-//             key={showTooltip}
-//             placement="bottom-start"
-//             {...(showTooltip ? {} : {open: false})}
-//             title={
-//                <ExplorerTooltipContainer>
-//                   <ObjectExplorer
-//                      cacheId={cacheId}
-//                      expressionId={expressionId}
-//                      objectNodeRenderer={objectNodeRenderer}
-//                      data={value}
-//                      handleChange={onChange}
-//                      outputRefs={outputRefs}
-//                   />
-//                </ExplorerTooltipContainer>
-//             }
-//          >
-//             {isOutput ?
-//                <GraphicalQuery
-//                   outputRefs={outputRefs}
-//                   visualIds={
-//                      getVisualIdsFromRefs(
-//                         outputRefs
-//                      )
-//                   }
-//                   selected={selected}
-//                />
-//                :
-//                <ObjectRootLabel
-//                   data={value}
-//                   compact={true}
-//                   expressionType={expressionType}
-//                   iconify={isIcon}
-//                />
-//             }
-//          </ExplorerTooltip>)
-//       }
-//    </Portal>
-// }
 
 const NavigatorTooltip = styled(({className, ...props}) => (
    <Tooltip {...props} classes={{popper: className}}/>
@@ -267,17 +198,6 @@ const NavigatorOutlinedButton = withStyles(() => ({
    root: buttonRootOutlinedStyle,
 }))(Button);
 
-// {/*<Typography*/}
-// {/*   variant="navigatorIndex"*/}
-// {/*>*/}
-// {/*   {value}*/}
-// {/*</Typography>*/}
-// {/*<Typography*/}
-// {/*   variant="navigatorMax"*/}
-// {/*>*/}
-// {/*   /{max}*/}
-// {/*</Typography>*/}
-
 const LiveBlock = (
    {
       autoHideAbsoluteIndex,
@@ -294,7 +214,6 @@ const LiveBlock = (
    const {
       branchNavigator,
       isSelected,
-      scopeType,
       absoluteMaxNavigationIndex,
       currentAbsoluteNavigationIndex,
       relativeMaxNavigationIndex,
@@ -308,7 +227,7 @@ const LiveBlock = (
    } = navigationState;
    
    const color = useMemo(() => {
-         return branchNavigator?.getScopeType() === 'function' ? 'primary' : 'secondary';
+         return branchNavigator?.getScopeType() === ScopeTypes.F ? 'primary' : 'secondary';
       },
       [branchNavigator]
    );
@@ -346,7 +265,6 @@ const LiveBlock = (
    const NavigatorButton = isRelative ?
       NavigatorOutlinedButton : NavigatorContainedButton;
    
-   const isControlBlock = ScopeTypes.C === scopeType;
    // const isLoop
    //todo: exit scopes
    return (
@@ -355,6 +273,7 @@ const LiveBlock = (
          key={`nt0_${showNavigatorTooltip}`}
          title={
             <BlockNavigator
+               color={color}
                min={showNavigatorTooltip ? 1 : 0}
                value={value}
                max={max}
@@ -375,8 +294,10 @@ const LiveBlock = (
                   <span
                      style={{fontSize: 11}}
                   >
-                 {isRelative ? currentRelativeNavigationIndex : value}
-                     {/*{value} ({currentRelativeNavigationIndex})*/}
+                 {formatBlockValue(
+                    isRelative ? currentRelativeNavigationIndex : value,
+                    max
+                 )}
                </span>
                   <span
                      style={{padding: 1, fontSize: 12}}
@@ -386,8 +307,8 @@ const LiveBlock = (
                   <span
                      style={{fontSize: 9, paddingTop: 3}}
                   >
-                  {isRelative ? relativeMaxNavigationIndex : absoluteMaxNavigationIndex}
-                     {/*{absoluteMaxNavigationIndex}({relativeMaxNavigationIndex})*/}
+                  {max}
+                 
                </span>
                   {isSelected ?
                      <FocusBox
@@ -400,58 +321,11 @@ const LiveBlock = (
             </NavigatorButton>
          </div>
       </NavigatorTooltip>
-      // {/*{recursiveMaxNavigationIndex > 1 ?*/}
-      // {/*   <NavigatorTooltip*/}
-      // {/*      key={`nt1_${showNavigatorTooltip}`}*/}
-      // {/*      title={*/}
-      // {/*         <BlockNavigator*/}
-      // {/*            min={1}*/}
-      // {/*            // value={recursiveMaxNavigationIndex}*/}
-      // {/*            max={recursiveMaxNavigationIndex}*/}
-      // {/*            handleSliderChange={handleSliderChange}*/}
-      // {/*            color="secondary"*/}
-      // {/*         />*/}
-      // {/*      }*/}
-      // {/*      */}
-      // {/*      {...(showNavigatorTooltip ? {arrow: false} : {open: false})}*/}
-      // {/*      {...tooltipProps}*/}
-      // {/*   >*/}
-      // {/*      <NavigatorContainedButton*/}
-      // {/*         variant="contained"*/}
-      // {/*         color="secondary"*/}
-      // {/*      >*/}
-      // {/*   <span*/}
-      // {/*      style={{fontSize: 11}}*/}
-      // {/*   >*/}
-      // {/*       {recursiveMaxNavigationIndex}*/}
-      // {/*   </span>*/}
-      // {/*         <span*/}
-      // {/*            style={{padding: 1, fontSize: 13}}*/}
-      // {/*         >*/}
-      // {/*       &#166;*/}
-      // {/*    </span>*/}
-      // {/*         <span*/}
-      // {/*            style={{fontSize: 9, paddingTop: 3}}*/}
-      // {/*         >*/}
-      // {/*         {recursiveMaxNavigationIndex}*/}
-      // {/*   </span>*/}
-      // {/*      </NavigatorContainedButton>*/}
-      // {/*   </NavigatorTooltip>*/}
-      // {/*   : null*/}
-      // {/*   */}
-      // {/*}*/}
-      // </span>
    );
 };
 
-const LiveExpression = ({data, ...rest}) => {
-   return (<Inspector
-         data={data}
-         // compact={true}
-         // expressionType={expressionType}
-         // iconify={isIcon}
-         {...rest} />
-   );
+const LiveExpression = (props) => {
+   return <ALEInspector variant="inline" {...props} />;
 };
 
 const VALE = ({visible, container, variant, ...rest}) => {

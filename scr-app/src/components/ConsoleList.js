@@ -6,20 +6,21 @@ import React, {
     useState
 } from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/styles';
-import {alpha, darken, lighten} from '@material-ui/core/styles';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import {withStyles} from '@mui/styles';
+import {alpha, darken, lighten} from '@mui/material/styles';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
-import Typography from '@material-ui/core/Typography';
-import TableCell from '@material-ui/core/TableCell';
-import TableRow from '@material-ui/core/TableRow';
+import Typography from '@mui/material/Typography';
+import TableCell from '@mui/material/TableCell';
+import TableRow from '@mui/material/TableRow';
 
 import InfiniteStickyList from './InfiniteStickyList';
 import ObjectExplorer from './ObjectExplorer';
 import {StickyAction} from './StickyAction';
 
-import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
+import PastebinContext from '../contexts/PastebinContext';
+import {TABLE_ROW_HEIGHT} from '../containers/Pastebin';
 import {ThemesRef} from "../themes";
 
 const styles = theme => {

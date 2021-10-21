@@ -1,35 +1,71 @@
 import React, {
    forwardRef,
+   useRef,
    useCallback,
    useEffect,
    useMemo,
    useState,
    useContext
 } from 'react';
-import isString from 'lodash/isString';
-import {withStyles} from '@material-ui/styles';
-import {alpha, darken, lighten} from '@material-ui/core/styles';
+import {withStyles} from '@mui/styles';
+import {alpha, darken, lighten} from '@mui/material/styles';
 
-import ButtonBase from '@material-ui/core/ButtonBase';
-import Typography from '@material-ui/core/Typography';
-import TableCell from '@material-ui/core/TableCell';
-import TableRow from '@material-ui/core/TableRow';
+import ButtonBase from '@mui/material/ButtonBase';
+import Typography from '@mui/material/Typography';
+import TableCell from '@mui/material/TableCell';
+import TableRow from '@mui/material/TableRow';
 import Highlighter from 'react-highlight-words';
 
-import JSEN from '../utils/JSEN';
-
 import InfiniteStickyList from './InfiniteStickyList';
-import ObjectExplorer from './ObjectExplorer';
 
-import {PastebinContext, TABLE_ROW_HEIGHT} from '../containers/Pastebin';
+
+import PastebinContext from '../contexts/PastebinContext';
+import {TABLE_ROW_HEIGHT} from '../containers/Pastebin';
 import {
    configureGoToTimelineBranch,
 } from '../containers/LiveExpressionStore';
 import OverflowComponent from './OverflowComponent';
-import {ThemesRef} from '../themes';
-import {usePrevious} from '../utils/reactUtils';
-import ObjectExplorersContext from "./ObjectExplorersContext";
+import {ThemeContext, ThemesRef} from '../themes';
+import {useMeasureBeforeMount, usePrevious} from '../utils/reactUtils';
 import {StickyAction, defaultFloatyMoreIcon} from './StickyAction';
+import ALEInspector from '../core/modules/RALE/ALEInspector';
+
+
+const CodeFragment = (
+   {
+      text = '',
+      monaco = global.monaco,
+      dataLang = "javascript",
+      disableOneLineText = false
+   }
+) => {
+   const {monacoTheme} = useContext(ThemeContext);
+   const ref = useRef();
+   const sourceText = useMemo(
+      () => (disableOneLineText ?
+            text
+            : text.replace(
+               /[\r\n\x0B\x0C\u0085\u2028\u2029]+/g,
+               ''
+            )
+      ),
+      [text, disableOneLineText]
+   );
+   
+   useEffect(
+      () => {
+         if (!ref.current || !monaco) {
+            return;
+         }
+         
+         monaco.editor.colorizeElement(ref.current, {theme: monacoTheme});
+      },
+      [text, monaco, monacoTheme]);
+   
+   return (
+      <div key={monacoTheme} ref={ref} data-lang={dataLang}>{sourceText}</div>);
+   
+}
 
 const expressionCellMaxWidth = 600;
 const expressionCellMinWidth = 100;
@@ -183,7 +219,10 @@ const styles = theme => {
          maxWidth: expressionCellMaxWidth,
          minWidth: expressionCellMinWidth,
          '&::-webkit-scrollbar': {
-            display: 'none' /* Hide scrollbar for IE, Edge and Firefox */
+            display: 'none', /* Hide scrollbar for IE, Edge and Firefox */
+            '-webkit-appearance': 'none',
+            width: 0,
+            height: 0,
          },
          msOverflowStyle: 'none',  /* IE and Edge */
          scrollbarWidth: 'none',  /* Firefox */
@@ -247,13 +286,11 @@ const rowColumnStylesResizingDefault = ([
 const Row = ({index, data}) => {
    const {
       classes, objectClasses,
-      objectNodeRenderer, searchWords, searchState,
+      searchWords, searchState,
       goToTimelineBranch, configureMappingEventListeners,
       columnStyles = rowColumnStylesDefault,
       items,
    } = data;
-   
-   const [cache] = useContext(ObjectExplorersContext);
    
    const [isPending, /*setIsPending*/] = useState(false);
    const [hasMore, setHasMore] = useState(false);
@@ -263,6 +300,10 @@ const Row = ({index, data}) => {
    const item = isValid && items?.[index];
    const n = item?.entry;
    const result = n?.chunksResult;
+   const isSearchActive = searchState?.checkSearchActive?.();
+   const isMatch = isSearchActive && n?.isMatch;
+   const expressionId = n?.entry?.expressionId ?? '';
+   const cacheId = `${expressionId}`;
    
    const findChunks = useCallback(
       () => (result?.expressionChunks || []),
@@ -280,212 +321,6 @@ const Row = ({index, data}) => {
          n?.entry && goToTimelineBranch()(n.entry);
       },
       [onClick, goToTimelineBranch, n]
-   );
-   
-   
-   const cacheId = `${n?.entry?.i ?? ''}`;
-   
-   const {parsedValue, outputRefs} = useMemo(
-      () => {
-         if (!cacheId) {
-            
-            return {
-               parsedValue: (isString(n?.value) ?
-                  JSEN.parse(n?.value) : n?.value),
-               outputRefs: (n?.entry?.outputRefs ?? []),
-            };
-         }
-         
-         cache[cacheId] = cache[cacheId]?? {current: {}};
-         
-         if (!cache[cacheId].current.hasParsedValue) {
-            cache[cacheId].current.parsedValue = isString(n?.value) ?
-               JSEN.parse(n?.value) : n?.value;
-            cache[cacheId].current.hasParsedValue = true;
-         }else{
-            // console.log('D', cacheId)
-         }
-         
-         if (!cache[cacheId].current.outputRefs) {
-            cache[cacheId].current.outputRefs = n?.entry?.outputRefs ?? [];
-         }
-         
-         return {
-            parsedValue: cache[cacheId].current.parsedValue,
-            outputRefs: cache[cacheId].current.outputRefs,
-         };
-         
-      },
-      [n, cache, cacheId]
-   );
-   
-   const isSearchActive = searchState?.checkSearchActive?.();
-   const searchValue = searchState?.value;
-   
-   useMemo(
-      () => {
-         if (cache[cacheId]?.current) {
-            if (isSearchActive) {
-               // cache[cacheId].current.disableCache = true;
-               
-               if (cache[cacheId].current.isMounted
-                  && !cache[cacheId].current.beforeSearchCache) {
-                  cache[cacheId].current.beforeSearchCache =
-                     cache[cacheId].current.stateAndSetter?.[0] ?? {};
-                  
-               }
-            } else {
-               // cache[cacheId].current.disableCache = false;
-            }
-         }
-      },
-      [isSearchActive]
-   );
-   
-   useEffect(
-      () => {
-         if (cache[cacheId]?.current) {
-            if (!isSearchActive) {
-               if (cache[cacheId].current.isMounted) {
-                  const beforeSearchCache =
-                     cache[cacheId].current.beforeSearchCache;
-                  if (beforeSearchCache) {
-                     cache[cacheId].current.stateAndSetter?.[1](
-                        beforeSearchCache
-                     );
-                     delete cache[cacheId].current.beforeSearchCache;
-                  }
-               }
-            }
-         }
-      },
-      [isSearchActive]
-   );
-   
-   useEffect(
-      () => {
-         if (cache[cacheId]?.current) {
-            if (searchValue) {
-               const tid = setTimeout(
-                  () => {
-                     if (cache[
-                        cacheId
-                        ].current.stateAndSetter?.[0]?.pending?.length) {
-                        setHasMore(
-                           cache[cacheId].current.hasMore && true);
-                     } else {
-                        setHasMore(false);
-                     }
-                  }, 500);
-               
-               return () => clearTimeout(tid);
-            } else {
-               setHasMore(false);
-               cache[cacheId].current.hasMore = true;
-            }
-         }
-      },
-      [searchValue]
-   );
-   
-   // useEffect(
-   //    () => {
-   //       const expandedPaths =
-   //          cache?.[cacheId]?.current?.stateAndSetter?.[0];
-   //       if (expandedPaths) {
-   //          if (cache[cacheId].current.isMounted) {
-   //             const n = expandedPaths.pending?.length;
-   //             if (n) {
-   //                let tids = []
-   //                let i = 0;
-   //                const chained = () => {
-   //                   const currentPending =
-   //                      cache[cacheId].current.stateAndSetter?.[0].pending?.[i];
-   //                   if (currentPending) {
-   //                      console.log('Z');
-   //                      tids.push(
-   //                         setTimeout(
-   //                            () => {
-   //                               const expandedPaths =
-   //                                  cache[cacheId].current.stateAndSetter?.[0];
-   //                               if (cache[cacheId].current.isMounted &&
-   //                                  expandedPaths.pending) {
-   //                                  // console.log(cacheId, index*10);
-   //                                  if (expandedPaths.pending?.[i]) {
-   //                                     console.log('A');
-   //                                     setIsPending(true);
-   //                                     cache[
-   //                                        cacheId
-   //                                        ].current.stateAndSetter?.[1](
-   //                                        p => ({...p, ...currentPending()})
-   //                                     );
-   //                                     expandedPaths.pending[i] = null;
-   //
-   //                                     i++;
-   //                                     if (i < n) {
-   //                                        chained();
-   //                                     } else {
-   //                                        console.log('B');
-   //                                        expandedPaths.pending = null;
-   //                                        setIsPending(false);
-   //                                     }
-   //
-   //                                  }
-   //                               }
-   //                            },
-   //                            100)
-   //                      );
-   //                   }
-   //                };
-   //
-   //                chained();
-   //
-   //                return () => {
-   //                   console.log('C');
-   //                   tids.forEach(tid => clearTimeout(tid));
-   //                };
-   //             } else {
-   //                console.log('D');
-   //                setIsPending(false);
-   //             }
-   //          }
-   //       }
-   //    },
-   //    [expandedPaths, index]
-   // );
-   
-   const onHover = useCallback(
-      (event) => {
-         onMouseEnter(event);
-         
-         const expandedPaths = cache?.[cacheId]?.current?.stateAndSetter?.[0];
-         if (expandedPaths) {
-            if (cache[cacheId].current.isMounted) {
-               const n = expandedPaths.pending?.length;
-               if (n) {
-                  clearTimeout(cache.expandedPathsTi);
-                  cache.expandedPathsTi = setTimeout(
-                     () => {
-                        let current = {};
-                        expandedPaths.pending.forEach(currentPending => {
-                           current = ({...current, ...currentPending()});
-                        });
-                        cache[
-                           cacheId
-                           ].current.stateAndSetter?.[1](
-                           p => {
-                              const newExpandedPaths = {...p, ...current};
-                              newExpandedPaths.pending = null;
-                              return newExpandedPaths;
-                           }
-                        );
-                     }, 250);
-                  return () => clearTimeout(cache.expandedPathsTi);
-               }
-            }
-         }
-      },
-      [cache, onMouseEnter]
    );
    
    return (isValid && <>
@@ -510,39 +345,40 @@ const Row = ({index, data}) => {
                      noWrap
                      variant='code'
                   >
-                     <Highlighter
-                        // highlightClassName={classes.highlight}
-                        searchWords={searchWords}
-                        textToHighlight={n?.expression || ''}
-                        autoEscape={true}
-                        findChunks={findChunks}
-                     />
+                     {isMatch ?
+                        
+                        <Highlighter
+                           // highlightClassName={classes.highlight}
+                           searchWords={searchWords}
+                           textToHighlight={n?.expression || ''}
+                           autoEscape={true}
+                           findChunks={findChunks}
+                        />
+                        : <CodeFragment text={n?.expression || ''}/>
+                     }
                   </Typography>
                </ButtonBase>
             </OverflowComponent>
          </TableCell>
          <TableCell
+            // ref={ref}
             component="div"
             className={classes.valueCell}
             classes={
                n?.isError ? objectClasses.hoverError
                   : n?.isGraphical ? objectClasses.hoverGraphical
-                  : objectClasses.hoverObject
+                     : objectClasses.hoverObject
             }
-            onMouseEnter={onHover}
+            // onMouseEnter={onHover}
             onMouseLeave={onMouseLeave}
             style={isPending ?
                rowColumnStylesResizingDefault[1] : columnStyles[1]
             }
          >
-            <ObjectExplorer
-               variant={"marker"}
-               expressionId={n?.expressionId}
-               objectNodeRenderer={objectNodeRenderer}
-               data={parsedValue}
-               outputRefs={outputRefs}
-               expandedPathsRef={cache[cacheId]}
-               getExpandedPaths={searchState?.getExpandedPaths}
+            <ALEInspector
+               cacheId={cacheId}
+               connectorVariant={"marker"}
+               aleObject={n?.entry?.entry?.logValue}
             />
             {hasMore && defaultFloatyMoreIcon}
          </TableCell>
@@ -592,6 +428,7 @@ function WindowedTable(props) {
       configureMappingEventListeners,
       classes,
    } = props;
+   // console.log(props);
    
    const [stickyIndices, setStickyIndices] = useState([]);
    
@@ -636,6 +473,7 @@ function WindowedTable(props) {
             ignoreIndices.push(i);
          }
       });
+      // console.log("data", data, matchedData);
       
       return {
          totalMatches: matchedData.length,
@@ -645,52 +483,52 @@ function WindowedTable(props) {
       }
    }, [data, searchState]);
    
-   const _prevItems = usePrevious(items);
-   const _prevOrder = usePrevious(order);
-   const _prevOrderBy = usePrevious(orderBy);
-   useEffect(
-      () => {
-         if (!_prevItems || !items) {
-            return;
-         }
-         
-         const delta = items.length - _prevItems.length;
-         
-         if (delta > 0) {
-            order !== 'asc' && setStickyIndices(
-               stickyIndices.map(
-                  i => i + delta
-               )
-            );
-         } else {
-            delta && setStickyIndices([]);
-         }
-         
-         
-      }
-      , [stickyIndices, setStickyIndices, items, _prevItems, order, orderBy]
-   );
+   // const _prevItems = usePrevious(items);
+   // const _prevOrder = usePrevious(order);
+   // const _prevOrderBy = usePrevious(orderBy);
+   // useEffect(
+   //    () => {
+   //       if (!_prevItems || !items) {
+   //          return;
+   //       }
+   //
+   //       const delta = items.length - _prevItems.length;
+   //
+   //       if (delta > 0) {
+   //          order !== 'asc' && setStickyIndices(
+   //             stickyIndices.map(
+   //                i => i + delta
+   //             )
+   //          );
+   //       } else {
+   //          delta && setStickyIndices([]);
+   //       }
+   //
+   //
+   //    }
+   //    , [stickyIndices, setStickyIndices, items, _prevItems, order, orderBy]
+   // );
    
-   useEffect(
-      () => {
-         if (orderBy === 'time') {
-            if (order !== _prevOrder) {
-               order === 'asc' && setStickyIndices(
-                  //+1 due to sticky row container
-                  stickyIndices.map(i => items.length + 1 - i)
-               );
-            }
-         } else {
-            if (order !== _prevOrder || orderBy !== _prevOrderBy) {
-               setStickyIndices([]);
-            }
-         }
-      }
-      , [
-         stickyIndices, setStickyIndices, items,
-         order, _prevOrder, orderBy, _prevOrderBy
-      ]
-   );
+   // useEffect(
+   //    () => {
+   //       if (orderBy === 'time') {
+   //          if (order !== _prevOrder) {
+   //             order === 'asc' && setStickyIndices(
+   //                //+1 due to sticky row container
+   //                stickyIndices.map(i => items.length + 1 - i)
+   //             );
+   //          }
+   //       } else {
+   //          if (order !== _prevOrder || orderBy !== _prevOrderBy) {
+   //             setStickyIndices([]);
+   //          }
+   //       }
+   //    }
+   //    , [
+   //       stickyIndices, setStickyIndices, items,
+   //       order, _prevOrder, orderBy, _prevOrderBy
+   //    ]
+   // );
    
    useEffect(
       () => {

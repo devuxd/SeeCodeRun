@@ -1,4 +1,6 @@
-import {useCallback, useEffect, useMemo, useRef} from 'react';
+import {useState, useCallback, useEffect, useMemo, useRef} from 'react';
+import {Resizable} from 'react-resizable';
+import {useResizeDetector} from 'react-resize-detector';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
 
@@ -163,4 +165,191 @@ export const useSandboxIFrameHandler = (documentObj, prepareIframe) => {
       },
       [documentObj, prepareIframe]
    );
-}
+};
+
+export const isOverflowed = (
+   ref,
+   containerRef,
+   handleOverflowWidth = true,
+   handleOverflowHeight = true,
+   overflowThresholdX = 2,
+   overflowThresholdY = 2
+) => {
+   if (!ref?.current || !containerRef?.current) {
+      return false;
+   }
+   
+   return (
+      (handleOverflowWidth &&
+         ref.current.offsetWidth - overflowThresholdX > containerRef.current.offsetWidth) ||
+      (handleOverflowHeight &&
+         ref.current.offsetHeight - overflowThresholdY > containerRef.current.offsetHeight)
+   );
+};
+
+export const useResizeAndOverflowDetector = (
+   {
+      containerRef,
+      onResize,
+      onOverflow,
+      handleOverflowWidth,
+      handleOverflowHeight,
+      ...resizeDetectorOptions
+   } = {}
+) => {
+   let ref = null;
+   const _containerRef = useRef();
+   containerRef = containerRef ?? _containerRef;
+   const _onResize = useCallback(
+      (...params) => {
+         onResize && onResize(...params);
+         onOverflow &&
+         onOverflow(
+            isOverflowed(
+               ref,
+               containerRef,
+               handleOverflowWidth,
+               handleOverflowHeight
+            )
+         );
+      },
+      [
+         ref,
+         onResize,
+         containerRef,
+         onOverflow,
+         handleOverflowWidth,
+         handleOverflowHeight
+      ]
+   );
+   
+   const detectorProps = useResizeDetector({
+      onResize: _onResize,
+      ...resizeDetectorOptions
+   });
+   ref = detectorProps.ref;
+   
+   return {...detectorProps, containerRef};
+};
+
+export const useMeasureBeforeMount = (
+   {
+      disableMeasureBeforeMount = false,
+      initialMeasurements = {width: 0, height: 0},
+      ref: beforeMountRef,
+   } = {}
+) => {
+   const [isMounted, setIsMounted] = useState(disableMeasureBeforeMount);
+   const [measurements, setMeasurements] = useState(initialMeasurements);
+   const _beforeMountRef = useRef();
+   const ref = beforeMountRef ?? _beforeMountRef;
+   useEffect(
+      () => {
+         if (isMounted || !ref.current) {
+            return;
+         }
+         const newMeasurements = {};
+         const rect = ref.current.getBoundingClientRect?.() ?? {};
+         for (let key in rect) {
+            if (typeof rect[key] === 'function') {
+               continue;
+            }
+            newMeasurements[key] = rect[key];
+         }
+         setMeasurements(measurements => ({
+            ...measurements,
+            ...newMeasurements
+         }));
+         setIsMounted(true);
+      },
+      [ref, isMounted]
+   );
+   
+   return {isMounted, ref, ...measurements};
+};
+
+const baseHandleStyle = {
+   position: "absolute",
+   backgroundColor: "transparent",
+   zIndex: 2000,
+};
+
+const defaultRowHandleStyle = {
+   ...baseHandleStyle,
+   cursor: "ns-resize",
+   bottom: 0,
+   marginBottom: 0,
+   left: 0,
+   height: 2,
+   width: "100%",
+};
+
+const defaultColumnHandleStyle = {
+   ...baseHandleStyle,
+   cursor: "ew-resize",
+   top: 0,
+   right: 0,
+   marginRight: 0,
+   width: 2,
+   height: "100%",
+};
+
+
+const defaultStyle = {
+   position: "relative",
+   height: 200,
+   width: 200,
+};
+
+const handle = (handle, ref) => {
+   const style =
+      handle === "e" || handle === "se" ?
+         defaultColumnHandleStyle
+         : handle === "s" ?
+            defaultRowHandleStyle : {};
+   return (<div
+      ref={ref}
+      style={style}
+   />);
+};
+
+const defaultResizableProps = {
+   axis: "x",
+   resizeHandles: ["e"],
+   handle,
+};
+
+export const resizableAcceptor = WrappedComponent => (
+   {
+      ResizableProps = defaultResizableProps,
+      style: _style = defaultStyle,
+      ...props
+   }
+) => {
+   
+   const [style, setStyle] = useState(_style);
+   
+   const onResize = useCallback(
+      (event, {size, handle/*,element*/}) => {
+         setStyle(style => ({
+            ...style,
+            height: handle === "s" ? size.height : style.height,
+            width: (handle === "e" || handle === "se") ? size.width : style.width,
+         }));
+      }, []);
+   
+   return <Resizable
+      {...ResizableProps}
+      height={style.height}
+      width={style.width}
+      onResize={onResize}
+   >
+      <div
+         style={style}
+      >
+         <WrappedComponent
+            {...props}
+         />
+      </div>
+   </Resizable>;
+};

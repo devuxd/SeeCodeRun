@@ -1720,7 +1720,7 @@ function locPushAndResolveLoggableScope(path, locLiveZones, parentSnapshot, code
 
 // ALE compliant path zones end
 
-export function makePathSnapshot(path, code, expressions, zones) {
+export function makePathSnapshot(path, code, expressions, zones, expressionId) {
    const nodeSnapshot = makeNodeSnapshot(path.node);
    
    if (!nodeSnapshot) {
@@ -1752,18 +1752,18 @@ export function makePathSnapshot(path, code, expressions, zones) {
    locPushCollectionLikeExpression(path, locLiveZones);
    (
       locPushLoggableExpression(path, locLiveZones) ||
-     
+      
       locPushVariableDeclarator(path, locLiveZones)
    );
    
-   if (isBranch) {
+   if (isBranch && !path.isClass()) {
       liveZoneType = LiveZoneTypes.B;
    }
    
-   if(!path.parentPath?.isBinary()){
+   if (!path.parentPath?.isBinary()) {
       locPushLoggableExpressionBasedOnParent(
          path, locLiveZones, parentSnapshot
-      ) ;
+      );
    }
    
    // console.log(getSourceCode(path, code));
@@ -1778,7 +1778,7 @@ export function makePathSnapshot(path, code, expressions, zones) {
    locPushBindExpressionOperator(path, locLiveZones);
    locPushExpressionParentheses(path, locLiveZones);
    locPushAssignmentPattern(path, locLiveZones);
-
+   
    
    // if (!locPushAssignmentExpression(path, locLiveZones)) {
    //    path.parentPath && locPushAssignmentExpression(path.parentPath, locLiveZones);
@@ -1790,11 +1790,17 @@ export function makePathSnapshot(path, code, expressions, zones) {
    
    const type = path.type;
    const parentType = path.parentPath?.type;
+   
+   const isLiteral = path.isLiteral();
+   const isStrictLiteral = isLiteral && !path.isTemplateLiteral();
    const snapshot = {
+      expressionId,
       type,
       parentType,
       scopeType,
       liveZoneType,
+      isLiteral,
+      isStrictLiteral,
       isRequireCall: false,
       isImportCall: false,
       importType: null,
@@ -1956,7 +1962,7 @@ function _registerExpression(path, code, expressions, zones) {
    let zone = null;
    if (i < 0) {
       i = expressions.push(path) - 1;
-      zone = makePathSnapshot(path, code, expressions, zones);
+      zone = makePathSnapshot(path, code, expressions, zones, i);
       // !zone && path.isReturnStatement() && console.log(">>", path.node.type, path.node.argument.type, path.node.argument, path.node.argument.loc, path.node?.loc);
       if (zone) {
          zones[i] = zone;

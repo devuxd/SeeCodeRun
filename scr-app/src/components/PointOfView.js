@@ -1,14 +1,14 @@
 import React, {createRef, PureComponent, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
-import {makeStyles} from '@material-ui/styles';
-import Container from '@material-ui/core/Container';
-import Slider from '@material-ui/core/Slider';
-import ImageList from '@material-ui/core/ImageList';
-import ImageListItem from '@material-ui/core/ImageListItem';
-import ImageListItemBar from '@material-ui/core/ImageListItemBar';
-import IconButton from '@material-ui/core/IconButton';
-import MinimizeIcon from '@material-ui/icons/Minimize';
-import MaximizeIcon from '@material-ui/icons/Maximize';
+import {makeStyles} from '@mui/styles';
+import Container from '@mui/material/Container';
+import Slider from '@mui/material/Slider';
+import ImageList from '@mui/material/ImageList';
+import ImageListItem from '@mui/material/ImageListItem';
+import ImageListItemBar from '@mui/material/ImageListItemBar';
+import IconButton from '@mui/material/IconButton';
+import MinimizeIcon from '@mui/icons-material/Minimize';
+import MaximizeIcon from '@mui/icons-material/Maximize';
 import {defaultSimpleMonacoOptions} from '../utils/monacoUtils';
 
 

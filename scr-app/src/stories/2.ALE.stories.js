@@ -2,7 +2,6 @@ import generate from "@babel/generator";
 import * as t from "@babel/types";
 import traverse from "@babel/traverse";
 import MonacoJSXHighlighter from 'monaco-jsx-highlighter';
-import {number, text, withKnobs} from '@storybook/addon-knobs';
 import React, {
    useEffect,
    useRef,
@@ -352,7 +351,7 @@ const EditorWrapper = (
                   {isDiff ? 'Normal' : 'Diff'}
                </span>
          {editor}
-         <RALE aleInstance={aleInstance} />
+         <RALE aleInstance={aleInstance}/>
       </div>);
    }
 };
@@ -496,17 +495,33 @@ const ALEDEmo = (
    );
 };
 
-export const ALEWithBabelTypesCompliance = withThemes(() => {
-   return (
-      <ALEDEmo
-         height={text('Container Height', '100%')}
-         width={number('Container Width (%)', 50)}
-      />
-   );
-});
+export const ALEWithBabelTypesCompliance = withThemes(
+   ({
+       height,
+       width,
+    }) => {
+      return (
+         <ALEDEmo
+            height={height}
+            width={width}
+         />
+      );
+   }
+);
 
 export default {
    title: 'ALE DEmo',
-   component: ALEDEmo,
-   decorators: [withKnobs],
+   component: ALEWithBabelTypesCompliance,
+   argTypes: {
+      width: {
+         control: {
+            type: 'range', min: 0, max: 100, step: 5
+         },
+         defaultValue: 100,
+      },
+      height: {
+         defaultValue: "100%",
+         type: {name: 'string', required: true},
+      },
+   },
 }

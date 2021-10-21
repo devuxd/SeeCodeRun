@@ -2,14 +2,14 @@
     font-size: 90%;
     font-weight: normal;
     opacity: 0.647;
-    color: lightcoral;
+    /*color: lightcoral;*/
 }
 
 .ale.branch.function.active {
     font-size: 110%;
     font-weight: bold;
     opacity: 1;
-    color: tomato;
+    /*color: tomato;*/
 }
 
 .ale.branch.function.hover {
@@ -23,33 +23,33 @@
     font-size: 90%;
     font-weight: normal;
     opacity: 0.647;
-    color: lightcoral;
+    /*color: lightcoral;*/
 }
 
 .ale.branch.control.active {
     font-size: 110%;
     font-weight: bold;
     opacity: 1;
-    color: tomato;
+    /*color: tomato;*/
 }
 
  .ale.branch.control.hover {
      font-size: 110%;
      font-weight: bold;
      opacity: 1;
-     color: tomato;
+     /*color: tomato;*/
  }
 
 .ale.value.normal {
     font-size: 95%;
     filter: contrast(0.647);
-    color: coral;
+    /*color: coral;*/
 }
 
 .ale.value.active {
     font-size: 100%;
     filter: contrast(1);
-    color: darkslateblue;
+    /*color: darkslateblue;*/
 }
 
 .ale.expression.hover {

@@ -1,6 +1,8 @@
 import {ofType} from 'redux-observable';
 import {zip} from 'rxjs';
 import {mergeMap, startWith} from 'rxjs/operators';
+import {createAction, createReducer} from '@reduxjs/toolkit'
+
 
 import {FETCH_PASTEBIN_CONTENT_FULFILLED} from './pastebin';
 
@@ -18,126 +20,95 @@ const SWITCH_MONACO_THEME = 'SWITCH_MONACO_THEME';
 const SWITCH_MONACO_THEME_FULFILLED = 'SWITCH_MONACO_THEME_FULFILLED';
 const SWITCH_MONACO_THEME_REJECTED = 'SWITCH_MONACO_THEME_REJECTED';
 
-const defaultState = {
-    error: null,
-    isMonacoLoading: false,
-    isMonacoLoaded: false,
-    isConfiguringMonacoModels: false,
-    areMonacoModelsConfigured: false,
+const initialState = {
+   error: null,
+   isMonacoLoading: false,
+   isMonacoLoaded: false,
+   isConfiguringMonacoModels: false,
+   areMonacoModelsConfigured: false,
+   monacoTheme: 'vs-light',
 };
 
-const loadMonaco = () => ({type: LOAD_MONACO});
-export const loadMonacoFulfilled = monaco => ({
-    type: LOAD_MONACO_FULFILLED,
-    monaco
-});
-export const loadMonacoRejected = error => ({
-    type: LOAD_MONACO_REJECTED,
-    error
-});
+const loadMonaco = createAction(LOAD_MONACO);
+export const loadMonacoFulfilled = createAction(LOAD_MONACO_FULFILLED);
+export const loadMonacoRejected = createAction(LOAD_MONACO_REJECTED);
 
-export const configureMonacoModelsFulfilled = () => ({type: CONFIGURE_MONACO_MODELS_FULFILLED});
-export const configureMonacoModelsRejected = error => ({
-    type: CONFIGURE_MONACO_MODELS_REJECTED,
-    error
-});
+export const configureMonacoModels = createAction(CONFIGURE_MONACO_MODELS);
 
-export const updateMonacoModelsFulfilled = () => ({type: UPDATE_MONACO_MODELS_FULFILLED});
-export const updateMonacoModelsRejected = error => ({
-    type: UPDATE_MONACO_MODELS_REJECTED,
-    error
-});
+export const configureMonacoModelsFulfilled = createAction(CONFIGURE_MONACO_MODELS_FULFILLED);
+export const configureMonacoModelsRejected = createAction(CONFIGURE_MONACO_MODELS_REJECTED);
 
-export const switchMonacoTheme = monacoTheme => ({
-    type: SWITCH_MONACO_THEME,
-    monacoTheme
-});
+export const updateMonacoModelsFulfilled = createAction(UPDATE_MONACO_MODELS_FULFILLED);
+export const updateMonacoModelsRejected = createAction(UPDATE_MONACO_MODELS_REJECTED);
 
-export const switchMonacoThemeFulfilled = () => ({type: SWITCH_MONACO_THEME_FULFILLED});
-export const switchMonacoThemeRejected = error => ({
-    type: SWITCH_MONACO_THEME_REJECTED,
-    error
-});
+export const switchMonacoTheme = createAction(SWITCH_MONACO_THEME);
 
-export const monacoReducer =
-    (state = defaultState,
-     action) => {
-        switch (action.type) {
-            case LOAD_MONACO:
-                return {
-                    ...state,
-                    isMonacoLoading: true,
-                    isMonacoLoaded: false,
-                };
+export const switchMonacoThemeFulfilled = createAction(SWITCH_MONACO_THEME_FULFILLED);
+export const switchMonacoThemeRejected = createAction(SWITCH_MONACO_THEME_REJECTED);
 
-            case LOAD_MONACO_FULFILLED:
-                return {
-                    ...state,
-                    isMonacoLoading: false,
-                    isMonacoLoaded: true
-                };
-
-            case LOAD_MONACO_REJECTED:
-                return {
-                    ...state,
-                    isMonacoLoading: false,
-                    error: action.error
-                };
-            case CONFIGURE_MONACO_MODELS:
-                return {
-                    ...state,
-                    isConfiguringMonacoModels: true,
-                    areMonacoModelsConfigured: false,
-                };
-            case CONFIGURE_MONACO_MODELS_FULFILLED:
-                return {
-                    ...state,
-                    isConfiguringMonacoModels: false,
-                    areMonacoModelsConfigured: true,
-                };
-            case CONFIGURE_MONACO_MODELS_REJECTED:
-                return {
-                    ...state,
-                    isConfiguringMonacoModels: false,
-                    error: action.error
-                };
-            default:
-                return state;
-        }
-    };
+export const monacoReducer = createReducer(initialState, (builder) => {
+   builder
+      .addCase(loadMonaco, (draft) => {
+         draft.isMonacoLoading = true;
+         draft.isMonacoLoaded = false;
+      })
+      .addCase(loadMonacoFulfilled, (draft) => {
+         draft.isMonacoLoading = false;
+         draft.isMonacoLoaded = true;
+      })
+      .addCase(loadMonacoRejected, (draft, {payload}) => {
+         draft.isMonacoLoading = false;
+         draft.error = payload;
+      })
+      .addCase(configureMonacoModels, (draft) => {
+         draft.isConfiguringMonacoModels = true;
+         draft.areMonacoModelsConfigured = false;
+      })
+      .addCase(configureMonacoModelsFulfilled, (draft) => {
+         draft.isConfiguringMonacoModels = false;
+         draft.areMonacoModelsConfigured = true;
+      })
+      .addCase(configureMonacoModelsRejected, (draft, {payload}) => {
+         draft.isConfiguringMonacoModels = false;
+         draft.error = payload;
+      })
+      .addCase(switchMonacoTheme, (draft, {payload}) => {
+         draft.monacoTheme = payload;
+      });
+})
 
 export const loadMonacoEpic = (action$, state$, {appManager}) =>
-    action$.pipe(
-        ofType(LOAD_MONACO),
-        mergeMap(() =>
-            appManager.observeLoadMonaco()
-        ),
-        startWith(loadMonaco()),
-    );
+   action$.pipe(
+      ofType(LOAD_MONACO),
+      mergeMap(() =>
+         appManager.observeLoadMonaco()
+      ),
+      startWith(loadMonaco()),
+   );
 
 export const configureMonacoModelsEpic = (action$, state$, {appManager}) =>
-    action$.pipe(
-        ofType(LOAD_MONACO_FULFILLED),
-        mergeMap(action =>
-            appManager.observeConfigureMonacoModels(action.monaco)
-        ),
-    );
+   action$.pipe(
+      ofType(LOAD_MONACO_FULFILLED),
+      mergeMap(({payload}) =>
+         appManager.observeConfigureMonacoModels(payload)
+      ),
+   );
 
 export const updateMonacoModelsEpic = (action$, state$, {appManager}) =>
-    zip(
-        action$.pipe(ofType(FETCH_PASTEBIN_CONTENT_FULFILLED)),
-        action$.pipe(ofType(CONFIGURE_MONACO_MODELS_FULFILLED)),
-    ).pipe(
-        mergeMap(() => {
-                return appManager.observeUpdateMonacoModels(state$.value.pastebinReducer.editorsTexts)
-            }
-        ),
-    );
+   zip(
+      action$.pipe(ofType(FETCH_PASTEBIN_CONTENT_FULFILLED)),
+      action$.pipe(ofType(CONFIGURE_MONACO_MODELS_FULFILLED)),
+   ).pipe(
+      mergeMap(() => {
+            return appManager.observeUpdateMonacoModels(state$.value.pastebinReducer.editorsTexts)
+         }
+      ),
+   );
 
 export const configureMonacoThemeSwitchEpic = (action$, state$, {appManager}) =>
-    action$.pipe(
-        ofType(SWITCH_MONACO_THEME),
-        mergeMap(action =>
-            appManager.observeSwitchMonacoTheme(action.monacoTheme)
-        )
-    );
+   action$.pipe(
+      ofType(SWITCH_MONACO_THEME),
+      mergeMap(({payload}) =>
+         appManager.observeSwitchMonacoTheme(payload)
+      )
+   );

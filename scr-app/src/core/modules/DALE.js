@@ -8,7 +8,6 @@ import {
    LiveZoneTypes,
    LiveZoneDecorationStyles, ScopeExitTypes
 } from "./ALE";
-import JSEN from "../../utils/JSEN";
 
 export const ViewZoneEventType = {
    CREATE: 'CREATE',
@@ -1226,22 +1225,13 @@ export class BranchNavigatorManager {
                zone = zale.zones[pre?.expressionId];
                values[expressionId] = values[expressionId] ?? [];
                logValues = values[expressionId];
-               const serialized = entry?.logValue?.serialized;
                const logValue = {
                   i,
                   uid,
                   zone,
                   entry,
                   isReady: false,
-                  value: null,
-               };
-               
-               logValue.getValue = () => {
-                  if (!logValue.isReady) {
-                     logValue.value = JSEN.parse(serialized);
-                     logValue.isReady = true;
-                  }
-                  return logValue.value;
+                  getValue: entry?.logValue?.getSnapshot
                };
                
                logValues.push(logValue);
@@ -1380,6 +1370,8 @@ export default function decorateALEExpressions(
    );
    
    const dale = {
+      monaco,
+      monacoEditor,
       onChangeLocLiveZoneDecorations: null,
       ref: {
          current: {
@@ -1389,7 +1381,6 @@ export default function decorateALEExpressions(
          }
       },
       getAleInstance: () => aleInstance,
-      monacoEditor,
       contentWidgetManager,
       getCode: () => monacoEditor.getValue(),
       locToMonacoRange,

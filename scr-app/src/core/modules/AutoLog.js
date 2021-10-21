@@ -240,41 +240,41 @@ const tryTransformScript = (source) => {
 };
 
 class AutoLog {
-    constructor(jRef) {
-        this.autoLogShift = new AutoLogShift(autoLogName, preAutoLogName, postAutoLogName, jRef);
-    }
-
-    toAst(text) {
-        const locationMap = {};
-
-        const ast = this.autoLogShift.autoLogSource(text, locationMap);
-        return {
-            source: text,
-            ast: ast,
-            locationMap: locationMap,
-        };
-    }
-
-    async transformWithLocationIds(ast, getLocationId) {
-        const {
-            locationMap, deps, ...rest
-        } = this.autoLogShift.autoLogAst(ast, getLocationId);
-        return {
-            ...rest,
-            locationMap,
-            deps,
-            trace: new Trace(locationMap, deps),
-            getCode: (options) => ast?.toSource?.(options),
-        };
-    }
-
-    static transform(ast) {
-        return {
-            ...ast,
-            trace: new Trace(ast?.locationMap),
-            code: ast?.ast?.toSource?.()
-        };
-    }
+    // constructor(jRef) {
+    //     this.autoLogShift = new AutoLogShift(autoLogName, preAutoLogName, postAutoLogName, jRef);
+    // }
+    //
+    // toAst(text) {
+    //     const locationMap = {};
+    //
+    //     const ast = this.autoLogShift.autoLogSource(text, locationMap);
+    //     return {
+    //         source: text,
+    //         ast: ast,
+    //         locationMap: locationMap,
+    //     };
+    // }
+    //
+    // async transformWithLocationIds(ast, getLocationId) {
+    //     const {
+    //         locationMap, deps, ...rest
+    //     } = this.autoLogShift.autoLogAst(ast, getLocationId);
+    //     return {
+    //         ...rest,
+    //         locationMap,
+    //         deps,
+    //         trace: new Trace(locationMap, deps),
+    //         getCode: (options) => ast?.toSource?.(options),
+    //     };
+    // }
+    //
+    // static transform(ast) {
+    //     return {
+    //         ...ast,
+    //         trace: new Trace(ast?.locationMap),
+    //         code: ast?.ast?.toSource?.()
+    //     };
+    // }
 
     appendIframe = () => {
     };

@@ -6,16 +6,16 @@ import {
    ThemeProvider,
    StyledEngineProvider,
    CssBaseline,
-} from '@material-ui/core';
-// import { StylesProvider } from '@material-ui/styles'; // breaks theme
+} from '@mui/material';
+// import { StylesProvider } from '@mui/styles'; // breaks theme
 import {
    createTheme,
    responsiveFontSizes,
    alpha,
-} from '@material-ui/core/styles';
+} from '@mui/material/styles';
 
-import indigo from '@material-ui/core/colors/indigo';
-import deepOrange from '@material-ui/core/colors/deepOrange';
+import indigo from '@mui/material/colors/indigo';
+import deepOrange from '@mui/material/colors/deepOrange';
 
 import {chromeDark, chromeLight} from 'react-inspector';
 
@@ -54,7 +54,7 @@ const typography = {
    code: {
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       fontWeight: 'normal',
-      fontSize: 12,//'0.75rem', // Monaco does not support REM
+      fontSize: 10,//12,//'0.75rem', // Monaco does not support REM
       fontFeatureSettings: '"liga", "calt"',
       letterSpacing: 'normal',
       textSizeAdjust: '100%',

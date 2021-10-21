@@ -1,8 +1,8 @@
 import React, {createRef, PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/styles';
-import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import {withStyles} from '@mui/styles';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 //source:
 // https://raw.githubusercontent.com/

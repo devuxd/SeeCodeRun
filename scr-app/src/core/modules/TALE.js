@@ -72,7 +72,7 @@ export const configureHaltingTimeout = (haltingTimeoutInMs) => {
    haltingTimeout = haltingTimeoutInMs;
 };
 
-const obsConfig = {attributes: true, childList: true};
+const obsConfig = {attributes: true, childList: true, subtree:false};
 
 // Callback function to execute when mutations are observed
 const obsCallback = function (mutationsList) {
@@ -86,44 +86,10 @@ const obsCallback = function (mutationsList) {
    }
 };
 
-
-// const objectIterator = createObjectIterator();
-
-class Scope {
-   constructor(parent, id) {
-      this.parent = parent;
-      this.id = id;
-      this.state = 'entered';
-      this.scopes = [];
-      this.isLocal = false;
-      this.localId = null;
-   }
-   
-   enterScope(id) {
-      const newScope = new Scope(this, id);
-      this.scopes.push(newScope);
-      return newScope;
-   }
-   
-   exitScope(id) {
-      if (this.id !== id) {
-         // console.log("errrror", id);
-      }
-      if (!this.scopes.length) {
-         this.state = 'exited';
-         return this.parent;
-      }
-      return this.scopes.pop();
-   }
-   
-}
-
 class Trace {
    constructor(locationMap, deps) {
       this.locationMap = locationMap;
       this.deps = deps;
-      this.currentScope = null;
-      this.rootScope = null;
       this.subject = new Subject();
       this.currentExpressionId = null; // program
       this.currentCallExpressionId = null; // program
@@ -162,7 +128,6 @@ class Trace {
    
    configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
       this.startTimestamp = Date.now();
-      this.startStack();
       this.setWindowRoots(runIframe.contentWindow);
       
       runIframe.contentWindow[autoLogName] = this.autoLog;
@@ -280,34 +245,6 @@ class Trace {
       if (this.subject) {
          this.subject.complete();
       }
-   }
-   
-   getCurrentStackIds() {
-      const stack = [];
-      let current = this.currentScope;
-      
-      do {
-         stack.unshift(current.id);
-         current = current.parent;
-      } while (current);
-      
-      return stack;
-   }
-   
-   locateStack(stack) {
-      console.log('>>>>>>>>>>>>>');//, this.locationMap, stack);
-      for (const i in stack) {
-         if (stack[i] >= 0) {
-            console.log(i, this.locationMap[stack[i]].loc);
-         } else {
-            console.log(i, 'root');
-         }
-      }
-      
-   }
-   
-   startStack() {
-      this.rootScope = this.currentScope = new Scope(null, -1);
    }
    
    getWindowRoots = () => {
@@ -734,7 +671,6 @@ class Trace {
       }
       
       this.currentExpressionId = id;
-      this.currentScope = this.currentScope.enterScope(id);
       return {
          id,
          type,
@@ -749,8 +685,6 @@ class Trace {
    
    postAutoLog = (id) => {
       //console.log(id, JSAN.parse(JSAN.stringify(this.rootScope)));
-      //this.locateStack(this.getCurrentStackIds());
-      this.currentScope = this.currentScope.exitScope(id);
       return {id: id};
    };
    

@@ -1,13 +1,13 @@
 import React, {useCallback,} from 'react';
-import Slider from '@material-ui/core/Slider';
+import Slider from '@mui/material/Slider';
 import PropTypes from 'prop-types';
 import {
     darken,
     styled,
-} from '@material-ui/core/styles';
-import { withStyles } from '@material-ui/styles';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
+} from '@mui/material/styles';
+import { withStyles } from '@mui/styles';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
     const value = `${

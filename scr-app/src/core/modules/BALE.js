@@ -33,6 +33,8 @@ export function markPathAsVisited(path) {
    path.state = path.state ?? true;
 }
 
+export const undefinedIdentifier = t.identifier('undefined');
+
 let makeAlIdentifier = (identifierName = 'l') => {
    const property = t.identifier(identifierName);
    if (globalObjectIdentifierName) {
@@ -60,6 +62,10 @@ let makeAlIdentifier = (identifierName = 'l') => {
 let makeParamsIdentifier =
    (uid) => t.identifier(`${alParamsIdentifierName}${uid}`);
 
+let makeAnonymousIdentifier =
+   (uid) => t.identifier(`${alAnonymousIdentifierName}${uid}`);
+
+
 let buildExceptionCallbackString = () => `${
    globalObjectIdentifierName ? `${globalObjectIdentifierName}.` : ''
 }${
@@ -80,13 +86,17 @@ let scrObjectIdentifierName = 'scr';
 let alIdentifierName = "_l";
 let alPreIdentifierName = '_i';
 let alPostIdentifierName = '_o';
-let alParamsIdentifierName = `_p`;
+let alLocatorIdentifierName = '_p';
+let alParamsIdentifierName = `_$arguments$_`
+let alAnonymousIdentifierName = `_$anonymous$_`;
 let alExceptionCallbackIdentifierName = `_e`;
 
 let exceptionCallbackString = buildExceptionCallbackString();
 let alIdentifier = makeAlIdentifier(alIdentifierName);
 let alPreIdentifier = makeAlIdentifier(alPreIdentifierName);
 let alPostIdentifier = makeAlIdentifier(alPostIdentifierName);
+let alLocatorIdentifier = makeAlIdentifier(alLocatorIdentifierName);
+
 let globalScrObjectString = buildGlobalScrObjectString();
 
 export const setAutoLogIdentifiers = (
@@ -96,6 +106,8 @@ export const setAutoLogIdentifiers = (
       identifiers.makeAlIdentifier ?? makeAlIdentifier;
    makeParamsIdentifier =
       identifiers.makeParamsIdentifier ?? makeParamsIdentifier;
+   makeAnonymousIdentifier =
+      identifiers.makeAnonymousIdentifier ?? makeAnonymousIdentifier;
    buildExceptionCallbackString =
       identifiers.buildExceptionCallbackString ??
       buildExceptionCallbackString;
@@ -115,6 +127,8 @@ export const setAutoLogIdentifiers = (
       identifiers.alPreIdentifierName ?? alPreIdentifierName;
    alPostIdentifierName =
       identifiers.alPostIdentifierName ?? alPostIdentifierName;
+   alLocatorIdentifierName =
+      identifiers.alLocatorIdentifierName ?? alLocatorIdentifierName;
    alExceptionCallbackIdentifierName =
       identifiers.alExceptionCallbackIdentifierName ??
       alExceptionCallbackIdentifierName;
@@ -123,12 +137,14 @@ export const setAutoLogIdentifiers = (
    alIdentifier = makeAlIdentifier(alIdentifierName);
    alPreIdentifier = makeAlIdentifier(alPreIdentifierName);
    alPostIdentifier = makeAlIdentifier(alPostIdentifierName);
+   alLocatorIdentifier = makeAlIdentifier(alLocatorIdentifierName);
    globalScrObjectString = buildGlobalScrObjectString();
 };
 
 export const getAutoLogIdentifiers = () => ({
    makeAlIdentifier,
    makeParamsIdentifier,
+   makeAnonymousIdentifier,
    buildExceptionCallbackString,
    alValueParamNumber,
    globalObjectIdentifierName,
@@ -136,12 +152,14 @@ export const getAutoLogIdentifiers = () => ({
    alIdentifierName,
    alPreIdentifierName,
    alPostIdentifierName,
+   alLocatorIdentifierName,
    alExceptionCallbackIdentifierName,
    globalScrObjectString,
    exceptionCallbackString,
    alIdentifier,
    alPreIdentifier,
    alPostIdentifier,
+   alLocatorIdentifier,
 });
 
 
@@ -224,7 +242,7 @@ function makeExitCall(uid, scopeType, scopeExitType, ...rest) {
          scopeExitType === ScopeExitTypes.R ||
          scopeExitType === ScopeExitTypes.Y
       ) ? makeParamsIdentifier(uid)
-         : t.identifier('undefined');
+         : undefinedIdentifier;
    return t.callExpression(alIdentifier, [
       t.stringLiteral(`${uid}`),
       t.stringLiteral(TraceEvents.O),
@@ -570,7 +588,7 @@ export default function BabeAutoLogEverything(
             scopeType,
             scopeExitType,
             expressionIdNode, // 2
-            node.argument ?? t.identifier('undefined'),
+            node.argument ?? undefinedIdentifier,
          );
       } else {
          if (
@@ -588,8 +606,8 @@ export default function BabeAutoLogEverything(
                         scopeType,
                         scopeExitType,
                         expressionIdNode,
-                        t.identifier('undefined'),
-                        t.identifier('undefined')
+                        undefinedIdentifier,
+                        undefinedIdentifier
                         // 3 alValueParamNumber
                      )
                   )
@@ -616,101 +634,101 @@ export default function BabeAutoLogEverything(
    
    function logExpression(path, type, node, jsxReplacementType) {
       const containingScope = resolveContainingScope(path);
-      if (containingScope) {
-         const extra = [];
-         if (enableDynamicImportDynamicSources &&
-            isImportOrRequireCallExpression(path)
-         ) {
-            path.node.arguments.forEach(argument => {
-               const j = getOriginalNodeExpressionIndex(argument);
-               if (j < 0) {
-                  trackWarn(
-                     path,
-                     '! getOriginalNode found in expressions'
-                  );
-               }
-               
-               extra.push(t.stringLiteral(`${j}`));
-               
-            });
-         }
-         
-         const i = registerExpression(path);
-         markPathAsVisited(path);
-         
-         if (jsxReplacementType === "valueAppend") {
-            path.node.value = t.jsxExpressionContainer(
-               makeAlCall(
-                  containingScope.uid,
-                  makeAlPreCall(i),
-                  t.booleanLiteral(true),
-                  makeAlPostCall(i)
-               )
-            );
-            return;
-         }
-         
-         const isNonInitVariableDeclarator =
-            isUnInitializedVariableDeclarator(path);
-         
-         node = node || path.node;
-         const preExtra = [];
-         
-         const nodeLoc = path.node.loc;
-         
-         if (node.type === 'CallExpression') {
-            const calleeType = node.callee.type;
-            // preExtra.push(t.stringLiteral(`${node.type}`));
-            // preExtra.push(t.stringLiteral(`${calleeType}`));
-            preExtra.push(t.numericLiteral(
-               getOriginalNodeExpressionIndex(node.callee)
-            ));
-            if (calleeType === "MemberExpression" ||
-               calleeType === "OptionalMemberExpression") {
-               preExtra.push(t.numericLiteral(
-                  getOriginalNodeExpressionIndex(node.callee.object)
-               ));
-            }
-         } else {
-            if (
-               node.type === 'JSXEmptyExpression' ||
-               node.type === 'EmptyStatement' ||
-               isNonInitVariableDeclarator
-            ) {
-               // preExtra.push(t.stringLiteral(`${node.type}`));
-               node = t.identifier('undefined');
-            }
-            
-            
-         }
-         
-         let replacement = makeAlCall(
-            containingScope.uid, // 0
-            makeAlPreCall(i, ...preExtra), // 2
-            node, // alValueParamNumber = 3
-            makeAlPostCall(i),
-            ...extra
-         );
-         
-         
-         if (isNonInitVariableDeclarator) {
-            replacement = t.variableDeclarator(path.node.id, replacement);
-         }
-         
-         if (jsxReplacementType === "containerWrap") {
-            replacement = t.jsxExpressionContainer(replacement);
-         }
-         
-         path.replaceWith(replacement);
-         path.node.loc = path.node.loc ?? nodeLoc;
-         
-         
-      } else {
+      if (!containingScope) {
          trackWarn(
             path,
             "!containingScope"
          );
       }
+      
+      const extra = [];
+      if (enableDynamicImportDynamicSources &&
+         isImportOrRequireCallExpression(path)
+      ) {
+         path.node.arguments.forEach(argument => {
+            const j = getOriginalNodeExpressionIndex(argument);
+            if (j < 0) {
+               trackWarn(
+                  path,
+                  '! getOriginalNode found in expressions'
+               );
+            }
+            
+            extra.push(t.stringLiteral(`${j}`));
+            
+         });
+      }
+      
+      const i = registerExpression(path);
+      markPathAsVisited(path);
+      
+      if (jsxReplacementType === "valueAppend") {
+         path.node.value = t.jsxExpressionContainer(
+            makeAlCall(
+               containingScope.uid,
+               makeAlPreCall(i),
+               t.booleanLiteral(true),
+               makeAlPostCall(i)
+            )
+         );
+         return;
+      }
+      
+      const isNonInitVariableDeclarator =
+         isUnInitializedVariableDeclarator(path);
+      
+      node = node || path.node;
+      const preExtra = [];
+      
+      const nodeLoc = path.node.loc;
+      
+      if (node.type === 'CallExpression') {
+         const calleeType = node.callee.type;
+         // preExtra.push(t.stringLiteral(`${node.type}`));
+         // preExtra.push(t.stringLiteral(`${calleeType}`));
+         preExtra.push(t.numericLiteral(
+            getOriginalNodeExpressionIndex(node.callee)
+         ));
+         if (calleeType === "MemberExpression" ||
+            calleeType === "OptionalMemberExpression") {
+            preExtra.push(t.numericLiteral(
+               getOriginalNodeExpressionIndex(node.callee.object)
+            ));
+         }
+      } else {
+         if (
+            node.type === 'JSXEmptyExpression' ||
+            node.type === 'EmptyStatement' ||
+            isNonInitVariableDeclarator
+         ) {
+            // preExtra.push(t.stringLiteral(`${node.type}`));
+            node = undefinedIdentifier;
+         }
+         
+         
+      }
+      
+      let replacement = makeAlCall(
+         containingScope.uid, // 0
+         makeAlPreCall(i, ...preExtra), // 2
+         node, // alValueParamNumber = 3
+         makeAlPostCall(i),
+         ...extra
+      );
+      
+      
+      if (isNonInitVariableDeclarator) {
+         replacement = t.variableDeclarator(path.node.id, replacement);
+      }
+      
+      if (jsxReplacementType === "containerWrap") {
+         replacement = t.jsxExpressionContainer(replacement);
+      }
+      
+      path.replaceWith(replacement);
+      path.node.loc = path.node.loc ?? nodeLoc;
+      
+      
    }
    
    function wrapProgramScope(path) {
@@ -719,10 +737,10 @@ export default function BabeAutoLogEverything(
       path.node.body.unshift(
          t.variableDeclaration("const", [
             t.variableDeclarator(
-               paramsIdentifier, t.thisExpression(),
+               paramsIdentifier, t.identifier('window'),
             )
          ]),
-         t.expressionStatement(makeEnterCall(uid, ScopeTypes.P))
+         t.expressionStatement(makeEnterCall(uid, ScopeTypes.P, paramsIdentifier))
       );
       !disableProgramScopeExit &&   // alValueParamNumber
       path.node.body.push(t.expressionStatement(
@@ -742,8 +760,16 @@ export default function BabeAutoLogEverything(
    }
    
    function wrapFunctionScope(path) {
+      const expressionIdNode = t.stringLiteral(`${registerExpression(path)}`);
       const uid = getScopeUID(path);
       const paramsIdentifier = makeParamsIdentifier(uid);
+      const functionIdNode =
+         path.isFunctionDeclaration() ?
+            path.node.id
+            : path.isMethod() ?
+               t.memberExpression(t.thisExpression(), path.node.key)
+               : undefinedIdentifier;
+      //console.log("F", functionIdNode, path, uid, path);
       wrapFunctionParams(path, paramsIdentifier);
       let superI = -1;
       if (path.isClassMethod() && path.scope.block.kind === "constructor") {
@@ -769,16 +795,39 @@ export default function BabeAutoLogEverything(
       }
       
       const enterCallStatement = t.expressionStatement(
-         makeEnterCall(uid, ScopeTypes.F, paramsIdentifier)
+         makeEnterCall(
+            uid, ScopeTypes.F, paramsIdentifier, functionIdNode, expressionIdNode
+         )
+      );
+      
+      const enterIfStatement = t.ifStatement(
+         t.binaryExpression(
+            "===",
+            alLocatorIdentifier,
+            t.memberExpression(
+               paramsIdentifier,
+               t.numericLiteral(0),
+               true,
+               false
+            )
+         ),
+         t.returnStatement(
+            makeEnterCall(
+               uid, ScopeTypes.L, paramsIdentifier, functionIdNode, expressionIdNode
+            )
+         ),
+         enterCallStatement,
       );
       
       if (superI < 0) {
-         path.node.body.body.unshift(enterCallStatement);
+         path.node.body.body.unshift(
+            enterIfStatement //enterCallStatement
+         );
       } else {
          path.node.body.body.splice(
             superI + 1,
             0,
-            enterCallStatement
+            enterIfStatement //enterCallStatement
          );
       }
       
