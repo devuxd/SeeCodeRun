@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {StrictMode} from 'react';
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
 import {Provider} from 'react-redux';
@@ -9,12 +9,12 @@ import Index from './pages/Index';
 const {store, urlData} = configureStore(window);
 
 ReactDOM.render(
-    <React.StrictMode>
+    <StrictMode>
         <Provider store={store}>
             <Index url={urlData.url} mediaQuery={'(prefers-color-scheme: light)'}
                    mediaQueryOptions={{noSsr: true}}/>
         </Provider>
-    </React.StrictMode>,
+    </StrictMode>,
     document.querySelector('#root')
 );
 // If you want your app to work offline and load faster, you can change

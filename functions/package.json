@@ -12,16 +12,17 @@
     "logs-dev": "cross-env NODE_ENV=development & firebase use development & firebase functions:log"
   },
   "dependencies": {
-    "firebase": "^7.22.0",
-    "firebase-admin": "^9.2.0",
-    "firebase-functions": "^3.11.0",
-    "firepad": "^1.5.10"
+    "firebase": "^8.2.7",
+    "firebase-admin": "^9.5.0",
+    "firebase-functions": "^3.13.1",
+    "firepad": "^1.5.11"
   },
   "private": true,
   "devDependencies": {
-    "cross-env": "^7.0.2"
+    "cross-env": "^7.0.3"
   },
   "engines": {
-    "node": "10"
+    "node": ">=10",
+    "npm": ">=7"
   }
 }

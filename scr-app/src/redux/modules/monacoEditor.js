@@ -1,6 +1,6 @@
 import {ofType} from 'redux-observable';
 import {zip} from 'rxjs';
-import {concatMap, startWith, mapTo, filter} from 'rxjs/operators';
+import {concatMap, filter, mapTo, startWith} from 'rxjs/operators';
 
 import {CONFIGURE_MONACO_MODELS_FULFILLED} from './monaco';
 
@@ -128,12 +128,18 @@ export const monacoEditorsReducer =
 export const mountedEditorEpic = (action$, state$, {appManager}) =>
     zip(
         action$.pipe(ofType(MOUNT_EDITOR_FULFILLED)),
-        action$.pipe(ofType(CONFIGURE_MONACO_MODELS_FULFILLED, LOAD_MONACO_EDITOR_FULFILLED)),
+        action$.pipe(
+            ofType(
+                CONFIGURE_MONACO_MODELS_FULFILLED,
+                LOAD_MONACO_EDITOR_FULFILLED
+            )
+        ),
     ).pipe(
         concatMap(actions => {
                 const action = actions[0];
-                return appManager
-                    .observeConfigureMonacoEditor(action.editorId, action.editorHooks)
+                return appManager.observeConfigureMonacoEditor(
+                    action.editorId, action.editorHooks
+                );
             }
         )
     );
@@ -141,9 +147,9 @@ export const mountedEditorEpic = (action$, state$, {appManager}) =>
 export const monacoEditorsEpic = (action$, state$) =>
     action$.pipe(
         ofType(LOAD_MONACO_EDITOR_FULFILLED),
-        filter(() =>
-            (state$.value.monacoEditorsReducer.monacoEditorsLoaded ===
-                state$.value.monacoEditorsReducer.monacoEditorsToLoad)
+        filter(() => (
+            state$.value.monacoEditorsReducer.monacoEditorsLoaded ===
+            state$.value.monacoEditorsReducer.monacoEditorsToLoad)
         ),
         mapTo(loadMonacoEditorsFulfilled()),
         startWith(loadMonacoEditors())

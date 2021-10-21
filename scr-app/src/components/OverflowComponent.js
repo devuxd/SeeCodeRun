@@ -1,8 +1,8 @@
-import React, {PureComponent, createRef} from 'react';
+import React, {createRef, PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core/styles';
-import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import {withStyles} from '@mui/styles';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 //source:
 // https://raw.githubusercontent.com/
@@ -208,27 +208,22 @@ const styles = theme => ({
             position: 'relative',
             overflow: 'hidden',
             paddingBottom: 0,
-            marginBottom: theme.spacing(-1),
         },
         rootY: {
             position: 'relative',
             overflow: 'hidden',
             paddingRight: 0,
-            marginRight: theme.spacing(-1),
         },
         rootBoth: {
             position: 'relative',
             overflow: 'hidden',
             paddingBottom: 0,
-            marginBottom: theme.spacing(-1),
             paddingRight: 0,
-            marginRight: theme.spacing(-1),
         },
         rootXScrolled: {
             position: 'relative',
             overflow: 'hidden',
             paddingBottom: 0,
-            marginBottom: theme.spacing(-1),
             borderLeft: `1px dotted ${theme.palette.text.secondary}`,
             borderRight: `1px dotted ${theme.palette.text.secondary}`,
         },
@@ -236,7 +231,6 @@ const styles = theme => ({
             position: 'relative',
             overflow: 'hidden',
             paddingRight: 0,
-            marginRight: theme.spacing(-1),
             borderTop: `1px dotted ${theme.palette.text.secondary}`,
             borderBottom: `1px dotted ${theme.palette.text.secondary}`,
         },
@@ -244,16 +238,13 @@ const styles = theme => ({
             position: 'relative',
             overflow: 'hidden',
             paddingBottom: 0,
-            marginBottom: theme.spacing(-1),
             paddingRight: 0,
-            marginRight: theme.spacing(-1),
             border: `1px dotted ${theme.palette.text.secondary}`,
         },
         rootXScrollEnd: {
             position: 'relative',
             overflow: 'hidden',
             paddingBottom: 0,
-            marginBottom: theme.spacing(-1),
         },
         rootYScrollEnd: {
             position: 'relative',
@@ -265,7 +256,7 @@ const styles = theme => ({
             position: 'relative',
             overflow: 'hidden',
             paddingBottom: 0,
-            marginBottom: theme.spacing(-1),
+            marginBottom: theme.spacing(-2),
             paddingRight: 0,
             marginRight: theme.spacing(-1),
         },
@@ -274,8 +265,8 @@ const styles = theme => ({
             color: theme.palette.text.secondary,
             backgroundColor: 'inherit',
             position: 'absolute',
-            top: '50%',
-            marginTop: theme.spacing(-1.5),
+            top: theme.spacing(2.5),
+            marginTop: theme.spacing(-2),
             right: theme.spacing(0.5),
             marginRight: theme.spacing(-0.5),
             padding: theme.spacing(0.25),
@@ -297,8 +288,8 @@ const styles = theme => ({
             zIndex: 1,
             backgroundColor: theme.palette.background.paper,
             position: 'absolute',
-            top: '50%',
-            marginTop: theme.spacing(-1.5),
+            top: theme.spacing(2.5),
+            marginTop: theme.spacing(-2),
             right: theme.spacing(0.5),
             marginRight: theme.spacing(-0.5),
             borderRadius: '50%',
@@ -326,8 +317,8 @@ const styles = theme => ({
             color: theme.palette.text.secondary,
             backgroundColor: 'inherit',
             position: 'absolute',
-            top: '50%',
-            marginTop: theme.spacing(-1.5),
+            top: theme.spacing(2.5),
+            marginTop: theme.spacing(-2),
             left: theme.spacing(0.5),
             marginLeft: theme.spacing(-0.5),
             padding: theme.spacing(0.25),
@@ -349,8 +340,8 @@ const styles = theme => ({
             zIndex: 1,
             backgroundColor: theme.palette.background.paper,
             position: 'absolute',
-            top: '50%',
-            marginTop: theme.spacing(-1.5),
+            top: theme.spacing(2.5),
+            marginTop: theme.spacing(-2),
             left: theme.spacing(0.5),
             marginLeft: theme.spacing(-0.5),
             borderRadius: '50%',

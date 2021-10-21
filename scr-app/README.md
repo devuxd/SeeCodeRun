@@ -59,7 +59,6 @@ scr-app/
     containers/
     pages/
       Index.js
-      Index.test.js
     redux/
       modules/
     seecoderun/

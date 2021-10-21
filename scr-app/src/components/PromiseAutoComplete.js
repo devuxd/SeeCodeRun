@@ -4,8 +4,8 @@ import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import {matchSorter} from 'match-sorter';
 
-import Autocomplete from '@material-ui/core/Autocomplete';
-import Popper from '@material-ui/core/Popper';
+import Autocomplete from '@mui/material/Autocomplete';
+import Popper from '@mui/material/Popper';
 
 export default function PromiseAutoComplete({
                                                 defaultValue = '',
@@ -42,7 +42,7 @@ export default function PromiseAutoComplete({
         return () => {
             active = false;
         };
-    }, [loading]);
+    }, [loading, getOptionsPromise]);
 
     useEffect(() => {
         if (!open) {
@@ -65,7 +65,7 @@ export default function PromiseAutoComplete({
                 </li>
             );
         },
-        [open]);
+        []);
 
     const onChange = useCallback((event, newValue, reason) => {
             const option = newValue ? newValue.inputValue ? {
@@ -165,4 +165,3 @@ export default function PromiseAutoComplete({
         ;
 
 }
-

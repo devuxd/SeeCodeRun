@@ -1,11 +1,11 @@
 import React, {useState} from 'react';
-import {withStyles} from '@material-ui/core/styles';
-import CloseIcon from '@material-ui/icons/Close';
-// import WarningIcon from '@material-ui/icons/Warning';
-import ErrorIcon from '@material-ui/icons/Error';
-import Button from '@material-ui/core/Button';
-import Snackbar from '@material-ui/core/Snackbar';
-import Slide from '@material-ui/core/Slide';
+import {withStyles} from '@mui/styles';
+import CloseIcon from '@mui/icons-material/Close';
+// import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
+import Slide from '@mui/material/Slide';
 
 function TransitionUp(props) {
     return <Slide {...props} direction="up"/>;
@@ -15,7 +15,7 @@ function TransitionDown(props) {
     return <Slide {...props} direction="down"/>;
 }
 
-const styles = (theme) => ({
+const styles = () => ({
     snackbar: {},
     snackbarContent: {
         maxWidth: 'inherit',

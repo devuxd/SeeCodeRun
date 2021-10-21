@@ -1,62 +1,20 @@
-import React, {Component} from 'react';
-import Slider from '@material-ui/core/Slider';
-import PropTypes from "prop-types";
-import {withStyles} from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
-import {alpha, darken} from '@material-ui/core/styles/colorManipulator';
+import React, {useCallback,} from 'react';
+import Slider from '@mui/material/Slider';
+import PropTypes from 'prop-types';
+import {
+    darken,
+    styled,
+} from '@mui/material/styles';
+import { withStyles } from '@mui/styles';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
 
 export const formatBranchValue = (aValue = '-', max = '-') => {
-    const value = `${'0'.repeat(max.toString().length - aValue.toString().length)}${aValue}`;
+    const value = `${
+        '0'.repeat(max.toString().length - aValue.toString().length)
+    }${aValue}`;
     return `${value}/${max}`;
 };
-
-const PrimarySlider = withStyles(theme => ({
-    root: {
-        color: theme.palette.primary.main,
-    },
-    thumb: {
-        height: 8,
-        width: 8,
-        marginTop: -3,
-        marginLeft: -4,
-        '&:hover, &$focusVisible': {
-            boxShadow: `0px 0px 0px 6px ${alpha(theme.palette.primary.main, 0.16)}`,
-            '@media (hover: none)': {
-                boxShadow: 'none',
-            },
-        },
-        '&$active': {
-            boxShadow: `0px 0px 0px 9px ${alpha(theme.palette.primary.main, 0.16)}`,
-        },
-    },
-    active: {},
-    focusVisible: {},
-}))(Slider);
-
-const SecondarySlider = withStyles(theme => ({
-    root: {
-        color: theme.palette.secondary.main,
-    },
-    thumb: {
-        height: 8,
-        width: 8,
-        marginTop: -3,
-        marginLeft: -4,
-        '&:hover, &$focusVisible': {
-            boxShadow: `0px 0px 0px 6px ${alpha(theme.palette.secondary.main, 0.16)}`,
-            '@media (hover: none)': {
-                boxShadow: 'none',
-            },
-        },
-        '&$active': {
-            boxShadow: `0px 0px 0px 9px ${alpha(theme.palette.secondary.main, 0.16)}`,
-        },
-    },
-    active: {},
-    focusVisible: {},
-}))(Slider);
-
 
 const styles = theme => ({
     root: {
@@ -66,34 +24,55 @@ const styles = theme => ({
         paddingLeft: 14,
         paddingRight: 14,
     },
-    text: {
-        fontWeight: 'bold',
-    },
 });
 
-const BranchNavigator = ({
-                             classes, min, max, value,
-                             handleSliderChange, handleSliderChangeCommitted,
-                             color, hideLabel, onMouseEnter, onMouseLeave
-                         }) => {
-    const CustomSlider = color === 'primary' ? PrimarySlider : SecondarySlider;
-    const [v, sv] = React.useState(0);
+const SecondarySlider = styled(Slider)(
+    ({theme}) => ({
+            color: theme.palette.secondary.main,
+            ':hover': {
+                color: darken(theme.palette.secondary.main, 0.2)
+            }
+        }
+    )
+);
 
-    React.useEffect(() => {
-           v && handleSliderChange(null, v);
-        },
-        [v, handleSliderChange]);
+const SliderContainer = withStyles(styles)(
+    ({classes, ...rest}) => (
+        <Paper
+            className={classes.root}
+            elevation={2}
+            {...rest}
+        />
+    )
+);
+
+const BranchNavigator = (
+    {
+        min, max, value,
+        showLabel, color = 'primary',
+        handleSliderChange,
+        SliderProps = {},
+        ...rest
+    }
+) => {
+
+    const CustomSlider = color === 'primary' ? Slider : SecondarySlider;
+
+    const onChange = useCallback(
+        (event, newValue) => (
+            newValue !== value && handleSliderChange(event, newValue)
+        ),
+        [value, handleSliderChange]
+    );
 
     return (
-        <Paper className={classes.root}
-               elevation={2}
-               onMouseEnter={onMouseEnter}
-               onMouseLeave={onMouseLeave}
+        <SliderContainer
+            {...rest}
         >
-            {hideLabel ?
-                null
-                : <Typography
-                    className={classes.text}>{formatBranchValue(value, max)}</Typography>
+            {showLabel &&
+            <Typography>
+                {formatBranchValue(value, max)}
+            </Typography>
             }
             <CustomSlider
                 aria-label="branch navigator slider"
@@ -101,20 +80,11 @@ const BranchNavigator = ({
                 step={1}
                 min={min}
                 max={max}
-                // value={value}
-                // onChange={handleSliderChange}
-                // onChangeCommitted={handleSliderChange}
-
-                // min={1}
-                // max={10}
-                // defaultValue={1}
-
-                // defaultValue={value}
-
-                value={v}
-                onChange={(e, v) => sv(v)}
+                value={value}
+                onChange={onChange}
+                {...SliderProps}
             />
-        </Paper>
+        </SliderContainer>
     );
 
 };
@@ -123,12 +93,10 @@ BranchNavigator.propTypes = {
     min: PropTypes.number.isRequired,
     max: PropTypes.number.isRequired,
     value: PropTypes.number.isRequired,
+    color: PropTypes.string,
     handleSliderChange: PropTypes.func.isRequired,
     handleSliderChangeCommitted: PropTypes.func,
-    hideLabel: PropTypes.bool
+    showLabel: PropTypes.bool
 };
 
-export default React.memo(withStyles(styles)(BranchNavigator));
-
-
-
+export default BranchNavigator;
