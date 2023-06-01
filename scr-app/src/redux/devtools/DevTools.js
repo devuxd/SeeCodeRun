@@ -1,8 +1,8 @@
 import React from 'react';
-import { createDevTools } from '@redux-devtools/core';
-import LogMonitor from '@redux-devtools/log-monitor';
-import SliderMonitor from '@redux-devtools/slider-monitor';
-import DockMonitor from '@redux-devtools/dock-monitor';
+import {createDevTools} from '@redux-devtools/core';
+import {LogMonitor} from '@redux-devtools/log-monitor';
+import {SliderMonitor} from '@redux-devtools/slider-monitor';
+import {DockMonitor} from '@redux-devtools/dock-monitor';
 
 export default createDevTools(
    <DockMonitor changeMonitorKey="ctrl-m"
@@ -15,6 +15,6 @@ export default createDevTools(
                   expandActionRoot={false}
                   hideMainButtons={true}
       />
-      <SliderMonitor />
+      <SliderMonitor/>
    </DockMonitor>
 );

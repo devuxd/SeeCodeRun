@@ -6,7 +6,7 @@ import {
    configureCreateMonacoRange,
    configureMonacoRangeToClassName
 } from './scrUtils';
-import {configureLocToMonacoRange} from 'monaco-jsx-highlighter';
+
 import './LiveExpressionWidgetProvider.css';
 import {MonacoExpressionClassNames} from '../themes';
 
@@ -35,7 +35,11 @@ class LiveExpressionWidgetProvider {
       
       this.contentWidgetPositionPreference =
          [this.monaco.editor.ContentWidgetPositionPreference.BELOW];
-      this.locToMonacoRange = configureLocToMonacoRange(this.monaco);
+      const a = async ()=>{
+         const {configureLoc2Range} = await import ('monaco-jsx-highlighter');
+         this.locToMonacoRange = configureLoc2Range(this.monaco);
+      };
+      a();
       this.createMonacoRange = configureCreateMonacoRange(this.monaco);
       this.monacoRangeToClassName = configureMonacoRangeToClassName(`${editorId}-r`);
       this.editorId = editorId;
@@ -104,6 +108,7 @@ class LiveExpressionWidgetProvider {
    count = 0;
    
    widgetize({ast}) {
+      console.log("here");
       let hasDecoratorIdsChanged = true;
       let success = true;
       try {

@@ -1,4 +1,5 @@
 import React, {
+   useRef,
    useCallback,
    useEffect,
    useLayoutEffect,
@@ -95,8 +96,13 @@ const GraphicalLocator = ({
                              },
                           }) => {
    const [style, setStyle] = useState(getStyle);
+   const ridRef = useRef(null);
    const onResize = useCallback((/*entry*/) => {
-      setStyle(getStyle());
+      cancelAnimationFrame(ridRef.current);
+      ridRef.current = requestAnimationFrame(() => {
+         setStyle(getStyle());
+      });
+      
    }, [setStyle, getStyle]);
    const [resizeObserver] = useState(
       () => (observeResizes && WindowResizeObserver &&

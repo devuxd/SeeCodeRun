@@ -1,4 +1,8 @@
 import {
+   forwardRef,
+   useMemo,
+} from 'react';
+import {
    StyledEngineProvider,
    ThemeProvider,
    CssBaseline,
@@ -7,11 +11,6 @@ import {
 import {
    createTheme,
 } from '@mui/material/styles';
-
-import React, {
-   forwardRef,
-   useMemo,
-} from 'react';
 
 import Inspector from 'react-inspector';
 import {withStyles} from '@mui/styles';
@@ -94,9 +93,9 @@ const styles = theme => ({
    },
 });
 
-const DefaultRow = ({index, style, data}) => {
+const DefaultRow = ({index, data}) => {
    const inspector = <Inspector
-      data={{height: data.itemSize(index), ...data.items[index], ...style}}/>;
+      data={data.items[index]}/>;
    return <Row>{inspector}</Row>;
 };
 
@@ -105,9 +104,9 @@ const StyledInfiniteStickyList = withStyles(styles)(InfiniteStickyList);
 
 export const InfiniteStickyListWithInspector = (
    {
-      height,
-      width,
-      itemsSize,
+      height = 800,
+      widthPercentage = 100,
+      itemsSize = 200,
    }
 ) => {
    const defaultItems = new Array(itemsSize)
@@ -154,7 +153,7 @@ export const InfiniteStickyListWithInspector = (
             <CssBaseline/>
             <div style={{
                height,
-               width,
+               width: `${widthPercentage}%`,
             }}>
                <StyledInfiniteStickyList {...defaultProps}/>
             </div>
@@ -166,23 +165,25 @@ export const InfiniteStickyListWithInspector = (
 export default {
    title: 'InfiniteStickyList',
    component: InfiniteStickyListWithInspector,
+   args: {
+      height: 800,
+      widthPercentage: 100,
+      itemsSize: 200,
+   },
    argTypes: {
       height: {
          control: {
-            type: 'range', min: 400, max: 1200, step: 50
+            type: 'range', min: 400, max: 1200, step: 50,
          },
-         defaultValue: 800,
+      },
+      widthPercentage: {
+         control: {
+            type: 'range', min: 0, max: 100, step: 1,
+         },
       },
       itemsSize: {
          control: {
-            type: 'range', min: 0, max: 999999, step: 5
-         },
-         defaultValue: 200,
-      },
-      width: {
-         defaultValue: "100%",
-         control: {
-            type: {name: 'string', required: true},
+            type: 'range', min: 0, max: 999999, step: 10,
          },
       },
    },

@@ -14,12 +14,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const REQUEST_TIMEOUT_MS = 5000;
-const SERVER_TIMESTAMP = admin.database.ServerValue.TIMESTAMP;
+const SERVER_TIMESTAMP = ()=>admin.database.ServerValue.TIMESTAMP;
 
 
 const dataBaseRoot = '/scr2';
-const defaultPastebinScheme = {
-    creationTimestamp: SERVER_TIMESTAMP,
+const defaultPastebinScheme = ()=>({
+    creationTimestamp: SERVER_TIMESTAMP(),
     firecos: 0, //history on each child  handled by Firepad: html, js, css
     search: 0,
     chat: 0,
@@ -29,7 +29,7 @@ const defaultPastebinScheme = {
         children: 0
     },
     users: 0
-};
+});
 
 const app = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -44,7 +44,7 @@ const databaseRootRef = app.database().ref(dataBaseRoot);
 // Data functions
 const makeNewPastebin = onComplete => {
     return databaseRootRef
-        .push(defaultPastebinScheme, onComplete);
+        .push(defaultPastebinScheme(), onComplete);
 };
 
 const makeNewPastebinId = () => {
@@ -119,7 +119,7 @@ const copyPastebinById = (parentPastebinId, res, pastebinResponse) => {
         databaseRootRef.child(`${childPastebinId}/`);
 
     const changeData = data => {
-        data.creationTimestamp = SERVER_TIMESTAMP;
+        data.creationTimestamp = SERVER_TIMESTAMP();
         if (!pastebinResponse.copyUsers) {
             data.users = {};
         }
@@ -155,7 +155,7 @@ const copyPastebinById = (parentPastebinId, res, pastebinResponse) => {
             });
         } else {
             sourceReference.child('shares/children')
-                .push({childPastebinId: childPastebinId, timestamp: SERVER_TIMESTAMP},
+                .push({childPastebinId: childPastebinId, timestamp: SERVER_TIMESTAMP()},
                     error => {
                         if (error) {
                             onError({

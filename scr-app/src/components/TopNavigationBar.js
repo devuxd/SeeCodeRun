@@ -12,6 +12,7 @@ import CloudOffIcon from '@mui/icons-material/CloudOff';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import FormGroup from '@mui/material/FormGroup';
@@ -21,7 +22,6 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {themeTypes} from '../themes';
 import TraceToolbar from './TraceToolbar';
 
-export const APP_BAR_HEIGHT = 48;
 let iconStyle = {};
 const scrSvg = {};
 const aStyle = {};
@@ -48,14 +48,14 @@ const styles = (theme) => {
       
       return {
          appCompact: {
-            minHeight: APP_BAR_HEIGHT,
+            minHeight: theme.appUnits.appBarHeight,
             paddingLeft: theme.spacing(1),
             paddingRight: theme.spacing(1),
          },
          scrIconSticky: {
             position: 'absolute',
-            top: 0,
-            left: 0,
+            top: 2,
+            left: 4,
             zIndex: theme.zIndex.snackbar,
          },
          iconButton: {
@@ -174,7 +174,9 @@ class TopNavigationBar extends PureComponent {
          shareAnchorEl, shareUrl, handleShareMenu, handleShareClose,
          shareClick, shareClipboardClick,
          resetLayoutClick,
-         MenuProps
+         MenuProps,
+         demo,
+         handleClickDemo
       } = this.props;
       
       const shareOpen = !!shareAnchorEl;
@@ -246,6 +248,16 @@ class TopNavigationBar extends PureComponent {
                      title={"Share playground"}
                   >
                      <ShareIcon style={iconStyle}/>
+                  </IconButton>
+   
+                  <IconButton
+                     aria-owns={shareOpen ? 'menu-appbar' : null}
+                     aria-haspopup="true"
+                     onClick={handleClickDemo}
+                     color={demo ? "secondary" : "default"}
+                     title={"seeCode.rum Demo"}
+                  >
+                     <HelpRoundedIcon style={iconStyle}/>
                   </IconButton>
                   <Menu
                      id="menu-appbar"
@@ -427,7 +439,10 @@ TopNavigationBar.propTypes = {
    classes: PropTypes.object.isRequired,
    switchTheme: PropTypes.func.isRequired,
    themeType: PropTypes.string.isRequired,
-   MenuProps: PropTypes.object.isRequired
+   MenuProps: PropTypes.object.isRequired,
+   demo: PropTypes.bool.isRequired,
+   handleClickDemo: PropTypes.func.isRequired,
+   
 };
 
 TopNavigationBar.defaultProps = {

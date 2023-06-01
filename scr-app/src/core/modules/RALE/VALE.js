@@ -1,16 +1,14 @@
 import React, {
-   useRef, useMemo, useCallback, useEffect, useState, useContext,
+    useRef, useMemo, useCallback, useEffect, useState, useContext,
 } from 'react';
-/** @jsxImportSource @emotion/react */
-import {jsx, css} from '@emotion/react';
 import PropTypes from 'prop-types';
 import Slider from '@mui/material/Slider';
 import Tooltip, {tooltipClasses} from '@mui/material/Tooltip';
 import Button from '@mui/material/Button';
 
 import {
-   darken,
-   styled,
+    darken,
+    styled,
 } from '@mui/material/styles';
 import {withStyles} from '@mui/styles';
 import Paper from '@mui/material/Paper';
@@ -19,323 +17,548 @@ import Input from '@mui/material/Input';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Portal from '@mui/material/Portal';
+import CheckIcon from '@mui/icons-material/Check';
+import ClearIcon from '@mui/icons-material/Clear';
+
+import PackageVariant from 'mdi-material-ui/PackageVariant';
+// import PackageVariantCheck from 'mdi-material-ui/PackageVariantCheck';
+// import PackageVariantClosed from 'mdi-material-ui/PackageVariantClosed';
 
 import {FocusBox} from "../../../common/UI";
-import {ScopeTypes} from "../ALE";
+import {LiveZoneDecorationStyles, ScopeTypes} from "../ALE";
 import {StickyAction} from "../../../components/StickyAction";
 import ALEInspector from "./ALEInspector";
 
 
 export const formatBlockValue = (aValue = '-', max = '-') => {
-   return `${
-      '0'.repeat(max.toString().length - aValue.toString().length)
-   }${aValue}`;
+    return `${
+        '0'.repeat(max.toString().length - aValue.toString().length)
+    }${aValue}`;
 };
 
 const SliderContainer = styled(Paper)(({theme}) => ({
-   width: theme.spacing(50), //todo: make size relative to editor width
-   maxWidth: theme.spacing(50),
-   height: '100%',
-   paddingLeft: theme.spacing(),
-   paddingRight: theme.spacing(),
+    width: theme.spacing(50), //todo: make size relative to editor width
+    maxWidth: theme.spacing(50),
+    height: '100%',
+    paddingLeft: theme.spacing(),
+    paddingRight: theme.spacing(),
 }));
 
 const SliderPropsDefault = {};
 const PaperPropsDefault = {elevation: 0, square: true, variant: "outlined"};
 
 const BlockNavigator = (
-   {
-      min,
-      max,
-      value,
-      showLabel,
-      color = 'primary',
-      handleSliderChange,
-      SliderProps = SliderPropsDefault,
-      PaperProps = PaperPropsDefault,
-      ...rest
-   }
+    {
+        min,
+        max,
+        value,
+        showLabel,
+        color = 'primary',
+        handleSliderChange,
+        SliderProps = SliderPropsDefault,
+        PaperProps = PaperPropsDefault,
+        ...rest
+    }
 ) => {
-   const sliderSx = useMemo(
-      () => ({color: `${color ?? 'primary'}.main`}),
-      [color]
-   );
-   const [isSticky, setIsSticky] = useState(false);
-   const handleChangeIsSticky = useCallback(
-      () => setIsSticky(isSticky => !isSticky),
-      []
-   );
-   
-   const [onChange, handleInputChange, handleBlur] = useMemo(
-      () => {
-         const onChange = (event, newValue) => (
-            newValue !== value && handleSliderChange(event, newValue)
-         );
-         const handleInputChange = (event) => {
-            const newValue = (event.target.value === '' ? '' : Number(event.target.value));
-            !isNaN(newValue) && handleSliderChange(event, newValue);
-         };
-         const handleBlur = (event) => {
-            if (value < min) {
-               handleSliderChange(event, min);
-            } else if (value > max) {
-               handleSliderChange(event, max);
-            }
-         };
-         
-         return [onChange, handleInputChange, handleBlur];
-      },
-      [value, handleSliderChange]
-   );
-   
-   const inputProps = {
-      step: 1,
-      min,
-      max,
-      type: 'number',
-      'aria-labelledby': "branch-slider",
-   };
-   
-   return (
-      <SliderContainer
-         {...PaperProps}
-         {...rest}
-      >
-         <Grid container spacing={2} alignItems="center">
-            <Grid item>
-               <StickyAction
-                  isSticky={isSticky}
-                  onStickyChange={handleChangeIsSticky}
-               />
+    const sliderSx = useMemo(
+        () => ({color: `${color ?? 'primary'}.main`}),
+        [color]
+    );
+    const [isSticky, setIsSticky] = useState(false);
+    const handleChangeIsSticky = useCallback(
+        () => setIsSticky(isSticky => !isSticky),
+        []
+    );
+
+    const [onChange, handleInputChange, handleBlur] = useMemo(
+        () => {
+            const onChange = (event, newValue) => (
+                newValue !== value && handleSliderChange(event, newValue)
+            );
+            const handleInputChange = (event) => {
+                const newValue = (event.target.value === '' ? '' : Number(event.target.value));
+                !isNaN(newValue) && handleSliderChange(event, newValue);
+            };
+            const handleBlur = (event) => {
+                if (value < min) {
+                    handleSliderChange(event, min);
+                } else if (value > max) {
+                    handleSliderChange(event, max);
+                }
+            };
+
+            return [onChange, handleInputChange, handleBlur];
+        },
+        [value, handleSliderChange]
+    );
+
+    const inputProps = {
+        step: 1,
+        min,
+        max,
+        type: 'number',
+        'aria-labelledby': "branch-slider",
+    };
+
+    return (
+        <SliderContainer
+            {...PaperProps}
+            {...rest}
+        >
+            <Grid container spacing={2} alignItems="center">
+                <Grid item>
+                    <StickyAction
+                        isSticky={isSticky}
+                        onStickyChange={handleChangeIsSticky}
+                    />
+                </Grid>
+                <Grid item xs>
+                    <Slider
+                        sx={sliderSx}
+                        aria-label="branch navigator slider"
+                        valueLabelDisplay="auto"
+                        step={1}
+                        min={min}
+                        max={max}
+                        value={value}
+                        onChange={onChange}
+                        {...SliderProps}
+                        aria-labelledby="branch-slider"
+                    />
+                </Grid>
+                <Grid item>
+                    <Input
+                        value={value}
+                        variant="filled"
+                        size="small"
+                        onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        inputProps={inputProps}
+                        endAdornment={
+                            <InputAdornment position="end">
+                                | {max}
+                            </InputAdornment>
+                        }
+                    />
+                </Grid>
             </Grid>
-            <Grid item xs>
-               <Slider
-                  sx={sliderSx}
-                  aria-label="branch navigator slider"
-                  valueLabelDisplay="auto"
-                  step={1}
-                  min={min}
-                  max={max}
-                  value={value}
-                  onChange={onChange}
-                  {...SliderProps}
-                  aria-labelledby="branch-slider"
-               />
-            </Grid>
-            <Grid item>
-               <Input
-                  value={value}
-                  variant="filled"
-                  size="small"
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  inputProps={inputProps}
-                  endAdornment={
-                     <InputAdornment position="end">
-                        | {max}
-                     </InputAdornment>
-                  }
-               />
-            </Grid>
-         </Grid>
-      </SliderContainer>
-   );
-   
+        </SliderContainer>
+    );
+
 };
 
 BlockNavigator.propTypes = {
-   min: PropTypes.number.isRequired,
-   max: PropTypes.number.isRequired,
-   value: PropTypes.number.isRequired,
-   color: PropTypes.string,
-   handleSliderChange: PropTypes.func.isRequired,
-   handleSliderChangeCommitted: PropTypes.func,
-   showLabel: PropTypes.bool
+    min: PropTypes.number.isRequired,
+    max: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+    color: PropTypes.string,
+    handleSliderChange: PropTypes.func.isRequired,
+    handleSliderChangeCommitted: PropTypes.func,
+    showLabel: PropTypes.bool
 };
 
 const NavigatorTooltip = styled(({className, ...props}) => (
-   <Tooltip {...props} classes={{popper: className}}/>
+    <Tooltip {...props} classes={{popper: className}}/>
 ))((/*{theme}*/) => ({
-   [`& .${tooltipClasses.tooltip}`]: {
-      // backgroundColor: theme.palette.background.paper,
-      backgroundColor: 'transparent',
-      maxWidth: "none",
-      border: 'none',
-      padding: 0,
-      margin: 0,
-      paddingBottom: 4,
-   },
+    [`& .${tooltipClasses.tooltip}`]: {
+        // backgroundColor: theme.palette.background.paper,
+        backgroundColor: 'transparent',
+        maxWidth: "none",
+        border: 'none',
+        padding: 0,
+        margin: 0,
+        paddingBottom: 4,
+    },
 }));
 
 
 const buttonRootContainedStyle = {
-   lineHeight: 1,
-   fontSize: 9,
-   maxHeight: 14 - 1,
-   minWidth: 0,
-   minHeight: 0,
-   paddingTop: 2,
-   paddingRight: 4,
-   paddingBottom: 2,
-   paddingLeft: 2,
-   margin: 0,
-   // width: '100%',
-   height: '100%',
-   borderRadius: 0,
-   zIndex: 9999,
+    lineHeight: 1,
+    fontSize: 9,
+    maxHeight: 14 - 1,
+    minWidth: 0,
+    minHeight: 0,
+    paddingTop: 2,
+    paddingRight: 4,
+    paddingBottom: 2,
+    paddingLeft: 2,
+    margin: 0,
+    // width: '100%',
+    height: '100%',
+    borderRadius: 0,
+    zIndex: 9999,
 };
 
 const buttonRootOutlinedStyle = {
-   ...buttonRootContainedStyle,
-   // backgroundColor: 'white',
+    ...buttonRootContainedStyle,
+    // backgroundColor: 'white',
 };
 
 const NavigatorContainedButton = withStyles(() => ({
-   root: buttonRootContainedStyle,
+    root: buttonRootContainedStyle,
 }))(Button);
 
 const NavigatorOutlinedButton = withStyles(() => ({
-   root: buttonRootOutlinedStyle,
+    root: buttonRootOutlinedStyle,
 }))(Button);
 
+const liveBlockLabelDefaultStyle = {fontSize: 9};
 const LiveBlock = (
-   {
-      autoHideAbsoluteIndex,
-      tooltipProps = {
-         placement: "top-start",
-         enterDelay: 250,
-         leaveDelay: 200,
-         // open: true,
-      },
-      navigationState = {}
-   }
+    props
 ) => {
-   
-   const {
-      branchNavigator,
-      isSelected,
-      absoluteMaxNavigationIndex,
-      currentAbsoluteNavigationIndex,
-      relativeMaxNavigationIndex,
-      currentRelativeNavigationIndex,
-      currentBranchEntry,
-      currentBranches,
-      handleChangeAbsoluteSelectedBranchEntry,
-      handleChangeRelativeSelectedBranchEntry,
-      resetNavigation,
-      branchNavigatorEntry,
-   } = navigationState;
-   
-   const color = useMemo(() => {
-         return branchNavigator?.getScopeType() === ScopeTypes.F ? 'primary' : 'secondary';
-      },
-      [branchNavigator]
-   );
-   
-   const isRelative = useMemo(
-      () => {
-         // console.log(currentBranches, );
-         return !!currentBranches.find(b => b.parentBranch);
-         
-      },
-      [currentBranches]
-   );
-   
-   const variant = isRelative ? 'outlined' : 'contained';
-   
-   //  console.log('F', branchNavigator?.paths()?.length, absoluteMaxNavigationIndex, currentNavigationIndex, resetNavigation);
-   const [, _setValue] = useState(absoluteMaxNavigationIndex);
-   const value =
-      isRelative ? currentRelativeNavigationIndex ?? relativeMaxNavigationIndex
-         : currentAbsoluteNavigationIndex ?? absoluteMaxNavigationIndex
-   const max =
-      isRelative ? relativeMaxNavigationIndex
-         : absoluteMaxNavigationIndex;
-   
-   const setValueRef = useRef();
-   setValueRef.current =
-      (isRelative ?
-         handleChangeRelativeSelectedBranchEntry
-         : handleChangeAbsoluteSelectedBranchEntry) ?? _setValue;
-   const handleSliderChange = useCallback((event, newValue) => {
-      setValueRef.current(newValue);
-   }, []);
-   
-   const showNavigatorTooltip = !!absoluteMaxNavigationIndex;
-   const NavigatorButton = isRelative ?
-      NavigatorOutlinedButton : NavigatorContainedButton;
-   
-   // const isLoop
-   //todo: exit scopes
-   return (
-      // <span>
-      <NavigatorTooltip
-         key={`nt0_${showNavigatorTooltip}`}
-         title={
-            <BlockNavigator
-               color={color}
-               min={showNavigatorTooltip ? 1 : 0}
-               value={value}
-               max={max}
-               handleSliderChange={handleSliderChange}
-            />
-         }
-         
-         {...(showNavigatorTooltip ? {arrow: false} : {open: false})}
-         {...tooltipProps}
-      >
-         <div>
-            <NavigatorButton
-               variant={variant}
-               color={color}
-               //disabled={!showNavigatorTooltip}
-            >
-               <>
+    const {
+        autoHideAbsoluteIndex,
+        tooltipProps = {
+            placement: "top-start",
+            enterDelay: 250,
+            leaveDelay: 200,
+            // open: true,
+        },
+        navigationState = {},
+        labelStyle = liveBlockLabelDefaultStyle,
+        decorate,
+        isIfBlock,
+        ifBlockKey
+    } = props;
+
+    const {
+        branchNavigator,
+        isSelected,
+        absoluteMaxNavigationIndex,
+        currentAbsoluteNavigationIndex,
+        relativeMaxNavigationIndex,
+        currentRelativeNavigationIndex,
+        currentBranchEntry,
+        currentBranches,
+        handleChangeAbsoluteSelectedBranchEntry,
+        handleChangeRelativeSelectedBranchEntry,
+        resetNavigation,
+        branchNavigatorEntry,
+    } = navigationState;
+
+    const color = useMemo(() => {
+            return branchNavigator?.getScopeType() === ScopeTypes.F ? 'primary' : 'secondary';
+        },
+        [branchNavigator]
+    );
+
+    const isRelative = useMemo(
+        () => {
+            // console.log(currentBranches, );
+            return !!currentBranches.find(b => b.parentBranch);
+
+        },
+        [currentBranches]
+    );
+
+    const variant = isRelative ? 'outlined' : 'contained';
+
+    //  console.log('F', branchNavigator?.paths()?.length, absoluteMaxNavigationIndex, currentNavigationIndex, resetNavigation);
+    const [, _setValue] = useState(absoluteMaxNavigationIndex);
+    const value =
+        isRelative ? currentRelativeNavigationIndex ?? relativeMaxNavigationIndex
+            : currentAbsoluteNavigationIndex ?? absoluteMaxNavigationIndex
+    const max =
+        isRelative ? relativeMaxNavigationIndex
+            : absoluteMaxNavigationIndex;
+
+    const setValueRef = useRef();
+    setValueRef.current =
+        (isRelative ?
+            handleChangeRelativeSelectedBranchEntry
+            : handleChangeAbsoluteSelectedBranchEntry) ?? _setValue;
+    const handleSliderChange = useCallback((event, newValue) => {
+        setValueRef.current(newValue);
+    }, []);
+
+
+    // const isIfBlock = branchNavigator?.zone()?.parentType === "IfStatement";
+
+    // isIfBlock && console.log("LiveBlock", branchNavigator?.zone(), value );
+
+    const showNavigatorTooltip = !isIfBlock && !!absoluteMaxNavigationIndex;
+    const NavigatorButton = isRelative ?
+        NavigatorOutlinedButton : NavigatorContainedButton;
+
+    const divStyle = {visibility: isIfBlock ? value ? 'visible' : 'hidden' : 'visible'};
+    const label = isIfBlock ? ( //value ? labelStyle : {...labelStyle, color: "transparent"}
+        ifBlockKey === "consequent" ? <CheckIcon style={labelStyle}/> : <ClearIcon style={labelStyle}/>
+        // <Skeleton variant="circular" width={40} height={40} />
+        // null
+    ) : (
+        <>
                   <span
-                     style={{fontSize: 11}}
+                      style={{fontSize: 11}}
                   >
                  {formatBlockValue(
-                    isRelative ? currentRelativeNavigationIndex : value,
-                    max
+                     isRelative ? currentRelativeNavigationIndex : value,
+                     max
                  )}
                </span>
-                  <span
-                     style={{padding: 1, fontSize: 12}}
-                  >
+            <span
+                style={{padding: 1, fontSize: 12}}
+            >
                    |
                 </span>
-                  <span
-                     style={{fontSize: 9, paddingTop: 3}}
-                  >
+            <span
+                style={{fontSize: 9, paddingTop: 3}}
+            >
                   {max}
-                 
+
                </span>
-                  {isSelected ?
-                     <FocusBox
-                        variant={'Line'}
-                        travelValue={-0.5}
-                        scale={[1, 1, 1]}
-                     /> : null}
-               </>
-            
-            </NavigatorButton>
-         </div>
-      </NavigatorTooltip>
-   );
+            {isSelected ?
+                <FocusBox
+                    variant={'Line'}
+                    travelValue={-0.5}
+                    scale={[1, 1, 1]}
+                /> : null}
+        </>
+    );
+
+    // const isLoop
+    //todo: exit scopes
+
+    useEffect(
+        () => {
+            let undecorate = null;
+
+            const tid = setTimeout(() => {
+                undecorate = decorate?.(value);
+            }, 10);
+
+            return () => {
+                clearTimeout(tid);
+                undecorate?.(value);
+            }
+        },
+        [value, decorate]
+    );
+    return (
+        // <span>
+        <NavigatorTooltip
+            key={`nt0_${showNavigatorTooltip}`}
+            title={
+                <BlockNavigator
+                    color={color}
+                    min={showNavigatorTooltip ? 1 : 0}
+                    value={value}
+                    max={max}
+                    handleSliderChange={handleSliderChange}
+                />
+            }
+
+            {...(showNavigatorTooltip ? {arrow: false} : {open: false})}
+            {...tooltipProps}
+        >
+            <div style={divStyle}>
+                <NavigatorButton
+                    variant={variant}
+                    color={color}
+                    // disabled={!showNavigatorTooltip}
+                >
+                    {label}
+                </NavigatorButton>
+            </div>
+        </NavigatorTooltip>
+    );
 };
 
-const LiveExpression = (props) => {
-   return <ALEInspector variant="inline" {...props} />;
+const liveExpressionIconDefaultStyle = {fontSize: 9};
+const LiveExpression = ({isImport, decorate, ...props}) => {
+    const [value, setValue] = useState(0);
+    useEffect(
+        () => {
+            let undecorate = null;
+
+            const tid = setTimeout(() => {
+                undecorate = decorate?.(value);
+            }, 10);
+
+            return () => {
+                clearTimeout(tid);
+                undecorate?.(value);
+            }
+        },
+        [value, decorate]
+    );
+    // isImport && console.log(props);
+    return isImport ? (<PackageVariant style={liveExpressionIconDefaultStyle}/>) : (
+        <ALEInspector variant="inline" setValue={setValue} {...props} />);
 };
 
-const VALE = ({visible, container, variant, ...rest}) => {
-   return (<Portal container={container}>
-         {
-            visible && (variant === 'block' ? <LiveBlock {...rest} /> :
-               <LiveExpression {...rest} />)
-         }
-      </Portal>
-   );
+const Noop = () => {
+    return null;
+}
+
+const emptyState = {};
+const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentScopes, programUID, ...rest}) => {
+    const container = contentWidget.getDomNode();
+    //contentWidget?.getDomNode(),
+    // console.log("VALE",  contentWidget?.getId(), contentWidget?.locLiveZoneActiveDecoration?.syntaxFragment?.getDecorationIds(),{contentWidget, container, variant, rest});
+
+    let data = null;
+    let aleObject = null;
+    let zone = null;
+    let currentEntry = null;
+    // console.log("navigationStates", navigationStates);
+    const variant = navigationStates[key] ? 'block' : 'expression';
+    const navigationState = navigationStates[key] ?? emptyState;
+    let forceVisible = false;
+    const isImport = contentWidget.locLiveZoneActiveDecoration?.isImport;
+    const isIfBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.ifBlock();
+    const ifBlockKey = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.ifBlockKey();
+
+    // (isIfBlock )&& console.log("navigationStates", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.ifBlockAlternate());//, navigationState, contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, );
+
+    if (variant === 'block') {
+        forceVisible = true;
+    } else { // expression variant
+        if (isImport) {
+            // console.log("RALE", {contentWidget, navigationState, variant});
+            forceVisible = true;
+            // data = currentEntry.getValue();
+            // aleObject = currentEntry.entry?.logValue;
+            // zone = _zone;
+        } else {
+            const {zone: _zone = {}, logValues = []} =
+            contentWidget.locLiveZoneActiveDecoration ?? {};
+
+            const {uid, type, parentType} = _zone;
+
+            // if (type === "CallExpression") {
+            //     console.log("TR>>", _zone);
+            //
+            // }
+
+
+            let isUseful = true;
+            if (parentType === 'BinaryExpression' || parentType === 'LogicalExpression') {
+                if (type !== 'BinaryExpression' && type !== 'LogicalExpression') {
+                    isUseful = false;
+                }
+            }
+
+            if (isUseful) {
+                const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();
+                const forBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlock();
+                const forBlockInit = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlockInit();
+                const expressionUpdate = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionUpdate();
+                let branchEntry = allCurrentScopes?.[uid]?.currentBranchEntry;
+
+                const branchAny = {in: 0, out: Infinity};
+                const currentBranch = (
+                        (forBlockInit ? (branchEntry?.branch ? {in: 0, out: branchEntry?.branch?.in} : branchAny) :
+                                (expressionTest || (forBlock && expressionUpdate)) ?
+                                    branchEntry?.branch ?
+                                        {in: branchEntry?.branch?.in ?? 0, out: Infinity}
+                                        : branchAny
+                                    : null
+                        )
+                    )
+                    ?? (branchEntry?.branch ?? (programUID == uid ? branchAny : null));
+
+                currentEntry = currentBranch && logValues.find(entry => {
+                    if (
+                        currentBranch.in <= entry.i &&
+                        entry.i <= currentBranch.out
+                    ) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+
+                if (currentEntry) {
+                    forceVisible = true;
+                    data = currentEntry.getValue();
+                    aleObject = currentEntry.entry?.logValue;
+                    zone = _zone;
+                }
+
+                // (expressionTest) && console.log("expressionTest", { //allCurrentScopes?.[uid]
+                //     contentWidget,
+                //     variant,
+                //     navigationState,
+                //     aleObject,
+                //     currentBranch,
+                //     currentEntry,
+                //     logValues
+                // });
+                // (forBlockInit) && console.log("forBlock", { //allCurrentScopes?.[uid]
+                //     contentWidget,
+                //     variant,
+                //     navigationState,
+                //     aleObject,
+                //     currentBranch,
+                //     currentEntry,
+                //     logValues
+                // });
+
+                // (expressionTest) && console.log("expressionTest", {contentWidget, variant, navigationState, aleObject, currentEntry});//, navigationState, contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, );
+
+
+            }
+
+
+        }
+
+    }
+
+
+    const decorate = useCallback((value = 0) => {
+        // const isImport = contentWidget.locLiveZoneActiveDecoration?.isImport;
+
+        if (isImport) {
+            // console.log("RALE", {contentWidget, navigationState});
+            contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.active, false);
+            return;
+        }
+
+        if (variant === 'block') {
+            //navigationState?.absoluteMaxNavigationIndex
+            if (value) {
+                // if(isIfBlock){
+                //     console.log("BL A isIfBlock", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget);
+                // }
+                contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.active, false, value);
+                // console.log("BL A", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget, navigationState);
+            } else {
+                // console.log("BL", contentWidget, navigationState,contentWidget.locLiveZoneActiveDecoration?.syntaxFragment);
+                contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.default, false, value);
+            }
+        } else {
+            if (value) {
+                // if(isIfBlock){
+                //     console.log("BL A isIfBlock", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget);
+                // }
+                contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.active, false, value);
+                // console.log("BL A", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget, navigationState);
+            } else {
+                // console.log("BL", contentWidget, navigationState,contentWidget.locLiveZoneActiveDecoration?.syntaxFragment);
+                contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.default, false, value);
+            }
+        }
+
+    }, [contentWidget, isImport]);
+
+    const LiveArtifact = forceVisible ? (variant === 'block' ? LiveBlock : LiveExpression) : Noop;
+
+    return (
+        <Portal container={container}>
+            <LiveArtifact
+                {...rest}
+                data={data}
+                isLoading={isLoading}
+                aleObject={aleObject}
+                zone={zone}
+                navigationState={navigationState}
+                decorate={decorate}
+                isImport={isImport}
+                isIfBlock={isIfBlock}
+                ifBlockKey={ifBlockKey}
+            />
+        </Portal>
+    );
 };
 
 export default VALE;

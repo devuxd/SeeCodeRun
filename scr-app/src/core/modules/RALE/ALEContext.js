@@ -19,12 +19,15 @@ const ALEContext = createContext({
    setAleInstance: function (aleInstance){
       this.aleInstance = aleInstance;
    },
-   activateAleInstance: ()=>{},
+   activateAleInstance: (monacoEditor, onUnsafeAct)=>{},
    locToMonacoRange: ()=>{},
    // getTheme:()=>null,
    VisualQueryManager,
 });
 
+
+
+
 export default ALEContext;
-// expaining why leaning barriers
+// explaining why leaning barriers
 // implication of current work, and topics shoudl be epaliend. Boredn implications, enumarate more directions qhere to run with it.

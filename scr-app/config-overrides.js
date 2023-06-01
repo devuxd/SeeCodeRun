@@ -1,14 +1,26 @@
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
-module.exports = (config /*, env*/) => {
-    // Monaco ESM start
-    const options = {
-        languages: [
-            'css', 'handlebars', 'html', 'javascript', 'typescript',
-            'json', 'less', 'scss', 'xml'
-        ]
-    };
-    config.plugins.unshift(new MonacoWebpackPlugin(options));
-    // Monaco ESM end
-    return config;
+module.exports = (config, /*, env*/) => {
+   // Monaco ESM start
+   const options = {
+      languages: [
+         'html', 'handlebars',
+         'css', 'less', 'scss',
+         'typescript', 'javascript',
+         'json', 'xml',
+      ]
+   };
+   
+   config.plugins = [
+      ...config.plugins,
+      new MonacoWebpackPlugin()
+   ];
+
+   // add fallback for vm module
+   config.resolve.fallback = {
+      ...config.resolve.fallback,
+      "vm": require.resolve("vm-browserify")
+   };
+   
+   return config;
 };

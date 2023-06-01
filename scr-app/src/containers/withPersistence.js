@@ -1,81 +1,123 @@
-import React, {Component, useState, useEffect} from 'react';
+import {
+   useState,
+   useEffect,
+   useRef,
+   useCallback
+} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types';
 import {configureFirecoPersistableComponent} from '../redux/modules/fireco';
 
 const mapDispatchToProps = {configureFirecoPersistableComponent};
 
-export function usePersistence(firebaseRef, defaultValue, onError) {
-    const [data, setLocalValue] = useState(defaultValue);
-    const changeData = newValue => firebaseRef.set(newValue).catch(onError);
-    useEffect(() => {
-        const onValue = (snapshot) => {
-            setLocalValue(snapshot.val());
-        };
-        firebaseRef.on('value', onValue);
-        return () => {
+//defaults to {} for data, place data within this object
+export function usePersistence(firebaseRef, onError) {
+   const [pending, setPending] = useState(null);
+   const [data, setData] = useState({});
+   const changeData = useCallback(
+      newValue => {
+         if (!firebaseRef) {
+            return setPending(newValue);
+         }
+         
+         firebaseRef.set(newValue).catch(onError);
+      },
+      [firebaseRef, onError]
+   );
+   
+   useEffect(
+      () => {
+         if (firebaseRef && pending) {
+            changeData(pending);
+            setPending(null);
+         }
+         
+         return () => null;
+      },
+      [firebaseRef, pending, changeData]
+   );
+   
+   useEffect(() => {
+         if (!firebaseRef) {
+            return () => null;
+         }
+         
+         const onValue = (snapshot) => {
+            setData(snapshot.val() ?? {});
+         };
+         
+         firebaseRef.on('value', onValue);
+         
+         return () => {
             firebaseRef.off('value', onValue);
-        };
-    }, [firebaseRef]);
-
-    return [data, changeData];
+         };
+      },
+      [firebaseRef]
+   );
+   
+   return [data, changeData];
 }
 
-let SERVER_TIMESTAMP = null;
+const WithFirecoPersistence = (DataComponent) => {
+   return ({
+              persistablePath,
+              onError,
+              configureFirecoPersistableComponent,
+              ...rest
+           }) => {
+      
+      const firebaseVarsRef = useRef({
+         firebaseRef: null,
+         serverTimestamp: () => null
+      });
+      
+      const [isPersistenceReady, setIsPersistenceReady] = useState(false);
+      
+      const onFirecoActive = useCallback(
+         (firebaseRef, serverTimestamp) => {
+            firebaseVarsRef.current = {firebaseRef, serverTimestamp};
+            setIsPersistenceReady(true);
+         },
+         []
+      );
+      
+      const {firebaseRef, serverTimestamp} = firebaseVarsRef.current;
+      
+      const [
+         data, changeData
+      ] = usePersistence(firebaseRef, onError);
+      
+      useEffect(() => {
+            if (!persistablePath || !configureFirecoPersistableComponent) {
+               return () => null;
+            }
+            
+            configureFirecoPersistableComponent(
+               persistablePath, onFirecoActive
+            );
+            
+            return () => {
+               setIsPersistenceReady(false);
+            };
+         },
+         [
+            persistablePath, configureFirecoPersistableComponent,
+            onFirecoActive
+         ]
+      );
+      
+      return <DataComponent
+         SERVER_TIMESTAMP={serverTimestamp()}
+         isPersistenceReady={isPersistenceReady}
+         data={data}
+         changeData={changeData}
+         persistablePath={persistablePath}
+         {...rest}
+      />;
+   };
+};
+
 export default function withPersistence(DataComponent) {
-
-    class WithPersistence extends Component {
-        static propTypes = {
-            persistablePath: PropTypes.string.isRequired,
-        };
-
-        static defaultProps = {};
-        state = {
-            data: null
-        };
-
-        data = {current: null};
-        firebaseRef = null;
-
-        render() {
-            this.data.current = this.state.data;
-            return <DataComponent
-                SERVER_TIMESTAMP={SERVER_TIMESTAMP} data={this.data} changeData={this.changeData} {...this.props}
-            />;
-
-        }
-
-        onValue = (snapshot) => {
-            const data = snapshot.val() || {};
-            this.setState({data});
-        };
-
-        changeData = (data) => {
-            return this.firebaseRef && this.firebaseRef.set(data);
-        };
-
-        onFirecoActive = (firebaseRef, TIMESTAMP) => {
-            this.firebaseRef = firebaseRef;
-            SERVER_TIMESTAMP = TIMESTAMP;
-            this.firebaseRef.on('value', this.onValue);
-        };
-
-        onDispose = () => {
-            this.firebaseRef && this.firebaseRef.off('value', this.onValue);
-            this.firebaseRef = null;
-        };
-
-        componentDidMount() {
-            const {persistablePath, configureFirecoPersistableComponent} = this.props;
-            persistablePath &&
-            configureFirecoPersistableComponent(persistablePath, this.onFirecoActive, this.onDispose);
-        }
-
-        componentWillUnmount() {
-            this.onDispose();
-        }
-
-    }
-
-    return connect(null, mapDispatchToProps)(WithPersistence);
+   return connect(
+      null, mapDispatchToProps)(WithFirecoPersistence(DataComponent)
+   );
 }

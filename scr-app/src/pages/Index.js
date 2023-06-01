@@ -1,4 +1,4 @@
-import React, {createRef, PureComponent} from 'react';
+import React, {createRef, PureComponent,} from 'react';
 import {compose} from 'redux';
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types';
@@ -8,41 +8,41 @@ import {takeUntil} from 'rxjs/operators';
 
 import withThemes, {ThemeContext} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
-import TopNavigationBar, {APP_BAR_HEIGHT} from '../components/TopNavigationBar';
 import Pastebin from '../containers/Pastebin';
 
-import {getEditorIds} from '../core/AppManager';
+import {editorIds} from '../core/AppManager';
 import {end$, online$} from '../utils/scrUtils';
 
-import Chat from '../containers/Chat';
 import {switchMonacoTheme} from '../redux/modules/monaco';
 import withMediaQuery from '../utils/withMediaQuery';
+import LazyChat from "../containers/LazyChat";
 
-const mapStateToProps = ({
-                            firecoReducer,
-                            pastebinReducer,
-                         }, {url}) => {
+const mapDispatchToProps = {switchMonacoTheme};
+
+const mapStateToProps = (
+   {
+      firecoReducer,
+      pastebinReducer,
+   },
+   {
+      url,
+   }
+) => {
    const {isConnected, authUser, isFirecoEditorsReady} = firecoReducer;
    const {pastebinId} = pastebinReducer;
+   
    return {
       pastebinId,
       shareUrl: pastebinId ? `${url}/#:${pastebinId}` : null,
-      authUser,
       isConnected,
       loadChat: !!authUser && isFirecoEditorsReady,
    }
 };
 
-const mapDispatchToProps = {switchMonacoTheme};
 
-let appStyle = {margin: 0};
 const styles = theme => {
-   appStyle = {
-      margin: theme.spacingUnit(1),
-      rowHeightSmall: APP_BAR_HEIGHT,
-      rowHeight: APP_BAR_HEIGHT,
-   };
-   appStyle.marginArray = [appStyle.margin, appStyle.margin];
+   const {margin} = theme.appUnits;
+   
    return {
       root: {
          display: 'block',
@@ -53,19 +53,9 @@ const styles = theme => {
          left: 0,
          minWidth: 800,
          minHeight: 600,
-         // height: '100%', // fixes unwanted scrollbars after RGL update
-         // width: '100%',
-         // overflow: 'auto',
       },
       margin: {
-         margin: appStyle.margin,
-      },
-      container: {
-         overflow: 'hidden',
-         height: '100%',
-         width: '100%',
-         margin: 0,
-         padding: 0,
+         margin,
       },
       scroller: {
          overflow: 'auto',
@@ -74,22 +64,39 @@ const styles = theme => {
          margin: 0,
          padding: 0,
       },
-      content: {
-         // overflow: 'visible',
-         // height: '100%',
-         // width: '100%',
-         // margin: 0,
-         // padding: 0,
-      }
    }
 };
 
-class Index extends PureComponent {
+const getRootContainerBottomMargin = (
+   isTopNavigationToggled, appUnits
+) => {
+   const {rowHeight, rowHeightSmall} = appUnits;
+   const {innerWidth} = global;
    
+   return (
+      isTopNavigationToggled ? 0
+         : innerWidth > 600 ? rowHeight
+            : rowHeightSmall
+   );
+};
+
+const getHeightAdjust = (
+   isTopNavigationToggled, appUnits
+) => {
+   const {margin} = appUnits;
+   
+   return (
+      isTopNavigationToggled ? margin
+         : getRootContainerBottomMargin(
+         isTopNavigationToggled, appUnits) + margin * 2
+   );
+};
+
+class Index extends PureComponent {
    constructor(props) {
       super(props);
       this.pastebinRef = createRef();
-      this.editorIds = getEditorIds();
+      this.gridRef = createRef();
    }
    
    sendNotification = (message, autoHideDuration) => {
@@ -145,7 +152,7 @@ class Index extends PureComponent {
             isChatToggled: event ?
                !prevState.isChatToggled
                : isChatToggled,
-            activateChatReason: event ? 'user' : 'system',
+            isUserAction: event ? true : prevState.activateChatReason,
          })
       );
    };
@@ -189,11 +196,31 @@ class Index extends PureComponent {
       this.resetGridLayout(layout);
    };
    
-   onHeight = (node, heightAdjust) => {
-      const {minPastebinHeight} = this.props;
-      const minHeight = minPastebinHeight || 600;
+   onHeight = () => {
+      const {minPastebinHeight, theme} = this.props;
+      const {isTopNavigationToggled} = this.state;
+      
+      const heightAdjust = getHeightAdjust(
+         isTopNavigationToggled, theme.appUnits
+      );
+      
+      const minHeight = isNaN(minPastebinHeight) ? 600 : minPastebinHeight;
       const newHeight = global.innerHeight - heightAdjust;
+      
       return Math.max(minHeight, newHeight);
+   };
+   
+   handleChangeIsOnline = isOnline => {
+      if (this.state.isOnline !== isOnline) {
+         this.setState({isOnline});
+      }
+   };
+   
+   switchMonacoTheme = () => {
+      const {themes, switchMonacoTheme} = this.props;
+      const {monacoTheme} = themes;
+      
+      return switchMonacoTheme?.(monacoTheme);
    };
    
    state = {
@@ -207,7 +234,7 @@ class Index extends PureComponent {
       isConnected: false,
       isChatToggled: false,
       chatTitle: 'Chat',
-      activateChatReason: null,
+      isUserAction: false,
    };
    
    stateSetters = {
@@ -226,32 +253,34 @@ class Index extends PureComponent {
    
    render() {
       const {
-         props, state, stateSetters,
-         pastebinRef, editorIds,
-         currentLayout, resetLayoutClick,
-         logoClick, chatClick, isNetworkOk, onHeight, setGridLayoutCallbacks,
+         props,
+         state,
+         stateSetters,
+         pastebinRef,
+         gridRef,
+         currentLayout,
+         resetLayoutClick,
+         logoClick,
+         chatClick,
+         isNetworkOk,
+         onHeight,
+         setGridLayoutCallbacks,
       } = this;
       
       const {
          classes, themes,
-         url, pastebinId, shareUrl, authUser, isConnected, loadChat,
+         url, pastebinId, shareUrl, isConnected, loadChat,
       } = props;
+      
+      const {
+         isTopNavigationToggled, isChatToggled,
+         chatTitle, isUserAction,
+      } = state;
       
       const {
          themeType, switchTheme, muiTheme
       } = themes;
       
-      const {
-         isTopNavigationToggled, isChatToggled,
-         chatTitle, activateChatReason,
-      } = state;
-      
-      const rootContainerBottomMargin = isTopNavigationToggled ? 0 :
-         global.innerWidth > 600 ? appStyle.rowHeight
-            : appStyle.rowHeightSmall;
-      
-      const heightAdjust = isTopNavigationToggled ?
-         appStyle.margin : rootContainerBottomMargin + appStyle.margin * 2;
       
       const forwardedState = {
          ...state,
@@ -259,7 +288,6 @@ class Index extends PureComponent {
          pastebinId,
          url,
          shareUrl,
-         authUser,
          isConnected,
          themeType,
          switchTheme,
@@ -270,7 +298,7 @@ class Index extends PureComponent {
             value={themes}
          >
             <SnackbarProvider
-               maxSnack={3}
+               maxSnack={2}
                preventDuplicate
             >
                <NotificationCenter {...forwardedState}/>
@@ -279,6 +307,7 @@ class Index extends PureComponent {
                   ref={pastebinRef}
                >
                   <Pastebin
+                     gridRef={gridRef}
                      muiTheme={muiTheme}
                      disableGridAutomaticEditorLayout={true}
                      isTopNavigationToggled={
@@ -289,18 +318,12 @@ class Index extends PureComponent {
                      setGridLayoutCallbacks={
                         setGridLayoutCallbacks
                      }
-                     appClasses={classes}
-                     appStyle={appStyle}
-                     measureBeforeMount={true}
+                     measureBeforeMount
                      onHeight={onHeight}
-                     heightAdjust={heightAdjust}
-                     TopNavigationBarComponent={
-                        <TopNavigationBar
-                           {...forwardedState}
-                        />
-                     }
+                     TopNavigationBarProps={forwardedState}
+                     persistablePath={"configuration"}
                   />
-                  <Chat
+                  <LazyChat
                      isTopNavigationToggled={isTopNavigationToggled}
                      logoClick={logoClick}
                      isChatToggled={isChatToggled}
@@ -311,8 +334,8 @@ class Index extends PureComponent {
                      resetLayoutClick={resetLayoutClick}
                      themeType={themeType}
                      switchTheme={switchTheme}
-                     dragConstraintsRef={pastebinRef}
-                     activateChatReason={activateChatReason}
+                     dragConstraintsRef={gridRef}
+                     isUserAction={isUserAction}
                      loadChat={loadChat}
                   />
                
@@ -321,12 +344,6 @@ class Index extends PureComponent {
          </ThemeContext.Provider>
       );
    }
-   
-   handleChangeIsOnline = isOnline => {
-      if (this.state.isOnline !== isOnline) {
-         this.setState({isOnline});
-      }
-   };
    
    componentDidMount() {
       this.online$ = online$();
@@ -350,12 +367,6 @@ class Index extends PureComponent {
       this.online$subscriber.unsubscribe();
       this.online$.pipe(takeUntil(end$()));
    }
-   
-   switchMonacoTheme = () => {
-      const {themes, switchMonacoTheme} = this.props;
-      const {monacoTheme} = themes;
-      switchMonacoTheme && switchMonacoTheme(monacoTheme);
-   }
 }
 
 Index.propTypes = {
@@ -370,7 +381,7 @@ const enhance =
    compose(
       withMediaQuery,
       withThemes,
-      withStyles(styles),
+      withStyles(styles, {withTheme: true}),
       connect(mapStateToProps, mapDispatchToProps)
    );
 export default enhance(Index);

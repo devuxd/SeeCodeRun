@@ -36,8 +36,52 @@ export const configureLocalMemo = (
    };
 };
 
+
+export const diffObjectKeysHandler = (objectA, objectB) => {
+   const result = {allKeys: {}, equal: {}, added: {}, removed: {}};
+   const diffKeys = (e, i) => {
+      result.allKeys[e] = i;
+      
+      const current = objectA[e];
+      const previous = objectB[e];
+      const values = {current, previous};
+      if (current !== previous) {
+         if (objectA.hasOwnProperty(e)) {
+            result.added[e] = values;
+         }
+         if (objectB.hasOwnProperty(e)) {
+            result.removed[e] = values;
+         }
+      } else {
+         result.equal[e] = values;
+      }
+   };
+   
+   return {result, diffKeys};
+};
+
+export function* diffObjectKeysIterator(objectA, objectB) {
+   const {result, diffKeys} = diffObjectKeysHandler(objectA, objectB);
+   
+   let i = 0;
+   for (let key in objectA) {
+      yield diffKeys(objectA[key], i++);
+   }
+   
+   for (let key in objectB) {
+      if (result.allKeys[key] > -1) {
+         continue;
+      }
+      
+      yield diffKeys(objectB[key], i++);
+   }
+   
+   return result;
+}
+
+
 // from is-dom
-export const isNode = (val, win = window) => {
+export const isNode = (val, win = global) => {
    return (!win || !val || typeof val !== 'object')
       ? false
       : (typeof win === 'object' && typeof win.Node === 'object')
@@ -167,7 +211,7 @@ const htmlEvents =
 
 //https://github.com/xyc/react-inspector/blob/master/src/
 // dom-inspector/DOMNodePreview.js
-const defaultOnCopyChild = (child, i, children )=> `${child.tagName}.${child.className}`;
+const defaultOnCopyChild = (child, i, children) => `${child.tagName}.${child.className}`;
 const newDOMElement = (element, context) => {
    const {tagName, attributes, style, dataset, children} = element;
    const domData = new ElementNode();
@@ -309,7 +353,7 @@ export const configureFindChunks =
       autoEscape,
       caseSensitive,
       isExactWord,
-      disableAdvanceMatching,
+      disableAdvanceMatching = true,
       useMatchSorter
    ) =>
       (({
@@ -407,7 +451,12 @@ export const configureFindChunks =
                   let end = regex.lastIndex
                   // We do not return zero-length matches
                   if (end > start) {
-                     chunks.push({start, end})
+                     chunks.push({
+                        searchWord,
+                        finalSearchWord,
+                        start,
+                        end
+                     });
                   }
                   
                   // Prevent browsers like Firefox from
@@ -520,6 +569,13 @@ export const decodeBabelError = (
    errorInfo.message = lines[0];
    return errorInfo;
 };
+
+export function toRawObject(classObject) {
+   return Object.keys(classObject).reduce((r, e) => {
+      r[e] = classObject[e];
+      return r;
+   }, {});
+}
 
 /* // old firebase sync before Firepad supported Monaco.
 // After any change, it submits the whole file to the server instead of the edits

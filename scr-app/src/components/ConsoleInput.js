@@ -1,4 +1,4 @@
-import React, {Component, createRef} from 'react';
+import {PureComponent, createRef} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
@@ -161,7 +161,7 @@ const getHeights = (lineCount) => {
    }
 };
 
-class ConsoleInput extends Component {
+class ConsoleInput extends PureComponent {
    constructor(props) {
       super(props);
       this.editorRef = createRef();
