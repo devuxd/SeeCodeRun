@@ -26,7 +26,7 @@ const Pastebin = (props) => {
     );
 
     return (
-        <Suspense fallback={<div>Loading Pastebin...</div>}>
+        <Suspense fallback={<h4>Loading Pastebin...</h4>}>
             <ImportedPastebin {...props}/>
         </Suspense>
     );

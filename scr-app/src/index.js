@@ -1,5 +1,8 @@
-import React, {StrictMode} from 'react';
+import React, {StrictMode, useMemo, Suspense, lazy} from 'react';
 import ReactDOM from 'react-dom';
+// import Box from '@mui/material/Box';
+// import Typography from '@mui/material/Typography';
+// import LinearProgress from '@mui/material/LinearProgress';
 // import {createRoot} from 'react-dom/client'; // causes infinite loop of set value in editors =(
 import {Provider} from 'react-redux';
 import update, {extend} from "immutability-helper";
@@ -12,15 +15,40 @@ extend("$autoArray", function (value, object) {
 });
 
 import configureStore from './redux/configureStore';
-import Index from './pages/Index';
+// import Index from './pages/Index';
 import * as serviceWorker from './serviceWorker';
 
 const {store, urlData} = configureStore(window);
 
-const indexProps = {
-    mediaQuery: '(prefers-color-scheme: light)',
-    mediaQueryOptions: {noSsr: true},
-    url: urlData.url,
+
+const Index = (props) => {
+    const ImportedIndex = useMemo(
+        () => (lazy(() => import('./pages/Index'))),
+        []
+    );
+
+    const indexProps = useMemo(() => ({
+            mediaQuery: '(prefers-color-scheme: light)',
+            mediaQueryOptions: {noSsr: true},
+            url: urlData.url,
+        }),
+        []
+    );
+
+    return (
+        <Suspense fallback={ <h4>Loading SCR...</h4>
+            // <Box sx={{display: 'flex', alignItems: 'center'}}>
+            //     <Box sx={{minWidth: 35}}>
+            //         <Typography variant="body2" color="text.secondary">{`Loading SCR ...`}</Typography>
+            //     </Box>
+            //     <Box sx={{width: '100%', mr: 1}}>
+            //         <LinearProgress/>
+            //     </Box>
+            // </Box>
+        }>
+            <ImportedIndex {...indexProps} {...props}/>
+        </Suspense>
+    );
 };
 
 // createRoot(document.querySelector('#root'))
@@ -28,7 +56,7 @@ ReactDOM
     .render(
         <StrictMode>
             <Provider store={store}>
-                <Index {...indexProps}/>
+                <Index/>
             </Provider>
         </StrictMode>,
         document.querySelector('#root')
