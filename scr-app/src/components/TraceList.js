@@ -48,6 +48,7 @@ const CodeFragment = memo((
         disableOneLineText = false,
         cacheId,
         itemsCache,
+        hoverClassName,
     }
 ) => {
     const {monacoTheme} = useContext(ThemeContext);
@@ -142,6 +143,14 @@ const CodeFragment = memo((
         },
         [loading, cache]
     );
+
+    useEffect(() => {
+        if (!ref.current) {
+            return;
+        }
+
+        ref.current.className = hoverClassName;
+    }, [hoverClassName]);
 
     return (
         loading ?
@@ -462,7 +471,8 @@ const CodeContainer = (
         findChunks,
         buttonClick,
         isMatch,
-        searchStateTextHighlighter
+        searchStateTextHighlighter,
+        hoverClassName
     }) => {
     const [mounted, setMounted] = useState(false);
 
@@ -495,6 +505,7 @@ const CodeContainer = (
                             cacheId={cacheId}
                             itemsCache={itemsCache}
                             text={expression}
+                            hoverClassName={hoverClassName}
                         />
                     }
                 </Typography>
@@ -554,45 +565,100 @@ const Row = ({index, data}) => {
     const cacheId = `${expressionId}`;
     const traceCacheId = `trace-${index}`;
 
+    const [, codeText, syntaxFragment] = useMemo(() => {
+            if (!dale || expressionId < 0) {
+                return [];
+            }
+
+            return dale.getSyntaxFragment?.(expressionId) ?? [];
+
+        },
+        [expressionId, dale]
+    );
+
     const findChunks = useCallback(
         () => (result?.expressionChunks || []),
         [result]
     );
 
-    const {onMouseEnter, onMouseLeave, onClick} = useMemo(
-        () => configureMappingEventListeners?.(n || {}),
-        [configureMappingEventListeners, n]
+    useMemo(
+        () => {
+            let cache = {};
+            if (itemsCache && cacheId) {
+                cache = itemsCache.current[cacheId] ??= {};
+            }
+            cache.getHoverClassName = syntaxFragment?.getHoverClassName;
+            return cache;
+        },
+        [itemsCache, cacheId, syntaxFragment]
     );
+
+    const [hoverClassName, setHoverClassName] = useState(null);
+
+    const {onMouseEnter, onMouseLeave, onClick} = useMemo(
+        () => ({
+            onMouseEnter: () => {
+                syntaxFragment?.syntaxWidget()?.mouseMove();
+                setHoverClassName(syntaxFragment?.getHoverClassName());
+            },
+            onMouseLeave: () => {
+                syntaxFragment?.syntaxWidget()?.mouseLeave();
+                setHoverClassName(null);
+            },
+            onClick: () => syntaxFragment?.syntaxWidget()?.mouseDown(),
+        }),
+        [syntaxFragment]
+    );
+
+    // const {onMouseEnter, onMouseLeave, onClick} = useMemo(
+    //     () => configureMappingEventListeners?.(n || {}),
+    //     [configureMappingEventListeners, n]
+    // );
 
     const buttonClick = useCallback(
         () => {
-            onClick();
-            n?.entry && goToTimelineBranch()(n.entry);
+            // syntaxFragment.
+            // onClick();
+            // n?.entry && goToTimelineBranch()(n.entry);
         },
-        [onClick, goToTimelineBranch, n]
+        [onClick, goToTimelineBranch, n, syntaxFragment]
     );
 
-    const codeText = useMemo(() => {
-            if (!dale) {
-                return '';
-            }
+    // const codeText = useMemo(() => {
+    //         if (!dale || cacheId < 0 || expressionId < 0) {
+    //             return '';
+    //         }
+    //
+    //         const [, sourceText, zone] = dale.getSyntaxFragment?.(expressionId) ?? [];
+    //
+    //         // console.log("sourceText", {sourceText, cacheId,expressionId, dale, zone, sf:dale.getSyntaxFragment?.(expressionId)});
+    //         if (!zone) {
+    //             return '';
+    //         }
+    //
+    //         // const declarationZone =zale.lookupZoneParentByType(zone, 'VariableDeclaration');
+    //         // const zoneText = zone.getAlternateText();
+    //         // const declarationZoneText = declarationZone?.getAlternateText();
+    //         // console.log("ALE", {zone, sourceText, declarationZone, declarationZoneText});
+    //         // return declarationZone? declarationZone.sourceText: zone.sourceText;
+    //         return sourceText;
+    //
+    //     },
+    //     [cacheId, expressionId, dale]
+    // );
 
-            const [, sourceText, zone] = (cacheId && dale.getSyntaxFragment?.(expressionId)) || [];
-            // console.log("sourceText", sourceText);
-            if (!zone) {
-                return '';
-            }
-
-            // const declarationZone =zale.lookupZoneParentByType(zone, 'VariableDeclaration');
-            // const zoneText = zone.getAlternateText();
-            // const declarationZoneText = declarationZone?.getAlternateText();
-            // console.log("ALE", {zone, sourceText, declarationZone, declarationZoneText});
-            // return declarationZone? declarationZone.sourceText: zone.sourceText;
-            return sourceText;
-
-        },
-        [cacheId, expressionId, zale]
-    );
+    // const xx = useMemo(
+    //     () => {
+    //         console.log("dale", dale);
+    //     },
+    //     [dale]
+    // );
+    // const xx = useMemo(
+    //     () => {
+    //         console.log("aleInstance", aleInstance, codeText);
+    //     },
+    //     [aleInstance, codeText]
+    // );
 
 
     return (isValid && <>
@@ -614,6 +680,7 @@ const Row = ({index, data}) => {
                     findChunks={findChunks}
                     isMatch={isMatch}
                     searchStateTextHighlighter={searchStateTextHighlighter}
+                    hoverClassName={hoverClassName}
                 />
             </TableCell>
             <TableCell
@@ -685,7 +752,9 @@ const WindowedTable = (
 ) => {
     // console.log(props);
     const {
-        data, isNew, searchState, highlightErrors, order,
+        data,
+        isNew, searchState, highlightErrors, order,
+        aleContext,
         ...rest
         //configureMappingEventListeners,
         // orderBy, objectNodeRenderer,
@@ -693,7 +762,7 @@ const WindowedTable = (
         // highlightSingleText, setCursorToLocation,
         // traceSubscriber,
     } = useContext(PastebinContext);
-
+    // const data = [];
     // logs if data is being updated correctly
     // useEffect(() => {
     //     console.log("PastebinContext", data);
@@ -809,6 +878,7 @@ const WindowedTable = (
                         // (
                         // async () =>
                     {
+
                         const isConsole = n.entry?.entry?.isConsole;
 
                         const newN = {
@@ -964,7 +1034,8 @@ const WindowedTable = (
     );
     const {monacoTheme} = useContext(ThemeContext);
     const mRef = useRef();
-    const alec = rest?.aleContext?.aleInstance?.getALECode()
+    const alec = aleContext?.aleInstance?.getALECode();
+
     useEffect(() => {
             if (!mRef.current || !monaco || !alec) {
                 return;
@@ -987,11 +1058,33 @@ const WindowedTable = (
         },
         [monaco, alec, monacoTheme]
     );
-    // console.log("TR>", items, alec);
+    // console.log("TR>", items?.find(it => it));
+    //updatePlaygroundLoadFailure
+    const {dale} = aleContext?.aleInstance ?? {};
+
+    const _items = useMemo(() => {
+        if (!dale || !items?.length) {
+            return items;
+        }
+
+        // console.log("FIL", {dale, items});
+        return items.filter(en => {
+            const expressionId = en?.entry?.entry?.expressionId;
+            const [, , syntaxFragment] = dale.getSyntaxFragment(expressionId) ?? [];
+            let keep = true;
+            if ((syntaxFragment?.type() ?? "").endsWith("Literal")) {
+                keep = false;
+            }
+            return keep;
+            // console.log("FIL",  {type: , syntaxFragment, dale, items});
+
+        });
+
+    }, [dale, items]);
 
     const listProps = {
         estimatedItemSize: TABLE_ROW_HEIGHT,
-        items,
+        items: _items,
         itemsCache,
         autoScrollTo,
         StickyComponent: StickyAction,

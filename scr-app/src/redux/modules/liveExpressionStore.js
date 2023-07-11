@@ -1,9 +1,12 @@
 import {ofType} from 'redux-observable';
 import {of, from, map, concatMap, switchMap} from 'rxjs';
-import postcss from "postcss";
-import postcssPresetEnv from "postcss-preset-env";
+// import postcss from "postcss";
+// import postcssPresetEnv from "postcss-preset-env";
 import {createActions, handleActions, combineActions} from 'redux-actions';
 import {immutableAutoUpdateObjectArray} from "../../utils/immutableHelperUtils";
+
+let postcss = null;
+let postcssPresetEnv = null;
 
 const defaultUpdateBundleState = {
     isBundling: false,
@@ -108,7 +111,7 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                             alJs = null;
 
                         let aleInstance = null,
-                            setAleInstance= null,
+                            setAleInstance = null,
                             editorId = null,
                             errorType = UPDATE_BUNDLE;
 
@@ -142,6 +145,7 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
 
                         try {
                             const [aleInstanceT, setAleInstanceT] = activateAleInstance();
+
                             aleInstance = aleInstanceT;
                             setAleInstance = setAleInstanceT;
                             //const {alJs, editorId, errors, errorType} =  autoLog?.updateIframe()??{};
@@ -159,6 +163,8 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                                     deps: {},
                                     trace: {
                                         configureWindow: () => {
+                                            //todo: window ready before set tracer
+                                            // console.log("LES");
                                         },
                                         onError: () => {
                                         },
@@ -173,6 +179,7 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                         } catch (error) {
                             //todo: adapt to unsafe act
                             jsErrors.push(error);
+                            console.log("?", error);
                         }
 
                         if (jsExceptions.length || jsErrors.length) {
@@ -186,11 +193,26 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                         //  get aljs, also the timestamp
 
                         try {
-                            const pCssResult = await postcss([postcssPresetEnv]).process(
-                                css, {from: "css"}
+                            if (!postcss) {
+                                postcss = (await import("postcss")).default;
+                                postcssPresetEnv = (await import("postcss-preset-env")).default;
+                            }
+                            const pCssResult = await postcss(
+                                [postcssPresetEnv({
+                                        stage: 3,
+                                        features: {
+                                            'nesting-rules': true
+                                        }
+                                    }
+                                )
+                                    // , postcssNested(), autoprefixer()
+                                ]
+                            ).process(
+                                css, {from: "scss.scss", to: "css.css"}
                             );
-
-                            bundle.pCss = (await pCssResult)?.css;
+                            const cxx = (await pCssResult);
+                            //console.log("pCssResult", {css, pCssResult, cxx, cx: postcss.parse(css, {from: "css"})});
+                            bundle.pCss = cxx?.css;
 
                         } catch (error) {
                             if (error.name === 'CssSyntaxError') {

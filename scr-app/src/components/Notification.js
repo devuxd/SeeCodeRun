@@ -24,13 +24,16 @@ import {grey} from '@mui/material/colors';
 
 import {isArrayLikeObject} from "lodash";
 
-import {toReadableThrowable} from "../utils/throwableUtils";
+import {toThrowable} from "../utils/throwableUtils";
 import {CompilationErrorIcon} from "../common/icons/Software";
 
 
 const drawerBleeding = 115;
 
 const makeErrorMessageWidget = (editor, range, message, domRef, id = "Main", monaco = global.monaco) => {
+    const preference = [
+        monaco.editor.ContentWidgetPositionPreference.BELOW
+    ];
     const domNode = domRef.current;
     const contentWidget = {
         id: `errorWidget${id}`,
@@ -42,19 +45,29 @@ const makeErrorMessageWidget = (editor, range, message, domRef, id = "Main", mon
             return this.domNode;
         },
         getPosition: function () {
+            const position = range?.getStartPosition?.();
+
+            if (!position || !this.domNode) {
+                return null;
+            }
+
             return {
-                position: range.getStartPosition(),
-                preference: [
-                    monaco.editor.ContentWidgetPositionPreference.BELOW
-                ]
+                position,
+                preference,
             };
         }
     };
     console.log("errorWidget I", contentWidget, domRef, !!domRef.current);
     editor.addContentWidget(contentWidget);
+    let done = false;
     return () => {
-        console.log("errorWidget O", contentWidget, domRef, !!domRef.current);
+        if (done) {
+            return;
+        }
+        //todo: ?
+        // console.log("errorWidget O", contentWidget, domRef, !!domRef.current);
         (domRef.current && editor.removeContentWidget(contentWidget))
+        done = true;
     };
 }
 
@@ -311,8 +324,14 @@ function UnstyledEditorNotification(
             const editorUBErrors = updateBundleErrors?.[editorId] ?? [];
 
             const throwables = [...editorPExceptions, ...editorPErrors, ...editorUBErrors].map(
-                e => toReadableThrowable(e)
+                e => toThrowable(e)
             );
+            throwables.length && console.log("throwables", throwables.length, {
+                throwables,
+                editorPExceptions,
+                editorPErrors,
+                editorUBErrors
+            });
             // return [];
             //
             // //console.log("BI", throwables, {editorId, playgroundErrors, updateBundleErrors, playgroundExceptions});
@@ -377,7 +396,7 @@ function UnstyledEditorNotification(
 
         const collection = monacoEditor.createDecorationsCollection([lineDecoration, locationDecoration]);
 
-        monacoEditor.revealLineInCenter(range.startLineNumber);
+        range?.startLineNumber && monacoEditor.revealLineInCenter(range.startLineNumber);
 
         const removeErrorWidget = makeErrorMessageWidget(
             monacoEditor, range, message, domRef
@@ -414,10 +433,9 @@ function UnstyledEditorNotification(
             if (throwables.length < 1 || !focusOnFaultLocation) {
                 return;
             }
-
+            console.log("useLayoutEffect I", domRef, !!domRef.current, focusedThrowableIndex[0], throwables[focusedThrowableIndex[0]]);
             const unFocus = focusOnFaultLocation(throwables[focusedThrowableIndex[0]]);
 
-            console.log("useLayoutEffect I", domRef, !!domRef.current);
 
             return () => {
                 console.log("useLayoutEffect O", domRef, !!domRef.current);

@@ -1,5 +1,6 @@
 import React from 'react';
-import {render} from 'react-dom';
+// import {render} from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import DevTools from './DevTools';
 
 /**
@@ -12,9 +13,15 @@ export default function showDevTools(store) {
     const devtoolsDiv = document.createElement('div');
     devtoolsDiv.id = 'react-devtools-root';
     document.body.appendChild(devtoolsDiv);
-    render(
-      <DevTools store={store}/>,
-      document.querySelector('#react-devtools-root')
+    const root = createRoot(devtoolsDiv);
+    root.render(
+        <DevTools store={store}/>
+        // ,
+        // document.querySelector('#react-devtools-root')
     );
+    // render(
+    //   <DevTools store={store}/>,
+    //   document.querySelector('#react-devtools-root')
+    // );
   }, 100);
 }

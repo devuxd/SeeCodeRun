@@ -27,7 +27,7 @@ const mapStateToProps = (state) => {
 
     const props = {
         playgroundExceptions: updatePlaygroundReducer.exceptions,
-        playgroundErrors : updatePlaygroundReducer.errors,
+        playgroundErrors: updatePlaygroundReducer.errors,
         updateBundleErrors: updateBundleReducer.errors,
         monacoEditorsStates: monacoEditorsReducer.monacoEditorsStates,
     };
@@ -115,7 +115,7 @@ const SkeletonEditor = withStyles(skeletonStyles)((
                         animation: "wave",
                         width: getRandomWidthPercentage()
                     }))
-                    .map(props => (<Skeleton {...props} />))
+                    .map(({key, ...props}) => (<Skeleton key={key} {...props} />))
             );
         },
         [size]
@@ -153,7 +153,7 @@ const EditorContainer = (
     const [settingsOpen] = useState(false);
     const [errorSnackbarOpen, setErrorSnackbarOpen] = useState(false);
     const [isMonacoEditorReady, setIsMonacoEditorReady] = useState(
-        firecoPad?.isMonacoEditorReady ?? false
+        ()=>(firecoPad?.isMonacoEditorReady ?? false)
     );
 
     const handleSettingsClick = useCallback(
@@ -229,11 +229,11 @@ const EditorContainer = (
                 monacoEditor={monacoEditor}
                 onClose={handleClose}
                 exception={errorState}
-                editorId = {editorId}
+                editorId={editorId}
                 locToMonacoRange={locToMonacoRange}
                 playgroundErrors={playgroundErrors}
                 updateBundleErrors={updateBundleErrors}
-                playgroundExceptions = {playgroundExceptions}
+                playgroundExceptions={playgroundExceptions}
             />
             {settingsOpen ?
                 (

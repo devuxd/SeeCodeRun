@@ -17,6 +17,7 @@ import {
     isLoggableExpressionBasedOnParent,
     isLoggableMemberExpression,
     isCollectionLikeExpression,
+    JSXExpressionReplacementType,
     resolveJSXExpressionReplacementType,
     isLoggableScope,
     isLoggableStatement,
@@ -32,7 +33,15 @@ export function markPathAsVisited(path) {
     path.state = true;
 }
 
-export const undefinedIdentifier = t.identifier('undefined');
+export const sharedIdentifiers = {
+    undefinedIdentifier: t.identifier('undefined'),
+    jsxRefIdentifier: t.jsxIdentifier("ref"),
+    reactIdentifier: t.identifier("React"),
+};
+
+export const undefinedIdentifier = () => sharedIdentifiers.undefinedIdentifier;
+export const jsxRefIdentifier = () => sharedIdentifiers.jsxRefIdentifier;
+export const reactIdentifier = () => sharedIdentifiers.reactIdentifier;
 
 let makeAlIdentifier = (identifierName = 'l') => {
     const property = t.identifier(identifierName);
@@ -249,7 +258,7 @@ function makeExitCall(uid, scopeType, scopeExitType, ...rest) {
             scopeExitType === ScopeExitTypes.R ||
             scopeExitType === ScopeExitTypes.Y
         ) ? makeParamsIdentifier(uid)
-            : undefinedIdentifier;
+            : undefinedIdentifier();
     return t.callExpression(alIdentifier, [
         t.stringLiteral(`${uid}`),
         t.stringLiteral(TraceEvents.O),
@@ -479,14 +488,9 @@ export default function BabeAutoLogEverything(
             const jsxReplacementType = resolveJSXExpressionReplacementType(path);
             if (jsxReplacementType) {
                 logExpression(
-                    path, null, null, jsxReplacementType
+                    path, jsxReplacementType //null, null,
                 );
                 return;
-            } else {
-                if (path.isJSXElement()) {
-                    logExpression(path);
-                    return;
-                }
             }
 
             if (isLoggableExpression(path)) {
@@ -636,7 +640,7 @@ export default function BabeAutoLogEverything(
                 scopeType,
                 scopeExitType,
                 expressionIdNode, // 2
-                node.argument ?? undefinedIdentifier,
+                node.argument ?? undefinedIdentifier(),
             );
         } else {
             if (
@@ -654,8 +658,8 @@ export default function BabeAutoLogEverything(
                                 scopeType,
                                 scopeExitType,
                                 expressionIdNode,
-                                undefinedIdentifier,
-                                undefinedIdentifier
+                                undefinedIdentifier(),
+                                undefinedIdentifier()
                                 // 3 alValueParamNumber
                             )
                         )
@@ -738,164 +742,244 @@ export default function BabeAutoLogEverything(
 
     }
 
-    function logExpression(path, jsxReplacementType) {
-        const {node} = path;
-        const containingScope = resolveContainingScope(path);
+    function logExpression(path, jsxReplacementType = undefined) {
+        try {
+            // jsxReplacementType && console.log( "jsxReplacementType", jsxReplacementType, path);
 
-        if (!containingScope) {
-            trackWarn(
-                path,
-                "!containingScope"
-            );
-        }
+            // path?.parentPath?.isJSXExpressionContainer()
 
-        if (path.isSuper()) { // imports?
-            console.log("S", path);
-        }
+            // jsxReplacementType && console.log("isJSXExpressionContainer", jsxReplacementType, path);
 
-        // if(path.isAssignmentExpression() && isAlNode(path.node.right)){
-        //    console.log("AS", path);
-        // }
+            // path?.parentPath?.isJSXSpreadAttribute() && console.log( "isJSXSpreadAttribute", jsxReplacementType, path);
 
-        const extra = [];
-        if (enableDynamicImportDynamicSources &&
-            isImportOrRequireCallExpression(path)
-        ) {
-            path.node.arguments.forEach(argument => {
-                const j = getOriginalNodeExpressionIndex(argument);
-                if (j < 0) {
-                    trackWarn(
-                        path,
-                        '! getOriginalNode found in expressions'
-                    );
-                }
-
-                extra.push(t.stringLiteral(`${j}`));
-
-            });
-        }
-
-        const i = registerExpression(path);
-
-        if (jsxReplacementType === "valueAppend") {
-            path.node.value = t.jsxExpressionContainer(
-                makeAlCall(
-                    containingScope.uid,
-                    makeAlPreCall(i),
-                    t.booleanLiteral(true),
-                    makeAlPostCall(i)
-                )
-            );
-            return;
-        }
-
-        const isNonInitVariableDeclarator =
-            isUnInitializedVariableDeclarator(path);
-
-        const preExtra = [];
-
-        const nodeLoc = path.node.loc;
-        let calleeType = 'none';
-        let isUndefinedNode = false;
-
-        const nodeType =
-            isNonInitVariableDeclarator ? 'isNonInitVariableDeclarator' : node.type;
+            const containingScope = resolveContainingScope(path);
 
 
-        switch (nodeType) {
-            case 'CallExpression':
-            case 'OptionalCallExpression':
-                if (!path.isSuper()) { // imports?
-                    calleeType = node.callee.type;
-                } else {
-                    track(path, "S",);
-                }
-                break;
-
-            case 'MemberExpression':
-            case 'OptionalMemberExpression':
-                const parent = path.parentPath;
-                // safeguard: if isLoggableExpressionBasedOnParent() check ommited
-                const needLogging = !parent ||
-                    !(
-                        parent.isCallExpression() || parent.isOptionalCallExpression()
-                        // ||parent.isMemberExpression() || parent.isOptionalMemberExpression()
-                        // || isAlNode(parent.node) not feasible
-                    );
-
-                if (needLogging) {
-                    logMemberExpression(path);
-                } // else: handled below at logMemberExpression call
-
-                break;
-
-            case 'JSXEmptyExpression':
-            case 'isNonInitVariableDeclarator':
-                isUndefinedNode = true;
-                break;
-        }
-
-        if (calleeType !== "none") {
-            const calleePath = path.get("callee");
-            let j = getOriginalNodeExpressionIndex(calleePath.node);
-            if (j < 0) {
-                j = registerExpression(calleePath);
+            if (!containingScope) {
+                trackWarn(
+                    path,
+                    "!containingScope"
+                );
             }
 
-            switch (calleeType) {
+            if (path.isSuper()) { // imports?
+                console.log("S", path);
+            }
+
+            const i = registerExpression(path);
+
+            const {node} = path;
+            const nodeLoc = node.loc;
+
+            const isNonInitVariableDeclarator =
+                isUnInitializedVariableDeclarator(path);
+
+
+            let calleeType = 'none';
+            let isUndefinedNode = false;
+
+            const nodeType =
+                isNonInitVariableDeclarator ? 'isNonInitVariableDeclarator' : node.type;
+
+            // handled at WALE's scrObject[alPreIdentifierName]
+            const preCallParams = [
+                i, // 0    expressionId,
+                undefinedIdentifier(), // 1     calleeExpressionId,
+                undefinedIdentifier(), // 2        calleeObjectExpressionId,
+                undefinedIdentifier(), // 3        calleePropertyExpressionId,
+                //...preExtra => [...]
+                undefinedIdentifier(),  // 4 0 jsxReplacementTypeNode
+                undefinedIdentifier(), // 5 1 reactIdentifier()
+            ];
+
+            if (jsxReplacementType) {
+                preCallParams[4] = t.stringLiteral(`${jsxReplacementType}`);
+                preCallParams[5] = reactIdentifier();
+            }
+
+
+            // if(path.isAssignmentExpression() && isAlNode(path.node.right)){
+            //    console.log("AS", path);
+            // }
+
+            const extra = [];
+            if (enableDynamicImportDynamicSources &&
+                isImportOrRequireCallExpression(path)
+            ) {
+                path.node.arguments.forEach(argument => {
+                    const j = getOriginalNodeExpressionIndex(argument);
+                    if (j < 0) {
+                        trackWarn(
+                            path,
+                            '! getOriginalNode found in expressions'
+                        );
+                    }
+
+                    extra.push(t.stringLiteral(`${j}`));
+
+                });
+            }
+
+            if (jsxReplacementType === JSXExpressionReplacementType.refIntercept) {
+                //todo: consider ref rerender du to new ref every time
+                    let valueNode = path.node.value ?? undefinedIdentifier();
+                    const contained = t.isJSXExpressionContainer(valueNode);
+                    valueNode = contained ? valueNode.expression : valueNode;
+
+                    //console.log(JSXExpressionReplacementType.refIntercept, path, path.node.value?.type, path.node.value?.expression?.type);
+
+                    const interceptor = makeAlCall(
+                        containingScope.uid,
+                        makeAlPreCall(
+                            ...preCallParams
+                        ),
+                        valueNode,
+                        makeAlPostCall(i)
+                    );
+
+                    if (contained) {
+                        path.node.value.expression = interceptor;
+                    } else {
+                        path.node.value = t.jsxExpressionContainer(interceptor);
+                    }
+
+                return;
+
+            }
+
+
+            if (jsxReplacementType === JSXExpressionReplacementType.valueAppend) {
+                path.node.value = t.jsxExpressionContainer(
+                    makeAlCall(
+                        containingScope.uid,
+                        makeAlPreCall(...preCallParams),
+                        t.booleanLiteral(true),
+                        makeAlPostCall(i)
+                    )
+                );
+
+                return;
+            }
+
+            if (jsxReplacementType === JSXExpressionReplacementType.refAppend) {
+                // try {
+                path.node.attributes.push(
+                    t.jsxAttribute(
+                        jsxRefIdentifier(),
+                        t.jsxExpressionContainer(
+                            makeAlCall(
+                                containingScope.uid,
+                                makeAlPreCall(
+                                    ...preCallParams
+                                ),
+                                undefinedIdentifier(),
+                                makeAlPostCall(i)
+                            )
+                        )
+                    )
+                );
+                // } catch (e) {
+                //     console.log("ss", e);
+                // }
+                return;
+            }
+
+
+
+            switch (nodeType) {
+                case 'CallExpression':
+                case 'OptionalCallExpression':
+                    if (!path.isSuper()) { // imports?
+                        calleeType = node.callee.type;
+                    } else {
+                        track(path, "S",);
+                    }
+                    break;
+
                 case 'MemberExpression':
                 case 'OptionalMemberExpression':
-                    const {
-                        objectExpressionId, propertyExpressionId
-                    } = logMemberExpression(calleePath);
+                    const parent = path.parentPath;
+                    // safeguard: if isLoggableExpressionBasedOnParent() check ommited
+                    const needLogging = !parent ||
+                        !(
+                            parent.isCallExpression() || parent.isOptionalCallExpression()
+                            // ||parent.isMemberExpression() || parent.isOptionalMemberExpression()
+                            // || isAlNode(parent.node) not feasible
+                        );
 
-                    preExtra.push(
-                        t.stringLiteral(`${j}`),
-                        t.stringLiteral(`${objectExpressionId}`),
-                        t.stringLiteral(`${propertyExpressionId}`),
-                    );
+                    if (needLogging) {
+                        logMemberExpression(path);
+                    } // else: handled below at logMemberExpression call
 
                     break;
 
-                default:
-                    if (!isAlNode(node.callee)) {
-                        node.callee = makeAlCall(
-                            containingScope.uid, // 0
-                            makeAlPreCall(j), // 2
-                            calleePath.node, // alValueParamNumber = 3
-                            makeAlPostCall(j),
-                        );
-
-                        preExtra.push(t.stringLiteral(`${j}`));
-                    }
-
+                case 'JSXEmptyExpression':
+                case 'isNonInitVariableDeclarator':
+                    isUndefinedNode = true;
+                    break;
             }
+
+            if (calleeType !== "none") {
+                const calleePath = path.get("callee");
+                let j = getOriginalNodeExpressionIndex(calleePath.node);
+                if (j < 0) {
+                    j = registerExpression(calleePath);
+                }
+
+                switch (calleeType) {
+                    case 'MemberExpression':
+                    case 'OptionalMemberExpression':
+                        const {
+                            objectExpressionId, propertyExpressionId
+                        } = logMemberExpression(calleePath);
+                        preCallParams[1] = t.stringLiteral(`${j}`);
+                        preCallParams[2] = t.stringLiteral(`${objectExpressionId}`);
+                        preCallParams[3] = t.stringLiteral(`${propertyExpressionId}`);
+                        break;
+
+                    default:
+                        if (!isAlNode(node.callee)) {
+                            node.callee = makeAlCall(
+                                containingScope.uid, // 0
+                                makeAlPreCall(j), // 2
+                                calleePath.node, // alValueParamNumber = 3
+                                makeAlPostCall(j),
+                            );
+                            preCallParams[1] = t.stringLiteral(`${j}`);
+                        }
+
+                }
+            }
+
+
+            let replacement = makeAlCall(
+                containingScope.uid, // 0
+                makeAlPreCall(...preCallParams), // 2
+                isUndefinedNode ?
+                    undefinedIdentifier() : node, // alValueParamNumber = 3
+                makeAlPostCall(i),
+                ...extra // imports
+            );
+
+
+            if (isNonInitVariableDeclarator) {
+                replacement = t.variableDeclarator(path.node.id, replacement);
+            }
+
+            if (jsxReplacementType === JSXExpressionReplacementType.containerWrap
+                || jsxReplacementType === JSXExpressionReplacementType.valueWrap) {
+                // console.log( "containerWrap", path);
+                replacement = t.jsxExpressionContainer(replacement);
+            }
+
+
+            path.replaceWith(replacement);
+            path.node.loc = path.node.loc ?? nodeLoc;
+            markPathAsVisited(path);
+
+        }catch(e){
+            console.log("e", e);
         }
-
-        let replacement = makeAlCall(
-            containingScope.uid, // 0
-            makeAlPreCall(i, ...preExtra), // 2
-            isUndefinedNode ?
-                undefinedIdentifier : node, // alValueParamNumber = 3
-            makeAlPostCall(i),
-            ...extra // imports
-        );
-
-
-        if (isNonInitVariableDeclarator) {
-            replacement = t.variableDeclarator(path.node.id, replacement);
-        }
-
-        if (jsxReplacementType === "containerWrap") {
-            replacement = t.jsxExpressionContainer(replacement);
-        }
-
-        path.replaceWith(replacement);
-        markPathAsVisited(path);
-
-        path.node.loc = path.node.loc ?? nodeLoc;
-
-
     }
 
     function wrapProgramScope(path) {
@@ -935,7 +1019,7 @@ export default function BabeAutoLogEverything(
                 path.node.id
                 : path.isMethod() ?
                     t.memberExpression(t.thisExpression(), path.node.key)
-                    : undefinedIdentifier;
+                    : undefinedIdentifier();
         //console.log("F", functionIdNode, path, uid, path);
         wrapFunctionParams(path, paramsIdentifier);
         let superI = -1;

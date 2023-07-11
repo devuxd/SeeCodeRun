@@ -28,7 +28,7 @@ export const parse5Loc2MonacoRange = (loc = {}) => {
 
 class ReadableParse5Throwable extends ReadableThrowable {
     constructor(obj) {
-        super();
+        super(obj);
         const {
             name,
             code

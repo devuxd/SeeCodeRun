@@ -1,4 +1,11 @@
 import {useState, useCallback, useEffect, useMemo, useRef} from 'react';
+
+// import {
+//     activate as activateBackend,
+//     initialize as initializeBackend
+// } from 'react-devtools-inline/backend';
+// import {initialize as initializeFrontend} from 'react-devtools-inline/frontend';
+
 import {Resizable} from 'react-resizable';
 import {useResizeDetector} from 'react-resize-detector';
 import throttle from 'lodash/throttle';
@@ -173,7 +180,32 @@ export const useSandboxIFrameHandler = (documentObj, prepareIframe) => {
                         removeIframe();
                         playgroundRef.current.appendChild(newIFrameRefCurrent);
                         iFrameRef.current = newIFrameRefCurrent;
-                        return true;
+                        const DevTools = null;
+
+//                         // The React app you want to inspect with DevTools is running within this iframe:
+//                         const iframe = newIFrameRefCurrent;// document.getElementById('target');
+//                         const {contentWindow} = iframe;
+//
+// // Installs the global hook into the iframe.
+// // This must be called before React is loaded into that frame.
+//                         initializeBackend(contentWindow);
+//
+//                         // Initialize DevTools UI to listen to the hook we just installed.
+// // This returns a React component we can render anywhere in the parent window.
+// // This also must be called before React is loaded into the iframe
+//                         const DevTools = initializeFrontend(contentWindow);
+//
+// // React application can be injected into <iframe> at any time now...
+// // Note that this would need to be done via <script> tag injection,
+// // as setting the src of the <iframe> would load a new page (without the injected backend).
+//
+// // <DevTools /> interface can be rendered in the parent window at any time now...
+// // Be sure to use ReactDOMClient.createRoot() to render this component.
+//
+// // Let the backend know the frontend is ready and listening.
+//                         activateBackend(contentWindow);
+                        // console.log({DevTools});
+                        return [true, DevTools];
                     },
                     getIframe: () => iFrameRef.current,
                     appendScriptToIFrameBody,

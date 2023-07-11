@@ -568,6 +568,7 @@ class LiveExpressionWidgetProvider {
          },
          getPosition: function () {
             // this.adjustWidth(false);
+            console.log("getPosition works?");
             return {
                position: getDecorator(decoratorId).range.getStartPosition(),
                preference,

@@ -381,7 +381,7 @@ class AutoLog {
                     onErrorHandler
                 );
             } else {
-                updatePlaygroundLoadFailure('js', new Error("PG"), null);
+                // updatePlaygroundLoadFailure('js', new Error("PG"), null);
                 console.log("CRITICAL:updatePlaygroundLoadFailure");
             }
         }
@@ -408,16 +408,15 @@ class AutoLog {
 
 
     configureIframe = (runIframeHandler, updatePlaygroundLoadSuccess, updatePlaygroundLoadFailure, autoLogger, html, css, js, alJs, onErrorHandler) => {
-
-        // runIframe.onerror= (e) => {
-        //   console.log("error ifr", e);
-        // };
+        // console.log("configureIframe", runIframeHandler);
         autoLogger && updateDeps(autoLogger.deps);
         requireConfig.triggerChange = null;
 
         const state = this.state();
         const getState = () => this.state();
+        // console.log("configureIframe 2");
         this.appendHtml(state, html, css, js, alJs, onErrorHandler).then(() => {
+            // console.log("appendHtml");
             const sandboxIframe = () => {
                 const runIframe = runIframeHandler?.createIframe();
                 if (runIframe) {
@@ -440,10 +439,13 @@ class AutoLog {
             };
 
             const addIframeLoadListener = (runIframe) => runIframe.addEventListener('load', () => {
+
                 if (autoLogger && autoLogger.trace && runIframe.contentWindow) {
 
                     if (runIframe.contentWindow.scrLoader && runIframe.contentWindow.scrLoader.onScriptsLoaded) {
+
                         autoLogger.trace.configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName);
+                        // console.log("addIframeLoadListener", autoLogger.trace);
                         if (runIframe.contentWindow.scrLoader.scriptsLoaded) {
                             // console.log('appending', state.transformed.code, state.criticalError, state.transformed.error);
                             runIframe.contentWindow.scrLoader.onRequireSyncLoaded = (errors, fallbackOverrides) => {
@@ -482,34 +484,35 @@ class AutoLog {
             });
 
             this.appendIframe = () => {
+                let isAppended = false, DevTools = null;
                 // console.log("appendIframe");
 
                 //todo: CHECK PARSE ERROR BEFORE BUNDLING
                 if (state.getHTML) {
                     const runIframe = sandboxIframe();
                     const alHTML = state.getHTML();
-                    const isAppended = runIframeHandler.appendIframe(runIframe);
+                    [isAppended, DevTools] = runIframeHandler.appendIframe(runIframe);
                     const activeRunIframe = runIframeHandler.getIframe();
                     if (isAppended && activeRunIframe) {
-                        // console.log('appending', runIframe === activeRunIframe, alHTML);
+                        // console.log('appending', {DevTools}, runIframe === activeRunIframe, alHTML);
                         addIframeLoadListener(activeRunIframe);
                         activeRunIframe.srcdoc = alHTML;
                     }
                 }
-                updatePlaygroundLoadSuccess('js', alJs);
+                updatePlaygroundLoadSuccess('js', alJs, DevTools);
             };
             requireConfig.triggerChange = this.appendIframe;
             this.appendIframe();
         }).catch(error => {
                 // todo [semantic] errors, add retry
-                console.log("FFFF", getState(), this);
+                // console.log("FFFF", getState(), this);
                 const {humanUnderstandableError, criticalError} = this.state();
                 if (humanUnderstandableError) {
                     switch (humanUnderstandableError.type) {
                         case AutoLogErrors.babel:
-
-                            const errorInfo = decodeBabelError(error);
-                            console.log('Semantic error', errorInfo, humanUnderstandableError);
+                            //const errorInfo = decodeBabelError(error);
+                            //todo: <X x={}> causes TypeError: unknown file: Property value of ObjectProperty expected node to be of a type ["Expression","PatternLike"] but instead got "JSXEmptyExpression"
+                            console.log('Semantic error!', humanUnderstandableError, error, ({...criticalError}));
                             updatePlaygroundLoadFailure('js', error, null);
 
                             break;
@@ -566,7 +569,6 @@ class AutoLog {
     };
 
     async appendHtml(state, html, css, js, alJs, onErrorHandler) {
-
         const cssString = `<style>${css}</style>`;
 
         const defaultHeadTagLocation = {

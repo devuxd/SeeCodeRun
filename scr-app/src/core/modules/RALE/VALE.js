@@ -17,8 +17,8 @@ import Input from '@mui/material/Input';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Portal from '@mui/material/Portal';
-import CheckIcon from '@mui/icons-material/Check';
-import ClearIcon from '@mui/icons-material/Clear';
+// import CheckIcon from '@mui/icons-material/Check';
+// import ClearIcon from '@mui/icons-material/Clear';
 
 import PackageVariant from 'mdi-material-ui/PackageVariant';
 // import PackageVariantCheck from 'mdi-material-ui/PackageVariantCheck';
@@ -281,12 +281,18 @@ const LiveBlock = (
         NavigatorOutlinedButton : NavigatorContainedButton;
 
     const divStyle = {visibility: isIfBlock ? value ? 'visible' : 'hidden' : 'visible'};
-    const label = isIfBlock ? ( //value ? labelStyle : {...labelStyle, color: "transparent"}
-        ifBlockKey === "consequent" ? <CheckIcon style={labelStyle}/> : <ClearIcon style={labelStyle}/>
+    const navigationIndicator = isIfBlock ? (
+        null
+        //value ? labelStyle : {...labelStyle, color: "transparent"}
+        // ifBlockKey === "consequent" ? <CheckIcon style={labelStyle}/> : <ClearIcon style={labelStyle}/>
         // <Skeleton variant="circular" width={40} height={40} />
         // null
     ) : (
-        <>
+        <NavigatorButton
+            variant={variant}
+            color={color}
+            // disabled={!showNavigatorTooltip}
+        >
                   <span
                       style={{fontSize: 11}}
                   >
@@ -312,7 +318,7 @@ const LiveBlock = (
                     travelValue={-0.5}
                     scale={[1, 1, 1]}
                 /> : null}
-        </>
+        </NavigatorButton>
     );
 
     // const isLoop
@@ -351,19 +357,19 @@ const LiveBlock = (
             {...tooltipProps}
         >
             <div style={divStyle}>
-                <NavigatorButton
-                    variant={variant}
-                    color={color}
-                    // disabled={!showNavigatorTooltip}
-                >
-                    {label}
-                </NavigatorButton>
+                {navigationIndicator}
             </div>
         </NavigatorTooltip>
     );
 };
 
-const liveExpressionIconDefaultStyle = {fontSize: 9};
+//same-ish as ALEInspector for now
+const liveExpressionIconDefaultStyle = {
+    fontSize: "0.8rem",
+    color: 'white',
+    fontWeight: 'bold',
+    backgroundColor: 'rgb(153, 128, 255)',
+};
 const LiveExpression = ({isImport, decorate, ...props}) => {
     const [value, setValue] = useState(0);
     useEffect(
@@ -432,11 +438,11 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
 
 
             let isUseful = true;
-            if (parentType === 'BinaryExpression' || parentType === 'LogicalExpression') {
-                if (type !== 'BinaryExpression' && type !== 'LogicalExpression') {
-                    isUseful = false;
-                }
-            }
+            // if (parentType === 'BinaryExpression' || parentType === 'LogicalExpression') {
+            //     if (type !== 'BinaryExpression' && type !== 'LogicalExpression') {
+            //         isUseful = false;
+            //     }
+            // }
 
             if (isUseful) {
                 const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();

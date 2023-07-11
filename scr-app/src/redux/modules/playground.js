@@ -66,10 +66,11 @@ export const updatePlaygroundLoad = (editorId, updateIframe) => ({
     })
 ;
 
-export const updatePlaygroundLoadSuccess = (editorId, transformed) => ({
+export const updatePlaygroundLoadSuccess = (editorId, transformed, DevTools) => ({
         type: UPDATE_PLAYGROUND_LOAD_SUCCESS,
         editorId,
         transformed,
+        DevTools
     })
 ;
 
@@ -94,7 +95,7 @@ export const updatePlaygroundReducer =
     (state = defaultUpdatePlaygroundState,
      action) => {
         let {errors, exceptions, extras} = state;
-        const {type, editorId, exception, error, extra, autoLog, cancelEvent} = action;
+        const {type, editorId, exception, error, extra, autoLog, cancelEvent, DevTools} = action;
 
         switch (type) {
             case UPDATE_PLAYGROUND_INSTRUMENTATION_SUCCESS:
@@ -168,6 +169,8 @@ export const updatePlaygroundReducer =
                     isPlaygroundUpdated: true,
                     isPlaygroundCorrupted: false,
                     [action.editorId]: action.transformed,
+                    DevTools
+
                 };
 
             case UPDATE_PLAYGROUND_LOAD_FAILURE:
@@ -255,7 +258,13 @@ export const updatePlaygroundEpic = (action$, state$, {appManager}) =>
 
                 const onTraceChange = (timeline, isTraceReset, timelineDataDelta, timelineDelta, programEndI) => {
 
-                   console.log("R: onTraceChange", {timeline, isTraceReset, timelineDataDelta, timelineDelta, programEndI});
+                    console.log("R: onTraceChange", {
+                        timeline,
+                        isTraceReset,
+                        timelineDataDelta,
+                        timelineDelta,
+                        programEndI
+                    });
 
                     if (isTraceReset) {
                         //todo
@@ -291,7 +300,7 @@ export const updatePlaygroundEpic = (action$, state$, {appManager}) =>
                 };
 
                 try {
-                    //console.log("updatePlaygroundEpic", preAction.payload?.bundle?.aleInstance.setAfterTraceChange);
+                    // console.log("updatePlaygroundEpic", action);
                     //preAction.payload?.bundle?.aleInstance.setAfterTraceChange(onTraceChange);
                     action.updateIframe();
                     // do not exist =)
@@ -300,6 +309,8 @@ export const updatePlaygroundEpic = (action$, state$, {appManager}) =>
                     error = e;
                     type = UPDATE_PLAYGROUND_LOAD_FAILURE;
                 }
+
+                // console.log("updatePlaygroundEpic", error);
 
                 return (of({
                     type,

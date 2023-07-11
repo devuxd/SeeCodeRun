@@ -4,6 +4,17 @@ import {withStyles} from '@mui/styles';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
+
+const overflowComponentDefaultProps = {
+    disableOverflowDetection: false,
+    disableOverflowDetectionX: false,
+    disableOverflowDetectionY: false,
+    isRememberScrollDisabled: false,
+    isRememberScrollDisabledX: false,
+    isRememberScrollDisabledY: false,
+    contentAlign: 'center'
+};
+
 //source:
 // https://raw.githubusercontent.com/
 // nickuraltsev/react-overflow/master/src/OverflowDetector.jsx
@@ -54,12 +65,13 @@ export class OverflowAndScrollDetector extends PureComponent {
         this.isOverflowedY = false;
         this.scrollerRef = createRef();
         this.state = {
-            disableOverflowDetection: false,
-            disableOverflowDetectionX: false,
-            disableOverflowDetectionY: false,
-            isRememberScrollDisabled: false,
-            isRememberScrollDisabledX: false,
-            isRememberScrollDisabledY: false,
+            // disableOverflowDetection: false,
+            // disableOverflowDetectionX: false,
+            // disableOverflowDetectionY: false,
+            // isRememberScrollDisabled: false,
+            // isRememberScrollDisabledX: false,
+            // isRememberScrollDisabledY: false,
+            ...overflowComponentDefaultProps
         };
     }
 
@@ -367,6 +379,7 @@ const styles = theme => ({
     })
 ;
 
+
 class OverflowComponent extends PureComponent {
 
     state = {
@@ -524,14 +537,14 @@ OverflowComponent.propTypes = {
     contentAlign: PropTypes.string,
 };
 
-OverflowComponent.defaultProps = {
-    disableOverflowDetection: false,
-    disableOverflowDetectionX: false,
-    disableOverflowDetectionY: false,
-    isRememberScrollDisabled: false,
-    isRememberScrollDisabledX: false,
-    isRememberScrollDisabledY: false,
-    contentAlign: 'center'
-};
+// OverflowComponent.defaultProps = {
+//     disableOverflowDetection: false,
+//     disableOverflowDetectionX: false,
+//     disableOverflowDetectionY: false,
+//     isRememberScrollDisabled: false,
+//     isRememberScrollDisabledX: false,
+//     isRememberScrollDisabledY: false,
+//     contentAlign: 'center'
+// };
 
 export default withStyles(styles)(OverflowComponent);

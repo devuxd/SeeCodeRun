@@ -13,9 +13,9 @@
     "logs-dev": "cross-env NODE_ENV=development & firebase use development & firebase functions:log"
   },
   "dependencies": {
-    "firebase": "^9.21.0",
-    "firebase-admin": "^11.7.0",
-    "firebase-functions": "^4.3.1",
+    "firebase": "9.21.0",
+    "firebase-admin": "11.7.0",
+    "firebase-functions": "4.3.1",
     "firepad": "^1.5.11"
   },
   "devDependencies": {

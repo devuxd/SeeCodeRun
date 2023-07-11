@@ -26,9 +26,14 @@ export const postCssLoc2MonacoRange = (loc = {}) => {
     };
 };
 
+export const isPostCssError = (obj) => {
+    return obj?.name === 'CssSyntaxError';
+};
+
+
 class ReadablePostCssThrowable extends ReadableThrowable {
     constructor(obj) {
-        super();
+        super(obj);
         const {
             name,
             plugin,
@@ -70,10 +75,6 @@ class ReadablePostCssThrowable extends ReadableThrowable {
         return new monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
     };
 }
-
-export const isPostCssError = (obj) => {
-    return obj?.name === 'CssSyntaxError';
-};
 
 export function toReadablePostCssThrowable(obj = {}) {
     return new ReadablePostCssThrowable(obj);

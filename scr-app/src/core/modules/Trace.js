@@ -159,6 +159,7 @@ class Trace {
    }
    
    configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName) {
+      console.log("LEGACY?");
       this.startTimestamp = Date.now();
       this.startStack();
       this.setWindowRoots(runIframe.contentWindow);

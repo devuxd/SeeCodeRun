@@ -18,6 +18,8 @@ import {
     updateBundleSuccess
 } from "../redux/modules/liveExpressionStore";
 
+import {updatePlaygroundLoadFailure} from "../redux/modules/playground";
+
 import PastebinContext from '../contexts/PastebinContext';
 import {NavigationTypes} from '../core/modules/AutoLogShift';
 import {monacoProps} from '../utils/monacoUtils';
@@ -41,6 +43,7 @@ const mapDispatchToProps = {
     updateBundle,
     updateBundleFailure,
     updateBundleSuccess,
+    updatePlaygroundLoadFailure,
 };
 
 const goToTimelineBranchInactive = (/*timelineI*/) => {
@@ -349,6 +352,7 @@ class LiveExpressionStore extends PureComponent {
 
         monacoEditor.onDidScrollChange(throttle(() => {
             // this.setState({});
+            // console.log("YEp", this.state.currentContentWidgetId);
             if (this.state.currentContentWidgetId) {
                 this.setState({currentContentWidgetId: null});
             }
@@ -586,7 +590,7 @@ class LiveExpressionStore extends PureComponent {
                     this.handleTraceChange({
                         timeline: [], logs: [], mainLoadedTimelineI: 0
                     });
-                    aleInstance.setAfterTraceChange(this.onTraceChange);
+                    aleInstance.setAfterTraceChange(this.afterTraceChange);
                 }
 
                 return [aleInstance, () => setAleInstance(aleInstance)];
@@ -709,7 +713,10 @@ class LiveExpressionStore extends PureComponent {
     };
 
 
-    onTraceChange = () => {
+    afterTraceChange = (timeline, isTraceReset, timelineDataDelta, [from, to], programEndTimelineI, values, errorsData = []) => {
+
+
+
         //todo:
         // make it the timeline refresh active after bundle is ready : done
         //change refresh after each liveExpressionStoreChange, confirm is triggered by WALE push in timeline
@@ -742,6 +749,18 @@ class LiveExpressionStore extends PureComponent {
                 // console.log("refreshTimeline FF");
 
                 liveExpressionStoreChange?.(this, false);//set via props
+            }
+
+            if (errorsData.length) {
+
+                const {updatePlaygroundLoadFailure} = this.props;
+                let error = null;
+                while (error = errorsData.pop()) {
+                    const {errorObject} = error;
+                    console.log("afterTraceChange", errorObject);
+                    updatePlaygroundLoadFailure("js", errorObject);
+                }
+
             }
         }
     };

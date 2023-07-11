@@ -188,14 +188,14 @@ const mapDispatchToProps = {pastebinConfigureLayout};
 const sortOptions = [
     {
         time: true,
-        desc: true,
-        Icon: SortDescendingIcon,
-    },
-    {
-        time: true,
         asc: true,
         Icon: SortAscendingIcon,
 
+    },
+    {
+        time: true,
+        desc: true,
+        Icon: SortDescendingIcon,
     },
     {
         expression: true,
@@ -241,6 +241,16 @@ const getNextSortOption = (orderBy, orderFlow) => (
 const defaultSearchWords = [''];
 
 const styles = theme => {
+    const container = {
+        overflow: 'hidden',
+        height: '100%',
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        "& .react-resizable-handle::after": {
+            right: theme.spacing(2.75),
+        }
+    };
     return ({
         '@global': {
             [`.${
@@ -271,27 +281,30 @@ const styles = theme => {
             },
             ".react-grid-item > .react-resizable-handle": {
                 position: "absolute",
-                width: "5px",
+                width: theme.spacing(0.5),
                 height: "100%",
                 bottom: "0",
                 right: "0",
-                marginRight: "-6px",
-                cursor: "ew-resize",
+                marginRight: theme.spacing(-0.5),
+                // cursor: "ew-resize",
+                cursor: "nwse-resize",
                 background: "transparent",
-                zIndex: 9999,
+                zIndex: theme.zIndex.tooltip,
             },
             ".react-grid-item > .react-resizable-handle::after": {
                 content: '""',
                 position: "absolute",
-                right: "4px",
-                bottom: "4px",
-                marginRight: "6px",
-                width: "24px",
-                height: "24px",
-                background: `url(\'data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="24" height="24" viewBox="0 0 24 24"><path fill="${
-                    hexToRgb(theme.palette.primary.main)
-                }" d="M22,22H20V20H22V22M22,18H20V16H22V18M18,22H16V20H18V22M18,18H16V16H18V18M14,22H12V20H14V22M22,14H20V12H22V14Z" /></svg>\')`,
-                cursor: "se-resize",
+                right: theme.spacing(1.5),
+                bottom: theme.spacing(0.5),
+                // marginRight: "6px",
+                width: theme.spacing(3),
+                height: theme.spacing(3),
+                background: `linear-gradient(135deg, transparent ${theme.spacing(3.75)}, ${hexToRgb(theme.palette.primary.main)} 1%), transparent`,
+                //     `url(\'data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="24" height="24" viewBox="0 0 24 24"><path fill="${
+                //     hexToRgb(theme.palette.primary.main)
+                // }" d="M22,22H20V20H22V22M22,18H20V16H22V18M18,22H16V20H18V22M18,18H16V16H18V18M14,22H12V20H14V22M22,14H20V12H22V14Z" /></svg>\')`,
+                // cursor: "nwse-resize", // overlaps with column handle!?
+                zIndex: theme.zIndex.tooltip,
             },
             ".react-grid-item.react-grid-placeholder": {
                 background: theme.palette.primary.main,
@@ -307,9 +320,9 @@ const styles = theme => {
         },
         draggable: {
             position: 'absolute',
-            zIndex: theme.zIndex.snackbar,
-            bottom: 0,
-            right: theme.spacing(4),
+            zIndex: theme.zIndex.tooltip,
+            bottom: theme.spacing(3.5),
+            right: theme.spacing(2),
             color: theme.palette.primary.main,
             fontSize: theme.spacing(2),
             cursor: 'grab',
@@ -360,12 +373,11 @@ const styles = theme => {
         locator: {
             fontSize: theme.spacing(2.5),
         },
-        container: {
-            overflow: 'hidden',
-            height: '100%',
-            width: '100%',
-            margin: 0,
-            padding: 0,
+        debugContainer: {
+            ...container
+        },
+        playgroundContainer: {
+            ...container,
         },
     })
 };
@@ -739,8 +751,20 @@ class Pastebin extends PureComponent {
             (entry.isOutput && searchState.visualQuery.find(
                     q => entry.outputRefs?.includes(q)
                 )
-            )
+            );
     };
+
+    // timelineLiveExpressionFilter = (entry = {}) => {
+    //     const {zone} = entry;
+    //
+    //     switch(zone.type){
+    //         case "Literal":
+    //             return false;
+    //         default:
+    //             return true;
+    //     }
+    // };
+
 
     cleanEditorTextInLocCache = () => {
         if (!this.textInLocCacheResetCounter) {
@@ -770,6 +794,10 @@ class Pastebin extends PureComponent {
     createData(
         timeline
     ) {
+    //     console.log("timeline",timeline);
+    // .filter(
+    //         this.timelineLiveExpressionFilter
+    //     )
         return (timeline || []).filter(
             this.timelineSearchFilter
         ).map((entry, i) => ({
@@ -883,38 +911,45 @@ class Pastebin extends PureComponent {
     ) => {
         const zones = this.state.aleContext?.aleInstance.zale?.zones;
 
-        const getSourceText = expressionId => zones?.[expressionId]?.sourceText;
-        const timeline = pureTimeline.filter(e => !!e.pre).map((entry, i) => {
+        const getSourceText = expressionId => (zones?.[expressionId]?.sourceText ?? "");
+        const getSourceLoc = expressionId => (zones?.[expressionId]?.loc ?? {});
+        const timeline = pureTimeline
+            // .filter(e => !!e.pre)
+            .map((entry, i) => {
 
-            const expressionId = entry?.pre?.expressionId;
-            return ({
+                const expressionId = entry?.expressionId ?? entry?.pre?.expressionId;
+                return ({
+                    reactKey: i,
+                    i,
+                    expressionId,
+                    // time: entry.timestamp,
+                    expression: getSourceText(expressionId),
+                    value: entry?.logValue?.serialized,
+                    loc: getSourceLoc(expressionId),//{...(entry?.node?.loc ?? {})},
 
-                reactKey: i,
-                i,
-                // time: entry.timestamp,
-                expression: getSourceText(expressionId),
-                value: entry?.logValue?.serialized,
-                loc: {...(entry?.node?.loc ?? {})},
-                expressionId: expressionId,
-                entry: entry,
-                isError: entry.isError,
-                isGraphical: entry.isDOM,
-                funcRefId: entry.funcRefId,
-                dataRefId: entry.dataRefId,
-            })
-        });
+                    entry: entry,
+                    isError: entry.isError,
+                    isGraphical: entry.isDOM,
+                    funcRefId: entry.funcRefId,
+                    dataRefId: entry.dataRefId,
+                })
+            });
         this.getEditorTextInLoc = getEditorTextInLoc;
         isNew && !timeline.length && this.cleanEditorTextInLocCache();
 
         const {orderBy, order, isPlaying} = this.state;
         isPlaying && this.handleChangeDebugLoading(true);
 
-        this.prevLiveExpressionStoreIsNew && clearTimeout(
+
+        const ee = pureTimeline?.find(e => e.isError);
+        ee && console.log("PRE liveExpressionStoreChange", ee);
+        // this.prevLiveExpressionStoreIsNew &&
+        clearTimeout(
             this.liveExpressionStoreChangeTimeout
         );
+
         this.prevLiveExpressionStoreIsNew = isNew;
 
-        // console.log("PRE liveExpressionStoreChange", pureTimeline, isNew, zones);
 
         this.liveExpressionStoreChangeTimeout = setTimeout(() => {
             // why puretimline is still []: check this obj
@@ -925,6 +960,12 @@ class Pastebin extends PureComponent {
                 let currentLogs = isPlaying ? logs : this.state.logs;
                 const data = this.createData(currentTimeline);
                 const logData = this.createLogData(currentLogs);
+
+                ee && console.log("data liveExpressionStoreChange", {
+                    data,
+                    timeline,
+                    currentTimeline
+                }, data?.find(e => e.isError));
 
                 const sortedData = this.sortData(data, orderBy, order);
                 const sortedLogData = this.sortData(
@@ -958,7 +999,7 @@ class Pastebin extends PureComponent {
                 };
                 this.setState((prevState) => {
 
-
+                    // todo: ? ee && console.log("liveExpressionStoreChange", {sortedData});
                     return ({
                         searchState,
                         isNew,
@@ -1207,12 +1248,23 @@ class Pastebin extends PureComponent {
     }
 
     setAleInstance = (aleInstance) => {
-        this.setState(({aleContext}) => {
-            if (aleContext.VisualQueryManager) {
-                aleContext.VisualQueryManager.visualQuery = [];
+        this.setState(({aleContext: _aleContext}) => {
+            const same = aleInstance === _aleContext?.aleInstance;
+            const aleContext = same ? _aleContext : {..._aleContext, aleInstance};
+
+            if (!same) {
+                _aleContext?.aleInstance?.dale.stop();
+                // aleContext?.aleInstance?.dispose();
+                aleInstance?.dale?.start(aleContext?.aleInstance?.dale);
+
+                if (aleContext.VisualQueryManager) {
+                    aleContext.VisualQueryManager.visualQuery = [];
+                }
             }
+
+
             return {
-                aleContext: {...aleContext, aleInstance}
+                aleContext
             };
         });
     }
@@ -1238,11 +1290,32 @@ class Pastebin extends PureComponent {
 
 
         // aleInstance.setOnOutputChange(this.onOutputChange);
+
         aleInstance.attachDALE(global.monaco, monacoEditor, () => {
         }, console.log);
+        // console.log("attachDALE", aleInstance);
         // this.setAleInstance(aleInstance);
         return aleInstance;
     };
+
+    handleChangeGraphicalLocator = () => this.setState(
+        prevState => {
+            const isGraphicalLocatorActive =
+                !prevState.isGraphicalLocatorActive;
+            // const searchState = {...prevState.searchState};
+            // if (isGraphicalLocatorActive) {
+            //     searchState.isExpressionsTemp = searchState.isExpressions;
+            //     searchState.isExpressions = true;
+            // } else {
+            //     searchState.visualQuery = [];
+            //     searchState.visualId = null;
+            //     searchState.isExpressions = searchState.isExpressionsTemp;
+            // }
+            return {
+                isGraphicalLocatorActive,
+                // searchState
+            }
+        });
 
     state = {
         demo: false,
@@ -1251,7 +1324,7 @@ class Pastebin extends PureComponent {
         isDebugLoading: false,
         isSelectable: false,
         tabOptions: ['trace'],
-        order: 'desc',
+        order: 'asc',
         orderBy: 'time',
         selected: [],
         data: [],
@@ -1266,7 +1339,7 @@ class Pastebin extends PureComponent {
         liveTimeline: [],
         liveLogs: [],
         isPlaying: true,
-        timeFlow: 'desc',
+        timeFlow: 'asc',
         isAutoLogActive: true,
         width: 800,
         height: 600,
@@ -1283,6 +1356,7 @@ class Pastebin extends PureComponent {
         getSortInfo: this.getSortInfo,
         handleChangeTimeFlow: this.handleChangeTimeFlow,
         handleChangeAutoExpand: this.handleChangeAutoExpand,
+        handleChangeGraphicalLocator: this.handleChangeGraphicalLocator,
         highlightSingleText: () => {
         },
         colorizeDomElement: () => {
@@ -1393,24 +1467,6 @@ class Pastebin extends PureComponent {
         this.setState({hoveredCellKey});
     }
 
-    handleChangeGraphicalLocator = () => this.setState(
-        prevState => {
-            const isGraphicalLocatorActive =
-                !prevState.isGraphicalLocatorActive;
-            const searchState = {...prevState.searchState};
-            if (isGraphicalLocatorActive) {
-                searchState.isExpressionsTemp = searchState.isExpressions;
-                searchState.isExpressions = true;
-            } else {
-                searchState.visualQuery = [];
-                searchState.visualId = null;
-                searchState.isExpressions = searchState.isExpressionsTemp;
-            }
-            return {
-                isGraphicalLocatorActive,
-                searchState
-            }
-        });
 
     handleChangeEnterCellScriptContainer =
         event => this.handleChangeHoveredCellKey(
@@ -1444,17 +1500,18 @@ class Pastebin extends PureComponent {
         event => this.handleChangeHoveredCellKey(event, null);
 
     handleUnsafeAct = (type, editorId, exception, errors, ...rest) => {
+        console.log("handleUnsafeAct", {type, editorId, exception, errors, rest});
         //here it is, put all error logic here
         switch (type) {
             case ErrorTypes.P:
-                //start with
+            //start with
             case ErrorTypes.B:
                 console.log("XC", {type, editorId, exception, errors});
                 updateBundleFailure(editorId, exception, errors, type, ...rest);
                 break;
 
             case ErrorTypes.R:
-                updatePlaygroundLoadFailure('js', exception, errors, rest);
+                //  updatePlaygroundLoadFailure('js', exception, errors, rest);
                 break;
             default:
                 throw new Error(`handleUnsafeAct: unsupported type: ${type}`);
@@ -1630,7 +1687,7 @@ class Pastebin extends PureComponent {
                         <Paper
                             elevation={1}
                             key="debugContainer"
-                            className={classes.container}
+                            className={classes.debugContainer}
                             onMouseEnter={
                                 this.handleChangeEnterCellDebugContainer
                             }
@@ -1660,7 +1717,7 @@ class Pastebin extends PureComponent {
                         <Paper
                             elevation={1}
                             key="playgroundContainer"
-                            className={classes.container}
+                            className={classes.playgroundContainer}
                             onMouseEnter={
                                 this.handleChangeEnterCellPlaygroundContainer
                             }
@@ -1668,30 +1725,6 @@ class Pastebin extends PureComponent {
                                 this.handleChangeLeaveCellPlaygroundContainer
                             }
                         >
-                            <Tooltip
-                                title={
-                                    `${
-                                        isGraphicalLocatorActive ?
-                                            'Hide' : 'Show'
-                                    } visual elements referenced in code`
-                                }
-                            >
-                                <IconButton
-                                    color={
-                                        isGraphicalLocatorActive ?
-                                            'secondary' : 'inherit'
-                                    }
-                                    className={classes.locatorButton}
-                                    raised="true"
-                                    onClick={
-                                        this.handleChangeGraphicalLocator
-                                    }
-                                >
-                                    <HighlightAltIcon
-                                        className={classes.locator}
-                                    />
-                                </IconButton>
-                            </Tooltip>
                             <DragHandleIcon
                                 className={classes.draggable}
                             />
@@ -1699,12 +1732,12 @@ class Pastebin extends PureComponent {
                                 autorunDelay={autorunDelay}
                                 editorIds={editorIds}
                                 isAutoLogActive={isAutoLogActive}
-                                isGraphicalLocatorActive={
-                                    isGraphicalLocatorActive
-                                }
-                                handleChangeGraphicalLocator={
-                                    this.handleChangeGraphicalLocator
-                                }
+                                // isGraphicalLocatorActive={
+                                //     isGraphicalLocatorActive
+                                // }
+                                // handleChangeGraphicalLocator={
+                                //     this.handleChangeGraphicalLocator
+                                // }
                                 resizeListener={this.setResizeListener}
                                 onUnsafeAct={this.handleUnsafeAct}
                             />

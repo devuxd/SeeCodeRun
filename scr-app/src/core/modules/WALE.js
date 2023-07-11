@@ -1,12 +1,35 @@
-import {TraceEvents, makeError, ScopeTypes, ALEObject} from "./ALE";
+import {
+    TraceEvents,
+    makeError,
+    ScopeTypes,
+    ALEObject,
+    getZoneDataByExpressionId,
+    getZoneDataLoc,
+    JSXExpressionReplacementType
+} from "./ALE";
 import JSEN from "../../utils/JSEN";
 import isNil from "lodash/isNil";
 import isString from "lodash/isString";
 import isObject from "lodash/isObject";
+import {isArrayLikeObject, isObjectLike} from "lodash";
 
 import isFunction from "lodash/isFunction";
 import {copifyDOMNode, isNativeCaught, isNode} from "../../utils/scrUtils";
-import {isArrayLikeObject, isObjectLike} from "lodash";
+
+import {GraphicalIdiom, SupportedApis} from "./RALE/IdiomaticInspector";
+
+class Diff {
+    diff;
+    og;
+    ng;
+    eq;
+
+    constructor(og, ng) {
+        this.eq = og === ng;
+        this.og = og;
+        this.ng = ng;
+    }
+}
 
 const MutationObserver =
     global.MutationObserver ?? global.WebKitMutationObserver ?? global.MozMutationObserver;
@@ -60,6 +83,8 @@ export class ALEJSEN {
 
     _natives = [];
     _domNodes = [];
+    _domNodesApiNames = []; // sync with _domNodes
+    _domNodesExpressionIds = [];
     _domNodesObs = [];
     _functions = [];
     _objects = [];
@@ -70,7 +95,7 @@ export class ALEJSEN {
     _importsKeys = [];
     _importsMap = {};
 
-    onDomNodeAdded = (domNodeAdded, domNodes) => {
+    onDomNodeAdded = (domNodeAdded, domNodes, domNodesApiNames) => {
     };
 
     scrObject = () => {
@@ -130,6 +155,14 @@ export class ALEJSEN {
         return this._domNodes;
     };
 
+    domNodesApiNames = () => {
+        return this._domNodesApiNames;
+    };
+
+    domNodesExpressionIds = () => {
+        return this._domNodesExpressionIds;
+    };
+
     domNodesObs = () => {
         return this._domNodesObs;
     };
@@ -187,19 +220,45 @@ export class ALEJSEN {
             const prop = text.substring(tagOffset, tagI);
             tagOffset = tagI + ALEJSEN.MAGIC_TAG.length;
             tagI = text.indexOf(ALEJSEN.MAGIC_TAG, tagOffset);
-            const i = text.substring(tagOffset, tagI);
+            const it = text.substring(tagOffset, tagI);
             tagOffset = tagI + ALEJSEN.MAGIC_TAG.length;
             tagI = text.indexOf(ALEJSEN.MAGIC_TAG, tagOffset);
-            const j = text.substring(tagOffset, tagI);
+            const jt = text.substring(tagOffset, tagI);
+            console.log(">>", {it, jt});
 
-            const ref = result[`${prop}Refs`][j];
-            result.addLiveRef(ref, prop);
-            if (prop === 'domNodes') {
-                const domRef = ref?.getSnapshot();
-                result.addDomLiveRef(domRef);
-                return domRef;
+            const i = parseInt(it);
+            const j = parseInt(jt);
+            // console.log(">>", {i, j});
+
+            if (i >= 0 && j >= 0) {
+                const ref = result[`${prop}Refs`][j];
+                result.addLiveRef(ref, prop);
+                if (prop === 'domNodes') {
+                    const domRef = ref?.getSnapshot();
+                    result.addDomLiveRef(domRef);
+                    return domRef;
+                }
+
+                return ref;
+            } else {
+                const ja = jt?.split(":");
+                const refs = [];
+                for (let k = 1; k < ja?.length; k++) {
+                    const ref = result[`${prop}Refs`][ja[k]];
+                    result.addLiveRef(ref, prop);
+                    if (prop === 'domNodes') {
+                        const domRef = ref?.getSnapshot();
+                        result.addDomLiveRef(domRef);
+                        refs.push(domRef);
+                    } else {
+                        refs.push(ref);
+                    }
+                }
+
+                return refs;
+
             }
-            return ref;
+
         }
         return JSEN.parse(text, reviver);
     };
@@ -209,6 +268,7 @@ export class ALEJSEN {
     };
 
     magicReplace = (prop, i, j) => {
+        // console.log("domNodeReplacer", {prop, i, j});
         return JSEN.replacer(
             null,
             `${
@@ -235,6 +295,7 @@ export class ALEJSEN {
             bindSharedData,
             natives,
             domNodes,
+            domNodesApiNames,
             domNodesObs,
             functions,
             objects,
@@ -261,7 +322,137 @@ export class ALEJSEN {
         // const _functions = functions();
         // const _objects = objects();
         const _domNodes = domNodes();
-        const _domNodesObs = domNodesObs();
+        const _domNodesApiNames = domNodesApiNames();
+        // const _domNodesObs = domNodesObs();
+
+        const registerDomNode = (_value, apiName) => {
+            // console.log("registerDomNode I", _value);
+            const prop = 'domNodes';
+            let i = _domNodes.indexOf(_value);
+
+            if (i < 0) {
+                i = _domNodes.push(_value) - 1;
+                // Create an observer instance linked to the callback function
+                // const observer = new MutationObserver(MutationObserverCallback);
+                // // Start observing the target node for configured mutations
+                // observer.observe(_value, MutationObserverConfig);
+                // _domNodesObs.push(observer);
+                _domNodesApiNames[i] = apiName;
+                // if (apiName == SupportedApis.React) {
+                    // const f = _domNodes.reverse().find(d => d !== _value && d._owner === _value._owner && d.type === _value.type &&(_value._owner?.child === d._owner?.child )) ?? {};
+
+                    //
+                    // const diffVisitor = (og, ng, diff, key = "root", memo = []) => {
+                    //
+                    //     try {
+                    //         if (memo.indexOf(og) > -1 || memo.indexOf(ng) > -1) {
+                    //             const kl = `${key}:LOOP`;
+                    //             diff[kl] = new Diff(og, ng);
+                    //         }
+                    //         memo.push(og, ng);
+                    //         // if(key){
+                    //         //     diff = diff[key];
+                    //         // }
+                    //
+                    //         [...Object.keys(og), ...Object.keys(ng)].forEach(k => {
+                    //             const l = og?.[k];
+                    //             const r = ng?.[k];
+                    //             if (l || r) {
+                    //
+                    //                 diff[k] = new Diff(l, r);
+                    //                 //   diffVisitor(l, r, diff, `${key}:${k}`, memo);
+                    //             }
+                    //         });
+                    //
+                    //     } catch (e) {
+                    //         const ke = `${key}:ERRR`;
+                    //         diff[ke] = new Diff(og, ng);
+                    //     }
+                    // }
+                    //
+                    // const diff = {};
+                    // diffVisitor(_value, f, diff);
+                    //
+                    // const diffOwner = {};
+                    // diffVisitor(_value._owner, f._owner, diffOwner);
+                    //
+                    //
+                    // console.log(
+                    //     "registerDomNode", diff, diffOwner,); //?.memoizedProps  _value._owner, f._owner
+                    // //     (_value._owner?.memoizedProps && (_value._owner?.memoizedProps === f._owner?.memoizedProps)), _value._owner?.memoizedProps, f._owner?.memoizedProps,); //{p:f.props===_value.props, s: f===_value, f, _value, apiName});
+                    // //jsxReplacementType
+                // }
+                // console.log("onDomNodeAdded", {onDomNodeAdded, _value, _domNodes, _domNodesApiNames});
+                onDomNodeAdded?.(_value, _domNodes, _domNodesApiNames);
+            }
+
+
+            // console.log("registerDomNode S",_value);
+            // try {
+            const val = copifyDOMNode(_value, this, apiName);
+            //fix children: log dom refs for ids only, check native everywhere;
+            const valString = this.stringify(val, null, space, domCopyDepth);
+            const j = result[`${prop}Refs`].push(
+                valString
+            ) - 1;
+
+            if (apiName == SupportedApis.standard && _value === value && !result.isOutput) {
+                result.isOutput = !ignoreTags.includes(
+                    (_value.tagName || '').toLowerCase()
+                );
+
+            }
+
+            if (apiName == SupportedApis.React) {
+                result.isOutput = true;
+                // console.log("f", val, _value === value, !result.isOutput,  _value, value, result);
+            }
+
+            if (result.isOutput) {
+                result.outputRefs.push(_value);
+                result.graphicalId = i;
+
+                if (result.graphicalIds?.indexOf(i) < 0) {
+                    result.graphicalIds?.push(i);
+                }
+                if (apiName == SupportedApis.React) {
+                    result.isOutput = true;
+                    // console.log("f", val, _value === value, !result.isOutput,  _value, value, result);
+                }
+            }
+
+
+            // } catch (e) {
+            //     console.log("registerDomNode E", _value, e);
+            // }
+            // console.log("registerDomNode O",_value, result);
+            return [i, j];
+        };
+
+        const domNodeReplacer = (_value, apiName) => {
+            // console.log("domNodeReplacer",_value, apiName);
+            result.isDOM = true;
+            const prop = 'domNodes';
+            let ia = "", ja = "";
+            switch (apiName) {
+                case SupportedApis.jQuery:
+                    for (let k = 0; k < _value.length; k++) {
+                        const [i, j] = registerDomNode(_value[k], apiName);
+                        ia += ":" + i;
+                        ja += ":" + j;
+                    }
+                    break;
+                case SupportedApis.standard:
+                case SupportedApis.React:
+                    // default:
+                    const [i, j] = registerDomNode(_value, apiName);
+                    ia = i;
+                    ja = j;
+            }
+            // console.log("domNodeReplacer E", {ia, ja});
+
+            return magicReplace(prop, ia, ja);
+        };
 
         this._replacer = replacer = replacer ?? ((_key, _value) => {
 
@@ -310,40 +501,11 @@ export class ALEJSEN {
                     registerValue(_value, prop, result);
                 }
 
-                if (isNode(_value, scrObject.contentWindow)) {
-                    const prop = 'domNodes';
-                    i = _domNodes.indexOf(_value);
-                    result.isDOM = true;
+                const apiName = GraphicalIdiom.isNode(_value, scrObject.contentWindow);
+                // apiName && console.log(apiName, _value);
 
-                    if (i < 0) {
-                        i = _domNodes.push(_value) - 1;
-                        // Create an observer instance linked to the callback function
-                        const observer = new MutationObserver(MutationObserverCallback);
-                        // Start observing the target node for configured mutations
-                        observer.observe(_value, MutationObserverConfig);
-                        _domNodesObs.push(observer);
-                        onDomNodeAdded?.(_value, _domNodes);
-                    }
-
-                    const val = copifyDOMNode(_value, this);
-                    //fix children: log dom refs for ids only, check native everywhere;
-                    const valString = this.stringify(val, null, space, domCopyDepth);
-                    const j = result[`${prop}Refs`].push(
-                        valString
-                    ) - 1;
-
-                    if (_value === value && !result.isOutput) {
-                        result.isOutput = !ignoreTags.includes(
-                            (_value.tagName || '').toLowerCase()
-                        );
-
-                        if (result.isOutput) {
-                            result.outputRefs.push(_value);
-                            result.graphicalId = i;
-                        }
-                    }
-
-                    return magicReplace(prop, i, j);
+                if (apiName) {//isNode(_value, scrObject.contentWindow)
+                    return domNodeReplacer(_value, apiName);
                 }
             }
             return JSEN.replacer(_key, _value);
@@ -401,6 +563,9 @@ export class ALEJSEN {
 }
 
 export class TimelineEntry {
+    _graphicalAPIName = null;
+    _graphicalObject = null;
+
     constructor(
         traceEventType, uid, pre, logValue, post,
         scopeType, scopeThis,
@@ -449,8 +614,22 @@ export class TimelineEntry {
         this.errorObject = errorObject;
         this.zoneData = zoneData;
         this.rawError = rawError;
-        this.importZoneExpressionData =importZoneExpressionData;
+        this.importZoneExpressionData = importZoneExpressionData;
 
+    }
+
+    graphicalAPIName = (graphicalAPIName = undefined) => {
+        if (graphicalAPIName !== undefined) {
+            this._graphicalAPIName = graphicalAPIName;
+        }
+        return this._graphicalAPIName;
+    }
+
+    graphicalObject = (graphicalObject = undefined) => {
+        if (graphicalObject !== undefined) {
+            this._graphicalObject = graphicalObject;
+        }
+        return this._graphicalObject?.();
     }
 }
 
@@ -522,24 +701,27 @@ export default function wireGlobalObjectToALE(
     scrObject[alLocatorIdentifierName] = {};
 
     scrObject[alPreIdentifierName] = ( // handles BALE's makeAlPreCall calls
-        expressionId, calleeExpressionId, calleeObjectExpressionId,
-        calleePropertyExpressionId, ...extra
+        expressionId,
+        calleeExpressionId,
+        calleeObjectExpressionId,
+        calleePropertyExpressionId,
+        ...preExtra
     ) => {
         scrObject.lastExpressionId = expressionId;
         aleInstance?.onTraceChange?.();
         return {
             expressionId, calleeExpressionId, calleeObjectExpressionId,
             calleePropertyExpressionId,
-            extra
+            preExtra
         };
     };
 
     scrObject[alPostIdentifierName] = ( // handles BALE's makeAlPostCall calls
-        expressionId, ...extra
+        expressionId, ...postExtra
     ) => {
         aleInstance?.onTraceChange?.();
         return {
-            expressionId, extra
+            expressionId, postExtra
         };
     };
 
@@ -547,7 +729,7 @@ export default function wireGlobalObjectToALE(
         (expressionIds = []) => {
             let pending = expressionIds.length;
             const _expressionIds = expressionIds.map(v => `${v}`);
-            const result = {};
+            const latestEntries = {};
             for (let i = scrObject.timeline.length; i > -1 && pending > 0; i--) {
                 const entry = scrObject.timeline[i];
                 const expressionId = entry?.pre?.expressionId;
@@ -555,19 +737,21 @@ export default function wireGlobalObjectToALE(
                 if (expressionId) {
                     const _expressionId = `${expressionId}`;
                     if (_expressionIds.includes(_expressionId)) {
-                        if (!result[_expressionId]) {
-                            result[_expressionId] = entry;
+                        if (!latestEntries[_expressionId]) {
+                            latestEntries[_expressionId] = entry;
                             pending--;
                         }
                     }
                 }
             }
-            return result;
+            return latestEntries;
         };
 
     scrObject[alIdentifierName] = (
         uid, traceEventType, ...rest
     ) => {
+
+        // console.log("ref", {uid, traceEventType, rest});
         if (traceEventType === TraceEvents.P) {
             const [importSourceName, importSourceIndex, importRef] = rest;
             const importZoneExpressionData = scrObject.aleJSEN?.registerImportRef(importSourceName, importSourceIndex, importRef, aleInstance);
@@ -579,7 +763,7 @@ export default function wireGlobalObjectToALE(
                 traceEventType, uid,
                 null, null, null,
                 null, null, expressionId, null,
-                true, false, false, true,
+                true, false, false, false,
                 null,
                 null, null, null, null,
                 null, null,
@@ -595,16 +779,38 @@ export default function wireGlobalObjectToALE(
 
         }
         if (traceEventType === TraceEvents.L || traceEventType === TraceEvents.R) {
-            // console.log("API REGISTER", [uid, traceEventType,...rest]);
+            //  console.log("API REGISTER", [uid, traceEventType,...rest]);
             // handles BALE's makeAlCall calls
             // alValueParamNumber = 3 := value
-            const [pre, value, post, ...extra] = rest;
+            const [pre, val, post, ...extra] = rest;
+
+            let value = val;
+
             const {
                 expressionId,
                 calleeExpressionId,
                 calleeObjectExpressionId,
-                calleePropertyExpressionId
+                calleePropertyExpressionId,
+                preExtra
             } = pre;
+
+
+            // preExtra.length && console.log("REF",preExtra); //[uid, traceEventType,...rest, preExtra]
+
+            const [jsxReplacementType, reactApiObj] = preExtra;
+
+            let isReactObject = false;
+
+            switch (jsxReplacementType) {
+                case JSXExpressionReplacementType.refAppend:
+                case JSXExpressionReplacementType.refIntercept:
+                    value = value ?? reactApiObj?.createRef?.();
+                    isReactObject = true;
+                    break;
+
+            }
+            // jsxReplacementType && console.log("JSX", {jsxReplacementType, val, value});
+
 
             const isMethodCall =
                 !!calleeObjectExpressionId && !!calleePropertyExpressionId;
@@ -649,6 +855,12 @@ export default function wireGlobalObjectToALE(
                 false, isCall, isConsole, false,
                 extra,
             );
+
+            // if (isReactObject) {
+            //     entry.graphicalAPIName(SupportedApis.React);
+            //     entry.graphicalObject(() => value?.current);
+            //
+            // }
 
             scrObject.timeline.push(entry);
             aleInstance?.onTraceChange?.();
@@ -779,19 +991,21 @@ export default function wireGlobalObjectToALE(
 
     scrObject[alExceptionCallbackIdentifierName] = (e, ...rest) => {
         const lastExpressionId = scrObject?.lastExpressionId;
-        //console.log("lastExpressionId", lastExpressionId);
+        // console.log("lastExpressionId", lastExpressionId);
         if (lastExpressionId) {
-            const eData = aleInstance?.zale?.getZoneData?.(
-                lastExpressionId
-            );
+            const zoneData = getZoneDataByExpressionId(aleInstance, lastExpressionId);
+            const babelLoc = getZoneDataLoc(zoneData);
 
-            if (eData) {
-                const errorObject = makeError(e);
+            if (babelLoc) {
                 let entry = null;
+
+                const errorObject = makeError(e, babelLoc);
+                // console.log("lastExpressionId", {lastExpressionId, zoneData, errorObject});
+                //todo: on trace change trigger notification via updateplaygorund failure: done
                 if (scrObject) {
                     const traceEventType = TraceEvents.E;
                     const expressionId = lastExpressionId;
-                    const zoneData = eData;
+
                     const rawError = e;
                     entry = new TimelineEntry(
                         traceEventType, null,

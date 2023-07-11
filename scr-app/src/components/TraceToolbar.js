@@ -29,6 +29,7 @@ import PastebinContext from '../contexts/PastebinContext';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {searchStateChange} from '../redux/modules/pastebin';
 import {VisualQueryManager} from "../core/modules/VisualQueryManager";
+import HighlightAltIcon from "@mui/icons-material/HighlightAlt";
 
 const mapStateToProps = null,
    mapDispatchToProps = {
@@ -196,7 +197,11 @@ function InputEndAdornment(props) {
 
 function ResultsFilter(props) {
    const {
-      classes, searchState, getSortInfo
+      classes,
+      isGraphicalLocatorActive,
+      handleChangeGraphicalLocator,
+      searchState,
+      getSortInfo
    } = props;
    const {
       // isFunctions,
@@ -241,7 +246,7 @@ function ResultsFilter(props) {
             title={"Include Code Expressions"}
          >
             <Chip
-               label="x=y"
+               label= "code"//"x=y"
                onClick={() => handleFilterClick('isExpressions')}
                classes={avatarClasses}
                avatar={isExpressions ? <Avatar><CheckBoxIcon/></Avatar> :
@@ -252,7 +257,7 @@ function ResultsFilter(props) {
             title={"Include Execution Values"}
          >
             <Chip
-               label="{...}"
+               label= "values"//"{...}"
                onClick={() => handleFilterClick('isValues')}
                classes={avatarClasses}
                avatar={
@@ -261,6 +266,43 @@ function ResultsFilter(props) {
                }
             />
          </Tooltip>
+          <Tooltip
+              title={"Include Visual Elements"}
+          >
+              <Chip
+                  label= "visuals"//"{...}"
+                  onClick={handleChangeGraphicalLocator}
+                  classes={avatarClasses}
+                  avatar={
+                      isGraphicalLocatorActive ? <Avatar><CheckBoxIcon/></Avatar> :
+                          <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
+                  }
+              />
+          </Tooltip>
+         {/*<Tooltip*/}
+         {/*    title={*/}
+         {/*       `${*/}
+         {/*           isGraphicalLocatorActive ?*/}
+         {/*               'Hide' : 'Show'*/}
+         {/*       } visual elements referenced in code`*/}
+         {/*    }*/}
+         {/*>*/}
+         {/*   <IconButton*/}
+         {/*       color={*/}
+         {/*          isGraphicalLocatorActive ?*/}
+         {/*              'secondary' : 'inherit'*/}
+         {/*       }*/}
+         {/*       className={classes.locatorButton}*/}
+         {/*       raised="true"*/}
+         {/*       onClick={*/}
+         {/*          handleChangeGraphicalLocator*/}
+         {/*       }*/}
+         {/*   >*/}
+         {/*      <HighlightAltIcon*/}
+         {/*          className={classes.locator}*/}
+         {/*      />*/}
+         {/*   </IconButton>*/}
+         {/*</Tooltip>*/}
       </>
    );
 }
@@ -378,18 +420,18 @@ function EnhancedToolbar(props) {
    return (
       <>
          <div className={classes.itemCenter}>
-            {numSelected > 0 ? null : <>
-               <Tooltip
-                  title={
-                     isPlaying ? 'Pause Updates' : newEntries > 99 ?
-                        `${newEntries} new updates` : 'Resume Updates'
-                  }
-                  placement={'bottom-end'}
-                  enterDelay={300}
-               >
-                  {playingButton}
-               </Tooltip>
-            </>}
+            {/*{numSelected > 0 ? null : <>*/}
+            {/*   <Tooltip*/}
+            {/*      title={*/}
+            {/*         isPlaying ? 'Pause Updates' : newEntries > 99 ?*/}
+            {/*            `${newEntries} new updates` : 'Resume Updates'*/}
+            {/*      }*/}
+            {/*      placement={'bottom-end'}*/}
+            {/*      enterDelay={300}*/}
+            {/*   >*/}
+            {/*      {playingButton}*/}
+            {/*   </Tooltip>*/}
+            {/*</>}*/}
             <div className={classes.title}>
                {numSelected > 0 ? (
                   <Typography color="inherit" variant="subtitle1">
@@ -410,21 +452,21 @@ function EnhancedToolbar(props) {
                   />
                )}
             </div>
-            <Tooltip
-               title={
-                  isAutoLogActive ?
-                     'Deactivate Live Expressions'
-                     : 'Activate Live Expressions'
-               }
-               placement={'bottom-end'}
-               enterDelay={300}
-            >
-               <IconButton color={isAutoLogActive ? "primary" : 'inherit'}
-                           onClick={handleChangeAutoExpand}>
-                  {isAutoLogActive ? <CenterFocusStrongIcon/> :
-                     <CenterFocusWeakIcon/>}
-               </IconButton>
-            </Tooltip>
+            {/*<Tooltip*/}
+            {/*   title={*/}
+            {/*      isAutoLogActive ?*/}
+            {/*         'Deactivate Live Expressions'*/}
+            {/*         : 'Activate Live Expressions'*/}
+            {/*   }*/}
+            {/*   placement={'bottom-end'}*/}
+            {/*   enterDelay={300}*/}
+            {/*>*/}
+            {/*   <IconButton color={isAutoLogActive ? "primary" : 'inherit'}*/}
+            {/*               onClick={handleChangeAutoExpand}>*/}
+            {/*      {isAutoLogActive ? <CenterFocusStrongIcon/> :*/}
+            {/*         <CenterFocusWeakIcon/>}*/}
+            {/*   </IconButton>*/}
+            {/*</Tooltip>*/}
          </div>
          <div className={classes.actions}>
             {numSelected > 0 ? (

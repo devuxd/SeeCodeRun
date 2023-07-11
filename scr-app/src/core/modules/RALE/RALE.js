@@ -538,9 +538,7 @@ export function RALE(
         if (!dale) {
             return;
         }
-        dale.start();
         setDecorationsRef(dale.ref);
-        return () => dale.stop();
     }, [dale, lastContentChangeTimestamp]);
 
     useEffect(

@@ -57,11 +57,14 @@ import {
     parseOptions
 } from "./modules/ALE";
 
+import {makeAjax, makeScrCloudFunctions} from '../firebase/scrCloudFunctions';
+
 let MonacoJSXHighlighter = null;
 
 const {root, config} = firebaseConfig;
 
 const fireco = {
+    appId: `${Date.now()}`,
     serverTimestamp: () => null,
     app: null,
     database: null,
@@ -77,6 +80,8 @@ const fireco = {
     persistableComponents: {},
     persistableComponentsOnDispose: [],
     disposeFirecoChat: () => null,
+    scrCloudFunctions: {},
+    ajax: null,
 };
 
 const defaultFirecoPad = {
@@ -150,11 +155,16 @@ class AppManager {
                         global.monaco = monaco;
                         configureMonacoDefaults(monaco);
                         observer.next(loadMonacoFulfilled(monaco));
+                        observer.complete();
                     })
                     .catch(error => {
-                        observer.next(loadMonacoRejected(error)
-                        )
+                        observer.next(loadMonacoRejected(error));
+                        observer.complete();
                     });
+
+                return () => {
+                    // no need
+                };
             }
         );
     }
@@ -186,6 +196,9 @@ class AppManager {
         return true;
     }
 
+
+    activateLogRocket = false;
+
     setPastebinId(pastebinId, shouldReplace = false) {
         if (pastebinId && (!this.pastebinId || shouldReplace)) {
             global.location.hash = pastebinId;
@@ -197,7 +210,7 @@ class AppManager {
                 email: `${pastebinId}@scr.run`,
             };
 
-            this.initLogRocket(userLogRocket);
+            this.activateLogRocket && this.initLogRocket(userLogRocket);
         }
     }
 
@@ -279,7 +292,8 @@ class AppManager {
         fireco.unsubscribeOnIdTokenChanged?.();
     }
 
-    configureFirecoPaths(pastebinId, isNew) {
+    configureFirecoPaths(pastebinKey, isNew, uid = null) {
+        const pastebinId = `${uid ? `${uid}/` : ''}${pastebinKey}`;
         fireco.chatPath = `${root}/${pastebinId}/chat`;
         fireco.usersPath = `${root}/${pastebinId}/users`;
         fireco.persistablePath = `${root}/${pastebinId}/components`;
@@ -403,6 +417,7 @@ class AppManager {
 
         let tm = null;
         const widgetLayoutChange = () => {
+            console.log("works", firecoPad?.liveExpressionWidgetProvider?.beforeRender);
             isChange && firecoPad?.liveExpressionWidgetProvider?.beforeRender();
             isChange = false;
             clearTimeout(tm);
@@ -473,6 +488,15 @@ class AppManager {
                 }
 
                 const firecoPad = this.firecoPads[editorId];
+
+                const action = of(
+                    loadMonacoEditorFulfilled(editorId, firecoPad)
+                );
+
+                // if (firecoPad.isConfigured) {
+                //     console.log("perhaps? observeConfigureMonacoEditor");
+                //     return action;
+                // }
 
                 firecoPad.lineNumbersProvider = configureLineNumbersProvider(
                     editorId
@@ -567,9 +591,9 @@ class AppManager {
                     },
                 };
 
-                return of(
-                    loadMonacoEditorFulfilled(editorId, firecoPad)
-                );
+                // firecoPad.isConfigured = true;
+
+                return action;
 
             } catch (error) {
                 return of(loadMonacoEditorRejected(editorId, error));
@@ -605,44 +629,90 @@ class AppManager {
         return of(switchMonacoThemeFulfilled());
     }
 
-    observeActivateFireco(pastebinId, pastebinToken, isNew) {
-        if (pastebinId && pastebinToken) {
-            this.configureFirecoPaths(pastebinId, isNew);
-            fireco.isAuth = false;
-            return Observable.create(observer => {
-                if (fireco.unsubscribeOnAuthStateChanged) {
-                    fireco.unsubscribeOnAuthStateChanged();
-                    fireco.unsubscribeOnAuthStateChanged = null;
-                }
-                //http://localhost:3000/#-MmsphZhV1G1mZdAF3Ze
-                const loadFire = async () => {
-                    if (!fireco.app) {
-                        fireco.firebase = (await import('firebase/app')).default;
-                        await import ('firebase/auth');
-                        await import ('firebase/database');
+    ajax = (...options) => {
+        if (fireco.ajax) {
+            return fireco.ajax(...options);
+        }
 
-                        fireco.Firepad = (await import('firepad')).default;
-                        fireco.app =
-                            fireco.firebase.initializeApp(config, pastebinId);
-                        fireco.database = fireco.firebase.database(fireco.app);
-                        fireco.auth = fireco.firebase.auth(fireco.app);
+        return new Observable(observer => {
+            let subscription = null;
 
-                        fireco.serverTimestamp =
-                            () => fireco.firebase.database.ServerValue.TIMESTAMP;
-                        fireco.connectedRef =
-                            fireco.database.ref(".info/connected");
-
-                    } else {
-                        fireco.connectedRef.off("value", fireco.onValue);
+            this.loadFires().then(() => {
+                subscription = fireco.ajax(...options).subscribe({
+                    next(value) {
+                        observer.next(value);
+                    },
+                    error(err) {
+                        observer.error(err);
+                    },
+                    complete() {
+                        observer.complete();
                     }
+                });
 
-                    fireco.onValue =
-                        snap => observer.next(onConnectionChanged(snap.val()));
+            }).catch(error => observer.error(error));
 
+            return () => {
+                subscription?.unsubscribe();
+            };
+        });
+    };
+
+    loadFires = async () => {
+        if (fireco.app) {
+            return fireco;
+        }
+
+        // try {
+        const firebase = (await import('firebase/app')).default;
+        await import ('firebase/auth');
+        await import ('firebase/database');
+        const Firepad = (await import('firepad')).default;
+
+
+        fireco.appId = this.pastebinId ?? fireco.appId;
+
+        const app = firebase.initializeApp(config, fireco.appId);
+        // console.log("config", config);
+        const database = firebase.database(app);
+        const auth = firebase.auth(app);
+
+        const serverTimestamp = () => firebase.database.ServerValue.TIMESTAMP;
+        const connectedRef = database.ref(".info/connected");
+
+        const scrCloudFunctions = makeScrCloudFunctions(app, serverTimestamp);
+        const ajax = makeAjax(scrCloudFunctions);
+
+        fireco.firebase = firebase;
+        fireco.Firepad = Firepad;
+        fireco.app = app;
+        fireco.database = database;
+        fireco.auth = auth;
+        fireco.serverTimestamp = serverTimestamp;
+        fireco.connectedRef = connectedRef;
+        fireco.scrCloudFunctions = scrCloudFunctions;
+        fireco.ajax = ajax;
+
+        return fireco;
+        // } catch (e) {
+        //     console.log("loadFires", e);
+        // }
+    };
+
+    authSignInMethod = "signInAnonymously"; //signInWithCustomToken
+
+    observeActivateFireco(pastebinId, pastebinToken, isNew) {
+        // console.log("observeActivateFireco", {pastebinId, pastebinToken, isNew});
+        if (pastebinId && pastebinToken) {
+
+            fireco.isAuth = false;
+            return new Observable(observer => {
+                //http://localhost:3000/#-MmsphZhV1G1mZdAF3Ze
+
+                this.loadFires().then(() => {
+                    fireco.onValue = snap => observer.next(onConnectionChanged(snap.val()));
                     fireco.connectedRef.on("value", fireco.onValue);
-                };
 
-                loadFire().then(() => {
                     const onError = (error) => {
                         fireco.isAuth = false;
                         observer.next(activateFirepadRejected(error));
@@ -650,12 +720,69 @@ class AppManager {
 
                     fireco.unsubscribeOnAuthStateChanged =
                         fireco.auth.onAuthStateChanged(user => {
+                                // console.log("onAuthStateChanged", user);
                                 if (user) {
                                     fireco.isAuth = true;
+                                    this.configureFirecoPaths(
+                                        pastebinId,
+                                        isNew
+                                        // , user.uid
+                                    );
+
+                                    //todo: make users use google to persist pastebins
+                                    // add more robust rules
+                                    //https://github.com/FirebaseExtended/firepad/tree/master/examples/security
+                                    // move identify framework to manage old data
+                                    // try {
+                                    //     const provider = new fireco.firebase.auth.GoogleAuthProvider();
+                                    //     // fireco.firebase.auth()
+                                    //     fireco.auth
+                                    //         .signInWithPopup(provider)
+                                    //         .then((result) => {
+                                    //             /** @type {firebase.auth.OAuthCredential} */
+                                    //             const credential = result.credential;
+                                    //
+                                    //             // This gives you a Google Access Token. You can use it to access the Google API.
+                                    //             const token = credential.accessToken;
+                                    //             // The signed-in user info.
+                                    //             const user = result.user;
+                                    //             // IdP data available in result.additionalUserInfo.profile.
+                                    //             const googleUser = user;
+                                    //
+                                    //             const credentialN = fireco.firebase.auth.GoogleAuthProvider.credential(
+                                    //                 googleUser.getAuthResponse().id_token);
+                                    //
+                                    //             // fireco.firebase.auth
+                                    //             fireco.auth
+                                    //                 .currentUser.linkWithCredential(credentialN)
+                                    //                 .then((usercred) => {
+                                    //                     const user = usercred.user;
+                                    //                     console.log("Anonymous account successfully upgraded", user);
+                                    //                 }).catch((error) => {
+                                    //                 console.log("Error upgrading anonymous account", error);
+                                    //             });
+                                    //             // ...
+                                    //         }).catch((error) => {
+                                    //         // Handle Errors here.
+                                    //         var errorCode = error.code;
+                                    //         var errorMessage = error.message;
+                                    //         // The email of the user's account used.
+                                    //         var email = error.email;
+                                    //         // The firebase.auth.AuthCredential type that was used.
+                                    //         var credential = error.credential;
+                                    //
+                                    //
+                                    //         // ...
+                                    //     });
+                                    // }catch (e){
+                                    //     console.log("signInWithPopup", e);
+                                    // }
+
                                     observer.next(
                                         activateFirepadFulfilled(user)
                                     );
                                 } else {
+                                    fireco.isAuth = false;
                                     onError(
                                         new Error("Firebase user logged out")
                                     );
@@ -664,10 +791,22 @@ class AppManager {
                             onError
                         );
 
+                    if (this.authSignInMethod === "signInAnonymously") {
+                        return fireco.auth.signInAnonymously(
+
+                        ).catch(onError);
+                    }
+
                     return fireco.auth.signInWithCustomToken(
                         pastebinToken
                     ).catch(onError);
                 });
+
+                return () => {
+                    fireco.connectedRef?.off("value", fireco.onValue);
+                    fireco.unsubscribeOnAuthStateChanged?.();
+                    fireco.unsubscribeOnAuthStateChanged = null;
+                };
 
             });
         } else {
@@ -709,11 +848,18 @@ class AppManager {
                 firecoPad.monacoEditor,
                 {defaultText: editorText}
             );
-            return Observable.create(observer => {
+            return new Observable(observer => {
                 observer.next(configureFirecoEditorFulfilled(editorId));
-                firecoPad.firepadInstance.on('ready', () => {
+                const onReady = () => {
                     observer.next(configureFirecoEditorReady(editorId));
-                });
+                    observer.complete();
+                };
+
+                firecoPad.firepadInstance.on('ready', onReady);
+
+                return () => {
+                    firecoPad.firepadInstance.off('ready', onReady);
+                };
             });
         } catch (error) {
             return of(configureFirecoEditorRejected(editorId, error));

@@ -15,6 +15,7 @@ import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
 import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
 import CodeEqualIcon from 'mdi-material-ui/CodeEqual';
 import isNative from "lodash/isNative";
+import {SupportedApis} from "../core/modules/RALE/IdiomaticInspector";
 
 
 export const fuseMatch = (words, pattern, options) => (
@@ -298,7 +299,55 @@ class DocumentTypeNode {
 class DocumentFragmentNode {
 }
 
-export const copifyDOMNode = (data, replacer) => {
+class ReactElement {
+}
+
+
+const newReactElement = (element, context) => {
+   const {type, key, ref, props} = element;
+   const {children, ...otherProps} = props??{};
+
+   const domData = new ReactElement();
+   domData.tagName = type; // amke refs live
+   domData.key = key;
+   domData.ref = ref; // make live
+   // domData.name = domData.tagName.toLowerCase();
+   // domData.listeners = {};
+   // for (const k of htmlEvents) {
+   //    const listener = element[k];
+   //    listener && !isNativeCaught(listener) && (domData.listeners[k] = listener);
+   // }
+   domData.props = {};
+
+   const attributes = Object.keys(otherProps);
+
+   if (attributes) {
+      const attributeNodes = {};
+      for (let i = 0; i < attributes.length; i++) {
+         const attribute = attributes[i];
+         attributeNodes[attribute] = otherProps[attribute];
+      }
+      domData.props = attributeNodes;
+   }
+
+   if (children) {
+      const onCopyChild = context?.onCopyChild ?? defaultOnCopyChild;
+      const childrenCopy = [];
+      for (let i = 0; i < children.length; i++) {
+         const childCopy = onCopyChild(children[i], i, children);
+         childrenCopy.push(childCopy);
+      }
+      domData.props.children = childrenCopy;
+   }
+
+   return domData;
+};
+
+export const copifyDOMNode = (data, replacer, apiName) => {
+   if(SupportedApis.React === apiName){
+      return newReactElement(data, replacer);
+   }
+
    switch (data.nodeType) {
       case Node.ELEMENT_NODE:
          return newDOMElement(data, replacer);

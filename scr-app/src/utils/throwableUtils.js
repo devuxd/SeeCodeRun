@@ -1,8 +1,9 @@
+import {toReadableThrowable} from './bundleUtils';
 import {isParse5Error, toReadableParse5Throwable} from "./parse5Utils";
 import {isPostCssError, toReadablePostCssThrowable} from "./postCssUtils";
-import {toReadableBabelThrowable} from "./babelUtils";
+import {isBabelError, toReadableBabelThrowable} from "./babelUtils";
 
-export function toReadableThrowable(obj) {
+export function toThrowable(obj) {
     if (isPostCssError(obj)) {
         return toReadablePostCssThrowable(obj);
     }
@@ -11,5 +12,9 @@ export function toReadableThrowable(obj) {
         return toReadableParse5Throwable(obj);
     }
 
-    return toReadableBabelThrowable(obj);
+    if(isBabelError(obj)){
+        return toReadableBabelThrowable(obj);
+    }
+
+    return toReadableThrowable(obj);
 }

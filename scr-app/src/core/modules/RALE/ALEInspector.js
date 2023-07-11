@@ -14,111 +14,122 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
+import FunctionIcon from 'mdi-material-ui/Function';
+
 
 import isArrayLikeObject from 'lodash/isArrayLikeObject';
 import isObjectLike from 'lodash/isObjectLike';
+import isFunction from 'lodash/isFunction';
 
 import ALEContext from "./ALEContext";
 import {useResizeAndOverflowDetector} from "../../../utils/reactUtils";
 
-
 //start
 // https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 /* NOTE: Chrome console.log is italic */
-const styles = theme => ({
-    preview: {
-        fontStyle: 'italic',
-    },
-    objectClassName: {
-        fontSize: '80%',
-    },
-    objectBraces: {
-        fontFamily: 'Menlo, monospace',
-        fontWeight: 'bold',
-        fontStyle: 'normal',
-        // color: 'white',
-        color: theme.palette.mode === 'light' ?
-            'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
-        fontSize: '105%',
-    },
-    arrayBrackets: {
-        fontFamily: 'Menlo, monospace',
-        fontWeight: 'bold',
-        fontStyle: 'normal',
-        color: theme.palette.mode === 'light' ?
-            'rgb(28, 0, 207)' : 'rgb(153, 128, 255)',
-        // fontSize: '110%',
-    },
-    stringQuote: {
-        fontWeight: 'bold',
-        fontStyle: 'normal',
-        fontSize: '105%',
-        color: theme.palette.mode !== 'light' ?
-            'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
-    },
-    // stringValue: {
-    //    fontWeight: 100,
-    //    // color: theme.palette.mode === 'light' ?
-    //    // 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
-    // },
-    emptyStringValue: {
-        fontFamily: 'Menlo, monospace',
-        color: 'white',
-        fontWeight: 'bold',
-        backgroundColor: theme.palette.action.disabled,
-    },
-    booleanValue: {
-        fontFamily: 'Menlo, monospace',
-        fontSize: '90%',
-        fontWeight: 'bold',
-    },
-    numberValue: {},
-    undefinedValue: {
-        fontFamily: 'Menlo, monospace',
-        color: 'white',
-        fontWeight: 'bold',
-        backgroundColor: theme.palette.mode === 'light' ?
-            'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
-    },
-    trueValue: {
-        fontFamily: 'Menlo, monospace',
-        color: 'white',
-        fontWeight: 'bold',
-        backgroundColor: theme.palette.mode === 'light' ?
-            'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
-    },
-    falseValue: {
-        fontFamily: 'Menlo, monospace',
-        color: 'white',
-        fontWeight: 'bold',
-        backgroundColor: theme.palette.mode === 'light' ?
-            'rgb( 26, 22,196)' : 'rgb( 63, 59,233)',
-    },
-    nanValue: {
-        fontFamily: 'Menlo, monospace',
-        color: 'white',
-        fontWeight: 'bold',
-        background: `linear-gradient(-120deg, ${
-            theme.palette.mode === 'light' ?
-                'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
-        } 0%, ${
-            theme.palette.mode === 'light' ?
-                'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
-        } 46.5%, white 46.5%, white 54.5%, ${
-            theme.palette.mode === 'light' ?
-                'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
-        } 54.5%,${
-            theme.palette.mode === 'light' ?
-                'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
-        } 100%)`,
-    },
-    undefinedValueWarning: {
-        fontFamily: 'Menlo, monospace',
-        color: 'white',
-        fontWeight: 'bold',
-        backgroundColor: 'grey',
-    },
-});
+const styles = theme => {
+    return ({
+        liveExpressionIconDefaultStyle: {
+            fontSize: "0.8rem",
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
+        },
+        preview: {
+            fontStyle: 'italic',
+        },
+        objectClassName: {
+            fontSize: '80%',
+        },
+        objectBraces: {
+            fontFamily: 'Menlo, monospace',
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            // color: 'white',
+            color: theme.palette.mode === 'light' ?
+                'rgb(136, 19, 145)' : 'rgb(227, 110, 236)',
+            fontSize: '105%',
+        },
+        arrayBrackets: {
+            fontFamily: 'Menlo, monospace',
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            color: theme.palette.mode === 'light' ?
+                'rgb(28, 0, 207)' : 'rgb(153, 128, 255)',
+            // fontSize: '110%',
+        },
+        stringQuote: {
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            fontSize: '105%',
+            color: theme.palette.mode !== 'light' ?
+                'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+        },
+        // stringValue: {
+        //    fontWeight: 100,
+        //    // color: theme.palette.mode === 'light' ?
+        //    // 'rgb(196, 26, 22)' : 'rgb(233, 63, 59)',
+        // },
+        emptyStringValue: {
+            fontFamily: 'Menlo, monospace',
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.action.disabled,
+        },
+        booleanValue: {
+            fontFamily: 'Menlo, monospace',
+            fontSize: '90%',
+            fontWeight: 'bold',
+        },
+        numberValue: {},
+        undefinedValue: {
+            fontFamily: 'Menlo, monospace',
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb(296, 26, 222)' : 'rgb(233, 63, 259)',
+        },
+        trueValue: {
+            fontFamily: 'Menlo, monospace',
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb(26, 156, 50)' : 'rgb(0, 176, 20)', // 'rgb( 26,56, 172)' : 'rgb(63,86,  209)'
+        },
+        falseValue: {
+            fontFamily: 'Menlo, monospace',
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb(255, 166, 50)' : 'rgb(255, 166, 100)', // 'rgb( 26, 22,196)' : 'rgb( 63, 59,233)',
+        },
+        nanValue: {
+            fontFamily: 'Menlo, monospace',
+            color: 'white',
+            fontWeight: 'bold',
+            background: `linear-gradient(-120deg, ${
+                theme.palette.mode === 'light' ?
+                    'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
+            } 0%, ${
+                theme.palette.mode === 'light' ?
+                    'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
+            } 46.5%, white 46.5%, white 54.5%, ${
+                theme.palette.mode === 'light' ?
+                    'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
+            } 54.5%,${
+                theme.palette.mode === 'light' ?
+                    'rgb( 260, 22,196)' : 'rgb( 263, 59,233)'
+            } 100%)`,
+        },
+        undefinedValueWarning: {
+            fontFamily: 'Menlo, monospace',
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: 'grey',
+        },
+    })
+};
 
 
 export const ExplorerTooltip = withStyles(({spacing}) => ({
@@ -140,7 +151,7 @@ export const ExplorerTooltipContainer = withStyles(({spacing}) => ({
         marginTop: -14,
         padding: spacing(0.5),
         paddingRight: spacing(1),
-        overflow: "scroll",
+        overflow: "auto", /// scroll breaks default size
     },
 }))(Paper);
 
@@ -311,11 +322,18 @@ export const ObjectPreview = memo(withStyles(styles)(
             previewDepth = 0,
             maxPreviewDepth = 1,
         } = props;
-        const {useStyles, ObjectValue, ObjectName} = useContext(ALEContext);
+        const {useStyles, ObjectValue, ObjectName, ...rest} = useContext(ALEContext);
         const styles = useStyles?.('ObjectPreview');
 
         const object = liveData ? liveData.getSnapshot() : data;
         const {isGraphical} = liveData ?? {};
+
+        if (isFunction(object)) {
+            // todo add locator in code
+            // console.log("F", {props, rest, liveData, data});
+            return <FunctionIcon className={classes.liveExpressionIconDefaultStyle}/>;
+        }
+
         if (
             typeof object !== 'object' ||
             object === null ||
@@ -390,7 +408,8 @@ export const ObjectPreview = memo(withStyles(styles)(
                                 enterDelay={iconTooltipDelay}
                             >
                             <span
-                                className={classes.undefinedValue}>{'N'}</span>
+                                className={classes.undefinedValue}>{'N'}
+                            </span>
                             </ExplorerTooltip>
                         );
                     case true:
@@ -724,7 +743,7 @@ const ALEInspector = (
             } = graphicalClasses;
             let object = depth === 0 ? data : _data;
 
-            const _graphical = aleObject?.isDomLiveRef?.(object);
+            const _graphical = aleObject?.isDomLiveRef?.(object?.ref??object);
             const _aleObject =
                 depth === 0 ? aleObject
                     : aleObject?.getLiveRefOfDomLiveRef?.(object);

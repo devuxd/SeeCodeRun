@@ -3,6 +3,7 @@ import * as t from "@babel/types";
 import {
     ReadableThrowable, snakeCaseToSpaceCase, camelOrPascalCaseToSpaceCase, removeLocFromMessage
 } from "./bundleUtils"
+
 export function replaceExpressionWithBlock(
     path, property, node
 ) {
@@ -85,10 +86,15 @@ export const babelLoc2MonacoRange = (loc = {}) => {
     };
 };
 
+export const isBabelError = (obj) => {
+    return obj?.code === 'BABEL_PARSE_ERROR';
+};
+
 class ReadableBabelThrowable extends ReadableThrowable {
     constructor(obj) {
-        super();
+        super(obj);
         const {
+            constructor,
             name, message,
             // cause, fileName, stack,
             code, reasonCode, loc
@@ -97,8 +103,8 @@ class ReadableBabelThrowable extends ReadableThrowable {
         this.code = code;
         this.reasonCode = reasonCode;
         this.loc = loc;
-        this.name = name;
-        this.message = message;
+        this.name = constructor?.name;
+        this.message = reasonCode;
     }
 
     getReadableCode = () => {
@@ -114,7 +120,7 @@ class ReadableBabelThrowable extends ReadableThrowable {
     };
 
     getReadableMessage = () => {
-        return removeLocFromMessage(this.message);
+        return camelOrPascalCaseToSpaceCase(this.message);
     };
 
     getMonacoPosition = () => {

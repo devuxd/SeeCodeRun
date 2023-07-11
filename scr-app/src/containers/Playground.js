@@ -6,6 +6,8 @@ import React, {
     useState,
     useContext
 } from 'react';
+
+import {createRoot} from "react-dom/client";
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {withStyles} from '@mui/styles';
@@ -40,6 +42,7 @@ const mapStateToProps = ({
         isPlaygroundUpdating,
         isPlaygroundUpdated,
         isPlaygroundCorrupted,
+        DevTools
         // isPlaygroundUpdatingCanceled,
     } = updatePlaygroundReducer;
     const monacoEditor =
@@ -53,6 +56,7 @@ const mapStateToProps = ({
         isPlaygroundUpdating,
         isPlaygroundUpdated,
         isPlaygroundCorrupted,
+        DevTools
         // isPlaygroundUpdatingCanceled
     };
 };
@@ -102,7 +106,9 @@ const Playground = (
         activatePlayground,
         resizeListener,
         classes,
-        onUnsafeAct
+        onUnsafeAct,
+        DevTools,
+        visualElementDebounceTimeMs = 1000
     }
 ) => {
     const {
@@ -260,14 +266,39 @@ const Playground = (
                 return () => null;
             }
 
-            return scrObject.setOnDomNodeAdded(
-                (domNodeAdded, domNodes) => {
-                    setVisualElements(domNodes);
-                }
-            );
+            let tid = null;
+
+            let cb = (domNodeAdded, domNodes, domNodesApiNames) => {
+                clearTimeout(tid);
+                tid = setTimeout(
+                    () => {
+                        const ve = [[...domNodes], [...domNodesApiNames]];
+                        // console.log("setVisualElements", ve);
+                        setVisualElements(ve);
+                    },
+                    visualElementDebounceTimeMs
+                );
+            };
+
+            const dispose = scrObject.setOnDomNodeAdded(cb);
+            return () => {
+                dispose();
+            }
         },
-        [scrObject]
+        [visualElementDebounceTimeMs, scrObject]
     );
+
+    const devRef = useRef();
+
+    useEffect(() => {
+        if (!devRef.current || !DevTools) {
+            return;
+        }
+
+        const root = createRoot(devRef.current);
+        root.render(<DevTools/>);
+
+    }, [DevTools]);
 
     return activatePlayground &&
         (<>
@@ -290,10 +321,10 @@ const Playground = (
                 aleInstance &&
                 <>
                     <RALE
-                    data ={data}
-                    aleInstance={aleInstance}
-                    cacheRef={cacheRef}
-                />
+                        data={data}
+                        aleInstance={aleInstance}
+                        cacheRef={cacheRef}
+                    />
                     <div>YOLO</div>
                 </>
             }
@@ -302,6 +333,7 @@ const Playground = (
                 <div className={classes.resizeBackdrop}
                      onClick={onResizeFalse}/>
             }
+            {<div ref={devRef}/>}
         </>);
 }
 

@@ -6,41 +6,45 @@
 }
 
 .ale.branch.function.active {
-    font-size: 110%;
+    font-size: 100%;
     /*font-weight: bold;*/
     opacity: 1;
     /*color: gold;*/
 }
 
 .ale.branch.function.hover {
-    font-size: 110%;
+    font-size: 100%;
     font-weight: bold;
     opacity: 1;
+    background-color: rgba(0, 0, 255, 0.3);
     /*color: tomato;*/
 }
 
 .ale.branch.control.normal {
     font-size: 90%;
+    filter: contrast(0.33);
     font-weight: normal;
     /*opacity: 0.647;*/
     /*color: grey;*/
-    filter: contrast(0.33);
+
 }
 
 .ale.branch.control.active {
-    font-size: 110%;
-    /*font-weight: bold;*/
-    opacity: 1;
+    font-size: 100%;
     filter: contrast(1);
+    font-weight: bold;
     /*color: tomato;*/
 }
 
 .ale.branch.control.hover {
-    background-color: rgba(0, 0, 255, 0.08);
+    font-size: 100%;
+    filter: contrast(1);
+    font-weight: bold;
+    background-color: rgba(255, 50, 50, 0.3);
 }
 
 .ale.value.normal {
-    font-size: 95%;
+    font-size: 90%;
     /*filter: contrast(0.647);*/
     filter: contrast(0.33);
     transition-duration: 250ms;
@@ -49,26 +53,30 @@
     /*color: seagreen;*/
 }
 
-/*.ale.value.normal:hover {*/
-/*    filter: contrast(0.85);*/
-/*    color: coral;*/
-/*}*/
-
 
 .ale.value.active {
     font-size: 100%;
     filter: contrast(1);
+}
+
+.ale.value.hover {
+    font-size: 100%;
+    filter: contrast(1);
+    background-color: rgba(0, 255, 0, 0.2);
     /*color: crimson;*/
     /*color: darkgreen;*/
 }
 
+
 .ale.expression.hover {
     font-size: 100%;
+    filter: contrast(1);
     font-weight: bold;
+    background-color: rgba(25, 255, 25, 0.075);
 }
 
 .ale.import.normal {
-    font-size: 95%;
+    font-size: 90%;
     filter: contrast(0.647);
     font-weight: normal;
     /*color: cornflowerblue;*/
@@ -83,7 +91,9 @@
 
 .ale.import.hover {
     font-size: 100%;
+    filter: contrast(1);
     font-weight: bold;
+    background-color: rgba(255, 0, 255, 0.2);
 }
 
 

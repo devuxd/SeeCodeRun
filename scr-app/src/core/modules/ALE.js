@@ -11,7 +11,8 @@ import {monacoProps} from "../../utils/monacoUtils";
 import BALE, {getAutoLogIdentifiers} from './BALE'; // Babel transforms
 
 import CALE from './CALE'; // connect require js
-import DALE, {BranchNavigatorManager} from './DALE'; // decorate editor
+import DALE from './dale/DALE'; // decorate editor
+import BranchNavigatorManager from './dale/BranchNavigatorManager'; // decorate editor
 import WALE from './WALE'; // trace bindings
 import ZALE from './ZALE'; // zone management
 
@@ -156,13 +157,27 @@ export const LiveZoneDecorationStyles = {
 //    {}
 // );
 
+export const getZoneDataByExpressionId = (aleInstance, expressionId) => {
+    return aleInstance?.zale?.getZoneData?.(
+        expressionId
+    );
+}
 
-export const makeError = (e) => {
+export const getZoneDataLoc = (zoneData) => {
+    return zoneData?.[2]?.node?.loc;
+}
+
+
+// needed when errors are passed by iframe. tghey are stringified before
+export const makeError = (e, babelLoc = {}) => {
+    let {line: lineNumber = 1, column: columnNumber = 0} = babelLoc.start ?? {};
+    columnNumber++;
+
     let name = '', message = '';
     if (isString(e)) {
-        const [nameSpaced, ...rest] = e.split(": ");
+        const [nameSpaced, ...rest] = e.split(":");
         name = nameSpaced.replace(/\s+/, "");
-        message = rest.reduce((r, e) => r + e, "");
+        message = rest.reduce((r, e) => `${r}${r ? ":" : ""}${e}`, "")?.trim();
     } else {
         name = e?.name;
         message = e?.message;
@@ -172,6 +187,8 @@ export const makeError = (e) => {
         constructor: {name},
         name,
         message,
+        lineNumber,
+        columnNumber
     }
 };
 
@@ -854,23 +871,83 @@ export const isSupportingContextOfExpression = (path) => {
     );
 };
 
+export const JSXExpressionReplacementType = {
+    containerWrap: "containerWrap", //
+    valueWrap: "valueWrap", //
+    valueAppend: "valueAppend", //
+    logExpression: "logExpression",//
+    spreadAttribute: "spreadAttribute",
+    refIntercept: "refIntercept",//
+    refAppend: "refAppend",
+};
+
+export const isJSXAttributeRef = (node) => {
+    return !!node && (!node.name?.namespace && node.name?.name === "ref");
+};
+
 export const resolveJSXExpressionReplacementType = (path) => {
-    return (
+    if ((path.isJSXAttribute())) { // chck if container exp
+        const {node} = path;
+
+        if (isJSXAttributeRef(node)) {
+            // console.log("refIntercept", {path, node});
+            return JSXExpressionReplacementType.refIntercept;
+        }
+
+        if ((node && !node.value)) { // chck if container exp
+            return JSXExpressionReplacementType.valueAppend;
+        }
+
+    }
+
+    if ((
         (
-            (
-                (path.isJSXElement() || path.isJSXFragment()) &&
-                path.parentPath &&
-                (path.parentPath.isJSXElement() || path.parentPath?.isJSXFragment())
-            ) ||
-            (
-                path.parentPath?.isJSXAttribute() &&
-                path.key === "value" &&
-                !path.isJSXExpressionContainer()
-            )
-        ) ? "containerWrap"
-            : (path.isJSXAttribute() && !path.node.value) ? "valueAppend"
-                : null
-    );
+            (path.isJSXElement() || path.isJSXFragment())
+            && path.parentPath
+            && (path.parentPath.isJSXElement() || path.parentPath.isJSXFragment())
+        )
+    )) {
+        return JSXExpressionReplacementType.containerWrap;
+    }
+
+    if (
+        (
+            path.parentPath?.isJSXAttribute()
+            && !isJSXAttributeRef(path.parentPath?.node)
+            && path.key === "value"
+            && !path.isJSXExpressionContainer()
+        )
+    ) {
+        return JSXExpressionReplacementType.valueWrap;
+    }
+
+    if (path.isJSXElement() && (!path?.parentPath?.isJSXElement())) {
+        return JSXExpressionReplacementType.logExpression;
+    }
+
+    if (path.isJSXOpeningElement()) {
+        const {attributes = []} = path.node;
+// console.log("attributes", {path, attributes, attribute});
+        const refAttribute = attributes.find(attribute => attribute?.name?.name === "ref");
+
+        if (refAttribute) {
+            return null;
+        }
+
+        return JSXExpressionReplacementType.refAppend;
+
+        // console.log("jsxReplacementType", jsxReplacementType, {path, attributes});
+    }
+
+
+
+
+    if ((path?.parentPath?.isJSXSpreadAttribute())) {
+        return JSXExpressionReplacementType.spreadAttribute;
+    }
+
+
+    return null;
 };
 
 export const isLoopBlockStatement = (path) => {
@@ -1164,6 +1241,7 @@ export class ALEObject {
     isDOM = false;
     isOutput = false;
     graphicalId = -1;
+    graphicalIds = [];
     outputRefs = [];
     scrObjectRefs = [];
     windowRootsRefs = [];
@@ -1175,6 +1253,8 @@ export class ALEObject {
     liveRefsProps = [];
     domLiveRefs = [];
     domLiveRefsToLiveRef = {};
+    idiomKnowledge = null;
+
 
     constructor(value, bindSharedData) {
         this.live = value;
@@ -1263,7 +1343,7 @@ export {
 
 export {
     default as DALE,
-} from './DALE';
+} from './dale/DALE';
 
 export {
     RALE,
