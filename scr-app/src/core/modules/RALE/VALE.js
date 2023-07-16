@@ -17,12 +17,6 @@ import Input from '@mui/material/Input';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Portal from '@mui/material/Portal';
-// import CheckIcon from '@mui/icons-material/Check';
-// import ClearIcon from '@mui/icons-material/Clear';
-
-import PackageVariant from 'mdi-material-ui/PackageVariant';
-// import PackageVariantCheck from 'mdi-material-ui/PackageVariantCheck';
-// import PackageVariantClosed from 'mdi-material-ui/PackageVariantClosed';
 
 import {FocusBox} from "../../../common/UI";
 import {LiveZoneDecorationStyles, ScopeTypes} from "../ALE";
@@ -363,13 +357,6 @@ const LiveBlock = (
     );
 };
 
-//same-ish as ALEInspector for now
-const liveExpressionIconDefaultStyle = {
-    fontSize: "0.8rem",
-    color: 'white',
-    fontWeight: 'bold',
-    backgroundColor: 'rgb(153, 128, 255)',
-};
 const LiveExpression = ({isImport, decorate, ...props}) => {
     const [value, setValue] = useState(0);
     useEffect(
@@ -387,9 +374,8 @@ const LiveExpression = ({isImport, decorate, ...props}) => {
         },
         [value, decorate]
     );
-    // isImport && console.log(props);
-    return isImport ? (<PackageVariant style={liveExpressionIconDefaultStyle}/>) : (
-        <ALEInspector variant="inline" setValue={setValue} {...props} />);
+
+    return (<ALEInspector variant="inline" isImport={isImport} setValue={setValue} {...props} />);
 };
 
 const Noop = () => {

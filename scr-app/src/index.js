@@ -1,4 +1,4 @@
-import React, {StrictMode, useMemo, Suspense, lazy} from 'react';
+import React, {StrictMode} from 'react'; //, useMemo, Suspense, lazy
 import ReactDOM from 'react-dom';
 // import Box from '@mui/material/Box';
 // import Typography from '@mui/material/Typography';
@@ -15,48 +15,45 @@ extend("$autoArray", function (value, object) {
 });
 
 import configureStore from './redux/configureStore';
-// import Index from './pages/Index';
+import Index from './pages/Index';
 import * as serviceWorker from './serviceWorker';
 
 const {store, urlData} = configureStore(window);
 
-
-const Index = (props) => {
-    const ImportedIndex = useMemo(
-        () => (lazy(() => import('./pages/Index'))),
-        []
-    );
-
-    const indexProps = useMemo(() => ({
-            mediaQuery: '(prefers-color-scheme: light)',
-            mediaQueryOptions: {noSsr: true},
-            url: urlData.url,
-        }),
-        []
-    );
-
-    return (
-        <Suspense fallback={ <h4>Loading SCR...</h4>
-            // <Box sx={{display: 'flex', alignItems: 'center'}}>
-            //     <Box sx={{minWidth: 35}}>
-            //         <Typography variant="body2" color="text.secondary">{`Loading SCR ...`}</Typography>
-            //     </Box>
-            //     <Box sx={{width: '100%', mr: 1}}>
-            //         <LinearProgress/>
-            //     </Box>
-            // </Box>
-        }>
-            <ImportedIndex {...indexProps} {...props}/>
-        </Suspense>
-    );
+const indexProps = {
+    mediaQuery: '(prefers-color-scheme: light)',
+    mediaQueryOptions: {noSsr: true},
+    url: urlData.url,
 };
+
+// const Index = (props) => { // only -23kb improvement
+//     const ImportedIndex = useMemo(
+//         () => (lazy(() => import('./pages/Index'))),
+//         []
+//     );
+//
+//     return (
+//         <Suspense fallback={ <h4>Loading SCR...</h4>
+//             // <Box sx={{display: 'flex', alignItems: 'center'}}>
+//             //     <Box sx={{minWidth: 35}}>
+//             //         <Typography variant="body2" color="text.secondary">{`Loading SCR ...`}</Typography>
+//             //     </Box>
+//             //     <Box sx={{width: '100%', mr: 1}}>
+//             //         <LinearProgress/>
+//             //     </Box>
+//             // </Box>
+//         }>
+//             <ImportedIndex {...props}/>
+//         </Suspense>
+//     );
+// };
 
 // createRoot(document.querySelector('#root'))
 ReactDOM
     .render(
         <StrictMode>
             <Provider store={store}>
-                <Index/>
+                <Index {...indexProps}/>
             </Provider>
         </StrictMode>,
         document.querySelector('#root')

@@ -14,7 +14,7 @@ import isObject from "lodash/isObject";
 import {isArrayLikeObject, isObjectLike} from "lodash";
 
 import isFunction from "lodash/isFunction";
-import {copifyDOMNode, isNativeCaught, isNode} from "../../utils/scrUtils";
+import {copifyDOMNode, findStateInState, isNode, nativeFunctionStringName, stateToRefArray} from "../../utils/scrUtils";
 
 import {GraphicalIdiom, SupportedApis} from "./RALE/IdiomaticInspector";
 
@@ -183,6 +183,10 @@ export class ALEJSEN {
         }
         const j = result[`${prop}Refs`].push(value) - 1;
 
+        // if (shared === this._functions) {
+        //     console.log("_functions", shared, {i, j, value});
+        // }
+
         return {i, j};
     };
 
@@ -339,48 +343,48 @@ export class ALEJSEN {
                 // _domNodesObs.push(observer);
                 _domNodesApiNames[i] = apiName;
                 // if (apiName == SupportedApis.React) {
-                    // const f = _domNodes.reverse().find(d => d !== _value && d._owner === _value._owner && d.type === _value.type &&(_value._owner?.child === d._owner?.child )) ?? {};
+                // const f = _domNodes.reverse().find(d => d !== _value && d._owner === _value._owner && d.type === _value.type &&(_value._owner?.child === d._owner?.child )) ?? {};
 
-                    //
-                    // const diffVisitor = (og, ng, diff, key = "root", memo = []) => {
-                    //
-                    //     try {
-                    //         if (memo.indexOf(og) > -1 || memo.indexOf(ng) > -1) {
-                    //             const kl = `${key}:LOOP`;
-                    //             diff[kl] = new Diff(og, ng);
-                    //         }
-                    //         memo.push(og, ng);
-                    //         // if(key){
-                    //         //     diff = diff[key];
-                    //         // }
-                    //
-                    //         [...Object.keys(og), ...Object.keys(ng)].forEach(k => {
-                    //             const l = og?.[k];
-                    //             const r = ng?.[k];
-                    //             if (l || r) {
-                    //
-                    //                 diff[k] = new Diff(l, r);
-                    //                 //   diffVisitor(l, r, diff, `${key}:${k}`, memo);
-                    //             }
-                    //         });
-                    //
-                    //     } catch (e) {
-                    //         const ke = `${key}:ERRR`;
-                    //         diff[ke] = new Diff(og, ng);
-                    //     }
-                    // }
-                    //
-                    // const diff = {};
-                    // diffVisitor(_value, f, diff);
-                    //
-                    // const diffOwner = {};
-                    // diffVisitor(_value._owner, f._owner, diffOwner);
-                    //
-                    //
-                    // console.log(
-                    //     "registerDomNode", diff, diffOwner,); //?.memoizedProps  _value._owner, f._owner
-                    // //     (_value._owner?.memoizedProps && (_value._owner?.memoizedProps === f._owner?.memoizedProps)), _value._owner?.memoizedProps, f._owner?.memoizedProps,); //{p:f.props===_value.props, s: f===_value, f, _value, apiName});
-                    // //jsxReplacementType
+                //
+                // const diffVisitor = (og, ng, diff, key = "root", memo = []) => {
+                //
+                //     try {
+                //         if (memo.indexOf(og) > -1 || memo.indexOf(ng) > -1) {
+                //             const kl = `${key}:LOOP`;
+                //             diff[kl] = new Diff(og, ng);
+                //         }
+                //         memo.push(og, ng);
+                //         // if(key){
+                //         //     diff = diff[key];
+                //         // }
+                //
+                //         [...Object.keys(og), ...Object.keys(ng)].forEach(k => {
+                //             const l = og?.[k];
+                //             const r = ng?.[k];
+                //             if (l || r) {
+                //
+                //                 diff[k] = new Diff(l, r);
+                //                 //   diffVisitor(l, r, diff, `${key}:${k}`, memo);
+                //             }
+                //         });
+                //
+                //     } catch (e) {
+                //         const ke = `${key}:ERRR`;
+                //         diff[ke] = new Diff(og, ng);
+                //     }
+                // }
+                //
+                // const diff = {};
+                // diffVisitor(_value, f, diff);
+                //
+                // const diffOwner = {};
+                // diffVisitor(_value._owner, f._owner, diffOwner);
+                //
+                //
+                // console.log(
+                //     "registerDomNode", diff, diffOwner,); //?.memoizedProps  _value._owner, f._owner
+                // //     (_value._owner?.memoizedProps && (_value._owner?.memoizedProps === f._owner?.memoizedProps)), _value._owner?.memoizedProps, f._owner?.memoizedProps,); //{p:f.props===_value.props, s: f===_value, f, _value, apiName});
+                // //jsxReplacementType
                 // }
                 // console.log("onDomNodeAdded", {onDomNodeAdded, _value, _domNodes, _domNodesApiNames});
                 onDomNodeAdded?.(_value, _domNodes, _domNodesApiNames);
@@ -415,10 +419,10 @@ export class ALEJSEN {
                 if (result.graphicalIds?.indexOf(i) < 0) {
                     result.graphicalIds?.push(i);
                 }
-                if (apiName == SupportedApis.React) {
-                    result.isOutput = true;
-                    // console.log("f", val, _value === value, !result.isOutput,  _value, value, result);
-                }
+                // if (apiName == SupportedApis.React) {
+                //     result.isOutput = true;
+                //     // console.log("f", val, _value === value, !result.isOutput,  _value, value, result);
+                // }
             }
 
 
@@ -456,6 +460,10 @@ export class ALEJSEN {
 
         this._replacer = replacer = replacer ?? ((_key, _value) => {
 
+            // if (isFunction(_value)) {
+            //     console.log("_replacer", {_key, _value});
+            // }
+
             if (isIgnoreObjectPrivateProperties &&
                 isString(_key) &&
                 _key.startsWith('_')) {
@@ -483,13 +491,14 @@ export class ALEJSEN {
             }
 
             if (!isNil(_value)) {
-                if (isNativeCaught(_value)) {
-                    const prop = 'natives';
-                    const {i, j} = registerValue(_value, prop, result);
-                    return magicReplace(prop, i, j);
-                }
+                // if (isNativeCaught(_value)) {
+                //     const prop = 'natives';
+                //     const {i, j} = registerValue(_value, prop, result);
+                //     return magicReplace(prop, i, j);
+                // }
 
                 if (isFunction(_value)) {
+                    // console.log("_replacer", {_key, _value});
                     const prop = 'functions';
                     const {i, j} = registerValue(_value, prop, result);
                     return magicReplace(prop, i, j);
@@ -513,6 +522,10 @@ export class ALEJSEN {
 
 
         try {
+
+            // if(isFunction(value)){
+            //     console.log("serialized", {value});
+            // }
             serialized = JSEN.stringify(
                 value, replacer, space, true
             );
@@ -659,6 +672,90 @@ export default function wireGlobalObjectToALE(
         functions: {},
         expressionFunctions: {},
         contentWindow: null,
+        nativeRootState: null,
+        natives: {},
+        importZoneExpressionDataArray: [],
+        importsStates: [],
+    };
+
+    scrObject.registerNatives = (iFrame) => {
+        scrObject.nativeRootState = iFrame.contentWindow;
+        scrObject.natives = stateToRefArray(scrObject.nativeRootState, [global, scrObject], undefined, scrObject.nativeRootState);
+        //  console.log("registerNatives", iFrame.contentWindow.document.getElementById, scrObject.natives, scrObject.natives.visitedStates.indexOf(iFrame.contentWindow.document.getElementById));
+    };
+
+    scrObject.nativeStateInfo = (aState) => {
+        const nativeFunctionName = nativeFunctionStringName(aState);
+        const rootState = scrObject.nativeRootState;
+        let native = false;
+        let path = null;
+        // console.log("scrObject.natives", scrObject.natives);
+
+        const i = scrObject.natives?.visitedStates?.indexOf(aState);
+
+        if (i > -1) {
+            native = true;
+            path = scrObject.natives.paths[i];
+        }
+
+        return {
+            native,
+            path,
+            rootState,
+            nativeFunctionName
+        };
+    };
+
+    scrObject.registerImportState = (importRef, importZoneExpressionData) => {
+        if (!importRef || !importZoneExpressionData) {
+            throw new Error("invalid params");
+        }
+
+        let i = scrObject.importZoneExpressionDataArray?.indexOf(importZoneExpressionData);
+        if (i < 0) {
+            i = scrObject.importZoneExpressionDataArray.push(importZoneExpressionData) - 1;
+        }
+
+        scrObject.importsStates[i] = stateToRefArray(importRef, [global, scrObject], undefined, scrObject.nativeRootState);
+        importRef.FFFFFFF = "FFFDEFDFDFDF"
+        // console.log("registerImportState",
+        //     {importRef, importZoneExpressionData, importsState: scrObject.importsStates[i]}
+        // );
+    };
+
+    scrObject.importStateInfo = (aState) => {
+        let imported = false;
+        let path = null;
+        let importZoneExpressionData = null;
+        let importRef = null;
+
+        let j = -1;
+        let i = -1;
+        const importState = scrObject.importsStates?.find((is, isi) => {
+            j = is.visitedStates.indexOf(aState);
+
+            if (j > -1) {
+                i = isi;
+                return true;
+            }
+
+            return false;
+        });
+
+        if (i > -1) {
+            imported = true;
+            importRef = importState.rootState;
+            path = importState.paths[j];
+            importZoneExpressionData = scrObject.importZoneExpressionDataArray[i];
+        }
+
+        return {
+            imported,
+            importState,
+            importRef,
+            path,
+            importZoneExpressionData
+        };
     };
 
     scrObject.getWindowRef = () => scrObject.contentWindow;
@@ -687,6 +784,59 @@ export default function wireGlobalObjectToALE(
         scrObject.functions[fString].push(entry);
         scrObject.expressionFunctions[expressionId].push(entry);
     };
+
+    scrObject.inspectorsStates = [];
+    scrObject.inspectorsInfo = [];
+
+    scrObject.resolveStateInfo = (obj) => {
+        const i = scrObject.inspectorsStates.indexOf(obj);
+        const inspectorInfo = scrObject.inspectorsInfo[i];
+
+        if (inspectorInfo) {
+            if (inspectorInfo.stateType === "rejected") {
+                return null;
+            } else {
+                return inspectorInfo;
+            }
+        }
+
+
+        let isFunctionType = false;
+        let stateType = "rejected";
+        let location = null;
+
+
+        if (isFunction(obj)) {
+            isFunctionType = true;
+            location = scrObject.getFunctionLocation(obj);
+            if (location) {
+                stateType = "local";
+            } else {
+                stateType = "unknown";
+            }
+        }
+
+        let info = scrObject.importStateInfo(obj);
+        if (info?.imported) {
+            stateType = "import";
+        } else {
+            info = scrObject.nativeStateInfo(obj);
+            if (info?.native || info?.nativeFunctionName) {
+                stateType = "native";
+            } else {
+                info = null;
+            }
+        }
+
+        const j = scrObject.inspectorsStates.push(obj) - 1;
+        return scrObject.inspectorsInfo[j] = {
+            stateType,
+            isFunctionType,
+            location,
+            info,
+        };
+    }
+
 
     const aleJSEN = new ALEJSEN(scrObject);
     scrObject.aleJSEN = aleJSEN;
@@ -747,16 +897,88 @@ export default function wireGlobalObjectToALE(
             return latestEntries;
         };
 
+    scrObject.currentCallers = [];
+    scrObject.currentFunctionRefs = [];
+    scrObject.currentFunctionEntries = [];
+    scrObject.currentFunctionFirstEntries = [];
+    scrObject.registerCurrentFunction = (functionRef, timelineEntry) => {
+        let i = scrObject.currentFunctionRefs.indexOf(functionRef);
+        if (i < 0) {
+            i = scrObject.currentFunctionRefs.push(functionRef) - 1;
+            scrObject.currentFunctionFirstEntries[i] = timelineEntry;
+        }
+        scrObject.currentFunctionEntries[i] ??= [];
+        scrObject.currentFunctionEntries[i].push(timelineEntry);
+    };
+
+    scrObject.getCurrentFunctionRefFirstEntry = (functionRef) => {
+        const i = scrObject.currentFunctionRefs.indexOf(functionRef);
+        if (i < 0) {
+            return null;
+        }
+        return scrObject.currentFunctionFirstEntries[i];
+    };
+
+    scrObject.getFunctionLocation = (functionRef) => {
+        const location = {
+            type: "unknown",
+            expressionId: null,
+        };
+
+        // const result = findStateInState(scrObject.contentWindow.document.getElementById, scrObject.contentWindow, [scrObject]);
+        // if (result.found) {
+        //     entry.callerType = "native";
+        //     console.log("native", {functionRef, result});
+        // }
+        // console.log("native", {functionRef: scrObject.contentWindow.document.getElementById, result});
+
+        const entry = scrObject.getCurrentFunctionRefFirstEntry(functionRef);
+
+        if (entry) {
+            switch (entry.callerType) {
+                case  "local":
+                    location.type = entry.callerType;
+                    // console.log("e", entry);
+                    location.expressionId = entry.calleeEntry?.uid;
+                    break;
+                case "native":
+                    // const result = findStateInState(functionRef, scrObject.contentWindow);
+                    // if (result.found) {
+                    //     console.log("native", {entry, functionRef, result});
+                    // }
+
+                    break;
+                case "import":
+                    break;
+                default:
+                //const result = findStateInState(functionRef, scrObject.contentWindow, [scrObject]);
+                // if (result.found) {
+                //     entry.callerType = "native";
+                //     console.log("native", {functionRef, result});
+                // }
+
+            }
+
+        } else {
+            //todo:
+            // console.log("NF", {functionRef, location});
+        }
+
+
+        return location;
+    };
+
     scrObject[alIdentifierName] = (
         uid, traceEventType, ...rest
     ) => {
+        // console.log("windowRoots", stateToRefArray(scrObject.contentWindow));//
 
         // console.log("ref", {uid, traceEventType, rest});
         if (traceEventType === TraceEvents.P) {
             const [importSourceName, importSourceIndex, importRef] = rest;
             const importZoneExpressionData = scrObject.aleJSEN?.registerImportRef(importSourceName, importSourceIndex, importRef, aleInstance);
-
             const {expressionId, ...ex} = importZoneExpressionData ?? {};
+            scrObject.registerImportState(importRef, importZoneExpressionData);
             // console.log("IMP", expressionId, ex);
 
             const entry = new TimelineEntry(
@@ -785,6 +1007,7 @@ export default function wireGlobalObjectToALE(
             const [pre, val, post, ...extra] = rest;
 
             let value = val;
+
 
             const {
                 expressionId,
@@ -862,6 +1085,14 @@ export default function wireGlobalObjectToALE(
             //
             // }
 
+            if (isFunction(value)) {
+                // console.log("TraceEvents.L isFunction", {value, rest});
+                entry._func = value;
+                scrObject.currentCallers.push(entry);
+                scrObject.registerCurrentFunction(value, entry);
+
+            }
+
             scrObject.timeline.push(entry);
             aleInstance?.onTraceChange?.();
 
@@ -871,6 +1102,8 @@ export default function wireGlobalObjectToALE(
             if (traceEventType === TraceEvents.I) {
                 // handles BALE's makeEnterCall calls
                 const [scopeType, scopeThis, ...more] = rest;
+                //console.log("traceEventType", {traceEventType, rest, f: scrObject.currentCallers});
+
 
                 let value = null;
 
@@ -883,13 +1116,17 @@ export default function wireGlobalObjectToALE(
                 let paramsIdentifier = null;
                 let functionIdNode = null;
                 let expressionIdNode = null;
+                let callerTimeLineEntry = null;
                 switch (scopeType) {
                     case ScopeTypes.P:
                         const contentWindow = more[0];
                         scrObject.contentWindow = contentWindow;
                         aleJSEN.windowRoots(contentWindow);
-                    // console.log("windowRoots", more, aleJSEN);
+
+                        // console.log("windowRoots", more, aleJSEN, stateToRefArray(contentWindow));
+                        break;
                     case ScopeTypes.F:
+
                         paramsIdentifier = more[0];
                         functionIdNode = more[1];
                         expressionIdNode = more[2];
@@ -900,6 +1137,14 @@ export default function wireGlobalObjectToALE(
                             uid
                         );
                         paramsValue = aleJSEN.stringify(paramsIdentifier);
+                        callerTimeLineEntry = scrObject.currentCallers.pop();
+                        // console.log("ScopeTypes.F", {rest, value, functionIdNode,
+                        //     expressionIdNode,
+                        //     uid, paramsValue});
+                        //
+                        // if(isFunction(value)){
+                        //     console.log("ScopeTypes.F f", {value});
+                        // }
 
                         // console.log("FFF", rest, {
                         //    zone:aleInstance.zale?.getZoneData(expressionIdNode),
@@ -945,6 +1190,14 @@ export default function wireGlobalObjectToALE(
                 );
 
                 scrObject.timeline.push(entry);
+
+                if (callerTimeLineEntry) {
+                    entry.calleeType = "local";
+                    entry.callerTimeLineEntry = callerTimeLineEntry;
+                    callerTimeLineEntry.callerType = "local";
+                    callerTimeLineEntry.calleeEntry = entry;
+                }
+
 
                 aleInstance?.onTraceChange?.();
 

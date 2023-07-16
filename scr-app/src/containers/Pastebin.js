@@ -31,6 +31,14 @@ import SortAlphabeticalDescendingIcon
     from 'mdi-material-ui/SortAlphabeticalDescending';
 import SortNumericAscendingIcon from 'mdi-material-ui/SortNumericAscending';
 import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
+import FunctionIcon from 'mdi-material-ui/Function';
+import FolderHome from 'mdi-material-ui/FolderHome';
+import FolderAccount from 'mdi-material-ui/FolderAccount';
+import FolderArrowDown from 'mdi-material-ui/FolderArrowDown';
+
+
+import isFunction from 'lodash/isFunction';
+
 import {
     Inspector as BaseInspector,
     ObjectName as InspectorObjectName,
@@ -83,17 +91,126 @@ import {editorIds} from "../core/AppManager";
 const withPastebinSearchContext = Component => {
     return props => {
         const context = useContext(PastebinContext);
+
         const searchValueHighlighter =
             context.searchState?.searchValueHighlighter;
+        const aleInstance =
+            context.aleContext?.aleInstance;
+
         return (
             <Component
                 propertyValueFormatter={searchValueHighlighter}
+                aleInstance={aleInstance}
                 {...props}
             />
         );
     };
 };
-const ObjectValue = withPastebinSearchContext(InspectorObjectValue);
+
+const vStyles = (theme) => {
+    return {
+        liveExpressionIconDefaultStyle: {
+            fontSize: "0.8rem",
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
+        }
+    };
+};
+
+// let i = 0;
+const IdiomaticObjectValue = withStyles(vStyles)(({aleInstance, classes, ...props}) => {
+
+    let objectValue = null;
+    const {
+        stateType,
+        isFunctionType,
+        location,
+        info,
+    } = aleInstance?.scr?.resolveStateInfo(props.object) ?? {};
+
+    if (isFunctionType) {
+        objectValue = <FunctionIcon className={classes.liveExpressionIconDefaultStyle}/>;
+    } else {
+        objectValue = <InspectorObjectValue {...props}/>;
+    }
+
+    switch (stateType) {
+        // case "local":
+        //     return <span> <FolderAccount className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</span>;
+        case "native":
+            return <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
+        case "import":
+            //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+            return <><FolderArrowDown
+                className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
+
+        default:
+            return objectValue;
+    }
+
+});
+
+const IdiomaticObjectType = withStyles(vStyles)(({aleInstance, classes, object}) => {
+    const f = aleInstance?.scr?.importsStates?.[0]?.rootState;
+    const ff = f === object;
+    // the hell?
+    (ff || object?.Children) && console.log("IdiomaticObjectType", object, f, ff);
+    // const {
+    //     stateType,
+    //     isFunctionType,
+    //     location,
+    //     info,
+    // } = aleInstance?.scr?.resolveStateInfo(object) ?? {};
+    // console.log("IdiomaticObjectType",aleInstance?.scr, object, {
+    //     stateType,
+    //     isFunctionType,
+    //     location,
+    //     info,
+    // });
+    const objectConstructorName = object?.constructor ?
+        object.constructor.name : 'Object';
+
+    return objectConstructorName === 'Object' ?
+        '' : `${objectConstructorName} `;
+
+    // let objectValueText = objectConstructorName === 'Object' ?
+    //     '' : `${objectConstructorName} `;
+
+    // let objectValue =  objectConstructorName === 'Object' ?
+    //     '' : `${objectConstructorName} `;
+    //
+
+    //
+    // if (isFunctionType) {
+    //     objectValue = <FunctionIcon className={classes.liveExpressionIconDefaultStyle}/>;
+    // }
+    //
+    // // if (objectValueText.length) {
+    // //     return objectValueText;
+    // // }
+    //
+    // switch (stateType) {
+    //     // case "local":
+    //     //     return <span> <FolderAccount className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</span>;
+    //     case "native":
+    //         return <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
+    //     case "import":
+    //         //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+    //         return <><FolderArrowDown
+    //             className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
+    //
+    //     default:
+    //         return objectValue;
+    // }
+
+});
+
+const ObjectType = withPastebinSearchContext(IdiomaticObjectType);
+
+
+const ObjectValue = withPastebinSearchContext(IdiomaticObjectValue);
 const ObjectName = withPastebinSearchContext(InspectorObjectName);
 
 const withPastebinSearchVisualQueryContext = Component => {
@@ -794,10 +911,10 @@ class Pastebin extends PureComponent {
     createData(
         timeline
     ) {
-    //     console.log("timeline",timeline);
-    // .filter(
-    //         this.timelineLiveExpressionFilter
-    //     )
+        //     console.log("timeline",timeline);
+        // .filter(
+        //         this.timelineLiveExpressionFilter
+        //     )
         return (timeline || []).filter(
             this.timelineSearchFilter
         ).map((entry, i) => ({
@@ -1393,6 +1510,7 @@ class Pastebin extends PureComponent {
         },
         aleContext: {
             Inspector,
+            ObjectType,
             ObjectValue,
             ObjectName,
             useStyles,
@@ -1582,7 +1700,8 @@ class Pastebin extends PureComponent {
             >
                 <ALEContext.Provider value={aleContext}>
                     {debugDrawer}
-                    <TopNavigationBar {...TopNavigationBarProps} demo={demo} handleClickDemo={this.handleClickDemo}/>
+                    <TopNavigationBar {...TopNavigationBarProps} demo={demo}
+                                      handleClickDemo={this.handleClickDemo}/>
                     {demo ? <Demo open={demo} handleClose={this.closeDemo}/> : null}
                     <Responsive
                         innerRef={gridRef}

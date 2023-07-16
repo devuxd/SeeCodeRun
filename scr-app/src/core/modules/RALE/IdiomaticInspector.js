@@ -57,7 +57,7 @@ const reactQuery = (obj) => {
 
 graphicalQueryApis[SupportedApis.React] = {
     isNode: (value) => {
-        return (value?.$$typeof?.toString?.() === 'Symbol(react.element)' && (value.type && !isFunction(value.type)));
+        return (value?.$$typeof?.toString?.() === 'Symbol(react.element)' ); //&& (value.type && !isFunction(value.type))
         // if(value?.$$typeof === 'Symbol(react.element)'){
         //     console.log("vvvv", value.$$typeof?.toString() );
         // // === 'Symbol(react.element)'

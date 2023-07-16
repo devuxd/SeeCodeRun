@@ -346,6 +346,7 @@ class AutoLog {
         // bundle.alJs;// Auto-logged script.
         const autoLog = bundle.autoLog; // manager
         const autoLogger = bundle.autoLogger;// Auto-logged results and bindings
+        autoLogger.aleInstance = aleInstance;
         const isAutoLogActive = true// bundle.isAutoLogActive; // redundant
 
         if (alJs) {
@@ -441,8 +442,10 @@ class AutoLog {
             const addIframeLoadListener = (runIframe) => runIframe.addEventListener('load', () => {
 
                 if (autoLogger && autoLogger.trace && runIframe.contentWindow) {
+                    // console.log("onScriptsLoaded", !!autoLogger.aleInstance.scr, runIframe, runIframe.contentWindow, runIframe.contentDocument);
+                    autoLogger.aleInstance.scr.registerNatives(runIframe);
 
-                    if (runIframe.contentWindow.scrLoader && runIframe.contentWindow.scrLoader.onScriptsLoaded) {
+                    if (runIframe.contentWindow.scrLoader?.onScriptsLoaded) {
 
                         autoLogger.trace.configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName);
                         // console.log("addIframeLoadListener", autoLogger.trace);
@@ -473,6 +476,7 @@ class AutoLog {
                             };
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
                             runIframe.contentWindow.scrLoader.onScriptsLoaded = () => {
+                                // console.log("onScriptsLoaded", runIframe, runIframe.contentDocument);
                                 // console.log('appending', state.transformed.code, state.criticalError, state.transformed.error);
                                 appendScript(runIframe.contentDocument, state.transformed.code);
                             };

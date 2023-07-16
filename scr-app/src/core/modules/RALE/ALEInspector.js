@@ -13,29 +13,32 @@ import Box from '@mui/material/Box';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-
 import FunctionIcon from 'mdi-material-ui/Function';
+import FolderHome from 'mdi-material-ui/FolderHome';
+import FolderAccount from 'mdi-material-ui/FolderAccount';
+import FolderArrowDown from 'mdi-material-ui/FolderArrowDown';
+
+// import CheckIcon from '@mui/icons-material/Check';
+// import ClearIcon from '@mui/icons-material/Clear';
+
+import PackageVariant from 'mdi-material-ui/PackageVariant';
+// import PackageVariantCheck from 'mdi-material-ui/PackageVariantCheck';
+// import PackageVariantClosed from 'mdi-material-ui/PackageVariantClosed';
 
 
 import isArrayLikeObject from 'lodash/isArrayLikeObject';
 import isObjectLike from 'lodash/isObjectLike';
-import isFunction from 'lodash/isFunction';
+
 
 import ALEContext from "./ALEContext";
 import {useResizeAndOverflowDetector} from "../../../utils/reactUtils";
+import {isTypeNaN} from "../../../utils/scrUtils";
 
 //start
 // https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 /* NOTE: Chrome console.log is italic */
 const styles = theme => {
     return ({
-        liveExpressionIconDefaultStyle: {
-            fontSize: "0.8rem",
-            color: 'white',
-            fontWeight: 'bold',
-            backgroundColor: theme.palette.mode === 'light' ?
-                'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
-        },
         preview: {
             fontStyle: 'italic',
         },
@@ -187,10 +190,7 @@ const intersperse = (arr, sep) => {
 // const isTypeNaN = (datum) => {
 //    return (datum !== NaN.toString() && datum?.toString() === NaN.toString());
 // };
-const nan = [NaN];
-const isTypeNaN = (datum) => {
-    return nan.includes(datum);
-};
+
 // prevent other tooltip providers from duplicating tooltips
 export const hasOwnTooltip = datum => (
     datum === ""
@@ -304,6 +304,11 @@ const PreviewArray = memo((
     );
 });
 
+const stripConstructorFromObject = (object) => {
+    const {constructor, ...obj} = object ?? {};
+    return constructor?.name ? obj : object;
+};
+
 /**
  * A preview of the object
  */
@@ -321,18 +326,21 @@ export const ObjectPreview = memo(withStyles(styles)(
             ellipsis = defaultEllipsis,
             previewDepth = 0,
             maxPreviewDepth = 1,
+            showConstructor = false,
         } = props;
-        const {useStyles, ObjectValue, ObjectName, ...rest} = useContext(ALEContext);
+
+        const {
+            useStyles,
+            ObjectType,
+            ObjectValue,
+            ObjectName,
+            ...rest
+        } = useContext(ALEContext);
         const styles = useStyles?.('ObjectPreview');
 
         const object = liveData ? liveData.getSnapshot() : data;
-        const {isGraphical} = liveData ?? {};
 
-        if (isFunction(object)) {
-            // todo add locator in code
-            // console.log("F", {props, rest, liveData, data});
-            return <FunctionIcon className={classes.liveExpressionIconDefaultStyle}/>;
-        }
+        const {isGraphical} = liveData ?? {};
 
         if (
             typeof object !== 'object' ||
@@ -442,7 +450,6 @@ export const ObjectPreview = memo(withStyles(styles)(
                         );
                     default:
                         const objectValue = <ObjectValue object={object}/>;
-                        ;
                         if (isGraphical) {
                             return <span>{objectValue}</span>;
                         }
@@ -479,30 +486,36 @@ export const ObjectPreview = memo(withStyles(styles)(
                     }
 
                     const propertyValue = getPropertyValue(object, propertyName);
-                    const preview = isMaxPreviewDepth ?
-                        <ObjectValue object={propertyValue}/>
-                        : <ObjectPreview {...props} data={propertyValue}
-                                         previewDepth={previewDepth + 1}/>;
-                    propertyNodes.push(
-                        <span key={propertyName}>
-            <ObjectName name={propertyName || `""`}/>
-            :&nbsp;
-                            {preview}
-                            {ellipsis}
-          </span>
-                    );
-                    if (ellipsis) break;
+
+                    const isConstructor = propertyName === "constructor" && !!propertyValue?.name;
+
+                    if (!isConstructor || (isConstructor && showConstructor)) {
+                        const preview = isMaxPreviewDepth ?
+                            <ObjectValue object={propertyValue}/>
+                            : <ObjectPreview {...props} data={propertyValue}
+                                             previewDepth={previewDepth + 1}/>;
+                        propertyNodes.push(
+                            <span key={propertyName}>
+                                <ObjectName name={propertyName || `""`}/>
+                                    :&nbsp;
+                                {preview}
+                                {ellipsis}
+                            </span>
+                        );
+
+                        if (ellipsis) {
+                            break;
+                        }
+
+                    }
                 }
             }
 
-            const objectConstructorName = object.constructor ?
-                object.constructor.name : 'Object';
 
             return (
                 <>
               <span css={styles.objectDescription}>
-                 {objectConstructorName === 'Object' ?
-                     '' : `${objectConstructorName} `}
+                 <ObjectType object={object}/>
               </span>
                     <span css={styles.preview}>
                 <span className={classes.objectBraces}>{'{'}</span>
@@ -515,33 +528,141 @@ export const ObjectPreview = memo(withStyles(styles)(
     }));
 ObjectPreview.displayName = 'ObjectPreview';
 
-const ObjectRootLabel = ({name, ...rest}) => {
-    const {ObjectName} = useContext(ALEContext);
-    const objectPreview = <ObjectPreview {...rest}/>;
-    return (typeof name === 'string') ?
-        (<span><ObjectName name={name}/><span>: </span>{objectPreview}</span>)
-        : objectPreview;
+
+const liveExpressionIconDefaultStyle = {
+    fontSize: "0.8rem",
+    color: 'white',
+    fontWeight: 'bold',
+    backgroundColor: 'rgb(153, 128, 255)',
 };
+
+const labelStyles = (theme) => {
+    return {
+        liveExpressionIconDefaultStyle: {
+            fontSize: "0.8rem",
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
+        }
+    };
+};
+
+const ObjectRootLabel = withStyles(labelStyles)(({classes, name, ...rest}) => {
+    const {ObjectName, aleInstance} = useContext(ALEContext);
+    const obj = rest.data;
+    const resolveStateInfo = aleInstance?.scr?.resolveStateInfo;
+    const {
+        stateType,
+        isFunctionType,
+        location,
+        info,
+    } = useMemo(() => {
+            return resolveStateInfo?.(obj) ?? {};
+
+        },
+        [obj, resolveStateInfo]
+    );
+
+    let objectName = null;
+
+    if (typeof name === 'string') {
+        objectName = <ObjectName name={name}/>;
+    }
+
+    let objectPreview = null;
+
+    if (isFunctionType) {
+        objectPreview = <FunctionIcon className={classes.liveExpressionIconDefaultStyle}/>;
+    } else {
+        objectPreview = <ObjectPreview {...rest}/>;
+    }
+
+    let idiomaticState = objectPreview; //objectName ??
+    //
+    switch (stateType) {
+        case "native":
+            idiomaticState = <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+            break
+        case "import":
+            //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+            idiomaticState = <><FolderArrowDown
+                className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+    }
+
+    // if (objectName) {
+    //     objectName = idiomaticState;
+    // } else {
+    objectPreview = idiomaticState;
+    // }
+
+    return (objectName) ?
+        (<span>{objectName}<span>: </span>{objectPreview}</span>)
+        : objectPreview;
+});
 
 /**
  * if isNonenumerable is specified, render the name dimmed
  */
-const ObjectLabel = ({name, data, isNonenumerable = false}) => {
-    const {ObjectValue, ObjectName} = useContext(ALEContext);
+const ObjectLabel = withStyles(labelStyles)(({classes, name, data, isNonenumerable = false}) => {
+    const {ObjectValue, ObjectName, aleInstance} = useContext(ALEContext);
     const object = data;
+    const obj = object;
+    const resolveStateInfo = aleInstance?.scr?.resolveStateInfo;
+    const {
+        stateType,
+        isFunctionType,
+        location,
+        info,
+    } = useMemo(() => {
+            return resolveStateInfo?.(obj) ?? {};
 
-    return (
-        <span>
-      {(typeof name === 'string' && name.length) ? (
-          <ObjectName name={name} dimmed={isNonenumerable}/>
-      ) : (
-          <ObjectPreview data={name}/>
-      )}
-            <span>: </span>
-      <ObjectValue object={object}/>
+        },
+        [obj, resolveStateInfo]
+    );
+
+    let objectName = null;
+    const isConstructor = name === "constructor" && !!object?.name;
+
+    if (typeof name === 'string' && name.length) {
+        objectName = <ObjectName name={name} dimmed={isNonenumerable || isConstructor}/>;
+    } else {
+        objectName = <ObjectPreview data={name}/>;
+    }
+
+    let objectValue = null;
+
+    if (isFunctionType) {
+        objectValue = <FunctionIcon className={classes.liveExpressionIconDefaultStyle}/>;
+    } else {
+
+        objectValue = <ObjectValue object={object}/>;
+    }
+
+    let idiomaticState = objectValue; //objectName ??
+
+    // switch (stateType) {
+    //     case "native":
+    //         idiomaticState = <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+    //         break
+    //     case "import":
+    //         //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+    //         idiomaticState = <><FolderArrowDown
+    //             className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+    // }
+
+    // if (objectName) {
+    //     objectName = idiomaticState;
+    // } else {
+    objectValue = idiomaticState;
+    // }
+
+
+    return (<span>
+      {objectName}<span>: </span>{objectValue}
     </span>
     );
-};
+});
 
 // end https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 
@@ -682,6 +803,7 @@ const ALEInspector = (
     props
 ) => {
     const {
+        isImport,
         setValue,
         classes,
         variant,
@@ -743,7 +865,8 @@ const ALEInspector = (
             } = graphicalClasses;
             let object = depth === 0 ? data : _data;
 
-            const _graphical = aleObject?.isDomLiveRef?.(object?.ref??object);
+            const _graphical = aleObject?.isDomLiveRef?.(object); //?.ref??object
+            // console.log("_graphical", _graphical, object);
             const _aleObject =
                 depth === 0 ? aleObject
                     : aleObject?.getLiveRefOfDomLiveRef?.(object);
@@ -901,21 +1024,23 @@ const ALEInspector = (
         _aleObject && setValue?.(1);
     }, [_aleObject, setValue]);
 
-    return (
-        <ExplorerTooltip
-            key={`${showTooltip}`}
-            placement="bottom-start"
-            title={
-                disableInteractive ?
-                    ""
-                    : <ExplorerTooltipContainer>
-                        {tooltipTableHandle}
-                        {tooltipInspector}
-                    </ExplorerTooltipContainer>
-            }
-        >
-            {aleInspector}
-        </ExplorerTooltip>
+    return (isImport ?
+            <PackageVariant style={liveExpressionIconDefaultStyle}/>
+            :
+            <ExplorerTooltip
+                key={`${showTooltip}`}
+                placement="bottom-start"
+                title={
+                    disableInteractive ?
+                        ""
+                        : <ExplorerTooltipContainer>
+                            {tooltipTableHandle}
+                            {tooltipInspector}
+                        </ExplorerTooltipContainer>
+                }
+            >
+                {aleInspector}
+            </ExplorerTooltip>
     );
 };
 

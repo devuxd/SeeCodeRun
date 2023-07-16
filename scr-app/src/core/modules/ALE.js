@@ -1210,6 +1210,10 @@ class ALEManager {
         }
     };
 
+    resolveCallPointByFunctionRef =(functionRef) =>{
+        aleInstance.scr.aleJSEN.functions()
+    }
+
 }
 
 const ALE = (
