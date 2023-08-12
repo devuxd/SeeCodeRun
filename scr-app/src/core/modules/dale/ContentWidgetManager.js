@@ -101,6 +101,10 @@ export default class ContentWidgetManager {
         return this.contentWidgets;
     };
 
+    isContentWidgetIncludedInResize = (contentWidget) => {
+        return contentWidget?.getDomNode?.()?.children?.length > 0;
+    };
+
     widgetResize = () => {
         let layout = {};
         const contentWidgets = Object.values(this.getContentWidgets() ?? {});
@@ -128,13 +132,22 @@ export default class ContentWidgetManager {
                 // console.log("x", x);
                 const {width, contentWidget} = ys[x];
                 if (!previous) {
-                    previous = {x, width, contentWidget};
+
+                    if (this.isContentWidgetIncludedInResize(contentWidget)) {
+                        previous = {x, width, contentWidget};
+                    }
+
                     // console.log(
                     //     "resize",
                     //     { y, x, maxWidth: 0, previousEl: previous.contentWidget.domNode, currentEl: contentWidget.domNode, contentWidget }
                     // );
                     return;
                 }
+
+                if (!this.isContentWidgetIncludedInResize(contentWidget)) {
+                    return;
+                }
+
                 const maxWidth = x - previous.x - this.widgetGap;
 
                 // console.log(
@@ -147,6 +160,9 @@ export default class ContentWidgetManager {
                 //     }
                 // );
 
+
+                // console.log("previousDomNode", );
+
                 const style = previous.contentWidget.getDomNode()?.style;
                 if (style) {
                     style.maxWidth = `${maxWidth}px`;
@@ -157,9 +173,12 @@ export default class ContentWidgetManager {
             });
 
             if (xs.length) {
-                const style = ys[xs[xs.length - 1]].contentWidget.getDomNode()?.style;
-                if (style) {
-                    style.maxWidth = `unset`;
+                const lastContentWidget = ys[xs[xs.length - 1]].contentWidget;
+                if (this.isContentWidgetIncludedInResize(lastContentWidget)) {
+                    const style = lastContentWidget.getDomNode()?.style;
+                    if (style) {
+                        style.maxWidth = `unset`;
+                    }
                 }
             }
 
@@ -626,12 +645,14 @@ export default class ContentWidgetManager {
 
         if (contentWidget) {
             contentWidget.updateRefs(this, locLiveZoneActiveDecoration);
-            this.layoutContentWidget(contentWidget);
-            return contentWidget;
+        } else {
+            contentWidget = this.makeContentWidget(id, locLiveZoneActiveDecoration);
+            this.editor.addContentWidget(contentWidget);
         }
+        const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
+        expressionId == 6 && console.log("editorContentWidgetById", {expressionId, contentWidget});
 
-        contentWidget = this.makeContentWidget(id, locLiveZoneActiveDecoration);
-        this.editor.addContentWidget(contentWidget);
+
         this.layoutContentWidget(contentWidget);
         return contentWidget;
     };
@@ -645,7 +666,10 @@ export default class ContentWidgetManager {
     }
 
     onDecorationsChange = (locLiveZoneActiveDecorations) => {
-        // console.log("onDecorationsChange", locLiveZoneActiveDecorations);
+        // console.log("onDecorationsChange", locLiveZoneActiveDecorations, locLiveZoneActiveDecorations.find(locLiveZoneActiveDecoration => {
+        //     const {expressionId} = locLiveZoneActiveDecoration?.zone ?? {};
+        //     return expressionId; //&& console.log("onDecorationsChange", {expressionId, locLiveZoneActiveDecoration});
+        // }));
         //fix mapping of id with map to index of locLiveZoneActiveDecorations: done
 
         const ids2i = {};

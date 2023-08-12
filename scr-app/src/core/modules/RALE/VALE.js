@@ -384,7 +384,15 @@ const Noop = () => {
 
 const emptyState = {};
 const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentScopes, programUID, ...rest}) => {
+
     const container = contentWidget.getDomNode();
+    const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
+    const {
+        zone: _zone = {}, logValues = []
+    } = contentWidget.locLiveZoneActiveDecoration ?? {};
+
+    const {uid, type, parentType} = _zone;
+    // expressionId == 6 && console.log("VALE", {expressionId, contentWidget});
     //contentWidget?.getDomNode(),
     // console.log("VALE",  contentWidget?.getId(), contentWidget?.locLiveZoneActiveDecoration?.syntaxFragment?.getDecorationIds(),{contentWidget, container, variant, rest});
 
@@ -402,6 +410,9 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
 
     // (isIfBlock )&& console.log("navigationStates", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.ifBlockAlternate());//, navigationState, contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, );
 
+
+    let isUseful = true;
+
     if (variant === 'block') {
         forceVisible = true;
     } else { // expression variant
@@ -412,101 +423,141 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
             // aleObject = currentEntry.entry?.logValue;
             // zone = _zone;
         } else {
-            const {zone: _zone = {}, logValues = []} =
-            contentWidget.locLiveZoneActiveDecoration ?? {};
-
-            const {uid, type, parentType} = _zone;
-
-            // if (type === "CallExpression") {
-            //     console.log("TR>>", _zone);
-            //
-            // }
-
-
-            let isUseful = true;
-            // if (parentType === 'BinaryExpression' || parentType === 'LogicalExpression') {
-            //     if (type !== 'BinaryExpression' && type !== 'LogicalExpression') {
-            //         isUseful = false;
-            //     }
-            // }
-
-            if (isUseful) {
-                const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();
-                const forBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlock();
-                const forBlockInit = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlockInit();
-                const expressionUpdate = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionUpdate();
-                let branchEntry = allCurrentScopes?.[uid]?.currentBranchEntry;
-
-                const branchAny = {in: 0, out: Infinity};
-                const currentBranch = (
-                        (forBlockInit ? (branchEntry?.branch ? {in: 0, out: branchEntry?.branch?.in} : branchAny) :
-                                (expressionTest || (forBlock && expressionUpdate)) ?
-                                    branchEntry?.branch ?
-                                        {in: branchEntry?.branch?.in ?? 0, out: Infinity}
-                                        : branchAny
-                                    : null
-                        )
-                    )
-                    ?? (branchEntry?.branch ?? (programUID == uid ? branchAny : null));
-
-                currentEntry = currentBranch && logValues.find(entry => {
-                    if (
-                        currentBranch.in <= entry.i &&
-                        entry.i <= currentBranch.out
-                    ) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-
-                if (currentEntry) {
-                    forceVisible = true;
-                    data = currentEntry.getValue();
-                    aleObject = currentEntry.entry?.logValue;
-                    zone = _zone;
-                }
-
-                // (expressionTest) && console.log("expressionTest", { //allCurrentScopes?.[uid]
-                //     contentWidget,
-                //     variant,
-                //     navigationState,
-                //     aleObject,
-                //     currentBranch,
-                //     currentEntry,
-                //     logValues
-                // });
-                // (forBlockInit) && console.log("forBlock", { //allCurrentScopes?.[uid]
-                //     contentWidget,
-                //     variant,
-                //     navigationState,
-                //     aleObject,
-                //     currentBranch,
-                //     currentEntry,
-                //     logValues
-                // });
-
-                // (expressionTest) && console.log("expressionTest", {contentWidget, variant, navigationState, aleObject, currentEntry});//, navigationState, contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, );
-
-
-            }
-
 
         }
+    }
+
+
+    // if (type === "CallExpression") {
+    //     console.log("TR>>", _zone);
+    //
+    // }
+
+
+    // if (parentType === 'BinaryExpression' || parentType === 'LogicalExpression') {
+    //     if (type !== 'BinaryExpression' && type !== 'LogicalExpression') {
+    //         isUseful = false;
+    //     }
+    // }
+
+    if (isUseful) {
+        const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();
+        const forBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlock();
+        const forBlockInit = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlockInit();
+        const expressionUpdate = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionUpdate();
+        const forXRight = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forXRight();
+        const forXLeft = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forXLeft();
+
+        let branchEntry = allCurrentScopes?.[uid]?.currentBranchEntry;
+
+        const branchAny = {in: 0, out: Infinity};
+        const currentBranch = (
+                (forBlockInit ? (branchEntry?.branch ? {in: 0, out: branchEntry?.branch?.in} : branchAny) :
+                        (expressionTest || forXRight || (forBlock && expressionUpdate)) ?
+                            branchEntry?.branch ?
+                                {in: branchEntry?.branch?.in ?? 0, out: Infinity}
+                                : branchAny
+                            : null
+                )
+            )
+            ?? (branchEntry?.branch ?? (programUID == uid ? branchAny : null));
+
+        const forXBranch = currentBranch && forXRight && logValues.reverse().find(entry => {
+            if (
+                currentBranch.in >= entry.i
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        let lvs = logValues;
+
+        if(lvs.length === 0 && (variant === 'block') && currentBranch){
+            lvs = currentBranch.logValues??lvs;
+        }
+
+        currentEntry = forXBranch || (currentBranch && lvs.find(entry => {
+            if (
+                currentBranch.in <= entry.i &&
+                entry.i <= currentBranch.out
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        }));
+        //_zone.parentType =="ForInStatement"
+
+        //_zone.type =="ArrayExpression" &&console.log("contentWidget.locLiveZoneActiveDecoration",{forin, currentBranch,branchEntry, currentEntry, logValues}, contentWidget.locLiveZoneActiveDecoration, contentWidget?.locLiveZoneActiveDecoration?.getBranchNavigator());
+
+
+        //bring the branch and collect the in entry
+        if (currentEntry) {
+            console.log("currentEntry", currentEntry);
+            forceVisible = true;
+            data = currentEntry.getValue();
+            aleObject = (currentEntry.entry?.idValue)?? currentEntry.entry?.logValue;
+            zone =  (currentEntry.entry?.idValue?.zone)??_zone;
+        }
+
+        // (variant === 'block')
+        forXLeft
+        && console.log(variant, {
+            expressionId,
+            contentWidget,
+            // branchNavigator: contentWidget.getLocLiveZoneActiveDecoration().getBranchNavigator(),
+            // forXRight,
+            logValues,
+            currentBranch,
+            // type,
+            // logValues,
+            currentEntry,
+            data,
+            aleObject,
+            zone,
+        });
+
+        // (expressionTest) && console.log("expressionTest", { //allCurrentScopes?.[uid]
+        //     contentWidget,
+        //     variant,
+        //     navigationState,
+        //     aleObject,
+        //     currentBranch,
+        //     currentEntry,
+        //     logValues
+        // });
+        // (forBlockInit) && console.log("forBlock", { //allCurrentScopes?.[uid]
+        //     contentWidget,
+        //     variant,
+        //     navigationState,
+        //     aleObject,
+        //     currentBranch,
+        //     currentEntry,
+        //     logValues
+        // });
+
+        // (expressionTest) && console.log("expressionTest", {contentWidget, variant, navigationState, aleObject, currentEntry});//, navigationState, contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, );
+
 
     }
 
 
     const decorate = useCallback((value = 0) => {
         // const isImport = contentWidget.locLiveZoneActiveDecoration?.isImport;
-
         if (isImport) {
             // console.log("RALE", {contentWidget, navigationState});
             contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.active, false);
             return;
         }
 
+        // contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText === "let n" && console.log("BL", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget);
+
+
         if (variant === 'block') {
+            //  contentWidget.locLiveZoneActiveDecoration?.syntaxFragment && console.log("BL", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget);
+
             //navigationState?.absoluteMaxNavigationIndex
             if (value) {
                 // if(isIfBlock){
@@ -519,6 +570,8 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
                 contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.default, false, value);
             }
         } else {
+            //why widget is not aligned with expression node
+            // }
             if (value) {
                 // if(isIfBlock){
                 //     console.log("BL A isIfBlock", contentWidget.locLiveZoneActiveDecoration?.syntaxFragment, contentWidget);
@@ -531,7 +584,7 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
             }
         }
 
-    }, [contentWidget, isImport]);
+    }, [contentWidget, isImport, variant]);
 
     const LiveArtifact = forceVisible ? (variant === 'block' ? LiveBlock : LiveExpression) : Noop;
 

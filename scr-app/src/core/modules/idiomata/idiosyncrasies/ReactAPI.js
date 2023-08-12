@@ -1,17 +1,7 @@
-const addMapEntry = (entry, map) => {
+import {SupportedApis} from "../Idiomata";
+import {PackageIdiom, PackageIdiosyncrasy} from "../idioms/PackageIdiom";
+import {pushUniqueEntry} from "../../../../utils/scrUtils";
 
-    if (!entry) {
-        return -1;
-    }
-
-    const i = map.indexOf(entry);
-
-    if (i > -1) {
-        return i;
-    }
-
-    return map.push(entry) - 1;
-};
 
 const filterOwnedComponents = (component, components) => {
     return components.filter(
@@ -55,11 +45,11 @@ class ComponentTreeNode {
     };
 
     addOwnerComponentTreeNode = (owner) => {
-        return addMapEntry(owner, this.ownerComponentTreeNodes);
+        return pushUniqueEntry(owner, this.ownerComponentTreeNodes);
     }
 
     addOwnedComponentTreeNode = (owned) => {
-        return addMapEntry(owned, this.ownedComponentTreeNodes);
+        return pushUniqueEntry(owned, this.ownedComponentTreeNodes);
     }
 
     getOwnerComponentTreeNodes = () => {
@@ -132,3 +122,45 @@ export class ReactElementRefTree {
         );
     }
 }
+
+
+const resolvePackageRef = (state, importStateInfo) => {
+    if (!(state && typeof state === "object")) {
+        return null;
+    }
+
+    if (importStateInfo.isRootStateAlias(state)) {
+        return importStateInfo.rootState;
+    }
+
+    let checks = 3;
+
+    for (let k in state) {
+        if (--checks < 0) {
+            return null;
+        }
+
+        try {
+            const aState = state[k];
+
+            if (
+                importStateInfo.visitedStates.indexOf(aState) > -1
+                && state.version
+                && importStateInfo.rootState?.version === state.version
+            ) {
+                importStateInfo.registerStateAlias(state);
+                return importStateInfo.rootState;
+            }
+        } catch (e) {
+            return undefined;
+        }
+
+    }
+
+    return null;
+
+};
+
+export const packageIdiosyncrasy = new PackageIdiosyncrasy(SupportedApis.React, resolvePackageRef);
+
+PackageIdiom.registerIdiosyncrasy(packageIdiosyncrasy);

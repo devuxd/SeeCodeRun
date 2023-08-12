@@ -21,8 +21,22 @@ import CubeOutlineIcon from 'mdi-material-ui/CubeOutline';
 import DebugStepOutIcon from 'mdi-material-ui/DebugStepOut';
 import CodeEqualIcon from 'mdi-material-ui/CodeEqual';
 import isNative from "lodash/isNative";
-import {SupportedApis} from "../core/modules/RALE/IdiomaticInspector";
+import {SupportedApis} from "../core/modules/idiomata/Idiomata";
 
+export const pushUniqueEntry = (entry, anArray) => {
+
+    if (!entry) {
+        return -1;
+    }
+
+    const i = anArray.indexOf(entry);
+
+    if (i > -1) {
+        return i;
+    }
+
+    return anArray.push(entry) - 1;
+};
 
 const regex = /function\s*([^\s]+)\s*\{\s*\[\s*native\s+code\s*\]\s*\}/gm;
 export const nativeFunctionStringName = (state) => {
@@ -117,8 +131,20 @@ export const stateToRefArray = (state, skipStates = [], Obj = _Object, contentWi
 
     stateVisitor(state, []);
 
+    const _aliases = [];
+
+    const registerStateAlias = (aliasState) => {
+        return pushUniqueEntry(aliasState, _aliases);
+    };
+
+    const isRootStateAlias = (aliasState) => {
+        return _aliases.indexOf(aliasState) > -1;
+    };
+
     return {
         rootState: state,
+        registerStateAlias,
+        isRootStateAlias,
         stateVisitor,
         paths,
         visitedStates,
@@ -508,7 +534,12 @@ const newReactElement = (element, context) => {
     const {children, ...otherProps} = props ?? {};
 
     const domData = new ReactElement();
-    domData.tagName = type; // amke refs live
+    //
+    // if(isString(type)){
+    //
+    // }
+    // domData.tagName = type; // amke refs live
+    domData.type = type; // amke refs live
     domData.key = key;
     domData.ref = ref; // make live
     // domData.name = domData.tagName.toLowerCase();
@@ -547,7 +578,6 @@ const newReactElement = (element, context) => {
                 }
             }
             domData.props.children = childrenCopy;
-
         }
 
     }

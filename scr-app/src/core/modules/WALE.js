@@ -7,7 +7,7 @@ import {
     getZoneDataLoc,
     JSXExpressionReplacementType
 } from "./ALE";
-import JSEN from "../../utils/JSEN";
+import JSEN, {getObjectClassName} from "../../utils/JSEN";
 import isNil from "lodash/isNil";
 import isString from "lodash/isString";
 import isObject from "lodash/isObject";
@@ -16,7 +16,9 @@ import {isArrayLikeObject, isObjectLike} from "lodash";
 import isFunction from "lodash/isFunction";
 import {copifyDOMNode, findStateInState, isNode, nativeFunctionStringName, stateToRefArray} from "../../utils/scrUtils";
 
-import {GraphicalIdiom, SupportedApis} from "./RALE/IdiomaticInspector";
+import {GraphicalIdiom} from "./RALE/IdiomaticInspector";
+import {SupportedApis} from "./idiomata/Idiomata";
+import {PackageIdiom} from "./idiomata/idioms/PackageIdiom";
 
 class Diff {
     diff;
@@ -666,6 +668,7 @@ export default function wireGlobalObjectToALE(
         previous,
         ids,
         errorActions,
+        lastCallExpressionId: null,
         lastExpressionId: null,
         errorsData: [],
         timeline: [],
@@ -676,13 +679,27 @@ export default function wireGlobalObjectToALE(
         natives: {},
         importZoneExpressionDataArray: [],
         importsStates: [],
+        nativeConsolePath: ["console"],
     };
 
     scrObject.registerNatives = (iFrame) => {
         scrObject.nativeRootState = iFrame.contentWindow;
+        // for(let k in scrObject.nativeRootState ){
+        //     if(k === "console")console.log("c", scrObject.nativeRootState[k]);
+        // }
+        // console.log("c", scrObject.nativeRootState.console);
         scrObject.natives = stateToRefArray(scrObject.nativeRootState, [global, scrObject], undefined, scrObject.nativeRootState);
-        //  console.log("registerNatives", iFrame.contentWindow.document.getElementById, scrObject.natives, scrObject.natives.visitedStates.indexOf(iFrame.contentWindow.document.getElementById));
+        scrObject.natives.stateVisitor(scrObject.nativeRootState.console, scrObject.nativeConsolePath);
+        // console.log("registerNatives",scrObject.nativeRootState.console?.constructor,typeof scrObject.nativeRootState.console, iFrame.contentWindow.document.getElementById, scrObject.natives, !!iFrame.contentWindow.console, scrObject.natives.visitedStates.indexOf(iFrame.contentWindow.console));
     };
+
+    scrObject.nativeConsole = () => {
+        return scrObject.nativeRootState?.console;
+    }
+
+    scrObject.nativeConsoleInfo = () => {
+        return scrObject.natives?.visitedStates?.[scrObject.natives?.paths?.indexOf(scrObject.nativeConsolePath)];
+    }
 
     scrObject.nativeStateInfo = (aState) => {
         const nativeFunctionName = nativeFunctionStringName(aState);
@@ -717,7 +734,6 @@ export default function wireGlobalObjectToALE(
         }
 
         scrObject.importsStates[i] = stateToRefArray(importRef, [global, scrObject], undefined, scrObject.nativeRootState);
-        importRef.FFFFFFF = "FFFDEFDFDFDF"
         // console.log("registerImportState",
         //     {importRef, importZoneExpressionData, importsState: scrObject.importsStates[i]}
         // );
@@ -737,6 +753,12 @@ export default function wireGlobalObjectToALE(
             if (j > -1) {
                 i = isi;
                 return true;
+            } else {
+                if (PackageIdiom.resolvePackageRef(aState, is)) {
+                    i = isi;
+                    j = 0;
+                    return true;
+                }
             }
 
             return false;
@@ -816,20 +838,31 @@ export default function wireGlobalObjectToALE(
             }
         }
 
-        let info = scrObject.importStateInfo(obj);
-        if (info?.imported) {
-            stateType = "import";
-        } else {
-            info = scrObject.nativeStateInfo(obj);
-            if (info?.native || info?.nativeFunctionName) {
-                stateType = "native";
+        let objectConstructorName = getObjectClassName(obj);
+        let info = null;
+        if (scrObject.nativeConsole() === obj) {
+            info = scrObject.nativeConsoleInfo();
+            objectConstructorName = "console";
+            stateType = "native";
+        }
+
+        if (!info) {
+            info = scrObject.importStateInfo(obj);
+            if (info?.imported) {
+                stateType = "import";
             } else {
-                info = null;
+                info = scrObject.nativeStateInfo(obj);
+                if (info?.native || info?.nativeFunctionName) {
+                    stateType = "native";
+                } else {
+                    info = null;
+                }
             }
         }
 
         const j = scrObject.inspectorsStates.push(obj) - 1;
         return scrObject.inspectorsInfo[j] = {
+            objectConstructorName,
             stateType,
             isFunctionType,
             location,
@@ -857,6 +890,16 @@ export default function wireGlobalObjectToALE(
         calleePropertyExpressionId,
         ...preExtra
     ) => {
+        // if (calleeExpressionId) {
+        //     console.log("pre", expressionId, {
+        //         calleeExpressionId,
+        //         calleeObjectExpressionId,
+        //         calleePropertyExpressionId,
+        //         preExtra
+        //     });
+        scrObject.lastCallExpressionId = ((calleePropertyExpressionId ?? calleeObjectExpressionId) ?? calleeExpressionId)?? scrObject.lastCallExpressionId;
+        // }
+
         scrObject.lastExpressionId = expressionId;
         aleInstance?.onTraceChange?.();
         return {
@@ -1189,7 +1232,9 @@ export default function wireGlobalObjectToALE(
                     null, null, null,
                 );
 
-                scrObject.timeline.push(entry);
+                let i = scrObject.timeline.push(entry)-1;
+
+                idValue && console.log("C", {i,entry, z: aleInstance.zale?.getZoneData(uid), idValue, forOfValue});
 
                 if (callerTimeLineEntry) {
                     entry.calleeType = "local";
@@ -1243,7 +1288,7 @@ export default function wireGlobalObjectToALE(
     };
 
     scrObject[alExceptionCallbackIdentifierName] = (e, ...rest) => {
-        const lastExpressionId = scrObject?.lastExpressionId;
+        const lastExpressionId = scrObject?.lastCallExpressionId ?? scrObject?.lastExpressionId;
         // console.log("lastExpressionId", lastExpressionId);
         if (lastExpressionId) {
             const zoneData = getZoneDataByExpressionId(aleInstance, lastExpressionId);
@@ -1274,7 +1319,6 @@ export default function wireGlobalObjectToALE(
                     );
 
                     scrObject.errorsData.push(entry);
-
                     scrObject.timeline.push(entry);
                 }
                 // done: uncaught errors are strings when passed to log (ifra,?)

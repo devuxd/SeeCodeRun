@@ -18,8 +18,10 @@ import {
     pulseOutlineAnimation as animation,
     pulseStartOutline
 } from "../common/UI";
-import {filterVisualElementsByApiName, GraphicalIdiom, SupportedApis} from "../core/modules/RALE/IdiomaticInspector";
-import {ReactElementRefTree} from "../core/modules/idiomata/idiosyncracies/ReactAPI";
+import {GraphicalIdiom} from "../core/modules/RALE/IdiomaticInspector";
+import {SupportedApis} from "../core/modules/idiomata/Idiomata";
+//filterVisualElementsByApiName
+// import {ReactElementRefTree} from "../core/modules/idiomata/idiosyncrasies/ReactAPI";
 
 const styles = () => ({
     locator: {
@@ -286,8 +288,8 @@ const GraphicalMapper = (({
     const makeLocators = useCallback(() => {
             const locatedEls = [];
             // console.log("locators", visualElements);
-           // const reactComponents = filterVisualElementsByApiName(visualElements, visualElementsApiNames, SupportedApis.React).reverse();
-           //  const reactElementRefTree = new ReactElementRefTree(reactComponents);
+            // const reactComponents = filterVisualElementsByApiName(visualElements, visualElementsApiNames, SupportedApis.React).reverse();
+            //  const reactElementRefTree = new ReactElementRefTree(reactComponents);
             (visualElements ?? []).forEach((visualElement, key) => {
                 const apiName = visualElementsApiNames[key];
                 let domEls = GraphicalIdiom.graphicalQuery(visualElement, apiName);

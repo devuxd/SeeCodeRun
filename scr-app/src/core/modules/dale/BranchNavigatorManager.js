@@ -1,4 +1,4 @@
-import BranchNavigator from "./BranchNavigator";
+import BranchNavigator, {LogValue} from "./BranchNavigator";
 import {LiveZoneDecorationStyles, ScopeExitTypes, ScopeTypes, TraceEvents} from "../ALE";
 import {ZoneDecorationType} from "./DALE";
 
@@ -132,7 +132,7 @@ export default class BranchNavigatorManager {
         });
     }
 
-    enterScope(uid, i, zone, tryBlockType, extraZone, paramsIdentifier) {
+    enterScope(uid, i, zone, tryBlockType, extraZone, paramsIdentifier, scopeEnterStateValues) {
 
         const scope = this.resolveScope(uid, zone);
         if (tryBlockType) {
@@ -160,7 +160,7 @@ export default class BranchNavigatorManager {
         if (extraZone?.type === "SwitchCase" && scope.current(paramsIdentifier)) {
             return scope;
         }
-        scope.enter(i, zone, paramsIdentifier);
+        scope.enter(i, zone, paramsIdentifier, scopeEnterStateValues);
         return scope;
     }
 
@@ -268,7 +268,8 @@ export default class BranchNavigatorManager {
             return null;
         }
 
-        return zale.zones[scopeMap?.expressionId];
+        let zone = zale.zones[scopeMap?.expressionId];
+        return zone;
     };
 
 
@@ -317,6 +318,11 @@ export default class BranchNavigatorManager {
             zone, LiveZoneDecorationStyles.active
         );
 
+        // console.log("locLiveZoneActiveDecorationsPush", this.locLiveZoneActiveDecorations, this.locLiveZoneActiveDecorations.find(locLiveZoneActiveDecoration => {
+        //     const {expressionId} = locLiveZoneActiveDecoration?.zone ?? {};
+        //     return expressionId ==6; //&& console.log("onDecorationsChange", {expressionId, locLiveZoneActiveDecoration});
+        // }));
+
         let activate = false;
 
         if (isError) {
@@ -359,6 +365,15 @@ export default class BranchNavigatorManager {
             activate = true;
         }
 
+        if (zone?.parentType === "ForInStatement") { // && zone?.key !== 'test' //zone?.parentType === "ForInStatement"
+            if (logValues?.length) {
+                syntaxFragment = dale.getSyntaxFragment(logValues[0].zone.expressionId)?.[2];
+                activate = true;
+            }
+            console.log('ForInStatement ', logValues?.length, {syntaxFragment, zone, range, logValues, found, b: getBranchNavigator()});
+
+        }
+
 
         if (isImport) {
             syntaxFragment = dale.getSyntaxFragmentImport(zone?.importSourceName, 0)?.[2];
@@ -378,6 +393,8 @@ export default class BranchNavigatorManager {
             }
 
         }
+
+        //TODO: ADD THE LEFT FROM FORX !!!!! SEPARATE FROM BLOCK AND EXPRESSION IDS
 
         if (activate) {
             this.locLiveZoneActiveDecorations.push({
@@ -431,7 +448,7 @@ export default class BranchNavigatorManager {
             const entry = scr.timeline[i];
             const {
                 pre, traceEventType, uid, scopeType, extraExpressionId,
-                tryBlockType, scopeExitType, paramsIdentifier,
+                tryBlockType, scopeExitType, paramsIdentifier, idValue
             } = entry;
             let zone = null;
             let branchNavigator = null;
@@ -439,23 +456,20 @@ export default class BranchNavigatorManager {
             let ignore = false;
             let isImport = false;
             let isError = false;
-
+            let expressionId = pre?.expressionId;
             switch (traceEventType) {
                 case TraceEvents.L:
-                    const expressionId = pre?.expressionId;
                     zone = zale.zones[pre?.expressionId];
                     values[expressionId] = values[expressionId] ?? [];
                     logValues = values[expressionId];
-                    const logValue = {
-                        i,
-                        uid,
-                        zone,
-                        entry,
-                        isReady: false,
-                        getValue: entry?.logValue?.getSnapshot
-                    };
-
-                    logValues.push(logValue);
+                    logValues.push(
+                        new LogValue({
+                            i,
+                            uid,
+                            zone,
+                            entry,
+                        })
+                    );
                     break;
                 case TraceEvents.O:
                     zone = this.getZoneByUID(bale, zale, uid);// zale.zones[extraExpressionId];
@@ -466,12 +480,54 @@ export default class BranchNavigatorManager {
                     break;
                 case TraceEvents.I:
                     zone = this.getZoneByUID(bale, zale, uid);
-                    const extraZone = zale.zones[extraExpressionId];
+                    const extraZone = zale.zones[extraExpressionId ?? uid];
+                    expressionId = extraZone?.expressionId;
+                    const {parentPathI} = zone;
+
+                    let y = false;
+                    if (zone?.parentType === "ForInStatement") {
+                        y = true;
+                        values[parentPathI] = values[parentPathI] ?? [];
+                        logValues = values[parentPathI];
+                    } else {
+                        values[expressionId] = values[expressionId] ?? [];
+                        logValues = values[expressionId];
+                    }
+
+
+                    const scopeEnterStateValues = entry;
 
                     branchNavigator = this.enterScope(
-                        uid, i, zone, tryBlockType, extraZone, paramsIdentifier
+                        uid, i, zone, tryBlockType, extraZone, paramsIdentifier, scopeEnterStateValues
                     );
-                    // console.log('I', {uid, extraExpressionId, zone, entry, extraZone, branchNavigator});
+
+
+                    logValues.push(
+                        new LogValue({
+                            i,
+                            uid,
+                            zone: extraZone,
+                            entry,
+                        })
+                    );
+                    const cb = branchNavigator.current();
+                    cb.logValues = logValues;
+
+
+                    console.log('I', {
+                        y,
+                        parentPathI,
+                        expressionId,
+                        idValue,
+                        values,
+                        uid,
+                        extraExpressionId,
+                        zone,
+                        entry,
+                        extraZone,
+                        branchNavigator,
+                        logValues
+                    });
                     break;
                 case TraceEvents.R:
                     break;

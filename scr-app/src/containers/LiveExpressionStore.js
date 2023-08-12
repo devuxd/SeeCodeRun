@@ -758,6 +758,9 @@ class LiveExpressionStore extends PureComponent {
                 while (error = errorsData.pop()) {
                     const {errorObject} = error;
                     console.log("afterTraceChange", errorObject);
+                    if(errorObject.name === "TypeError"){
+                        errorObject.message = errorObject.message.replace(/\(near.*/, "");
+                    }
                     updatePlaygroundLoadFailure("js", errorObject);
                 }
 

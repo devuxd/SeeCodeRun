@@ -34,7 +34,7 @@ import SortNumericDescendingIcon from 'mdi-material-ui/SortNumericDescending';
 import FunctionIcon from 'mdi-material-ui/Function';
 import FolderHome from 'mdi-material-ui/FolderHome';
 import FolderAccount from 'mdi-material-ui/FolderAccount';
-import FolderArrowDown from 'mdi-material-ui/FolderArrowDown';
+import FolderDownload from 'mdi-material-ui/FolderDownload';
 
 
 import isFunction from 'lodash/isFunction';
@@ -110,12 +110,28 @@ const withPastebinSearchContext = Component => {
 const vStyles = (theme) => {
     return {
         liveExpressionIconDefaultStyle: {
-            fontSize: "0.8rem",
+            fontSize: "0.75rem",
+            marginBottom: "-0.2rem",
             color: 'white',
             fontWeight: 'bold',
             backgroundColor: theme.palette.mode === 'light' ?
                 'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
+        },
+        liveExpressionObjectType: {
+            fontSize: "0.64rem",
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
+        },
+        liveExpressionObjectTypeDefault: {
+            fontSize: "0.64rem",
+            // color: 'white',
+            fontWeight: 'bold',
+            // backgroundColor: theme.palette.mode === 'light' ?
+            //     'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
         }
+
     };
 };
 
@@ -143,7 +159,7 @@ const IdiomaticObjectValue = withStyles(vStyles)(({aleInstance, classes, ...prop
             return <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
         case "import":
             //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
-            return <><FolderArrowDown
+            return <><FolderDownload
                 className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
 
         default:
@@ -154,33 +170,46 @@ const IdiomaticObjectValue = withStyles(vStyles)(({aleInstance, classes, ...prop
 
 const IdiomaticObjectType = withStyles(vStyles)(({aleInstance, classes, object}) => {
     const f = aleInstance?.scr?.importsStates?.[0]?.rootState;
-    const ff = f === object;
+    // const ff = f === object;
     // the hell?
-    (ff || object?.Children) && console.log("IdiomaticObjectType", object, f, ff);
-    // const {
-    //     stateType,
-    //     isFunctionType,
-    //     location,
-    //     info,
-    // } = aleInstance?.scr?.resolveStateInfo(object) ?? {};
+    // (ff || object?.Children) && console.log("IdiomaticObjectType", object, f, ff);
+    const {
+        stateType,
+        isFunctionType,
+        location,
+        info,
+        objectConstructorName,
+        ...rest
+    } = aleInstance?.scr?.resolveStateInfo(object) ?? {};
     // console.log("IdiomaticObjectType",aleInstance?.scr, object, {
     //     stateType,
     //     isFunctionType,
     //     location,
     //     info,
     // });
-    const objectConstructorName = object?.constructor ?
-        object.constructor.name : 'Object';
 
-    return objectConstructorName === 'Object' ?
-        '' : `${objectConstructorName} `;
+    // let objectConstructorName = getObjectClassName(object); // object?.constructor?.name ?? 'Object';
+    // = null;
+    // object?.constructor?.name; //object?.constructor ?// Symbol(obj).toString  and strip Symbol(...) then [object X]
+    // // if (!objectConstructorName) {
+    // try {
+    //     // objectConstructorName = Symbol(object)?.toString();
+    //     console.log("Symbol", Symbol(object)?.toString(), object);
+    // } catch (e) {
+    //     // objectConstructorName =
+    //     //     object?.constructor?.name ?? 'Object';
+    // }
+    // }
+
+    // return objectConstructorName === 'Object' ?
+    //     '' : `${objectConstructorName} `;
 
     // let objectValueText = objectConstructorName === 'Object' ?
     //     '' : `${objectConstructorName} `;
 
-    // let objectValue =  objectConstructorName === 'Object' ?
-    //     '' : `${objectConstructorName} `;
-    //
+    let objectValue = objectConstructorName === 'Object' ?
+        '' : ` ${objectConstructorName} `;
+
 
     //
     // if (isFunctionType) {
@@ -191,19 +220,22 @@ const IdiomaticObjectType = withStyles(vStyles)(({aleInstance, classes, object})
     // //     return objectValueText;
     // // }
     //
-    // switch (stateType) {
-    //     // case "local":
-    //     //     return <span> <FolderAccount className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</span>;
-    //     case "native":
-    //         return <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
-    //     case "import":
-    //         //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
-    //         return <><FolderArrowDown
-    //             className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</>;
-    //
-    //     default:
-    //         return objectValue;
-    // }
+    //objectValue===""
+    // aleInstance?.scr.nativeRootState.console === object && console.log("w", object, objectValue, info, rest);
+    switch (stateType) {
+        // case "local":
+        //     return <span> <FolderAccount className={classes.liveExpressionIconDefaultStyle}/>{objectValue}</span>;
+        case "native":
+            objectValue.includes("conso") && console.log("w", objectValue, info, rest);
+            return <span className={classes.liveExpressionObjectType}>{objectValue}</span>;
+        case "import":
+            //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+            return <span className={classes.liveExpressionObjectType}>{objectValue}</span>;
+
+        default:
+            <span className={classes.liveExpressionObjectTypeDefault}>{objectValue}</span>;
+           // return objectValue;
+    }
 
 });
 

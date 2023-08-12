@@ -1,5 +1,23 @@
 import jsan from "jsan";
 
+export const getObjectClassName = (object) => {
+    let objectConstructorName = null;
+    try {
+        objectConstructorName = Symbol(object)?.toString() ?? "";
+        const regex = /Symbol\(\[([^\s]+)\s+([^\s]+)\]\)/gm;
+        const match = regex.exec(objectConstructorName);
+        // console.log("getObjectClassName", object, objectConstructorName, match, match?.[2]);
+        objectConstructorName = match?.[2];
+        if (objectConstructorName === "Object") {
+            objectConstructorName = null;
+        }
+    } catch (e) {
+        // objectConstructorName =
+        //     object?.constructor?.name;
+    }
+    return objectConstructorName ?? object?.constructor?.name;
+}
+
 export default class JSEN {
     static MAGIC_TAG = "$@.$";
 
@@ -25,16 +43,24 @@ export default class JSEN {
                 if (Array.isArray(object)) {
                     return "Array";
                 }
-                if (!object.constructor) {
-                    return "Object";
+
+                const objectConstructorName = getObjectClassName(object);
+
+                if (object.constructor) {
+                    //     if (objectConstructorName === "Object") {
+                    //         return "Object";
+                    //     }
+                    // } else {
+                    if (
+                        typeof object.constructor.isBuffer === "function" &&
+                        object.constructor.isBuffer(object)
+                    ) {
+                        return "Buffer";
+                    }
                 }
-                if (
-                    typeof object.constructor.isBuffer === "function" &&
-                    object.constructor.isBuffer(object)
-                ) {
-                    return "Buffer";
-                }
-                return object.constructor.name;
+                // console.log("objectConstructorName", objectConstructorName, object);
+
+                return objectConstructorName;
             case "function":
                 return "function";
             case "symbol":
@@ -49,7 +75,8 @@ export default class JSEN {
     };
 
     static isObjectTypeNative = (object) => {
-        switch (JSEN.getObjectClassName(object) ?? "null") {
+        const objectConstructorName = JSEN.getObjectClassName(object) ?? "null";
+        switch (objectConstructorName) {
             case "null":
             case "Date":
             case "RegExp":
@@ -63,8 +90,12 @@ export default class JSEN {
     };
 
     static replacer = (key, value) => {
-        if (key && !JSEN.isObjectTypeNative(value)) {
-            return `${JSEN.MAGIC_TAG}${value.constructor.name}${
+        if ((key ?? false) && !JSEN.isObjectTypeNative(value)) {
+            // const objectConstructorName = JSEN.getObjectClassName(value) ?? "null";
+            // if (objectConstructorName === "console") {
+            //     console.log("JSEN replacer", value, objectConstructorName, getObjectClassName(value));
+            // }
+            return `${JSEN.MAGIC_TAG}${JSEN.getObjectClassName(value)}${
                 JSEN.MAGIC_TAG
             }${jsan.stringify(value, JSEN.replacer, null, true)}`;
         }
@@ -91,7 +122,11 @@ export default class JSEN {
         obj, replacer = JSEN.replacer, space, options = true
     ) {
         if (!JSEN.isObjectTypeNative(obj)) {
-            return `${JSEN.MAGIC_TAG}${obj.constructor.name}${
+            // const objectConstructorName =  JSEN.getObjectClassName(obj)?? "null";
+            // //if (objectConstructorName === "console") {
+            // console.log("JSEN stringify", obj, objectConstructorName, getObjectClassName(obj));
+            // //}
+            return `${JSEN.MAGIC_TAG}${JSEN.getObjectClassName(obj)}${
                 JSEN.MAGIC_TAG
             }${jsan.stringify(obj, replacer, space, options)}`;
         }
@@ -104,7 +139,10 @@ export default class JSEN {
             const objectClassName = str.substring(JSEN.MAGIC_TAG.length, tagI);
             try {
                 const ref = jsan.parse(str.substring(tagI + JSEN.MAGIC_TAG.length), reviver);
-                ref.constructor = {name: objectClassName};
+                if (ref?.constructor?.name) {
+                    ref.constructor = {name: objectClassName};
+                }
+
                 return ref;
             } catch (e) {
                 return e;

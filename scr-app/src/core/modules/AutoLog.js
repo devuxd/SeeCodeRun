@@ -443,7 +443,7 @@ class AutoLog {
 
                 if (autoLogger && autoLogger.trace && runIframe.contentWindow) {
                     // console.log("onScriptsLoaded", !!autoLogger.aleInstance.scr, runIframe, runIframe.contentWindow, runIframe.contentDocument);
-                    autoLogger.aleInstance.scr.registerNatives(runIframe);
+                    autoLogger.aleInstance?.scr?.registerNatives(runIframe);
 
                     if (runIframe.contentWindow.scrLoader?.onScriptsLoaded) {
 

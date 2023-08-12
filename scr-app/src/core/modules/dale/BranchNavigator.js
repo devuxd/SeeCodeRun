@@ -1,3 +1,61 @@
+export class LogValue {
+
+    i = -1;
+    uid = null;
+    zone = null;
+    entry = null;
+    isRead = false;
+
+    constructor({
+                    i,
+                    uid,
+                    zone,
+                    entry,
+                    isReady = false,
+                }) {
+        this.i = i;
+        this.uid = uid;
+        this.zone = zone;
+        this.entry = entry;
+        this.isReady = isReady;
+    }
+
+    getValue = () => this.entry?.logValue?.getSnapshot();
+}
+
+
+class Branch {
+    paramsIdentifier = null;
+    scopeEnterStateValues = null;
+    scopeEnterState = null;
+    i = null;
+    in = null;
+    out = null;
+    zones = null;
+
+    constructor({paramsIdentifier, scopeEnterStateValues, i, in: _in, out, zones}) {
+        this.paramsIdentifier = paramsIdentifier;
+        this.scopeEnterStateValues = scopeEnterStateValues;
+        this.scopeEnterState = new ScopeEnterState(scopeEnterStateValues);
+        this.i = i;
+        this.in = _in;
+        this.out = out;
+        this.zones = zones;
+    }
+}
+
+class ScopeEnterState {
+    values = null;
+    states = null;
+
+    constructor(values) {
+        // console.log("ScopeEnterState", values);
+        if (values) {
+
+        }
+        this.values = values;
+    }
+}
 
 export default class BranchNavigator {
     _uid = null;
@@ -80,7 +138,7 @@ export default class BranchNavigator {
         return this.paths().reduce((r, e) => [...r, ...e], []);
     }
 
-    enter(i, zone, paramsIdentifier) {
+    enter(i, zone, paramsIdentifier, scopeEnterStateValues) {
         this.currentBranch = this.currentEnter(
             paramsIdentifier ?? `${i}`, zone
         );
@@ -91,13 +149,18 @@ export default class BranchNavigator {
             this.branches = branches;
         }
 
-        this.branches[this.currentBranch] = {
+        const branch = new Branch({
             paramsIdentifier,
+            scopeEnterStateValues,
             i: this.currentBranch,
             in: i,
             out: -1,
             zones: {in: zone, out: null}
-        };
+        });
+
+        this.branches[this.currentBranch] = branch;
+
+        // console.log("ScopeEnterState", branch);
 
         this._min = Math.min(this.min(), i);
     }

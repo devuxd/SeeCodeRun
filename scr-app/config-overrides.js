@@ -13,7 +13,7 @@ module.exports = (config, /*, env*/) => {
 
     config.plugins = [
         ...config.plugins,
-        new MonacoWebpackPlugin(options) //
+        new MonacoWebpackPlugin(options)
     ];
 
     // add fallback for vm module

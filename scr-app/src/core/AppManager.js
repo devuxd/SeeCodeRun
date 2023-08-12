@@ -149,10 +149,14 @@ class AppManager {
 
     observeLoadMonaco() {
         return new Observable(observer => {
-                (async () => await import ('monaco-editor'))()
-                    .then(monaco => {
-                        // fixes breaking changes [0.22.0] (29.01.2021)
-                        global.monaco = monaco;
+                (async () => [
+                    await import('monaco-editor/esm/vs/editor/editor.api'),
+                    // await import('monaco-editor/esm/metadata')
+                ])()//'monaco-editor'
+                    .then(([monaco, metadata]) => {
+                        // fixes breaking changes [0.22.0] (29.01.2021) // addressed in index.js
+                        // global.monaco = monaco;
+                        // console.log("monaco metadata", metadata);
                         configureMonacoDefaults(monaco);
                         observer.next(loadMonacoFulfilled(monaco));
                         observer.complete();
@@ -664,20 +668,26 @@ class AppManager {
         }
 
         // try {
-        const firebase = (await import('firebase/app')).default;
-        await import ('firebase/auth');
-        await import ('firebase/database');
+        const firebase = (await import('firebase/compat/app')).default;
+        // const {getAuth} =
+            await import ('firebase/compat/auth');
+        // const Database =
+            await import ('firebase/compat/database');
         const Firepad = (await import('firepad')).default;
+        const {initializeApp} = firebase;
+        // const {getDatabase, serverTimestamp} = Database;
 
 
         fireco.appId = this.pastebinId ?? fireco.appId;
 
-        const app = firebase.initializeApp(config, fireco.appId);
-        // console.log("config", config);
+        const app = initializeApp(config, fireco.appId);
         const database = firebase.database(app);
         const auth = firebase.auth(app);
-
+        // const database = getDatabase(app);
+        // const auth = getAuth(app);
+        // console.log("config", config);
         const serverTimestamp = () => firebase.database.ServerValue.TIMESTAMP;
+        console.log("firebase", {firebase, fireco, database, auth, f: serverTimestamp()});
         const connectedRef = database.ref(".info/connected");
 
         const scrCloudFunctions = makeScrCloudFunctions(app, serverTimestamp);

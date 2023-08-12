@@ -1,10 +1,3 @@
-import React, {StrictMode} from 'react'; //, useMemo, Suspense, lazy
-import ReactDOM from 'react-dom';
-// import Box from '@mui/material/Box';
-// import Typography from '@mui/material/Typography';
-// import LinearProgress from '@mui/material/LinearProgress';
-// import {createRoot} from 'react-dom/client'; // causes infinite loop of set value in editors =(
-import {Provider} from 'react-redux';
 import update, {extend} from "immutability-helper";
 
 extend("$auto", function (value, object) {
@@ -13,7 +6,13 @@ extend("$auto", function (value, object) {
 extend("$autoArray", function (value, object) {
     return object ? update(object, value) : update([], value);
 });
-
+import React, {StrictMode} from 'react'; //, useMemo, Suspense, lazy
+import ReactDOM from 'react-dom';
+import {Provider} from 'react-redux';
+// import Box from '@mui/material/Box';
+// import Typography from '@mui/material/Typography';
+// import LinearProgress from '@mui/material/LinearProgress';
+// import {createRoot} from 'react-dom/client'; // causes infinite loop of set value in editors =(
 import configureStore from './redux/configureStore';
 import Index from './pages/Index';
 import * as serviceWorker from './serviceWorker';

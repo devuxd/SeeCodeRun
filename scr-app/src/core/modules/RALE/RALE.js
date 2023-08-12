@@ -389,6 +389,12 @@ export function RALE(
 
     const current = decorationRefs;
 
+    Object.values(contentWidgets ?? {}).forEach(contentWidget => {
+        const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
+        contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText === "let n" && console.log("navigator", {expressionId, contentWidget});
+    });
+
+
     const contentWidgetKeys = useMemo(
         () => Object.keys(contentWidgets ?? {}),
         [contentWidgets, current]
@@ -400,6 +406,9 @@ export function RALE(
         // console.log("branchNavigator >>>>>");
         contentWidgetKeys.forEach((key) => {
             const contentWidget = contentWidgets[key];
+            const z = contentWidget?.locLiveZoneActiveDecoration?.zone
+            const {expressionId} = z ?? {};
+           // contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText?.includes("let n") && console.log("navigatorKeys", {expressionId, z, contentWidget}); // expressionId == 14
             if (LiveZoneTypes.B !== contentWidget.locLiveZoneActiveDecoration?.zone.liveZoneType) {
                 return;
             }
@@ -564,6 +573,9 @@ export function RALE(
     return (<>
             {contentWidgetKeys.map((key) => {
                 const contentWidget = contentWidgets[key];
+                contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText === "let n" && console.log("RALE", contentWidget);
+                const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
+                // expressionId == 6 && console.log("RALE", {expressionId, contentWidget});
                 // const forBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlock();
                 // const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();
                 // // const expressionInit = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionInit();

@@ -10,7 +10,10 @@ import {
 // f is a reference role becomes
 // const f = function(...){...};
 
-const checks = {};
+export const SyntaxTypeChecks = {
+    forX: ["ForInStatement", "ForOfStatement"],
+};
+
 
 export const defaultOptionsToCompare = [
     // "inlineClassName", // they don't match from deltaoptions to modeldecorations: ale.r => ale r not preceise
@@ -72,7 +75,11 @@ export default class SyntaxFragment {
         this.ranges = dale.rangeCompactor.compactRanges(this.rawRanges);
         this.alternateRanges = dale.rangeCompactor.compactRanges(this.rawAlternateRanges);
 
-        const sourceTextFocusRange = zone.node?.loc && dale.locToMonacoRange(zone.node.loc);
+        this.getSourceTextFocusRange = () => {
+            return zone.node?.loc && dale.locToMonacoRange(zone.node.loc);
+        }
+
+        const sourceTextFocusRange = this.getSourceTextFocusRange();
         const allRanges = [...this.ranges];
         sourceTextFocusRange && allRanges.unshift(sourceTextFocusRange);
 
@@ -116,9 +123,25 @@ export default class SyntaxFragment {
             return this.zone?.key === "update";
         };
 
+        this.expressionRight = () => {
+            return this.zone?.key === "right";
+        };
+
+        this.expressionLeft = () => {
+            return this.zone?.key === "left";
+        };
+
         this.forBlockInit = () => {
             return this.expressionInit() && !!this.dale?.getAleInstance?.()?.zale.lookupZoneParentByType(this.zone, "ForStatement");
         };
+
+        this.forXRight = () => {
+            return (this.expressionRight() && !!this.dale?.getAleInstance?.()?.zale.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
+        }
+
+        this.forXLeft = () => {
+            return (this.expressionLeft() && !!this.dale?.getAleInstance?.()?.zale.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
+        }
 
 
         this.makeZoneDecorations = (
@@ -137,6 +160,15 @@ export default class SyntaxFragment {
             // value &&console.log("makeZoneDecorations", zone.type, {zone, currentRanges, decorationStyle, value});
             if (!this.ifBlock() && this.expressionTest()) {
                 // console.log("loop?", zone.type, {zone, currentRanges, decorationStyle, value});
+            }
+
+            if (this.forXRight()) {
+                const focusRange = this.getSourceTextFocusRange();
+                if (focusRange) {
+                    currentRanges = [focusRange];
+                }
+
+                // console.log("forInRight", zone.type, {zone, currentRanges, decorationStyle, value});
             }
 
             if (this.ifBlock()) {
@@ -395,23 +427,23 @@ export default class SyntaxFragment {
             //
         };
 
-        this.startHover = ()=>{
+        this.startHover = () => {
             this.decorate(
                 LiveZoneDecorationStyles.hover, false
             );
         }
 
-        this.stopHover = ()=>{
+        this.stopHover = () => {
             this.decorate(
                 LiveZoneDecorationStyles.hover, true
             );
         }
 
-        this.getHoverClassName = ()=>{
-            return  this._hoverClassName;
+        this.getHoverClassName = () => {
+            return this._hoverClassName;
             // this._hovered?
             //     this._hoverClassName
-                // : null
+            // : null
             // ;
         };
     }

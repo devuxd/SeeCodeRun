@@ -1,12 +1,7 @@
 import isFunction from "lodash/isFunction";
 import {isNode} from '../../../utils/scrUtils';
-import {ReactElementRefTree} from "../idiomata/idiosyncracies/ReactAPI";
-
-export const SupportedApis = {
-    standard: "standard",
-    jQuery: "jQuery",
-    React: "React"
-};
+import {ReactElementRefTree} from "../idiomata/idiosyncrasies/ReactAPI";
+import {SupportedApis} from "../idiomata/Idiomata";
 
 export const graphicalQueryApis = {};
 
@@ -57,7 +52,7 @@ const reactQuery = (obj) => {
 
 graphicalQueryApis[SupportedApis.React] = {
     isNode: (value) => {
-        return (value?.$$typeof?.toString?.() === 'Symbol(react.element)' ); //&& (value.type && !isFunction(value.type))
+        return (value?.$$typeof?.toString?.() === 'Symbol(react.element)'); //&& (value.type && !isFunction(value.type))
         // if(value?.$$typeof === 'Symbol(react.element)'){
         //     console.log("vvvv", value.$$typeof?.toString() );
         // // === 'Symbol(react.element)'
@@ -72,6 +67,7 @@ graphicalQueryApis[SupportedApis.React] = {
         return new ReactElementRefTree(components);
     },
 };
+
 
 export class GraphicalIdiom {
     static isNode(...p) {

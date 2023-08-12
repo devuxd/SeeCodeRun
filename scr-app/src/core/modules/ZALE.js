@@ -2223,6 +2223,19 @@ export default function zoneALE(code) {
         return null;
     };
 
+    const lookupZoneParentByTypes = (zone, types) => {
+        let current = zone?.parentSnapshot;
+
+        while (current) {
+            if (types.includes(current.type)) {
+                return current;
+            }
+            current = current?.parentSnapshot;
+        }
+
+        return null;
+    };
+
     const getImportZoneData = (importSourceName, importSourceIndex) => {
         const importSource = importZones[importSourceName];
         const zone = importSource?.[importSourceIndex];
@@ -2244,6 +2257,7 @@ export default function zoneALE(code) {
         getScopeUIDs,
         getZoneData,
         lookupZoneParentByType,
+        lookupZoneParentByTypes,
         getImportZoneData
     };
 }

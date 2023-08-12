@@ -16,12 +16,12 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import FunctionIcon from 'mdi-material-ui/Function';
 import FolderHome from 'mdi-material-ui/FolderHome';
 import FolderAccount from 'mdi-material-ui/FolderAccount';
-import FolderArrowDown from 'mdi-material-ui/FolderArrowDown';
+import FolderDownload from 'mdi-material-ui/FolderDownload';
 
 // import CheckIcon from '@mui/icons-material/Check';
 // import ClearIcon from '@mui/icons-material/Clear';
 
-import PackageVariant from 'mdi-material-ui/PackageVariant';
+// import PackageVariant from 'mdi-material-ui/PackageVariant';
 // import PackageVariantCheck from 'mdi-material-ui/PackageVariantCheck';
 // import PackageVariantClosed from 'mdi-material-ui/PackageVariantClosed';
 
@@ -537,11 +537,15 @@ const liveExpressionIconDefaultStyle = {
 };
 
 const labelStyles = (theme) => {
+    const baseIconStyle = {
+        fontSize: "0.75rem",
+        marginBottom: "-0.2rem",
+        color: 'white',
+        fontWeight: 'bold',
+    };
     return {
         liveExpressionIconDefaultStyle: {
-            fontSize: "0.8rem",
-            color: 'white',
-            fontWeight: 'bold',
+            ...baseIconStyle,
             backgroundColor: theme.palette.mode === 'light' ?
                 'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
         }
@@ -553,6 +557,7 @@ const ObjectRootLabel = withStyles(labelStyles)(({classes, name, ...rest}) => {
     const obj = rest.data;
     const resolveStateInfo = aleInstance?.scr?.resolveStateInfo;
     const {
+        objectConstructorName,
         stateType,
         isFunctionType,
         location,
@@ -566,8 +571,27 @@ const ObjectRootLabel = withStyles(labelStyles)(({classes, name, ...rest}) => {
 
     let objectName = null;
 
+
+    // if (typeof nn === 'string') {
+    //     objectName = <ObjectName name={nn}/>;
+    // }
+
     if (typeof name === 'string') {
         objectName = <ObjectName name={name}/>;
+    } else {
+
+        // const nn = (objectConstructorName ?? name);
+        // if (!nn) {
+        //     console.log("FFF", {
+        //         name, obj,
+        //         objectConstructorName,
+        //         stateType,
+        //         isFunctionType,
+        //         location,
+        //         info,
+        //     });
+        // }
+
     }
 
     let objectPreview = null;
@@ -582,11 +606,12 @@ const ObjectRootLabel = withStyles(labelStyles)(({classes, name, ...rest}) => {
     //
     switch (stateType) {
         case "native":
-            idiomaticState = <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+            idiomaticState = <><FolderHome
+                className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
             break
         case "import":
             //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
-            idiomaticState = <><FolderArrowDown
+            idiomaticState = <><FolderDownload
                 className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
     }
 
@@ -641,15 +666,18 @@ const ObjectLabel = withStyles(labelStyles)(({classes, name, data, isNonenumerab
 
     let idiomaticState = objectValue; //objectName ??
 
-    // switch (stateType) {
-    //     case "native":
-    //         idiomaticState = <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
-    //         break
-    //     case "import":
-    //         //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
-    //         idiomaticState = <><FolderArrowDown
-    //             className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
-    // }
+    if (isFunctionType) {
+
+        switch (stateType) {
+            case "native":
+                idiomaticState = <><FolderHome className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+                break
+            case "import":
+                //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+                idiomaticState = <><FolderDownload
+                    className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+        }
+    }
 
     // if (objectName) {
     //     objectName = idiomaticState;
@@ -1025,7 +1053,7 @@ const ALEInspector = (
     }, [_aleObject, setValue]);
 
     return (isImport ?
-            <PackageVariant style={liveExpressionIconDefaultStyle}/>
+            <FolderDownload style={liveExpressionIconDefaultStyle}/>
             :
             <ExplorerTooltip
                 key={`${showTooltip}`}
