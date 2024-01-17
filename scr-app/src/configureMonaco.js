@@ -4,7 +4,7 @@ const configureMonacoDefaults = (
     const compilerDefaults = {
         jsxFactory: 'React.createElement',
         reactNamespace: 'React',
-        jsx: monaco.languages.typescript.JsxEmit.React,
+        jsx: monaco.languages.typescript.JsxEmit.ReactJSXDEv,
         target: monaco.languages.typescript.ScriptTarget.Latest,
         allowNonTsExtensions: !hasNativeTypescript,
         moduleResolution:

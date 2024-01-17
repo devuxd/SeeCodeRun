@@ -38,9 +38,12 @@ import {
 
 import {
     updatePlaygroundReducer,
+    updatePlaygroundEpic,
 } from './playground';
 
-import {updateBundleReducer} from './liveExpressionStore';
+import {
+    updateBundleReducer,
+    updateLiveExpressionStoreEpic} from './liveExpressionStore';
 
 export const rootEpic = combineEpics(
     disposePastebinEpic,
@@ -61,6 +64,8 @@ export const rootEpic = combineEpics(
     monacoEditorsEpic,
     // updatePlaygroundEpic,
     // updatePlaygroundInstrumentationEpic,
+    updateLiveExpressionStoreEpic,
+    updatePlaygroundEpic,
     firecoEditorsEpic,
     firecoActivateEpic,
     firecoEditorEpic,

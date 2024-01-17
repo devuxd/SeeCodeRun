@@ -128,7 +128,7 @@ class NotificationCenter extends PureComponent {
       const {
          changeShowNetworkState,
          getNetworkStateMessage,
-         didMountDisconnectTimeout
+         didMountDisconnectTimeout = 20000
       } = this.props;
       
       const {snackbarMessageId} = this.state;
@@ -163,8 +163,8 @@ NotificationCenter.propTypes = {
    closeSnackbar: PropTypes.func.isRequired,
 };
 
-NotificationCenter.defaultProps = {
-   didMountDisconnectTimeout: 20000,
-};
+// NotificationCenter.defaultProps = {
+//    didMountDisconnectTimeout: 20000,
+// };
 
 export default withSnackbar(NotificationCenter);

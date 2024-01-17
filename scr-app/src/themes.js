@@ -1,4 +1,4 @@
-import React, {
+import {
    createContext, useCallback, useEffect, useMemo, useState,
 } from 'react';
 import PropTypes from 'prop-types';
@@ -48,7 +48,18 @@ const darkPalette = {
    },
 };
 
-const spacingUnit = x => x * 8;
+const APP_BAR_HEIGHT = 58;
+const SPACING_UNIT = 8;
+
+const appUnits = {
+   margin: SPACING_UNIT,
+   marginArray: [SPACING_UNIT, SPACING_UNIT],
+   appBarHeight: APP_BAR_HEIGHT,
+   rowHeightSmall: APP_BAR_HEIGHT,
+   rowHeight: APP_BAR_HEIGHT,
+};
+
+const spacingUnit = x => x * SPACING_UNIT;
 
 const typography = {
    code: {
@@ -74,6 +85,7 @@ const getMuiThemeOptions = (palette) => ({
    spacingUnit,
    palette,
    typography,
+   appUnits,
 });
 
 const getLightTheme = () => responsiveFontSizes(
@@ -94,30 +106,33 @@ const getMuiThemes = {
    [themeTypes.darkTheme]: getDarkTheme,
 };
 
+const muiChromeBase = {
+   ARROW_FONT_SIZE: '10px',
+   BASE_BACKGROUND_COLOR: 'transparent',
+};
+
+const muiChromeCompact = {
+   ARROW_FONT_SIZE: '9px',
+   BASE_FONT_SIZE: '9px',
+   TREENODE_FONT_SIZE: "9px",
+};
+
 const muiChromeLight = {
-   ...chromeLight, ...({BASE_BACKGROUND_COLOR: 'transparent'})
+   ...chromeLight, ...muiChromeBase
 };
 
 const muiChromeLightCompact = {
-   ...muiChromeLight, ...({
-      BASE_FONT_SIZE: '9px',
-      TREENODE_FONT_SIZE: "9px",
-   })
+   ...muiChromeLight, ...muiChromeCompact
 };
 
 const muiChromeDark = {
-   ...chromeDark, ...({
-      BASE_BACKGROUND_COLOR: 'transparent',
-      OBJECT_VALUE_STRING_COLOR: 'rgb(206,145,120)',
-   })
+   ...chromeDark, ...muiChromeBase,
+   OBJECT_VALUE_STRING_COLOR: 'rgb(206,145,120)',
 };
 // console.log(muiChromeDark);
 
 const muiChromeDarkCompact = {
-   ...muiChromeDark, ...({
-      BASE_FONT_SIZE: '9px',
-      TREENODE_FONT_SIZE: "9px",
-   })
+   ...muiChromeDark, ...muiChromeCompact
 };
 
 export const MonacoHighlightTypes = {
@@ -135,8 +150,8 @@ export const MonacoExpressionClassNames = {
    liveExpressionNavClassName: 'monaco-editor-decoration-les-expressionNavLive',
    errorExpressionClassName: 'monaco-editor-decoration-les-expressionError',
    branchExpressionClassName: 'monaco-editor-decoration-les-expressionBranch',
-   liveExpressionDependencyClassName:
-      'monaco-editor-decoration-les-expressionDependencyLive',
+   liveExpressionDependencyClassName: 'monaco-editor-decoration-les-expressionDependencyLive',
+   commentGlyphMarginClassName:'monaco-editor-ale-commentGlyph',
    
 };
 

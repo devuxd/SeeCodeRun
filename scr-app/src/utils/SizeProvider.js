@@ -1,76 +1,111 @@
-// based on react-grid-layout's WidthProvider
-import React, {createRef, PureComponent} from 'react';
+import {
+   memo,
+   forwardRef,
+   useRef,
+   useState,
+   useEffect
+} from 'react';
 import PropTypes from 'prop-types';
-import debounce from 'lodash/debounce';
 
-export default function SizeProvider(ComposedComponent) {
-    return class SizeProvider extends PureComponent {
-        static defaultProps = {
-            measureBeforeMount: false
-        };
-
-        static propTypes = {
-            onHeight: PropTypes.func,
-            heightAdjust: PropTypes.number,
-        };
-
-        constructor(props) {
-            super(props);
-            this.state = {
-                domNode: null,
-                width: 1280,
-                height: 1024,
+const SizeProvider = (Component) => {
+   const SizeProvider = memo(forwardRef((
+      {
+         measureBeforeMount = false,
+         onHeight,
+         onWidth,
+         debounceTime = 500,
+         initialHeight = 1024,
+         initialWidth = 1280,
+         aWindow = window, // support for iframe
+         ...props
+      },
+      ref
+   ) => {
+      const reactRef = useRef();
+      const [height, setHeight] = useState(initialHeight);
+      const [width, setWidth] = useState(initialWidth);
+      
+      const [mounted, setMounted] = useState(!measureBeforeMount);
+      
+      useEffect(
+         () => {
+            setMounted(true);
+            return () => null;
+         },
+         []
+      );
+      
+      useEffect(
+         () => {
+            const onWindowResize = () => {
+               const node = reactRef.current;
+               
+               if (!(node instanceof HTMLElement)) {
+                  return;
+               }
+               
+               setHeight(
+                  (onHeight?.(node) ?? node.offsetHeight)
+                  ?? aWindow.innerHeight
+               );
+               
+               setWidth(
+                  (onWidth?.(node) ?? node.offsetWidth)
+                  ?? aWindow.innerWidth
+               );
+               
             };
-            this.mounted = false;
-            this.reactRef = createRef();
-        }
+            
+            onWindowResize();
+            
+            let tid = null;
+            const _onWindowResize = () => {
+               aWindow.clearTimeout(tid);
+               tid = aWindow.setTimeout(onWindowResize, debounceTime);
+            };
+            
+            aWindow.addEventListener('resize', _onWindowResize);
+            
+            return () => {
+               aWindow.clearTimeout(tid);
+               aWindow.removeEventListener('resize', _onWindowResize);
+            };
+            
+         },
+         [aWindow, onHeight, onWidth, debounceTime]
+      );
+      
+      return (
+         mounted ?
+            <div ref={reactRef}>
+               <Component
+                  height={height}
+                  width={width}
+                  ref={ref}
+                  {...props}
+               />
+            </div>
+            : <div
+               ref={reactRef}
+               className={props.className}
+               style={props.style}
+            />
+      );
+   }));
+   
+   SizeProvider.propTypes = {
+      measureBeforeMount: PropTypes.bool,
+      onHeight: PropTypes.func,
+      onWidth: PropTypes.func,
+      debounceTime: PropTypes.number,
+      initialHeight: PropTypes.number,
+      initialWidth: PropTypes.number,
+      aWindow: PropTypes.object,
+   };
+   
+   SizeProvider.displayName = "SizeProvider";
+   
+   return SizeProvider;
+};
 
-
-        componentDidMount() {
-            this.mounted = true;
-            this._onWindowResize = debounce(this.onWindowResize, 250, {maxWait: 1000});
-            window.addEventListener('resize', this._onWindowResize );
-            this.onWindowResize();
-        }
-
-        componentWillUnmount() {
-            this.mounted = false;
-            window.removeEventListener('resize', this._onWindowResize );
-            this._onWindowResize.cancel();
-        }
-
-        onWindowResize = () => {
-            if (!this.mounted || !this.reactRef.current) return;
-            const node = this.reactRef.current;
-            if (node instanceof HTMLElement) {
-                const {onHeight, heightAdjust} = this.props;
-                this.setState({
-                    domNode: node,
-                    width: node.offsetWidth,
-                    height: onHeight ? onHeight(node, heightAdjust || 0) : window.innerHeight
-                });
-            }
-        };
-
-        static getDerivedStateFromProps(nextProps, prevState) {
-            if (nextProps.onHeight && prevState.domNode) {
-                const height = nextProps.onHeight(prevState.domNode, nextProps.heightAdjust || 0);
-                return {height};
-            }
-            return null;
-        }
-
-        render() {
-            const {measureBeforeMount, ...rest} = this.props;
-            if (measureBeforeMount && !this.mounted) {
-                return (
-                    <div ref={this.reactRef} className={this.props.className} style={this.props.style}/>
-                );
-            }
-            return (<div ref={this.reactRef}>
-                <ComposedComponent {...rest} {...this.state} />
-            </div>);
-        }
-
-    };
-}
+export default SizeProvider;

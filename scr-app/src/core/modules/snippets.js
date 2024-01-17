@@ -29,11 +29,11 @@ export const evaluateSnippet = (
       });
       
       aleInstance = ALE(
-         null,
+         "js",
          tPath,
          global.top ?? global,
          true,
-         onError,
+         // onError,
          key,
       );
       

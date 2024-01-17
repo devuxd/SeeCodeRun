@@ -10,8 +10,10 @@ import {
     mergeMap,
     startWith
 } from 'rxjs/operators';
-import {ajax} from 'rxjs/ajax';
+// import {ajax} from 'rxjs/ajax'; // replaced with inner to avoid using cloudfunctions
 import localStorage from 'store';
+
+
 import {getDefaultPastebinContent} from '../../utils/pastebinContentUtils';
 import {ACTIVATE_FIREPAD_EXPIRED} from './fireco';
 import {MONACO_EDITOR_CONTENT_CHANGED} from './monacoEditor';
@@ -273,6 +275,7 @@ export const pastebinEpic = (action$, state$, {appManager}) =>
                 const url = action.isCopy ?
                     `${getPasteBinCopyUrl}?sourcePastebinId=${action.sourcePastebinId}`
                     : getPasteBinIdUrl;
+                const {ajax} = appManager;
                 const getPastebinIdRequest = () => ajax({
                     crossDomain: true,
                     url: url,
@@ -316,7 +319,7 @@ export const pastebinEpic = (action$, state$, {appManager}) =>
         startWith(fetchPastebin(appManager.urlData.hash)),
     );
 
-export const pastebinTokenEpic = (action$, state$) =>
+export const pastebinTokenEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         ofType(FETCH_PASTEBIN_FULFILLED, ACTIVATE_FIREPAD_EXPIRED, FETCH_PASTEBIN_TOKEN),
         mergeMap(() => {
@@ -324,6 +327,7 @@ export const pastebinTokenEpic = (action$, state$) =>
                 `${getPasteBinTokenUrl}?pastebinId=${
                     state$.value.pastebinReducer.pastebinId
                 }`;
+            const {ajax} = appManager;
             return ajax({
                 crossDomain: true,
                 url: url,
@@ -345,7 +349,7 @@ export const pastebinTokenRejectedEpic = action$ =>
         mapTo(fetchPastebinToken())
     );
 
-export const pastebinContentEpic = (action$, state$) =>
+export const pastebinContentEpic = (action$, state$, {appManager}) =>
     action$.pipe(
         ofType(/*FETCH_PASTEBIN_FULFILLED,*/ FETCH_PASTEBIN_CONTENT),
         filter(() => !state$.value.pastebinReducer.isNew),
@@ -354,6 +358,7 @@ export const pastebinContentEpic = (action$, state$) =>
                 `${
                     getPasteBinUrl
                 }?pastebinId=${state$.value.pastebinReducer.pastebinId}`;
+            const {ajax} = appManager;
             return ajax({
                 crossDomain: true,
                 url: url,

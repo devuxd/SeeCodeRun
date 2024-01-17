@@ -2,10 +2,7 @@ import React, {
    createRef,
    memo,
    PureComponent,
-   useEffect,
-   useState
 } from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import classnames from 'classnames';
 import {of} from 'rxjs';
@@ -27,7 +24,6 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
-import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -35,7 +31,7 @@ import Typography from '@mui/material/Typography';
 
 import {randomColor} from '../common/UI';
 import update from 'immutability-helper';
-import {motion} from 'framer-motion';
+
 import {ResizableBox} from 'react-resizable';
 
 import {
@@ -44,29 +40,103 @@ import {
 } from '../redux/modules/fireco';
 import PromiseAutoComplete from '../components/PromiseAutoComplete';
 import InfinityChatList from './InfinityChatList';
+import MotionControlledXY from "../common/MotionControlledXY";
+import TextFieldWithAutoFocus from "../common/TextFieldWithAutoFocus";
+import {l} from "../core/modules/AutoLogShift";
 
 const mapDispatchToProps = {configureFirecoChat, firecoEditorsSetUserId};
 
 const LIST_SUBHEADER_HEIGHT = 72 + 1; //1 from divider
 // const LIST_ITEM_HEIGHT = 60; //1 from divider
 const LIST_ITEM_SKELETON_HEIGHT = 48; //1 from divider
-const defaultChatStyle = {
-   minWidth: LIST_SUBHEADER_HEIGHT * 4,
-   minHeight: LIST_SUBHEADER_HEIGHT * 2,
-   left: 'unset',
-   right: 'unset',
-   top: 'unset',
-   bottom: 'unset',
-   width: 'unset',
-   height: 'unset',
-};
 
 const defaultChatLayout = {
+   left: LIST_SUBHEADER_HEIGHT,
+   top: LIST_SUBHEADER_HEIGHT,
+   minLeft: 0,
+   minTop: 0,
    width: LIST_SUBHEADER_HEIGHT * 4,
    height: LIST_SUBHEADER_HEIGHT * 2,
-   left: LIST_SUBHEADER_HEIGHT * 4,
-   top: LIST_SUBHEADER_HEIGHT * 2,
+   minWidth: LIST_SUBHEADER_HEIGHT * 4,
+   minHeight: LIST_SUBHEADER_HEIGHT * 2,
 }
+
+const defaultResizableBoxProps = {
+   handleSize: [5, 5],
+   resizeHandles: ['ne', 'se', 'sw', 'nw'],
+   minConstraints: [defaultChatLayout.minWidth, defaultChatLayout.minHeight],
+};
+
+
+const rectifyChatBoundingClientRectValue = (
+   chatBoundingClientRect, key,
+) => {
+   const value = chatBoundingClientRect[key];
+   const defaultValue = defaultChatLayout[key];
+   let newValue = (isNaN(value) ? defaultValue : value) ?? 0;
+   
+   let layoutKey = null;
+   let globalKey = null;
+   let dimensionKey = null;
+   switch (key) {
+      case 'left':
+         layoutKey = 'minLeft';
+         globalKey = 'innerWidth';
+         dimensionKey = 'width';
+         break;
+      case 'width':
+         layoutKey = 'minWidth';
+         globalKey = 'innerWidth';
+         break;
+      case 'top':
+         layoutKey = 'minTop';
+         globalKey = 'innerHeight';
+         dimensionKey = 'height';
+         break;
+      case 'height':
+         layoutKey = 'minHeight';
+         globalKey = 'innerHeight';
+         break;
+      default:
+         return 0;
+   }
+   
+   if (dimensionKey) {
+      if (newValue > global[globalKey] + chatBoundingClientRect[dimensionKey]) {
+         return (global[globalKey] - chatBoundingClientRect[dimensionKey]) * .9;
+      }
+   } else {
+      if (newValue > global[globalKey]) {
+         return global[globalKey] * .9;
+      }
+   }
+   
+   const minValue = defaultChatLayout[layoutKey];
+   if (newValue < minValue) {
+      return minValue;
+   }
+   
+   return newValue;
+};
+
+const rectifyChatLayout = (chatLayout) => {
+   chatLayout ??= {};
+   chatLayout.chatBoundingClientRect ??= {};
+   
+   const {chatBoundingClientRect} = chatLayout;
+   const rectifiedChatBoundingClientRect = {...chatBoundingClientRect};
+   
+   for (let key of ['width', 'height', 'left', 'top']) { // order matters
+      rectifiedChatBoundingClientRect[key] = rectifyChatBoundingClientRectValue(
+         rectifiedChatBoundingClientRect, key
+      );
+   }
+   
+   return {
+      ...chatLayout,
+      chatBoundingClientRect: rectifiedChatBoundingClientRect,
+   };
+};
 
 const styles = theme => ({
    backdrop: {
@@ -78,14 +148,15 @@ const styles = theme => ({
       backgroundColor: theme.palette.action.disabledBackground,
    },
    chat: {
+      display: 'block',
       position: 'absolute',
       top: 0,
       left: 0,
       boxShadow: theme.shadows[7],
       overflow: 'hidden',
    },
-   hidden: {
-      display: 'none',
+   chatHidden: {
+      display: 'none'
    },
    avatarMenu: {
       overflow: 'auto',
@@ -193,18 +264,22 @@ const loadMoreItems = (startIndex, stopIndex) => {
    });
 };
 
+
 class Chat extends PureComponent {
    constructor(props) {
       super(props);
-      this.chatEl = createRef();
+      this.styleRef = createRef();
+      this.rootRef = createRef();
+      this.chatElRef = createRef();
       this.chatListRef = createRef();
       this.chatAvatarEl = createRef();
       this.inputContainerRef = createRef();
       this.inputContainerResizeObserver = new window.ResizeObserver(
          this.updateHeightOffset
       );
+      
       this.state = {
-         ...defaultChatStyle,
+         ...defaultChatLayout,
          isAvatarMenuOpen: false,
          chatUserId: null,
          chatUserName: '',
@@ -227,22 +302,79 @@ class Chat extends PureComponent {
       this.userColors = {};
       
       this.firecoChat = null;
-      this.SERVER_TIMESTAMP = null;
+      this.serverTimestamp = () => null;
       this.chatUserIdLocalStoragePath = null;
       this.updateMessagesInterval = null;
       this.updateMessagesIntervalTime = 300000;//fiveMins
       this.dayOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
    }
    
+   getCurrentChatLayout = (forceValid = false) => {
+      const {
+         isTopNavigationToggled,
+         themeType,
+         isChatToggled,
+         currentLayout
+      } = this.props;
+      
+      const {
+         height, width,
+      } = this.state;
+      
+      
+      const {current} = this.styleRef;
+      const left = current?.x.get();
+      const top = current?.y.get();
+      
+      if (forceValid &&
+         isNaN(left) || isNaN(top) || isNaN(width) || isNaN(height)) {
+         return null;
+      }
+      
+      const layout = {
+         gridString: JSON.stringify(currentLayout?.() ?? null),
+         isTopNavigationToggled,
+         themeType,
+         isChatToggled,
+      };
+      
+      layout.chatBoundingClientRect = {
+         left, top,
+         height, width,
+      };
+      
+      return rectifyChatLayout(layout);
+   };
+   
    updateHeightOffset = (entry) => {
-      const height =
-         this.inputContainerRef.current.getBoundingClientRect().height;
-      this.setState(
-         {
-            heightOffset: LIST_SUBHEADER_HEIGHT > height ?
-               LIST_SUBHEADER_HEIGHT : height
+      cancelAnimationFrame(this.rid);
+      this.rid = requestAnimationFrame(() => {
+         const inputEl = this.inputContainerRef.current;
+         
+         if (!inputEl) {
+            return;
          }
-      )
+         
+         const height = inputEl.getBoundingClientRect().height;
+         
+         this.setState(
+            {
+               heightOffset: LIST_SUBHEADER_HEIGHT > height ?
+                  LIST_SUBHEADER_HEIGHT : height
+            }
+         );
+      });
+      
+   };
+   
+   handleUpdateChatBoundingClientRect = () => {
+      cancelAnimationFrame(this.ridChat);
+      this.ridChat = requestAnimationFrame(() => {
+         this.updateChatBoundingClientRect({
+            layout: this.getCurrentChatLayout()
+         });
+      });
+      
    };
    
    handleMessageTextChange = e => {
@@ -277,9 +409,9 @@ class Chat extends PureComponent {
       } else {
          if (chatMessageText.trim().length) {
             this.firecoChat.child('messages').push({
-               chatUserId: chatUserId,
+               chatUserId,
                text: chatMessageText,
-               timestamp: this.SERVER_TIMESTAMP
+               timestamp: this.serverTimestamp()
             }, error => {
                this.setState({
                   chatAvatarWarning: null,
@@ -400,7 +532,7 @@ class Chat extends PureComponent {
                chatUserName,
                color: this.getValidColor(),
                layout: {
-                  creationTimestamp: this.SERVER_TIMESTAMP,
+                  creationTimestamp: this.serverTimestamp(),
                }
             });
             this.setUserId(firecoChatUserPushPromise.key);
@@ -430,9 +562,31 @@ class Chat extends PureComponent {
       return color;
    };
    
-   updateLayout = (layout) => {
+   updateChatBoundingClientRect = (data) => {
+      if (!data?.layout) {
+         return null;
+      }
+      
+      data.layout = rectifyChatLayout(data.layout);
+      const {layout} = data;
+      
+      const {left, top, width, height} = layout.chatBoundingClientRect;
+      
+      if (this.chatElRef.current && this.styleRef.current) {
+         this.styleRef.current.x.set(left);
+         this.styleRef.current.y.set(top);
+      }
+      
+      this.setState({width, height});
+      
+      return layout;
+   };
+   
+   updateLayout = (data) => {
+      const layout = this.updateChatBoundingClientRect(data);
+      
       if (!layout) {
-         return;
+         return null;
       }
       
       const {
@@ -463,28 +617,16 @@ class Chat extends PureComponent {
          && !isEqual(layoutGrid, grid)) {
          resetLayoutClick(layoutGrid);
       }
+      
       if (switchTheme && layout.themeType && layout.themeType !== themeType) {
          switchTheme(null, layout.themeType);
-      }
-      
-      if (this.chatEl.current && layout.chatBoundingClientRect) {
-         if (layout.chatBoundingClientRect.left > window.innerWidth
-            || layout.chatBoundingClientRect.top > window.innerHeight) {
-            layout.chatBoundingClientRect.left = defaultChatLayout.left;
-            layout.chatBoundingClientRect.top = defaultChatLayout.top;
-         }
-         this.setState({
-            ...layout.chatBoundingClientRect
-         });
-         
       }
    };
    
    listenToChatUsersData = () => {
-      //const {isChatToggled} = this.props;
       const {chatMessagesLimit} = this.state;
       if (!this.firecoChat || !this.firecoUsers) {
-         console.log('this.firecoChat and this.firecoUsers must be set');
+         console.warn('this.firecoChat and this.firecoUsers must be set');
          return;
       }
       
@@ -507,7 +649,7 @@ class Chat extends PureComponent {
          }
          
          if (this.state.chatUserId === snapshot.key) {
-            this.updateLayout(data.layout);
+            this.updateLayout(data);
             if (this.state.chatUserName !== data.chatUserName) {
                this.setState({
                   chatUserName: data.chatUserName || '',
@@ -553,32 +695,62 @@ class Chat extends PureComponent {
          this.scrollToBottom();
       }, 2000, {leading: false, trailing: true, maxWait: 4000});
       
+      const messagesOnChildData = snapshot => {
+         chatMessagesLoadingTimeout &&
+         (chatMessagesLoadingTimeout =
+            clearTimeout(chatMessagesLoadingTimeout));
+         const chatMessage = snapshot.val();
+         const {messages} = this.state;
+         batchedState = {
+            isChatMessagesLoading: false,
+            lastMessageReceivedOwnerId: chatMessage.chatUserId,
+            lastMessageReceivedTimestamp: chatMessage.timestamp,
+            messages: update(batchedState ?
+               batchedState.messages : messages, {
+               $push: [{
+                  key: snapshot.key,
+                  chatUserId: chatMessage.chatUserId,
+                  text: chatMessage.text,
+                  timestamp: chatMessage.timestamp,
+                  color: chatMessage.color
+               }],
+            }),
+         };
+         debouncedSetState();
+      };
       this.firecoChat
          .child('messages')
          .limitToLast(chatMessagesLimit)
-         .on('child_added', snapshot => {
-            chatMessagesLoadingTimeout &&
-            (chatMessagesLoadingTimeout =
-               clearTimeout(chatMessagesLoadingTimeout));
-            const chatMessage = snapshot.val();
-            const {messages} = this.state;
-            batchedState = {
-               isChatMessagesLoading: false,
-               lastMessageReceivedOwnerId: chatMessage.chatUserId,
-               lastMessageReceivedTimestamp: chatMessage.timestamp,
-               messages: update(batchedState ?
-                  batchedState.messages : messages, {
-                  $push: [{
-                     key: snapshot.key,
-                     chatUserId: chatMessage.chatUserId,
-                     text: chatMessage.text,
-                     timestamp: chatMessage.timestamp,
-                     color: chatMessage.color
-                  }],
-               }),
-            };
-            debouncedSetState();
-         });
+         .on('child_added', messagesOnChildData);
+      
+      const result = {disposed: false, error: null};
+      
+      this.firecoChatDispose = () => {
+         
+         if (result.disposed) {
+            return result;
+         }
+         
+         try {
+            this.firecoUsers
+               .off('child_added', onChildData);
+            
+            this.firecoUsers
+               .off('child_changed', onChildData);
+            
+            this.firecoChat
+               .child('messages')
+               .off('child_added', messagesOnChildData);
+         } catch (e) {
+            result.error = e;
+            return result;
+         }
+         
+         result.disposed = true;
+         result.error = null;
+         
+         return result;
+      };
    };
    
    handleChatUsersToSuggestions = users => {
@@ -618,18 +790,6 @@ class Chat extends PureComponent {
       });
    };
    
-   handleChangeBackdrop = (backdrop, isResizing, layoutData) => {
-      const nextState = {backdrop, isResizing};
-      if (layoutData && layoutData.point) {
-         nextState.left = layoutData.point.x;
-         nextState.top = layoutData.point.y;
-      }
-      if (layoutData && layoutData.size) {
-         nextState.width = layoutData.size.width;
-         nextState.height = layoutData.size.height;
-      }
-      this.setState(nextState);
-   };
    
    getMessageOwner = chatUserId => {
       if (chatUserId) {
@@ -719,6 +879,41 @@ class Chat extends PureComponent {
    
    getOptionsPromise = of(() => [...this.userSuggestions]).toPromise();
    
+   handleChangeBackdrop = (
+      backdrop, isResizing, event, layoutData = {}
+   ) => {
+      const nextState = {backdrop, isResizing};
+      const {size} = layoutData;
+      if (size) { // onResizeStart, onResizeStop
+         nextState.width =
+            rectifyChatBoundingClientRectValue(size, 'width');
+         nextState.height =
+            rectifyChatBoundingClientRectValue(size, 'height');
+      }
+      
+      this.setState(nextState);
+   };
+   
+   onDragStart = (...p) => this.handleChangeBackdrop(
+      true, false, ...p
+   );
+   
+   onDragEnd = (...p) => this.handleChangeBackdrop(
+      false, false, ...p
+   );
+   
+   onResizeStart = (...p) => this.handleChangeBackdrop(
+      true, true, ...p
+   );
+   
+   onResizeStop = (...p) => this.handleChangeBackdrop(
+      false, false, ...p
+   );
+   
+   ignoreChatListElScrollTrue = () => {this.ignoreChatListElScroll = true};
+   
+   ignoreChatListElScrollFalse = () => {this.ignoreChatListElScroll = false};
+   
    render() {
       const {
          classes,
@@ -726,10 +921,13 @@ class Chat extends PureComponent {
          chatClick,
          chatTitle,
          dragConstraintsRef,
+         resizableBoxProps = defaultResizableBoxProps
       } = this.props;
       
       const {
-         left, top, height, width, backdrop,
+         width,
+         height,
+         backdrop,
          chatUserId, chatUserName, chatMessageText,
          isAvatarMenuOpen,
          users, messages, isChatMessagesLoading,
@@ -750,8 +948,9 @@ class Chat extends PureComponent {
       
       const renderChatUserNameInput = ({InputProps, ...rest}) => {
          return (
-            <TextField
+            <TextFieldWithAutoFocus
                {...rest}
+               focusOnDelay={1000}
                error={!chatUserName}
                label={chatUserName ?
                   chatUserId ? 'Editing your chat name'
@@ -773,84 +972,33 @@ class Chat extends PureComponent {
          );
       };
       
-      let key = false;
-      const initialDragValue = {};
-      
-      if (!(isNaN(top) || isNaN(left))) {
-         key = true;
-         initialDragValue.x = Math.max(
-            left - defaultChatLayout.left,
-            defaultChatLayout.left
-         );
-         initialDragValue.y = Math.max(
-            top - defaultChatLayout.top,
-            defaultChatLayout.top
-         );
-      } else {
-         initialDragValue.x = defaultChatLayout.left;
-         initialDragValue.y = defaultChatLayout.top;
-      }
-      
-      const currentResizeValue = {};
-      
-      if (!(isNaN(width) || isNaN(height))) {
-         currentResizeValue.width = width;
-         currentResizeValue.height = height;
-      } else {
-         currentResizeValue.width = defaultChatLayout.width;
-         currentResizeValue.height = defaultChatLayout.height;
-      }
-      
       const getSkeletonCount = () => Math.max(Math.floor(
-         currentResizeValue.height / LIST_ITEM_SKELETON_HEIGHT
+         height / LIST_ITEM_SKELETON_HEIGHT
       ), 2);
+      
       return (
-         <div>
-            {backdrop &&
-            <div className={classes.backdrop}
-                 onClick={this.hideBackdrop}/>}
-            
-            <motion.div
-               key={key}
-               initial={initialDragValue}
+         <div ref={this.rootRef}>
+            {
+               backdrop && <div className={classes.backdrop}/>
+            }
+            <MotionControlledXY
                drag={!isResizing}
                dragConstraints={dragConstraintsRef}
                dragMomentum={false}
-               className={isChatToggled ? classes.chat : classes.hidden}
-               onDragStart={
-                  (event, info) => this.handleChangeBackdrop(
-                     true, false, info
-                  )
-               }
-               onDragEnd={
-                  (event, info) => this.handleChangeBackdrop(
-                     false, false, info
-                  )
-               }
-               ref={this.chatEl}
+               className={isChatToggled ? classes.chat : classes.chatHidden}
+               initial={{opacity: 0}}
+               animate={{opacity: isChatToggled ? 1 : 0}}
+               onDragStart={this.onDragStart}
+               onDragEnd={this.onDragEnd}
+               styleRef={this.styleRef}
+               ref={this.chatElRef}
             >
                <ResizableBox
-                  {...currentResizeValue}
-                  handleSize={[5, 5]}
-                  resizeHandles={['ne', 'se', 'sw', 'nw']}
-                  onResizeStart={
-                     (e, data) => this.handleChangeBackdrop(
-                        true,
-                        true,
-                        data,
-                     )
-                  }
-                  onResizeStop={
-                     (e, data) => this.handleChangeBackdrop(
-                        false,
-                        false,
-                        data,
-                     )
-                  }
-                  minConstraints={
-                     [LIST_SUBHEADER_HEIGHT * 2,
-                        LIST_SUBHEADER_HEIGHT * 2]
-                  }
+                  {...resizableBoxProps}
+                  width={width}
+                  height={height}
+                  onResizeStart={this.onResizeStart}
+                  onResizeStop={this.onResizeStop}
                >
                   <>
                      {
@@ -858,14 +1006,8 @@ class Chat extends PureComponent {
                         <List
                            dense
                            className={classes.list}
-                           onMouseEnter={
-                              () => this
-                                 .ignoreChatListElScroll = true
-                           }
-                           onMouseLeave={
-                              () => this
-                                 .ignoreChatListElScroll = false
-                           }
+                           onMouseEnter={this.ignoreChatListElScrollTrue}
+                           onMouseLeave={this.ignoreChatListElScrollFalse}
                         >
                            {isChatMessagesLoading ?
                               getMessageLoadingSkeletons(
@@ -954,9 +1096,9 @@ class Chat extends PureComponent {
                            </ListItemAvatar>
                            <ListItemText
                               className={classes.listItemTextField}
-                              primary={<TextField
+                              primary={<TextFieldWithAutoFocus
+                                 key={`${isChatToggled}-${isChatMessagesLoading}`}
                                  variant="standard"
-                                 autoFocus
                                  fullWidth
                                  error={errors}
                                  placeholder="type message..."
@@ -1008,7 +1150,6 @@ class Chat extends PureComponent {
                      <Menu
                         classes={{paper: classes.avatarMenu}}
                         anchorEl={this.chatAvatarEl.current}
-                        container={this.chatEl.current}
                         open={isAvatarMenuOpen}
                         onClose={this.handleAvatarClose}
                      >
@@ -1016,39 +1157,6 @@ class Chat extends PureComponent {
                            dense
                         >
                            <PromiseAutoComplete
-                              PopperProps={{
-                                 container:
-                                    () => this.chatEl.current,
-                                 disablePortal: false,
-                                 placement: "top-start",
-                                 modifiers: [
-                                    {
-                                       name: 'offset',
-                                       options: {
-                                          offset: [
-                                             0,
-                                             4
-                                          ],
-                                       },
-                                    },
-                                    {
-                                       name: 'flip',
-                                       enabled: false,
-                                    },
-                                    {
-                                       name: 'preventOverflow',
-                                       enabled: false,
-                                       options: {
-                                          // altAxis: true,
-                                          altBoundary: true,
-                                          // tether: false,
-                                          rootBoundary:
-                                             'viewport',
-                                          // padding: 8
-                                       }
-                                    }
-                                 ],
-                              }}
                               freeSolo
                               fullWidth
                               includeInputInList
@@ -1073,7 +1181,7 @@ class Chat extends PureComponent {
                      </Menu>
                   </>
                </ResizableBox>
-            </motion.div>
+            </MotionControlledXY>
          </div>
       );
    }
@@ -1081,50 +1189,39 @@ class Chat extends PureComponent {
    onFirecoActive = (
       firecoChat,
       firecoUsers,
-      SERVER_TIMESTAMP,
+      serverTimestamp,
       chatUserIdLocalStoragePath
    ) => {
       this.firecoChat = firecoChat;
       this.firecoUsers = firecoUsers;
-      this.SERVER_TIMESTAMP = SERVER_TIMESTAMP;
+      this.serverTimestamp = serverTimestamp;
       this.chatUserIdLocalStoragePath = chatUserIdLocalStoragePath;
       this.listenToChatUsersData();
    };
    
-   onDispose = () => {
-      const {
-         isTopNavigationToggled,
-         themeType,
-         isChatToggled,
-         currentLayout
-      } = this.props;
+   
+   disposeFirecoChat = () => {
       const {
          chatUserId,
-         left, top,
-         height, width,
       } = this.state;
+      
       if (chatUserId && this.firecoUsers) {
+         const layout = this.getCurrentChatLayout(true);
          
-         const newLayout = {
-            gridString: JSON.stringify(currentLayout()),
-            isTopNavigationToggled,
-            themeType,
-            isChatToggled,
-         };
-         
-         if (!(isNaN(left) || isNaN(top) || isNaN(height) || isNaN(width))) {
-            newLayout.chatBoundingClientRect = {
-               left, top,
-               height, width,
-            };
+         if (!layout) {
+            return;
          }
          
          this.firecoUsers
             .child(`${chatUserId}/layout`)
-            .update({...newLayout}, error => {
-               console.log(error);
-            });
+            .update(layout).catch(error => {
+            console.warn(
+               `User (${chatUserId}) layout was not persisted.`, error
+            );
+         });
       }
+      
+      this.firecoChatDispose?.();
    };
    
    componentDidMount() {
@@ -1134,23 +1231,41 @@ class Chat extends PureComponent {
             .observe(this.inputContainerRef.current);
          this.updateHeightOffset();
       }
+      
+      global.addEventListener(
+         'resize', this.handleUpdateChatBoundingClientRect
+      );
+      
+      
       const {configureFirecoChat} = this.props;
-      configureFirecoChat(this.onFirecoActive, this.onDispose);
+      configureFirecoChat(this.onFirecoActive, this.disposeFirecoChat);
    }
    
    componentWillUnmount() {
+      this.disposeFirecoChat();
       this.inputContainerRef?.current &&
-      this
-         .inputContainerResizeObserver
-         .unobserve(this.inputContainerRef.current);
+      this.inputContainerResizeObserver.unobserve(
+         this.inputContainerRef.current
+      );
+      
+      global.removeEventListener(
+         'resize', this.handleUpdateChatBoundingClientRect
+      );
+      
+      cancelAnimationFrame(this.rid);
+      cancelAnimationFrame(this.ridChat);
+      
    }
    
    componentDidUpdate(prevProps, prevState) {
       const {isChatToggled, firecoEditorsSetUserId} = this.props;
       const {users, chatUserId} = this.state;
+      
       if (prevProps.isChatToggled !== isChatToggled) {
          clearInterval(this.updateMessagesInterval);
+         
          if (isChatToggled) {
+            this.handleUpdateChatBoundingClientRect();
             this.updateMessagesInterval = setInterval(() => {
                this.setState(prevState => ({
                   messages: prevState.messages
@@ -1188,53 +1303,6 @@ class Chat extends PureComponent {
    
 }
 
-const LazyChat = (
-   {activateChatReason, loadChat, loadChatDelay, ...props}
-) => {
-   const [activateChat, setActivateChat] = useState(false);
-   const [activateTimeout, setActivateTimeout] = useState(null);
-   
-   useEffect(() => {
-         if (activateChat) {
-            return;
-         }
-         
-         if (activateChatReason === 'user') {
-            setActivateChat(true);
-            return;
-         }
-         
-         if (
-            activateChatReason === 'system' && loadChat && !activateTimeout
-         ) {
-            setActivateTimeout(
-               setTimeout(
-                  () => setActivateChat(true)
-                  , loadChatDelay)
-            );
-            return;
-         }
-      },
-      [
-         activateChatReason, loadChat, loadChatDelay,
-         activateChat, setActivateChat,
-         activateTimeout, setActivateTimeout
-      ]
-   );
-   
-   return (activateChat && <Chat {...props}/>)
-};
-
-LazyChat.propTypes = {
-   activateChatReason: PropTypes.string,
-   loadChat: PropTypes.bool,
-   loadChatDelay: PropTypes.number,
-};
-
-LazyChat.defaultProps = {
-   loadChatDelay: 5000,
-};
-
 export default memo(connect(null, mapDispatchToProps)(
-   withStyles(styles, {withTheme: true})(LazyChat)
+   withStyles(styles, {withTheme: true})(Chat)
 ));

@@ -1,6 +1,7 @@
 import isArray from 'lodash/isArray';
 
 export class VisualQueryManager {
+   static visualElementsApiNames = [];
    static visualElements = [];
    static visualQuery = [];
    static getVisualIdsFromRefs = refsArray => {
@@ -19,7 +20,7 @@ export class VisualQueryManager {
    ).includes(
       domEl
    );
-   static onChange = (/*els, keys, event*/) => {
+   static onChange = (newVisualQuery = [], visualIds, action = null) => {
       //set on Pastebin's constructor
    };
 };

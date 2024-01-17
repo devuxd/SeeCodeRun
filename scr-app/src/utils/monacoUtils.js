@@ -4,16 +4,16 @@ export const monacoProps = {
     fixedOverflowWidgets: true,
     fontSize: 12,
     widgetFontSize: 9,
-    widgetOffsetHeight: 7,
+    widgetOffsetHeight: 9, // 8 causes 1 px gap between decoration and content widget
     widgetMaxHeight: 14,
-    widgetMinWidth: 7,
+    widgetMinWidth: 0,//7 causes hover leg
     lineOffSetHeight: 14, //sync with css padding-top: lineOffSetHeight/2
     widgetBackgroundColor: 'transparent',
 };
 
 export const defaultSimpleMonacoOptions = {
     wordWrap: 'on',
-    overviewRulerBorder:false,
+    overviewRulerBorder: false,
     overviewRulerLanes: 0,
     glyphMargin: false,
     lineNumbers: 'off',
@@ -46,7 +46,7 @@ export const monacoEditorDefaultOptions = {
     // automaticLayout: false,
     fontLigatures: true,
     folding: true,
-    hover: true,
+    hover: false,
     minimap: {enabled: false},
     scrollBeyondLastLine: false,
     formatOnPaste: true,
@@ -73,9 +73,9 @@ export const monacoEditorDefaultOptions = {
         alwaysConsumeMouseWheel: false,
     },
     renderLineHighlight: 'gutter',
-    // smoothScrolling: true,
+    smoothScrolling: true,
     fontSize: monacoProps.fontSize,
-    quickSuggestionsDelay: 1250,
+    // quickSuggestionsDelay: 1250,
     lineNumbersMinChars: 3, //5 is default
 };
 
@@ -94,7 +94,7 @@ export const monacoEditorMouseEventTypes = {
 //     : true;
 // }
 
-export function configureLineNumbersProvider(editorId, doc) {
+export function configureLineNumbersProvider(editorId, doc = document) {
     //lineNumberProvider
     const lnp = {
         onLineNumbersUpdate: null,
@@ -151,9 +151,59 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
     );
 }
 
+// Fixes disposing element within a React component that unmounts it before
+const configureMonacoEditorDetachModel = (monacoEditor) => {
+    const detachModel = monacoEditor._detachModel.bind(monacoEditor);
+
+    function _detachModel() {
+        // Error in React unmount (removeChild):
+        // if (removeDomNode && this._domElement.contains(removeDomNode)) {
+        //    this._domElement.removeChild(removeDomNode);
+        // }
+
+        let model = this._modelData?.model;
+
+        try {
+            model = detachModel();
+        } catch (e) {
+            try {
+                // continue right after error (original code):
+                if (this._bannerDomNode &&
+                    this._domElement.contains(this._bannerDomNode)) {
+                    this._domElement.removeChild(this._bannerDomNode);
+                }
+            } catch (e1) {
+                console.warn(
+                    "Monaco ran into an error while detaching model:"
+                    , e1
+                    , " Original error:",
+                    e
+                );
+            }
+        }
+
+        return model;
+    }
+
+    monacoEditor._detachModel = _detachModel.bind(monacoEditor);
+};
+
+// export function configureCreateDecorationsCollection(monacoEditor){
+//    const createDecorationsCollection = monacoEditor.createDecorationsCollection;
+//    monacoEditor.createDecorationsCollection = (...args)=>{
+//       const collection = createDecorationsCollection.apply(monacoEditor,...args);
+//       collection.getDecorationIds = ()=> collection._decorationIds;
+//       return collection;
+//    };
+// }
+
 export function configureMonacoEditor(monaco, editorEl, customEditorOptions) {
     const options = {...monacoEditorDefaultOptions, ...customEditorOptions};
-    return monaco.editor.create(editorEl, options);
+    const monacoEditor = monaco.editor.create(editorEl, options);
+
+    configureMonacoEditorDetachModel(monacoEditor);
+    // configureCreateDecorationsCollection(monacoEditor);
+    return monacoEditor;
 }
 
 export function configureMonacoEditorMouseEventsObservable(editor) {

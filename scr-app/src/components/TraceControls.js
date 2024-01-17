@@ -1,4 +1,4 @@
-import React, {PureComponent} from 'react';
+import {PureComponent, useRef, useEffect} from 'react';
 import PropTypes from 'prop-types';
 
 import SpeedDial from '@mui/material/SpeedDial';
@@ -15,13 +15,13 @@ import {alpha} from '@mui/material/styles';
 import Menu from '@mui/material/Menu';
 import ListItem from '@mui/material/ListItem';
 import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 
 import {Subject} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../core/modules/AutoLog';
-import withPersistence from '../containers/withPersistence';
+import TextFieldWithAutoFocus from '../common/TextFieldWithAutoFocus';
+
 
 const onDependenciesChange = async () => {
     await requireConfig.configureDependencies(requireConfig);
@@ -127,74 +127,13 @@ class TraceControls extends PureComponent {
         hidden: false,
         anchorEl: null,
         actionId: null,
-        autorunDelay: null,
         codeBundlingDeps: [],
-        handleChangeAutorunDelay: null,
         isData: false,
         isCodeBundlingDeps: false,
     };
 
-    static getDerivedStateFromProps(nextProps, prevState) {
-        let nextState = {};
-        const {data} = nextProps;
-
-        if (nextProps.handleChangeAutorunDelay !== prevState.handleChangeAutorunDelay) {
-            nextState.handleChangeAutorunDelay = nextProps.handleChangeAutorunDelay;
-        }
-
-        if (data.current) {
-            if (isNaN(data.current.autorunDelay) || !data.current.dependencyOverrides) {
-                const autorunDelay =
-                    isNaN(data.current.autorunDelay) ? nextProps.autorunDelay : data.current.autorunDelay;
-                const dependencyOverrides =
-                    data.current.dependencies || {
-                        ...requireConfig.dependencyOverrides,
-                        count: 0
-                    };
-                nextProps.changeData(
-                    {
-                        ...nextProps.data.current,
-                        autorunDelay,
-                        dependencyOverrides,
-                    });
-                return nextState;
-            }
-
-            if (data.current.autorunDelay !== nextProps.autorunDelay) {
-                if (prevState.isData) {
-                    nextProps.changeData(
-                        {
-                            ...nextProps.data.current,
-                            autorunDelay: nextProps.autorunDelay
-                        });
-                } else {
-                    nextProps.handleChangeAutorunDelay(data.current.autorunDelay);
-                    nextState.isData = true;
-                }
-
-                return nextState;
-            } else {
-                if (data.current.autorunDelay !== prevState.autorunDelay) {
-                    nextState.autorunDelay = data.current.autorunDelay;
-                }
-            }
-
-            if (data.current.dependencyOverrides !== requireConfig.dependencyOverrides) {
-                requireConfig.dependencyOverrides = data.current.dependencyOverrides;
-                nextState.isCodeBundlingDeps = true;
-            }
-
-            return nextState;
-        }
-
-        if (nextProps.autorunDelay !== prevState.autorunDelay) {
-            nextState.autorunDelay = nextProps.autorunDelay;
-        }
-
-        return nextState;
-    }
-
     handleVisibility = (isVisible) => {
+        const {hideDelay = 1500} = this.props;
         if (isVisible) {
             clearTimeout(this.tms);
             this.setState({
@@ -209,7 +148,9 @@ class TraceControls extends PureComponent {
                         hidden: !this.state.open,
                     });
                 }
-                , this.props.hideDelay);
+                ,
+                hideDelay
+            );
 
         }
     };
@@ -259,12 +200,12 @@ class TraceControls extends PureComponent {
         }
         const dependencyOverrides = {...requireConfig.dependencyOverrides};
         dependencyOverrides[dep.name] = url;
-        if (this.props.changeData && this.props.data.current) {
+        if (this.props.changeData && this.props.data) {
             dependencyOverrides.count = Object.keys(dependencyOverrides).length - 1;
             this.props.changeData(
                 {
-                    ...this.props.data.current,
-                    dependencyOverrides: dependencyOverrides
+                    ...this.props.data,
+                    dependencyOverrides
                 }
             );
         } else {
@@ -274,27 +215,31 @@ class TraceControls extends PureComponent {
         this.subject.next({});
     };
 
+    handleChangeAutorunDelay = (event) => {
+        this.props.setAutorunDelay(event.target.value);
+    };
+
     render() {
-        const {classes, isTopNavigationToggled} = this.props;
+        const {
+            autorunDelay, classes, isTopNavigationToggled
+        } = this.props;
         const {
             // hidden,
             open,
             anchorEl,
             actionId,
             codeBundlingDeps,
-            autorunDelay,
-            handleChangeAutorunDelay,
         } = this.state;
-        //console.log(codeBundlingDeps);
+
         let menuContent;
         let menuClass = {className: classes.list};
         switch (actionId) {
             case actions[0].id:
                 menuContent = <ListItem className={classes.list}>
-                    <TextField
+                    <TextFieldWithAutoFocus
                         label="auto-run delay"
                         value={autorunDelay}
-                        onChange={event => handleChangeAutorunDelay(event.target.value)}
+                        onChange={this.handleChangeAutorunDelay}
                         type="number"
                         InputLabelProps={{
                             shrink: true,
@@ -307,7 +252,7 @@ class TraceControls extends PureComponent {
             case actions[1].id:
                 menuContent = codeBundlingDeps.length ? codeBundlingDeps.map(dep => {
                     return <ListItem className={classes.list} key={dep.key}>
-                        <TextField
+                        <TextFieldWithAutoFocus
                             error={dep.isDuped}
                             label={dep.name}
                             helperText={`${dep.isAsync ? 'ASYNC IMPORT' : ''} ${dep.isDuped ? '[ERROR] Loaded synchronously, remove one of them.' : ''}`}
@@ -374,7 +319,7 @@ class TraceControls extends PureComponent {
                     MenuListProps={menuClass}
                     id={`trace-controls-menu-${actionId}`}
                     anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
+                    open={!!anchorEl}
                     onMouseEnter={this.handleOpen}
                     onMouseLeave={this.handleClose}
                     onClose={this.handleMenuClose}
@@ -398,7 +343,7 @@ class TraceControls extends PureComponent {
         this.subject = new Subject();
         this.subject
             .pipe(debounceTime(1000))
-            .subscribe(() => (requireConfig.triggerChange && requireConfig.triggerChange()));
+            .subscribe(() => requireConfig?.triggerChange());
     }
 
     componentDidUpdate(prevProps, prevState/*, snapshot*/) {
@@ -427,18 +372,13 @@ class TraceControls extends PureComponent {
 
 TraceControls.propTypes = {
     hideDelay: PropTypes.number,
-    data: PropTypes.object,
-    changeData: PropTypes.func.isRequired,
     classes: PropTypes.object.isRequired,
-    autorunDelay: PropTypes.number,
-    handleChangeAutorunDelay: PropTypes.func,
+    autorunDelay: PropTypes.string.isRequired,
+    setAutorunDelay: PropTypes.func.isRequired,
 };
 
-TraceControls.defaultProps = {
-    hideDelay: 1500,
-    autorunDelay: 0,
-    handleChangeAutorunDelay: () => {
-    },
-};
+// TraceControls.defaultProps = {
+//    hideDelay: 1500,
+// };
 
-export default withPersistence(withStyles(styles)(TraceControls));
+export default withStyles(styles)(TraceControls);

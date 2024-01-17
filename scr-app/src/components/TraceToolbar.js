@@ -1,6 +1,9 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState, useContext} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
+import {BehaviorSubject} from "rxjs";
+import {debounceTime} from "rxjs/operators";
 
 import {withStyles} from '@mui/styles';
 import {lighten} from '@mui/material/styles';
@@ -28,7 +31,8 @@ import TextField from '@mui/material/TextField';
 import PastebinContext from '../contexts/PastebinContext';
 import GraphicalQuery from '../components/GraphicalQuery';
 import {searchStateChange} from '../redux/modules/pastebin';
-import {VisualQueryManager} from "../core/modules/VisualQueryManager";
+// import {VisualQueryManager} from "../core/modules/VisualQueryManager";
+import HighlightAltIcon from "@mui/icons-material/HighlightAlt";
 
 const mapStateToProps = null,
     mapDispatchToProps = {
@@ -153,13 +157,13 @@ function InputEndAdornment(props) {
                     // }
                 >
                     {!expanded ? hasSelected ?
-                        <TuneIcon
-                            className={classes.tuneIcon}
-                        />
-                        : <TuneIcon
-                            color="inherit"
-                            className={classes.tuneIcon}
-                        />
+                            <TuneIcon
+                                className={classes.tuneIcon}
+                            />
+                            : <TuneIcon
+                                color="inherit"
+                                className={classes.tuneIcon}
+                            />
                         : <Paper>
                             {inputFilterOptions.map(filter =>
                                 (<Tooltip
@@ -194,12 +198,18 @@ function InputEndAdornment(props) {
     );
 }
 
-function ResultsFilter(props) {
+function ResultsFilter(
+    {
+        classes,
+        isGraphicalLocatorActive,
+        handleChangeGraphicalLocator,
+        searchState,
+        getSortInfo
+    }
+) {
     const {
-        classes, searchState, getSortInfo
-    } = props;
-    const {
-        isFunctions, isExpressions, isValues, handleFilterClick
+        // isFunctions,
+        isExpressions, isValues, handleFilterClick
     } = searchState;
     //const hasSelected = isFunctions || isExpressions || isValues;
     const avatarClasses = {
@@ -212,41 +222,17 @@ function ResultsFilter(props) {
 
     return (
         <>
-            <Tooltip
-                title={"Include Functions"}
-            >
-                <Chip
-                    label="f(x)"
-                    onClick={() => handleFilterClick('isFunctions')}
-                    classes={avatarClasses}
-                    avatar={isFunctions ? <Avatar><CheckBoxIcon/></Avatar> :
-                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
-                />
-            </Tooltip>
-            <Tooltip
-                title={"Include Expressions"}
-            >
-                <Chip
-                    label="x=y"
-                    onClick={() => handleFilterClick('isExpressions')}
-                    classes={avatarClasses}
-                    avatar={isExpressions ? <Avatar><CheckBoxIcon/></Avatar> :
-                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
-                />
-            </Tooltip>
-            <Tooltip
-                title={"Include Values"}
-            >
-                <Chip
-                    label="{...}"
-                    onClick={() => handleFilterClick('isValues')}
-                    classes={avatarClasses}
-                    avatar={
-                        isValues ? <Avatar><CheckBoxIcon/></Avatar> :
-                            <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
-                    }
-                />
-            </Tooltip>
+            {/*<Tooltip*/}
+            {/*    title={"Include Functions"}*/}
+            {/*>*/}
+            {/*    <Chip*/}
+            {/*        label="f(x)"*/}
+            {/*        onClick={() => handleFilterClick('isFunctions')}*/}
+            {/*        classes={avatarClasses}*/}
+            {/*        avatar={isFunctions ? <Avatar><CheckBoxIcon/></Avatar> :*/}
+            {/*            <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}*/}
+            {/*    />*/}
+            {/*</Tooltip>*/}
             <Tooltip
                 title={sortTitle}
             >
@@ -260,6 +246,67 @@ function ResultsFilter(props) {
                     }
                 />
             </Tooltip>
+            <Tooltip
+                title={"Include Code Expressions"}
+            >
+                <Chip
+                    label="code"//"x=y"
+                    onClick={() => handleFilterClick('isExpressions')}
+                    classes={avatarClasses}
+                    avatar={isExpressions ? <Avatar><CheckBoxIcon/></Avatar> :
+                        <Avatar><CheckBoxOutlineBlankIcon/></Avatar>}
+                />
+            </Tooltip>
+            <Tooltip
+                title={"Include Execution Values"}
+            >
+                <Chip
+                    label="values"//"{...}"
+                    onClick={() => handleFilterClick('isValues')}
+                    classes={avatarClasses}
+                    avatar={
+                        isValues ? <Avatar><CheckBoxIcon/></Avatar> :
+                            <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
+                    }
+                />
+            </Tooltip>
+            <Tooltip
+                title={"Include Visual Elements"}
+            >
+                <Chip
+                    label="visuals"//"{...}"
+                    onClick={handleChangeGraphicalLocator}
+                    classes={avatarClasses}
+                    avatar={
+                        isGraphicalLocatorActive ? <Avatar><CheckBoxIcon/></Avatar> :
+                            <Avatar><CheckBoxOutlineBlankIcon/></Avatar>
+                    }
+                />
+            </Tooltip>
+            {/*<Tooltip*/}
+            {/*    title={*/}
+            {/*       `${*/}
+            {/*           isGraphicalLocatorActive ?*/}
+            {/*               'Hide' : 'Show'*/}
+            {/*       } visual elements referenced in code`*/}
+            {/*    }*/}
+            {/*>*/}
+            {/*   <IconButton*/}
+            {/*       color={*/}
+            {/*          isGraphicalLocatorActive ?*/}
+            {/*              'secondary' : 'inherit'*/}
+            {/*       }*/}
+            {/*       className={classes.locatorButton}*/}
+            {/*       raised="true"*/}
+            {/*       onClick={*/}
+            {/*          handleChangeGraphicalLocator*/}
+            {/*       }*/}
+            {/*   >*/}
+            {/*      <HighlightAltIcon*/}
+            {/*          className={classes.locator}*/}
+            {/*      />*/}
+            {/*   </IconButton>*/}
+            {/*</Tooltip>*/}
         </>
     );
 }
@@ -271,17 +318,39 @@ function EnhancedToolbar(props) {
     // onClick={createSortHandler(column.id)}
     const {
         classes,
-        selected,
-        isPlaying, handleChangePlaying, timeline, liveTimeline,
-        searchState, isSelectable, isAutoLogActive, handleChangeAutoExpand,
         searchStateChange,
+        ...rest
+    } = props;
+
+    const {
+        searchState, VisualQueryManager,
+        selected,
+        isPlaying, handleChangePlaying, timeline, liveTimeline, isSelectable, isAutoLogActive, handleChangeAutoExpand,
         formHelperTextProps = {
             component: 'span',
             margin: 'dense',
         },
         searchDelay = 500,
-        VisualQueryManager,
-    } = props;
+        handleChangeGraphicalLocator,
+        isGraphicalLocatorActive,
+        getSortInfo,
+        ...cRest
+    } = useContext(PastebinContext);
+
+    // console.log("EnhancedToolbar", {
+    //     classes,
+    //     searchStateChange,
+    //     rest,
+    //     searchState, VisualQueryManager,
+    //     selected,
+    //     isPlaying, handleChangePlaying, timeline, liveTimeline, isSelectable, isAutoLogActive, handleChangeAutoExpand,
+    //     formHelperTextProps,
+    //     searchDelay,
+    //     handleChangeGraphicalLocator,
+    //     isGraphicalLocatorActive,
+    //     getSortInfo,
+    //     cRest
+    // });
 
     const {visualQuery, value, handleChangeValue, placeholder} = searchState;
 
@@ -314,7 +383,7 @@ function EnhancedToolbar(props) {
                             {visualQuery.map(el => {
                                 const query = [el];
                                 const ids =
-                                   VisualQueryManager.getVisualIdsFromRefs(query);
+                                    VisualQueryManager.getVisualIdsFromRefs(query);
                                 return (
                                     <GraphicalQuery
                                         key={JSON.stringify(ids)}
@@ -327,7 +396,7 @@ function EnhancedToolbar(props) {
                         VisualQueryManager
                             .onChange(
                                 visualQuery,
-                               VisualQueryManager.getVisualIdsFromRefs(visualQuery),
+                                VisualQueryManager.getVisualIdsFromRefs(visualQuery),
                                 'select'
                             );
                     }}
@@ -344,7 +413,13 @@ function EnhancedToolbar(props) {
             startAdornment:
                 (
                     <InputAdornment position="start">
-                        <ResultsFilter {...props} />
+                        <ResultsFilter {...{
+                            classes,
+                            isGraphicalLocatorActive,
+                            handleChangeGraphicalLocator,
+                            searchState,
+                            getSortInfo
+                        }} />
                         {graphicalQuery}
                     </InputAdornment>
                 ),
@@ -355,40 +430,56 @@ function EnhancedToolbar(props) {
                 }}
             />
         })
-        , [props, classes, searchState, graphicalQuery]);
+        , [classes,
+            isGraphicalLocatorActive,
+            handleChangeGraphicalLocator,
+            searchState,
+            getSortInfo, graphicalQuery]);
 
-    const [searchValue, setSearchValue] = useState(value);
 
-    const onSearchValueChange = useCallback((event) => {
-        setSearchValue(event.target.value || '');
-    }, [setSearchValue]);
+    const searchValueRx = useMemo(() => (new BehaviorSubject('')), []);
+
+    const [textValue, setTextValue] = useState(() => {
+        searchValueRx.next(value);
+        return value;
+    });
+
+    const onTextValueChange = useCallback((event) => {
+        const textValue = event.target.value || '';
+        setTextValue(textValue);
+        searchValueRx.next(textValue);
+    }, [searchValueRx]);
 
     useEffect(() => {
-        if (searchValue !== value) {
-            const tid = setTimeout(
-                () => handleChangeValue(searchValue),
-                searchDelay
-            );
-            return () => clearTimeout(tid);
-        }
-    }, [searchValue, searchDelay, handleChangeValue]);
+        setTextValue(value);
+    }, [value]);
 
+    useEffect(() => {
+            const uns = searchValueRx.pipe(debounceTime(searchDelay)).subscribe(
+                searchValue => {
+                    handleChangeValue(searchValue);
+                });
+            return () => uns.unsubscribe();
+        },
+        [searchValueRx]
+    );
+    // mini-gradescope for labs,
 
     return (
         <>
             <div className={classes.itemCenter}>
-                {numSelected > 0 ? null : <>
-                    <Tooltip
-                        title={
-                            isPlaying ? 'Pause Updates' : newEntries > 99 ?
-                                `${newEntries} new updates` : 'Resume Updates'
-                        }
-                        placement={'bottom-end'}
-                        enterDelay={300}
-                    >
-                        {playingButton}
-                    </Tooltip>
-                </>}
+                {/*{numSelected > 0 ? null : <>*/}
+                {/*   <Tooltip*/}
+                {/*      title={*/}
+                {/*         isPlaying ? 'Pause Updates' : newEntries > 99 ?*/}
+                {/*            `${newEntries} new updates` : 'Resume Updates'*/}
+                {/*      }*/}
+                {/*      placement={'bottom-end'}*/}
+                {/*      enterDelay={300}*/}
+                {/*   >*/}
+                {/*      {playingButton}*/}
+                {/*   </Tooltip>*/}
+                {/*</>}*/}
                 <div className={classes.title}>
                     {numSelected > 0 ? (
                         <Typography color="inherit" variant="subtitle1">
@@ -399,32 +490,31 @@ function EnhancedToolbar(props) {
                             fullWidth
                             margin="dense"
                             id="search"
-                            label={null}
                             placeholder={placeholder}
                             type="search"
                             className={classes.textField}
                             InputProps={InputProps}
                             FormHelperTextProps={formHelperTextProps}
-                            value={searchValue}
-                            onChange={onSearchValueChange}
+                            value={textValue}
+                            onChange={onTextValueChange}
                         />
                     )}
                 </div>
-                <Tooltip
-                    title={
-                        isAutoLogActive ?
-                            'Deactivate Live Expressions'
-                            : 'Activate Live Expressions'
-                    }
-                    placement={'bottom-end'}
-                    enterDelay={300}
-                >
-                    <IconButton color={isAutoLogActive ? "primary" : 'inherit'}
-                                onClick={handleChangeAutoExpand}>
-                        {isAutoLogActive ? <CenterFocusStrongIcon/> :
-                            <CenterFocusWeakIcon/>}
-                    </IconButton>
-                </Tooltip>
+                {/*<Tooltip*/}
+                {/*   title={*/}
+                {/*      isAutoLogActive ?*/}
+                {/*         'Deactivate Live Expressions'*/}
+                {/*         : 'Activate Live Expressions'*/}
+                {/*   }*/}
+                {/*   placement={'bottom-end'}*/}
+                {/*   enterDelay={300}*/}
+                {/*>*/}
+                {/*   <IconButton color={isAutoLogActive ? "primary" : 'inherit'}*/}
+                {/*               onClick={handleChangeAutoExpand}>*/}
+                {/*      {isAutoLogActive ? <CenterFocusStrongIcon/> :*/}
+                {/*         <CenterFocusWeakIcon/>}*/}
+                {/*   </IconButton>*/}
+                {/*</Tooltip>*/}
             </div>
             <div className={classes.actions}>
                 {numSelected > 0 ? (
@@ -467,12 +557,5 @@ EnhancedToolbar.contexTypes = {
     selected: PropTypes.number.isRequired,
 };
 
-const EnhancedToolbarWithContext = props => (
-    <PastebinContext.Consumer>
-        {(context) => {
-            return <EnhancedToolbar {...props} {...context}/>
-        }}
-    </PastebinContext.Consumer>
-);
-const TraceToolbar = withStyles(toolbarStyles)(EnhancedToolbarWithContext);
+const TraceToolbar = withStyles(toolbarStyles)(EnhancedToolbar);
 export default connect(mapStateToProps, mapDispatchToProps)(TraceToolbar);

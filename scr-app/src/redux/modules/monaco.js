@@ -1,7 +1,7 @@
 import {ofType} from 'redux-observable';
 import {zip} from 'rxjs';
 import {mergeMap, startWith} from 'rxjs/operators';
-import {createAction, createReducer} from '@reduxjs/toolkit'
+import {createAction, createReducer} from '@reduxjs/toolkit';
 
 
 import {FETCH_PASTEBIN_CONTENT_FULFILLED} from './pastebin';

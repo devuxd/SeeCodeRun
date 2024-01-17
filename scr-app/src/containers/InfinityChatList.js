@@ -29,9 +29,11 @@ export default function InfinityChatList(
             - (new Date(messages[index - 1].timestamp).getTime())) < 30000;
         const messageOwner = getMessageOwner(message.chatUserId);
         const listItemAvatarStyle = {
-            visibility: (prevChatUserId === message.chatUserId
-                || chatUserId === message.chatUserId) ?
-                "hidden" : "visible",
+            visibility:
+            // (prevChatUserId === message.chatUserId||
+                chatUserId === message.chatUserId ?
+                    "hidden" :
+                    "visible",
         };
         prevChatUserId = message.chatUserId;
 
@@ -86,7 +88,7 @@ export default function InfinityChatList(
             loadMoreItems={loadMoreItems}
         >
             {({onItemsRendered, ref}) => (
-                <AutoSizer  ref={ref}>
+                <AutoSizer ref={ref}>
                     {({height = 0, width = 0}) => (
                         <List
                             width={width + widthOffset}

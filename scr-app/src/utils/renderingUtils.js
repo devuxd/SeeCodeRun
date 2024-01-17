@@ -5,7 +5,7 @@ import React, {useState, useRef, useEffect} from 'react';
 //https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
 const _requestAnimationFrame = global.requestAnimationFrame ||
    function (handler) {
-      return setTimeout(function () {
+      return global.setTimeout(function () {
          handler(Date.now());
       }, 1);
    };
@@ -15,7 +15,7 @@ const _requestAnimationFrame = global.requestAnimationFrame ||
 const _requestIdleCallback = global.requestIdleCallback || function (handler) {
    let startTime = Date.now();
    
-   return setTimeout(function () {
+   return global.setTimeout(function () {
       handler({
          didTimeout: false,
          timeRemaining: function () {
@@ -26,7 +26,7 @@ const _requestIdleCallback = global.requestIdleCallback || function (handler) {
 };
 
 const _cancelIdleCallback = global.cancelIdleCallback || function (id) {
-   clearTimeout(id);
+   global.clearTimeout(id);
 };
 
 const _cancelAnimationFrame = global.cancelAnimationFrame ||
@@ -34,7 +34,8 @@ const _cancelAnimationFrame = global.cancelAnimationFrame ||
 
 
 export function makeTaskQueue(
-   onUpdateCallback, idleCallbackOptions = {timeout: 5000}
+   onUpdateCallback,
+   idleCallbackOptions = {timeout: 5000}
 ) {
    const taskList = [];
    let totalTaskCount = 0;
@@ -56,7 +57,7 @@ export function makeTaskQueue(
       }
    };
    
-   const enqueueTask = (task) =>{
+   const enqueueTask = (task) => {
       taskList.push(task);
       
       totalTaskCount++;
@@ -68,7 +69,7 @@ export function makeTaskQueue(
       scheduleStatusRefresh();
    };
    
-   const runTaskQueue =(deadline) =>{
+   const runTaskQueue = (deadline) => {
       while ((deadline.timeRemaining() > 0 || deadline.didTimeout) &&
       taskList.length) {
          let task = taskList.shift();
@@ -90,13 +91,45 @@ export function makeTaskQueue(
 
 // mine:
 
-export function requestAnimationFrameWhenIdle(payloadHandler, handler) {
-   return _requestIdleCallback(() => {
-      const payload = payloadHandler();
-      _requestAnimationFrame((timestamp) => {
-         handler(timestamp, payload);
+export function requestAnimationFrameWhenIdle(
+   idlePayloadHandler,
+   animationFrameHandler
+) {
+   let raid = null;
+   let rid = null;
+   
+   const requestAnimationFrameHandler = (resolvedPayload, error) => {
+      raid = _requestAnimationFrame(
+         (timestamp) => {
+            animationFrameHandler?.(timestamp, resolvedPayload, error);
+         }
+      );
+   };
+   
+   const resolvePayload = payload => {
+      if (payload instanceof Promise) {
+         payload
+            .then(requestAnimationFrameHandler)
+            .catch(error => {
+               requestAnimationFrameHandler(null, error)
+            });
+      } else {
+         requestAnimationFrameHandler(payload, null);
+      }
+   };
+   
+   if (idlePayloadHandler) {
+      rid = _requestIdleCallback(() => {
+         resolvePayload(idlePayloadHandler());
       });
-   });
+   } else {
+      resolvePayload(null);
+   }
+   
+   return () => {
+      rid && _cancelIdleCallback(rid);
+      raid && _cancelAnimationFrame(raid);
+   }
 }
 
 // Adapted from:
