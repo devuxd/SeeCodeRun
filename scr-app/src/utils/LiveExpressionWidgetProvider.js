@@ -37,6 +37,7 @@ class LiveExpressionWidgetProvider {
          [this.monaco.editor.ContentWidgetPositionPreference.BELOW];
       const a = async ()=>{
          const {configureLoc2Range} = await import ('monaco-jsx-highlighter');
+         console.log("YOLLLLLLLL");
          this.locToMonacoRange = configureLoc2Range(this.monaco);
       };
       a();

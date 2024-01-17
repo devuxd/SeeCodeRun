@@ -39,7 +39,7 @@ export default class ContentWidgetManager {
     widgetResizeDebounceTime = 10;
 
     constructor(
-        editor, monaco,
+        editor, monaco
         // handleMouseActionDecoration
     ) {
         // console.log("ContentWidgetManager");
@@ -122,19 +122,22 @@ export default class ContentWidgetManager {
             layout[y][x] = {width, contentWidget};
         }
 
+        console.log("widgetResize---------------------------------------------");
+
         Object.keys(this.pendingYs).forEach(y => {
             const ys = layout[y] ?? {};
             const xs = Object.keys(ys).sort((a, b) => +a - +b);
             // console.log(" Y needs resizing:", y, ys, xs);
             let previous = null;
-
-            xs.forEach(x => {
-                // console.log("x", x);
+            let lastIncludedI = xs.length - 1;
+            let lastStyle = null;
+            xs.forEach((x, i) => {
                 const {width, contentWidget} = ys[x];
                 if (!previous) {
-
                     if (this.isContentWidgetIncludedInResize(contentWidget)) {
-                        previous = {x, width, contentWidget};
+                        previous = {x, width, contentWidget, i};
+                    } else {
+
                     }
 
                     // console.log(
@@ -145,13 +148,14 @@ export default class ContentWidgetManager {
                 }
 
                 if (!this.isContentWidgetIncludedInResize(contentWidget)) {
+                    // console.log("empty", {contentWidget, y, x});
                     return;
                 }
 
                 const maxWidth = x - previous.x - this.widgetGap;
 
                 // console.log(
-                //     "resize",
+                //     "resize", i,
                 //     {
                 //         y, x,
                 //         maxWidth,
@@ -166,18 +170,28 @@ export default class ContentWidgetManager {
                 const style = previous.contentWidget.getDomNode()?.style;
                 if (style) {
                     style.maxWidth = `${maxWidth}px`;
+                    // lastStyle = style;
                 }
 
-                previous = {x, width, contentWidget};
+                previous = {x, width, contentWidget, i};
+                // lastIncludedI = i;
 
             });
 
+            // if (lastStyle) {
+            //     lastStyle.maxWidth = `unset`;
+            // }
+
             if (xs.length) {
+                // const lastContentWidget = ys[xs[lastIncludedI]].contentWidget;
                 const lastContentWidget = ys[xs[xs.length - 1]].contentWidget;
                 if (this.isContentWidgetIncludedInResize(lastContentWidget)) {
+
                     const style = lastContentWidget.getDomNode()?.style;
                     if (style) {
+
                         style.maxWidth = `unset`;
+                        // console.log("last", {lastContentWidget, lastIncludedI, maxWidth:style.maxWidth});
                     }
                 }
             }
@@ -209,12 +223,31 @@ export default class ContentWidgetManager {
     };
 
 
-    makeContentWidget = (id, locLiveZoneActiveDecoration) => {
+    makeContentWidgets = (id, locLiveZoneActiveDecoration) => {
+        // const contentWidget = new SyntaxWidget(
+        //     this, id, locLiveZoneActiveDecoration
+        // );
+        // locLiveZoneActiveDecoration?.syntaxFragment.syntaxWidget(contentWidget);
+        // return contentWidget;
+        const newContentWidgets = [];
+
+        if (!id) {
+            // program type zone
+            return newContentWidgets;
+        }
+
         const contentWidget = new SyntaxWidget(
             this, id, locLiveZoneActiveDecoration
         );
         locLiveZoneActiveDecoration?.syntaxFragment.syntaxWidget(contentWidget);
-        return contentWidget;
+
+        newContentWidgets.push(contentWidget);
+
+        // if (locLiveZoneActiveDecoration.zone?.functionParams) {
+        //     console.log("makeContentWidgets", {id, locLiveZoneActiveDecoration});
+        // }
+
+        return newContentWidgets;
 
         // use locLiveZoneActiveDecoration and its decoration id
         // let range = {...(locLiveZoneActiveDecoration?.syntaxFragment?.ranges?.[0] ??(editor.getModel()?.getDecorationRange(id)?? {}))};
@@ -334,7 +367,7 @@ export default class ContentWidgetManager {
         }
 
         if (this.editor._contentWidgets?.hasOwnProperty(id)) {
-            contentWidget = this.editor._contentWidgets?.[id]?.widget;
+            contentWidget = this.editor._contentWidgets[id]?.widget;
 
             if (contentWidget) {
                 this.contentWidgets[id] = contentWidget;
@@ -395,6 +428,7 @@ export default class ContentWidgetManager {
                 .forEach(
                     (decoration) => {
                         const widget = this.contentWidgets[decoration.id];
+
 
                         if (!widget) {
                             return;
@@ -640,21 +674,28 @@ export default class ContentWidgetManager {
     }
 
     //exposes editors inner collection and recover missing from "this" one
-    editorContentWidgetById = (id, locLiveZoneActiveDecoration) => {
-        let contentWidget = this.widgetById(id);
-
-        if (contentWidget) {
-            contentWidget.updateRefs(this, locLiveZoneActiveDecoration);
+    editorContentWidgetsById = (id, locLiveZoneActiveDecoration) => {
+        let currentContentWidget = this.widgetById(id);
+        const contentWidgets = [];
+        if (currentContentWidget) {
+            currentContentWidget.updateRefs(this, locLiveZoneActiveDecoration);
+            contentWidgets.push(currentContentWidget);
         } else {
-            contentWidget = this.makeContentWidget(id, locLiveZoneActiveDecoration);
-            this.editor.addContentWidget(contentWidget);
+            const newContentWidgets = this.makeContentWidgets(id, locLiveZoneActiveDecoration);
+            newContentWidgets.forEach((newContentWidget) => {
+                this.editor.addContentWidget(newContentWidget);
+            });
+            contentWidgets.push(...newContentWidgets);
         }
-        const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
-        expressionId == 6 && console.log("editorContentWidgetById", {expressionId, contentWidget});
+        // const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
+        // expressionId == 6 && console.log("editorContentWidgetsById", {expressionId, contentWidget});
 
-
-        this.layoutContentWidget(contentWidget);
-        return contentWidget;
+        // console.log("editorContentWidgetsById", {contentWidget});
+        contentWidgets.forEach((contentWidget) => {
+            this.layoutContentWidget(contentWidget);
+        });
+        // console.log("contentWidgets", contentWidgets);
+        return contentWidgets;
     };
 
     removeContentWidgetById = (id) => {
@@ -678,10 +719,14 @@ export default class ContentWidgetManager {
             (e, i) => { // todo: obtain anchor id not all: done
                 const a = e.parentSyntaxFragment?.getDecorationIds() ?? [];
                 const b = e.syntaxFragment?.getDecorationIds() ?? [];
-                //const ks= [...a, ...b];
-                const ks = [b[0] ?? a[0]];
+                const ks= [...a, ...b];
+                // const ks = [b[0] ?? a[0]];
+                // console.log("locLiveZoneActiveDecorations", {e, i, ks, a, b});
                 ks.forEach(
                     (k) => {
+                        if (!k) {
+                            return; // prevents program's undefined widget id
+                        }
                         ids2i[k] = i;
                         // i2ids[i]??={};
                         // i2ids[i][k] = ids2i[k];
@@ -695,7 +740,7 @@ export default class ContentWidgetManager {
         const {prevIds} = this;
         const toRemove = {};
 
-        // th ids are not redy yet, since they are trigered at rale
+        // th ids are not ready yet, since they are trigered at rale
         // console.log("locLiveZoneActiveDecorations", {prevIds, ids, ids2i});
 
         prevIds?.forEach((id) => {
@@ -704,22 +749,33 @@ export default class ContentWidgetManager {
 
         ids.forEach((id) => {
             toRemove[id] = false;
-
+            // heck why elements are not bein added
             const locLiveZoneActiveDecoration = locLiveZoneActiveDecorations[ids2i[id]];
-            let contentWidget = this.editorContentWidgetById(id, locLiveZoneActiveDecoration);
-            contentWidgets[id] = contentWidget;
+            // makeContentWidgets call caused a month delay
+            const currentContentWidgets = this.editorContentWidgetsById(id, locLiveZoneActiveDecoration);
+            // console.log("makeContentWidgets", {currentContentWidgets, id, locLiveZoneActiveDecoration} );
+            currentContentWidgets.forEach((contentWidget, i) => {
+                // const _id = `${contentWidget.getId()};${i}`;
+                const _id = contentWidget.getId();
+                toRemove[_id] = false;
+                // console.log("makeContentWidgets", {currentContentWidgets, id, _id, locLiveZoneActiveDecoration});
+                contentWidgets[_id] = contentWidget;
+            });
+
         });
 
+        const removed = [];
         for (const id in toRemove) {
             if (toRemove[id]) {
                 this.removeContentWidgetById(id);
+                removed.push(id);
             }
         }
 
         this.prevIds = ids;
         this.contentWidgets = contentWidgets;
 
-        // console.log("onDecorationsChange", locLiveZoneActiveDecorations, contentWidgets);
+        // console.log("onDecorationsChange", {locLiveZoneActiveDecorations, contentWidgets, removed});
 
         return toRemove;
     }

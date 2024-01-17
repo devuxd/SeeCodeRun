@@ -14,6 +14,7 @@ import PropTypes from 'prop-types';
 import {withStyles} from '@mui/styles';
 import {alpha, darken, lighten} from '@mui/material/styles';
 
+import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 import TableCell from '@mui/material/TableCell';
@@ -30,9 +31,11 @@ import OverflowComponent from './OverflowComponent';
 import {ThemeContext, ThemesRef} from '../themes';
 // import {useMeasureBeforeMount, usePrevious} from '../utils/reactUtils';
 import {StickyAction, defaultFloatyMoreIcon} from './StickyAction';
-import ALEInspector from '../core/modules/RALE/ALEInspector';
+import ALEInspector from '../core/modules/rale/ALEInspector';
 import {requestAnimationFrameWhenIdle} from "../utils/renderingUtils";
-import ALEContext from "../core/modules/RALE/ALEContext";
+import ALEContext from "../core/modules/rale/ALEContext";
+import {NavigationSignifier, NavigatorComponent} from "../core/modules/rale/VALE";
+import {useRALEContext} from "../core/modules/rale/RALE";
 
 const toOneLineText = (text = '') => (
     text
@@ -472,7 +475,9 @@ const CodeContainer = (
         buttonClick,
         isMatch,
         searchStateTextHighlighter,
-        hoverClassName
+        hoverClassName,
+        item,
+        ...rest
     }) => {
     const [mounted, setMounted] = useState(false);
 
@@ -485,32 +490,100 @@ const CodeContainer = (
         },
         [mounted]
     );
+    let isNav = false, isIfBlock = false, absoluteMaxNavigationIndex = 10, isRelative = true, value = 1,
+        variant = "contained",
+        color = "primary", currentRelativeNavigationIndex = cacheId, max = rest?.length ?? cacheId, isSelected = false;
 
+    const [{
+        contentWidgets, contentWidgetKeys, navigationStates, getNavigationStateInfo,
+        // isUpdating, allCurrentScopes, programUID
+    }] = useRALEContext();
+
+    const widget = useMemo(() => {
+        for (let k of contentWidgetKeys) {
+            const widget = contentWidgets[k];
+            // console.log("nnn", {k, e:item.entry.entry.entry.uid, z:widget.locLiveZoneActiveDecoration.zone.uid});
+            const uid = item?.entry?.entry?.entry?.uid;
+
+            if (uid && uid === widget?.locLiveZoneActiveDecoration?.zone?.uid) {
+                return widget;
+            }
+        }
+
+        return null;
+    }, [contentWidgetKeys, contentWidgets, item,]);
+
+    if (widget) {
+        const id = widget.getId();
+        const ns = navigationStates?.[id];
+        if (ns && expression !== "i++") {
+            const navigationStateInfo = getNavigationStateInfo(id);
+            isNav = true;
+            absoluteMaxNavigationIndex = navigationStateInfo.absoluteMaxNavigationIndex;
+            currentRelativeNavigationIndex = navigationStateInfo.currentRelativeNavigationIndex;
+            color = navigationStateInfo.color;
+            isRelative = navigationStateInfo.isRelative;
+            variant = navigationStateInfo.blockVariant;
+            value = navigationStateInfo.value;
+            max = navigationStateInfo.max;
+
+            //{color, isRelative, blockVariant: variant, value, max}
+
+            // console.log("W", {
+            //     id,
+            //     expression,
+            //     item, widget,
+            //     ns
+            // });
+        }
+    }
+
+    const {
+        showNavigatorTooltip,
+        divStyle,
+        navigationIndicator
+    } = NavigatorComponent({
+            isIfBlock,
+            absoluteMaxNavigationIndex,
+            isRelative,
+            value,
+            variant,
+            color,
+            currentRelativeNavigationIndex,
+            max,
+            isSelected
+        }
+    );
+    // console.log("nnn",{item, contentWidgets});
     return (mounted &&
         <OverflowComponent
             disableOverflowDetectionY={true}
             contentClassName={classes.expressionCellContent}
         >
-            <ButtonBase
-                onClick={buttonClick}
-            >
-                <Typography
-                    align='left'
-                    noWrap
-                    variant='code'
+            <Box sx={{display: 'inline-flex'}}>
+                {isNav ? NavigationSignifier(divStyle, navigationIndicator) : <div style={{width: 25}}/>}
+                <ButtonBase
+                    onClick={buttonClick}
                 >
-                    {isMatch ?
-                        searchStateTextHighlighter(expression, findChunks, searchWords)
-                        : <CodeFragment
-                            cacheId={cacheId}
-                            itemsCache={itemsCache}
-                            text={expression}
-                            hoverClassName={hoverClassName}
-                        />
-                    }
-                </Typography>
-            </ButtonBase>
-        </OverflowComponent>);
+                    <Typography
+                        align='left'
+                        noWrap
+                        variant='code'
+                    >
+                        {isMatch ?
+                            searchStateTextHighlighter(expression, findChunks, searchWords)
+                            : <CodeFragment
+                                cacheId={cacheId}
+                                itemsCache={itemsCache}
+                                text={expression}
+                                hoverClassName={hoverClassName}
+                            />
+                        }
+                    </Typography>
+                </ButtonBase>
+            </Box>
+        </OverflowComponent>
+    );
 };
 
 CodeContainer.propTypes = {
@@ -670,6 +743,7 @@ const Row = ({index, data}) => {
                 css={columnStyles[0]}
             >
                 <CodeContainer
+                    item={item}
                     cacheId={cacheId}
                     itemsCache={itemsCache}
                     classes={classes}
@@ -762,6 +836,9 @@ const WindowedTable = (
         // highlightSingleText, setCursorToLocation,
         // traceSubscriber,
     } = useContext(PastebinContext);
+
+    const [rale] = useRALEContext();
+
     // const data = [];
     // logs if data is being updated correctly
     // useEffect(() => {
@@ -1062,13 +1139,34 @@ const WindowedTable = (
     //updatePlaygroundLoadFailure
     const {dale} = aleContext?.aleInstance ?? {};
 
+
+    const {navigationStates} = rale;
+    const selectedNavigationState = useMemo(() => {
+        if (!navigationStates) {
+            return null;
+        }
+        return Object.values(navigationStates).find(ns => ns.isSelected);
+    }, [navigationStates]);
+
+    // console.log("R", selectedNavigationState, navigationStates);
     const _items = useMemo(() => {
         if (!dale || !items?.length) {
             return items;
         }
 
         // console.log("FIL", {dale, items});
-        return items.filter(en => {
+        return items.filter((en, i) => {
+
+            if (selectedNavigationState) {
+                const {currentBranchEntry} = selectedNavigationState;
+                // console.log("selectedNavigationState", {en, i, currentBranchEntry});
+                const {branch} = currentBranchEntry;
+                if (branch.in >= i && i <= branch.out) {
+
+                } else {
+                    return false;
+                }
+            }
             const expressionId = en?.entry?.entry?.expressionId;
             const [, , syntaxFragment] = dale.getSyntaxFragment(expressionId) ?? [];
             let keep = true;
@@ -1080,7 +1178,7 @@ const WindowedTable = (
 
         });
 
-    }, [dale, items]);
+    }, [dale, items, selectedNavigationState]);
 
     const listProps = {
         estimatedItemSize: TABLE_ROW_HEIGHT,

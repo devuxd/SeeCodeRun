@@ -1,4 +1,4 @@
-import React, {useRef, useState, useMemo, useCallback, useEffect} from 'react';
+import React, {useRef, useState, useMemo, useCallback, useEffect, useContext, createContext} from 'react';
 
 import deferComponentRender, {
     makeTaskQueue
@@ -6,7 +6,9 @@ import deferComponentRender, {
 
 
 import VALE from './VALE';
-import {LiveZoneDecorationStyles, LiveZoneTypes} from "../ALE";
+import {LiveZoneDecorationStyles, LiveZoneTypes, ScopeTypes} from "../ALE";
+import ALEContext from "./ALEContext";
+import PastebinContext from "../../../contexts/PastebinContext";
 
 const getAllCurrentScopes = (navigationStates) => {
     const allCurrentScopes = {};
@@ -306,8 +308,11 @@ const makeBranchesStates = (keys, contentWidgets, timestamp) => {
             };
         });
 
+        // console.log("navigationStates", navigationStates);
+
         return navigationStates;
     };
+
     return {
         allBranchNavigators,
         allBranches,
@@ -315,10 +320,15 @@ const makeBranchesStates = (keys, contentWidgets, timestamp) => {
         updateBranches
     };
 };
+//
 
 
-const useNavigationStates = (keys, contentWidgets, timestamp) => {
+const useNavigationStates = (keys, contentWidgets, searchState, timestamp) => {
+    // console.log("useNavigationStates", {keys, contentWidgets, searchState, timestamp});
+    const {value} = searchState ?? {};
     const [selectedBranchEntry, setSelectedBranchEntry] = useState({});
+    const activeBranchEntry = value?.length ? null : selectedBranchEntry;
+
 
     const branchesStates = useMemo(
         () => {
@@ -330,7 +340,7 @@ const useNavigationStates = (keys, contentWidgets, timestamp) => {
     return useMemo(
         () => {
             const navigationStates =
-                branchesStates.updateBranches(selectedBranchEntry, setSelectedBranchEntry);
+                branchesStates.updateBranches(activeBranchEntry, setSelectedBranchEntry);
 
             return {
                 navigationStates,
@@ -338,17 +348,16 @@ const useNavigationStates = (keys, contentWidgets, timestamp) => {
             };
 
         },
-        [branchesStates, selectedBranchEntry]
+        [branchesStates, activeBranchEntry]
     );
 };
 
-export function RALE(
-    {
-        data,
-        aleInstance,
-        VisualizerComponent = VALE
-    }
-) {
+
+const emptyState = {};
+
+const useRALE = () => {
+    const {data, searchState} = useContext(PastebinContext);
+    const {aleInstance} = useContext(ALEContext);
     const {
         // objectNodeRenderer,
         // getVisualIdsFromRefs,
@@ -364,6 +373,16 @@ export function RALE(
 
     const programUID = branchNavigatorManager?.programUID();
     const contentWidgets = dale?.contentWidgetManager?.getContentWidgets();
+    // console.log("contentWidgets", aleInstance);
+
+    // const r = useMemo(() => {
+    //     console.log(">>>>> contentWidgets", contentWidgets);
+    // }, [contentWidgets]);
+
+    // Object.values(contentWidgets).forEach((contentWidget) => {
+    //     contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceTextFocus === "let n" && console.log("TTTTTTT", contentWidget);
+    // });
+
     const resizeContentWidgets = dale?.contentWidgetManager?.resize;
     const timeline = data ?? [];
 
@@ -389,10 +408,13 @@ export function RALE(
 
     const current = decorationRefs;
 
-    Object.values(contentWidgets ?? {}).forEach(contentWidget => {
-        const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
-        contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText === "let n" && console.log("navigator", {expressionId, contentWidget});
-    });
+    // Object.values(contentWidgets ?? {}).forEach(contentWidget => {
+    //     const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
+    //     contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText === "let n" && console.log("navigator", {
+    //         expressionId,
+    //         contentWidget
+    //     });
+    // });
 
 
     const contentWidgetKeys = useMemo(
@@ -408,7 +430,7 @@ export function RALE(
             const contentWidget = contentWidgets[key];
             const z = contentWidget?.locLiveZoneActiveDecoration?.zone
             const {expressionId} = z ?? {};
-           // contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText?.includes("let n") && console.log("navigatorKeys", {expressionId, z, contentWidget}); // expressionId == 14
+            // contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText?.includes("let n") && console.log("navigatorKeys", {expressionId, z, contentWidget}); // expressionId == 14
             if (LiveZoneTypes.B !== contentWidget.locLiveZoneActiveDecoration?.zone.liveZoneType) {
                 return;
             }
@@ -434,7 +456,7 @@ export function RALE(
         navigationStates,
         allCurrentScopes
     } = useNavigationStates(
-        navigatorKeys, contentWidgets, timestamp
+        navigatorKeys, contentWidgets, searchState, timestamp
     );
 
 
@@ -559,23 +581,109 @@ export function RALE(
 
     useEffect(
         () => {
-            if (timelineData && resizeContentWidgets) {
+            if (
+                // contentWidgetKeys &&
+                timelineData && resizeContentWidgets) {
                 resizeContentWidgets(timelineDataVisibleRef.current);
             }
         },
-        [timelineData, resizeContentWidgets]
+        [timelineData, resizeContentWidgets,
+            // contentWidgetKeys
+        ]
     );
 
     // console.log("contentWidgetKeys", contentWidgetKeys);
 // console.log("contentWidgets", contentWidgets);
     // console.log("BI", contentWidgetKeys.filter((key) => !!(contentWidgets[key]?.locLiveZoneActiveDecoration?.zone.type === "BinaryExpression")));
     // <div>{progress}%</div>
+    const getNavigationStateInfo = (key) => {
+        const variant = navigationStates[key] ? 'block' : 'expression';
+        const navigationState = navigationStates[key] ?? emptyState;
+        const {
+            branchNavigator,
+            isSelected,
+            absoluteMaxNavigationIndex,
+            currentAbsoluteNavigationIndex,
+            relativeMaxNavigationIndex,
+            currentRelativeNavigationIndex,
+            currentBranchEntry,
+            currentBranches,
+            handleChangeAbsoluteSelectedBranchEntry,
+            handleChangeRelativeSelectedBranchEntry,
+            resetNavigation,
+            branchNavigatorEntry,
+        } = navigationState;
+
+        const color = branchNavigator?.getScopeType() === ScopeTypes.F ? 'primary' : 'secondary';
+        const isRelative = currentBranches && !!currentBranches.find(b => b.parentBranch);
+        const blockVariant = isRelative ? 'outlined' : 'contained';
+        const value =
+            isRelative ? currentRelativeNavigationIndex ?? relativeMaxNavigationIndex
+                : currentAbsoluteNavigationIndex ?? absoluteMaxNavigationIndex
+        const max =
+            isRelative ? relativeMaxNavigationIndex
+                : absoluteMaxNavigationIndex;
+        return {
+            variant,
+            navigationState,
+            color,
+            isRelative,
+            blockVariant,
+            value,
+            max,
+            currentRelativeNavigationIndex,
+            absoluteMaxNavigationIndex,
+            isSelected
+        };
+    };
+
+    return [
+        {
+            contentWidgets,
+            contentWidgetKeys,
+            navigationStates,
+            isUpdating,
+            allCurrentScopes,
+            programUID,
+            getNavigationStateInfo
+        },
+        {}
+    ];
+};
+
+const RALEContext = createContext({});
+
+export function useRALEContext() {
+    return useContext(RALEContext);
+}
+
+export function RALEContextProvider({children}) {
+    return <RALEContext.Provider value={useRALE()}>
+        {children}
+    </RALEContext.Provider>
+}
+
+export function RALE(
+    {
+        VisualizerComponent = VALE
+    }
+) {
+    const [{
+        contentWidgets,
+        contentWidgetKeys,
+        navigationStates,
+        isUpdating,
+        allCurrentScopes,
+        programUID,
+        getNavigationStateInfo
+    }] = useRALEContext();
+
     return (<>
             {contentWidgetKeys.map((key) => {
                 const contentWidget = contentWidgets[key];
-                contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceText === "let n" && console.log("RALE", contentWidget);
+                // contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.sourceTextFocus === "let n" && console.log("rale", contentWidget);
                 const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
-                // expressionId == 6 && console.log("RALE", {expressionId, contentWidget});
+                // console.log("rale", {expressionId, contentWidget});
                 // const forBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlock();
                 // const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();
                 // // const expressionInit = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionInit();
@@ -594,6 +702,7 @@ export function RALE(
                     isLoading={isUpdating}
                     contentWidget={contentWidget}
                     navigationStates={navigationStates}
+                    getNavigationStateInfo={getNavigationStateInfo}
                     allCurrentScopes={allCurrentScopes}
                     programUID={programUID}
                 />;
@@ -603,5 +712,4 @@ export function RALE(
 }
 
 const DeferredRALE = deferComponentRender(RALE);
-
 export default DeferredRALE;

@@ -9,6 +9,7 @@ import {
 
 import ContentWidgetManager from "./ContentWidgetManager";
 import SyntaxFragment from "./SyntaxFragment";
+import {MonacoExpressionClassNames} from "../../../themes";
 
 export const configureLoc2Range = (
     monaco, parserType = 'babel'
@@ -321,24 +322,44 @@ const makeDALERefDefaultState = () => {
     }
 };
 
-export default function decorateALEExpressions(
-    aleInstance,
-    monaco,
-    monacoEditor,
-    onDecorationsReady,
-    onViewZoneChange
-) {
+const DALE = ({monacoEditor, monaco, aleInstanceSubject, contentWidgetManager, onViewZoneChange}) => {
     const locToMonacoRange = configureLoc2Range(monaco);
 
     const rangeCompactor = configureRangeCompactor(monaco);
 
-    const contentWidgetManager = new ContentWidgetManager(
-        monacoEditor,
-        monaco,
-        // aleInstance.branchNavigatorManager?.handleMouseActionDecoration
-    );
+
+    const createCommentDecorator = (commentDecorator = {}) => {
+        let commentDecorationsCollection = commentDecorator.commentDecorationsCollection;
+
+        if (!commentDecorationsCollection || monacoEditor !== commentDecorator.monacoEditor) {
+            commentDecorationsCollection?.clear();
+            commentDecorationsCollection = monacoEditor.createDecorationsCollection();
+        }
+
+        const commentLocs2Ranges = (commentsLocs = []) => commentsLocs.map(loc => ({
+            range: locToMonacoRange(loc),
+            options: {
+                isWholeLine: true,
+                glyphMarginClassName: MonacoExpressionClassNames.commentGlyphMarginClassName,
+            },
+        }));
+        const update = (commentsLocs = []) => {
+            return commentDecorationsCollection.set(commentLocs2Ranges(commentsLocs));
+        };
+
+        return {
+            ...commentDecorator,
+            monacoEditor,
+            update,
+            commentDecorationsCollection,
+            commentLocs2Ranges
+        }
+    };
+
+    let aleInstance = null;
 
     const dale = {
+        createCommentDecorator,
         isStandAlone: false,
         monaco,
         monacoEditor,
@@ -419,25 +440,27 @@ export default function decorateALEExpressions(
     };
 
     dale.removeAll = () => {
-        const allDecorations = dale.monacoEditor?.getModel()?.getAllDecorations(undefined, true);
-        // console.log("allDecorations", allDecorations);
-        const removeIds = allDecorations?.map(d => d.id) ?? [];
-        // console.log("START", {zones, importZones}, removeIds);
-
-        if (removeIds.length) {
-            removeIds.forEach(id => {
-                    dale.contentWidgetManager.removeContentWidgetById(id);
-                }
-            );
-            dale.monacoEditor?.removeDecorations(removeIds);
-        }
+        // const allDecorations = dale.monacoEditor?.getModel()?.getAllDecorations(undefined, true);
+        // // console.log("allDecorations", allDecorations);
+        // const removeIds = allDecorations?.map(d => d.id) ?? [];
+        // // console.log("START", {zones, importZones}, removeIds);
+        //
+        // if (removeIds.length) {
+        //     removeIds.forEach(id => {
+        //             dale.contentWidgetManager.removeContentWidgetById(id);
+        //         }
+        //     );
+        //     dale.monacoEditor?.removeDecorations(removeIds);
+        // }
     };
 
-    dale.start = (previousDale) => {
-        previousDale?.removeAll();
+    dale.start = (aleInstance) => {
+
+
         const {zale} = aleInstance.getModel();
         const {zones, importZones} = zale ?? {};
 
+        // console.log("dale.start", aleInstance, {zones, importZones, zale});
         const {
             syntaxFragments,
             syntaxFragmentsNormalize,
@@ -470,21 +493,20 @@ export default function decorateALEExpressions(
         dale.onChangeLocLiveZoneDecorations?.(Date.now());
     };
 
-    dale.onDidChangeModelContentDisposer =
-        dale.monacoEditor.onDidChangeModelContent(aleInstance.handleChangeContent);
+    // dale.onDidChangeModelContentDisposer =
+    //     dale.monacoEditor.onDidChangeModelContent(aleInstance.handleChangeContent);
 
     dale.onDidDisposeDisposer = monacoEditor.onDidDispose(dale.stop);
-    dale.onDidChangeModelDisposer = monacoEditor.onDidChangeModel(
-        () => {
-            aleInstance.handleChangeContent();
-        }
-    );
+    // dale.onDidChangeModelDisposer = monacoEditor.onDidChangeModel(
+    //     () => {
+    //         aleInstance.handleChangeContent();
+    //     }
+    // );
 
     dale.dispose = () => {
         dale.stop();
-        dale.contentWidgetManager?.unobserve();
-        dale.onDidChangeModelContentDisposer?.dispose();
-        dale.onDidChangeModelDisposer?.dispose();
+        // dale.onDidChangeModelContentDisposer?.dispose();
+        // dale.onDidChangeModelDisposer?.dispose();
         dale.onDidDisposeDisposer?.dispose();
     };
 
@@ -513,10 +535,29 @@ export default function decorateALEExpressions(
         ];
     };
 
-    dale.makeSyntaxFragment = (zone, daleInstance = dale) => {
+    dale.makeSyntaxFragment = (zone, _dale = dale) => {
         const {liveZoneType, scopeType} = zone;
-        return new SyntaxFragment(daleInstance, zone, ZoneDecorationType.resolve(liveZoneType, scopeType));
+        return new SyntaxFragment(_dale, zone, ZoneDecorationType.resolve(liveZoneType, scopeType));
     };
+
+    dale.inLay = (position, label)=>{
+        const i =monaco.languages.registerInlayHintsProvider("javascript", {
+            provideInlayHints(...p) {
+                // console.log("p", p);
+                return {
+                    hints: [
+                        {
+                            kind: monaco.languages.InlayHintKind.Type,
+                            position,
+                            label,
+                            whitespaceBefore: true, // see difference between a and b parameter
+                        },
+                    ],
+                    dispose: () => {},
+                };
+            },
+        });
+    }
 
     dale.makeSyntaxFragments = (zones) => {
         if (!zones) {
@@ -532,6 +573,11 @@ export default function decorateALEExpressions(
                 const {expressionId} = zone;
                 const syntaxFragment = dale.makeSyntaxFragment(zone);
                 syntaxFragments[expressionId] = syntaxFragment;
+                // console.log("j = n;",syntaxFragment )
+                // if (syntaxFragment.sourceText === "j = n;") {
+                //     console.log("j = 0", syntaxFragment)
+                // }
+
                 syntaxFragmentsNormalizers[i] = () => syntaxFragment.decorate();
                 syntaxFragmentsResets[i] = () => syntaxFragment.unDecorateAll();
             }
@@ -609,6 +655,7 @@ export default function decorateALEExpressions(
             syntaxFragmentsImportsReset,
         };
     };
+
     dale.getSyntaxFragmentImport = (importSource, i) => {
         const entry = dale.ref.current?.syntaxFragmentsImports?.[importSource]?.[i];
         return [
@@ -620,19 +667,68 @@ export default function decorateALEExpressions(
     };
 
     dale.defaultOnChangeHandler = () => { // no React
-        dale.stop();
-        return dale.start();
+        // aleInstance = _aleInstance;
+        dale.stop(aleInstance);
+        return dale.start(aleInstance);
     };
 
     dale.onContentChange = () => {
-        if (dale.isStandAlone) {
-            dale.defaultOnChangeHandler();
-            return;
-        }
-
+        // if (dale.isStandAlone) {
+        //     dale.defaultOnChangeHandler();
+        //     return;
+        // }
+        dale.defaultOnChangeHandler();
         dale.onChangeLocLiveZoneDecorations?.(Date.now());
     };
-    // console.log(" dale.contentWidgetManager.observe();");
-    dale.contentWidgetManager.observe();
+
+    aleInstanceSubject().subscribe(({aleInstance: _aleInstance}) => {
+        aleInstance = _aleInstance;
+        if (!aleInstance) {
+            return;
+        }
+        // console.log("aleInstanceSubject", aleInstanceSubject);
+        dale.defaultOnChangeHandler(aleInstance);
+        // dale.defaultOnChangeHandler(aleInstance);
+    });
+
     return dale;
+}
+
+export default function decorateALEExpressions(aleFirecoPad) {
+    const {
+        aleInstanceSubject,
+        monacoEditorSubject,
+        contentWidgetManagerSubject,
+        daleSubject
+    } = aleFirecoPad.behaviors();
+
+    const onViewZoneChange = aleFirecoPad;
+
+    let contentWidgetManager = null;
+
+    const next = ({monacoEditor, monaco,}) => {
+        if (!(monacoEditor && monaco)) {
+            return;
+        }
+        contentWidgetManager = new ContentWidgetManager(
+            monacoEditor,
+            monaco,
+        );
+        contentWidgetManager.observe();
+        contentWidgetManagerSubject().next({contentWidgetManager});
+        const dale = DALE({monacoEditor, monaco, aleInstanceSubject, contentWidgetManager, onViewZoneChange});
+        daleSubject().next({dale});
+    };
+
+    const complete = () => {
+        contentWidgetManager?.unobserve();
+    };
+
+    const error = complete;
+
+    monacoEditorSubject().subscribe({
+        next,
+        error,
+        complete,
+    });
 }

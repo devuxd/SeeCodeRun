@@ -53,11 +53,13 @@ import {MonacoHighlightTypes} from "../themes";
 import firebaseConfig from './firebaseConfig';
 import configureMonacoDefaults from '../configureMonaco';
 import {
+    CALE,
     MonacoOptions,
     parseOptions
 } from "./modules/ALE";
 
 import {makeAjax, makeScrCloudFunctions} from '../firebase/scrCloudFunctions';
+import RxApp from "./RxApp";
 
 let MonacoJSXHighlighter = null;
 
@@ -145,16 +147,21 @@ class AppManager {
                 language: 'scss' // css
             }
         };
+
+        const rxApp = new RxApp(this, editorIds['js']);
+        this.rxApp = () => rxApp;
     }
+
 
     observeLoadMonaco() {
         return new Observable(observer => {
                 (async () => [
+                    // monaco 0.41.0 does not include
                     await import('monaco-editor/esm/vs/editor/editor.api'),
                     // await import('monaco-editor/esm/metadata')
                 ])()//'monaco-editor'
                     .then(([monaco, metadata]) => {
-                        // fixes breaking changes [0.22.0] (29.01.2021) // addressed in index.js
+                        // fixes breaking changes [0.22.0] (29.01.2021) // addressed in index.html
                         // global.monaco = monaco;
                         // console.log("monaco metadata", metadata);
                         configureMonacoDefaults(monaco);
@@ -316,6 +323,9 @@ class AppManager {
                 this.monaco.editor.setTheme(this.currentMonacoTheme);
                 for (const editorId in this.firecoPads) {
                     const firecoPad = this.firecoPads[editorId];
+                    firecoPad.monaco = monaco;
+
+
                     // let text = '';
                     // if (this.hasSavedEditorsStates &&
                     //     firecoPad.monacoEditorSavedState) {
@@ -469,15 +479,17 @@ class AppManager {
             disposerRef,
         } = editorHooks;
 
-        if (this.monaco) {
+        const {monaco} = this;
+
+        if (monaco) {
             try {
                 if (isConsole) {
                     this.consoleInputEditor = configureMonacoEditor(
-                        this.monaco,
+                        monaco,
                         editorRef.current,
                         {
                             ...monacoOptions,
-                            model: this.monaco.editor.createModel(
+                            model: monaco.editor.createModel(
                                 '',
                                 'javascript'
                             )
@@ -493,6 +505,7 @@ class AppManager {
 
                 const firecoPad = this.firecoPads[editorId];
 
+
                 const action = of(
                     loadMonacoEditorFulfilled(editorId, firecoPad)
                 );
@@ -502,24 +515,29 @@ class AppManager {
                 //     return action;
                 // }
 
-                firecoPad.lineNumbersProvider = configureLineNumbersProvider(
-                    editorId
-                );
 
                 const editorOptions = {
                     ...firecoPad.editorOptions,
                     model: firecoPad.monacoEditorModel,
-                    lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
+                    // lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
                 };
 
                 const monacoEditor = configureMonacoEditor(
-                    this.monaco,
+                    monaco,
                     editorRef.current,
                     editorOptions,
                 );
 
                 firecoPad.monacoEditor = monacoEditor;
 
+                const {behaviors} = firecoPad;
+                // console.log("firecoPad", {firecoPad, behaviors});
+                behaviors?.().monacoEditorSubject().next({editorId, monacoEditor, monaco});
+
+
+                firecoPad.lineNumbersProvider = configureLineNumbersProvider(
+                    editorId
+                );
 
                 if (isString(firecoPad.monacoEditorSavedState?.viewState)) {
                     monacoEditor.restoreViewState(
@@ -534,12 +552,21 @@ class AppManager {
                 }
 
                 firecoPad.onContentChangedAction =
-                    (changes) => monacoEditorContentChanged?.(
-                        editorId, monacoEditor.getValue(), changes
-                    );
-                const asyncContentChanged = async (changes) => {
-                    firecoPad.onContentChanged?.();
-                    firecoPad.onContentChangedAction(changes);
+                    (modelContentChanges) => {
+                        if (monacoEditorContentChanged) {
+                            //console.log("monacoEditorContentChanged", firecoPad, modelContentChanges);
+
+                            return monacoEditorContentChanged?.(
+                                editorId, monacoEditor.getValue(), modelContentChanges
+                            );
+                        }
+                        return null;
+                    };
+                const asyncContentChanged = async () => {
+                    const modelContentChanges = firecoPad.modelContentChanges;
+                    firecoPad.modelContentChanges = null;
+                    firecoPad.onContentChanged?.(modelContentChanges);
+                    firecoPad.onContentChangedAction(modelContentChanges);
                 };
 
                 const timeWindow = 150;
@@ -549,8 +576,8 @@ class AppManager {
                     timeWindow, {leading: true, trailing: true});
 
                 const debouncedAsyncContentChanged = debounce(
-                    (changes) => {
-                        asyncContentChanged(changes)
+                    () => {
+                        asyncContentChanged()
                             .then(() => (layoutHidden = false))
                             .catch(error => console.log(
                                     '[ERROR]asyncContentChanged',
@@ -559,23 +586,26 @@ class AppManager {
                             );
                     }, timeWindow * 2);
                 //todo: simplify change response
-                firecoPad.onDidChangeModelContent = debounce(async changes => {
+                firecoPad.onDidChangeModelContent = debounce(async () => {
                     if (!layoutHidden) {
                         layoutHidden = true;
                         throttledWidgetLayoutChange();
                     }
-                    debouncedAsyncContentChanged(changes);
+                    debouncedAsyncContentChanged();
                 }, 50, {maxWait: timeWindow});
 
                 firecoPad.isMonacoEditorReady = firecoPad.isMonacoEditorReady ?? false;
 
                 const disposer = monacoEditor
-                    .onDidChangeModelContent(changes => {
+                    .onDidChangeModelContent((codeChanges, ...others) => {
+                        behaviors?.().codeChangesSubject?.().next({codeChanges, others});
+                        firecoPad.modelContentChanges ??= [];
+                        firecoPad.modelContentChanges.push(codeChanges);
                         !firecoPad.isMonacoEditorReady &&
                         (firecoPad.isMonacoEditorReady = true);
 
                         onEditorContentFirstRender?.();
-                        firecoPad.onDidChangeModelContent?.(changes)
+                        firecoPad.onDidChangeModelContent?.()
                     });
 
                 let disposed = false;
@@ -670,9 +700,9 @@ class AppManager {
         // try {
         const firebase = (await import('firebase/compat/app')).default;
         // const {getAuth} =
-            await import ('firebase/compat/auth');
+        await import ('firebase/compat/auth');
         // const Database =
-            await import ('firebase/compat/database');
+        await import ('firebase/compat/database');
         const Firepad = (await import('firepad')).default;
         const {initializeApp} = firebase;
         // const {getDatabase, serverTimestamp} = Database;
@@ -685,9 +715,8 @@ class AppManager {
         const auth = firebase.auth(app);
         // const database = getDatabase(app);
         // const auth = getAuth(app);
-        // console.log("config", config);
         const serverTimestamp = () => firebase.database.ServerValue.TIMESTAMP;
-        console.log("firebase", {firebase, fireco, database, auth, f: serverTimestamp()});
+        // console.log("firebase", {firebase, fireco, database, auth, f: serverTimestamp(), config});
         const connectedRef = database.ref(".info/connected");
 
         const scrCloudFunctions = makeScrCloudFunctions(app, serverTimestamp);

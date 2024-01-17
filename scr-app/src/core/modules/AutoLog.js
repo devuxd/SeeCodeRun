@@ -222,19 +222,23 @@ export const importLoaders = async () => {
             //     esmodules: true,
             // },
             presets: [
+                'react',
                 ['env', {
                     // "exclude":
-                    //     ["proposal-dynamic-import"],
+                    //     ["syntax-optional-chaining-assign"],
+                    // ["proposal-dynamic-import"],
                     "modules": false
                 }
                 ],
-                'react',
+
             ],
             plugins: //[]
                 Object.keys(Babel.availablePlugins)
                     .filter(key =>
                         // key === pluginName ||
                         // !key.includes("transform-modules-commonjs")||
+                        // key === "proposal-optional-chaining-assign" ||
+                        // key === "syntax-optional-chaining-assign" ||
                         (key.includes('proposal-') &&
                             !key.includes('proposal-decorators') &&
                             !key.includes('proposal-pipeline-operator') &&
@@ -243,6 +247,11 @@ export const importLoaders = async () => {
                     )
             // .filter(key =>!key.includes("transform-modules-commonjs"))
         };
+        // options.plugins.push("@babel/plugin-proposal-optional-chaining-assign");
+        // options.plugins.push("@babel/plugin-syntax-optional-chaining-assign");
+        // options.plugins.push("@babel/plugin-syntax-optional-chaining-assign");
+        // options.plugins.push(["syntax-optional-chaining-assign", {version: '2023-07'}]);
+        // console.log("options", options, Babel.availablePlugins);
         BabelSCR.transform = sourceCode => Babel.transform(sourceCode, options);
     }
 };

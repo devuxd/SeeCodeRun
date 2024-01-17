@@ -197,83 +197,26 @@ const NavigatorOutlinedButton = withStyles(() => ({
 }))(Button);
 
 const liveBlockLabelDefaultStyle = {fontSize: 9};
-const LiveBlock = (
-    props
-) => {
-    const {
-        autoHideAbsoluteIndex,
-        tooltipProps = {
-            placement: "top-start",
-            enterDelay: 250,
-            leaveDelay: 200,
-            // open: true,
-        },
-        navigationState = {},
-        labelStyle = liveBlockLabelDefaultStyle,
-        decorate,
+
+export function NavigationSignifier(divStyle, navigationIndicator) {
+    return <div style={divStyle}>
+        {navigationIndicator}
+    </div>;
+}
+
+function NavigationIndicator(
+    {
         isIfBlock,
-        ifBlockKey
-    } = props;
-
-    const {
-        branchNavigator,
-        isSelected,
-        absoluteMaxNavigationIndex,
-        currentAbsoluteNavigationIndex,
-        relativeMaxNavigationIndex,
+        value,
+        variant,
+        color,
+        isRelative,
         currentRelativeNavigationIndex,
-        currentBranchEntry,
-        currentBranches,
-        handleChangeAbsoluteSelectedBranchEntry,
-        handleChangeRelativeSelectedBranchEntry,
-        resetNavigation,
-        branchNavigatorEntry,
-    } = navigationState;
-
-    const color = useMemo(() => {
-            return branchNavigator?.getScopeType() === ScopeTypes.F ? 'primary' : 'secondary';
-        },
-        [branchNavigator]
-    );
-
-    const isRelative = useMemo(
-        () => {
-            // console.log(currentBranches, );
-            return !!currentBranches.find(b => b.parentBranch);
-
-        },
-        [currentBranches]
-    );
-
-    const variant = isRelative ? 'outlined' : 'contained';
-
-    //  console.log('F', branchNavigator?.paths()?.length, absoluteMaxNavigationIndex, currentNavigationIndex, resetNavigation);
-    const [, _setValue] = useState(absoluteMaxNavigationIndex);
-    const value =
-        isRelative ? currentRelativeNavigationIndex ?? relativeMaxNavigationIndex
-            : currentAbsoluteNavigationIndex ?? absoluteMaxNavigationIndex
-    const max =
-        isRelative ? relativeMaxNavigationIndex
-            : absoluteMaxNavigationIndex;
-
-    const setValueRef = useRef();
-    setValueRef.current =
-        (isRelative ?
-            handleChangeRelativeSelectedBranchEntry
-            : handleChangeAbsoluteSelectedBranchEntry) ?? _setValue;
-    const handleSliderChange = useCallback((event, newValue) => {
-        setValueRef.current(newValue);
-    }, []);
-
-
-    // const isIfBlock = branchNavigator?.zone()?.parentType === "IfStatement";
-
-    // isIfBlock && console.log("LiveBlock", branchNavigator?.zone(), value );
-
-    const showNavigatorTooltip = !isIfBlock && !!absoluteMaxNavigationIndex;
-    const NavigatorButton = isRelative ?
-        NavigatorOutlinedButton : NavigatorContainedButton;
-
+        max,
+        isSelected,
+        NavigatorButton
+    }
+) {
     const divStyle = {visibility: isIfBlock ? value ? 'visible' : 'hidden' : 'visible'};
     const navigationIndicator = isIfBlock ? (
         null
@@ -314,6 +257,137 @@ const LiveBlock = (
                 /> : null}
         </NavigatorButton>
     );
+    return {divStyle, navigationIndicator};
+}
+
+function NavigatorShape(isRelative) {
+    const NavigatorButton = isRelative ?
+        NavigatorOutlinedButton : NavigatorContainedButton;
+    return NavigatorButton;
+}
+
+export function NavigatorComponent({
+                                       isIfBlock,
+                                       absoluteMaxNavigationIndex,
+                                       isRelative,
+                                       value,
+                                       variant,
+                                       color,
+                                       currentRelativeNavigationIndex,
+                                       max,
+                                       isSelected
+                                   }) {
+    const showNavigatorTooltip = !isIfBlock && !!absoluteMaxNavigationIndex;
+    const NavigatorButton = NavigatorShape(isRelative);
+    const {
+        divStyle,
+        navigationIndicator
+    } = NavigationIndicator({
+        isIfBlock,
+        value,
+        variant,
+        color,
+        isRelative,
+        currentRelativeNavigationIndex,
+        max,
+        isSelected,
+        NavigatorButton
+    });
+    return {showNavigatorTooltip, divStyle, navigationIndicator};
+}
+
+const LiveBlock = (
+    props
+) => {
+    const {
+        autoHideAbsoluteIndex,
+        tooltipProps = {
+            placement: "top-start",
+            enterDelay: 250,
+            leaveDelay: 200,
+            // open: true,
+        },
+        navigationState = {},
+        navigationStateInfo={},
+        labelStyle = liveBlockLabelDefaultStyle,
+        decorate,
+        isIfBlock,
+        ifBlockKey
+    } = props;
+
+    const {
+        branchNavigator,
+        isSelected,
+        absoluteMaxNavigationIndex,
+        currentAbsoluteNavigationIndex,
+        relativeMaxNavigationIndex,
+        currentRelativeNavigationIndex,
+        currentBranchEntry,
+        currentBranches,
+        handleChangeAbsoluteSelectedBranchEntry,
+        handleChangeRelativeSelectedBranchEntry,
+        resetNavigation,
+        branchNavigatorEntry,
+    } = navigationState;
+
+    const {color, isRelative, blockVariant: variant, value, max} = navigationStateInfo;
+
+
+    // const color = useMemo(() => {
+    //         return branchNavigator?.getScopeType() === ScopeTypes.F ? 'primary' : 'secondary';
+    //     },
+    //     [branchNavigator]
+    // );
+
+    // const isRelative = useMemo(
+    //     () => {
+    //         // console.log(currentBranches, );
+    //         return !!currentBranches.find(b => b.parentBranch);
+    //
+    //     },
+    //     [currentBranches]
+    // );
+
+    // const variant = isRelative ? 'outlined' : 'contained';
+
+    //  console.log('F', branchNavigator?.paths()?.length, absoluteMaxNavigationIndex, currentNavigationIndex, resetNavigation);
+    const [, _setValue] = useState(absoluteMaxNavigationIndex);
+    // const value =
+    //     isRelative ? currentRelativeNavigationIndex ?? relativeMaxNavigationIndex
+    //         : currentAbsoluteNavigationIndex ?? absoluteMaxNavigationIndex
+    // const max =
+    //     isRelative ? relativeMaxNavigationIndex
+    //         : absoluteMaxNavigationIndex;
+
+    const setValueRef = useRef();
+    setValueRef.current =
+        (isRelative ?
+            handleChangeRelativeSelectedBranchEntry
+            : handleChangeAbsoluteSelectedBranchEntry) ?? _setValue;
+    const handleSliderChange = useCallback((event, newValue) => {
+        setValueRef.current(newValue);
+    }, []);
+
+
+    // const isIfBlock = branchNavigator?.zone()?.parentType === "IfStatement";
+
+    // isIfBlock && console.log("LiveBlock", branchNavigator?.zone(), value );
+    const {
+        showNavigatorTooltip,
+        divStyle,
+        navigationIndicator
+    } = NavigatorComponent({
+            isIfBlock,
+            absoluteMaxNavigationIndex,
+            isRelative,
+            value,
+            variant,
+            color,
+            currentRelativeNavigationIndex,
+            max,
+            isSelected
+        }
+    );
 
     // const isLoop
     //todo: exit scopes
@@ -350,9 +424,7 @@ const LiveBlock = (
             {...(showNavigatorTooltip ? {arrow: false} : {open: false})}
             {...tooltipProps}
         >
-            <div style={divStyle}>
-                {navigationIndicator}
-            </div>
+            {NavigationSignifier(divStyle, navigationIndicator)}
         </NavigatorTooltip>
     );
 };
@@ -382,8 +454,17 @@ const Noop = () => {
     return null;
 }
 
-const emptyState = {};
-const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentScopes, programUID, ...rest}) => {
+
+const VALE = ({
+                  contentWidget,
+                  navigationStates,
+                  id: key,
+                  isLoading,
+                  allCurrentScopes,
+                  programUID,
+                  getNavigationStateInfo,
+                  ...rest
+              }) => {
 
     const container = contentWidget.getDomNode();
     const {expressionId} = contentWidget?.locLiveZoneActiveDecoration?.zone ?? {};
@@ -400,9 +481,14 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
     let aleObject = null;
     let zone = null;
     let currentEntry = null;
+    const navigationStateInfo = getNavigationStateInfo(key);
+    const {
+        variant,
+        navigationState
+    } = navigationStateInfo;
     // console.log("navigationStates", navigationStates);
-    const variant = navigationStates[key] ? 'block' : 'expression';
-    const navigationState = navigationStates[key] ?? emptyState;
+    // const variant = navigationStates[key] ? 'block' : 'expression';
+    // const navigationState = navigationStates[key] ?? emptyState;
     let forceVisible = false;
     const isImport = contentWidget.locLiveZoneActiveDecoration?.isImport;
     const isIfBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.ifBlock();
@@ -417,7 +503,7 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
         forceVisible = true;
     } else { // expression variant
         if (isImport) {
-            // console.log("RALE", {contentWidget, navigationState, variant});
+            // console.log("rale", {contentWidget, navigationState, variant});
             forceVisible = true;
             // data = currentEntry.getValue();
             // aleObject = currentEntry.entry?.logValue;
@@ -474,8 +560,8 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
 
         let lvs = logValues;
 
-        if(lvs.length === 0 && (variant === 'block') && currentBranch){
-            lvs = currentBranch.logValues??lvs;
+        if (lvs.length === 0 && (variant === 'block') && currentBranch) {
+            lvs = currentBranch.logValues ?? lvs;
         }
 
         currentEntry = forXBranch || (currentBranch && lvs.find(entry => {
@@ -495,29 +581,36 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
 
         //bring the branch and collect the in entry
         if (currentEntry) {
-            console.log("currentEntry", currentEntry);
+            // console.log("currentEntry", currentEntry);
             forceVisible = true;
-            data = currentEntry.getValue();
-            aleObject = (currentEntry.entry?.idValue)?? currentEntry.entry?.logValue;
-            zone =  (currentEntry.entry?.idValue?.zone)??_zone;
+            aleObject = (currentEntry.entry?.idValue) ?? currentEntry.entry?.logValue;
+            data = currentEntry.getValue() ?? aleObject;
+
+            // if (logValues?.length) {
+            //     zone = logValues[0]?.zone ?? _zone;
+            // } else {
+            //     zone = (currentEntry.entry?.idValue?.zone) ?? _zone;
+            // }
+            zone = (currentEntry?.zone) ?? _zone;
+            //the zone of the vraible is changed to the forloop, perhaps in contentmangaer. evidence in the widget infor, as is using parent ingot not its own
         }
 
         // (variant === 'block')
-        forXLeft
-        && console.log(variant, {
-            expressionId,
-            contentWidget,
-            // branchNavigator: contentWidget.getLocLiveZoneActiveDecoration().getBranchNavigator(),
-            // forXRight,
-            logValues,
-            currentBranch,
-            // type,
-            // logValues,
-            currentEntry,
-            data,
-            aleObject,
-            zone,
-        });
+        // currentEntry && forXLeft
+        // && console.log(variant, {
+        //     expressionId,
+        //     contentWidget,
+        //     // branchNavigator: contentWidget.getLocLiveZoneActiveDecoration().getBranchNavigator(),
+        //     // forXRight,
+        //     logValues,
+        //     currentBranch,
+        //     // type,
+        //     // logValues,
+        //     currentEntry,
+        //     data,
+        //     aleObject,
+        //     zone,
+        // });
 
         // (expressionTest) && console.log("expressionTest", { //allCurrentScopes?.[uid]
         //     contentWidget,
@@ -547,7 +640,7 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
     const decorate = useCallback((value = 0) => {
         // const isImport = contentWidget.locLiveZoneActiveDecoration?.isImport;
         if (isImport) {
-            // console.log("RALE", {contentWidget, navigationState});
+            // console.log("rale", {contentWidget, navigationState});
             contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.decorate(LiveZoneDecorationStyles.active, false);
             return;
         }
@@ -588,19 +681,36 @@ const VALE = ({contentWidget, navigationStates, id: key, isLoading, allCurrentSc
 
     const LiveArtifact = forceVisible ? (variant === 'block' ? LiveBlock : LiveExpression) : Noop;
 
+
+    const props = {
+        ...rest,
+        data,
+        isLoading,
+        aleObject,
+        zone,
+        navigationState,
+        navigationStateInfo,
+        decorate,
+        isImport,
+        isIfBlock,
+        ifBlockKey,
+    };
+
+    // console.log("VALE LiveArtifact", container, props);
     return (
         <Portal container={container}>
             <LiveArtifact
-                {...rest}
-                data={data}
-                isLoading={isLoading}
-                aleObject={aleObject}
-                zone={zone}
-                navigationState={navigationState}
-                decorate={decorate}
-                isImport={isImport}
-                isIfBlock={isIfBlock}
-                ifBlockKey={ifBlockKey}
+                {...props}
+                // data={data}
+                // isLoading={isLoading}
+                // aleObject={aleObject}
+                // zone={zone}
+                // navigationState={navigationState}
+                // decorate={decorate}
+                // isImport={isImport}
+                // isIfBlock={isIfBlock}
+                // ifBlockKey={ifBlockKey}
+
             />
         </Portal>
     );

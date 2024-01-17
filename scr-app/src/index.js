@@ -17,12 +17,13 @@ import configureStore from './redux/configureStore';
 import Index from './pages/Index';
 import * as serviceWorker from './serviceWorker';
 
-const {store, urlData} = configureStore(window);
+const {store, urlData, dependencies} = configureStore(window);
 
 const indexProps = {
     mediaQuery: '(prefers-color-scheme: light)',
     mediaQueryOptions: {noSsr: true},
     url: urlData.url,
+    dependencies,
 };
 
 // const Index = (props) => { // only -23kb improvement

@@ -54,6 +54,7 @@ export class SyntaxWidget {
     }
 
     getId = () => {
+        //console.log("getId",this.id, this.contentWidgetManager, this.locLiveZoneActiveDecoration)
         return this.id;
     };
 
@@ -65,15 +66,15 @@ export class SyntaxWidget {
         return this.locLiveZoneActiveDecoration;
     };
 
-    mouseMove = ()=>{
+    mouseMove = () => {
         this.getContentWidgetManager()?.resolveMouseActionMouseMoveByWidgetId(this.getId());
     };
 
-    mouseDown = ()=>{
+    mouseDown = () => {
         this.getContentWidgetManager()?.resolveMouseActionMouseDownByWidgetId(this.getId());
     };
 
-    mouseLeave = ()=>{
+    mouseLeave = () => {
         this.getContentWidgetManager()?.resolveMouseActionMouseLeaveByWidgetId(this.getId());
     };
 
@@ -126,6 +127,8 @@ export class SyntaxWidget {
 
         }
 
+        // console.log("getDomNode", domNode);
+
         return domNode;
     };
     getPosition = () => {
@@ -140,6 +143,11 @@ export class SyntaxWidget {
         }
 
         const position = startPosition();
+
+        // console.log("getPosition", this.domNode, {
+        //     position,
+        //     preference
+        // });
 
         return {
             position,
@@ -170,8 +178,10 @@ export class SyntaxWidget {
     };
 
     afterRender = () => {
+        // console.log("afterRender", this.domNode);
         const {domRects, contentWidgetManager} = this;
         const {handleContentWidgetResize} = contentWidgetManager;
+        // console.log("afterRender", this.domNode);
 
         handleContentWidgetResize(domRects());
     };

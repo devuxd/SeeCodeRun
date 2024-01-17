@@ -14,15 +14,17 @@ const defaultUpdateBundleState = {
     errorType: null,
     errors: {},
     exceptions: {}, // coming from the parsers or bundlers
-    bundle: null,
+    // bundle: null,
+    // prevBundle: null,
     timestamp: null,
 };
 
 export const UPDATE_BUNDLE = "UPDATE_BUNDLE";
 export const UPDATE_BUNDLE_SUCCESS = "UPDATE_BUNDLE_SUCCESS";
 export const UPDATE_BUNDLE_FAILURE = "UPDATE_BUNDLE_FAILURE";
+export const UPDATE_BUNDLE_SKIP = "UPDATE_BUNDLE_SKIP";
 
-export const {updateBundle, updateBundleSuccess, updateBundleFailure} = createActions({
+export const {updateBundle, updateBundleSuccess, updateBundleFailure, updateBundleSkip} = createActions({
     UPDATE_BUNDLE: (editorsTexts, autoLog, activateAleInstance) => ({
         ...defaultUpdateBundleState,
         isBundling: true,
@@ -41,16 +43,24 @@ export const {updateBundle, updateBundleSuccess, updateBundleFailure} = createAc
         exceptions,
         errors,
     }),
+    UPDATE_BUNDLE_SKIP: () => ({
+        isSkip: true,
+    }),
 });
 
 
 export const updateBundleReducer = handleActions(
     {
-        [combineActions(updateBundle, updateBundleSuccess, updateBundleFailure)]: (
+        [combineActions(updateBundle, updateBundleSuccess, updateBundleFailure, updateBundleSkip)]: (
             state,
             {payload}
         ) => {
+            const {errors, exceptions, ...restS} = state;
+            let {bundle, prevBundle} = state;
+
             const {
+                isSkip,
+                isBundled,
                 isBundling,
                 editorId,
                 errors: newErrors,
@@ -61,14 +71,27 @@ export const updateBundleReducer = handleActions(
                 ...restP
             } = payload;
 
-            const {errors, exceptions, ...restS} = state;
+            if (isSkip) {
+                return state;
+            }
 
             let nextErrors = errors, nextExceptions = exceptions;
 
+            if (isBundled) {
+                prevBundle = bundle;
+                bundle = payload.bundle;
+                // const be = bundle === prevBundle;
+                // console.log("isBundled", {be, prevBundle, bundle});
+            }
+
             if (isBundling) {
+                // prevBundle = state.bundle;// ?? prevBundle;
                 nextErrors = {};
                 nextExceptions = {};
+            } else {
+                // prevBundle = null;
             }
+
 
             if (editorId) {
                 nextErrors = immutableAutoUpdateObjectArray(errors, editorId, newErrors);
@@ -78,9 +101,12 @@ export const updateBundleReducer = handleActions(
             return {
                 ...restS,
                 isBundling,
+                isBundled,
                 ...restP,
                 errors: nextErrors,
                 exceptions: nextExceptions,
+                bundle,
+                prevBundle,
             };
         }
     },
@@ -144,16 +170,37 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                         }
 
                         try {
+                            const _editorId = "js";
                             const [aleInstanceT, setAleInstanceT] = activateAleInstance();
 
                             aleInstance = aleInstanceT;
                             setAleInstance = setAleInstanceT;
                             //const {alJs, editorId, errors, errorType} =  autoLog?.updateIframe()??{};
-
+                            // let {commentsText, commentsLocs} = aleInstance.doPreBALE();
+                            // const {prevBundle} = state$.value.updateBundleReducer;
+                            // const prevCT = prevBundle?.commentsText;
+                            // const sameComments = !prevCT || prevCT === commentsText;
+                            // const editorChanges = state$.value.monacoEditorsReducer?.monacoEditorsStates?.[_editorId]?.changes;
+                            // console.log("state$.value",aleInstance, commentsLocs, editorChanges);
+                            // // console.log("sameComments", {sameComments, prevCT, commentsText,});
+                            // if (!sameComments) {
+                            //     // aleInstance.undoPreBALE();
+                            //
+                            //     return [updateBundleSkip()];
+                            //     // aleInstance = prevBundle.aleInstance;
+                            //     // alJs = prevBundle.alJs
+                            //     // commentsText = prevBundle.commentsText;
+                            // } else {
+                            //     alJs = aleInstance.getWrappedALECode(true);
+                            // }
+                            let {commentsText} = aleInstance.doPreBALE();
                             alJs = aleInstance.getWrappedALECode(true);
+
                             // checking if parsing error was thrown first? separate parsing js from ast traversal
 
+
                             bundle = (aleInstance && alJs) ? {
+                                commentsText,
                                 aleInstance,
                                 editorsTexts,
                                 alJs,

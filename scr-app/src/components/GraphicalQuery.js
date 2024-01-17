@@ -59,7 +59,7 @@ const styles = theme => ({
     }
 });
 
-// deprecated: todo switch to *base in RALE
+// deprecated: todo switch to *base in rale
 const GraphicalQuery = ({
                             classes,
                             outputRefs,

@@ -31,13 +31,14 @@ import {
 
 const mapStateToProps = (
     {monacoEditorsReducer, pastebinReducer}
-    , {editorId}
+    // , {editorId}
 ) => {
-    const {monacoEditorsStates} = monacoEditorsReducer;
+    // const {monacoEditorsStates} = monacoEditorsReducer;
     const {editorsTexts} = pastebinReducer;
-    const firecoPad = monacoEditorsStates?.[editorId]?.firecoPad;
+    // const firecoPad = monacoEditorsStates?.[editorId]?.firecoPad;
 
-    return firecoPad ? {editorsTexts, firecoPad} : {editorsTexts}; // do not replace if none found
+    // return firecoPad ? {editorsTexts, firecoPad} : {editorsTexts}; // do not replace if none found
+    return {editorsTexts};
 }
 const mapDispatchToProps = {
     updateBundle,
@@ -70,6 +71,11 @@ const styles = (theme) => {
                 opacity: 0.4,
                 filter: 'greyscale(85%)',
                 // fontWeight: 100,
+            },
+            [`.${MonacoExpressionClassNames.commentGlyphMarginClassName}`]: {
+                backgroundColor: `rgba(0, 255, 0, 0.35)`,
+                width: `5px !important`,
+                marginLeft: `3px`,
             },
             [`.${MonacoExpressionClassNames.deadExpressionClassName}`]: {
                 opacity: '0.467 !important',
@@ -568,37 +574,46 @@ class LiveExpressionStore extends PureComponent {
             editorsTexts,
             updateBundle,
             aleContext,
-            firecoPad,
+            firecoPad: aleFirecoPad,
         } = this.props;
 
-        const {monacoEditor} = firecoPad ?? {};
+        // const {monacoEditor} = firecoPad ?? {};
 
         const {activateAleInstance, setAleInstance} = aleContext;
+        activateAleInstance();
 
-
-        updateBundle(
-            editorsTexts,
-            this.autoLog,
-            () => {
-
-                const aleInstance = activateAleInstance(monacoEditor);
-
-                if (aleInstance) {
-                    // console.log("aleInstance", this.refreshRate);
-
-                    //reset
-                    this.handleTraceChange({
-                        timeline: [], logs: [], mainLoadedTimelineI: 0
-                    });
-                    aleInstance.setAfterTraceChange(this.afterTraceChange);
-                }
-
-                return [aleInstance, () => setAleInstance(aleInstance)];
-                // const {/*, decorators*/ getLocationId} = this.state;
-                // console.log("updateBundle");
-
+        aleFirecoPad.behaviors().aleInstanceSubject().subscribe(({aleInstance}) => {
+            if (!aleInstance) {
+                return;
             }
-        );
+            // console.log("firecoPad", aleFirecoPad)
+            updateBundle(
+                editorsTexts,
+                this.autoLog,
+                () => {
+
+                    // const aleInstance = activateAleInstance();
+
+                    if (aleInstance) {
+                        // console.log("aleInstance", this.refreshRate);
+
+                        //reset
+                        this.handleTraceChange({
+                            timeline: [], logs: [], mainLoadedTimelineI: 0
+                        });
+                        aleInstance.setAfterTraceChange(this.afterTraceChange);
+                    }
+
+                    return [aleInstance, () => setAleInstance(aleInstance)];
+                    // const {/*, decorators*/ getLocationId} = this.state;
+                    // console.log("updateBundle");
+
+                }
+            );
+
+        })
+
+
     };
 
     highlightSingleText = (loc, type = MonacoHighlightTypes.text, matches, isReveal = true) => {
@@ -714,9 +729,6 @@ class LiveExpressionStore extends PureComponent {
 
 
     afterTraceChange = (timeline, isTraceReset, timelineDataDelta, [from, to], programEndTimelineI, values, errorsData = []) => {
-
-
-
         //todo:
         // make it the timeline refresh active after bundle is ready : done
         //change refresh after each liveExpressionStoreChange, confirm is triggered by WALE push in timeline
@@ -758,7 +770,7 @@ class LiveExpressionStore extends PureComponent {
                 while (error = errorsData.pop()) {
                     const {errorObject} = error;
                     console.log("afterTraceChange", errorObject);
-                    if(errorObject.name === "TypeError"){
+                    if (errorObject.name === "TypeError") {
                         errorObject.message = errorObject.message.replace(/\(near.*/, "");
                     }
                     updatePlaygroundLoadFailure("js", errorObject);

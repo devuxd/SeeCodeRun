@@ -1,7 +1,7 @@
 import React, {
     useCallback,
     useEffect,
-    useMemo,
+    // useMemo,
     useRef,
     useState,
     useContext
@@ -16,7 +16,8 @@ import isString from 'lodash/isString';
 
 import {useSandboxIFrameHandler} from '../utils/reactUtils';
 import {
-    RALE, ALEContext
+    // rale,
+    ALEContext
 } from '../core/modules/ALE';
 
 import GraphicalMapper from './GraphicalMapper';
@@ -27,16 +28,22 @@ import {
     updatePlaygroundLoadSuccess,
     updatePlaygroundLoadCanceled,
 } from "../redux/modules/playground";
-import {editorIds} from "../core/AppManager";
-import PastebinContext from "../contexts/PastebinContext";
+import {isActivatePlayground} from "../utils/reduxUtils";
+// import {editorIds} from "../core/AppManager";
+// import PastebinContext from "../contexts/PastebinContext";
 
-const mapStateToProps = ({
-                             updateBundleReducer,
-                             updatePlaygroundReducer,
-                             firecoReducer,
-                             monacoEditorsReducer
-                         }) => {
-    const {isFirecoEditorsReady} = firecoReducer;
+
+
+
+const mapStateToProps = (reduxers) => {
+    const {
+        updateBundleReducer,
+        updatePlaygroundReducer,
+        monacoEditorsReducer
+    } = reduxers;
+
+    const activatePlayground = isActivatePlayground(reduxers);
+
     const {timestamp, bundle} = updateBundleReducer;
     const {
         isPlaygroundUpdating,
@@ -52,7 +59,7 @@ const mapStateToProps = ({
         timestamp,
         bundle, // address disconnect when there is a previous bundle value
         monacoEditor,
-        activatePlayground: isFirecoEditorsReady && !!bundle,
+        activatePlayground,
         isPlaygroundUpdating,
         isPlaygroundUpdated,
         isPlaygroundCorrupted,
@@ -111,18 +118,19 @@ const Playground = (
         visualElementDebounceTimeMs = 1000
     }
 ) => {
-    const {
-        data,
-        // isNew, searchState, highlightErrors, order,
-        // ...rest
-        //configureMappingEventListeners,
-        // orderBy, objectNodeRenderer,
-        // handleSelectClick, isRowSelected,
-        // highlightSingleText, setCursorToLocation,
-        // traceSubscriber,
-    } = useContext(PastebinContext);
-    const {aleInstance, activateAleInstance} = useContext(ALEContext);
-    const cacheRef = useRef({});
+    // const {
+    //     data,
+    //     // isNew, searchState, highlightErrors, order,
+    //     // ...rest
+    //     //configureMappingEventListeners,
+    //     // orderBy, objectNodeRenderer,
+    //     // handleSelectClick, isRowSelected,
+    //     // highlightSingleText, setCursorToLocation,
+    //     // traceSubscriber,
+    // } = useContext(PastebinContext);
+    const {aleInstance
+        // , activateAleInstance
+    } = useContext(ALEContext);
     const [key, setKey] = useState(0);
     const [isResizing, setIsResizing] = useState(null);
     const [visualElements, setVisualElements] = useState([]);
@@ -317,17 +325,7 @@ const Playground = (
                 ref={playgroundRef}
                 className={classes.iframeContainer}
             />
-            {
-                aleInstance &&
-                <>
-                    <RALE
-                        data={data}
-                        aleInstance={aleInstance}
-                        cacheRef={cacheRef}
-                    />
-                    <div>YOLO</div>
-                </>
-            }
+
             {
                 isResizing &&
                 <div className={classes.resizeBackdrop}

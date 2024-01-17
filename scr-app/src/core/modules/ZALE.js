@@ -18,7 +18,7 @@ import {
     isStatementOrExpressionWithArgument,
     isUnInitializedVariableDeclarator,
     LiveZoneTypes, ScopeTypes, getPathScopeExits,
-    getLoopScopeUID,
+    getLoopScopeUID, isRegisterParameter,
 } from "./ALE";
 
 export class LocLiveZones {
@@ -1419,12 +1419,14 @@ function locPushLoggableExpressionBasedOnParent(
     const isObjectOfMemberExpression = path.key === 'object' &&
         isLoggableMemberExpression(path.parentPath);
 
+
     if (copyLocLiveZonesFromParent || isObjectOfMemberExpression) {
-        locLiveZones.setParent(parentSnapshot.locLiveZones);
+        parentSnapshot && locLiveZones.setParent(parentSnapshot.locLiveZones);
         // locLiveZones.pushHighlights(
         //    ...parentSnapshot.locLiveZones.getHighlights()
         // );
     }
+
 
     if (isObjectOfMemberExpression) {
         return pushLocAllPath(path, locLiveZones);
@@ -1801,7 +1803,7 @@ function locPushAndResolveLoggableScope(path, locLiveZones, parentSnapshot, code
         // locLiveZones.pushHighlights(
         //    ...parentSnapshot.locLiveZones.getHighlights()
         // );
-        locLiveZones.setParent(parentSnapshot.locLiveZones);
+        parentSnapshot && locLiveZones.setParent(parentSnapshot.locLiveZones);
         return result;
     }
 
@@ -1810,9 +1812,9 @@ function locPushAndResolveLoggableScope(path, locLiveZones, parentSnapshot, code
 
         if (path.parentPath.isLoop() || path.parentPath.isFunction()) {
             // loopScopeUID && console.log("B:", loopScopeUID);
-            locLiveZones.setParent(parentSnapshot.locLiveZones);
+            parentSnapshot && locLiveZones.setParent(parentSnapshot.locLiveZones);
 
-            const classXSnapshot = parentSnapshot.parentSnapshot?.parentSnapshot;
+            const classXSnapshot = parentSnapshot?.parentSnapshot?.parentSnapshot;
             if (
                 classXSnapshot &&
                 (classXSnapshot.type === 'ClassDeclaration' ||
@@ -1824,7 +1826,7 @@ function locPushAndResolveLoggableScope(path, locLiveZones, parentSnapshot, code
         }
 
         if (locPushIfStatementBlock(path, locLiveZones)) {
-            locLiveZones.setParent(parentSnapshot.locLiveZones);
+            parentSnapshot && locLiveZones.setParent(parentSnapshot.locLiveZones);
             return result;
         }
 
@@ -1844,6 +1846,11 @@ function locPushAndResolveLoggableScope(path, locLiveZones, parentSnapshot, code
 // ALE compliant path zones end
 
 export function makePathSnapshot(path, code, expressions, zones, expressionId) {
+    let snapshot = expressionId >= 0 ? zones[expressionId] : null;
+    if (snapshot) {
+        return snapshot;
+    }
+
     const nodeSnapshot = makeNodeSnapshot(path.node);
 
     if (!nodeSnapshot) {
@@ -1854,11 +1861,31 @@ export function makePathSnapshot(path, code, expressions, zones, expressionId) {
         p, code, expressions, zones,
     )[prop]);
 
+    const functionParams =
+        path.isFunction() ? path.get("params").map(paramPath => {
+                    // if (isRegisterParameter(p)) {
+                    //     registerExpression(p);//
+                    // }
+                    let paramPathI = expressions.indexOf(paramPath);
+                    if (paramPathI < 0) {
+                        paramPathI = registerExpression(paramPath);
+                    }
+                    //console.log("fp", path, paramPathI, [...expressions]);//.find(e => e.listKey=== p.listKey)
+
+                    return {paramPathI, zone: expressions[paramPathI]};//makeNodeSnapshot(p.node);
+                }
+            ) :
+            null;
+
+    // path.isFunction() ?console.log("functionParams", functionParams):null;
+
+
     let liveZoneType = LiveZoneTypes.O;
 
-    let parentPathI = expressions.indexOf(path.parentPath);
-    if (parentPathI < 0) {
+    let parentPathI = path.parentPath ? expressions.indexOf(path.parentPath) : -1;
+    if (path.parentPath && parentPathI < 0) {
         parentPathI = registerExpression(path.parentPath);
+        // console.log("parentPathI", parentPathI);
     }
 
     const parentSnapshot = zones[parentPathI];
@@ -1883,7 +1910,7 @@ export function makePathSnapshot(path, code, expressions, zones, expressionId) {
         liveZoneType = LiveZoneTypes.B;
     }
 
-    if (!path.parentPath?.isBinary()) {
+    if (path.parentPath && !path.parentPath.isBinary()) {
         locPushLoggableExpressionBasedOnParent(
             path, locLiveZones, parentSnapshot
         );
@@ -1921,7 +1948,7 @@ export function makePathSnapshot(path, code, expressions, zones, expressionId) {
 
     const isLiteral = path.isLiteral();
     const isStrictLiteral = isLiteral && !path.isTemplateLiteral();
-    const snapshot = {
+    snapshot = {
         expressionId,
         type,
         parentType,
@@ -1929,6 +1956,7 @@ export function makePathSnapshot(path, code, expressions, zones, expressionId) {
         liveZoneType,
         isLiteral,
         isStrictLiteral,
+        functionParams,
         isRequireCall: false,
         isImportCall: false,
         importType: null,
@@ -1954,7 +1982,7 @@ export function makePathSnapshot(path, code, expressions, zones, expressionId) {
 
 export function makeImportSnapshot(
     pathOrNode, code, parentPathI, parentSnapshot,
-    uid, uidParent, expressions,importSourceName
+    uid, uidParent, expressions, importSourceName
 ) {
     const isRequireCall = isRequireCallExpression(pathOrNode);
     const isImportCall = isImportCallExpression(pathOrNode);
@@ -2079,26 +2107,80 @@ function makePathShallowPropsSnapshot(path, snapshot) {
     }
 }
 
+export const arrayRegisterStrategy = (el, findElI, accessI, addEl) => {
+    let i = findElI(el);
+    let registeredEl = null;
+    let isNew = true;
+    if (i >= 0) {
+        registeredEl = accessI(i);
+        isNew = false;
+    } else {
+        registeredEl = el;
+        i = addEl(el);
+    }
+
+    return [registeredEl, i, isNew];
+};
+
+export const nodeSnapshots = [];
+export const nodeSnapshotsFindIndex = (snapshot) => {
+    return nodeSnapshots.findIndex(({type, loc}) => snapshot.type === type && snapshot.loc === loc);
+};
+export const nodeSnapshotsAccessIndex = (i) => {
+    return nodeSnapshots[i];
+};
+export const nodeSnapshotsAdd = (snapshot) => {
+    return nodeSnapshots.push(snapshot) - 1;
+};
+
+
+export const registerNodeSnapshot = (snapshot) => {
+    return arrayRegisterStrategy(snapshot, nodeSnapshotsFindIndex, nodeSnapshotsAccessIndex, nodeSnapshotsAdd);
+};
+
 function makeNodeSnapshot(node) {
-    if (!node || !node.type || !node.loc) {
+    const {type, loc: nodeLoc} = node ?? {};
+
+    if (!node || !type || !nodeLoc) {
         return null;
     }
-    const type = node.type;
-    const loc = makeLocSnapshot(node.loc);
-    if (type && loc) {
-        return {type, loc};
+
+    const loc = makeLocSnapshot(nodeLoc);
+
+    if (!loc) {
+        return null;
     }
-    return null;
+
+    return registerNodeSnapshot({type, loc})?.[0];
 }
+
+export const nodeLocSnapshots = [];
+export const nodeLocSnapshotsFindIndex = (locSnapshot) => {
+    return nodeLocSnapshots.findIndex(l => LocLiveZones.locComparator(l, locSnapshot) === 0);
+};
+export const nodeLocSnapshotsAccessIndex = (i) => {
+    return nodeLocSnapshots[i]
+};
+export const nodeLocSnapshotsAdd = (locSnapshot) => {
+    return nodeLocSnapshots.push(locSnapshot) - 1;
+};
+
+
+export const registerNodeLocSnapshots = (locSnapshot) => {
+    return arrayRegisterStrategy(locSnapshot, nodeLocSnapshotsFindIndex, nodeLocSnapshotsAccessIndex, nodeLocSnapshotsAdd);
+};
 
 function makeLocSnapshot(loc) {
     if (!loc || !loc.start || !loc.end) {
         return null;
     }
-    return {
+
+    const locSnapshot = {
         start: {...loc.start},
         end: {...loc.end}
-    }
+    };
+
+    return registerNodeLocSnapshots(locSnapshot)?.[0];
 }
 
 function _registerExpression(path, code, expressions, zones) {
@@ -2113,7 +2195,18 @@ function _registerExpression(path, code, expressions, zones) {
     let zone = null;
     if (i < 0) {
         i = expressions.push(path) - 1;
-        zone = makePathSnapshot(path, code, expressions, zones, i);
+        // zones[i] = {};
+        // i = expressions.length;
+        // expressions[i] = path;
+        try {
+            zone = makePathSnapshot(path, code, expressions, zones, i);
+            // i = expressions.push(path) - 1;
+
+            // console.log("_registerExpression", zone);
+        } catch (e) {
+            console.log("_registerExpression !", e);
+        }
+
         // !zone && path.isReturnStatement() && console.log(">>", path.node.type, path.node.argument.type, path.node.argument, path.node.argument.loc, path.node?.loc);
         if (zone) {
             zones[i] = zone;

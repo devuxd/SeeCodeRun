@@ -25,7 +25,7 @@
             window.process = {platform: null, env: null};
             // done fix.
 
-            window.MonacoEnvironment = {globalAPI: true}
+            window.MonacoEnvironment = {globalAPI: true}; //fixes monaco 0.22.0 breaking change.
 
             // keeping it S...
             if ('%PUBLIC_URL%') {

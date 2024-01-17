@@ -57,27 +57,48 @@ export default class SyntaxFragment {
 
     };
 
-    constructor(dale, zone, decorationStyles) {
+    constructor(dale, zone, decorationStyles, isFunctionParams = false) {
         this.dale = dale;
         this.zone = zone;
-        // console.log("zone", zone);
-
         this.decorationStyles = decorationStyles;
-        this.rawRanges = zone.locLiveZones.getHighlights().map(
-            loc => dale.locToMonacoRange(loc)
-        );
+        this.isFunctionParams = isFunctionParams;
+        // console.log("zone", zone);
+        const extraFragments = [];
+        if (zone?.functionParams) {
+            zone.functionParams.forEach(fp => {
+                const {zone: fZone} = fp;
+                fZone && extraFragments.push(new SyntaxFragment(dale, fZone, decorationStyles, true));
+            });
+            console.log("extraFragments", {extraFragments});
+        }
 
-        this.rawAlternateRanges = zone.locLiveZones.getAlternateHighlights().map(
-            loc => dale.locToMonacoRange(loc)
-        );
+        this.extraFragments = () => extraFragments;
+
+        this.getSourceTextFocusRange = () => {
+            return zone.node?.loc && dale.locToMonacoRange(zone.node.loc);
+        }
+
+        const expressionRange = this.getSourceTextFocusRange();
+        this.expressionRange = () => expressionRange;
+
+        this.rawRanges = [expressionRange];
+        this.rawAlternateRanges = this.rawRanges;
+
+        if (zone.locLiveZones) {
+            this.rawRanges = zone.locLiveZones.getHighlights().map(
+                loc => dale.locToMonacoRange(loc)
+            );
+
+            this.rawAlternateRanges = zone.locLiveZones.getAlternateHighlights().map(
+                loc => dale.locToMonacoRange(loc)
+            );
+        }
+
 
         // console.log("ZE", zone);
         this.ranges = dale.rangeCompactor.compactRanges(this.rawRanges);
         this.alternateRanges = dale.rangeCompactor.compactRanges(this.rawAlternateRanges);
 
-        this.getSourceTextFocusRange = () => {
-            return zone.node?.loc && dale.locToMonacoRange(zone.node.loc);
-        }
 
         const sourceTextFocusRange = this.getSourceTextFocusRange();
         const allRanges = [...this.ranges];
@@ -132,15 +153,15 @@ export default class SyntaxFragment {
         };
 
         this.forBlockInit = () => {
-            return this.expressionInit() && !!this.dale?.getAleInstance?.()?.zale.lookupZoneParentByType(this.zone, "ForStatement");
+            return this.expressionInit() && !!this.dale?.getAleInstance?.()?.zale?.lookupZoneParentByType(this.zone, "ForStatement");
         };
 
         this.forXRight = () => {
-            return (this.expressionRight() && !!this.dale?.getAleInstance?.()?.zale.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
+            return (this.expressionRight() && !!this.dale?.getAleInstance?.()?.zale?.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
         }
 
         this.forXLeft = () => {
-            return (this.expressionLeft() && !!this.dale?.getAleInstance?.()?.zale.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
+            return (this.expressionLeft() && !!this.dale?.getAleInstance?.()?.zale?.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
         }
 
 
@@ -162,7 +183,7 @@ export default class SyntaxFragment {
                 // console.log("loop?", zone.type, {zone, currentRanges, decorationStyle, value});
             }
 
-            if (this.forXRight()) {
+            if (this.forXRight() || this.forXLeft()) {
                 const focusRange = this.getSourceTextFocusRange();
                 if (focusRange) {
                     currentRanges = [focusRange];
@@ -170,6 +191,12 @@ export default class SyntaxFragment {
 
                 // console.log("forInRight", zone.type, {zone, currentRanges, decorationStyle, value});
             }
+
+            if (zone.type === "CallExpression") {
+                // console.log("zone", zone, value);
+
+            }
+
 
             if (this.ifBlock()) {
                 if (this.ifBlockConsequent() || this.ifBlockAlternate()) {
@@ -243,7 +270,7 @@ export default class SyntaxFragment {
             const hoverOptions = decorationStyles[LiveZoneDecorationStyles.hover];
 
             if (decorationStyle === LiveZoneDecorationStyles.active) {
-                if (zone.type === "VariableDeclarator") {
+                if (zone.type === "VariableDeclarator" && zone.locLiveZones?.mainAnchor) {
                     const vRange = dale.locToMonacoRange(zone.locLiveZones.mainAnchor);
                     console.log("GOTCHA", vRange);
                     currentRanges = [vRange];

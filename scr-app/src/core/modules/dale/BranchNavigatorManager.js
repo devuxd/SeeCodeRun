@@ -314,9 +314,11 @@ export default class BranchNavigatorManager {
 
     locLiveZoneActiveDecorationsPush = (zone, logValues, locToMonacoRange, getBranchNavigator, forcePush = false, isImport = false, isError = false) => {
         const {dale} = this.aleInstance;
+        // console.log("locLiveZoneActiveDecorationsPush", dale);
         const options = ZoneDecorationType.resolveType(
             zone, LiveZoneDecorationStyles.active
         );
+
 
         // console.log("locLiveZoneActiveDecorationsPush", this.locLiveZoneActiveDecorations, this.locLiveZoneActiveDecorations.find(locLiveZoneActiveDecoration => {
         //     const {expressionId} = locLiveZoneActiveDecoration?.zone ?? {};
@@ -338,6 +340,7 @@ export default class BranchNavigatorManager {
         // });
         const loc = zone.locLiveZones.getMainAnchor();
         const range = locToMonacoRange?.(loc);
+        // console.log("locToMonacoRange", locToMonacoRange);
         const found = this.locLiveZoneActiveDecorations.find(
             d => d.range.equalsRange(range)
         );
@@ -365,14 +368,68 @@ export default class BranchNavigatorManager {
             activate = true;
         }
 
-        if (zone?.parentType === "ForInStatement") { // && zone?.key !== 'test' //zone?.parentType === "ForInStatement"
-            if (logValues?.length) {
-                syntaxFragment = dale.getSyntaxFragment(logValues[0].zone.expressionId)?.[2];
-                activate = true;
-            }
-            console.log('ForInStatement ', logValues?.length, {syntaxFragment, zone, range, logValues, found, b: getBranchNavigator()});
+        if (logValues?.length && zone.type === "CallExpression") {
+            const lv = logValues[0];
+            const expressionId = lv.zone.expressionId;
+            const expressionType = lv.entry.logValue.objectType;
+            const syntaxFragment = dale.getSyntaxFragment(lv.zone.expressionId)?.[2];
 
+            //const focusRange = syntaxFragment.getSourceTextFocusRange();
+            const range = syntaxFragment.expressionRange();
+            const rRange = syntaxFragment.ranges[syntaxFragment.ranges.length - 1];
+            console.log("syntaxFragment.ranges[syntaxFragment.ranges.length - 1]", syntaxFragment, range, rRange);
+            const aleFirecoPad = this.aleInstance.getModel().firecoPad;
+            aleFirecoPad?.behaviors?.().monacoInlayHintsSubjectNextCallExpression({
+                expressionId,
+                expressionType,
+                options: {kind: "Type"},
+                range,
+            });
+            // console.log("CallExpression  c", zone, lv.getValue(), lv, focusRange, syntaxFragment);
+            // dale.inLay();
         }
+
+        if (zone?.parentType === "ForInStatement"
+            // || zone?.parentType === "ForOfStatement"
+        ) { // && zone?.key !== 'test' //zone?.parentType === "ForInStatement"
+            if (logValues?.length) {
+                const expressionId = logValues[0]?.zone.expressionId;
+                if (expressionId) {
+                    syntaxFragment = dale.getSyntaxFragment(expressionId)?.[2];
+                    if (syntaxFragment) {
+                        activate = true;
+                    }
+                }
+
+                // const loopExpressionId = logValues[0]?.zone?.expressionId;
+                //
+                // if (loopExpressionId > -1 && logValues?.length) {
+                //     syntaxFragment = dale.getSyntaxFragment(loopExpressionId)?.[2] ?? syntaxFragment;
+                //     activate = true;
+                // }
+                // console.log('ForInStatement ', logValues?.length, {
+                //     syntaxFragment,
+                //     zone,
+                //     range,
+                //     logValues,
+                //     found,
+                //     b: getBranchNavigator()
+                // });
+
+            }
+        }
+
+
+        // if (zone?.functionParams) {
+        //     console.log('functionParams', logValues?.length, {
+        //         syntaxFragment,
+        //         zone,
+        //         range,
+        //         logValues,
+        //         found,
+        //         b: getBranchNavigator()
+        //     });
+        // }
 
 
         if (isImport) {
@@ -384,7 +441,7 @@ export default class BranchNavigatorManager {
         if (!activate && (forcePush || !found)) {
             syntaxFragment = dale.getSyntaxFragment(zone.expressionId)?.[2];
             activate = !!syntaxFragment;
-            if (zone?.parentSnapshot?.type == "VariableDeclarator") {
+            if (zone?.parentSnapshot?.type === "VariableDeclarator") {
                 // && zone.liveZoneType === LiveZoneTypes.B
                 const vRange = dale.locToMonacoRange(zone.parentSnapshot.locLiveZones.mainAnchor);
                 parentSyntaxFragment = dale.getSyntaxFragment(zone.parentSnapshot.expressionId)?.[2];
@@ -395,7 +452,6 @@ export default class BranchNavigatorManager {
         }
 
         //TODO: ADD THE LEFT FROM FORX !!!!! SEPARATE FROM BLOCK AND EXPRESSION IDS
-
         if (activate) {
             this.locLiveZoneActiveDecorations.push({
                 isImport,
@@ -408,10 +464,50 @@ export default class BranchNavigatorManager {
                 parentSyntaxFragment,
             });
         }
+        // if (activate) {
+        //
+        //
+        //     const p = {
+        //         // : false,
+        //         isImport,
+        //         zone,
+        //         logValues,
+        //         options,
+        //         range,
+        //         getBranchNavigator,
+        //         syntaxFragment,
+        //         parentSyntaxFragment,
+        //     };
+        //     const extraFragments = syntaxFragment.extraFragments();
+        //
+        //     if (extraFragments?.length) {
+        //         extraFragments.forEach(ef => {
+        //             const range = ef.getSourceTextFocusRange();
+        //             this.locLiveZoneActiveDecorations.push({
+        //                 ...p,
+        //                 // isFunctionParams: true,
+        //                 zone: ef.zone,
+        //                 range,
+        //                 parentSyntaxFragment: syntaxFragment
+        //             });
+        //         });
+        //        // console.log("locLiveZoneActiveDecorationsPush", {zone, extraFragments});
+        //     }
+        //
+        //
+        //     // if (zone?.functionParams) {
+        //     //     zone.functionParams.forEach(fp=>{
+        //     //         const range = locToMonacoRange?.(fp.zone.loc);
+        //     //         this.locLiveZoneActiveDecorations.push({...p, zone: fp.zone, range, parentSyntaxFragment: syntaxFragment});
+        //     //     });
+        //     //    // console.log("locLiveZoneActiveDecorationsPush", {zone, p});
+        //     // }
+        //
+        //     this.locLiveZoneActiveDecorations.push(p);
+        // }
     }
 
     handleTimelineChange = () => {
-
         // console.log("handleTimelineChange");
         if (!this.aleInstance) {
             return;
@@ -420,6 +516,8 @@ export default class BranchNavigatorManager {
         const {
             zale, bale, scr, dale, afterTraceChange, resetTimelineChange
         } = this.aleInstance.getModel();
+
+        // console.log("c", {zale, bale, scr, dale, afterTraceChange, resetTimelineChange});
 
         if (!(zale?.zones && bale?.scopesMaps && scr?.timeline)) {
             return;
@@ -485,7 +583,7 @@ export default class BranchNavigatorManager {
                     const {parentPathI} = zone;
 
                     let y = false;
-                    if (zone?.parentType === "ForInStatement") {
+                    if (zone?.parentType === "ForInStatement") { //|| zone?.parentType === "ForOfStatement"
                         y = true;
                         values[parentPathI] = values[parentPathI] ?? [];
                         logValues = values[parentPathI];
@@ -514,20 +612,24 @@ export default class BranchNavigatorManager {
                     cb.logValues = logValues;
 
 
-                    console.log('I', {
-                        y,
-                        parentPathI,
-                        expressionId,
-                        idValue,
-                        values,
-                        uid,
-                        extraExpressionId,
-                        zone,
-                        entry,
-                        extraZone,
-                        branchNavigator,
-                        logValues
-                    });
+                    if (zone?.scopeType === "function") {
+                        //paramsIdentifier
+                        console.log('I', {
+                            y,
+                            parentPathI,
+                            expressionId,
+                            idValue,
+                            values,
+                            uid,
+                            extraExpressionId,
+                            zone,
+                            entry,
+                            extraZone,
+                            branchNavigator,
+                            logValues
+                        });
+                    }
+
                     break;
                 case TraceEvents.R:
                     break;
@@ -573,7 +675,7 @@ export default class BranchNavigatorManager {
         // this.setLastTimelineLength((scr.timeline.length || 1) - 1); // s1: solved changing to "to" value
         this.setLastTimelineLength(to);
         // todo: adds anchors deltas, group locs by anchor,
-        //  and pass only delta anchors to afterTC, then render in RALE
+        //  and pass only delta anchors to afterTC, then render in rale
         const locLiveZoneActiveDecorations =
             this.getLocLiveZoneActiveDecorations();
         if (monacoEditor) {
@@ -628,34 +730,34 @@ export default class BranchNavigatorManager {
         );
     };
 
-    // handleMouseActionDecoration = (mouseActionDecorations) => {
-    //     if (!this.aleInstance) {
-    //         return;
-    //     }
-    //
-    //     const {
-    //         dale
-    //     } = this.aleInstance.getModel();
-    //
-    //     if (!dale?.locToMonacoRange) {
-    //         return;
-    //     }
-    //
-    //     console.log("handleMouseActionDecoration", mouseActionDecorations);
-    //     const zoneDecorations = [];
-    //     mouseActionDecorations.forEach(decoration => {
-    //         const zoneDecoration = this._getActiveZoneByDecorationId?.(decoration.id);
-    //         const zone = zoneDecoration?.zone;
-    //         zone?.locLiveZones.getHighlights().forEach(loc => {
-    //             zoneDecorations.push({
-    //                 options: ZoneDecorationType.resolveType(
-    //                     zone, LiveZoneDecorationStyles.hover
-    //                 ),
-    //                 range: dale.locToMonacoRange(loc),
-    //             });
-    //         });
-    //     });
-    //
-    //     return zoneDecorations;
-    // };
+// handleMouseActionDecoration = (mouseActionDecorations) => {
+//     if (!this.aleInstance) {
+//         return;
+//     }
+//
+//     const {
+//         dale
+//     } = this.aleInstance.getModel();
+//
+//     if (!dale?.locToMonacoRange) {
+//         return;
+//     }
+//
+//     console.log("handleMouseActionDecoration", mouseActionDecorations);
+//     const zoneDecorations = [];
+//     mouseActionDecorations.forEach(decoration => {
+//         const zoneDecoration = this._getActiveZoneByDecorationId?.(decoration.id);
+//         const zone = zoneDecoration?.zone;
+//         zone?.locLiveZones.getHighlights().forEach(loc => {
+//             zoneDecorations.push({
+//                 options: ZoneDecorationType.resolveType(
+//                     zone, LiveZoneDecorationStyles.hover
+//                 ),
+//                 range: dale.locToMonacoRange(loc),
+//             });
+//         });
+//     });
+//
+//     return zoneDecorations;
+// };
 }

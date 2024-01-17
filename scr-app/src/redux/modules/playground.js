@@ -222,6 +222,7 @@ export const updatePlaygroundEpic = (action$, state$, {appManager}) =>
         ofType(UPDATE_BUNDLE_SUCCESS),
         combineLatestWith(action$.pipe(ofType(UPDATE_PLAYGROUND_LOAD))),
         switchMap(([preAction, action]) => {
+            console.log("YYYYYYY");
                 let error = null;
                 let type = UPDATE_PLAYGROUND_LOAD_SUCCESS;
                 const setProgress = (...p) => console.log("setProgress", ...p);

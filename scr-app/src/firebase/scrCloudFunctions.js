@@ -6,7 +6,7 @@
 // const config = require("./cloud-functions.json");
 
 import {Observable} from 'rxjs';
-import queryString from 'query-string';
+// import queryString from 'query-string';
 
 
 import * as ScrFunctions from './scrFunctions';

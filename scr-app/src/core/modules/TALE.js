@@ -9,7 +9,7 @@ import isFunction from 'lodash/isFunction';
 import JSEN from '../../utils/JSEN';
 import ClassFactory from './ClassFactory';
 import {NavigationTypes} from './AutoLogShift';
-import {GraphicalIdiom} from "./RALE/IdiomaticInspector";
+import {GraphicalIdiom} from "./rale/IdiomaticInspector";
 
 export const MAGIC_TAG = `@$.@`;
 

@@ -8,10 +8,8 @@ export * as babelTypes from "@babel/types";
 import isString from 'lodash/isString';
 
 import {monacoProps} from "../../utils/monacoUtils";
-import BALE, {getAutoLogIdentifiers} from './BALE'; // Babel transforms
+import BALE, {getAutoLogIdentifiers, preBALE} from './BALE'; // Babel transforms
 
-import CALE from './CALE'; // connect require js
-import DALE from './dale/DALE'; // decorate editor
 import BranchNavigatorManager from './dale/BranchNavigatorManager'; // decorate editor
 import WALE from './WALE'; // trace bindings
 import ZALE from './ZALE'; // zone management
@@ -235,7 +233,10 @@ export const parseOptions = {
         "classPrivateProperties",
         "classPrivateMethods",
         "classStaticBlock",
-        "throwExpressions"
+        "throwExpressions",
+        // "syntaxOptionalChainingAssign"
+        // ["syntaxOptionalChainingAssign", {version: '2023-07'}]
+        // ["syntax-optional-chaining-assign", {version: '2023-07'}]
     ]
 };
 
@@ -262,7 +263,10 @@ export const handleExceptionAsRefProp = (refReturningCallback, ref) => {
 
 export const babelParse = (code, options = parseOptions, ref) => {
     return handleExceptionAsRefProp(
-        () => parse(code, options),
+        () => {
+            // console.log("babelParse", parse(code, options));
+            return parse(code, options);
+        },
         ref
     );
 
@@ -272,6 +276,7 @@ export const babelTraverse = (ast, visitor, ref) => {
     return handleExceptionAsRefProp(
         () => {
             traverse(ast, visitor);
+            // console.log("babelTraverse", ast);
             return ast;
         },
         ref
@@ -292,11 +297,12 @@ const defaultMonacoEditorLiveExpressionClassName =
     'monaco-editor-live-expression';
 
 const baseLiveEditorConstructionOptions = {
-    // glyphMargin: true,
     lineHeight: 18 + monacoProps.lineOffSetHeight,
     // 18 is the default, sync with css: max-height:18px; and padding-top
     nativeContextMenu: false,
-    hover: true,
+    folding: false,
+    hover: false,
+    glyphMargin: true,
 };
 export const MonacoOptions = {
     baseLiveEditorConstructionOptions,
@@ -759,6 +765,14 @@ export const isLoggableIdentifier = (path) => {
     );
 };
 
+export const isRegisterParameter = (path) => {
+    return (
+        path && (
+            path.listKey === "params" && path.key >= 0
+        )
+    );
+};
+
 // isLoggableExpressionBasedOnParent start
 export const isUnInitializedVariableDeclarator = (path) => (
     path.isVariableDeclarator() &&
@@ -940,8 +954,6 @@ export const resolveJSXExpressionReplacementType = (path) => {
     }
 
 
-
-
     if ((path?.parentPath?.isJSXSpreadAttribute())) {
         return JSXExpressionReplacementType.spreadAttribute;
     }
@@ -972,16 +984,16 @@ export const getLoopScopeUID = (path) => {
 
 
 class ALEManager {
+    firecoPad = null;
     editorId = null;
     prevModel = null;
     ids = null;
     original = null;
     code = null;
     output = null;
-    dale = null; // set by attachDALE
     zale = null;
     scr = null; // set by WALE
-    branchNavigatorManager = null; // used by RALE, set by activateTraceChanges
+    branchNavigatorManager = null; // used by rale, set by activateTraceChanges
     onTraceChange = null; // used by WALE, set by DALE
     // onOutputChange = null;
     onTraceChangeError = null;
@@ -992,7 +1004,7 @@ class ALEManager {
     globalObject
     options = null;
     key = null;
-    handleChangeContent = null;
+    // handleChangeContent = null;
     // storeActions = makeStoreActions();
     traceProvider = {
         trace: {
@@ -1002,7 +1014,9 @@ class ALEManager {
     };
 
     constructor(
-        editorId,
+        aleFirecoPad,
+        cale,
+        dale,
         customTraverseEnter,
         customTraverseExit,
         globalObject,
@@ -1010,7 +1024,10 @@ class ALEManager {
         // storeActions,
         key,
     ) {
-        this.editorId = editorId;
+        this.firecoPad = aleFirecoPad;
+        this.editorId = aleFirecoPad.id;
+        this.cale = cale;
+        this.dale = dale;
         this.ids = getAutoLogIdentifiers();
         this.customTraverseEnter = customTraverseEnter;
         this.customTraverseExit = customTraverseExit;
@@ -1034,20 +1051,22 @@ class ALEManager {
         this.onContentChangeDebounceOptions = onContentChangeDebounceOptions;
         this.onTraceChangeDebounceOptions = onTraceChangeDebounceOptions;
 
-        this.handleChangeContent = debounce(
-            () => {
-                return this._handleContentChange();
-            },
-            ...this.onContentChangeDebounceOptions
-        );
+        // this.handleChangeContent = debounce(
+        //     () => {
+        //         return this._handleContentChange();
+        //     },
+        //     ...this.onContentChangeDebounceOptions
+        // );
     }
 
     getModel = () => ({
+        firecoPad: this.firecoPad,
         code: this.code,
         zale: this.zale,
         bale: this.bale,
-        output: this.bale?.output,
+        cale: this.cale,
         dale: this.dale,
+        output: this.bale?.output,
         scr: this.scr,
         afterTraceChange: this.afterTraceChange,
         resetTimelineChange: this.resetTimelineChange,
@@ -1087,8 +1106,7 @@ class ALEManager {
         this.setOnTraceChange(null);
     }
 
-    attachDALE = (...rest) => {
-        this.dale = DALE(this, ...rest);
+    attachDALE = () => {
         this._handleContentChange();
     };
 
@@ -1101,19 +1119,43 @@ class ALEManager {
         return this.original;
     };
 
+
+    preBaleObj = null;
+
+    doPreBALE() {
+        this.preBaleObj = preBALE(this.getCode(), this.options);
+        const {cale, dale} = this;
+        if (cale && dale) {
+            cale.commentDecorator = dale.createCommentDecorator(cale.commentDecorator);
+            cale.commentDecorator.update(this.preBaleObj.commentsLocs);
+            //console.log("dale", {dale, ccs});
+        }
+        return this.preBaleObj;
+    }
+
+    undoPreBALE() {
+        this.preBaleObj = null;
+    }
+
     onALEChange = () => {
         // report bundle change via store!
         const code = this.getCode();
         const zale = (code ?? '') ? ZALE(code) : null;
+        const {cale, dale} = this;
+        const preBaleObj = this.preBaleObj ?? preBALE(code, this.options);
+        // console.log("preBaleObj", preBaleObj, {cale, dale});
         // pass down the trigger for calling update and success as well
         const bale = BALE(
-            code,
+            preBaleObj,
             zale,
+            cale,
             this.customTraverseEnter,
             this.customTraverseExit,
             this.options,
             this.key,
         );
+
+        this.preBaleObj = null;
 
         this.prevModel = this.getModel();
 
@@ -1123,7 +1165,12 @@ class ALEManager {
         // console.log("B", scrObject);
 
         this.setModel(code, zale, bale, scrObject, this.afterTraceChange);
-        this.dale?.onContentChange();
+
+        if (dale) {
+            dale.onContentChange();
+            cale.update(dale);
+        }
+
     };
 
     _handleContentChange = () => {
@@ -1153,7 +1200,7 @@ class ALEManager {
     };
 
     dispose = () => {
-        this.handleChangeContent?.cancel();
+        // this.handleChangeContent?.cancel();
         this.onTraceChange?.cancel();
         this.dale?.dispose?.();
     };
@@ -1210,14 +1257,16 @@ class ALEManager {
         }
     };
 
-    resolveCallPointByFunctionRef =(functionRef) =>{
+    resolveCallPointByFunctionRef = (functionRef) => {
         aleInstance.scr.aleJSEN.functions()
     }
 
 }
 
 const ALE = (
-    editorId,
+    aleFirecoPad,
+    cale,
+    dale,
     customTraverseEnter = null,
     customTraverseExit = null,
     globalObject = global.top ?? global,
@@ -1226,7 +1275,9 @@ const ALE = (
 ) => {
 
     return new ALEManager(
-        editorId,
+        aleFirecoPad,
+        cale,
+        dale,
         customTraverseEnter, customTraverseExit, globalObject,
         options, key
     );
@@ -1343,7 +1394,7 @@ export {
 
 export {
     default as CALE,
-} from './CALE';
+} from './cale/CALE';
 
 export {
     default as DALE,
@@ -1354,7 +1405,7 @@ export {
     VALE,
     ALEContext,
     GraphicalQueryBase
-} from './RALE';
+} from './rale';
 
 export {
     default as WALE,

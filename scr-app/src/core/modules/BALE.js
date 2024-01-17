@@ -5,6 +5,8 @@ import {
     getScopeUID,
 } from '../../utils/babelUtils';
 
+import DiffMatchPathJs from "../../utils/DiffMatchPathJs";
+
 import {
     babelParse,
     babelTraverse,
@@ -26,7 +28,7 @@ import {
     isSupportingContextOfExpression,
     isControlScope,
     getScopeExitType,
-    getPathScopeExits, getPathScopeType, ScopeExitTypes, isScopeExitStatement, ErrorTypes
+    getPathScopeExits, getPathScopeType, ScopeExitTypes, isScopeExitStatement, ErrorTypes,
 } from "./ALE";
 
 export function markPathAsVisited(path) {
@@ -287,30 +289,94 @@ function makeImportLogStatement(...rest) {
 
 // BABEL AUTO LOG EVERYTHING
 let c = 0;
-export default function BabeAutoLogEverything(
-    code,
-    zale,
-    customTraverseEnter = null,
-    customTraverseExit = null,
-    options = {},
-    key = 0,
-) {
+let previousCode = null;
+
+
+export const doCale = (ast, cale) => {
+    if (!(ast && cale)) {
+        return;
+    }
+
+    if (!ast.comments) {
+        return
+    }
+
+    ast.comments.forEach((comment, id) => {
+        const commentHandler = (getCommentCheck) => {
+
+            const codeCommentCheck = getCommentCheck(comment, comment.value);
+            //
+            if (codeCommentCheck) {
+                //console.log("codeCommentCheck", comment.value, codeCommentCheck);
+                return codeCommentCheck;
+            }
+            return null;
+        };
+        cale.onCodeComment(commentHandler);
+    });
+};
+
+
+export function preBALE(code, options) {
     const disableConsoleWarnings =
         options === true || options.disableProgramScopeExit;
     const disableProgramScopeExit =
         options === true || options.disableProgramScopeExit;
     const enableDynamicImportDynamicSources =
         !options === true || options.enableDynamicImportDynamicSources;
-    const _this = this;
 
-    const scopesMaps = {};
 
     const exceptions = [];
     //throwable change is bale object and refs
     const throwables = {
         exceptions,
     };
+
     const ast = babelParse(code, undefined, throwables);
+
+    // const commentsText = ast?.comments?.reduce((r, e) => {
+    //     return `${r}:${e.value}`;
+    // }, "") ?? "";
+
+    const commentsText = JSON.stringify(ast?.comments?.map(c => c.value) ?? []);
+    const commentsLocs = ast?.comments?.map(c => ({...(c.loc ?? {})})) ?? [];
+
+    return {
+        preBALE,
+        commentsText,
+        commentsLocs,
+        disableConsoleWarnings, disableProgramScopeExit, enableDynamicImportDynamicSources, exceptions, throwables,
+        ast
+    };
+}
+
+export default function BabeAutoLogEverything(
+    code,
+    zale,
+    cale,
+    customTraverseEnter = null,
+    customTraverseExit = null,
+    options = {},
+    key = 0,
+) {
+    const {
+        disableConsoleWarnings, disableProgramScopeExit,
+        enableDynamicImportDynamicSources, exceptions, throwables,
+        ast
+    } = preBALE === code?.preBALE ? code : preBALE(code, options);
+
+    const _this = this;
+    const scopesMaps = {};
+
+    // if (previousCode) {
+    //     const diffMatchPathJs =new DiffMatchPathJs();
+    //     const diff = diffMatchPathJs.diff_main(previousCode, code);
+    //     const ast0 = babelParse(code, undefined, throwables);
+    //     console.log("BALE", {diff, ast0, ast});
+    // }
+    //
+    // previousCode = code;
+
     throwables.errors = ast?.errors ?? [];
     const {errors} = throwables;
 
@@ -327,6 +393,7 @@ export default function BabeAutoLogEverything(
         }
         return false;
     };
+
 
     const bale = {
         ast,
@@ -362,13 +429,50 @@ export default function BabeAutoLogEverything(
 
     c++;
 
+    bale.uidOffset = -1;
+
+    bale.uidOnset = (uid) => {
+        if (bale.uidOffset < 0) {
+            return uid;
+        }
+
+        return uid - bale.uidOffset;
+    };
+
+    doCale(ast, cale);
+    const codeCommentChecks = cale?.commentChecksByType();
+
     bale.visitor = {
         enter: (path) => {
             customTraverseEnter && customTraverseEnter(path, _this);
 
+            // if (path.isFile()) {
+            //     console.log("isComment", path);
+            // }
+
+            if (codeCommentChecks) {
+                const line = (path.node?.loc?.start?.line) ?? -1;
+                if (line > 0) {
+                    // console.log(">>", {path, line,  codeCommentChecks});
+                    const m = codeCommentChecks.find(c => c.afterLineNumber + 1 === line);
+                    if (m) {
+
+                        path.state = true;
+                        return;
+                    }
+
+                }
+            }
+
+            if (bale.uidOffset < 0) {
+                // console.log("bale.visitor", path);
+                bale.uidOffset = path.scope?.uid ?? -1;
+            }
+
             if (path.state) {
                 return;
             }
+
 
             if (path.key === 'left' && path.parentPath?.isAssignmentExpression()) {
                 markPathAsVisited(path);
@@ -538,7 +642,7 @@ export default function BabeAutoLogEverything(
             }
         }
     };
-
+    // babelTraverse(babelParse(code, undefined, throwables), bale.visitor, throwables);
     babelTraverse(bale.ast, bale.visitor, throwables);
 
     if (bale.throws()) {
@@ -822,26 +926,26 @@ export default function BabeAutoLogEverything(
 
             if (jsxReplacementType === JSXExpressionReplacementType.refIntercept) {
                 //todo: consider ref rerender du to new ref every time
-                    let valueNode = path.node.value ?? undefinedIdentifier();
-                    const contained = t.isJSXExpressionContainer(valueNode);
-                    valueNode = contained ? valueNode.expression : valueNode;
+                let valueNode = path.node.value ?? undefinedIdentifier();
+                const contained = t.isJSXExpressionContainer(valueNode);
+                valueNode = contained ? valueNode.expression : valueNode;
 
-                    //console.log(JSXExpressionReplacementType.refIntercept, path, path.node.value?.type, path.node.value?.expression?.type);
+                //console.log(JSXExpressionReplacementType.refIntercept, path, path.node.value?.type, path.node.value?.expression?.type);
 
-                    const interceptor = makeAlCall(
-                        containingScope.uid,
-                        makeAlPreCall(
-                            ...preCallParams
-                        ),
-                        valueNode,
-                        makeAlPostCall(i)
-                    );
+                const interceptor = makeAlCall(
+                    containingScope.uid,
+                    makeAlPreCall(
+                        ...preCallParams
+                    ),
+                    valueNode,
+                    makeAlPostCall(i)
+                );
 
-                    if (contained) {
-                        path.node.value.expression = interceptor;
-                    } else {
-                        path.node.value = t.jsxExpressionContainer(interceptor);
-                    }
+                if (contained) {
+                    path.node.value.expression = interceptor;
+                } else {
+                    path.node.value = t.jsxExpressionContainer(interceptor);
+                }
 
                 return;
 
@@ -883,7 +987,6 @@ export default function BabeAutoLogEverything(
                 // }
                 return;
             }
-
 
 
             switch (nodeType) {
@@ -977,7 +1080,7 @@ export default function BabeAutoLogEverything(
             path.node.loc = path.node.loc ?? nodeLoc;
             markPathAsVisited(path);
 
-        }catch(e){
+        } catch (e) {
             console.log("e", e);
         }
     }

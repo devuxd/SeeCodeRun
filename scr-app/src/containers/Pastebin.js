@@ -1,6 +1,6 @@
 import 'react-resizable/css/styles.css';
 import React, {
-    createContext, createRef, PureComponent, useContext,
+    createRef, PureComponent, useContext,
 } from 'react';
 /** @jsxImportSource @emotion/react */
 import {jsx} from '@emotion/react';
@@ -46,7 +46,7 @@ import {
     useStyles
 } from 'react-inspector';
 
-import ALE, {ErrorTypes, GraphicalQueryBase, MonacoOptions} from '../core/modules/ALE';
+import ALE, {ErrorTypes, GraphicalQueryBase, MonacoOptions, RALE} from '../core/modules/ALE';
 
 import {configureFindChunks, functionLikeExpressions} from '../utils/scrUtils';
 import {VisualQueryManager} from '../core/modules/VisualQueryManager';
@@ -80,13 +80,17 @@ import TopNavigationBar from '../components/TopNavigationBar';
 import PastebinContext from '../contexts/PastebinContext';
 import {ThemeContext} from '../themes';
 
-import ALEContext from "../core/modules/RALE/ALEContext";
+import ALEContext from "../core/modules/rale/ALEContext";
 import withPersistence from '../containers/withPersistence';
 import LazyHighlighter from "../common/LazyHighlighter";
-import Demo from "./Demo";
-import {updatePlaygroundLoadFailure} from "../redux/modules/playground";
 import {updateBundleFailure} from "../redux/modules/liveExpressionStore";
-import {editorIds} from "../core/AppManager";
+
+import {RALEContextProvider} from "../core/modules/rale/RALE";
+import {IdiomaticProvider} from "../core/modules/rale/IdiomaticContext";
+import IdiomaticView from "../core/modules/rale/IdiomaticView";
+import {ArtifactContext} from "../core/modules/rale/ArtifactContext";
+
+// import {isActivatePlayground} from "../utils/reduxUtils";
 
 const withPastebinSearchContext = Component => {
     return props => {
@@ -234,7 +238,7 @@ const IdiomaticObjectType = withStyles(vStyles)(({aleInstance, classes, object})
 
         default:
             <span className={classes.liveExpressionObjectTypeDefault}>{objectValue}</span>;
-           // return objectValue;
+        // return objectValue;
     }
 
 });
@@ -330,6 +334,12 @@ export const pastebinConfigureLayout =
             getCurrentGridLayouts,
         };
     };
+
+const mapStateToProps = null;
+//     (reduxers) => {
+//     const activatePlayground = isActivatePlayground(reduxers);
+//     return {activatePlayground};
+// };
 
 const mapDispatchToProps = {pastebinConfigureLayout};
 
@@ -633,6 +643,7 @@ class Pastebin extends PureComponent {
         d.log = this.handleChangePointOfViewTiles;
         this.textInLocCacheResetThreshold = 1000;
         this.cleanEditorTextInLocCache();
+        this.cacheRef = createRef({});
     }
 
     //layout: Layout, oldItem: LayoutItem, newItem: LayoutItem,
@@ -643,6 +654,7 @@ class Pastebin extends PureComponent {
         this.onGridResize(true);
     };
 
+    onVisualQueryChangeTid = null;
     onVisualQueryChange = (newVisualQuery = [], visualIds, action) => {
         this.setState(({searchState = {}}) => {
             let {visualQueryPreview = [], visualQuery = []} = searchState;
@@ -672,8 +684,8 @@ class Pastebin extends PureComponent {
                 visualQuery,
                 visualQueryPreview,
             };
-
-            setTimeout(() => {
+            clearTimeout(this.onVisualQueryChangeTid);
+            this.onVisualQueryChangeTid = setTimeout(() => {
                 this.setState(state => {
                     const {
                         orderBy,
@@ -1195,6 +1207,12 @@ class Pastebin extends PureComponent {
         };
     };
 
+    handleChangePartialSearchValue = searchState => {
+        this.setState(prevState => (
+            this.setSearchState({...prevState.searchState, ...searchState})
+        ));
+    };
+
     handleChangeSearchValue = value => {
         this.setState(prevState => (
             this.setSearchState({...prevState.searchState, value})
@@ -1402,9 +1420,9 @@ class Pastebin extends PureComponent {
             const aleContext = same ? _aleContext : {..._aleContext, aleInstance};
 
             if (!same) {
-                _aleContext?.aleInstance?.dale.stop();
-                // aleContext?.aleInstance?.dispose();
-                aleInstance?.dale?.start(aleContext?.aleInstance?.dale);
+                // _aleContext?.aleInstance?.dale.stop();
+                // // aleContext?.aleInstance?.dispose();
+                // aleInstance?.dale?.start(aleContext?.aleInstance?.dale);
 
                 if (aleContext.VisualQueryManager) {
                     aleContext.VisualQueryManager.visualQuery = [];
@@ -1422,29 +1440,87 @@ class Pastebin extends PureComponent {
     //     this._onOutputChange?.();
     // };
 
-    activateAleInstance = (monacoEditor, onUnsafeAct) => { // propates exception, catch for user reporting
+    activateAleInstance = () => { // propates exception, catch for user reporting
         // this._onOutputChange = onOutputChange;
+        const {dependencies} = this.props;
+        const {appManager} = dependencies;
+        // let aleInstance = null;
+        // const {aleInstanceSubject, aleInstanceContext} = appManager.rxApp().aleFirecoPad().behaviors();
+        // // console.log("activateAleInstance", appManager.rxApp().aleFirecoPad(), appManager.rxApp().aleFirecoPad().behaviors(), aleInstanceContext());
+        //
+        // aleInstanceContext()
+        //     .subscribe(
+        //         ({aleFirecoPad, cale, dale}) => {
+        //             console.log("activateAleInstance", aleInstanceContext());
+        //             if (!(aleFirecoPad && cale && dale)) {
+        //                 return;
+        //             }
+        //
+        //             aleInstance?.dispose?.();
+        //
+        //             aleInstance = ALE(
+        //                 aleFirecoPad.id,
+        //                 cale,
+        //                 dale,
+        //                 null,
+        //                 null,
+        //                 global.top ?? global,
+        //                 true,
+        //                 // onUnsafeAct,
+        //             );
+        //             aleInstance.activateTraceChanges();
+        //             // console.log("aleInstance", aleInstance);
+        //             aleInstanceSubject().next({aleInstance});
+        //
+        //         }
+        //     );
+
+        //
+        appManager.rxApp().aleFirecoPad().behaviors().aleFirecoPadSubject?.().subscribe(({aleFirecoPad}) => {
+            if (!aleFirecoPad) {
+                return;
+            }
+
+            const {caleSubject, daleSubject, aleInstanceSubject} = aleFirecoPad.behaviors() ?? {};
+
+            let aleInstance = null;
+            caleSubject().subscribe(({cale}) => {
+                daleSubject().subscribe(({dale}) => {
+                    if (!(cale && dale)) {
+                        return;
+                    }
+
+                    aleInstance?.dispose?.();
+
+                    aleInstance = ALE(
+                        aleFirecoPad,
+                        cale,
+                        dale,
+                        null,
+                        null,
+                        global.top ?? global,
+                        true,
+                        // onUnsafeAct,
+                    );
+                    aleInstance.activateTraceChanges();
+                    // console.log("aleInstance", aleInstance);
+                    aleInstanceSubject().next({aleInstance});
+                    this.setAleInstance(aleInstance);
+                });
+
+            });
 
 
-        const aleInstance = ALE(
-            editorIds.js,
-            null,
-            null,
-            global.top ?? global,
-            true,
-            // onUnsafeAct,
-        );
-
-        aleInstance.activateTraceChanges();
+        });
 
 
         // aleInstance.setOnOutputChange(this.onOutputChange);
 
-        aleInstance.attachDALE(global.monaco, monacoEditor, () => {
-        }, console.log);
+        // aleInstance.attachDALE(monaco, monacoEditor, () => {
+        // }, console.log);
         // console.log("attachDALE", aleInstance);
         // this.setAleInstance(aleInstance);
-        return aleInstance;
+        return null;
     };
 
     handleChangeGraphicalLocator = () => this.setState(
@@ -1525,6 +1601,7 @@ class Pastebin extends PureComponent {
             visualKey: null,
             value: '',
             searchWords: defaultSearchWords,
+            setSearchState: this.setSearchState,
             handleChangeValue: this.handleChangeSearchValue,
             handleFilterClick: this.handleChangeSearchFilterClick,
             matchesFilterTrace: this.matchesFilterTrace,
@@ -1539,6 +1616,7 @@ class Pastebin extends PureComponent {
             ),
             findChunks: configureFindChunks(true),
             functionLikeExpressions: functionLikeExpressions,
+            handleChangePartialSearchValue: this.handleChangePartialSearchValue,
         },
         aleContext: {
             Inspector,
@@ -1678,12 +1756,16 @@ class Pastebin extends PureComponent {
         const {
             gridRef,
             theme, classes,
-            editorIds, TopNavigationBarProps,
+            TopNavigationBarProps,
             isTopNavigationToggled,
             width,
             height,
             data,
+            dependencies,
+            // activatePlayground,
         } = this.props;
+
+        const editorIds = dependencies?.appManager?.editorIds;
 
         const {
             gridLayouts,
@@ -1700,6 +1782,8 @@ class Pastebin extends PureComponent {
             // jsErrorState,
         } = this.state;
 
+        const {aleInstance} = aleContext;
+
         const {appUnits} = theme;
 
         const {autorunDelay = "1500",} = data;
@@ -1714,198 +1798,221 @@ class Pastebin extends PureComponent {
             gridLayoutFormatter.currentBreakPoint
             ] = rowHeight - appUnits.margin;
 
-        const debugDrawer = (isDebug && global.monaco && global.monaco.editor
-            && isAutoLogActive &&
-            <Drawer anchor={"bottom"} open={isAutoLogActive}
-                    onClose={this.handleChangeAutoExpand}>
-                <PointOfView monaco={global.monaco}
-                             tiles={pointOfViewTiles}/>
-            </Drawer>);
+        // const debugDrawer = (isDebug && global.monaco && global.monaco.editor
+        //     && isAutoLogActive &&
+        //     <Drawer anchor={"bottom"} open={isAutoLogActive}
+        //             onClose={this.handleChangeAutoExpand}>
+        //         <PointOfView monaco={global.monaco}
+        //                      tiles={pointOfViewTiles}/>
+        //     </Drawer>);
 
         const _rowHeight = gridLayoutFormatter.rowHeights[
             gridLayoutFormatter.currentBreakPoint
             ];
 
+
+        const rale = (
+            (aleInstance
+                // &&
+                // activatePlayground
+            ) &&
+            <>
+                <RALE
+                    // data={this.state.data}
+                    // aleInstance={aleInstance}
+                    // cacheRef={this.cacheRef}
+                />
+                {/*<div>YOLO</div>*/}
+            </>
+        );
+
         return (
             <PastebinContext.Provider
                 value={this.state}
             >
-                <ALEContext.Provider value={aleContext}>
-                    {debugDrawer}
-                    <TopNavigationBar {...TopNavigationBarProps} demo={demo}
-                                      handleClickDemo={this.handleClickDemo}/>
-                    {demo ? <Demo open={demo} handleClose={this.closeDemo}/> : null}
-                    <Responsive
-                        innerRef={gridRef}
-                        width={width}
-                        breakpoints={gridLayoutFormatter.gridBreakpoints}
-                        layouts={gridLayouts}
-                        cols={gridLayoutFormatter.grid.cols}
-                        verticalCompact={true}
-                        compactType={'vertical'}
-                        autoSize={true}
-                        margin={appUnits.marginArray}
-                        containerPadding={appUnits.marginArray}
-                        rowHeight={_rowHeight}
-                        onResizeStart={this.onResizeStart}
-                        onResize={this.onResize}
-                        onResizeStop={this.onResizeStop}
-                        draggableHandle={`.${classes.draggable}`}
-                        onDragStart={this.onDragStart}
-                        onDrag={this.onDrag}
-                        onDragStop={this.onDragStop}
-                        onLayoutChange={this.onLayoutChange}
-                        onBreakpointChange={this.onBreakpointChange}
-                    >
-                        <Paper
-                            elevation={1}
-                            key="scriptContainer"
-                            onMouseEnter={
-                                this.handleChangeEnterCellScriptContainer
-                            }
-                            onMouseLeave={
-                                this.handleChangeLeaveCellScriptContainer
-                            }
-                        >
-                            <Editor
-                                editorId={editorIds['js']}
-                                observeMouseEvents
-                                observeLiveExpressions={true}
-                                updateMonacoEditorLayout={
-                                    this.updateMonacoEditorLayout(
-                                        editorIds['js']
-                                    )
-                                }
-                                // errorState = {jsErrorState}
-                                locToMonacoRange={aleContext?.locToMonacoRange}
-                            />
-                            {hoveredCellKey === 'scriptContainer' ?
-                                null
-                                : <LanguageJavaScriptIcon
-                                    className={classes.icon}
-                                />
-                            }
-                        </Paper>
-                        <Paper
-                            elevation={1}
-                            key="htmlContainer"
-                            onMouseEnter={
-                                this.handleChangeEnterCellHtmlContainer
-                            }
-                            onMouseLeave={
-                                this.handleChangeLeaveCellHtmlContainer
-                            }
-                        >
-                            <Editor editorId={editorIds['html']}
-                                    updateMonacoEditorLayout={
-                                        this.updateMonacoEditorLayout(
-                                            editorIds['html']
-                                        )
-                                    }
-                            />
-                            {hoveredCellKey === 'htmlContainer' ?
-                                null
-                                : <LanguageHtml5Icon
-                                    className={classes.icon}
-                                />
-                            }
-                        </Paper>
-                        <Paper
-                            elevation={1}
-                            key="cssContainer"
-                            onMouseEnter={
-                                this.handleChangeEnterCellCssContainer
-                            }
-                            onMouseLeave={
-                                this.handleChangeLeaveCellCssContainer
-                            }
-                        >
-                            <Editor
-                                editorId={editorIds['css']}
-                                updateMonacoEditorLayout={
-                                    this.updateMonacoEditorLayout(
-                                        editorIds['css']
-                                    )
-                                }
-                            />
-                            {hoveredCellKey === 'cssContainer' ?
-                                null
-                                : <LanguageCss3Icon
-                                    className={classes.icon}
-                                />
-                            }
-                        </Paper>
-                        <Paper
-                            elevation={1}
-                            key="debugContainer"
-                            className={classes.debugContainer}
-                            onMouseEnter={
-                                this.handleChangeEnterCellDebugContainer
-                            }
-                            onMouseLeave={
-                                this.handleChangeLeaveCellDebugContainer
-                            }
-                        >
-
-                            <DebugContainer
-                                tabOptions={tabOptions}
-                                handleChangeTab={this.handleChangeTab}
-                                handleChangePlaying={
-                                    this.handleChangePlaying
-                                }
-                                isPlaying={isPlaying}
-                            />
-
-
-                            {isDebugLoading ?
-                                <span
-                                    className={classes.loadingFeedback}
+                <ArtifactContext.Provider value={{searchState}}>
+                    <ALEContext.Provider value={aleContext}>
+                        <RALEContextProvider>
+                            <IdiomaticProvider>
+                                {rale}
+                                {/*{debugDrawer}*/}
+                                <TopNavigationBar {...TopNavigationBarProps} demo={demo}
+                                                  handleClickDemo={this.handleClickDemo}/>
+                                <Responsive
+                                    innerRef={gridRef}
+                                    width={width}
+                                    breakpoints={gridLayoutFormatter.gridBreakpoints}
+                                    layouts={gridLayouts}
+                                    cols={gridLayoutFormatter.grid.cols}
+                                    verticalCompact={true}
+                                    compactType={'vertical'}
+                                    autoSize={true}
+                                    margin={appUnits.marginArray}
+                                    containerPadding={appUnits.marginArray}
+                                    rowHeight={_rowHeight}
+                                    onResizeStart={this.onResizeStart}
+                                    onResize={this.onResize}
+                                    onResizeStop={this.onResizeStop}
+                                    draggableHandle={`.${classes.draggable}`}
+                                    onDragStart={this.onDragStart}
+                                    onDrag={this.onDrag}
+                                    onDragStop={this.onDragStop}
+                                    onLayoutChange={this.onLayoutChange}
+                                    onBreakpointChange={this.onBreakpointChange}
                                 >
+                                    <Paper
+                                        elevation={1}
+                                        key="scriptContainer"
+                                        onMouseEnter={
+                                            this.handleChangeEnterCellScriptContainer
+                                        }
+                                        onMouseLeave={
+                                            this.handleChangeLeaveCellScriptContainer
+                                        }
+                                    >
+                                        <Editor
+                                            editorId={editorIds['js']}
+                                            observeMouseEvents
+                                            observeLiveExpressions={true}
+                                            updateMonacoEditorLayout={
+                                                this.updateMonacoEditorLayout(
+                                                    editorIds['js']
+                                                )
+                                            }
+                                            // errorState = {jsErrorState}
+                                            locToMonacoRange={aleContext?.locToMonacoRange}
+                                        />
+                                        {hoveredCellKey === 'scriptContainer' ?
+                                            null
+                                            : <LanguageJavaScriptIcon
+                                                className={classes.icon}
+                                            />
+                                        }
+                                    </Paper>
+                                    <Paper
+                                        elevation={1}
+                                        key="htmlContainer"
+                                        onMouseEnter={
+                                            this.handleChangeEnterCellHtmlContainer
+                                        }
+                                        onMouseLeave={
+                                            this.handleChangeLeaveCellHtmlContainer
+                                        }
+                                    >
+                                        <Editor editorId={editorIds['html']}
+                                                updateMonacoEditorLayout={
+                                                    this.updateMonacoEditorLayout(
+                                                        editorIds['html']
+                                                    )
+                                                }
+                                        />
+                                        {hoveredCellKey === 'htmlContainer' ?
+                                            null
+                                            : <LanguageHtml5Icon
+                                                className={classes.icon}
+                                            />
+                                        }
+                                    </Paper>
+                                    <Paper
+                                        elevation={1}
+                                        key="cssContainer"
+                                        onMouseEnter={
+                                            this.handleChangeEnterCellCssContainer
+                                        }
+                                        onMouseLeave={
+                                            this.handleChangeLeaveCellCssContainer
+                                        }
+                                    >
+                                        <Editor
+                                            editorId={editorIds['css']}
+                                            updateMonacoEditorLayout={
+                                                this.updateMonacoEditorLayout(
+                                                    editorIds['css']
+                                                )
+                                            }
+                                        />
+                                        {hoveredCellKey === 'cssContainer' ?
+                                            null
+                                            : <LanguageCss3Icon
+                                                className={classes.icon}
+                                            />
+                                        }
+                                    </Paper>
+                                    <Paper
+                                        elevation={1}
+                                        key="debugContainer"
+                                        className={classes.debugContainer}
+                                        onMouseEnter={
+                                            this.handleChangeEnterCellDebugContainer
+                                        }
+                                        onMouseLeave={
+                                            this.handleChangeLeaveCellDebugContainer
+                                        }
+                                    >
+
+                                        <DebugContainer
+                                            tabOptions={tabOptions}
+                                            handleChangeTab={this.handleChangeTab}
+                                            handleChangePlaying={
+                                                this.handleChangePlaying
+                                            }
+                                            isPlaying={isPlaying}
+                                        />
+
+
+                                        {isDebugLoading ?
+                                            <span
+                                                className={classes.loadingFeedback}
+                                            >
                                         <MoreHorizIcon/>
                                     </span>
-                                : null}
-                        </Paper>
-                        <Paper
-                            elevation={1}
-                            key="playgroundContainer"
-                            className={classes.playgroundContainer}
-                            onMouseEnter={
-                                this.handleChangeEnterCellPlaygroundContainer
-                            }
-                            onMouseLeave={
-                                this.handleChangeLeaveCellPlaygroundContainer
-                            }
-                        >
-                            <DragHandleIcon
-                                className={classes.draggable}
-                            />
-                            <Playground
-                                autorunDelay={autorunDelay}
-                                editorIds={editorIds}
-                                isAutoLogActive={isAutoLogActive}
-                                // isGraphicalLocatorActive={
-                                //     isGraphicalLocatorActive
-                                // }
-                                // handleChangeGraphicalLocator={
-                                //     this.handleChangeGraphicalLocator
-                                // }
-                                resizeListener={this.setResizeListener}
-                                onUnsafeAct={this.handleUnsafeAct}
-                            />
-                            {hoveredCellKey === 'playgroundContainer' ?
-                                null
-                                : <TvIcon
-                                    className={classes.icon}
+                                            : null}
+                                    </Paper>
+                                    <Paper
+                                        elevation={1}
+                                        key="playgroundContainer"
+                                        className={classes.playgroundContainer}
+                                        onMouseEnter={
+                                            this.handleChangeEnterCellPlaygroundContainer
+                                        }
+                                        onMouseLeave={
+                                            this.handleChangeLeaveCellPlaygroundContainer
+                                        }
+                                    >
+                                        <DragHandleIcon
+                                            className={classes.draggable}
+                                        />
+                                        <Playground
+                                            autorunDelay={autorunDelay}
+                                            editorIds={editorIds}
+                                            isAutoLogActive={isAutoLogActive}
+                                            // isGraphicalLocatorActive={
+                                            //     isGraphicalLocatorActive
+                                            // }
+                                            // handleChangeGraphicalLocator={
+                                            //     this.handleChangeGraphicalLocator
+                                            // }
+                                            resizeListener={this.setResizeListener}
+                                            onUnsafeAct={this.handleUnsafeAct}
+                                        />
+                                        {hoveredCellKey === 'playgroundContainer' ?
+                                            null
+                                            : <TvIcon
+                                                className={classes.icon}
+                                            />
+                                        }
+                                    </Paper>
+                                </Responsive>
+                                <TraceControls
+                                    isTopNavigationToggled={isTopNavigationToggled}
+                                    autorunDelay={autorunDelay}
+                                    setAutorunDelay={this.setAutorunDelay}
                                 />
-                            }
-                        </Paper>
-                    </Responsive>
-                    <TraceControls
-                        isTopNavigationToggled={isTopNavigationToggled}
-                        autorunDelay={autorunDelay}
-                        setAutorunDelay={this.setAutorunDelay}
-                    />
-                </ALEContext.Provider>
+                                {demo ? <IdiomaticView open={demo} handleClose={this.closeDemo}/> : null}
+                            </IdiomaticProvider>
+                        </RALEContextProvider>
+                    </ALEContext.Provider>
+                </ArtifactContext.Provider>
             </PastebinContext.Provider>
         );
     }
@@ -1933,7 +2040,7 @@ class Pastebin extends PureComponent {
 
 Pastebin.propTypes = {
     classes: PropTypes.object.isRequired,
-    editorIds: PropTypes.object.isRequired,
+    dependencies: PropTypes.object.isRequired,
     setGridLayoutCallbacks: PropTypes.func.isRequired,
     disableGridAutomaticEditorLayout: PropTypes.bool,
     data: PropTypes.object.isRequired,
@@ -1942,7 +2049,7 @@ Pastebin.propTypes = {
 };
 
 export default connect(
-    null,
+    mapStateToProps,
     mapDispatchToProps)(
     withStyles(styles, {withTheme: true})(
         SizeProvider(

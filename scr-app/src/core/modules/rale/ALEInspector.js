@@ -564,7 +564,6 @@ const ObjectRootLabel = withStyles(labelStyles)(({classes, name, ...rest}) => {
         info,
     } = useMemo(() => {
             return resolveStateInfo?.(obj) ?? {};
-
         },
         [obj, resolveStateInfo]
     );

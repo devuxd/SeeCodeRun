@@ -5,6 +5,28 @@ import {SupportedApis} from "../idiomata/Idiomata";
 
 export const graphicalQueryApis = {};
 
+
+//https://stackoverflow.com/questions/22473532/compare-two-dom-elements-using-xpath
+// var wgxpath = require('wgxpath');
+// var jsdom = require('jsdom');
+//
+// var url = 'http://www.merriam-webster.com/word-of-the-day/';
+// var expressionString = '//*[@id="content"]/div[3]/ul/li[1]/strong';
+//
+// jsdom.env({
+//     html: url,
+//     done: function(errors, window) {
+//         wgxpath.install(window);
+//         var expression = window.document.createExpression(expressionString);
+//         var result = expression.evaluate(window.document,
+//             wgxpath.XPathResultType.STRING_TYPE);
+//         console.log('The Word of the Day is "' + result.stringValue + '."');
+//     }
+// });
+// html2canvas(document.querySelector("#capture")).then(canvas => {
+//     document.body.appendChild(canvas)
+// });
+
 graphicalQueryApis[SupportedApis.standard] = {
     isNode: (...p) => isNode(...p),
     query: (obj) => {

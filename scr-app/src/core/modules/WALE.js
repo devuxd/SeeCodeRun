@@ -16,7 +16,7 @@ import {isArrayLikeObject, isObjectLike} from "lodash";
 import isFunction from "lodash/isFunction";
 import {copifyDOMNode, findStateInState, isNode, nativeFunctionStringName, stateToRefArray} from "../../utils/scrUtils";
 
-import {GraphicalIdiom} from "./RALE/IdiomaticInspector";
+import {GraphicalIdiom} from "./rale/IdiomaticInspector";
 import {SupportedApis} from "./idiomata/Idiomata";
 import {PackageIdiom} from "./idiomata/idioms/PackageIdiom";
 
@@ -1181,10 +1181,10 @@ export default function wireGlobalObjectToALE(
                         );
                         paramsValue = aleJSEN.stringify(paramsIdentifier);
                         callerTimeLineEntry = scrObject.currentCallers.pop();
-                        // console.log("ScopeTypes.F", {rest, value, functionIdNode,
-                        //     expressionIdNode,
-                        //     uid, paramsValue});
-                        //
+                        console.log("ScopeTypes.F", {rest, value, functionIdNode,
+                            expressionIdNode,
+                            uid, paramsValue});
+
                         // if(isFunction(value)){
                         //     console.log("ScopeTypes.F f", {value});
                         // }
@@ -1234,7 +1234,7 @@ export default function wireGlobalObjectToALE(
 
                 let i = scrObject.timeline.push(entry)-1;
 
-                idValue && console.log("C", {i,entry, z: aleInstance.zale?.getZoneData(uid), idValue, forOfValue});
+                // idValue && console.log("C", {i,entry, z: aleInstance.zale?.getZoneData(uid), idValue, forOfValue});
 
                 if (callerTimeLineEntry) {
                     entry.calleeType = "local";

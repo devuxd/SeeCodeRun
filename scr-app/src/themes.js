@@ -150,8 +150,8 @@ export const MonacoExpressionClassNames = {
    liveExpressionNavClassName: 'monaco-editor-decoration-les-expressionNavLive',
    errorExpressionClassName: 'monaco-editor-decoration-les-expressionError',
    branchExpressionClassName: 'monaco-editor-decoration-les-expressionBranch',
-   liveExpressionDependencyClassName:
-      'monaco-editor-decoration-les-expressionDependencyLive',
+   liveExpressionDependencyClassName: 'monaco-editor-decoration-les-expressionDependencyLive',
+   commentGlyphMarginClassName:'monaco-editor-ale-commentGlyph',
    
 };
 

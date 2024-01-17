@@ -18,7 +18,7 @@ import {
     pulseOutlineAnimation as animation,
     pulseStartOutline
 } from "../common/UI";
-import {GraphicalIdiom} from "../core/modules/RALE/IdiomaticInspector";
+import {GraphicalIdiom} from "../core/modules/rale/IdiomaticInspector";
 import {SupportedApis} from "../core/modules/idiomata/Idiomata";
 //filterVisualElementsByApiName
 // import {ReactElementRefTree} from "../core/modules/idiomata/idiosyncrasies/ReactAPI";

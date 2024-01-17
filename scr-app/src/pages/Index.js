@@ -10,7 +10,7 @@ import withThemes, {ThemeContext} from '../themes';
 import NotificationCenter from '../containers/NotificationCenter';
 // import Pastebin from '../containers/Pastebin';
 
-import {editorIds} from '../core/AppManager';
+// import {editorIds} from '../core/AppManager';
 import {end$, online$} from '../utils/scrUtils';
 
 import {switchMonacoTheme} from '../redux/modules/monaco';
@@ -285,6 +285,7 @@ class Index extends PureComponent {
         const {
             classes, themes,
             url, pastebinId, shareUrl, isConnected, loadChat,
+            dependencies,
         } = props;
 
         const {
@@ -295,7 +296,6 @@ class Index extends PureComponent {
         const {
             themeType, switchTheme, muiTheme
         } = themes;
-
 
         const forwardedState = {
             ...state,
@@ -329,7 +329,7 @@ class Index extends PureComponent {
                                 isTopNavigationToggled
                             }
                             themeType={themeType}
-                            editorIds={editorIds}
+                            // editorIds={editorIds}
                             setGridLayoutCallbacks={
                                 setGridLayoutCallbacks
                             }
@@ -337,6 +337,7 @@ class Index extends PureComponent {
                             onHeight={onHeight}
                             TopNavigationBarProps={forwardedState}
                             persistablePath={"configuration"}
+                            dependencies={dependencies}
                         />
                         <LazyChat
                             isTopNavigationToggled={isTopNavigationToggled}

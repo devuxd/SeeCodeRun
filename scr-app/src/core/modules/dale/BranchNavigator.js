@@ -191,6 +191,7 @@ export default class BranchNavigator {
     }
 
     relativePaths(branchNavigator) {
+
         const relativePaths = [];
         if (this === branchNavigator) {
             return relativePaths;

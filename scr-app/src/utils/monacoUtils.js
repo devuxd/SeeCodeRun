@@ -46,7 +46,7 @@ export const monacoEditorDefaultOptions = {
     // automaticLayout: false,
     fontLigatures: true,
     folding: true,
-    hover: true,
+    hover: false,
     minimap: {enabled: false},
     scrollBeyondLastLine: false,
     formatOnPaste: true,
@@ -73,9 +73,9 @@ export const monacoEditorDefaultOptions = {
         alwaysConsumeMouseWheel: false,
     },
     renderLineHighlight: 'gutter',
-    // smoothScrolling: true,
+    smoothScrolling: true,
     fontSize: monacoProps.fontSize,
-    quickSuggestionsDelay: 1250,
+    // quickSuggestionsDelay: 1250,
     lineNumbersMinChars: 3, //5 is default
 };
 
