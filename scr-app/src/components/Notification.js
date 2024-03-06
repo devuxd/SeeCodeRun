@@ -21,6 +21,7 @@ import {
 } from '@mui/material/styles';
 
 import {grey} from '@mui/material/colors';
+import Markdown from "react-markdown";
 
 import {isArrayLikeObject} from "lodash";
 
@@ -57,7 +58,7 @@ const makeErrorMessageWidget = (editor, range, message, domRef, id = "Main", mon
             };
         }
     };
-    console.log("errorWidget I", contentWidget, domRef, !!domRef.current);
+    // console.log("errorWidget I", contentWidget, domRef, !!domRef.current);
     editor.addContentWidget(contentWidget);
     let done = false;
     return () => {
@@ -109,6 +110,13 @@ const Puller = styled(Box)(({theme}) => ({
     position: 'absolute',
     top: 8,
     left: 'calc(50% - 15px)',
+}));
+
+const InlineAlert = styled(Alert)(({theme}) => ({
+    // fontSize: ".5rem",
+    '& .MuiAlert-message': {
+        marginTop: theme.spacing(-1.5),
+    },
 }));
 
 export default function SwipeableEdgeDrawer({header, children, container, onClose, onClick}) {
@@ -185,6 +193,7 @@ const ParserErrorMessage = (
         severity = "error",
         variant = "outlined",
         focused = false,
+        isRawText = false,
         ...alertProps
     }
 ) => {
@@ -220,7 +229,7 @@ const ParserErrorMessage = (
         };
     }
 
-    return (<Alert
+    return (<InlineAlert
         icon={
             <Tooltip title={name}>
                 <CompilationErrorIcon fontSize="inherit"/>
@@ -230,11 +239,14 @@ const ParserErrorMessage = (
         variant={variant}
         {...alertProps}
     >
-        {focused ?
-            <strong>{message}</strong>
-            : message
-        }
-    </Alert>);
+        <Tooltip title={<Markdown>{message}</Markdown>}>
+            {isRawText ? focused ?
+                <strong>{message}</strong>
+                : message : <Box><Markdown>{message}</Markdown></Box>
+            }
+        </Tooltip>
+
+    </InlineAlert>);
 };
 
 
@@ -326,12 +338,13 @@ function UnstyledEditorNotification(
             const throwables = [...editorPExceptions, ...editorPErrors, ...editorUBErrors].map(
                 e => toThrowable(e)
             );
-            throwables.length && console.log("throwables", throwables.length, {
-                throwables,
-                editorPExceptions,
-                editorPErrors,
-                editorUBErrors
-            });
+            // throwables.length && console.log("throwables", throwables.length, {
+            //     base: [...editorPExceptions, ...editorPErrors, ...editorUBErrors],
+            //     throwables,
+            //     editorPExceptions,
+            //     editorPErrors,
+            //     editorUBErrors
+            // });
             // return [];
             //
             // //console.log("BI", throwables, {editorId, playgroundErrors, updateBundleErrors, playgroundExceptions});
@@ -347,7 +360,7 @@ function UnstyledEditorNotification(
 
     const domRef = useRef();
 
-    const [focusedThrowableIndex, setFocusedThrowableIndex] = useState([0]);
+    const [focusedThrowableIndex, setFocusedThrowableIndex] = useState([0, false]);
     const [iconified, setIconified] = useState(true);
     const [open, setOpen] = useState(true);
 
@@ -366,7 +379,7 @@ function UnstyledEditorNotification(
     }, [classes]);
 
     const handleClickThrowable = useCallback(
-        (i) => setFocusedThrowableIndex([i]),
+        (i, forceReveal = false) => setFocusedThrowableIndex([i, forceReveal]),
         []
     );
 
@@ -376,7 +389,7 @@ function UnstyledEditorNotification(
     );
 
 
-    const focusOnFaultLocation = useCallback((focusedThrowable) => {
+    const focusOnFaultLocation = useCallback((focusedThrowable, forceReveal = false) => {
         if (!monacoEditor || !focusedThrowable) {
             return () => {
             };
@@ -394,16 +407,16 @@ function UnstyledEditorNotification(
             options: errorDecorationOptions.location
         };
 
-        const collection = monacoEditor.createDecorationsCollection([lineDecoration, locationDecoration]);
+        const ids = monacoEditor.getModel().deltaDecorations([], [lineDecoration, locationDecoration]);
 
-        range?.startLineNumber && monacoEditor.revealLineInCenter(range.startLineNumber);
+        forceReveal && (range?.startLineNumber) && monacoEditor.revealLineInCenter(range.startLineNumber);
 
         const removeErrorWidget = makeErrorMessageWidget(
             monacoEditor, range, message, domRef
         );
 
         return () => {
-            collection.clear();
+            monacoEditor.getModel().deltaDecorations(ids, []);
             removeErrorWidget();
         }
 
@@ -424,7 +437,7 @@ function UnstyledEditorNotification(
 
     const handleDrawerView = useCallback(() => {
             //   setIconified(false);
-            handleClickThrowable(0);
+            handleClickThrowable(0); // disable reveal todo: do once, the reveal is lingering with reset
         },
         []
     );
@@ -433,12 +446,12 @@ function UnstyledEditorNotification(
             if (throwables.length < 1 || !focusOnFaultLocation) {
                 return;
             }
-            console.log("useLayoutEffect I", domRef, !!domRef.current, focusedThrowableIndex[0], throwables[focusedThrowableIndex[0]]);
-            const unFocus = focusOnFaultLocation(throwables[focusedThrowableIndex[0]]);
+            // console.log("useLayoutEffect I", domRef, !!domRef.current, focusedThrowableIndex[0], throwables[focusedThrowableIndex[0]]);
+            const unFocus = focusOnFaultLocation(throwables[focusedThrowableIndex[0]], focusedThrowableIndex[1]);
 
 
             return () => {
-                console.log("useLayoutEffect O", domRef, !!domRef.current);
+                // console.log("useLayoutEffect O", domRef, !!domRef.current);
 
                 unFocus();
             };

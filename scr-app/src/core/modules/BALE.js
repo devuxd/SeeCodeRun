@@ -31,6 +31,67 @@ import {
     getPathScopeExits, getPathScopeType, ScopeExitTypes, isScopeExitStatement, ErrorTypes,
 } from "./ALE";
 
+const blacklist = [
+    "document.getElementById",
+    "React.useState",
+    "window.*",
+    "useState"
+];
+
+function getCalleeFullName(path, parts = []) {
+    if (path.isMemberExpression()) {
+        const {object, property, computed} = path.node;
+
+        getCalleeFullName(path.get('object'), parts); // Recursively get the object part
+
+        if (computed) {
+            // For computed properties, handle different types of property expressions
+            if (path.get('property').isLiteral()) {
+                parts.push(`[${property.value}]`); // For literals like obj['prop']
+            } else if (path.get('property').isIdentifier()) {
+                parts.push(`[${property.name}]`); // For identifiers used in a computed way like obj[propName]
+            } else {
+                // For more complex expressions, you might choose to simplify or handle specifically
+                parts.push('[ComputedProperty]'); // Placeholder for complex computed properties
+            }
+        } else {
+            parts.push(property.name); // For non-computed properties, directly use the property name
+        }
+    } else if (path.isIdentifier()) {
+        parts.push(path.node.name); // Base case: add the identifier name
+    } else if (path.isThisExpression()) {
+        parts.push('this'); // Handle `this` expressions
+    } else {
+        // For other cases, you might choose to simplify or handle specifically
+        parts.push('[ComplexExpression]'); // Placeholder for other complex expressions
+    }
+
+    return parts.join('.');
+}
+
+
+function isBlacklisted(calleeName, blacklist) {
+    for (let pattern of blacklist) {
+        if (pattern.endsWith(".*")) {
+            const objectName = pattern.slice(0, -2);
+            if (calleeName.startsWith(objectName + ".")) {
+                return true; // Matches a pattern like "window.*"
+            }
+        } else if (pattern.includes(".")) {
+            if (calleeName === pattern) {
+                return true; // Matches a fully qualified name like "document.getElementById"
+            }
+        } else {
+            const parts = calleeName.split('.');
+            if (parts.includes(pattern)) {
+                return true; // Matches a simple name that appears anywhere in the callee name
+            }
+        }
+    }
+    return false;
+}
+
+
 export function markPathAsVisited(path) {
     path.state = true;
 }
@@ -327,9 +388,11 @@ export function preBALE(code, options) {
 
 
     const exceptions = [];
+    const errors = [];
     //throwable change is bale object and refs
     const throwables = {
         exceptions,
+        errors,
     };
 
     const ast = babelParse(code, undefined, throwables);
@@ -345,7 +408,8 @@ export function preBALE(code, options) {
         preBALE,
         commentsText,
         commentsLocs,
-        disableConsoleWarnings, disableProgramScopeExit, enableDynamicImportDynamicSources, exceptions, throwables,
+        disableConsoleWarnings, disableProgramScopeExit, enableDynamicImportDynamicSources,
+        throwables,
         ast
     };
 }
@@ -361,7 +425,7 @@ export default function BabeAutoLogEverything(
 ) {
     const {
         disableConsoleWarnings, disableProgramScopeExit,
-        enableDynamicImportDynamicSources, exceptions, throwables,
+        enableDynamicImportDynamicSources, throwables,
         ast
     } = preBALE === code?.preBALE ? code : preBALE(code, options);
 
@@ -377,8 +441,8 @@ export default function BabeAutoLogEverything(
     //
     // previousCode = code;
 
-    throwables.errors = ast?.errors ?? [];
-    const {errors} = throwables;
+    // throwables.errors.push(...(ast?.errors ?? []));
+    const {errors, exceptions} = throwables;
 
     let error = {
         errorType: ErrorTypes.P,
@@ -1001,6 +1065,16 @@ export default function BabeAutoLogEverything(
 
                 case 'MemberExpression':
                 case 'OptionalMemberExpression':
+                    const calleeFullName = getCalleeFullName(path.get('callee'));
+
+                    if (!isBlacklisted(calleeFullName, blacklist)) {
+                        // This CallExpression is whitelisted; you can process it here
+                        // console.log("Whitelisted call: " + calleeFullName);
+                    } else {
+                        // This CallExpression is blacklisted; you might want to skip or handle differently
+                        // console.log("Blacklisted call: " + calleeFullName);
+                        return;
+                    }
                     const parent = path.parentPath;
                     // safeguard: if isLoggableExpressionBasedOnParent() check ommited
                     const needLogging = !parent ||
@@ -1354,7 +1428,7 @@ export default function BabeAutoLogEverything(
                 )
             );
 
-            console.log("makeImportLogCall", {importSourceName});
+            // console.log("makeImportLogCall", {importSourceName});
 
             markPathAsVisited(path);
             path.node.loc = path.node.loc ?? nodeLoc;

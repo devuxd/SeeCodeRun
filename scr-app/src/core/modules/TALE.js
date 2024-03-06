@@ -734,6 +734,7 @@ class Trace {
     };
 
     onMainLoaded = () => {
+        console.log("..........FFFF");
         this.mainLoadedTimelineI = this.timeline.length;
         const windowDispatcher = dispatcher;
         dispatcher = command => windowDispatcher(`window.scrLoader.moduleEval('${command}')`);

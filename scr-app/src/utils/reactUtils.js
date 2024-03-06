@@ -134,7 +134,12 @@ export const useSandboxIFrameHandler = (documentObj, prepareIframe) => {
             };
 
             const appendScriptToIFrameBody = (script) => {
-                const doc = iFrameRef.current.contentDocument ?? document;
+                console.log("iframeDoc script", script);
+                const iframe =  iFrameRef.current;
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const doc = iframeDoc;
+                console.log("iframeDoc", iframeDoc);
+                // const doc = iFrameRef.current.contentDocument ?? document;
                 if (!iFrameStateRef.current.loaded) {
                     iFrameStateRef.current.pendingScript = script;
                     return;
@@ -149,10 +154,12 @@ export const useSandboxIFrameHandler = (documentObj, prepareIframe) => {
                 // console.log(script, scriptEl);
             };
 
-            const createIframe = () => {
+            const createIframe = (id = "scr.runIframe") => {
                 const runIframe = documentObj.createElement('iframe');
+                runIframe.id = id;
                 runIframe.sandbox = sandboxAttributeValue;
                 runIframe.style = iframeStyle;
+                // console.log("scr.runIframe", runIframe);
                 runIframe.addEventListener('load', () => {
                     iFrameStateRef.current.loaded = true;
                     if (iFrameStateRef.current.pendingScript) {
@@ -236,25 +243,21 @@ export const isOverflowed = (
 };
 
 export const useResizeAndOverflowDetector = (
-    {
-        containerRef,
-        onResize,
-        onOverflow,
-        handleOverflowWidth,
-        handleOverflowHeight,
-        ...resizeDetectorOptions
-    } = {}
+    onOverflow,
+    containerRef,
+    onResize,
+    handleOverflowWidth,
+    handleOverflowHeight
 ) => {
-    let ref = null;
+    const rRef = useRef();
     const _containerRef = useRef();
     containerRef = containerRef ?? _containerRef;
     const _onResize = useCallback(
         (...params) => {
-            onResize && onResize(...params);
-            onOverflow &&
-            onOverflow(
+            onResize?.(...params);
+            onOverflow?.(
                 isOverflowed(
-                    ref,
+                    rRef.current,
                     containerRef,
                     handleOverflowWidth,
                     handleOverflowHeight
@@ -262,7 +265,6 @@ export const useResizeAndOverflowDetector = (
             );
         },
         [
-            ref,
             onResize,
             containerRef,
             onOverflow,
@@ -271,13 +273,16 @@ export const useResizeAndOverflowDetector = (
         ]
     );
 
-    const detectorProps = useResizeDetector({
+    const props = useMemo(() => ({
         onResize: _onResize,
-        ...resizeDetectorOptions
-    });
-    ref = detectorProps.ref;
+        onOverflow
+    }), [_onResize, onOverflow]);
 
-    return {...detectorProps, containerRef};
+    const detectorProps = useResizeDetector(props);
+    detectorProps.containerRef = containerRef;
+    rRef.current = detectorProps.ref;
+
+    return detectorProps;
 };
 
 export const useMeasureBeforeMount = (

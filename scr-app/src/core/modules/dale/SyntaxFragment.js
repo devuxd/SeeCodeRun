@@ -40,6 +40,7 @@ export const areDecorationStylesEquivalent = (decorationStylesOptions, modelDeco
 export default class SyntaxFragment {
     _syntaxWidget = null;
     _graphicalLocator = null;
+
     syntaxWidget = (syntaxWidget = undefined) => {
         if (syntaxWidget !== undefined) {
             this._syntaxWidget = syntaxWidget;
@@ -61,22 +62,30 @@ export default class SyntaxFragment {
         this.dale = dale;
         this.zone = zone;
         this.decorationStyles = decorationStyles;
-        this.isFunctionParams = isFunctionParams;
-        // console.log("zone", zone);
-        const extraFragments = [];
-        if (zone?.functionParams) {
-            zone.functionParams.forEach(fp => {
-                const {zone: fZone} = fp;
-                fZone && extraFragments.push(new SyntaxFragment(dale, fZone, decorationStyles, true));
-            });
-            console.log("extraFragments", {extraFragments});
-        }
+        // this.isFunctionParams = isFunctionParams || !!zone?.functionParams;
 
-        this.extraFragments = () => extraFragments;
+        // console.log("zone", zone);
+        // const extraFragments = [];
+        // if (this.isFunctionParams) {
+        //     zone.functionParams.forEach(fp => {
+        //         const {zone: fZone} = fp;
+        //         fZone && extraFragments.push(new SyntaxFragment(dale, fZone, decorationStyles, true));
+        //     });
+        //     // console.log("extraFragments", {extraFragments});
+        // }
+        //
+        // this.extraFragments = () => extraFragments;
 
         this.getSourceTextFocusRange = () => {
-            return zone.node?.loc && dale.locToMonacoRange(zone.node.loc);
+            return this.zone.node?.loc && dale.locToMonacoRange(this.zone.node.loc);
         }
+
+        this.onClick = () => {
+            // console.log("dale", dale);
+            const {monacoEditor, monaco} = this.dale;
+            monacoEditor?.revealRangeInCenter(this.getSourceTextFocusRange(), monaco?.editor.ScrollType.Immediate);
+        };
+
 
         const expressionRange = this.getSourceTextFocusRange();
         this.expressionRange = () => expressionRange;
@@ -84,8 +93,8 @@ export default class SyntaxFragment {
         this.rawRanges = [expressionRange];
         this.rawAlternateRanges = this.rawRanges;
 
-        if (zone.locLiveZones) {
-            this.rawRanges = zone.locLiveZones.getHighlights().map(
+        if (this.zone.locLiveZones) {
+            this.rawRanges = this.zone.locLiveZones.getHighlights().map(
                 loc => dale.locToMonacoRange(loc)
             );
 
@@ -107,6 +116,14 @@ export default class SyntaxFragment {
         this.sourceText = dale.getValueInRanges(allRanges);
 
         this.sourceTextFocus = sourceTextFocusRange ? dale.getValueInRanges([sourceTextFocusRange]) : 'N/A';
+
+        this.listKeyBody = () => {
+            return this.zone?.listKey === "body";
+        };
+
+        this.expressionStatementParent = () => {
+            return this.zone?.parentType === "ExpressionStatement";
+        };
 
         this.type = () => {
             return this.zone?.type;
@@ -164,12 +181,41 @@ export default class SyntaxFragment {
             return (this.expressionLeft() && !!this.dale?.getAleInstance?.()?.zale?.lookupZoneParentByTypes(this.zone, SyntaxTypeChecks.forX));
         }
 
+        this.callExpression = () => {
+            return this.zone.type === "CallExpression";
+        };
+
+        this.branchType = () => {
+            return this.zone?.liveZoneType === "branch";
+        };
+
+        this.handleCallExpressionHint = (logValues) => {
+            if (this.callExpression() && logValues?.length) {
+                const lv = logValues[0];
+                const expressionId = lv.zone.expressionId;
+                const expressionType = lv.entry.logValue?.objectType ?? 'function';
+                const syntaxFragment = dale.getSyntaxFragment(expressionId)?.[2];
+
+                //const focusRange = syntaxFragment.getSourceTextFocusRange();
+                const range = syntaxFragment?.expressionRange();
+                // const rRange = syntaxFragment.ranges[syntaxFragment.ranges.length - 1];
+
+                // console.log("syntaxFragment.ranges[syntaxFragment.ranges.length - 1]", syntaxFragment, range, rRange);
+                return {
+                    hasHint: () => !!(expressionId && expressionType && range),
+                    expressionId,
+                    expressionType,
+                    options: {kind: "Type"},
+                    range,
+                }
+            }
+
+        }
 
         this.makeZoneDecorations = (
             decorationStyle = LiveZoneDecorationStyles.default, value = 0
         ) => {
-            const {dale, ranges, alternateRanges, decorationStyles, zone} = this;
-            const model = dale.monacoEditor.getModel();
+            const {dale, ranges, alternateRanges, decorationStyles} = this;
 
             let currentRanges =
                 decorationStyle === LiveZoneDecorationStyles.default ?
@@ -192,8 +238,18 @@ export default class SyntaxFragment {
                 // console.log("forInRight", zone.type, {zone, currentRanges, decorationStyle, value});
             }
 
-            if (zone.type === "CallExpression") {
-                // console.log("zone", zone, value);
+            const {functionParams} = this.zone;
+
+            if (functionParams) {
+
+                // console.log("zone functionParams", {zone, value, currentRanges, functionParams});
+                const pRanges = functionParams.map(v => dale.locToMonacoRange(v.zone.node.loc));
+                currentRanges = [...ranges, ...pRanges];
+            }
+
+            if (this.zone.type === "CallExpression") {
+
+                // console.log("zone", this.zone, value);
 
             }
 
@@ -270,8 +326,8 @@ export default class SyntaxFragment {
             const hoverOptions = decorationStyles[LiveZoneDecorationStyles.hover];
 
             if (decorationStyle === LiveZoneDecorationStyles.active) {
-                if (zone.type === "VariableDeclarator" && zone.locLiveZones?.mainAnchor) {
-                    const vRange = dale.locToMonacoRange(zone.locLiveZones.mainAnchor);
+                if (this.zone.type === "VariableDeclarator" && this.zone.locLiveZones?.mainAnchor) {
+                    const vRange = dale.locToMonacoRange(this.zone.locLiveZones.mainAnchor);
                     console.log("GOTCHA", vRange);
                     currentRanges = [vRange];
                 }
@@ -310,57 +366,105 @@ export default class SyntaxFragment {
             // );
         };
 
-        const decoratorCollection = this.dale.monacoEditor.createDecorationsCollection?.();
+        // const decoratorCollection = this.dale.monacoEditor.createDecorationsCollection?.();
+        const deltasRef = {current: []};
 
-        this.getDecoratorsCollection = () => {
-            return decoratorCollection;
-        };
-        this.getDecorationIds = () => decoratorCollection._decorationIds;
+        // this.getDecoratorsCollection = () => {
+        //     return decoratorCollection;
+        // };
+        // this.getDecorationIds = () => decoratorCollection._decorationIds;
+        this.getDecorationIds = () => deltasRef.current;
 
 
         this._decorationStyle = null;
 
-        this.clear = (zoneDecorations) => {
-            if (this) {
-                return;
-            }
+        // this.clear = (zoneDecorations) => {
+        //     if (this) {
+        //         return;
+        //     }
+        //
+        //
+        //     const zd = [
+        //         ...(this._zoneDecorations ?? []),
+        //         ...zoneDecorations
+        //     ];
+        //
+        //     const decorationIds = {};
+        //     zd.forEach((z) => {
+        //         const zoneRange = z.range;
+        //         const decorationsInRange = (this.dale.monacoEditor.getDecorationsInRange(zoneRange));
+        //         // console.log("decorationsInRange", zoneRange, decorationsInRange);
+        //         decorationsInRange?.forEach((decoration) => {
+        //                 const {id, range, options} = decoration;
+        //
+        //                 //todo filter by _decorationStyle
+        //                 // const ff = ;
+        //                 // // console.log("PP", ff, this.decorationStyles, decoration.options);
+        //                 // ff && console.log("zd", ff, {
+        //                 //     decoration,
+        //                 //     zoneRange,
+        //                 //     range
+        //                 // });
+        //                 // if (this._decorationStyle === LiveZoneDecoratio nStyles.active && !range.equalsRange(zoneRange)) {
+        //                 //     return;
+        //                 // }
+        //                 if (areDecorationStylesEquivalent(this.decorationStyles, options)) {
+        //                     decorationIds[id] = decoration;
+        //                 }
+        //             }
+        //         );
+        //     });
+        //
+        //     this.dale.monacoEditor.removeDecorations(Object.keys(decorationIds));
+        // };
+
+        this.clear = () => {
+            // if (this) {
+            //     return;
+            // }
 
 
-            const zd = [
-                ...(this._zoneDecorations ?? []),
-                ...zoneDecorations
-            ];
+            // const zd = deltasRef.current;
 
-            const decorationIds = {};
-            zd.forEach((z) => {
-                const zoneRange = z.range;
-                const decorationsInRange = (this.dale.monacoEditor.getDecorationsInRange(zoneRange));
-                // console.log("decorationsInRange", zoneRange, decorationsInRange);
-                decorationsInRange?.forEach((decoration) => {
-                        const {id, range, options} = decoration;
+            // const decorationIds = {};
+            // zd.forEach((z) => {
+            //     const zoneRange = z.range;
+            //     const decorationsInRange = (this.dale.monacoEditor.getDecorationsInRange(zoneRange));
+            //     // console.log("decorationsInRange", zoneRange, decorationsInRange);
+            //     decorationsInRange?.forEach((decoration) => {
+            //             const {id, range, options} = decoration;
+            //
+            //             //todo filter by _decorationStyle
+            //             // const ff = ;
+            //             // // console.log("PP", ff, this.decorationStyles, decoration.options);
+            //             // ff && console.log("zd", ff, {
+            //             //     decoration,
+            //             //     zoneRange,
+            //             //     range
+            //             // });
+            //             // if (this._decorationStyle === LiveZoneDecoratio nStyles.active && !range.equalsRange(zoneRange)) {
+            //             //     return;
+            //             // }
+            //             if (areDecorationStylesEquivalent(this.decorationStyles, options)) {
+            //                 decorationIds[id] = decoration;
+            //             }
+            //         }
+            //     );
+            // });
 
-                        //todo filter by _decorationStyle
-                        // const ff = ;
-                        // // console.log("PP", ff, this.decorationStyles, decoration.options);
-                        // ff && console.log("zd", ff, {
-                        //     decoration,
-                        //     zoneRange,
-                        //     range
-                        // });
-                        // if (this._decorationStyle === LiveZoneDecoratio nStyles.active && !range.equalsRange(zoneRange)) {
-                        //     return;
-                        // }
-                        if (areDecorationStylesEquivalent(this.decorationStyles, options)) {
-                            decorationIds[id] = decoration;
-                        }
-                    }
-                );
+            this.ifPresentModel(model => {
+                deltasRef.current = model.deltaDecorations(deltasRef.current, []);
             });
 
-            this.dale.monacoEditor.removeDecorations(Object.keys(decorationIds));
+        };
+
+        this.ifPresentModel = (ifPresentCallBack, orElseCallback) => {
+            const model = this.dale?.monacoEditor?.getModel?.();
+            return model ? ifPresentCallBack(model) : orElseCallback?.();
         };
 
         this._hovered = false;
+
 
         this.decorate = (
             decorationStyle = LiveZoneDecorationStyles.default,
@@ -375,16 +479,25 @@ export default class SyntaxFragment {
                         // this.clear(this._hoverZoneDecorations);
                         // decoratorCollection?.clear();
                         if (isReset) {
-                            decoratorCollection?.set(this._zoneDecorations);
-                            this.syntaxWidget()?.hover();
-                            this._hovered = false;
+                            // decoratorCollection?.set();
+                            this.ifPresentModel(model => {
+                                deltasRef.current = model.deltaDecorations(deltasRef.current, this._zoneDecorations);
+                                this.syntaxWidget()?.hover();
+                                this._hovered = false;
+                            });
+
                         } else {
-                            decoratorCollection?.set(
-                                this._hoverZoneDecorations
-                                // [...(this._zoneDecorations ?? []), ...this._hoverZoneDecorations]
-                            );
-                            this.syntaxWidget()?.hover(this._hoverClassName);
-                            this._hovered = true;
+                            this.ifPresentModel(model => {
+                                deltasRef.current = model.deltaDecorations(deltasRef.current, this._hoverZoneDecorations);
+                                this.syntaxWidget()?.hover(this._hoverClassName);
+                                this._hovered = true;
+                            });
+
+                            // decoratorCollection?.set(
+                            //     this._hoverZoneDecorations
+                            //     // [...(this._zoneDecorations ?? []), ...this._hoverZoneDecorations]
+                            // );
+
                         }
                     }
 
@@ -398,11 +511,14 @@ export default class SyntaxFragment {
                     // this.clear(zoneDecorations);
                     // this.clear(hoverZoneDecorations);
                     // decoratorCollection?.clear();
-                    decoratorCollection?.set(zoneDecorations);
-                    this._decorationStyle = decorationStyle;
-                    this._zoneDecorations = zoneDecorations;
-                    this._hoverZoneDecorations = hoverZoneDecorations;
-                    this._hoverClassName = hoverClassName;
+                    // decoratorCollection?.set(zoneDecorations);
+                    this.ifPresentModel(model => {
+                        deltasRef.current = model.deltaDecorations(deltasRef.current, zoneDecorations);
+                        this._decorationStyle = decorationStyle;
+                        this._zoneDecorations = zoneDecorations;
+                        this._hoverZoneDecorations = hoverZoneDecorations;
+                        this._hoverClassName = hoverClassName;
+                    })
 
                 }
                 // decoratorCollection?.clear();
@@ -428,8 +544,100 @@ export default class SyntaxFragment {
                 // }, {}), {decorationStyle});
             }
 
-            return decoratorCollection;
+            return this;
         };
+
+        // this.decorate = (
+        //     decorationStyle = LiveZoneDecorationStyles.default,
+        //     isReset = false,
+        //     value = 0,
+        // ) => {
+        //
+        //
+        //     if (decorationStyle && this._decorationStyle !== decorationStyle) {
+        //         if (decorationStyle === LiveZoneDecorationStyles.hover) {
+        //             if (this._hoverZoneDecorations) {
+        //                 // this.clear(this._hoverZoneDecorations);
+        //                 // decoratorCollection?.clear();
+        //                 if (isReset) {
+        //                     decoratorCollection?.set(this._zoneDecorations);
+        //                     this.syntaxWidget()?.hover();
+        //                     this._hovered = false;
+        //                 } else {
+        //                     decoratorCollection?.set(
+        //                         this._hoverZoneDecorations
+        //                         // [...(this._zoneDecorations ?? []), ...this._hoverZoneDecorations]
+        //                     );
+        //                     this.syntaxWidget()?.hover(this._hoverClassName);
+        //                     this._hovered = true;
+        //                 }
+        //             }
+        //
+        //         } else {
+        //             const [
+        //                 zoneDecorations,
+        //                 hoverZoneDecorations,
+        //                 hoverClassName
+        //
+        //             ] = this.makeZoneDecorations(decorationStyle, value);
+        //             // this.clear(zoneDecorations);
+        //             // this.clear(hoverZoneDecorations);
+        //             // decoratorCollection?.clear();
+        //             decoratorCollection?.set(zoneDecorations);
+        //             this._decorationStyle = decorationStyle;
+        //             this._zoneDecorations = zoneDecorations;
+        //             this._hoverZoneDecorations = hoverZoneDecorations;
+        //             this._hoverClassName = hoverClassName;
+        //
+        //         }
+        //         // decoratorCollection?.clear();
+        //
+        //
+        //         // (this.getDecorationIds() ?? []).forEach(id => {
+        //         //     checks[id] ??= 0;
+        //         //     checks[id]++;
+        //         // });
+        //
+        //         // console.log("decorate", zd,zd.reduce((r, e) => {
+        //         //     const k = JSON.stringify(e.range);
+        //         //     r[k] ??= {};
+        //         //     (this.dale.monacoEditor.getDecorationsInRange(e.range)).forEach((v) => {
+        //         //             const {id} = v;
+        //         //             v.ccc ??= 0;
+        //         //             v.ccc++;
+        //         //             r[k][id] = v;
+        //         //         }
+        //         //     );
+        //         //     return r;
+        //         //
+        //         // }, {}), {decorationStyle});
+        //     }
+        //
+        //     return decoratorCollection;
+        // };
+
+        // this.unDecorateAll = (decorationStyle = LiveZoneDecorationStyles.default) => {
+        //     // decoratorCollection?.clear();
+        //     if (decorationStyle && this._decorationStyle !== decorationStyle) {
+        //         const [zoneDecorations, hoverZoneDecorations] = this.makeZoneDecorations(decorationStyle);
+        //         // decoratorCollection?.clear();
+        //         // this.clear(zoneDecorations);
+        //         // this.clear(hoverZoneDecorations);
+        //         decoratorCollection?.clear();
+        //         decoratorCollection?.set(zoneDecorations);
+        //         this._decorationStyle = decorationStyle;
+        //         this._zoneDecorations = zoneDecorations;
+        //
+        //         // (this.getDecorationIds() ?? []).forEach(id => {
+        //         //     checks[id] ??= 0;
+        //         //     checks[id]++;
+        //         // });
+        //         //
+        //         //
+        //         // console.log("unDecorateAll", zd, {decorationStyle: this._decorationStyle});
+        //     }
+        //     //
+        // };
 
         this.unDecorateAll = (decorationStyle = LiveZoneDecorationStyles.default) => {
             // decoratorCollection?.clear();
@@ -438,10 +646,14 @@ export default class SyntaxFragment {
                 // decoratorCollection?.clear();
                 // this.clear(zoneDecorations);
                 // this.clear(hoverZoneDecorations);
-                decoratorCollection?.clear();
-                decoratorCollection?.set(zoneDecorations);
-                this._decorationStyle = decorationStyle;
-                this._zoneDecorations = zoneDecorations;
+                // decoratorCollection?.clear();
+                // decoratorCollection?.set(zoneDecorations);
+                this.ifPresentModel(model => {
+                    deltasRef.current = model.deltaDecorations(deltasRef.current, zoneDecorations);
+                    this._decorationStyle = decorationStyle;
+                    this._zoneDecorations = zoneDecorations;
+                });
+
 
                 // (this.getDecorationIds() ?? []).forEach(id => {
                 //     checks[id] ??= 0;

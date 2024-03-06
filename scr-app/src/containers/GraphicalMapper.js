@@ -20,6 +20,10 @@ import {
 } from "../common/UI";
 import {GraphicalIdiom} from "../core/modules/rale/IdiomaticInspector";
 import {SupportedApis} from "../core/modules/idiomata/Idiomata";
+import {
+    useAnimationFrameCallback,
+    useDOMObserverEffect
+} from "../core/modules/rale/contexts/DOMObserverContext";
 //filterVisualElementsByApiName
 // import {ReactElementRefTree} from "../core/modules/idiomata/idiosyncrasies/ReactAPI";
 
@@ -46,11 +50,6 @@ const LocatorTooltip = withStyles((theme) => ({
 }))
 (Tooltip);
 
-const WindowResizeObserver = global.ResizeObserver ||
-    console.log('Resize observer not supported!');
-
-const WindowMutationObserver = global.MutationObserver ||
-    console.log('Mutation observer not supported!');
 
 function getOverlayStyles(
     elt, containerOffsetTopPos, containerOffsetLeftPos, limit
@@ -80,15 +79,12 @@ function getOverlayStyles(
 //     console.log('gm', ...p)
 // }
 
+
 const GraphicalLocator = ({
                               id,
-                              observeResizes = true,
-                              observeMutations = false,
-                              mutationObserverOptions = {
-                                  attributes: true,
-                                  childList: false,
-                                  subtree: false
-                              },
+                              observeResizes,
+                              observeMutations,
+                              mutationObserverOptions,
                               getStyle,
                               visualElement,
                               domEl,
@@ -101,53 +97,24 @@ const GraphicalLocator = ({
                                   enterNextDelay: 100,
                                   leaveDelay: 100
                               },
-                              maxResizeTimeOutMs = 100
+                              maxResizeTimeOutMs
                           }) => {
+
+
     const [style, setStyle] = useState(getStyle);
-    const ridRef = useRef(null);
-    const onResize = useCallback((/*entry*/) => {
-        ridRef.current ??= {};
-        cancelAnimationFrame(ridRef.current.id);
-        ridRef.current.id = requestAnimationFrame((timeStamp) => {
-            ridRef.current.start ??= timeStamp;
-            const elapsed = timeStamp - ridRef.current.start;
-            if (elapsed > maxResizeTimeOutMs) {
-                ridRef.current.start = null;
-                setStyle(getStyle());
-            }
-        });
+    const _handleResize = useCallback(() => {
+        setStyle(getStyle());
+    }, [getStyle]);
 
-    }, [setStyle, getStyle, maxResizeTimeOutMs]);
-
-    const resizeObserver = useMemo(
-        () => ((observeResizes ? true : undefined) && WindowResizeObserver &&
-            new WindowResizeObserver(onResize)),
-        [observeResizes]
-    );
-    const mutationObserver = useMemo(
-        () => ((observeMutations ? true : undefined) && WindowMutationObserver &&
-            new WindowMutationObserver(onResize)),
-        [observeResizes]
+    const handleResize = useAnimationFrameCallback(
+        domEl,
+        _handleResize,
+        observeResizes,
+        observeMutations,
+        maxResizeTimeOutMs,
     );
 
-    useEffect(() => {
-            if (!domEl) {
-                return;
-            }
-
-            resizeObserver?.observe(domEl);
-            mutationObserver?.observe(
-                domEl,
-                mutationObserverOptions
-            );
-            return (() => {
-                    resizeObserver?.unobserve(domEl);
-                    mutationObserver?.disconnect();
-                }
-            );
-        },
-        [resizeObserver, mutationObserver, mutationObserverOptions, domEl]
-    );
+    useDOMObserverEffect(domEl, handleResize);
 
     // useEffect(() => {
     //     const caf = (e) => (console.log("RO", e)??cancelAnimationFrame(ridRef.current));

@@ -33,7 +33,7 @@ export default function PromiseAutoComplete({
         }
 
         (async () => {
-            const response = await getOptionsPromise;
+            const response = await getOptionsPromise();
             if (active) {
                 setOptions(response);
             }

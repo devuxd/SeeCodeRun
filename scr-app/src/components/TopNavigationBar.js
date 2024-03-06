@@ -1,7 +1,7 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {withStyles} from '@mui/styles';
-import ScrIcon from '../common/icons/SCR';
+import ScrIcon, {controlActionIcons} from '../common/icons/SCR';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -21,6 +21,8 @@ import Checkbox from '@mui/material/Checkbox';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {themeTypes} from '../themes';
 import TraceToolbar from './TraceToolbar';
+import TextFieldWithAutoFocus from "../common/TextFieldWithAutoFocus";
+import IntegrationProgress from "./IntegrationProgress";
 
 let iconStyle = {};
 const scrSvg = {};
@@ -88,8 +90,52 @@ const defaultMenuProps = {
     }
 };
 
+
+const autorunDelayAction = controlActionIcons.find(action => action.id === "autorunDelay");
+
+const openPageActions = {
+    standard: {
+        helpClick: () => {
+            global.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');
+        },
+
+        contactUsClick: () => {
+            global.open('mailto:contact@seecode.run', '_blank');
+        },
+
+        aboutClick: () => {
+            global.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');
+        },
+
+        repoClick: () => {
+            global.open('https://github.com/devuxd/SeeCodeRun', '_blank');
+        },
+    },
+    custom: {
+        helpClick: () => {
+            global.open('https://www.youtube.com/watch?v=sTSA_sWGM44', '_blank');
+        },
+
+        contactUsClick: () => {
+            global.open('https://www.youtube.com/watch?v=sTSA_sWGM44', '_blank');
+        },
+
+        aboutClick: () => {
+            global.open('https://www.youtube.com/watch?v=sTSA_sWGM44', '_blank');
+        },
+
+        repoClick: () => {
+            global.open('https://www.youtube.com/watch?v=sTSA_sWGM44', '_blank');
+        },
+    },
+    resolve: (mode = "standard") => {
+        return openPageActions[mode];
+    }
+};
+
 class TopNavigationBar extends PureComponent {
     handleChangeMemos = {};
+    openPageActions = openPageActions.resolve("custom");
 
     state = {
         infoAnchorEl: null,
@@ -99,6 +145,7 @@ class TopNavigationBar extends PureComponent {
         checkedCSS: false,
         checkedConsole: false,
         checkedOutput: false,
+        isAutorunEdit: false,
     };
 
     handleInfoMenu = event => {
@@ -107,22 +154,6 @@ class TopNavigationBar extends PureComponent {
 
     handleInfoClose = () => {
         this.setState({infoAnchorEl: null});
-    };
-
-    helpClick = () => {
-        global.open('https://github.com/tlatoza/SeeCodeRun/wiki/SeeCode.Run-Help!', '_blank');
-    };
-
-    contactUsClick = () => {
-        global.open('mailto:contact@seecode.run', '_blank');
-    };
-
-    aboutClick = () => {
-        global.open('https://github.com/tlatoza/SeeCodeRun/wiki/About-SeeCode.Run', '_blank');
-    };
-
-    repoClick = () => {
-        global.open('https://github.com/devuxd/SeeCodeRun', '_blank');
     };
 
     onClick = callback => {
@@ -148,7 +179,7 @@ class TopNavigationBar extends PureComponent {
             checkedHTML,
             checkedCSS,
             checkedConsole,
-            checkedOutput
+            checkedOutput,
         } = this.state;
         if (shareUrl) {
             let query = `${
@@ -176,7 +207,17 @@ class TopNavigationBar extends PureComponent {
 
     eventPreventDefault = event => event && event.preventDefault();
 
+    toggleAutorunEdit = () => {
+        this.setState({isAutorunEdit: !this.state.isAutorunEdit});
+    };
+
+    handleChangeAutorunDelay = (event) => {
+        this.props.setAutorunDelay?.(event.target.value);
+    };
+
     render() {
+
+        const {helpClick, contactUsClick, aboutClick, repoClick} = this.openPageActions;
         const {
             classes, themeType, switchTheme,
             isChatToggled, isTopNavigationToggled,
@@ -187,7 +228,12 @@ class TopNavigationBar extends PureComponent {
             resetLayoutClick,
             MenuProps = defaultMenuProps,
             demo,
-            handleClickDemo
+            handleClickDemo,
+            demoVisible = false,
+            loadChat = false,
+            autorunDelay,
+            autorunKey,
+            // setAutorunDelay,
         } = this.props;
 
         const shareOpen = !!shareAnchorEl;
@@ -200,6 +246,7 @@ class TopNavigationBar extends PureComponent {
             checkedCSS,
             checkedConsole,
             checkedOutput,
+            isAutorunEdit,
         } = this.state;
 
         const infoOpen = !!infoAnchorEl;
@@ -245,23 +292,38 @@ class TopNavigationBar extends PureComponent {
                                     classes={{root: classes.iconButton}}
                         >
                             <ScrIcon {...scrSvg.logo}/>
-                        </IconButton>
+                        </IconButton>{loadChat && (
                         <IconButton title={chatTitle} onClick={chatClick}
                                     color={isChatToggled ? "secondary" : "default"}>
                             <ChatIcon style={iconStyle}/>
-                        </IconButton>
+                        </IconButton>)}
+                        <IntegrationProgress key={autorunKey} autorunDelay={autorunDelay}/>
+                        {isAutorunEdit ?
+                            <TextFieldWithAutoFocus
+                                label="auto-run delay"
+                                value={autorunDelay}
+                                onChange={this.handleChangeAutorunDelay}
+                                type="number"
+                                InputLabelProps={{
+                                    shrink: true,
+                                }}
+                                size="small"
+                                margin="dense"
+                                sx={{width: '12ch'}}
+                                onBlur={this.toggleAutorunEdit}
+                            /> :
+                            <IconButton
 
-                        <IconButton
-                            aria-owns={shareOpen ? 'menu-appbar' : null}
-                            aria-haspopup="true"
-                            onClick={handleShareMenu}
-                            color={shareOpen ? "secondary" : "default"}
-                            title={"Share playground"}
-                        >
-                            <ShareIcon style={iconStyle}/>
-                        </IconButton>
+                                onClick={this.toggleAutorunEdit}
+                                aria-owns={isAutorunEdit ? 'menu-autorun-delay' : null}
+                                aria-haspopup="true"
+                                color={isAutorunEdit ? "secondary" : "default"}
+                                title={`Change ${autorunDelayAction.name}`}
+                            >{autorunDelayAction.icon}</IconButton>
+                        }
 
-                        <IconButton
+
+                        {demoVisible && (<IconButton
                             aria-owns={shareOpen ? 'menu-appbar' : null}
                             aria-haspopup="true"
                             onClick={handleClickDemo}
@@ -269,7 +331,7 @@ class TopNavigationBar extends PureComponent {
                             title={"seeCode.rum Demo"}
                         >
                             <HelpRoundedIcon style={iconStyle}/>
-                        </IconButton>
+                        </IconButton>)}
                         <Menu
                             id="menu-appbar"
                             anchorEl={shareAnchorEl}
@@ -382,6 +444,7 @@ class TopNavigationBar extends PureComponent {
                         {
                             networkStateIcon
                         }
+
                         <TraceToolbar/>
                         <Typography variant="h6" color="inherit"
                                     className={classes.flex}>
@@ -402,6 +465,15 @@ class TopNavigationBar extends PureComponent {
                                 <DarkModeIcon style={iconStyle}/>
                                 : <LightModeIcon style={iconStyle}/>
                             }
+                        </IconButton>
+                        <IconButton
+                            aria-owns={shareOpen ? 'menu-appbar' : null}
+                            aria-haspopup="true"
+                            onClick={handleShareMenu}
+                            color={shareOpen ? "secondary" : "default"}
+                            title={"Share playground"}
+                        >
+                            <ShareIcon style={iconStyle}/>
                         </IconButton>
                         <IconButton
                             aria-owns={infoOpen ? 'appbar-info-menu' : null}
@@ -429,14 +501,14 @@ class TopNavigationBar extends PureComponent {
                             <MenuItem onClick={this.onClick(resetLayoutClick)}>Reset
                                 layout</MenuItem>
                             <MenuItem
-                                onClick={this.onClick(this.helpClick)}>Help</MenuItem>
+                                onClick={this.onClick(helpClick)}>Help</MenuItem>
                             <MenuItem
-                                onClick={this.onClick(this.contactUsClick)}>Contact
+                                onClick={this.onClick(contactUsClick)}>Contact
                                 us</MenuItem>
                             <MenuItem
-                                onClick={this.onClick(this.aboutClick)}>About</MenuItem>
+                                onClick={this.onClick(aboutClick)}>About</MenuItem>
                             <MenuItem
-                                onClick={this.onClick(this.repoClick)}>GitHub</MenuItem>
+                                onClick={this.onClick(repoClick)}>GitHub</MenuItem>
                         </Menu>
                     </Toolbar>
                 </AppBar>

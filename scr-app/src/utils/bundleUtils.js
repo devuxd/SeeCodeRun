@@ -42,14 +42,16 @@ export class ReadableThrowable {
 
     constructor(obj) {
         const {
+            constructor,
             prototype,
-            message
+            message,
+            loc
         } = obj;
 
         this.code = DEFAULT_ERROR_CODE;
         this.reasonCode = DEFAULT_ERROR_CODE;
-        this.loc = obj;
-        this.name = prototype?.name ?? DEFAULT_ERROR_NAME;
+        this.loc = loc ?? obj;
+        this.name = prototype?.name ?? (constructor?.name ?? DEFAULT_ERROR_NAME);
         this.message = message;
     }
 
@@ -82,6 +84,7 @@ export class ReadableThrowable {
     };
 };
 
-export const toReadableThrowable = (obj)=>{
+export const toReadableThrowable = (obj) => {
+    // console.log("updatePlaygroundLoadFailure", obj)
     return new ReadableThrowable(obj);
 }

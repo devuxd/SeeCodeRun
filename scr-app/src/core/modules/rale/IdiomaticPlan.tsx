@@ -30,7 +30,6 @@ export function IdiomaticActionStepper(
         steps,
         activeStep,
         setActiveStep,
-        onClose,
     }
 ) {
 
@@ -46,7 +45,7 @@ export function IdiomaticActionStepper(
         setActiveStep(0);
     };
 
-    console.log("IdiomaticActionStepper", steps);
+    // console.log("IdiomaticActionStepper", steps);
 
     return (
         <Box sx={{maxWidth: 400}}>
@@ -107,7 +106,6 @@ export function IdiomaticPlanStepper(
         steps,
         activeStep,
         setActiveStep,
-        onClose,
         activeAction
     }
 ) {
@@ -185,7 +183,7 @@ export function IdiomaticPlanStepper(
                     </React.Fragment>
                 ) : (
                     <React.Fragment>
-                        <IdiomaticAction onClose={onClose} idiomaticActionShape={activeAction}/>
+                        <IdiomaticAction idiomaticActionShape={activeAction}/>
                         <Box sx={{display: 'flex', flexDirection: 'row', pt: 2}}>
                             <Button
                                 color="inherit"
@@ -219,7 +217,7 @@ export function IdiomaticPlanStepper(
     );
 }
 
-export function IdiomaticAction({idiomaticActionShape, onClose}) {
+export function IdiomaticAction({idiomaticActionShape}) {
     const [activeStep, setActiveStep] = useState(0);
     const {idiomaticIndicators} = useIdiomaticContext();
     const activeIndicators: IdiomaticIndicatorShape[] = useMemo(() => {
@@ -227,12 +225,12 @@ export function IdiomaticAction({idiomaticActionShape, onClose}) {
     }, [idiomaticActionShape, idiomaticIndicators]);
 
     return (<IdiomaticActionStepper
-        onClose={onClose} steps={activeIndicators} knowledgeType={idiomaticActionShape.knowledgeType}
+         steps={activeIndicators} knowledgeType={idiomaticActionShape.knowledgeType}
         activeStep={activeStep} setActiveStep={setActiveStep}
     />);
 }
 
-export function IdiomaticPlan({adjudicationType, actions, onClose, ...rest}) {
+export function IdiomaticPlan({adjudicationType, actions, ...rest}) {
     const [activeStep, setActiveStep] = useState(0);
     const activeAction = useMemo(() => {
         return actions[activeStep];
@@ -242,7 +240,7 @@ export function IdiomaticPlan({adjudicationType, actions, onClose, ...rest}) {
         <IdiomaticPlanStepper
             {...rest}
             activeAction={activeAction}
-            onClose={onClose} steps={actions} adjudicationType={adjudicationType}
+            steps={actions} adjudicationType={adjudicationType}
             activeStep={activeStep} setActiveStep={setActiveStep}
         />
     );

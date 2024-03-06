@@ -5,10 +5,7 @@ import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
 import SettingsIcon from '@mui/icons-material/SettingsSharp';
-import TimerIcon from '@mui/icons-material/Timer';
-import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay';
-import CodeIcon from '@mui/icons-material/Code';
-import PencilIcon from 'mdi-material-ui/Pencil';
+
 
 import {withStyles} from '@mui/styles';
 import {alpha} from '@mui/material/styles';
@@ -21,6 +18,7 @@ import {debounceTime} from 'rxjs/operators';
 
 import {requireConfig} from '../core/modules/AutoLog';
 import TextFieldWithAutoFocus from '../common/TextFieldWithAutoFocus';
+import {controlActionIcons} from '../common/icons/SCR';
 
 
 const onDependenciesChange = async () => {
@@ -106,21 +104,6 @@ const styles = theme => {
 };
 
 
-const actions = [
-    {
-        icon: <TimerIcon/>, name: 'Autorun delay', id: 'autorunDelay',
-    },
-    {
-        icon: <CodeIcon/>, name: 'Code bundling', id: 'codeBundling',
-    },
-    {
-        icon: <PlaylistPlayIcon/>, name: 'Trace history'
-    },
-    {
-        icon: <PencilIcon/>, name: 'Change history'
-    },
-];
-
 class TraceControls extends PureComponent {
     state = {
         open: false,
@@ -183,10 +166,10 @@ class TraceControls extends PureComponent {
 
     handleAction = (actionId, event) => {
         switch (actionId) {
-            case actions[0].id:
+            case controlActionIcons[0].id:
                 this.setState({anchorEl: event.currentTarget, actionId});
                 break;
-            case actions[1].id:
+            case controlActionIcons[1].id:
                 this.setState({anchorEl: event.currentTarget, actionId});
                 break;
             default:
@@ -234,7 +217,7 @@ class TraceControls extends PureComponent {
         let menuContent;
         let menuClass = {className: classes.list};
         switch (actionId) {
-            case actions[0].id:
+            case controlActionIcons[0].id:
                 menuContent = <ListItem className={classes.list}>
                     <TextFieldWithAutoFocus
                         label="auto-run delay"
@@ -249,7 +232,7 @@ class TraceControls extends PureComponent {
                     />
                 </ListItem>;
                 break;
-            case actions[1].id:
+            case controlActionIcons[1].id:
                 menuContent = codeBundlingDeps.length ? codeBundlingDeps.map(dep => {
                     return <ListItem className={classes.list} key={dep.key}>
                         <TextFieldWithAutoFocus
@@ -298,7 +281,7 @@ class TraceControls extends PureComponent {
                         size: isTopNavigationToggled ? "small" : "medium",
                     }}
                 >
-                    {actions.filter(action => action.id).map(action => (
+                    {controlActionIcons.filter(action => action.id).map(action => (
                         <SpeedDialAction
                             key={action.id}
                             icon={action.icon}

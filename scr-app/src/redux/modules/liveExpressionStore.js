@@ -193,13 +193,20 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                             // } else {
                             //     alJs = aleInstance.getWrappedALECode(true);
                             // }
-                            let {commentsText} = aleInstance.doPreBALE();
+                            let {commentsText, throwables, ...rest} = aleInstance.doPreBALE();
+                            const {errors = [], exceptions = []} = throwables ?? {};
+                            jsErrors.push(...errors);
+                            jsExceptions.push(...exceptions);
+                            // console.log("throwables", {jsErrors, jsExceptions});
+
                             alJs = aleInstance.getWrappedALECode(true);
+                            const babelGenerateOutput = aleInstance.getALECodeOutput();
 
                             // checking if parsing error was thrown first? separate parsing js from ast traversal
 
 
                             bundle = (aleInstance && alJs) ? {
+                                babelGenerateOutput,
                                 commentsText,
                                 aleInstance,
                                 editorsTexts,
@@ -228,6 +235,7 @@ export const updateLiveExpressionStoreEpic = (action$, state$, {appManager}) =>
                             jsErrors.push(error);
                             console.log("?", error);
                         }
+
 
                         if (jsExceptions.length || jsErrors.length) {
                             isBundleSuccess = false;

@@ -511,7 +511,9 @@ const configureCommentCheckerEditor = (ref, editor, monaco, active) => {
     }
 
     let currentLineCount = 1;
-    commentEditor.onDidChangeModelContent(() => {
+    //onDidChangeModelContentOrError
+    const disposer = commentEditor.onDidChangeModelContent(() => {
+        console.log("commentEditor.onDidChangeModelContent");
         const nlc = commentEditor.getModel().getLineCount();
         if (nlc < 1 || currentLineCount === nlc) {
             return;
@@ -527,6 +529,7 @@ const configureCommentCheckerEditor = (ref, editor, monaco, active) => {
         if (disposed) {
             return;
         }
+        disposer.dispose();
         disposed = true;
         clearTimeout(ti);
         removeZone();

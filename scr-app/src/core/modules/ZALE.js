@@ -2329,8 +2329,9 @@ export default function zoneALE(code) {
         return null;
     };
 
-    const getImportZoneData = (importSourceName, importSourceIndex) => {
+    const getImportZoneData = (importSourceName, importSourceIndex =-1) => {
         const importSource = importZones[importSourceName];
+        importSourceIndex =importSourceIndex>-1?importSourceIndex:(importSource?.length??1)-1;
         const zone = importSource?.[importSourceIndex];
         return [
             zone?.parentPathI,

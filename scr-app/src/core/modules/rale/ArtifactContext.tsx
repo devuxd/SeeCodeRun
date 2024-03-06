@@ -1,33 +1,5 @@
 import {createContext, useContext,} from 'react';
 
-interface SearchStateShape {
-    // isGraphicalLocatorActive
-    placeholder: string,
-    disableMultiWord: false,
-    isFunctions: true,
-    isExpressions: false,
-    isValues: true,
-    isCase: false,
-    isWord: false,
-    isRegExp: false,
-    visualQuery: any[],
-    visualKey: null,
-    value: string,
-    searchWords: any[],
-    setSearchState: Function,
-    handleChangeValue: Function,
-    handleFilterClick: Function,
-    matchesFilterTrace: Function,
-    matchesFilterConsole: Function,
-    searchValueHighlighter: Function,
-    searchStateTextHighlighter: Function,
-    checkSearchActive: Function,
-    getExpandedPaths: Function,
-    findChunks: Function,
-    functionLikeExpressions: Function,
-    handleChangePartialSearchValue: Function,
-}
-
 interface SearchDispatchShape {
     setSearchState: Function,
     handleChangeValue: Function,
@@ -42,6 +14,23 @@ interface SearchDispatchShape {
     functionLikeExpressions: Function,
     handleChangePartialSearchValue: Function,
 }
+
+interface SearchStateShape extends SearchDispatchShape {
+    // isGraphicalLocatorActive
+    placeholder: string,
+    disableMultiWord: false,
+    isFunctions: true,
+    isExpressions: false,
+    isValues: true,
+    isCase: false,
+    isWord: false,
+    isRegExp: false,
+    visualQuery: any[],
+    visualKey: null,
+    value: string,
+    searchWords: any[],
+}
+
 
 interface ArtifactShape {
     searchState: SearchStateShape;

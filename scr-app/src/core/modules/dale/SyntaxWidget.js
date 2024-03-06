@@ -120,10 +120,13 @@ export class SyntaxWidget {
             styleContentWidgetDomNode(domNode);
             //todo: remove after debug
             domNode.dataset.type = locLiveZoneActiveDecoration?.syntaxFragment?.type();
-            domNode.dataset.sourceTextFocus = locLiveZoneActiveDecoration?.syntaxFragment?.sourceTextFocus;
-            domNode.dataset.sourceText = locLiveZoneActiveDecoration?.syntaxFragment?.sourceText;
-            domNode.dataset.range = JSON.stringify(getRange());
-            domNode.dataset.startPosition = JSON.stringify(startPosition());
+            if(domNode.dataset.type === "CallExpression"){
+                // console.log("SyntaxWidget", this, locLiveZoneActiveDecoration);
+            }
+            // domNode.dataset.sourceTextFocus = locLiveZoneActiveDecoration?.syntaxFragment?.sourceTextFocus;
+            // domNode.dataset.sourceText = locLiveZoneActiveDecoration?.syntaxFragment?.sourceText;
+            // domNode.dataset.range = JSON.stringify(getRange());
+            // domNode.dataset.startPosition = JSON.stringify(startPosition());
 
         }
 

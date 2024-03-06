@@ -29,7 +29,12 @@ export default function IdiomaticIndicator({idiomaticIndicatorShape}) {
             if (interactionType !== InteractionType.Simulation) {
                 return;
             }
-            const stringObj = activeArtifacts[currentArtifactI].artifactCommand;
+            const artifact = activeArtifacts[currentArtifactI];
+            if (!artifact) {
+                console.log("artifact", {activeArtifacts, currentArtifactI});
+                return;
+            }
+            const stringObj = artifact.artifactCommand;
             const searchStateUpdate = JSON.parse(stringObj);
             handleChangePartialSearchValue(searchStateUpdate);
         },
@@ -40,7 +45,11 @@ export default function IdiomaticIndicator({idiomaticIndicatorShape}) {
         if (currentArtifactI !== 0) {
             return;
         }
-        searchStateUpdate();
+        const tid = setTimeout(() => {
+            searchStateUpdate();
+        }, 60);
+
+        return () => clearTimeout(tid);
 
     }, [currentArtifactI, searchStateUpdate]);
 

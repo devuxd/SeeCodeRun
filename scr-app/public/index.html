@@ -14,19 +14,6 @@
         <link rel="stylesheet"
               href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
         <script>
-            // name="viewport" content= user-scalable=0, minimum-scale=1
-            // react-scripts 5.0.0 :: avoids Uncaught Reference errors:
-            // Buffer is not defined, process is not defined (react refresh:6:1)
-            window.Buffer = function () {
-                this.isBuffer = function () {
-                    return false
-                };
-            };
-            window.process = {platform: null, env: null};
-            // done fix.
-
-            window.MonacoEnvironment = {globalAPI: true}; //fixes monaco 0.22.0 breaking change.
-
             // keeping it S...
             if ('%PUBLIC_URL%') {
                 if (window.location.protocol !== 'https:') {

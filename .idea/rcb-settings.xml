@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ReactBuddyPluginProjectSettings">
+    <option name="devServerConfigs">
+      <DevServerState>
+        <option name="packageJsonPath" value="$PROJECT_DIR$/scr-app/package.json" />
+        <option name="scriptName" value="start" />
+        <option name="url" value="http://localhost:3000/#-NpVp8iFDEmdsCZHoYmM" />
+      </DevServerState>
+    </option>
+  </component>
+  <component name="StorybookProjectConfigState">
+    <option name="defaultDirectory" value="$PROJECT_DIR$/packages/react-inspector/stories" />
+    <option name="useDefaultDirectory" value="true" />
+  </component>
+</project>

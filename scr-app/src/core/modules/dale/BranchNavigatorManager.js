@@ -329,7 +329,7 @@ export default class BranchNavigatorManager {
 
         if (isError) {
             activate = true;
-            console.log("ERROR", zone);
+            // console.log("ERROR", zone);
         }
 
         // zone.locLiveZones.getHighlights().forEach(loc => {
@@ -362,29 +362,24 @@ export default class BranchNavigatorManager {
 //         if (isImport) {
 //             console.log('import', {zone, range, logValues, found});
 //         }
-        if (zone?.parentType === "IfStatement" || isError) { // && zone?.key !== 'test'
+
+        const _syntaxFragment = zone?.expressionId ? dale?.getSyntaxFragment(zone.expressionId)?.[2] : null;
+
+        if (_syntaxFragment?.ifBlock() || isError) { // && zone?.key !== 'test'
             // console.log('IfStatement ', {zone, range, logValues, found, b: getBranchNavigator()});
-            syntaxFragment = dale.getSyntaxFragment(zone.expressionId)?.[2];
+            syntaxFragment = _syntaxFragment;
             activate = true;
         }
 
-        if (logValues?.length && zone.type === "CallExpression") {
-            const lv = logValues[0];
-            const expressionId = lv.zone.expressionId;
-            const expressionType = lv.entry.logValue.objectType;
-            const syntaxFragment = dale.getSyntaxFragment(lv.zone.expressionId)?.[2];
 
-            //const focusRange = syntaxFragment.getSourceTextFocusRange();
-            const range = syntaxFragment.expressionRange();
-            const rRange = syntaxFragment.ranges[syntaxFragment.ranges.length - 1];
-            console.log("syntaxFragment.ranges[syntaxFragment.ranges.length - 1]", syntaxFragment, range, rRange);
-            const aleFirecoPad = this.aleInstance.getModel().firecoPad;
-            aleFirecoPad?.behaviors?.().monacoInlayHintsSubjectNextCallExpression({
-                expressionId,
-                expressionType,
-                options: {kind: "Type"},
-                range,
-            });
+        if (_syntaxFragment?.callExpression()) {
+            const hint = _syntaxFragment?.handleCallExpressionHint(logValues);
+            if (hint.hasHint()) {
+                syntaxFragment = _syntaxFragment;
+                const aleFirecoPad = this.aleInstance.getModel().firecoPad;
+                aleFirecoPad?.behaviors?.().monacoInlayHintsSubjectNextCallExpression(hint);
+            }
+
             // console.log("CallExpression  c", zone, lv.getValue(), lv, focusRange, syntaxFragment);
             // dale.inLay();
         }
@@ -614,20 +609,21 @@ export default class BranchNavigatorManager {
 
                     if (zone?.scopeType === "function") {
                         //paramsIdentifier
-                        console.log('I', {
-                            y,
-                            parentPathI,
-                            expressionId,
-                            idValue,
-                            values,
-                            uid,
-                            extraExpressionId,
-                            zone,
-                            entry,
-                            extraZone,
-                            branchNavigator,
-                            logValues
-                        });
+                        //callerType = "local";
+                        // console.log('ScopeTypes.F I', {
+                        //     y,
+                        //     parentPathI,
+                        //     expressionId,
+                        //     idValue,
+                        //     values,
+                        //     uid,
+                        //     extraExpressionId,
+                        //     zone,
+                        //     entry,
+                        //     extraZone,
+                        //     branchNavigator,
+                        //     logValues
+                        // });
                     }
 
                     break;

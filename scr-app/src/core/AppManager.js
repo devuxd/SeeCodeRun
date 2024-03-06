@@ -45,7 +45,7 @@ import {
 import {
     configureLineNumbersProvider,
     configureMonacoEditor,
-    configureMonacoModel,
+    configureMonacoModel, normalizeEditorModelText,
 } from '../utils/monacoUtils';
 
 import {MonacoHighlightTypes} from "../themes";
@@ -110,6 +110,8 @@ const defaultFirecoPad = {
     nextSetFirecoTexts: [],
     text: null,// value obtained by firepad or set via scr
     widgetLayoutChange: null, // handled in LiveExpressionStore
+    firepadHeadless: null,
+    serverTimestamp: null,
 };
 
 export const editorIds = {
@@ -119,6 +121,8 @@ export const editorIds = {
 };
 
 class AppManager {
+    disableMonacoJSXHighlighter = true;
+
     constructor(urlData, isProduction) {
         this.idLogRocket = null;// '2njsfv/scr';
         this.isProduction = isProduction;
@@ -308,6 +312,8 @@ class AppManager {
         fireco.chatPath = `${root}/${pastebinId}/chat`;
         fireco.usersPath = `${root}/${pastebinId}/users`;
         fireco.persistablePath = `${root}/${pastebinId}/components`;
+        const rxCloudStorePath = `${root}/${pastebinId}/rxStore`;
+        this.rxApp().onRxCloudStorePath(rxCloudStorePath, fireco.database);
         for (const editorId in this.firecoPads) {
             this.firecoPads[editorId].firebasePath =
                 `${root}/${pastebinId}/firecos/${editorId}`;
@@ -390,6 +396,11 @@ class AppManager {
     }
 
     activateMonacoJSXHighlighter = async (firecoPad, monaco = this.monaco) => {
+        if (this.disableMonacoJSXHighlighter) {
+            return;
+        }
+        // console.log("disableMonacoJSXHighlighter");
+
         firecoPad.monacoJSXHighlighter?._dispose();
 
         MonacoJSXHighlighter ??= (await import ('monaco-jsx-highlighter')).default;
@@ -475,11 +486,11 @@ class AppManager {
         const {
             editorRef, monacoEditorContentChanged,
             editorDidMount, isConsole, monacoOptions,
-            onEditorContentFirstRender,
             disposerRef,
+            setIsMonacoEditorReady,
         } = editorHooks;
 
-        const {monaco} = this;
+        const {monaco, prevEditorRef} = this;
 
         if (monaco) {
             try {
@@ -522,6 +533,14 @@ class AppManager {
                     // lineNumbers: firecoPad.lineNumbersProvider.lineNumbers
                 };
 
+                if (prevEditorRef?.current) {
+                    if (prevEditorRef.current === editorRef.current) {
+                        console.log(">>>..............................>");
+                    } else {
+                        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    }
+                }
+
                 const monacoEditor = configureMonacoEditor(
                     monaco,
                     editorRef.current,
@@ -529,6 +548,7 @@ class AppManager {
                 );
 
                 firecoPad.monacoEditor = monacoEditor;
+
 
                 const {behaviors} = firecoPad;
                 // console.log("firecoPad", {firecoPad, behaviors});
@@ -594,19 +614,24 @@ class AppManager {
                     debouncedAsyncContentChanged();
                 }, 50, {maxWait: timeWindow});
 
-                firecoPad.isMonacoEditorReady = firecoPad.isMonacoEditorReady ?? false;
+                firecoPad.handleChangeModelContent = (codeChanges) => {
+                    // console.log("onDidChangeModelContent", {codeChanges});
+                    behaviors?.().codeChangesSubject?.().next({codeChanges});
+                    firecoPad.modelContentChanges ??= [];
+                    firecoPad.modelContentChanges.push(codeChanges);
+                    firecoPad.onDidChangeModelContent?.();
+                };
 
-                const disposer = monacoEditor
-                    .onDidChangeModelContent((codeChanges, ...others) => {
-                        behaviors?.().codeChangesSubject?.().next({codeChanges, others});
-                        firecoPad.modelContentChanges ??= [];
-                        firecoPad.modelContentChanges.push(codeChanges);
-                        !firecoPad.isMonacoEditorReady &&
-                        (firecoPad.isMonacoEditorReady = true);
+//onDidChangeModelContentOrError
+                const disposer = monacoEditor.onDidChangeModelContent((codeChanges) => {
+                    if (!firecoPad.isMonacoEditorReady && setIsMonacoEditorReady) {
+                        firecoPad.isMonacoEditorReady = true;
+                        setIsMonacoEditorReady(firecoPad.isMonacoEditorReady);
+                        disposer.dispose();
+                        firecoPad?.handleChangeModelContent(codeChanges);
+                    }
 
-                        onEditorContentFirstRender?.();
-                        firecoPad.onDidChangeModelContent?.()
-                    });
+                });
 
                 let disposed = false;
 
@@ -618,7 +643,7 @@ class AppManager {
 
                         debouncedAsyncContentChanged.cancel();
                         firecoPad.onDidChangeModelContent.cancel();
-                        disposer.dispose();
+                        disposer?.dispose();
                         monacoEditor.dispose();
 
                         disposed = true;
@@ -697,13 +722,191 @@ class AppManager {
             return fireco;
         }
 
-        // try {
         const firebase = (await import('firebase/compat/app')).default;
-        // const {getAuth} =
         await import ('firebase/compat/auth');
-        // const Database =
         await import ('firebase/compat/database');
-        const Firepad = (await import('firepad')).default;
+        const allFirepad = (await import( 'firepad'));
+        const Firepad = allFirepad.default;
+
+        //MonacoAdapter.prototype.onChange
+
+
+//         const MonacoAdapter = Firepad.MonacoAdapter;
+//
+//
+//         const onChange = MonacoAdapter.prototype.onChange;
+//
+// // Step 2: Override the function with your custom version
+//         let tid = null;
+//         let doOp = true;
+//         let previousVersionId = 0;
+//         MonacoAdapter.prototype.onChange = function (...args) {
+//             // if (!doOp) {
+//             //     return
+//             // }
+//             // Insert your custom logic here
+//
+//             const currentVersionId = args[0].versionId;
+//
+//             if (previousVersionId === currentVersionId) {
+//
+//             }
+//
+//             const {changes} = args[0];
+//
+//             const delta = currentVersionId - previousVersionId;
+//             console.log("sendOperation() onChange", this, {
+//                 delta,
+//                 currentVersionId,
+//                 previousVersionId
+//             }, changes, args[0]);
+//             previousVersionId = currentVersionId;
+//
+//
+//             // doOp = false;
+//             // try {
+//             onChange.call(this, ...args);
+//             // } catch (e) {
+//             //     console.log("sendOperation() onChange", args[0].versionId, args, e);
+//             // }
+//             // Call the original function with the current context and original arguments
+//
+//             // const result =
+//             // clearTimeout(tid);
+//             // tid = setTimeout(
+//             //     () => {
+//             //         doOp = true;
+//             //     }
+//             //     , 0);
+//
+//             // You can also modify the result here if needed
+//             // console.log("Custom logic after calling the original function");
+//
+//             // Return the result
+//             // return result;
+//         };
+        // console.log("Firepad", {...Firepad}, MonacoAdapter);
+
+        // Step 1: Save a reference to the original function
+        // const originalOperationFromMonacoChanges = MonacoAdapter.prototype.operationFromMonacoChanges;
+
+// Step 2: Override the function with your custom version
+//         MonacoAdapter.prototype.operationFromMonacoChanges = function (changes, doc, fromVersion) {
+//             // Insert your custom logic here
+//             console.log("Custom logic before calling the original function", {changes, doc, fromVersion});
+//
+//             // Call the original function with the current context and original arguments
+//
+//             const result = originalOperationFromMonacoChanges.call(this, changes, doc, fromVersion);
+//
+//             // You can also modify the result here if needed
+//             // console.log("Custom logic after calling the original function");
+//
+//             // Return the result
+//             return result;
+//         };
+
+        //TextOperation.prototype.compose
+
+//         const TextOperation = Firepad.TextOperation;
+//         // console.log("Firepad", {...Firepad}, MonacoAdapter);
+//
+//         // Step 1: Save a reference to the original function
+//         const compose = TextOperation.prototype.compose;
+//
+// // Step 2: Override the function with your custom version
+//         TextOperation.prototype.compose = function (operation2) {
+//             // Insert your custom logic here
+//             var operation1 = this;
+//             // console.log("Custom logic before calling compose", {
+//             //     operation1,
+//             //     operation2
+//             // }, operation1.targetLength, operation2.baseLength);
+//             if (operation1.targetLength !== operation2.baseLength) {
+//                 operation1.targetLength = operation2.baseLength
+//             }
+//
+//             try {
+//                 const result = compose.call(this, operation2);
+//                 return result;
+//             } catch (e) {
+//                 return operation2;
+//             }
+//             // Call the original function with the current context and original arguments
+//             //const result = compose.call(this, operation2);
+//
+//             // You can also modify the result here if needed
+//             // console.log("Custom logic after calling the original function");
+//
+//             // Return the result
+//             //return result;
+//         };
+
+//         const FirebaseAdapter = Firepad.firebaseAdapter_;
+//         console.log("Firepad", {...Firepad}, allFirepad, FirebaseAdapter);
+//
+//         // Step 1: Save a reference to the original function
+//         const sendOperation = FirebaseAdapter.prototype.sendOperation;
+//
+// // Step 2: Override the function with your custom version
+//         FirebaseAdapter.prototype.sendOperation = function (operation, callback) {
+//             // Insert your custom logic here
+//             // var operation1 = this;
+//             // // console.log("Custom logic before calling compose", {
+//             // //     operation1,
+//             // //     operation2
+//             // // }, operation1.targetLength, operation2.baseLength);
+//             // if (operation1.targetLength !== operation2.baseLength) {
+//             //     operation1.targetLength = operation2.baseLength
+//             // }
+//
+//             // Sanity check that this operation is valid.
+//             console.log("sendOperation", this.document_?.targetLength === operation?.baseLength, this.document_?.targetLength, operation?.baseLength);
+//
+//             try {
+//                 const result = sendOperation.call(this, operation, callback);
+//                 // return result;
+//             } catch (e) {
+//                 // return operation2;
+//             }
+//             // Call the original function with the current context and original arguments
+//             //const result = compose.call(this, operation2);
+//
+//             // You can also modify the result here if needed
+//             // console.log("Custom logic after calling the original function");
+//
+//             // Return the result
+//             //return result;
+//         };
+
+        // FirebaseAdapter.prototype.sendOperation
+
+
+        // const firebase = (await import('firebase/app')).default;
+        // // const {getAuth} =
+        // await import ('firebase/auth');
+        // // const Database =
+        // await import ('firebase/database');
+        // const Firepad = (await import( '@hackerrank/firepad')).default;
+        //"@hackerrank/firepad": "^0.8.5",
+
+        // try {
+        // const firebase = (await import('firebase/compat/app')).default;
+        // // const {getAuth} =
+        // await import ('firebase/compat/auth');
+        // // const Database =
+        // await import ('firebase/compat/database');
+        // const Firepad = (await import( '@lucafabbian/firepad')).default;
+
+        //old firebase 8...
+        // const firebase = (await import('firebase/app')).default;
+        // // const {getAuth} =
+        // await import ('firebase/auth');
+        // // const Database =
+        // await import ('firebase/database');
+        // const Firepad = (await import('firepad')).default;// "firepad": "^1.5.11",
+
+
         const {initializeApp} = firebase;
         // const {getDatabase, serverTimestamp} = Database;
 
@@ -740,7 +943,7 @@ class AppManager {
 
     authSignInMethod = "signInAnonymously"; //signInWithCustomToken
 
-    observeActivateFireco(pastebinId, pastebinToken, isNew) {
+    observeActivateFireco(pastebinId, pastebinToken, isNew, timeout = 1000) {
         // console.log("observeActivateFireco", {pastebinId, pastebinToken, isNew});
         if (pastebinId && pastebinToken) {
 
@@ -748,14 +951,44 @@ class AppManager {
             return new Observable(observer => {
                 //http://localhost:3000/#-MmsphZhV1G1mZdAF3Ze
 
+                let retries = 3;
+                let tid = null;
+                const onError = (error) => {
+                    clearTimeout(tid);
+                    tid = setTimeout(() => {
+                        if (retries > 0) {
+                            retries--;
+                            signIn();
+                            return;
+                        }
+
+                        if (fireco.isAuth === false) {
+                            return;
+                        }
+
+                        fireco.isAuth = false;
+                        observer.next(activateFirepadRejected(error));
+
+                    }, timeout);
+
+                };
+                const signIn = () => {
+                    if (this.authSignInMethod === "signInAnonymously") {
+                        return fireco.auth.signInAnonymously(
+
+                        ).catch(onError);
+                    }
+
+                    return fireco.auth.signInWithCustomToken(
+                        pastebinToken
+                    ).catch(onError);
+                };
+
+
                 this.loadFires().then(() => {
                     fireco.onValue = snap => observer.next(onConnectionChanged(snap.val()));
                     fireco.connectedRef.on("value", fireco.onValue);
 
-                    const onError = (error) => {
-                        fireco.isAuth = false;
-                        observer.next(activateFirepadRejected(error));
-                    };
 
                     fireco.unsubscribeOnAuthStateChanged =
                         fireco.auth.onAuthStateChanged(user => {
@@ -830,15 +1063,7 @@ class AppManager {
                             onError
                         );
 
-                    if (this.authSignInMethod === "signInAnonymously") {
-                        return fireco.auth.signInAnonymously(
-
-                        ).catch(onError);
-                    }
-
-                    return fireco.auth.signInWithCustomToken(
-                        pastebinToken
-                    ).catch(onError);
+                    signIn();
                 });
 
                 return () => {
@@ -862,7 +1087,7 @@ class AppManager {
         }
     }
 
-    observeConfigureFirecoEditor(editorId, editorText) {
+    observeConfigureFirecoEditor(editorId, editorText, flushChangesDebounceTime = 500, ignoreSyncChangesTime = 5000) {
         if (!fireco.isAuth) {
             return of(configureFirecoEditorRejected(editorId, 'Error:' +
                 ' Fireco' +
@@ -881,23 +1106,140 @@ class AppManager {
 
         try {
             const firecoPad = this.firecoPads[editorId];
+
             firecoPad.firebaseRef = fireco.database.ref(firecoPad.firebasePath);
+            // const editor = firecoPad.monacoEditor;
+            // fixed 1.5.11 (firepad)
+            // editor.onDidBlurEditor = editor.onDidBlurEditorWidget;
+            // editor.onDidFocusEditor = editor.onDidFocusEditorWidget;
+            let isReady = false;
+
             firecoPad.firepadInstance = fireco.Firepad.fromMonaco(
                 firecoPad.firebaseRef,
                 firecoPad.monacoEditor,
                 {defaultText: editorText}
             );
+
+
+            let changesBuffer = [];
+
+            let flushTid = null;
+            const doCrossOSCompatibility = () => {
+                const model = firecoPad.monacoEditor?.getModel();
+                const monaco = this.monaco;
+
+
+                if (!(model && monaco)) {
+                    return
+                }
+
+                normalizeEditorModelText(model, monaco);
+                // console.log("YOLT", editorId, {model, monaco});
+            };
+
+            let isCrossOSCompatibleSync = false;
+            let isCrossOSCompatibleSyncEdits = false;
+            const flushChangesBuffer = () => {
+                // Clear any scheduled flush to debounce changes
+                clearTimeout(flushTid);
+                flushTid = setTimeout(() => {
+                    if (!isCrossOSCompatibleSync) {
+                        // console.log("YOLO", editorId, {
+                        //     isCrossOSCompatibleSync,
+                        //     isCrossOSCompatibleSyncEdits,
+                        //     changesBuffer
+                        // });
+                        isCrossOSCompatibleSync = true;
+                        isCrossOSCompatibleSyncEdits = true;
+                        doCrossOSCompatibility();
+                        return;
+                    }
+
+
+                    if (isCrossOSCompatibleSyncEdits) {
+                        // console.log("YOLTR", editorId, {
+                        //     isCrossOSCompatibleSync,
+                        //     isCrossOSCompatibleSyncEdits,
+                        //     changesBuffer
+                        // });
+                        isCrossOSCompatibleSyncEdits = false;
+                        changesBuffer = [];
+                        return;
+                    }
+
+
+                    if (firecoPad.handleChangeModelContent) {
+                        // console.log("YOLTE", editorId, {
+                        //     isCrossOSCompatibleSync,
+                        //     isCrossOSCompatibleSyncEdits,
+                        //     changesBuffer
+                        // });
+                        changesBuffer.forEach(change => {
+                            firecoPad.handleChangeModelContent(change);
+                        });
+                        changesBuffer = []; // Clear the buffer after processing changes
+                    }
+                }, flushChangesDebounceTime);
+            };
+
+            let ignoreSynced = false;
+            let syncTid = null;
+
+            const scheduleIgnoreSync = () => {
+                // Clear any previous ignoreSync schedule
+                clearTimeout(syncTid);
+                syncTid = setTimeout(() => {
+                    ignoreSynced = true; // Enable fallback to force flushing changes
+                    flushChangesBuffer(); // Flush changes immediately upon fallback activation
+                }, ignoreSyncChangesTime);
+            };
+
+            // Initialize the fallback mechanism
+            scheduleIgnoreSync();
+
+            const onContentChange = (event) => {
+                changesBuffer.push(event);
+                if (!ignoreSynced) {
+                    scheduleIgnoreSync(); // Prepare fallback if not already in fallback state
+                } else {
+                    flushChangesBuffer(); // Flush immediately if in fallback state
+                }
+            };
+            // Setup the listener for content changes
+            const disposer = firecoPad.monacoEditor.onDidChangeModelContent(onContentChange);
+
+            const flushChanges = (isSynced) => {
+
+                // Stop the fallback mechanism if changes are synced
+                clearTimeout(syncTid);
+                if (isReady && isSynced) {
+                    ignoreSynced = false; // Respect actual sync state, reset fallback
+                    flushChangesBuffer(); // Flush changes as sync is confirmed
+                } else {
+                    scheduleIgnoreSync(); // Prepare fallback if not synced
+                }
+            };
+
+// Listen for sync state changes
+            firecoPad.firepadInstance.on('synced', flushChanges);
+
+
+            firecoPad.serverTimestamp = fireco.serverTimestamp;
+
+            firecoPad.firepadHeadless = () => fireco.Firepad.Headless;
             return new Observable(observer => {
                 observer.next(configureFirecoEditorFulfilled(editorId));
                 const onReady = () => {
+                    isReady = true;
                     observer.next(configureFirecoEditorReady(editorId));
                     observer.complete();
                 };
-
                 firecoPad.firepadInstance.on('ready', onReady);
 
                 return () => {
+                    // isReady = false;
                     firecoPad.firepadInstance.off('ready', onReady);
+                    // disposer?.dispose();
                 };
             });
         } catch (error) {

@@ -1,8 +1,11 @@
+// // /** @jsxImportSource @emotion/react */
+// import {jsx, css} from '@emotion/react';
 import {
-    useMemo, useCallback, useState, useContext, memo, useEffect,
+    useMemo, useCallback, useState, useContext, memo, useEffect, useRef,
 } from 'react';
-/** @jsxImportSource @emotion/react */
-import {jsx} from '@emotion/react';
+import {BehaviorSubject} from 'rxjs';
+import {debounceTime} from 'rxjs/operators';
+
 import PropTypes from 'prop-types';
 
 import {withStyles} from '@mui/styles';
@@ -17,6 +20,10 @@ import FunctionIcon from 'mdi-material-ui/Function';
 import FolderHome from 'mdi-material-ui/FolderHome';
 import FolderAccount from 'mdi-material-ui/FolderAccount';
 import FolderDownload from 'mdi-material-ui/FolderDownload';
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
+// import Badge from '@mui/material/Badge';
 
 // import CheckIcon from '@mui/icons-material/Check';
 // import ClearIcon from '@mui/icons-material/Clear';
@@ -33,14 +40,19 @@ import isObjectLike from 'lodash/isObjectLike';
 import ALEContext from "./ALEContext";
 import {useResizeAndOverflowDetector} from "../../../utils/reactUtils";
 import {isTypeNaN} from "../../../utils/scrUtils";
+import {useComputableProps} from "./GraphicalQueryBase";
+import {ExecutionWarningIcon} from "../../../common/icons/Software";
+
+const ALEProps = {arrayMaxProperties: 1, objectMaxProperties: 1};
 
 //start
 // https://github.com/xyc/react-inspector/tree/master/src/object-inspector
 /* NOTE: Chrome console.log is italic */
-const styles = theme => {
+const aleInspectorStyles = theme => {
     return ({
         preview: {
             fontStyle: 'italic',
+            // color: "red",
         },
         objectClassName: {
             fontSize: '80%',
@@ -129,7 +141,7 @@ const styles = theme => {
             fontFamily: 'Menlo, monospace',
             color: 'white',
             fontWeight: 'bold',
-            backgroundColor: 'grey',
+            backgroundColor: 'red',
         },
     })
 };
@@ -179,13 +191,32 @@ const getPropertyValue = (object, propertyName) => {
 };
 
 /* intersperse arr with separator */
+// const intersperse = (arr, sep) => {
+//     if (arr.length === 0) {
+//         return [];
+//     }
+//
+//     return arr.slice(1).reduce((xs, x) => xs.concat([sep, x]), [arr[0]]);
+// };
+
 const intersperse = (arr, sep) => {
+    // Directly return an empty array for the empty input to avoid further processing
     if (arr.length === 0) {
         return [];
     }
 
-    return arr.slice(1).reduce((xs, x) => xs.concat([sep, x]), [arr[0]]);
+    return arr.reduce((acc, item, index) => {
+        // For the first item, just add it to the accumulator
+        if (index === 0) {
+            acc.push(item);
+        } else {
+            // For subsequent items, add the separator first, then the item
+            acc.push(sep, item);
+        }
+        return acc;
+    }, []); // Start with an empty array as the accumulator
 };
+
 
 // const isTypeNaN = (datum) => {
 //    return (datum !== NaN.toString() && datum?.toString() === NaN.toString());
@@ -257,52 +288,49 @@ const makeGroupedPreviewArray = (
     return result;
 };
 
-const PreviewArray = memo((
-    {
-        disableListGroup, object, maxProperties, isMaxPreviewDepth,
-        ObjectValue, previewDepth, ellipsis, styles, classes,
-        ...objectProps
-    }
-) => {
-    const previewArray = disableListGroup ? makePreviewArray(
-        object,
-        maxProperties,
-        (element, index) => (
-            isMaxPreviewDepth ? <ObjectValue key={index} object={element}/>
-                : <ObjectPreview key={index} {...objectProps} data={element}
-                                 previewDepth={previewDepth + 1}/>
-        ),
-        ellipsis
-    ) : makeGroupedPreviewArray(
-        object,
-        maxProperties,
-        ({element, count}, index) => {
-            const preview = isMaxPreviewDepth ?
-                <ObjectValue key={index} object={element}/>
-                : <ObjectPreview key={index} {...objectProps} data={element}
-                                 previewDepth={previewDepth + 1}/>;
-            return (
-                count > 1 ? <span key={index}>{preview}<GroupCount
-                        count={count}/></span>
-                    : preview
-            );
-        },
-        ellipsis
-    );
-    const arrayLength = object.length;
-    return (
-        <>
-        <span css={styles.objectDescription}>
-          {arrayLength === 0 ? `` : `(${arrayLength})\xa0`}
-        </span>
-            <span css={styles.preview}>
-                  <span className={classes.arrayBrackets}>[</span>
+const PreviewArray = memo(
+    ({
+         disableListGroup, object, maxProperties, isMaxPreviewDepth,
+         ObjectValue, previewDepth, ellipsis, styles, classes,
+         ...objectProps
+     }) => {
+
+        const previewArray = disableListGroup ? makePreviewArray(
+            object,
+            maxProperties,
+            (element, index) => (
+                isMaxPreviewDepth ? <ObjectValue key={index} object={element}/>
+                    : <ObjectPreview key={index} {...objectProps} data={element}
+                                     previewDepth={previewDepth + 1}/>
+            ),
+            ellipsis
+        ) : makeGroupedPreviewArray(
+            object,
+            maxProperties,
+            ({element, count}, index) => {
+                const preview = isMaxPreviewDepth ?
+                    <ObjectValue key={index} object={element}/>
+                    : <ObjectPreview key={index} {...objectProps} data={element}
+                                     previewDepth={previewDepth + 1}/>;
+                return (
+                    count > 1 ? <span key={index}>{preview}<GroupCount
+                            count={count}/></span>
+                        : preview
+                );
+            },
+            ellipsis
+        );
+        const arrayLength = object.length;
+        const label = arrayLength === 0 ? `` : `(${arrayLength})\xa0`;
+        return (<>
+            <span style={styles.objectDescription}>{label}</span>
+            <span style={styles.preview}>
+                 <span className={classes.arrayBrackets}>[</span>
                 {intersperse(previewArray, ', ')}
                 <span className={classes.arrayBrackets}>]</span>
-               </span>
-        </>
-    );
-});
+            </span>
+        </>);
+    });
 
 const stripConstructorFromObject = (object) => {
     const {constructor, ...obj} = object ?? {};
@@ -312,7 +340,7 @@ const stripConstructorFromObject = (object) => {
 /**
  * A preview of the object
  */
-export const ObjectPreview = memo(withStyles(styles)(
+export const ObjectPreview = memo(withStyles(aleInspectorStyles)(
     (props) => {
         const {
             classes,
@@ -337,6 +365,8 @@ export const ObjectPreview = memo(withStyles(styles)(
             ...rest
         } = useContext(ALEContext);
         const styles = useStyles?.('ObjectPreview');
+
+        // console.log("s", styles, classes);
 
         const object = liveData ? liveData.getSnapshot() : data;
 
@@ -402,7 +432,7 @@ export const ObjectPreview = memo(withStyles(styles)(
                                 classes.undefinedValue
                                 : classes.undefinedValueWarning}
                     >
-                        {'U'}
+                        undefined
                         </span>
                             </ExplorerTooltip>);
                     case null:
@@ -463,8 +493,8 @@ export const ObjectPreview = memo(withStyles(styles)(
         const isMaxPreviewDepth = previewDepth > maxPreviewDepth;
 
         if (Array.isArray(object)) {
-            const maxProperties =
-                arrayMaxProperties ?? styles.arrayMaxProperties;
+            const maxProperties = (ALEProps.arrayMaxProperties ??
+                arrayMaxProperties) ?? styles.arrayMaxProperties;
             return <PreviewArray
                 {...{
                     ...props,
@@ -473,7 +503,8 @@ export const ObjectPreview = memo(withStyles(styles)(
                 }}
             />;
         } else {
-            const maxProperties = objectMaxProperties ?? styles.objectMaxProperties;
+            const maxProperties = (ALEProps.objectMaxProperties ??
+                objectMaxProperties) ?? styles.objectMaxProperties;
             let propertyNodes = [];
             for (const propertyName in object) {
                 if (hasOwnProperty.call(object, propertyName)) {
@@ -514,14 +545,14 @@ export const ObjectPreview = memo(withStyles(styles)(
 
             return (
                 <>
-              <span css={styles.objectDescription}>
-                 <ObjectType object={object}/>
-              </span>
-                    <span css={styles.preview}>
-                <span className={classes.objectBraces}>{'{'}</span>
+                    <span style={styles.objectDescription}>
+                        <ObjectType object={object}/>
+                    </span>
+                    <span style={styles.preview}>
+                        <span className={classes.objectBraces}>{'{'}</span>
                         {intersperse(propertyNodes, ', ')}
                         <span className={classes.objectBraces}>{'}'}</span>
-              </span>
+                    </span>
                 </>
             );
         }
@@ -530,7 +561,7 @@ ObjectPreview.displayName = 'ObjectPreview';
 
 
 const liveExpressionIconDefaultStyle = {
-    fontSize: "0.8rem",
+    fontSize: "0.75rem",
     color: 'white',
     fontWeight: 'bold',
     backgroundColor: 'rgb(153, 128, 255)',
@@ -538,14 +569,22 @@ const liveExpressionIconDefaultStyle = {
 
 const labelStyles = (theme) => {
     const baseIconStyle = {
+        height: 10,
         fontSize: "0.75rem",
-        marginBottom: "-0.2rem",
+        // marginBottom: "-0.2rem",
         color: 'white',
         fontWeight: 'bold',
     };
     return {
         liveExpressionIconDefaultStyle: {
             ...baseIconStyle,
+            marginBottom: "-0.1rem",
+            backgroundColor: theme.palette.mode === 'light' ?
+                'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
+        },
+        liveExpressionTextDefaultStyle: {
+            ...baseIconStyle,
+            fontSize: "0.55rem",
             backgroundColor: theme.palette.mode === 'light' ?
                 'rgb( 26,56, 172)' : 'rgb(63,86,  209)',
         }
@@ -606,12 +645,14 @@ const ObjectRootLabel = withStyles(labelStyles)(({classes, name, ...rest}) => {
     switch (stateType) {
         case "native":
             idiomaticState = <><FolderHome
-                className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+                className={classes.liveExpressionIconDefaultStyle}/>{JSON.stringify(location)}</>;
             break
         case "import":
             //<span>{JSON.stringify(info.importZoneExpressionData)}</span>
+            // console.log("import", info);
             idiomaticState = <><FolderDownload
-                className={classes.liveExpressionIconDefaultStyle}/>{idiomaticState}</>;
+                className={classes.liveExpressionIconDefaultStyle}/><span
+                className={classes.liveExpressionTextDefaultStyle}>{info.importZoneExpressionData.sourceText}</span></>;
     }
 
     // if (objectName) {
@@ -686,8 +727,8 @@ const ObjectLabel = withStyles(labelStyles)(({classes, name, data, isNonenumerab
 
 
     return (<span>
-      {objectName}<span>: </span>{objectValue}
-    </span>
+            {objectName}<span>: </span>{objectValue}
+        </span>
     );
 });
 
@@ -763,12 +804,12 @@ const tableChartIconStyleOff = {
 };
 
 const tableOn = (
-    <TableChartIcon css={tableChartIconStyleOn}/>
+    <TableChartIcon sx={tableChartIconStyleOn}/>
 );
 
 const tableOff = (
     <TableChartOutlinedIcon
-        css={tableChartIconStyleOff}/>
+        sx={tableChartIconStyleOff}/>
 );
 
 const tableChartIconStyleOnChart =
@@ -776,7 +817,7 @@ const tableChartIconStyleOnChart =
 
 const tooltipTableOn = (
     <TableChartIcon
-        css={tableChartIconStyleOnChart}/>
+        sx={tableChartIconStyleOnChart}/>
 );
 
 const tableChartIconStyleOffChart =
@@ -784,10 +825,11 @@ const tableChartIconStyleOffChart =
 
 const tooltipTableOff = (
     <TableChartOutlinedIcon
-        css={tableChartIconStyleOffChart}/>
+        sx={tableChartIconStyleOffChart}/>
 );
 
 const defaultContentStyle = {
+    display: 'inline-flex',
     width: "fit-content",
 }
 
@@ -826,6 +868,8 @@ const sxIconInline = {
     top: 3.61,
 };
 
+const defaultOverFlowPipelineRx = debounceTime(1000);
+
 const ALEInspector = (
     props
 ) => {
@@ -845,6 +889,7 @@ const ALEInspector = (
         Inspector,
         GraphicalQuery,
         VisualQueryManager,
+        overFlowPipelineRx = defaultOverFlowPipelineRx,
     } = useContext(ALEContext);
 
     // console.log('AI', props);
@@ -857,17 +902,32 @@ const ALEInspector = (
     const {isGraphical, isDomLiveRef, isLiveRef} = aleObject;
     const graphical = isGraphical?.();
 
+    const [cssText, nonComputableProps, propValues] = useComputableProps(data);
+
     const [overflowed, setOverflowed] = useState(false);
-    const onOverflow = useCallback(
-        (overflowed) => {
-            setOverflowed(overflowed);
-        },
-        []
+
+    const rxRef = useRef(null);
+    if (!rxRef.current) {
+        const bs = new BehaviorSubject(null);
+        const nextValue = (value) => bs.next(value);
+        rxRef.current = {
+            bs,
+            nextValue,
+        };
+    }
+
+    useEffect(
+        () => {
+            const uns = rxRef.current.bs.pipe(overFlowPipelineRx).subscribe((overflowed) => {
+                setOverflowed(overflowed);
+            });
+
+            return () => uns.unsubscribe();
+        }, [overFlowPipelineRx]
     );
 
-    const {ref, containerRef} = useResizeAndOverflowDetector(
-        {onOverflow}
-    );
+
+    const {ref, containerRef} = useResizeAndOverflowDetector(rxRef.current.nextValue);
 
     const graphicalClasses = useMemo(
         () => {
@@ -912,32 +972,29 @@ const ALEInspector = (
             //       aleObject
             //    }
             // );
+
+
             const objectLabel = (depth === 0
                 ? <ObjectRootLabel name={name}
                                    data={object}/>
                 : <ObjectLabel name={name} data={object}
                                isNonenumerable={isNonenumerable}/>);
+
+
             if (_graphical) {
                 const graphicalQuery = <GraphicalQuery
                     outputRefs={outputRefs}
                     visualIds={visualIds}
+                    data={object}
                 />;
                 if (isCompact) {
                     return graphicalQuery;
                 }
                 return (
                     <>
-                  <span
-                      className={containerClassName}
-                  >
-                     {objectLabel}
-                  </span>
-                        <span
-                            className={connectorClassName}
-                        />
-                        <span className={overlayClassName}>
-                     {graphicalQuery}
-                  </span>
+                        <Box className={containerClassName}>{objectLabel}</Box>
+                        <Box className={connectorClassName}/>
+                        <Box className={overlayClassName}>{graphicalQuery}</Box>
                     </>
                 );
             }
@@ -970,6 +1027,9 @@ const ALEInspector = (
         , [data]
     );
 
+    const [toggleStyle, setToggleStyle] = useState(false);
+
+
     const {inspector, tooltipInspector, disableInteractive} = useMemo(
         () => {
             const inspectorThemeName =
@@ -989,20 +1049,44 @@ const ALEInspector = (
                 />
             );
 
+
             const tooltipInspectorTheme =
                 graphical ? "inspectorGraphicalTheme" : "inspectorTheme";
 
-            const tooltipInspector = inline && isStrictLiteral ? null : (
-                <Inspector
+
+            let tooltipInspector = inline && isStrictLiteral ? null : (
+                (<Inspector
                     inspectorThemeName={tooltipInspectorTheme}
                     cacheId={cacheId}
                     nodeRenderer={tooltipNodeRenderer}
                     data={data}
                     table={isTable}
                     resizable
+
                     {...rest}
-                />
+                />)
             );
+
+            if (tooltipInspector && nonComputableProps.length) {
+                tooltipInspector = (
+                    <Stack spacing={1}>
+                        <Stack direction="row" spacing={1}>
+                            <Chip
+                                label={`unknown css styles (${nonComputableProps.length})`} variant={"filled"}
+                                color={"warning"} size={"small"}
+                                icon={<ExecutionWarningIcon/>}
+                            />
+                            {
+                                nonComputableProps.map(
+                                    p => (
+                                        <Chip key={p} label={p} variant={"outlined"} color={"default"} size={"small"}/>)
+                                )
+                            }
+                        </Stack>
+                        <Divider flexItem variant={"middle"}/>
+                        {tooltipInspector}
+                    </Stack>);
+            }
 
             const disableInteractive =
                 !inline || !showTooltip ||
@@ -1013,33 +1097,33 @@ const ALEInspector = (
         [
             Inspector, inline, graphical, expressionId, isStrictLiteral,
             data, nodeRenderer, tooltipNodeRenderer, overflowed, isTable,
-            isSupportTable
+            isSupportTable, nonComputableProps, toggleStyle, cssText
         ]
     );
 
     // console.log('objectNodeRenderer',dataZoneEntry);
 
     const tableHandle = isSupportTable &&
-        <div
+        <Box
             onClick={handleToggleTable}>{isTable ? tableOn : tableOff}
-        </div>;
+        </Box>;
 
     const tooltipTableHandle = isSupportTable &&
-        <div
+        <Box
             onClick={handleToggleTable}>
             {isTable ? tooltipTableOn : tooltipTableOff}
-        </div>;
+        </Box>;
 
     const aleInspector = (<div
         ref={containerRef}
-        css={containerStyle}
+        style={containerStyle}
     >
         {inline && overflowed && <Box sx={sxContainer}/>}
         {overflowed && <MoreHorizIcon sx={inline ? sxIcon : sxIconInline}/>}
         {!inline && tableHandle}
         <div
             ref={ref}
-            css={contentStyle}
+            style={contentStyle}
         >
             {inspector}
         </div>
@@ -1051,6 +1135,11 @@ const ALEInspector = (
         _aleObject && setValue?.(1);
     }, [_aleObject, setValue]);
 
+
+    if (expressionType === "CallExpression" && (_aleObject?.objectType === "undefined" || _aleObject?.objectType === "null")) {
+        // console.log("is function call")
+        return null;
+    }
     return (isImport ?
             <FolderDownload style={liveExpressionIconDefaultStyle}/>
             :
@@ -1081,6 +1170,7 @@ ALEInspector.propTypes = {
     connectorVariant: PropTypes.oneOf(["marker", "normal", "default"]),
     expandedPaths: PropTypes.array,
     getExpandedPaths: PropTypes.func,
+    isImport: PropTypes.bool,
 };
 
 export default withStyles(inspectorStyles)(ALEInspector);

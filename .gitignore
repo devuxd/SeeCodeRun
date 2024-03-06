@@ -7,7 +7,8 @@
 package-lock.json
 .firebaserc
 .vscode/
-.idea/
+.idea/*
+!.idea/rcb-settings.xml
 .DS_Store
 .env.development.local
 .env.test.local

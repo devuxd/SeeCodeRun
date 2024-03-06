@@ -1,5 +1,10 @@
 import React, {memo, Suspense} from 'react';
 
+import TimerIcon from '@mui/icons-material/Timer';
+import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay';
+import CodeIcon from '@mui/icons-material/Code';
+import PencilIcon from 'mdi-material-ui/Pencil';
+
 const SCR = (
     {
         color = 'blue',
@@ -46,5 +51,23 @@ const SCR = (
         </Suspense>
     )
 };
+
+
+export const controlActionIcons = [
+    {
+        icon: <TimerIcon/>, name: 'Autorun delay',
+        id: 'autorunDelay',
+    },
+    {
+        icon: <CodeIcon/>, name: 'Code bundling',
+        id: 'codeBundling',
+    },
+    {
+        icon: <PlaylistPlayIcon/>, name: 'Trace history'
+    },
+    {
+        icon: <PencilIcon/>, name: 'Change history'
+    },
+];
 
 export default memo(SCR);
