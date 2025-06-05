@@ -476,6 +476,7 @@ const CodeContainer = (
         isMatch,
         searchStateTextHighlighter,
         hoverClassName,
+        enableNavigator,
         item,
         ...rest
     }) => {
@@ -561,7 +562,8 @@ const CodeContainer = (
             contentClassName={classes.expressionCellContent}
         >
             <Box sx={{display: 'inline-flex'}}>
-                {isNav ? NavigationSignifier(divStyle, navigationIndicator) : <div style={{width: 25}}/>}
+                {(enableNavigator && isNav) ? NavigationSignifier(divStyle, navigationIndicator) :
+                    <div style={{width: 25}}/>}
                 <ButtonBase
                     onClick={buttonClick}
                 >
@@ -690,8 +692,7 @@ const Row = ({index, data}) => {
 
     const buttonClick = useCallback(
         () => {
-            // syntaxFragment.
-            // onClick();
+            syntaxFragment.onClick();
             // n?.entry && goToTimelineBranch()(n.entry);
         },
         [onClick, goToTimelineBranch, n, syntaxFragment]

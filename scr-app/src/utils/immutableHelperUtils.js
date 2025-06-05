@@ -16,7 +16,7 @@ export const immutableAutoUpdateObjectArray = (object, objectProperty, valueToAu
         }
     };
 
-    console.log("IM", {object, objectProperty, valueToAutoPushInObjectValue, autoArrayPush});
+    // console.log("IM", {object, objectProperty, valueToAutoPushInObjectValue, autoArrayPush});
     return update(object, {
         $auto: autoArrayPush
     })

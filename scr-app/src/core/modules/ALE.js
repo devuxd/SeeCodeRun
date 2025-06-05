@@ -16,6 +16,7 @@ import ZALE from './ZALE'; // zone management
 
 import './ALE.css';
 import {getScopeUID} from "../../utils/babelUtils";
+import {BehaviorSubject} from "rxjs";
 // import {
 //     updatePlaygroundInstrumentationFailure,
 //     updatePlaygroundInstrumentationSuccess, updatePlaygroundLoadFailure, updatePlaygroundLoadSuccess
@@ -167,7 +168,7 @@ export const getZoneDataLoc = (zoneData) => {
 
 
 // needed when errors are passed by iframe. tghey are stringified before
-export const makeError = (e, babelLoc = {}) => {
+export const makeError = (e, babelLoc = {}, augmentError) => {
     let {line: lineNumber = 1, column: columnNumber = 0} = babelLoc.start ?? {};
     columnNumber++;
 
@@ -181,13 +182,17 @@ export const makeError = (e, babelLoc = {}) => {
         message = e?.message;
     }
 
-    return {
+    const error = {
         constructor: {name},
         name,
         message,
         lineNumber,
         columnNumber
-    }
+    };
+
+    augmentError?.(error);
+
+    return error;
 };
 
 export const ALEError = makeError({
@@ -222,11 +227,23 @@ export const makeRIPRExplanation = (reach, infect, propagate, reveal) => {
 // };
 
 export const parseOptions = {
-    sourceFilename: "ale.js",
+    sourceFilename: "ale.js", // sourceMapChain 1/3
     sourceType: "module",
     allowImportExportEverywhere: true,
     errorRecovery: true,
-    createParenthesizedExpressions: false, // node.extra.parenthesized: Boolean
+    createParenthesizedExpressions: false, // node.extra.parenthesized: Boolean,
+    presets: [
+        [
+            "@babel/preset-env",
+            {
+                "targets": {
+                    "browsers": ["ie >= 11"]
+                },
+                "loose": false
+            }
+        ],
+        "@babel/preset-react"
+    ],
     plugins: [
         "jsx",
         "classProperties",
@@ -248,8 +265,8 @@ export const generateOptions = {
     minified: true,
     retainFunctionParens: true,
     retainLines: true,
-    sourceMaps: true,
-    sourceFileName: "ale.js"
+    sourceMaps: true,  // sourceMapChain 2/3
+    sourceFileName: "ale.js",  // sourceMapChain 2/3
 };
 
 export const handleExceptionAsRefProp = (refReturningCallback, ref) => {
@@ -258,14 +275,20 @@ export const handleExceptionAsRefProp = (refReturningCallback, ref) => {
     } catch (exception) {
         ref.exceptions ??= [];
         ref.exceptions.push(exception);
+        // console.log("babel Exception", {ref, exception});
     }
 };
 
 export const babelParse = (code, options = parseOptions, ref) => {
     return handleExceptionAsRefProp(
         () => {
-            // console.log("babelParse", parse(code, options));
-            return parse(code, options);
+            const parsed = parse(code, options);
+            ref.errors ??= [];
+            ref.errors.push(...(parsed.errors ?? []));
+            ref.exceptions ??= [];
+            ref.exceptions.push(...(parsed.exceptions ?? []));
+            // console.log("babel Parse", {parsed, ref, });
+            return parsed;
         },
         ref
     );
@@ -276,7 +299,7 @@ export const babelTraverse = (ast, visitor, ref) => {
     return handleExceptionAsRefProp(
         () => {
             traverse(ast, visitor);
-            // console.log("babelTraverse", ast);
+            // console.log("babel Traverse", {ast, ref});
             return ast;
         },
         ref
@@ -1137,6 +1160,7 @@ class ALEManager {
         this.preBaleObj = null;
     }
 
+    aleRxSubject = null;
     onALEChange = () => {
         // report bundle change via store!
         const code = this.getCode();
@@ -1160,6 +1184,8 @@ class ALEManager {
         this.prevModel = this.getModel();
 
         //ok: needs to happen before bundling
+        this.aleRxSubject?.complete();
+        this.aleRxSubject ??= new BehaviorSubject({});
         const scrObject = !bale.error ? WALE(this, this.globalObject, this.storeActions) : null;
 
         // console.log("B", scrObject);
@@ -1225,6 +1251,10 @@ class ALEManager {
 
     hasALECode = () => {
         return this.getCode() !== this.getALECode();
+    }
+
+    getALECodeOutput = () => {
+        return this.getModel().output;
     }
 
     getImportsCode = () => {

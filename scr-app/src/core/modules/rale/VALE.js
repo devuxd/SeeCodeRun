@@ -308,7 +308,7 @@ const LiveBlock = (
             // open: true,
         },
         navigationState = {},
-        navigationStateInfo={},
+        navigationStateInfo = {},
         labelStyle = liveBlockLabelDefaultStyle,
         decorate,
         isIfBlock,
@@ -525,8 +525,10 @@ const VALE = ({
     //         isUseful = false;
     //     }
     // }
+    const branchType = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.branchType();// _zone?.liveZoneType === "branch";//
+    const listKeyBody = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.listKeyBody();
 
-    if (isUseful) {
+    if (isUseful && !listKeyBody) {
         const expressionTest = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.expressionTest();
         const forBlock = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlock();
         const forBlockInit = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forBlockInit();
@@ -534,11 +536,17 @@ const VALE = ({
         const forXRight = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forXRight();
         const forXLeft = contentWidget.locLiveZoneActiveDecoration?.syntaxFragment?.forXLeft();
 
+
         let branchEntry = allCurrentScopes?.[uid]?.currentBranchEntry;
+
+        const _logValues = (branchEntry?.branch?.logValues) ?? logValues;
 
         const branchAny = {in: 0, out: Infinity};
         const currentBranch = (
-                (forBlockInit ? (branchEntry?.branch ? {in: 0, out: branchEntry?.branch?.in} : branchAny) :
+                ((forBlockInit || branchType) ? (branchEntry?.branch ? {
+                            in: 0,
+                            out: branchEntry?.branch?.in
+                        } : branchAny) :
                         (expressionTest || forXRight || (forBlock && expressionUpdate)) ?
                             branchEntry?.branch ?
                                 {in: branchEntry?.branch?.in ?? 0, out: Infinity}
@@ -548,7 +556,7 @@ const VALE = ({
             )
             ?? (branchEntry?.branch ?? (programUID == uid ? branchAny : null));
 
-        const forXBranch = currentBranch && forXRight && logValues.reverse().find(entry => {
+        const forXBranch = (currentBranch && (forXRight)) && _logValues.reverse().find(entry => {
             if (
                 currentBranch.in >= entry.i
             ) {
@@ -557,11 +565,17 @@ const VALE = ({
                 return false;
             }
         });
-
         let lvs = logValues;
 
-        if (lvs.length === 0 && (variant === 'block') && currentBranch) {
-            lvs = currentBranch.logValues ?? lvs;
+
+        if (lvs.length < 1 && currentBranch) {
+            if (variant === 'block') {
+                lvs = currentBranch.logValues ?? lvs;
+            } else {
+                if (variant === 'expression') {
+                    lvs = _logValues;
+                }
+            }
         }
 
         currentEntry = forXBranch || (currentBranch && lvs.find(entry => {
@@ -574,6 +588,8 @@ const VALE = ({
                 return false;
             }
         }));
+
+
         //_zone.parentType =="ForInStatement"
 
         //_zone.type =="ArrayExpression" &&console.log("contentWidget.locLiveZoneActiveDecoration",{forin, currentBranch,branchEntry, currentEntry, logValues}, contentWidget.locLiveZoneActiveDecoration, contentWidget?.locLiveZoneActiveDecoration?.getBranchNavigator());
@@ -581,9 +597,16 @@ const VALE = ({
 
         //bring the branch and collect the in entry
         if (currentEntry) {
-            // console.log("currentEntry", currentEntry);
+
             forceVisible = true;
             aleObject = (currentEntry.entry?.idValue) ?? currentEntry.entry?.logValue;
+            zone = (currentEntry?.zone) ?? _zone;
+            if (branchType) {
+                aleObject = currentEntry.entry.paramsValue;
+                zone = _zone;
+            }
+
+
             data = currentEntry.getValue() ?? aleObject;
 
             // if (logValues?.length) {
@@ -591,7 +614,21 @@ const VALE = ({
             // } else {
             //     zone = (currentEntry.entry?.idValue?.zone) ?? _zone;
             // }
-            zone = (currentEntry?.zone) ?? _zone;
+
+            // functionBlock && console.log("functionBlock", {
+            //     _zone,
+            //     _logValues,
+            //     branchEntry,
+            //     currentEntry,
+            //     lvs,
+            //     currentBranch,
+            //     x: contentWidget.locLiveZoneActiveDecoration,
+            //     aleObject,
+            //     data,
+            //     zone
+            // });
+
+            // console.log("currentEntry", currentEntry);
             //the zone of the vraible is changed to the forloop, perhaps in contentmangaer. evidence in the widget infor, as is using parent ingot not its own
         }
 
@@ -694,9 +731,11 @@ const VALE = ({
         isImport,
         isIfBlock,
         ifBlockKey,
+        branchType
     };
 
-    // console.log("VALE LiveArtifact", container, props);
+    // branchType && console.log("VALE LiveArtifact", {container, props, variant, zone, functionParams: zone?.functionParams});
+
     return (
         <Portal container={container}>
             <LiveArtifact

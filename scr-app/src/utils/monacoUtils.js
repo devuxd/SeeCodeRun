@@ -136,6 +136,22 @@ export function configureLineNumbersProvider(editorId, doc = document) {
 }
 
 
+export const normalizeLineEndings = (str) => {
+    return str?.replace(/\r\n|\r/g, "\n") ?? "";
+}
+
+export const normalizeEditorModelText = (model, monaco) => {
+    if (model.getEndOfLineSequence() !== monaco.editor.EndOfLineSequence.LF) {
+        model.pushEOL(monaco.editor.EndOfLineSequence.LF);
+        model.applyEdits([
+            {
+                range: model.getFullModelRange(),
+                text: model.getLinesContent().reduce((r, e) => `${r}${normalizeLineEndings(e)}`, "")
+            }
+        ]);
+    }
+}
+
 export function configureMonacoModel(monaco, editorId, text, language = 'js', onJsx) {
     let extension = language;
 
@@ -146,9 +162,14 @@ export function configureMonacoModel(monaco, editorId, text, language = 'js', on
         }
     }
 
-    return monaco.editor.createModel(text, language,
+    const model = monaco.editor.createModel(text, language,
         monaco.Uri.file(`${editorId}.${extension}`)
     );
+
+    normalizeEditorModelText(model, monaco);
+
+    return model;
+
 }
 
 // Fixes disposing element within a React component that unmounts it before
@@ -197,10 +218,29 @@ const configureMonacoEditorDetachModel = (monacoEditor) => {
 //    };
 // }
 
+function makeOnDidChangeModelContentOrError(monacoEditor) {
+
+    return (originalCallback, onDidChangeModelContentError = console.error) => {
+
+        return monacoEditor.onDidChangeModelContent((...ar) => {
+            try {
+                // Execute the original callback function safely
+                originalCallback(...ar);
+            } catch (error) {
+                // Error handling logic
+                onDidChangeModelContentError?.("Error occurred in onDidChangeModelContent callback:", error);
+                // console.error("Error occurred in onDidChangeModelContent callback:", error);
+                // You can also implement additional error handling logic here,
+                // such as logging to an external service, showing a notification to the user, etc.
+            }
+        });
+    };
+}
+
 export function configureMonacoEditor(monaco, editorEl, customEditorOptions) {
     const options = {...monacoEditorDefaultOptions, ...customEditorOptions};
     const monacoEditor = monaco.editor.create(editorEl, options);
-
+    monacoEditor.onDidChangeModelContentOrError = makeOnDidChangeModelContentOrError(monacoEditor);
     configureMonacoEditorDetachModel(monacoEditor);
     // configureCreateDecorationsCollection(monacoEditor);
     return monacoEditor;
@@ -246,4 +286,5 @@ export function configureMonacoEditorMouseEventsObservable(editor) {
             });
         });
     });
+
 }

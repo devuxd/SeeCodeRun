@@ -1,6 +1,7 @@
 import React, {
     PureComponent,
 } from 'react';
+import {BehaviorSubject} from 'rxjs';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
@@ -318,7 +319,6 @@ const styles = (theme) => {
 };
 
 class LiveExpressionStore extends PureComponent {
-    autoLog = new AutoLog();
     state = {
         autoLogger: null,
         decorators: [],
@@ -334,8 +334,8 @@ class LiveExpressionStore extends PureComponent {
     rt = 100;
     currentEditorsTexts = null;
     didUpdate = true;
-
     liveExpressionWidgets = {};
+    autoLog = new AutoLog();
 
     static getDerivedStateFromProps(nextProps, prevState) {
         // console.log('timeline', nextProps.timeline);
@@ -444,21 +444,21 @@ class LiveExpressionStore extends PureComponent {
         return null;
     }
 
-    shouldBundle = (editorsTexts) => {
-        if (!isEqual(this.currentEditorsTexts, editorsTexts)) {
-            if (editorsTexts) {
-                const {editorIds} = this.props;
-                for (const editorId in editorIds) {
-                    if (!isString(editorsTexts[editorIds[editorId]])) {
-                        return false;
-                    }
-                }
-                this.currentEditorsTexts = editorsTexts;
-                return true;
-            }
-        }
-        return false;
-    };
+    // shouldBundle = (editorsTexts) => {
+    //     if (!isEqual(this.currentEditorsTexts, editorsTexts)) {
+    //         if (editorsTexts) {
+    //             const {editorIds} = this.props;
+    //             for (const editorId in editorIds) {
+    //                 if (!isString(editorsTexts[editorIds[editorId]])) {
+    //                     return false;
+    //                 }
+    //             }
+    //             this.currentEditorsTexts = editorsTexts;
+    //             return true;
+    //         }
+    //     }
+    //     return false;
+    // };
 
 
     getGoToTimelineBranch = (
@@ -530,7 +530,8 @@ class LiveExpressionStore extends PureComponent {
             autorunDelay = 1000,
             firecoPad,
             editorsTexts,
-            aleContext
+            aleContext,
+            setAutorunKey
         } = this.props;
 
         // const {/*, decorators*/ getLocationId} = this.state;
@@ -552,6 +553,8 @@ class LiveExpressionStore extends PureComponent {
         }
 
         clearTimeout(this.updateBundleTimeout);
+
+        // console.log("updateBundleTimeout", autorunDelay, this.props);
         this.updateBundleTimeout = setTimeout(
             // () => {
             //     // console.log("updateBundleTimeout", autorunDelay);
@@ -562,6 +565,7 @@ class LiveExpressionStore extends PureComponent {
             ,
             autorunDelay
         );
+        setAutorunKey?.(this.updateBundleTimeout);
     }
 
     componentWillUnmount() {
@@ -650,13 +654,13 @@ class LiveExpressionStore extends PureComponent {
         // console.log("NANI");
         if (this.prevSingleTextState && this.prevSingleTextState.single.decorationIds.length) {
             this.prevSingleTextState.single.decorationIds =
-                firecoPad.monacoEditor.deltaDecorations(this.prevSingleTextState.single.decorationIds, []);
-            firecoPad.monacoEditor.restoreViewState(this.prevSingleTextState.single.viewState);
+                firecoPad.monacoEditor?.getModel()?.deltaDecorations(this.prevSingleTextState.single.decorationIds, []);
+            firecoPad.monacoEditor?.restoreViewState(this.prevSingleTextState.single.viewState);
         }
         if (this.prevSingleTextState && this.prevSingleTextState.matches
             && this.prevSingleTextState.matches.decorationIds.length) {
             this.prevSingleTextState.matches.decorationIds =
-                firecoPad.monacoEditor.deltaDecorations(this.prevSingleTextState.matches.decorationIds, []);
+                firecoPad.monacoEditor?.getModel?.().deltaDecorations(this.prevSingleTextState.matches.decorationIds, []);
         }
     };
 
@@ -769,10 +773,10 @@ class LiveExpressionStore extends PureComponent {
                 let error = null;
                 while (error = errorsData.pop()) {
                     const {errorObject} = error;
-                    console.log("afterTraceChange", errorObject);
-                    if (errorObject.name === "TypeError") {
-                        errorObject.message = errorObject.message.replace(/\(near.*/, "");
-                    }
+                    // console.log("afterTraceChange", errorObject);
+                    // if (errorObject.name === "TypeError") {
+                    //     errorObject.message = errorObject.message.replace(/\(near.*/, "");
+                    // }
                     updatePlaygroundLoadFailure("js", errorObject);
                 }
 

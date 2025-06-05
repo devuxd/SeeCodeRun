@@ -1,12 +1,42 @@
 import isString from 'lodash/isString';
-import AutoLogShift from './AutoLogShift';
-import Trace from './Trace';
+// import AutoLogShift from './AutoLogShift';
+// import Trace from './Trace';
 
-import {decodeBabelError} from '../../utils/scrUtils';
-import {updateBundleFailure} from "../../redux/modules/liveExpressionStore";
-import {updatePlaygroundLoadFailure} from "../../redux/modules/playground";
+// import {decodeBabelError} from '../../utils/scrUtils';
+// import {updateBundleFailure} from "../../redux/modules/liveExpressionStore";
+// import {updatePlaygroundLoadFailure} from "../../redux/modules/playground";
 import {editorIds} from "../AppManager";
-import {parseOptions} from "./ALE";
+import {parseOptions, ScopeTypes} from "./ALE";
+import {resolveErrorLoc} from "../../utils/jspmUtils";
+
+export const jspm = {
+    bundle: null,
+    generator: null,
+    generatorOptions: {
+        mapurl: "./",
+        env: ['development', 'browser', 'module'], //'production'
+    },
+    injectOptions: {
+        trace: true,
+        esmoduleshims: true,
+        integrity: true,
+        preload: true,
+    },
+    inject: async (html) => {
+        if (!jspm.bundle) {
+            jspm.bundle = (await import ('@jspm/generator'));
+            const {Generator} = jspm.bundle;
+            jspm.generator = new Generator(jspm.generatorOptions);
+        }
+        return jspm.generator.htmlInject(html, jspm.injectOptions);
+    },
+    injectLogStream: async (callBack) => {
+        for await (const {type, message} of jspm.generator.logStream()) {
+            callBack(`generator ${type}: ${message}`);
+        }
+    }
+};
+
 
 export const scriptWrap = (scriptContent, type = 'text/javascript') => (
     `<script type='${type}'>
@@ -14,11 +44,12 @@ ${scriptContent}
 </script>`);
 
 export const SCRLoader = {
-    headScript: scriptWrap(`var scrLoader={scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
-             onRequireSyncLoaded:function(errors, fallbackOverrides){},
-             onUserScriptLoaded:function(errors){},
-             fallbackOverrides:{},
-             errors:null,onErrTimeout:null}`),
+    headScript: scriptWrap(`var scrLoader={
+    handleDOMContentLoaded:null, onDOMContentLoaded:function(cb){this.handleDOMContentLoaded=cb;}, scriptsLoaded:false, onScriptsLoaded:function(){}, DOMLoaded:false,
+    onRequireSyncLoaded:function(errors, fallbackOverrides){},
+    onUserScriptLoaded:function(errors){/*console.log("onUserScriptLoaded unset")*/},
+    onSyncUserScriptLoaded:function(errors){/*console.log("onSyncUserScriptLoaded unset")*/},
+    fallbackOverrides:{},errors:null,onErrTimeout:null}`),
     bodyScript: scriptWrap(`scrLoader.scriptsLoaded=true; scrLoader.onScriptsLoaded()`),
 };
 
@@ -212,6 +243,8 @@ export const importLoaders = async () => {
 
         const options = {
             parserOpts: parseOptions,
+            sourceMaps: 'inline', // sourceMapChain 3/3
+            inputSourceMap: null, // sourceMapChain 3/3
             // modules: false,
             // caller: {
             //     name: "scr",
@@ -222,6 +255,7 @@ export const importLoaders = async () => {
             //     esmodules: true,
             // },
             presets: [
+                //     '@babel/preset-react',
                 'react',
                 ['env', {
                     // "exclude":
@@ -235,10 +269,7 @@ export const importLoaders = async () => {
             plugins: //[]
                 Object.keys(Babel.availablePlugins)
                     .filter(key =>
-                        // key === pluginName ||
-                        // !key.includes("transform-modules-commonjs")||
-                        // key === "proposal-optional-chaining-assign" ||
-                        // key === "syntax-optional-chaining-assign" ||
+
                         (key.includes('proposal-') &&
                             !key.includes('proposal-decorators') &&
                             !key.includes('proposal-pipeline-operator') &&
@@ -247,12 +278,8 @@ export const importLoaders = async () => {
                     )
             // .filter(key =>!key.includes("transform-modules-commonjs"))
         };
-        // options.plugins.push("@babel/plugin-proposal-optional-chaining-assign");
-        // options.plugins.push("@babel/plugin-syntax-optional-chaining-assign");
-        // options.plugins.push("@babel/plugin-syntax-optional-chaining-assign");
-        // options.plugins.push(["syntax-optional-chaining-assign", {version: '2023-07'}]);
-        // console.log("options", options, Babel.availablePlugins);
-        BabelSCR.transform = sourceCode => Babel.transform(sourceCode, options);
+
+        BabelSCR.transform = (sourceCode, inputSourceMap) => Babel.transform(sourceCode, {...options, inputSourceMap}); // sourceMapChain 3/3
     }
 };
 
@@ -262,22 +289,34 @@ export const postAutoLogName = '_$o';
 
 // setAutoLogNames(autoLogName, preAutoLogName, postAutoLogName);
 
-const appendScript = (doc, script, isScript = false) => {
+const appendScript = (runIframe, script, isScript = false) => {
+
+    const doc = runIframe.contentDocument || runIframe.contentWindow.document;
+
     const scriptEl = doc.createElement("script");
     scriptEl.type = isScript ? 'text/javascript' : "module";
-    doc.body.appendChild(scriptEl);
+
     scriptEl.innerHTML = script;
+    // scriptEl.innerHTML = `(function() {
+    //       ${script}
+    //     })();`;
+//     scriptEl.innerHTML=   `(() => {
+//   ${script}
+// })()`;
+    doc.body.appendChild(scriptEl);
+    // console.log("appendScript", runIframe, runIframe.getAttribute('sandbox'), scriptEl);
 };
 
-const tryTransformScript = (source) => {
+const tryTransformScript = (source, inputSourceMap) => {
     try {
-        return BabelSCR.transform(source);
+        return BabelSCR.transform(source, inputSourceMap);
     } catch (error) {
         return {error};
     }
 };
 
 class AutoLog {
+
     // constructor(jRef) {
     //     this.autoLogShift = new AutoLogShift(autoLogName, preAutoLogName, postAutoLogName, jRef);
     // }
@@ -330,7 +369,10 @@ class AutoLog {
         const css = bundle.pCss ?? bundle.editorsTexts[editorIds.css];
         const js = bundle.editorsTexts[editorIds.js];
 
-        const {alJs} = bundle;
+
+        const {alJs, babelGenerateOutput} = bundle;
+        const {map: inputSourceMap} = babelGenerateOutput ?? {};
+        // console.log("updateIframe",{alJs, inputSourceMap, bundle, aleInstance});
         if (!alJs || alJs === bundle.current?.alJs) {
             console.log("Skipping updateIframe: No alJs");
             return;
@@ -367,6 +409,7 @@ class AutoLog {
             //     css,
             //     js,});
             autoLog.configureIframe(
+                aleInstance,
                 iFrameRefHandler,
                 updatePlaygroundLoadSuccess,
                 updatePlaygroundLoadFailure,
@@ -375,11 +418,13 @@ class AutoLog {
                 css,
                 js,
                 isAutoLogActive ? alJs : js,
+                inputSourceMap,
                 onErrorHandler
             );
         } else {
             if (autoLogger && autoLogger.ast) {
                 autoLog.configureIframe(
+                    aleInstance,
                     iFrameRefHandler,
                     updatePlaygroundLoadSuccess,
                     updatePlaygroundLoadFailure,
@@ -388,6 +433,7 @@ class AutoLog {
                     css,
                     js,
                     js,
+                    inputSourceMap,
                     onErrorHandler
                 );
             } else {
@@ -417,16 +463,19 @@ class AutoLog {
     };
 
 
-    configureIframe = (runIframeHandler, updatePlaygroundLoadSuccess, updatePlaygroundLoadFailure, autoLogger, html, css, js, alJs, onErrorHandler) => {
+    configureIframe = (
+        aleInstance,
+        runIframeHandler, updatePlaygroundLoadSuccess, updatePlaygroundLoadFailure, autoLogger, html, css, js, alJs, inputSourceMap, onErrorHandler) => {
         // console.log("configureIframe", runIframeHandler);
         autoLogger && updateDeps(autoLogger.deps);
         requireConfig.triggerChange = null;
 
         const state = this.state();
+        this.rxSub?.unsubscribe();
+
         const getState = () => this.state();
         // console.log("configureIframe 2");
-        this.appendHtml(state, html, css, js, alJs, onErrorHandler).then(() => {
-            // console.log("appendHtml");
+        this.appendHtml(state, html, css, js, alJs, inputSourceMap, onErrorHandler).then(() => {
             const sandboxIframe = () => {
                 const runIframe = runIframeHandler?.createIframe();
                 if (runIframe) {
@@ -454,6 +503,7 @@ class AutoLog {
                     // console.log("onScriptsLoaded", !!autoLogger.aleInstance.scr, runIframe, runIframe.contentWindow, runIframe.contentDocument);
                     autoLogger.aleInstance?.scr?.registerNatives(runIframe);
 
+
                     if (runIframe.contentWindow.scrLoader?.onScriptsLoaded) {
 
                         autoLogger.trace.configureWindow(runIframe, autoLogName, preAutoLogName, postAutoLogName);
@@ -470,8 +520,28 @@ class AutoLog {
                                     autoLogger.trace.onError(errors, /*true*/);
                                 }
                             };
+
+                            this.rxSub = aleInstance?.aleRxSubject?.subscribe((event) => {
+                                if (!event) {
+                                    return;
+                                }
+                                const {state, lastLine} = event;
+                                // console.log("aleRxSubject", event, lastLine);
+                                if (state === ScopeTypes.P) {
+                                    runIframe.contentWindow.scrLoader.handleDOMContentLoaded?.();
+                                }
+                            });
+                            // aleInstance?.aleRxSubject.next({state: ScopeTypes.P, lastLine: true});
+
                             runIframe.contentWindow.scrLoader.onUserScriptLoaded = autoLogger.trace.onMainLoaded;
-                            appendScript(runIframe.contentDocument, state.transformed.code);
+                            runIframe.contentWindow.scrLoader.onSyncUserScriptLoaded = (...p) => {
+                                // console.log("aleRxSubject>>>>>>>", p);
+                                aleInstance?.aleRxSubject.next({state: ScopeTypes.P, lastLine: true});
+                            };
+                            // console.log(">>>>||", runIframe.contentWindow.scrLoader.onUserScriptLoaded);
+                            //needs catch
+                            // appendScript(runIframe, state.transformed.code);
+
                         } else {
                             runIframe.contentWindow.scrLoader.onRequireSyncLoaded = (errors, fallbackOverrides) => {
 
@@ -487,7 +557,7 @@ class AutoLog {
                             runIframe.contentWindow.scrLoader.onScriptsLoaded = () => {
                                 // console.log("onScriptsLoaded", runIframe, runIframe.contentDocument);
                                 // console.log('appending', state.transformed.code, state.criticalError, state.transformed.error);
-                                appendScript(runIframe.contentDocument, state.transformed.code);
+                                // appendScript(runIframe, state.transformed.code);
                             };
                         }
                     }
@@ -501,18 +571,42 @@ class AutoLog {
                 // console.log("appendIframe");
 
                 //todo: CHECK PARSE ERROR BEFORE BUNDLING
+                // let alHTML = "";
                 if (state.getHTML) {
                     const runIframe = sandboxIframe();
                     const alHTML = state.getHTML();
+                    // runIframe.srcdoc = alHTML;
+
+                    // state.transformed.code;
                     [isAppended, DevTools] = runIframeHandler.appendIframe(runIframe);
                     const activeRunIframe = runIframeHandler.getIframe();
+
                     if (isAppended && activeRunIframe) {
                         // console.log('appending', {DevTools}, runIframe === activeRunIframe, alHTML);
                         addIframeLoadListener(activeRunIframe);
-                        activeRunIframe.srcdoc = alHTML;
+
+                        jspm.inject(alHTML).then((iHtml) => {
+                            // console.log("alHTML", {alHTML, runIframe, activeRunIframe, isAppended, iHtml})// state.transformed.code);
+                            activeRunIframe.srcdoc = iHtml;
+                            updatePlaygroundLoadSuccess('js', alJs, DevTools);
+                            // jspm.injectLogStream(console.log);
+                        }).catch((e) => {
+                            const re = resolveErrorLoc(e, aleInstance);
+                            updatePlaygroundLoadFailure('js', re);
+                            // const importZone =aleInstance?.zale.getImportZoneData(pn);
+                            // console.log("updatePlaygroundLoadFailure",re);
+                            // jspm.injectLogStream(console.log);
+                            // updatePlaygroundLoadSuccess('js', alJs, DevTools);
+                        })
+
+
+                        // console.log("generator", jspm.generator); //getAnalysis(html)
+
+
                     }
                 }
-                updatePlaygroundLoadSuccess('js', alJs, DevTools);
+
+
             };
             requireConfig.triggerChange = this.appendIframe;
             this.appendIframe();
@@ -581,7 +675,7 @@ class AutoLog {
         return state.parsed;
     };
 
-    async appendHtml(state, html, css, js, alJs, onErrorHandler) {
+    async appendHtml(state, html, css, js, alJs, inputSourceMap, onErrorHandler) {
         const cssString = `<style>${css}</style>`;
 
         const defaultHeadTagLocation = {
@@ -615,11 +709,11 @@ class AutoLog {
         };
 
 
-        state.transformed = tryTransformScript(alJs);
+        state.transformed = tryTransformScript(alJs, inputSourceMap);
         if (state.transformed.error) {
             console.log("not running AlJs code");
             state.criticalError = state.transformed.error;
-            state.transformed = BabelSCR.transform(js);
+            state.transformed = BabelSCR.transform(js, inputSourceMap);
         }
 
         // console.log("CP", {alJs, state});
@@ -627,7 +721,8 @@ class AutoLog {
         state.transformed.source = state.transformed.code;
         //  requireConfig.requireSync.push('"material-ui/Tooltip"');
         state.transformed.code = requireConfig.isDisabled ?
-            state.transformed.code
+            `${state.transformed.code}
+            scrLoader.onSyncUserScriptLoaded();`
             : `${requireConfig.requireOnLoadString}
                 ${requireConfig.requireEnsureString}
                 requirejs(${JSON.stringify(requireConfig.requireSync)}, function(){
@@ -660,6 +755,7 @@ class AutoLog {
                     ${html.substring(bodyTagLocation.startTag.endOffset, bodyTagLocation.endTag.startOffset)}
                      ${requireScriptsString}
                      ${SCRLoader.bodyScript}
+                     ${scriptWrap(state.transformed.code, "module")}
                     ${html.substring(bodyTagLocation.endTag.startOffset, html.length)}`;
             } else {
                 return null;

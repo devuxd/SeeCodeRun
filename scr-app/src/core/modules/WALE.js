@@ -19,6 +19,14 @@ import {copifyDOMNode, findStateInState, isNode, nativeFunctionStringName, state
 import {GraphicalIdiom} from "./rale/IdiomaticInspector";
 import {SupportedApis} from "./idiomata/Idiomata";
 import {PackageIdiom} from "./idiomata/idioms/PackageIdiom";
+import {augmentError} from "./EALE";
+
+
+class UndefinedArrayReference {
+    reason;
+    referencedProperty;
+    referencedArray;
+}
 
 class Diff {
     diff;
@@ -897,7 +905,7 @@ export default function wireGlobalObjectToALE(
         //         calleePropertyExpressionId,
         //         preExtra
         //     });
-        scrObject.lastCallExpressionId = ((calleePropertyExpressionId ?? calleeObjectExpressionId) ?? calleeExpressionId)?? scrObject.lastCallExpressionId;
+        scrObject.lastCallExpressionId = ((calleePropertyExpressionId ?? calleeObjectExpressionId) ?? calleeExpressionId) ?? scrObject.lastCallExpressionId;
         // }
 
         scrObject.lastExpressionId = expressionId;
@@ -1112,7 +1120,30 @@ export default function wireGlobalObjectToALE(
                 scrObject.registerFunction(funcRef, expressionId, uid);
             }
 
-            const logValue = aleJSEN.stringify(value);
+            let logValue = aleJSEN.stringify(value);
+
+            const zoneData = getZoneDataByExpressionId(aleInstance, expressionId);
+
+            //const d = zoneData?.[2];
+
+            // if (d?.key === "property" && d.parentSnapshot?.key === "callee") {
+            //     const babelLoc = getZoneDataLoc(zoneData);
+            //     const _value = new UndefinedArrayReference();
+            //     const zoneDataX = getZoneDataByExpressionId(aleInstance, expressionId);
+            //     const d = zoneData?.[2];
+            //     console.log("dd", d);
+            //     if (d?.type) {
+            //
+            //         _value.reason = "Array reference is undefined";
+            //         _value.referencedProperty = "length";
+            //         _value.referencedArray = "elements";
+            //         logValue = aleJSEN.stringify(_value);
+            //         // console.log(">>", {uid, traceEventType, expressionId, rest, zoneData, babelLoc, _value});
+            //
+            //     }
+            //
+            // }
+
 
             const entry = new TimelineEntry(
                 traceEventType, uid,
@@ -1121,6 +1152,14 @@ export default function wireGlobalObjectToALE(
                 false, isCall, isConsole, false,
                 extra,
             );
+            if (value?.constructor.name === "CSSStyleDeclaration") {
+                const k = [];
+                for (let kk in value) {
+                    k.push(kk);
+                }
+                console.log("entry", {value, k, entry});
+            }
+
 
             // if (isReactObject) {
             //     entry.graphicalAPIName(SupportedApis.React);
@@ -1135,6 +1174,7 @@ export default function wireGlobalObjectToALE(
                 scrObject.registerCurrentFunction(value, entry);
 
             }
+
 
             scrObject.timeline.push(entry);
             aleInstance?.onTraceChange?.();
@@ -1165,6 +1205,8 @@ export default function wireGlobalObjectToALE(
                         const contentWindow = more[0];
                         scrObject.contentWindow = contentWindow;
                         aleJSEN.windowRoots(contentWindow);
+                        aleInstance?.aleRxSubject.next({state: ScopeTypes.P});
+                        // console.log("scrObject", globalObject);
 
                         // console.log("windowRoots", more, aleJSEN, stateToRefArray(contentWindow));
                         break;
@@ -1181,9 +1223,11 @@ export default function wireGlobalObjectToALE(
                         );
                         paramsValue = aleJSEN.stringify(paramsIdentifier);
                         callerTimeLineEntry = scrObject.currentCallers.pop();
-                        console.log("ScopeTypes.F", {rest, value, functionIdNode,
-                            expressionIdNode,
-                            uid, paramsValue});
+                        // console.log("ScopeTypes.F 0", {
+                        //     rest, value, functionIdNode,
+                        //     expressionIdNode,
+                        //     uid, paramsValue
+                        // });
 
                         // if(isFunction(value)){
                         //     console.log("ScopeTypes.F f", {value});
@@ -1232,7 +1276,7 @@ export default function wireGlobalObjectToALE(
                     null, null, null,
                 );
 
-                let i = scrObject.timeline.push(entry)-1;
+                let i = scrObject.timeline.push(entry) - 1;
 
                 // idValue && console.log("C", {i,entry, z: aleInstance.zale?.getZoneData(uid), idValue, forOfValue});
 
@@ -1280,6 +1324,11 @@ export default function wireGlobalObjectToALE(
                     scrObject.timeline.push(entry);
 
                     aleInstance?.onTraceChange?.();
+                    // console.log("ScopeTypes", entry);
+                    switch (scopeType) {
+                        case ScopeTypes.P:
+                            console.log("ScopeTypes", entry);
+                    }
 
                     return value;
                 }
@@ -1297,7 +1346,7 @@ export default function wireGlobalObjectToALE(
             if (babelLoc) {
                 let entry = null;
 
-                const errorObject = makeError(e, babelLoc);
+                const errorObject = makeError(e, babelLoc, _e => augmentError(_e, e, zoneData, entry));
                 // console.log("lastExpressionId", {lastExpressionId, zoneData, errorObject});
                 //todo: on trace change trigger notification via updateplaygorund failure: done
                 if (scrObject) {
@@ -1305,6 +1354,7 @@ export default function wireGlobalObjectToALE(
                     const expressionId = lastExpressionId;
 
                     const rawError = e;
+
                     entry = new TimelineEntry(
                         traceEventType, null,
                         null, null, null,
@@ -1317,6 +1367,7 @@ export default function wireGlobalObjectToALE(
                         null, null,
                         errorObject, zoneData, rawError,
                     );
+
 
                     scrObject.errorsData.push(entry);
                     scrObject.timeline.push(entry);

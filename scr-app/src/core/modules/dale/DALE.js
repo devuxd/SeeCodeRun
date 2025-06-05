@@ -386,6 +386,7 @@ const DALE = ({monacoEditor, monaco, aleInstanceSubject, contentWidgetManager, o
         enableMonacoEditorViewZones: () => {
             dale.updateMonacoEditorViewZones();
             dale.updateMonacoEditorViewZonesDisposer =
+                // onDidChangeModelContentOrError
                 dale.monacoEditor.onDidChangeModelContent(
                     dale.updateMonacoEditorViewZones
                 );
@@ -540,8 +541,8 @@ const DALE = ({monacoEditor, monaco, aleInstanceSubject, contentWidgetManager, o
         return new SyntaxFragment(_dale, zone, ZoneDecorationType.resolve(liveZoneType, scopeType));
     };
 
-    dale.inLay = (position, label)=>{
-        const i =monaco.languages.registerInlayHintsProvider("javascript", {
+    dale.inLay = (position, label) => {
+        const i = monaco.languages.registerInlayHintsProvider("javascript", {
             provideInlayHints(...p) {
                 // console.log("p", p);
                 return {
@@ -553,7 +554,8 @@ const DALE = ({monacoEditor, monaco, aleInstanceSubject, contentWidgetManager, o
                             whitespaceBefore: true, // see difference between a and b parameter
                         },
                     ],
-                    dispose: () => {},
+                    dispose: () => {
+                    },
                 };
             },
         });
@@ -694,12 +696,18 @@ const DALE = ({monacoEditor, monaco, aleInstanceSubject, contentWidgetManager, o
     return dale;
 }
 
+const EditorChangeTypes = {
+    "onDidScrollChange": "onDidScrollChange",
+};
+
 export default function decorateALEExpressions(aleFirecoPad) {
     const {
         aleInstanceSubject,
         monacoEditorSubject,
+        monacoEditorChangeSubject,
+        monacoEditorChangeComplete,
         contentWidgetManagerSubject,
-        daleSubject
+        daleSubject,
     } = aleFirecoPad.behaviors();
 
     const onViewZoneChange = aleFirecoPad;
@@ -710,9 +718,31 @@ export default function decorateALEExpressions(aleFirecoPad) {
         if (!(monacoEditor && monaco)) {
             return;
         }
+
+        // const editorChangeTypes = () => EditorChangeTypes;
+        // const editorBoundChanges = Object.keys(EditorChangeTypes).map((key) => {
+        //     const handleNext = (...params) => monacoEditorChangeSubject().next({key: [...params]});
+        //     const disposer = monacoEditor[key](handleNext);
+        //     return {
+        //         disposer,
+        //         handleNext
+        //     };
+        // });
+
+        //
+        // const disposeAll = () => {
+        //         for(let di of editorBoundChanges){
+        //             di.disposer.dispose();
+        //         }
+        // }
+
+        // monacoEditorChangeComplete(disposeAll);
+
         contentWidgetManager = new ContentWidgetManager(
             monacoEditor,
             monaco,
+            monacoEditorChangeSubject,
+            // editorChangeTypes,
         );
         contentWidgetManager.observe();
         contentWidgetManagerSubject().next({contentWidgetManager});

@@ -23,7 +23,7 @@ const mapStateToProps = (state) => {
     const {
         updateBundleReducer, updatePlaygroundReducer, monacoEditorsReducer
     } = state;
-    // console.log("RX", state, rest);
+    // console.log("RX", {updateBundleReducer, state});
 
     const props = {
         playgroundExceptions: updatePlaygroundReducer.exceptions,
@@ -145,16 +145,20 @@ const EditorContainer = (
         monacoEditorsStates,
         errorState,
         locToMonacoRange,
+        autorunDelay,
+        setAutorunKey,
     }
 ) => {
     const firecoPad = monacoEditorsStates?.[editorId]?.firecoPad;
-    const editorRef = useRef();
-    const disposerRef = useRef();
+    const {monacoEditor} = firecoPad ?? {};
+
+    const [isMonacoEditorReady, setIsMonacoEditorReady] = useState(false);
     const [settingsOpen] = useState(false);
     const [errorSnackbarOpen, setErrorSnackbarOpen] = useState(false);
-    const [isMonacoEditorReady, setIsMonacoEditorReady] = useState(
-        ()=>(firecoPad?.isMonacoEditorReady ?? false)
-    );
+
+    const editorRef = useRef();
+    const disposerRef = useRef();
+
 
     const handleSettingsClick = useCallback(
         () => {
@@ -182,25 +186,27 @@ const EditorContainer = (
         [classes, errorSnackbarOpen]
     );
 
+    const p = useRef(null);
+
+    if (!p.current) {
+        p.current = {setIsMonacoEditorReady, monacoEditorContentChanged, isConsole, monacoOptions}
+    }
+
     useEffect(
         () => {
-            const onEditorContentFirstRender = () => {
-                setIsMonacoEditorReady(true);
-            };
-
+            const {setIsMonacoEditorReady, monacoEditorContentChanged, isConsole, monacoOptions} = p.current;
             mountEditorFulfilled(
                 editorId, {
                     editorRef, monacoEditorContentChanged,
-                    isConsole, monacoOptions,
-                    onEditorContentFirstRender,
+                    isConsole, monacoOptions, setIsMonacoEditorReady,
                     disposerRef,
                 });
 
-            return () => disposerRef.current?.dispose();
+            return () => {
+                disposerRef.current?.dispose();
+            }
         },
-        [
-            monacoEditorContentChanged, isConsole, monacoOptions,
-        ]
+        []
     );
 
     useEffect(
@@ -210,7 +216,6 @@ const EditorContainer = (
         [updateMonacoEditorLayout]
     );
 
-    const monacoEditor = firecoPad?.monacoEditor;
 
     const isLoading = !(
         isConsole || (isMonacoEditorReady && monacoEditor)
@@ -221,8 +226,10 @@ const EditorContainer = (
             {observeLiveExpressions &&
                 <LiveExpressionStore
                     editorId={editorId}
+                    autorunDelay={autorunDelay}
                     liveExpressionStoreChange={liveExpressionStoreChange}
                     firecoPad={firecoPad}
+                    setAutorunKey={setAutorunKey}
                 />
             }
             <EditorNotification
@@ -259,6 +266,7 @@ EditorContainer.propTypes = {
     observeLiveExpressions: PropTypes.bool,
     setLiveExpressionStoreChange: PropTypes.func,
     mountEditorFulfilled: PropTypes.func.isRequired,
+    autorunDelay: PropTypes.string,
     // jsErrorState: PropTypes.object,
 };
 

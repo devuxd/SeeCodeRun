@@ -13,18 +13,20 @@ export function getDefaultTextForLanguage(language) {
     }
 // };
 }
+
 // import confetti from 'https://cdn.skypack.dev/canvas-confetti';
 
-const javascriptDefaultText = `import confetti from 'https://cdn.skypack.dev/canvas-confetti';
+const javascriptDefaultText = `import confetti from 'canvas-confetti';
 let array = [];
 for (let i = 0; i < 10; i++) {
-    array[i] = i * 100;
+    array[i] = \`Confetti thrown \${i+1} times\`;
     array;
 }
+
 const button = document.getElementById("b");
 let clickCounter = 0;
 button.addEventListener("click", () => {
-    button.textContent = \`Confetti thrown \${++clickCounter} times\`;
+    button.textContent = array[++clickCounter];
     confetti();
 });
 `;

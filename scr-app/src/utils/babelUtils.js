@@ -87,7 +87,13 @@ export const babelLoc2MonacoRange = (loc = {}) => {
 };
 
 export const isBabelError = (obj) => {
-    return obj?.code === 'BABEL_PARSE_ERROR';
+    switch (obj?.code) {
+        case 'BABEL_PARSER_SYNTAX_ERROR':
+        case 'BABEL_PARSE_ERROR':
+            return true;
+        default:
+            return false;
+    }
 };
 
 class ReadableBabelThrowable extends ReadableThrowable {

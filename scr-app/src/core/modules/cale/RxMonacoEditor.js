@@ -73,7 +73,7 @@ function toMonacoRanges(detectCommentsOutput, monaco, editor) {
     ).filter(range => editorFullRange.containsRange(range));
 }
 
-const toHints = (cs, monaco) => cs.map(({range, options, expressionType, inlayHintLabelParts}) => {
+const toHints = (cs, monaco) => cs.map(({range, options, expressionType, hintManager}) => {
     const kindLabel = options?.kind ?? "Parameter";
     const kind = monaco.languages.InlayHintKind[kindLabel];
     let whitespaceAfter = false;
@@ -91,13 +91,13 @@ const toHints = (cs, monaco) => cs.map(({range, options, expressionType, inlayHi
     return {
         kind,
         position,
-        label: inlayHintLabelParts?? label,
+        label: hintManager?.getMonacoHints() ?? label,
         whitespaceAfter,
         whitespaceBefore
     }
 });
 
-const inlayHinter = (hints, monaco) => monaco.languages.registerInlayHintsProvider("javascript", {
+const inlayHinter = (hints, monaco) => monaco.languages.registerInlayHintsProvider("javascript", { //enabled?fontFamily?fontSize?padding?
     provideInlayHints() {
         return {
             hints,
@@ -131,7 +131,7 @@ const makeLineContentChanges_ = (
 
     const linesContent_ = () => {
         _linesContentChanges.previous = _linesContentChanges.current;
-        _linesContentChanges.current = editor.getModel().getLinesContent();
+        _linesContentChanges.current = editor?.getModel()?.getLinesContent();
         _linesContentChanges.previous = _linesContentChanges.previous ?? _linesContentChanges.current;
         _linesContentChanges.previousComments = findCommentPatterns(_linesContentChanges.previous);
         _linesContentChanges.currentComments = findCommentPatterns(_linesContentChanges.current);
@@ -216,6 +216,10 @@ const makeOnDidChangeModelContentHandler = (
     const {linesContent_, contentChanges_} = makeLineContentChanges_(editor);
 
     return codeChangesSubject().subscribe(({codeChanges, others}) => {
+        if (!editor?.getModel()) {
+            editor = null;
+            return codeChangesSubject()?.complete();
+        }
         let linesContent = linesContent_();
         const previousRanges = toMonacoRanges(linesContent.previousComments, monaco, editor);
         const currentRanges = toMonacoRanges(linesContent.currentComments, monaco, editor);
@@ -229,7 +233,10 @@ const makeOnDidChangeModelContentHandler = (
             }
         }
 
-        monacoInlayHintsSubject().next({commentRanges: toModelDeltaDecoration(currentRanges), callExpressionRanges:[]});
+        monacoInlayHintsSubject().next({
+            commentRanges: toModelDeltaDecoration(currentRanges),
+            callExpressionRanges: []
+        });
     });
 
 }

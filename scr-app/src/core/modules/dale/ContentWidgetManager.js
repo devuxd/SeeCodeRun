@@ -1,5 +1,6 @@
 import debounce from 'lodash/debounce';
 import isString from "lodash/isString";
+import {debounceTime, delay, filter} from "rxjs/operators"
 import {sortedIndex, mouseActionTypes} from "./DALE"
 import {LiveZoneDecorationStyles} from "../ALE";
 import {SyntaxWidget} from "./SyntaxWidget";
@@ -36,16 +37,20 @@ export default class ContentWidgetManager {
     pendingYs = {};
     tid = null;
     widgetGap = 4;
-    widgetResizeDebounceTime = 10;
+    widgetResizeDebounceTime = 25;
 
     constructor(
-        editor, monaco
+        editor, monaco,
+        monacoEditorChangeSubject,
+        // editorChangeTypes,
         // handleMouseActionDecoration
     ) {
         // console.log("ContentWidgetManager");
         this.editor = editor;
         this.monaco = monaco;
         this.preference = [monaco.editor.ContentWidgetPositionPreference.BELOW];
+        this.monacoEditorChangeSubject = monacoEditorChangeSubject;
+        // this.editorChangeTypes =editorChangeTypes;
         // this.handleMouseActionDecoration = handleMouseActionDecoration;
 
         this.layoutAll = debounce(
@@ -73,6 +78,10 @@ export default class ContentWidgetManager {
         //     this.resolveMouseActionMove,
         //     this.resolveMouseActionLeaveDelay
         // );
+    }
+
+    subscribe = () => {
+        return this.monacoEditorChangeSubject().pipe(filter(v => !!v), debounceTime(1000), delay(1000)).subscribe(this.widgetResizeAll);
     }
 
 
@@ -105,6 +114,10 @@ export default class ContentWidgetManager {
         return contentWidget?.getDomNode?.()?.children?.length > 0;
     };
 
+    widgetResizeAll = () => {
+        Object.values(this.getContentWidgets() ?? {}).forEach(cw => cw?.afterRender());
+    }
+
     widgetResize = () => {
         let layout = {};
         const contentWidgets = Object.values(this.getContentWidgets() ?? {});
@@ -112,6 +125,7 @@ export default class ContentWidgetManager {
             if (!contentWidget) {
                 continue;
             }
+            // console.log("contentWidget", contentWidget)
 
             const rect = contentWidget.getDomNode()?.getBoundingClientRect();
             if (!rect) {
@@ -122,7 +136,7 @@ export default class ContentWidgetManager {
             layout[y][x] = {width, contentWidget};
         }
 
-        console.log("widgetResize---------------------------------------------");
+        // console.log("widgetResize---------------------------------------------");
 
         Object.keys(this.pendingYs).forEach(y => {
             const ys = layout[y] ?? {};
@@ -131,6 +145,7 @@ export default class ContentWidgetManager {
             let previous = null;
             let lastIncludedI = xs.length - 1;
             let lastStyle = null;
+            const ps = [];
             xs.forEach((x, i) => {
                 const {width, contentWidget} = ys[x];
                 if (!previous) {
@@ -174,9 +189,29 @@ export default class ContentWidgetManager {
                 }
 
                 previous = {x, width, contentWidget, i};
+                //clean nulls from statements, and duplicates
+
+                // const cp = contentWidget?.getPosition();
+                // const foundP = ps.find(p => p.position.lineNumber === cp.lineNumber && p.position.column === cp.column);
+                // if (foundP) {
+                //     foundP.hits++;
+                //     const st = contentWidget.getDomNode()?.style;
+                //     if (st) {
+                //         st.width = '0px';
+                //     }
+                //
+                //     //  return;
+                // } else {
+                //     ps.push({position: cp, hits: 0});
+                //     // contentWidget.ge
+                // }
+
+
                 // lastIncludedI = i;
 
             });
+
+            // console.log("hits >>", {ys, xs, ps});
 
             // if (lastStyle) {
             //     lastStyle.maxWidth = `unset`;
@@ -224,30 +259,30 @@ export default class ContentWidgetManager {
 
 
     makeContentWidgets = (id, locLiveZoneActiveDecoration) => {
-        // const contentWidget = new SyntaxWidget(
-        //     this, id, locLiveZoneActiveDecoration
-        // );
-        // locLiveZoneActiveDecoration?.syntaxFragment.syntaxWidget(contentWidget);
-        // return contentWidget;
-        const newContentWidgets = [];
-
-        if (!id) {
-            // program type zone
-            return newContentWidgets;
-        }
-
         const contentWidget = new SyntaxWidget(
             this, id, locLiveZoneActiveDecoration
         );
         locLiveZoneActiveDecoration?.syntaxFragment.syntaxWidget(contentWidget);
+        return [contentWidget];
+        // const newContentWidgets = [];
 
-        newContentWidgets.push(contentWidget);
-
-        // if (locLiveZoneActiveDecoration.zone?.functionParams) {
-        //     console.log("makeContentWidgets", {id, locLiveZoneActiveDecoration});
+        // if (!id) {
+        //     // program type zone
+        //     return newContentWidgets;
         // }
-
-        return newContentWidgets;
+        //
+        // const contentWidget = new SyntaxWidget(
+        //     this, id, locLiveZoneActiveDecoration
+        // );
+        // locLiveZoneActiveDecoration?.syntaxFragment.syntaxWidget(contentWidget);
+        //
+        // newContentWidgets.push(contentWidget);
+        //
+        // // if (locLiveZoneActiveDecoration.zone?.functionParams) {
+        // //     console.log("makeContentWidgets", {id, locLiveZoneActiveDecoration});
+        // // }
+        //
+        // return [newContentWidgets[0]];
 
         // use locLiveZoneActiveDecoration and its decoration id
         // let range = {...(locLiveZoneActiveDecoration?.syntaxFragment?.ranges?.[0] ??(editor.getModel()?.getDecorationRange(id)?? {}))};
@@ -359,7 +394,7 @@ export default class ContentWidgetManager {
     //         );
     // };
 
-    widgetById = (id) => {
+    widgetById = (id, locLiveZoneActiveDecoration) => {
         let contentWidget = this.contentWidgets[id];
 
         if (contentWidget) {
@@ -375,6 +410,13 @@ export default class ContentWidgetManager {
             }
         }
 
+        if (this.contentWidgets && locLiveZoneActiveDecoration) {
+            const cw = Object.values(this.contentWidgets).find(cw => cw.locLiveZoneActiveDecoration === locLiveZoneActiveDecoration);
+            if (cw) {
+                return cw;
+            }
+        }
+
         return null;
     };
 
@@ -383,8 +425,8 @@ export default class ContentWidgetManager {
     //     contentWidget && this.editor.removeContentWidget(contentWidget);
     // };
 
-    getWidgetSyntaxFragmentById = (widgetId) => {
-        return this.widgetById(widgetId)?.locLiveZoneActiveDecoration?.syntaxFragment;
+    getWidgetSyntaxFragmentById = (widgetId, locLiveZoneActiveDecoration) => {
+        return this.widgetById(widgetId, locLiveZoneActiveDecoration)?.locLiveZoneActiveDecoration?.syntaxFragment;
     };
 
     startHover = (currentHoveredWidgetId) => {
@@ -567,7 +609,7 @@ export default class ContentWidgetManager {
         return this.resolveMouseActionMouseLeave({target: {detail: widgetId}});
     };
 
-    observe = (forceReset = false) => {
+    observe = (forceReset = false, enableEventChanges = false) => {
         if (this.disposers) {
             if (!forceReset) {
                 return this.unobserve;
@@ -578,13 +620,27 @@ export default class ContentWidgetManager {
 
         const {monaco, editor} = this;
 
-        const onDidChangeModelContentDisposer =
+        const nextChange = (key, ...params) => this.monacoEditorChangeSubject().next({key: [...params]});
+        const uns = this.subscribe();
+        const changeKeys = {
+            onDidChangeModelContent: "onDidChangeModelContent",
+            onDidLayoutChange: "onDidLayoutChange",
+            onDidScrollChange: "onDidScrollChange",
+
+        };
+        //onDidChangeModelContentOrError
+        const onDidChangeModelContentDisposer = !enableEventChanges ?
+            {
+                dispose: () => {
+                }
+            } :
             editor.onDidChangeModelContent((event) => {
                 let changeStartPosition = null;
                 event.changes.forEach((change) => {
                     if (!change?.range) {
                         return;
                     }
+                    nextChange(changeKeys.onDidChangeModelContent, event);
                     const currentStartPosition =
                         monaco.Range.getStartPosition(change.range);
                     if (changeStartPosition) {
@@ -617,11 +673,15 @@ export default class ContentWidgetManager {
                 height = info.height;
                 width = info.width;
                 this._layoutAll();
+                nextChange(changeKeys.onDidLayoutChange, info);
             }
         });
-
+        const lall = (...p) => {
+            nextChange(changeKeys.onDidScrollChange, p);
+            this.layoutAll(...p);
+        }
         const onDidChangeModelDecorationsDisposer = editor.onDidChangeModelDecorations(this.layoutAll);
-        const onDidScrollChangeDisposer = editor.onDidScrollChange(this.layoutAll);
+        const onDidScrollChangeDisposer = editor.onDidScrollChange(lall);
 
         // editor.onContextMenu(function (...e) {
         //   contentWidgetManager.resolveMouseAction(
@@ -648,6 +708,8 @@ export default class ContentWidgetManager {
 
         const onMouseLeaveDisposer = editor.onMouseLeave(resolveMouseActionMouseLeave);
 
+        const dips = {dispose: uns};
+
         this.disposers = [
             onDidChangeModelContentDisposer,
             onDidLayoutChangeDisposer,
@@ -657,6 +719,7 @@ export default class ContentWidgetManager {
             onMouseLeaveDisposer,
             onDidScrollChangeDisposer,
             debouncersDisposer,
+            dips,
         ];
 
         return this.unobserve;
@@ -675,7 +738,7 @@ export default class ContentWidgetManager {
 
     //exposes editors inner collection and recover missing from "this" one
     editorContentWidgetsById = (id, locLiveZoneActiveDecoration) => {
-        let currentContentWidget = this.widgetById(id);
+        let currentContentWidget = this.widgetById(id, locLiveZoneActiveDecoration);
         const contentWidgets = [];
         if (currentContentWidget) {
             currentContentWidget.updateRefs(this, locLiveZoneActiveDecoration);
@@ -694,12 +757,12 @@ export default class ContentWidgetManager {
         contentWidgets.forEach((contentWidget) => {
             this.layoutContentWidget(contentWidget);
         });
-        // console.log("contentWidgets", contentWidgets);
+        // console.log("contentWidgets", contentWidgets, this.contentWidgets);
         return contentWidgets;
     };
 
-    removeContentWidgetById = (id) => {
-        const contentWidget = this.widgetById(id);
+    removeContentWidgetById = (id, locLiveZoneActiveDecoration) => {
+        const contentWidget = this.widgetById(id, locLiveZoneActiveDecoration);
         if (contentWidget) {
             this.editor.removeContentWidget(contentWidget);
             delete this.contentWidgets[id];
@@ -717,9 +780,9 @@ export default class ContentWidgetManager {
         // const i2ids = {};
         locLiveZoneActiveDecorations.forEach(
             (e, i) => { // todo: obtain anchor id not all: done
-                const a = e.parentSyntaxFragment?.getDecorationIds() ?? [];
+                const a = [];//.parentSyntaxFragment?.getDecorationIds() ?? [];
                 const b = e.syntaxFragment?.getDecorationIds() ?? [];
-                const ks= [...a, ...b];
+                const ks = [...a, ...b];
                 // const ks = [b[0] ?? a[0]];
                 // console.log("locLiveZoneActiveDecorations", {e, i, ks, a, b});
                 ks.forEach(
@@ -747,10 +810,20 @@ export default class ContentWidgetManager {
             toRemove[id] = true;
         });
 
+        const expressionIds = {};
+
         ids.forEach((id) => {
             toRemove[id] = false;
             // heck why elements are not bein added
+            // const locLiveZoneActiveDecoration = locLiveZoneActiveDecorations[ids2i[id]];
             const locLiveZoneActiveDecoration = locLiveZoneActiveDecorations[ids2i[id]];
+            // const expressionId = locLiveZoneActiveDecoration?.zone?.expressionId;
+            // if (expressionIds[expressionId]) {
+            //     return
+            // }
+            // expressionIds[expressionId] = locLiveZoneActiveDecoration;
+
+            // console.log("locLiveZoneActiveDecoration", locLiveZoneActiveDecoration);
             // makeContentWidgets call caused a month delay
             const currentContentWidgets = this.editorContentWidgetsById(id, locLiveZoneActiveDecoration);
             // console.log("makeContentWidgets", {currentContentWidgets, id, locLiveZoneActiveDecoration} );

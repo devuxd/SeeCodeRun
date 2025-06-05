@@ -471,10 +471,16 @@ const newDOMElement = (element, context) => {
 
     if (style) {
         const styleProps = {};
+
         for (const prop in style) {
             const styleProp = style[prop];
-            (isNumber(styleProp) || (styleProp && !isNativeCaught(styleProp))) &&
-            (styleProps[prop] = styleProp);
+            // console.log("newDOMElement", {element, domData, style, nat: isNativeCaught(styleProp)});
+            if (!isNativeCaught(styleProp)) {
+                if (isNumber(styleProp) || styleProp?.length)
+                    styleProps[prop] = styleProp;
+            }
+            // (isNumber(styleProp) || (styleProp && )) &&
+            // (styleProps[prop] = styleProp);
         }
         domData.style = styleProps;
     }

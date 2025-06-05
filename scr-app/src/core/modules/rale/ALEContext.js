@@ -1,30 +1,35 @@
 import {createContext} from 'react';
-import {
-   Inspector,
-   ObjectName,
-   ObjectValue,
-   useStyles
-} from 'react-inspector';
+// import {
+//     Inspector,
+//     ObjectName,
+//     ObjectValue,
+//     useStyles
+// } from 'react-inspector';
+//
+// import GraphicalQueryBase from "./GraphicalQueryBase";
+// import {VisualQueryManager} from "../VisualQueryManager";
+// // import {withIntegrator} from "../../../contexts/IntegrationContext";
+// const initialAleContext = {
+//     Inspector,
+//     ObjectName,
+//     ObjectValue,
+//     useStyles,
+//     GraphicalQuery: GraphicalQueryBase,
+//     aleInstance: null,
+//     // getTheme:()=>null,
+//     VisualQueryManager,
+// };
+//
+// initialAleContext.setAleInstance = (aleInstance) => {
+//     initialAleContext.aleInstance = aleInstance;
+// };
+//
+// initialAleContext.activateAleInstance = () => {
+// };
+// initialAleContext.locToMonacoRange = () => {
+// };
 
-import GraphicalQueryBase from "./GraphicalQueryBase";
-import {VisualQueryManager} from "../VisualQueryManager";
-import {withIntegrator} from "../../../contexts/IntegrationContext";
-
-const ALEContext = createContext({
-   Inspector,
-   ObjectName,
-   ObjectValue,
-   useStyles,
-   GraphicalQuery:GraphicalQueryBase,
-   aleInstance: null,
-   setAleInstance: function (aleInstance){
-      this.aleInstance = aleInstance;
-   },
-   activateAleInstance: ()=>{},
-   locToMonacoRange: ()=>{},
-   // getTheme:()=>null,
-   VisualQueryManager,
-});
+const ALEContext = createContext({});//initialAleContext
 
 // const initialData = {
 //    Inspector,

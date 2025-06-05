@@ -6,6 +6,7 @@ import React, {
     useState,
     useContext
 } from 'react';
+import ReactDOM from 'react-dom';
 
 import {createRoot} from "react-dom/client";
 import {connect} from 'react-redux';
@@ -31,8 +32,6 @@ import {
 import {isActivatePlayground} from "../utils/reduxUtils";
 // import {editorIds} from "../core/AppManager";
 // import PastebinContext from "../contexts/PastebinContext";
-
-
 
 
 const mapStateToProps = (reduxers) => {
@@ -96,7 +95,7 @@ const Playground = (
     {
         timestamp,
         bundle,
-        autorunDelay,
+        // autorunDelay,
         monacoEditor,
         editorIds,
         isPlaygroundUpdating,
@@ -128,7 +127,8 @@ const Playground = (
     //     // highlightSingleText, setCursorToLocation,
     //     // traceSubscriber,
     // } = useContext(PastebinContext);
-    const {aleInstance
+    const {
+        aleInstance
         // , activateAleInstance
     } = useContext(ALEContext);
     const [key, setKey] = useState(0);
@@ -152,7 +152,9 @@ const Playground = (
     );
 
     const [playgroundRef, iFrameRefHandler] = //sandboxRef, iFrameHandler
-        useSandboxIFrameHandler(document, prepareIframe);
+        useSandboxIFrameHandler(document, prepareIframe)
+
+    // console.log(">>", {playgroundRef, iFrameRefHandler});
 
     // useEffect(() => {
     //         if (!activatePlayground || !monacoEditor) {
@@ -308,6 +310,64 @@ const Playground = (
 
     }, [DevTools]);
 
+
+    // If the iframe is part of your React component
+    // const playgroundCRef = useRef(null);
+    //
+    //
+    // const [portalTarget, setPortalTarget] = useState(null);
+    //
+    // useEffect(() => {
+    //     // Access the DOM element where the iframe will be appended
+    //     const container = document.getElementById('iframe-root');
+    //     if (!activatePlayground ||!container || ! playgroundCRef.current) return; // Ensure the container exists
+    //
+    //     // // Create and append the iframe to 'iframe-root'
+    //     // const iframe = document.createElement('iframe');
+    //     // iframe.style.width = '100%';
+    //     // iframe.style.height = '300px'; // Set desired dimensions
+    //     // container.appendChild(iframe);
+    //     //
+    //     // ref={playgroundRef}
+    //     playgroundCRef.current.appendChild(container);
+    //     playgroundRef.current = container;
+    //
+    //     return ()=>playgroundCRef.current.removeChild(container)
+    //
+    //     // // Wait for the iframe to load before accessing its document
+    //     // iframe.onload = () => {
+    //     //     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    //     //
+    //     //     // Create a div inside the iframe to serve as the portal target
+    //     //     const portalDiv = iframeDoc.createElement('div');
+    //     //     portalDiv.id = 'portal-target';
+    //     //     iframeDoc.body.appendChild(portalDiv);
+    //     //
+    //     //     // Update state with the new div, to use as the portal target
+    //     //     setPortalTarget(portalDiv);
+    //     // };
+    // }, [activatePlayground]); // Empty dependency array ensures this runs once on mount
+
+
+    // const [portalTarget, setPortalTarget] = useState(null);
+    // useEffect(() => {
+    //     // Create the iframe
+    //     const iframe = document.createElement('iframe');
+    //     // iframe.style.width = '100%';
+    //     // iframe.style.height = '500px'; // Adjust as needed
+    //     document.body.appendChild(iframe);
+    //
+    //     // Save a reference to the iframe for later use
+    //     // window.myIframe = iframe;
+    //     setPortalTarget(iframe);
+    //
+    //     return () => {
+    //         // Clean up by removing the iframe when the component unmounts
+    //         document.body.removeChild(iframe);
+    //     };
+    // }, []);
+
+
     return activatePlayground &&
         (<>
             <div
@@ -321,6 +381,7 @@ const Playground = (
                     visualElements={visualElements}
                 />
             </div>
+            {/*<IframePortalComponent classes={classes} playgroundRef={playgroundRef} />*/}
             <div
                 ref={playgroundRef}
                 className={classes.iframeContainer}
@@ -335,8 +396,45 @@ const Playground = (
         </>);
 }
 
+
+// const IframePortalComponent = ({classes, playgroundRef}) => {
+//     const [portalTarget, setPortalTarget] = useState(null);
+//
+//     useEffect(() => {
+//         const iframe = document.createElement('iframe');
+//         // iframe.style.width = '100%';
+//         // iframe.style.height = '500px';
+//         document.body.appendChild(iframe);
+//
+//         const onIframeLoad = () => {
+//             const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+//             iframeDocument.body.innerHTML = '<div id="portal-root"></div>';
+//             setPortalTarget(iframeDocument.getElementById('portal-root'));
+//         };
+//
+//         iframe.addEventListener('load', onIframeLoad);
+//         // window.myIframe = iframe;
+//
+//         return () => {
+//             iframe.removeEventListener('load', onIframeLoad);
+//             document.body.removeChild(iframe);
+//         };
+//     }, []);
+//
+//
+//     return (
+//         <div>
+//             {portalTarget && ReactDOM.createPortal(<div
+//                 ref={playgroundRef}
+//                 className={classes.iframeContainer}
+//             />, portalTarget)}
+//         </div>
+//     );
+// };
+
+
 Playground.propTypes = {
-    autorunDelay: PropTypes.string,
+    // autorunDelay: PropTypes.string,
     editorIds: PropTypes.object.isRequired,
     isAutoLogActive: PropTypes.bool.isRequired,
 };
