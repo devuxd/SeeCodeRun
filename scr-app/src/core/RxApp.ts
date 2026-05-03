@@ -210,7 +210,8 @@ class HintPart implements InlayHintLabelPart {
     }
 
     resolve(expressionType: string, plusTypes: string[] = []) {
-        const plural = plusTypes?.length > 1 ?? false;
+       // const plural = plusTypes?.length > 1 ?? false; // fixes TS2869
+		const plural = plusTypes.length > 1;
         this.expressionType = expressionType;
         this.label = `${HintPart.TS_SYMBOL_TYPE}${HintPart.TS_SYMBOL_SEPARATOR}${expressionType}${plural ? HintPart.TS_SYMBOL_TYPE_PLUS : ""}`;
         const tooltip = plusTypes.join(HintPart.TS_SYMBOL_ALTERNATE_TYPE);

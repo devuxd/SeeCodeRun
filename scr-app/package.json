@@ -92,7 +92,7 @@
     "cross-env": "^7.0.3",
     "logrocket": "^2.2.1",
     "react-app-rewired": "^2.2.1",
-    "react-scripts": "^5.0.1",
+    "react-scripts": "5.0.1",
     "react-test-renderer": "^18.2.0",
     "source-map": "^0.7.4",
     "source-map-explorer": "^2.5.3",
@@ -103,7 +103,7 @@
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
     "@types/jest": "^29.5.11",
-    "webpack": "^5.89.0",
+    "webpack": "5.89.0",
     "react-devtools-inline": "^4.28.0",
     "use-immer": "^0.9.0",
     "nanoid": "^3.3.6",
@@ -116,7 +116,7 @@
     "@react-buddy/palette-mui": "^5.0.1"
   },
   "scripts": {
-    "start": "cross-env NODE_OPTIONS='--max_old_space_size=12000 --max_semi_space_size=256 --v8-pool-size=0' UV_THREADPOOL_SIZE=10 BROWSER=none react-app-rewired start",
+    "start": "cross-env NODE_OPTIONS='--max_old_space_size=12000 --max_semi_space_size=256 --v8-pool-size=0' UV_THREADPOOL_SIZE=10  GENERATE_SOURCEMAP=false react-app-rewired start",
     "build": "cross-env NODE_OPTIONS='--max_old_space_size=12000 --max_semi_space_size=256 --v8-pool-size=0' PUBLIC_URL='https://seecode.run' GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-app-rewired build  --verbose",
     "start-url": "cross-env PUBLIC_URL='https://seecode.run'& react-app-rewired start",
     "build-with-source-maps": "cross-env PUBLIC_URL='https://seecode.run' & react-app-rewired build",
