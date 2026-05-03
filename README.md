@@ -22,7 +22,7 @@ The main folders and relevant files should look like this:
   ...
 ```
 
-** Neote: ** Firebase cloud functions are behind a paywall. They are supported yet commented in code. I rolled back Fb client. Any setup including the functions functionality is optional. Skipt it completely if using the Fb client within scr-app.
+**Note:** Firebase cloud functions are behind a paywall. They are supported yet commented in code. I rolled back Fb client. Any setup including the functions functionality is optional. Skipt it completely if using the Fb client within scr-app.
 
 # Installation
 Follow these instructions to develop or deploy seeCode.run. Four sensitive files have been omitted from the
