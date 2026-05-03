@@ -44,9 +44,10 @@ You will need to create the following files:
 Create your own project in [firebase](https://console.firebase.google.com/).
  Create a google account if you do not have one already.
 
-### scr-app/firebaseDevConfig.js
+### scr-app/core/firebaseDevConfig.js (previously scr-app/firebaseDevConfig.js)
+
 Go to Project Overview > Add Firebase to your web app. Copy the content of the config variable and paste it in a new
-file called ```scr-app/firebaseDevConfig.js```, the content should look like this:
+file called ```scr-app/core/firebaseDevConfig.js```, the content should look like this:
 
 ```
 export default {
@@ -114,7 +115,7 @@ Create the file functions/cloud-functions.json with the following content:
 ```
 For ````cloudFunctionsUserId```, it must match
 the value that you set in your Firebase database rules(above).
-Replace ```[YOUR_FIREBASE_DB_URL]``` with the value you set in ```scr-app/firebaseDevConfig.js```.
+Replace ```[YOUR_FIREBASE_DB_URL]``` with the value you set in ```scr-app/core/firebaseDevConfig.js```.
 
 ### functions/serviceAccountKey.dev.json
 First get the service account info from the Firebase console.
