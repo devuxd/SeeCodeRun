@@ -77,6 +77,30 @@ module.exports = (config, /*, env*/) => {
         stream: require.resolve('stream-browserify'),
     };
 
+ config.experiments = { ...config.experiments, topLevelAwait: true };
+    //  config.externals["node:fs"] = "commonjs node:fs";
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+    };
+      config.plugins.push(
+
+        new webpack.NormalModuleReplacementPlugin(
+          /^node:/,
+          (resource) => {
+            resource.request = resource.request.replace(/^node:/, '');
+          },
+        ),
+      );
+config.externals = {
+    ...config.externals,
+    'jsdom': 'window',
+    'cssstyle': '{}',
+};
+
+// Also add to resolve.fallback
+config.resolve.fallback['jsdom'] = false;
+config.resolve.fallback['cssstyle'] = false;
     // setTimeout(() => { // see config after start clears
     //     console.log("config.resolve.fallback", config.resolve.fallback);
     // }, 15000)
