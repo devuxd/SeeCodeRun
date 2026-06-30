@@ -22,7 +22,7 @@ The main folders and relevant files should look like this:
   ...
 ```
 
-**Note:** Firebase cloud functions are behind a paywall as of 2024. They are supported yet commented in code. I rolled back Fb client. Any setup including the functions functionality is optional. Skipt it completely if using the Fb client within scr-app.
+**Note:** Firebase cloud functions are behind a paywall as of 2024. They are supported yet commented in code. I rolled back Fb client. Any setup including the functions functionality is optional. Skipt it completely if using the Fb client within scr-app. **Deprecation notes have been added below to indicate which sections to ommit as cloud functions are no longer needed to use SCR.**
 
 # Installation
 Follow these instructions to develop or deploy seeCode.run. Four sensitive files have been omitted from the
@@ -34,9 +34,10 @@ You will need to install [Node](https://nodejs.org/en/download/).
 ## Pending Files
 You will need to create the following files:
 ```/
-    functions/
-        cloud-functions.json
-        serviceAccountKey.dev.json
+   # deprecated (use only if needing cloud functions)
+   # functions/
+   #     cloud-functions.json
+   #     serviceAccountKey.dev.json
     scr-app/
         firebaseDevConfig.js
     .firebaserc
@@ -92,20 +93,25 @@ You may want to set your own ```cloudFunctionsUserId``` value,
 it helps identifying the admin credentials when used in cloud functions. It's value must match the one set to ```uid```
 in functions/cloud-functions.json (below).
 
-#### Install firebase tools and log in
+#### Enable Anonymous Login to your Firebase project
+While on your project website, go to the authentication section and enable anonymous login provider. **Note:** Ommiting this step will result in the SCR UI loaxding but the editors not being able to render code. Additionally, the web console will show an authentication toolkit error. 
+
+### Install firebase tools and log in 
+**NOTE:** This whole section is deprecated (use only if needing cloud functions)
 ```
 npm install -g firebase-tools
 firebase login
 ```
 
 #### Check your available projects and theirs ids
+
 ```
 firebase list
 ```
 Find a project with the same id as ```[YOUR_PROJECT_ID]```, if you cannot find it, the project has not been created or
 the user you are signed in is not the same you used to create the project in the browser.
 
-### functions/cloud-functions.json
+#### functions/cloud-functions.json
 Create the file functions/cloud-functions.json with the following content:
 ```
 {
@@ -118,7 +124,7 @@ For ````cloudFunctionsUserId```, it must match
 the value that you set in your Firebase database rules(above).
 Replace ```[YOUR_FIREBASE_DB_URL]``` with the value you set in ```scr-app/firebaseDevConfig.js```.
 
-### functions/serviceAccountKey.dev.json
+#### functions/serviceAccountKey.dev.json
 First get the service account info from the Firebase console.
  Tap in Project settings(gear icon by the side of Project Overview) > Service Accounts. In Firebase Admin SDK,
  Choose Node.js configuration and click on "Generate New Private Key" to obtain the service account info.
@@ -138,8 +144,23 @@ Create the file functions/serviceAccountKey.dev.json and paste the content obtai
   "client_x509_cert_url": "..."
 }
 ```
+#### Install dependencies for the first time
 
-### Add .firebaserc
+In ```functions/```, type:
+```
+npm install
+```
+
+### Install SCR dependencies for the first time
+
+In ```scr-app/```, type:
+```
+npm run install-and-monaco
+```
+
+## Congrats! your are ready to develop and contribute to seeCode.run
+
+#### Add .firebaserc to simplify CLI commands
 Create a file with the following content:
 ```
 {
@@ -151,21 +172,10 @@ Create a file with the following content:
 ```
 Replace ```[YOUR_PROJECT_ID]``` with the value you set in ```scr-app/firebaseDevConfig.js```.
 
-### Install dependencies for the first time
-In ```functions/```, type:
-```
-npm install
-```
-In ```scr-app/```, type:
-```
-npm run install-and-monaco
-```
-
-## Congrats! your are ready to develop and contribute to seeCode.run
-
 # Development
 
 ## Start the cloud functions emulator
+**NOTE:** This whole section is deprecated (use only if needing cloud functions)
 In ```functions/```, type:
 ```
 npm run serve
@@ -178,18 +188,25 @@ Use [[YOUR_PROJECT_ID]/us-central1] to set [YOUR_CLOUD_FUNCTIONS_EMULATOR_PATH]
 back in ```scr-app/firebaseDevConfig.js```. ```us-central1``` may be different depending on where your are in the globe.
 
 If you make changes to the files in this folder, stop the emulator and start it again to reflect such changes.
+
+## Start your SCR app
 ## Start you local server
 In ```scr-app/```, type
 ```
 npm start
 ```
-The server should be running in port 3000(default). It is also listening for files changes and refreshing your app as
+The server should be running in port 3000 (default). It is also listening for files changes and refreshing your app as
 it changes.
 
 # Deployment
 To deploy cloud functions you will need to obtain a
 [service account key](https://firebase.google.com/docs/admin/setup) and
  create a file in functions called serviceAccountKey.prod.json in the functions folder.
+ 
+  **Do not commit this file to the repo**.
+  
+  **Do not commit this file to the repo**.
+
   **Do not commit this file to the repo**.
 
 ## Unix
@@ -212,12 +229,13 @@ repository, thus requiring you to create them.
 ## Additional Pending Files
 You will need to create the following files:
 ```/
-    functions/
-        serviceAccountKey.prod.json
+    # functions/
+    #    serviceAccountKey.prod.json
     scr-app/
         firebaseProdConfig.js
 ```
 ### Modify functions/cloud-functions.json
+**NOTE:** This whole section is deprecated (use only if needing cloud functions)
 Ask the production project owner to share the info for this file
 ```
 {
@@ -227,6 +245,7 @@ Ask the production project owner to share the info for this file
 }
 ```
 ### functions/serviceAccountKey.prod.json
+**NOTE:** This whole section is deprecated (use only if needing cloud functions)
 ```
 [ASK_ADMIN_3]
 ```
@@ -262,6 +281,7 @@ export default {
 ```
 
 ### Check your available projects and theirs ids
+**NOTE:** This whole section is deprecated (use only if needing cloud functions)
 ```
 firebase list
 ```
