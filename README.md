@@ -94,7 +94,7 @@ it helps identifying the admin credentials when used in cloud functions. It's va
 in functions/cloud-functions.json (below).
 
 #### Enable Anonymous Login to your Firebase project
-While on your project website, go to the authentication section and enable anonymous login provider. **Note:** Ommiting this step will result in the SCR UI loaxding but the editors not being able to render code. Additionally, the web console will show an authentication toolkit error. 
+While on your project website, go to the authentication section and enable anonymous login provider. **Note:** Omitting this step will result in the SCR UI loaxding but the editors not being able to render code. Additionally, the web console will show an authentication toolkit error. 
 
 ### Install firebase tools and log in 
 **NOTE:** This whole section is deprecated (use only if needing cloud functions)
